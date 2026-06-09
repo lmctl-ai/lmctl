@@ -26,11 +26,14 @@ S3 + CloudFront.
 - Deploy (operator runs): `scripts/deploy.sh` — needs `S3_BUCKET` +
   `CF_DISTRIBUTION_ID`; syncs `build/` → `s3://$S3_BUCKET/lmctl/ --delete`
   (prefix-scoped, co-tenant-safe) + invalidates `/lmctl/*`.
-- **CloudFront viewer-request Function** (`infra/cf-rewrite.js`) is required for
-  the OAC/REST S3 origin: appends `.html` to slashless extensionless paths,
-  maps bare `/lmctl/` → `/lmctl/index.html`, 301s trailing-slash → slashless
-  canonical, leaves extensioned URIs untouched. It does NOT handle 404s (a
-  viewer-request function has no origin visibility).
+- **CloudFront viewer-request Function** (`infra/lmctl-www-redirect.js`) handles
+  the OAC/REST S3 origin: it keeps the existing `www.lmctl.com`→apex redirect and
+  adds `/lmctl/*` clean-URL resolution — appends `.html` to slashless
+  extensionless paths, maps bare `/lmctl/` → `/lmctl/index.html`, 301s
+  trailing-slash → slashless canonical, leaves extensioned URIs untouched. It
+  does NOT handle 404s (a viewer-request function has no origin visibility).
+  Deployed LIVE 2026-06-09 on distribution `E1GKUWTM93U7IV` (function
+  `lmctl-www-redirect`); prior code preserved in `.rollback/`.
 - **404 strategy is deploy-topology-dependent** (deferred to operator): a
   dedicated docs distribution → distribution custom-error-response; a shared
   `/templates/` distribution → behavior-scoped Lambda@Edge origin-response.

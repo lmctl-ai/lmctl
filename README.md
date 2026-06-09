@@ -22,7 +22,14 @@ The static artifact is written to `build/` with Docusaurus `baseUrl` set to
 
 ## Deploy
 
-The operator supplies the target bucket and CloudFront distribution:
+The production defaults target `s3://lmctl-website-prod/lmctl/` and CloudFront
+distribution `E1GKUWTM93U7IV`:
+
+```bash
+./scripts/deploy.sh
+```
+
+Operators can override either target with env vars:
 
 ```bash
 S3_BUCKET=<bucket> CF_DISTRIBUTION_ID=<distribution-id> ./scripts/deploy.sh
@@ -36,10 +43,26 @@ CloudFront constraints for the `/lmctl/*` behavior:
 
 - Origin Path must be empty. Objects already live under the `lmctl/` key prefix;
   setting Origin Path to `/lmctl` double-prefixes requests and returns 404.
-- Associate the viewer-request CloudFront Function source in
-  `infra/cf-rewrite.js` with the `/lmctl/*` behavior. The function rewrites
-  clean `/lmctl/` paths to S3 object keys and redirects non-canonical trailing
-  slash paths. It does not implement 404 handling.
+- The production viewer-request CloudFront Function is
+  `lmctl-www-redirect`, with source in `infra/lmctl-www-redirect.js`. It keeps
+  the existing `www.lmctl.com` to apex redirect and adds `/lmctl/*` clean-URL
+  resolution. It does not implement 404 handling.
+
+Rollback source for the prior LIVE function is kept in `.rollback/`. To roll
+back the function, update DEVELOPMENT with the saved source, then publish the
+returned ETag:
+
+```bash
+aws cloudfront update-function \
+  --name lmctl-www-redirect \
+  --if-match <current-ETag> \
+  --function-config Comment="301 redirect www.lmctl.com to lmctl.com",Runtime=cloudfront-js-2.0 \
+  --function-code fileb://.rollback/lmctl-www-redirect.LIVE.js
+
+aws cloudfront publish-function \
+  --name lmctl-www-redirect \
+  --if-match <rollback-update-ETag>
+```
 
 ### 404 Strategy
 

@@ -1,15 +1,10 @@
-/*
- * Viewer-request rules for the /lmctl/* behavior:
- * - /lmctl/ rewrites to /lmctl/index.html; no redirect.
- * - Slashless extensionless paths rewrite to append .html.
- * - Trailing-slash paths other than /lmctl/ redirect 301 to slashless canonical.
- * - Requests whose last path segment has a file extension are left untouched.
- *
- * 404 handling is not implemented here. Viewer-request functions cannot know
- * whether the origin key exists.
- */
 function handler(event) {
   var request = event.request;
+  var host = request.headers.host.value;
+  if (host === 'www.lmctl.com') {
+    return { statusCode: 301, statusDescription: 'Moved Permanently', headers: { location: { value: 'https://lmctl.com' + request.uri } } };
+  }
+
   var uri = request.uri;
 
   if (uri === '/lmctl' || uri === '/lmctl/') {

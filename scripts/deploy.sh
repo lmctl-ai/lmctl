@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ -z "${S3_BUCKET:-}" ]]; then
-  echo "S3_BUCKET is required. Example: S3_BUCKET=docs-bucket CF_DISTRIBUTION_ID=E123 ./scripts/deploy.sh" >&2
+S3_BUCKET="${S3_BUCKET:-lmctl-website-prod}"
+CF_DISTRIBUTION_ID="${CF_DISTRIBUTION_ID:-E1GKUWTM93U7IV}"
+
+if [[ -z "${S3_BUCKET}" ]]; then
+  echo "S3_BUCKET resolved empty. Set S3_BUCKET or restore the production default." >&2
   exit 1
 fi
 
-if [[ -z "${CF_DISTRIBUTION_ID:-}" ]]; then
-  echo "CF_DISTRIBUTION_ID is required. Example: S3_BUCKET=docs-bucket CF_DISTRIBUTION_ID=E123 ./scripts/deploy.sh" >&2
+if [[ -z "${CF_DISTRIBUTION_ID}" ]]; then
+  echo "CF_DISTRIBUTION_ID resolved empty. Set CF_DISTRIBUTION_ID or restore the production default." >&2
   exit 1
 fi
 

@@ -108,8 +108,11 @@ reporting.
 - `npm run build` → static `build/`. Artifact builds fully offline.
 - **CloudFront Function (viewer-request) is REQUIRED** for an OAC/REST S3 origin:
   a REST origin does not resolve directory indexes, so clean URLs 404 without
-  it. Ship the function source in the repo (`infra/cf-rewrite.js`). It does
-  **URI rewriting + canonical redirect ONLY**:
+  it. DEPLOYED: the existing distribution function `lmctl-www-redirect` (source
+  `infra/lmctl-www-redirect.js`) was extended additively — it keeps the
+  `www`→apex redirect and adds the `/lmctl/*` branch below; all non-`/lmctl/`
+  paths pass through unchanged. It does **URI rewriting + canonical redirect
+  ONLY**:
   Single mechanism — **append `.html`** (matches Docusaurus `trailingSlash:false`
   output, which emits `docs/glossary.html`, `search.html`, etc.; no extra
   build-time index-copy step):

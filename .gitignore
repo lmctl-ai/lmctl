@@ -10,3 +10,4 @@ build/
 .lmctl/
 .mcp.json
 .DS_Store
+.rollback/
