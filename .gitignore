@@ -1,0 +1,11 @@
+node_modules/
+dist/
+build/
+.cache/
+.env
+.env.*
+*.lmctl
+.lmctl0/
+.lmctl/
+.mcp.json
+.DS_Store
