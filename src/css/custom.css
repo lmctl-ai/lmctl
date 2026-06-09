@@ -1,0 +1,100 @@
+:root {
+  --ifm-color-primary: #25655f;
+  --ifm-color-primary-dark: #205b56;
+  --ifm-color-primary-darker: #1d514d;
+  --ifm-color-primary-darkest: #173f3c;
+  --ifm-color-primary-light: #2d756e;
+  --ifm-color-primary-lighter: #35857d;
+  --ifm-color-primary-lightest: #459b92;
+  --ifm-code-font-size: 95%;
+  --lmctl-ink: #17211f;
+  --lmctl-muted: #54615f;
+  --lmctl-border: #d8e0dd;
+  --lmctl-band: #f6f8f7;
+  --lmctl-accent: #c53f2f;
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #66c2b7;
+  --ifm-background-color: #111715;
+  --ifm-background-surface-color: #18211f;
+  --lmctl-ink: #f0f6f4;
+  --lmctl-muted: #b9c7c3;
+  --lmctl-border: #2b3c39;
+  --lmctl-band: #151d1b;
+  --lmctl-accent: #f07c67;
+}
+
+.heroBanner {
+  background:
+    linear-gradient(rgba(13, 21, 20, 0.74), rgba(13, 21, 20, 0.72)),
+    url('../../static/img/terminal-workflow.svg');
+  background-size: cover;
+  background-position: center;
+  color: #fff;
+  padding: 5rem 0 4rem;
+}
+
+.heroBanner h1 {
+  font-size: 4rem;
+  letter-spacing: 0;
+}
+
+.heroBanner .hero__subtitle {
+  max-width: 760px;
+  color: #dbe8e5;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+}
+
+.sectionBand {
+  background: var(--lmctl-band);
+  border-top: 1px solid var(--lmctl-border);
+  border-bottom: 1px solid var(--lmctl-border);
+  padding: 3rem 0;
+}
+
+.sectionPlain {
+  padding: 3rem 0;
+}
+
+.docGrid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.docCard {
+  border: 1px solid var(--lmctl-border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  background: var(--ifm-background-surface-color);
+}
+
+.docCard h3 {
+  margin-top: 0;
+}
+
+.docCard p {
+  color: var(--lmctl-muted);
+  margin-bottom: 0;
+}
+
+.commandBlock {
+  border-left: 4px solid var(--lmctl-accent);
+}
+
+@media (max-width: 640px) {
+  .heroBanner {
+    padding: 3.5rem 0 3rem;
+  }
+
+  .heroBanner h1 {
+    font-size: 2.8rem;
+  }
+}

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <rect width="1600" height="900" fill="#17211f"/>
+  <rect x="140" y="120" width="1320" height="660" rx="18" fill="#0f1514"/>
+  <rect x="140" y="120" width="1320" height="58" rx="18" fill="#273633"/>
+  <circle cx="184" cy="149" r="9" fill="#f07c67"/>
+  <circle cx="216" cy="149" r="9" fill="#f4c15d"/>
+  <circle cx="248" cy="149" r="9" fill="#66c2b7"/>
+  <text x="205" y="260" font-family="Menlo, Consolas, monospace" font-size="34" fill="#e6f0ed">$ lmctl-next api submit-job --workflow image-qa</text>
+  <text x="205" y="330" font-family="Menlo, Consolas, monospace" font-size="34" fill="#66c2b7">job queued -> run started -> terminal:ok</text>
+  <text x="205" y="430" font-family="Menlo, Consolas, monospace" font-size="30" fill="#b9c7c3">Review -> Consolidate -> ShellStep -> AssertRepoClean</text>
+  <text x="205" y="528" font-family="Menlo, Consolas, monospace" font-size="30" fill="#f07c67">durable-memory persists project knowledge</text>
+  <path d="M205 610h390M205 666h630M205 722h510" stroke="#3e5551" stroke-width="20" stroke-linecap="round"/>
+</svg>
