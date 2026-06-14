@@ -55,7 +55,7 @@ lmctl project unlock <name>
 The provider CLI's native conversation cache for one member. Sessions are useful
 for continuity but are not the canonical project record.
 
-## serve / API commands
+## serve / api commands
 
-`lmctl serve` starts the single always-on daemon (HTTP 127.0.0.1:8787 by
-default). `lmctl api ...` is the CLI client for that HTTP surface.
+`lmctl serve` is the local always-on daemon that executes queued work.
+`lmctl api ...` are CLI commands that act on your local lmctl state directly.

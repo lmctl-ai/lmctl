@@ -6,10 +6,10 @@ sidebar_position: 4
 # Architecture overview
 
 lmctl is single-operator and runs on Linux/WSL2. The `lmctl` CLI sets up and
-operates everything on its own. `lmctl serve` is the single always-on daemon
-documented here; the CLI and MCP bridges are HTTP satellites of it. The hosted
-web console at [lmctl.ai](https://lmctl.ai) is an optional satellite — a
-subscription feature (free and premium tiers), not required to run lmctl.
+operates everything on its own, working directly against local state.
+`lmctl serve` is the local always-on daemon that executes queued work. The
+hosted web console at [lmctl.ai](https://lmctl.ai) is optional — a subscription
+feature (free and premium tiers), not required to run lmctl.
 
 ## Pipeline as the organizing layer
 
@@ -20,15 +20,16 @@ to the next step or terminal state.
 That design makes recurring AI-agent work repeatable. Operators submit the
 workflow and inputs; the workflow controls the sequence.
 
-## Daemon and API client
+## The local daemon
 
-`lmctl serve` starts the single always-on daemon, which listens over HTTP on
-`127.0.0.1:8787`. `lmctl api ...` commands are an HTTP client of that daemon.
-Project, workflow, team, job, run, issue, and attention state is stored in a
-SQLite profile under `~/.lmctl/` (better-sqlite3, compiled at npm install). MCP
-bridges are also HTTP satellites of the daemon. The optional hosted web console
-at [lmctl.ai](https://lmctl.ai) (a free/premium subscription) is another client
-of the same API — everything it does is also doable from the CLI.
+`lmctl serve` starts the local always-on daemon — the queue worker and agent
+services that actually *execute* your jobs and runs. Project, workflow, team,
+job, run, issue, and attention state lives in a SQLite profile under `~/.lmctl/`
+(better-sqlite3, compiled at npm install). The `lmctl` CLI reads and writes that
+local state directly; you start `serve` once and leave it running so submitted
+work gets executed. The optional hosted web console at
+[lmctl.ai](https://lmctl.ai) (a free/premium subscription) connects to the same
+local daemon — everything it does is also doable from the CLI.
 
 ```bash
 lmctl serve > lmctl.log 2>&1 &
@@ -37,10 +38,12 @@ lmctl api status
 
 ## Cloud transport and metering
 
-Traffic between a client and the hosted services travels over a mailbox backed
-by a cloud bucket. The poll uses a GET-next-sequence protocol: each fetch asks
-for the next sequence number rather than listing object versions. Client and
-browser usage is metered against a quota.
+This applies only to the optional cloud console. It does not reach your machine
+directly; it exchanges messages with the hosted services over a **mailbox**
+backed by a cloud bucket (S3). The poll uses a GET-next-sequence protocol: each
+fetch asks for the next sequence number rather than listing object versions.
+Cloud usage is metered against a quota. The local CLI does not use this path —
+it works directly against local state.
 
 ## Job to run
 

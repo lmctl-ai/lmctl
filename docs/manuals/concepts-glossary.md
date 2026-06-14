@@ -67,13 +67,13 @@ lmctl api attentions
 lmctl api attention ack <attention_id>
 ```
 
-## serve, API commands, and auth
+## serve and the api commands
 
-`lmctl serve` starts the single always-on daemon (HTTP 127.0.0.1:8787 by
-default). `lmctl api ...` commands talk to that daemon over HTTP. See the
-[CLI / API reference](./cli-reference.md) for the command group details.
+`lmctl serve` is the local always-on daemon that executes queued work. The
+`lmctl api ...` commands are part of the CLI and act on your local lmctl state
+directly. See the [CLI reference](./cli-reference.md) for the full command list.
 
-When auth is enabled, set:
+To point the CLI at a remote daemon (advanced), set:
 
 ```bash
 export LMCTL_API_URL=http://127.0.0.1:8787

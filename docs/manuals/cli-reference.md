@@ -1,17 +1,21 @@
 ---
-title: CLI / API Reference
+title: CLI Reference
 sidebar_position: 2
 ---
 
-# CLI / API reference
+# CLI reference
 
-`lmctl` has top-level operator commands and an HTTP-backed `api` command
-group. The `api` group talks to the running daemon.
+`lmctl` is a local command-line tool. It runs on your machine and works
+directly against your local lmctl state (the SQLite profile under `~/.lmctl/`).
+Nothing it does leaves your machine unless you opt into the cloud console.
 
-## api command group
+Its commands come in two shapes, both part of the same CLI:
 
-In these docs, the **HTTP client** means the `lmctl api` command group. It is a
-CLI client over the `lmctl serve` HTTP surface; there is no separate binary.
+- **top-level commands** — `lmctl init`, `lmctl status`, `lmctl serve`,
+  `lmctl project`, `lmctl team`, `lmctl workflow`, `lmctl diagnose`, and so on.
+- **the `lmctl api <noun>` group** — inspect and act on jobs, runs, attentions,
+  and issues. `api` is just the name of a command group; it is not a separate
+  binary or a remote client.
 
 ## Setup and status
 
@@ -22,10 +26,10 @@ lmctl diagnose
 lmctl serve > lmctl.log 2>&1 &
 ```
 
-`lmctl serve` runs a single always-on daemon that listens over HTTP on
-`127.0.0.1:8787` by default. The CLI is the primary client of this daemon; the
-optional [lmctl.ai](https://lmctl.ai) web console (a free/premium subscription)
-is another.
+`lmctl serve` runs the local always-on daemon that *executes* queued work —
+jobs and runs are carried out by this background process. Start it once and
+leave it running. The optional [lmctl.ai](https://lmctl.ai) web console (a
+free/premium subscription) connects to this same local daemon.
 
 ## Project, team, and workflow setup
 
@@ -42,7 +46,9 @@ lmctl team seed my-team
 lmctl workflow load image-qa workflows/image-qa.compound.json
 ```
 
-## API command nouns
+## Inspecting state
+
+These `lmctl api <noun>` commands read and act on your local lmctl state:
 
 ```bash
 lmctl api status
@@ -111,13 +117,15 @@ lmctl api issues claim <id> --assigned-run-id <run_id>
 Use issues for failed QA chapters, bugs found during workflow runs, and
 operator-visible follow-up work.
 
-## API authentication
+## Connecting to a remote daemon (advanced)
 
-When the daemon requires auth, set:
+By default `lmctl` uses your local daemon and needs no auth. To point the CLI
+at a different or remote daemon — for example a shared host — set:
 
 ```bash
 export LMCTL_API_URL=http://127.0.0.1:8787
 export LMCTL_API_TOKEN=<token>
 ```
 
-The API command group sends the token as a bearer token to the daemon.
+`lmctl` then sends the token as a bearer token to that daemon. Most setups
+never need this.

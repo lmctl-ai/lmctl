@@ -5,8 +5,8 @@ sidebar_position: 5
 
 # Configuration & environment
 
-lmctl resolves local state from a SQLite profile and talks to the daemon through
-the API command environment.
+lmctl resolves its local state from a SQLite profile. The variables below
+control which profile it uses and, optionally, how to reach a remote daemon.
 
 ## Database and profile resolution
 

@@ -6,8 +6,7 @@ sidebar_position: 4
 # Operations runbook
 
 This page maps common operator questions to the `lmctl` commands to run.
-For the API command group definition, see
-[the `api` command group](./cli-reference.md#api-command-group).
+For the full command list, see the [CLI reference](./cli-reference.md).
 
 ## Start by orienting
 
