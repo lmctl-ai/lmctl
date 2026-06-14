@@ -44,7 +44,7 @@ jobs:
         run: npm run build
 
       - name: Assume the deploy role via OIDC (no stored keys)
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::254332045686:role/lmctl-website-deploy
           aws-region: us-east-1
