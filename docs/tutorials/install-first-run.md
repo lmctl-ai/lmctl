@@ -5,58 +5,51 @@ sidebar_position: 1
 
 # Install & first run
 
-This tutorial gets `lmctl-next` installed, initializes provider access, and
+This tutorial gets `lmctl` installed, initializes provider access, and
 checks that the local environment is usable.
 
-In these docs, lmctl is the product/platform name. `lmctl-next` is the command,
-binary, and repo you run locally.
+In these docs, lmctl is the product/platform name, and `lmctl` is the command
+you run locally.
 
 ## Requirements
 
-- Linux or WSL2.
+- Linux or WSL2. (macOS is untested; native Windows is unsupported.)
 - Node 22 or newer.
 - At least one native AI provider CLI installed and authenticated:
   `claude`, `codex`, `gemini`, `opencode`, or `qwen`.
 - A shell where you can build native Node packages. SQLite is provided through
-  `better-sqlite3` during `npm install`.
+  `better-sqlite3`, which is compiled during `npm install`.
 
-`lmctl-next` does not store provider API keys. Each provider authenticates
+`lmctl` does not store provider API keys. Each provider authenticates
 through its own CLI and config directory.
 
 ## Install
 
-Clone the product repo, install dependencies, build the TypeScript package, and
-initialize the local lmctl profile:
+Install the published package globally, then initialize your local lmctl
+profile:
 
 ```bash
-git clone <repo>
-cd lmctl-next
-npm install
-npm run build
-node bin/lmctl-next init
-node bin/lmctl-next status
+npm install -g @lmctl-ai/lmctl
+lmctl init
+lmctl status
 ```
+
+After `npm install -g`, the `lmctl` command is on your `PATH`.
 
 During `init`, lmctl checks for provider CLIs and guides you through missing
 install or authentication steps.
 
-## Add the command to your PATH
+## Where lmctl keeps state
 
-The rest of these docs assume `lmctl-next` is directly available:
-
-```bash
-ln -s "$PWD/bin/lmctl-next" ~/bin/lmctl-next
-```
-
-If `~/bin` is not on your `PATH`, either add it or keep using
-`node bin/lmctl-next`.
+lmctl stores its local state under `~/.lmctl/`. User-facing environment
+variables are prefixed `LMCTL_`.
 
 ## Verify the setup
 
 Run:
 
 ```bash
-lmctl-next status
+lmctl status
 ```
 
 The command reports the active profile, current project context when one can be

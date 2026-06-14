@@ -8,37 +8,40 @@ sidebar_position: 99
 Start with the diagnostic commands:
 
 ```bash
-lmctl-next status
-lmctl-next api attentions --unacked
-lmctl-next diagnose
+lmctl status
+lmctl api attentions --unacked
+lmctl diagnose
 ```
+
+`lmctl diagnose` collects a support bundle (DB snapshot, recent events, and
+config) that is useful when reporting a problem.
 
 ## API commands report an auth error
 
 Set the daemon URL and bearer token:
 
 ```bash
-export LMCTL_NEXT_API_URL=http://127.0.0.1:8787
-export LMCTL_NEXT_API_TOKEN=<token>
+export LMCTL_API_URL=http://127.0.0.1:8787
+export LMCTL_API_TOKEN=<token>
 ```
 
 Then retry:
 
 ```bash
-lmctl-next api status
+lmctl api status
 ```
 
 ## `api status` and `status` show different output
 
-`lmctl-next status` is the operator-oriented view and can resolve project
-context from the current working directory. `lmctl-next api status` is the
+`lmctl status` is the operator-oriented view and can resolve project
+context from the current working directory. `lmctl api status` is the
 daemon status payload and requires the daemon API.
 
 Use both when orienting:
 
 ```bash
-lmctl-next status
-lmctl-next api status
+lmctl status
+lmctl api status
 ```
 
 ## Workflow appears paused
@@ -46,14 +49,14 @@ lmctl-next api status
 List attentions and escalations:
 
 ```bash
-lmctl-next api attentions --json
-lmctl-next api escalations list --json
+lmctl api attentions --json
+lmctl api escalations list --json
 ```
 
 If an escalation is waiting for input, respond through the integrated command:
 
 ```bash
-lmctl-next api escalations respond <attention_id> "Continue with option A."
+lmctl api escalations respond <attention_id> "Continue with option A."
 ```
 
 ## `api workflows` is hard to parse
@@ -61,7 +64,7 @@ lmctl-next api escalations respond <attention_id> "Continue with option A."
 Use JSON output:
 
 ```bash
-lmctl-next api workflows --json
+lmctl api workflows --json
 ```
 
 ## Non-default serve port
@@ -69,9 +72,9 @@ lmctl-next api workflows --json
 If the daemon is running on a non-default port, update the API URL:
 
 ```bash
-lmctl-next serve --port 8788 > lmctl.log 2>&1 &
-export LMCTL_NEXT_API_URL=http://127.0.0.1:8788
-lmctl-next api status
+lmctl serve --port 8788 > lmctl.log 2>&1 &
+export LMCTL_API_URL=http://127.0.0.1:8788
+lmctl api status
 ```
 
 ## A project seems stuck behind a lock
@@ -79,15 +82,15 @@ lmctl-next api status
 First check the active run and attentions:
 
 ```bash
-lmctl-next status
-lmctl-next api runs
-lmctl-next api attentions --unacked
+lmctl status
+lmctl api runs
+lmctl api attentions --unacked
 ```
 
 If you confirm the lock should be released:
 
 ```bash
-lmctl-next project unlock <name>
+lmctl project unlock <name>
 ```
 
 ## A submitted job failed
@@ -95,8 +98,8 @@ lmctl-next project unlock <name>
 Inspect the run and then file or update an issue with concrete evidence:
 
 ```bash
-lmctl-next api run <id>
-lmctl-next api issues create my-project \
+lmctl api run <id>
+lmctl api issues create my-project \
   --title "Workflow failed during status smoke" \
   --body "Expected success; observed terminal failure in run <id>." \
   --severity high

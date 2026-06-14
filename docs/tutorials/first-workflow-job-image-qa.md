@@ -14,7 +14,7 @@ Use a real directory you own for `--local-path`. The examples below use
 ## Create a project
 
 ```bash
-lmctl-next project create my-project \
+lmctl project create my-project \
   --workflow image-qa \
   --team my-team \
   --local-path /tmp/my-project
@@ -25,9 +25,9 @@ A project binds a directory to one default workflow and one team.
 ## Create and seed a team
 
 ```bash
-lmctl-next team create my-team
-lmctl-next team add-member my-team --alias QA --provider claude
-lmctl-next team seed my-team
+lmctl team create my-team
+lmctl team add-member my-team --alias QA --provider claude
+lmctl team seed my-team
 ```
 
 Each team member has an alias and a provider. Workflows refer to members by
@@ -37,13 +37,13 @@ can capture a native session id and snapshot the member prompt.
 You can use a different provider if that CLI is installed and authenticated:
 
 ```bash
-lmctl-next team add-member my-team --alias QA --provider codex
+lmctl team add-member my-team --alias QA --provider codex
 ```
 
 ## Load the workflow
 
 ```bash
-lmctl-next workflow load image-qa workflows/image-qa.compound.json
+lmctl workflow load image-qa workflows/image-qa.compound.json
 ```
 
 The workflow definition is stored in the local SQLite profile.
@@ -51,10 +51,10 @@ The workflow definition is stored in the local SQLite profile.
 ## Start the daemon
 
 ```bash
-lmctl-next serve > lmctl.log 2>&1 &
+lmctl serve > lmctl.log 2>&1 &
 ```
 
-The daemon is the process that `lmctl-next api ...` commands talk to. It
+The daemon is the process that `lmctl api ...` commands talk to. It
 listens on `127.0.0.1:8787` by default.
 
 ## Place a sample image
@@ -80,7 +80,7 @@ EOF
 `image-qa` expects an image path and a prompt:
 
 ```bash
-lmctl-next api submit-job \
+lmctl api submit-job \
   --workflow image-qa \
   --project my-project \
   --inputs '{"image_path": "/tmp/my-project/sample.png", "prompt": "What is in this image?"}'
@@ -92,8 +92,8 @@ result data.
 ## Check status and attentions
 
 ```bash
-lmctl-next status
-lmctl-next api attentions
+lmctl status
+lmctl api attentions
 ```
 
 Use `status` for the operator-oriented view. Use `api attentions` to list

@@ -13,18 +13,18 @@ the API command environment.
 CLI commands resolve the database in this order:
 
 1. `--db PATH`
-2. `LMCTL_NEXT_DB`
+2. `LMCTL_DB`
 3. `--profile NAME`
-4. `LMCTL_NEXT_PROFILE`
-5. `~/.lmctl-next/active-profile`
-6. `~/.lmctl-next/state.db`
+4. `LMCTL_PROFILE`
+5. `~/.lmctl/active-profile`
+6. `~/.lmctl/state.db`
 
 Most users can use the default profile. Use explicit profiles when you want
 separate local environments:
 
 ```bash
-lmctl-next profile create test-profile
-lmctl-next --profile test-profile status
+lmctl profile create test-profile
+lmctl --profile test-profile status
 ```
 
 ## Daemon URL and token
@@ -39,18 +39,18 @@ Set these variables when API auth is enabled or when the daemon runs on a
 non-default URL:
 
 ```bash
-export LMCTL_NEXT_API_URL=http://127.0.0.1:8787
-export LMCTL_NEXT_API_TOKEN=<token>
+export LMCTL_API_URL=http://127.0.0.1:8787
+export LMCTL_API_TOKEN=<token>
 ```
 
 ## Serve port
 
-`lmctl-next serve` listens on port `8787` by default. If you run it on another
+`lmctl serve` listens on port `8787` by default. If you run it on another
 port, keep the API URL in sync:
 
 ```bash
-lmctl-next serve --port 8788 > lmctl.log 2>&1 &
-export LMCTL_NEXT_API_URL=http://127.0.0.1:8788
+lmctl serve --port 8788 > lmctl.log 2>&1 &
+export LMCTL_API_URL=http://127.0.0.1:8788
 ```
 
 ## Provider authentication
@@ -68,6 +68,6 @@ qwen
 Then seed a team member with that provider:
 
 ```bash
-lmctl-next team add-member my-team --alias QA --provider claude
-lmctl-next team seed my-team
+lmctl team add-member my-team --alias QA --provider claude
+lmctl team seed my-team
 ```

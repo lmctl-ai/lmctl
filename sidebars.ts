@@ -36,7 +36,7 @@ const sidebars: SidebarsConfig = {
         {
           type: 'category',
           label: 'Workflows & Archetypes',
-          items: ['manuals/workflows-archetypes', 'manuals/architecture-overview'],
+          items: ['manuals/workflows-archetypes', 'manuals/templates-catalog', 'manuals/architecture-overview'],
         },
         {
           type: 'category',

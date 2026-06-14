@@ -5,58 +5,62 @@ sidebar_position: 2
 
 # CLI / API reference
 
-`lmctl-next` has top-level operator commands and an HTTP-backed `api` command
+`lmctl` has top-level operator commands and an HTTP-backed `api` command
 group. The `api` group talks to the running daemon.
 
-## apicli
+## api command group
 
-In these docs, **apicli** means the `lmctl-next api` command group. There is no
-separate `apicli` binary.
+In these docs, the **HTTP client** means the `lmctl api` command group. It is a
+CLI client over the `lmctl serve` HTTP surface; there is no separate binary.
 
 ## Setup and status
 
 ```bash
-lmctl-next init
-lmctl-next status
-lmctl-next diagnose
-lmctl-next serve > lmctl.log 2>&1 &
+lmctl init
+lmctl status
+lmctl diagnose
+lmctl serve > lmctl.log 2>&1 &
 ```
+
+`lmctl serve` runs a single always-on daemon that listens over HTTP on
+`127.0.0.1:8787` by default. The CLI and web UI are HTTP satellites of this
+daemon.
 
 ## Project, team, and workflow setup
 
 ```bash
-lmctl-next project create my-project \
+lmctl project create my-project \
   --workflow image-qa \
   --team my-team \
   --local-path /tmp/my-project
 
-lmctl-next team create my-team
-lmctl-next team add-member my-team --alias QA --provider claude
-lmctl-next team seed my-team
+lmctl team create my-team
+lmctl team add-member my-team --alias QA --provider claude
+lmctl team seed my-team
 
-lmctl-next workflow load image-qa workflows/image-qa.compound.json
+lmctl workflow load image-qa workflows/image-qa.compound.json
 ```
 
 ## API command nouns
 
 ```bash
-lmctl-next api status
-lmctl-next api projects
-lmctl-next api projects <name>
-lmctl-next api teams
-lmctl-next api teams <name>
-lmctl-next api workflows --json
-lmctl-next api workflows <name>
-lmctl-next api runs
-lmctl-next api run <id>
-lmctl-next api jobs
-lmctl-next api job <id>
-lmctl-next api daemon
-lmctl-next api stats
-lmctl-next api attentions
-lmctl-next api sessions
-lmctl-next api external-objects
-lmctl-next api external-signals
+lmctl api status
+lmctl api projects
+lmctl api projects <name>
+lmctl api teams
+lmctl api teams <name>
+lmctl api workflows --json
+lmctl api workflows <name>
+lmctl api runs
+lmctl api run <id>
+lmctl api jobs
+lmctl api job <id>
+lmctl api daemon
+lmctl api stats
+lmctl api attentions
+lmctl api sessions
+lmctl api external-objects
+lmctl api external-signals
 ```
 
 Many list commands support `--json`. Prefer JSON when another program or agent
@@ -65,7 +69,7 @@ will parse the output.
 ## Submit jobs
 
 ```bash
-lmctl-next api submit-job \
+lmctl api submit-job \
   --workflow image-qa \
   --project my-project \
   --inputs '{"image_path":"/tmp/my-project/sample.png","prompt":"describe this"}'
@@ -76,20 +80,31 @@ The command blocks until the workflow reaches a terminal state.
 ## Upload files
 
 ```bash
-lmctl-next api upload /tmp/my-project/sample.png --project my-project --json
+lmctl api upload /tmp/my-project/sample.png --project my-project --json
 ```
 
 Uploads return structured metadata including path, size, and MIME type.
 
+## Attentions
+
+```bash
+lmctl api attentions
+lmctl api attentions --unacked
+lmctl api attention ack <id>
+```
+
+An attention is a persistent operator notification. Use `--unacked` to list the
+ones still awaiting acknowledgement, then ack them by id.
+
 ## Issues
 
 ```bash
-lmctl-next api issues list my-project --status open --json
-lmctl-next api issues show <id> --json
-lmctl-next api issues create my-project --title "Title" --body "Body"
-lmctl-next api issues close <id> --commit-hash <sha>
-lmctl-next api issues reopen <id>
-lmctl-next api issues claim <id> --assigned-run-id <run_id>
+lmctl api issues list my-project --status open --json
+lmctl api issues show <id> --json
+lmctl api issues create my-project --title "Title" --body "Body"
+lmctl api issues close <id> --commit-hash <sha>
+lmctl api issues reopen <id>
+lmctl api issues claim <id> --assigned-run-id <run_id>
 ```
 
 Use issues for failed QA chapters, bugs found during workflow runs, and
@@ -100,8 +115,8 @@ operator-visible follow-up work.
 When the daemon requires auth, set:
 
 ```bash
-export LMCTL_NEXT_API_URL=http://127.0.0.1:8787
-export LMCTL_NEXT_API_TOKEN=<token>
+export LMCTL_API_URL=http://127.0.0.1:8787
+export LMCTL_API_TOKEN=<token>
 ```
 
 The API command group sends the token as a bearer token to the daemon.

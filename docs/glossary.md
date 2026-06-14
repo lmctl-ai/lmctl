@@ -42,11 +42,12 @@ chapters to drive repeatable checks.
 
 ## lock
 
-A workflow guard used to prevent conflicting active execution for a project.
-If recovery is needed, use:
+A soft, per-project workflow lock held only during active execution. User
+submissions always queue and are never refused; the lock just serializes
+execution. If recovery is needed, force release with:
 
 ```bash
-lmctl-next project unlock <name>
+lmctl project unlock <name>
 ```
 
 ## session / sessiondir
@@ -56,5 +57,5 @@ for continuity but are not the canonical project record.
 
 ## serve / API commands
 
-`lmctl-next serve` starts the local daemon. `lmctl-next api ...` is the CLI
-client for that HTTP surface.
+`lmctl serve` starts the single always-on daemon (HTTP 127.0.0.1:8787 by
+default). `lmctl api ...` is the CLI client for that HTTP surface.

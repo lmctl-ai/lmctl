@@ -14,21 +14,21 @@ and cleanup for one manual or semi-automated check.
 Create or choose a project with a seeded team and a local path:
 
 ```bash
-lmctl-next project create qa-project \
+lmctl project create qa-project \
   --workflow qa-suite \
   --team qa-team \
   --local-path /tmp/qa-project
 
-lmctl-next team create qa-team
-lmctl-next team add-member qa-team --alias Tester --provider codex
-lmctl-next team add-member qa-team --alias Interpreter --provider claude
-lmctl-next team seed qa-team
+lmctl team create qa-team
+lmctl team add-member qa-team --alias Tester --provider codex
+lmctl team add-member qa-team --alias Interpreter --provider claude
+lmctl team seed qa-team
 ```
 
 Load the workflow:
 
 ```bash
-lmctl-next workflow load qa-suite workflows/qa-suite.compound.json
+lmctl workflow load qa-suite workflows/qa-suite.compound.json
 ```
 
 ## Add a chapter
@@ -63,7 +63,7 @@ The lmctl daemon is running and API auth variables are set.
 Run:
 
 ```bash
-lmctl-next api status
+lmctl api status
 ```
 
 ## Expected
@@ -81,13 +81,13 @@ No cleanup required.
 Start the daemon if it is not already running:
 
 ```bash
-lmctl-next serve > lmctl.log 2>&1 &
+lmctl serve > lmctl.log 2>&1 &
 ```
 
 Submit the QA workflow:
 
 ```bash
-lmctl-next api submit-job \
+lmctl api submit-job \
   --workflow qa-suite \
   --project qa-project \
   --inputs '{"project_name":"qa-project"}'

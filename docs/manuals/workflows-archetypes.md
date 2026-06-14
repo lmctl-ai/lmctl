@@ -15,13 +15,13 @@ Workflow files usually live under `workflows/` and are loaded into the local
 SQLite profile:
 
 ```bash
-lmctl-next workflow load image-qa workflows/image-qa.compound.json
+lmctl workflow load image-qa workflows/image-qa.compound.json
 ```
 
 After loading, submit a job by workflow name:
 
 ```bash
-lmctl-next api submit-job \
+lmctl api submit-job \
   --workflow image-qa \
   --project my-project \
   --inputs '{"image_path":"/tmp/my-project/sample.png","prompt":"describe this"}'
@@ -40,8 +40,6 @@ and execute.
 | Loop | Repeat a step sequence until an outcome stops the loop. |
 | ShellStep | Run a shell command as part of a workflow. |
 | AssertRepoClean | Check that a repository has no unexpected changes. |
-| Choice | Route based on a declared decision. |
-| Subflow | Invoke another workflow-shaped unit. |
 
 ## Outcome routing
 
@@ -61,7 +59,7 @@ A job is the queued request. A run is the execution instance created from that
 job. For most operator work, submit jobs and inspect runs:
 
 ```bash
-lmctl-next api jobs
-lmctl-next api runs
-lmctl-next api run <id>
+lmctl api jobs
+lmctl api runs
+lmctl api run <id>
 ```

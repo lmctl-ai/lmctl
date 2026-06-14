@@ -5,11 +5,11 @@ sidebar_position: 1
 
 # Concepts & glossary
 
-lmctl is the workflow-driven AI-agent platform. The command and repo documented
-here are `lmctl-next`.
+lmctl is the workflow-driven AI-agent platform. The command documented here is
+`lmctl`.
 
 The main objects are projects, teams, workflows, jobs, runs, attentions,
-escalations, provider sessions, and durable-memory.
+provider sessions, and durable-memory.
 
 ## Core model
 
@@ -48,36 +48,36 @@ Inspect jobs when you care about queued or submitted work. Inspect runs when
 you care about step state, outputs, failures, or terminal state.
 
 ```bash
-lmctl-next api jobs
-lmctl-next api runs
-lmctl-next api run <id>
+lmctl api jobs
+lmctl api runs
+lmctl api run <id>
 ```
 
-## Attention and escalation
+## Attention and paused workflows
 
 An attention is a durable operator notification. It can report a failed run,
-workflow pause, drift signal, or other condition that should not disappear with
-a terminal session.
+workflow pause, drift signal, forced lock, or other condition that should not
+disappear with a terminal session.
 
-An escalation is a workflow pause waiting for operator input. List them and
-respond through the API command group:
+A paused workflow surfaces as an attention waiting for operator input. List
+attentions and acknowledge them through the API command group:
 
 ```bash
-lmctl-next api escalations list --json
-lmctl-next api escalations respond <attention_id> "Continue with option A."
+lmctl api attentions
+lmctl api attention ack <attention_id>
 ```
 
 ## serve, API commands, and auth
 
-`lmctl-next serve` starts the local daemon. `lmctl-next api ...` commands talk
-to that daemon over HTTP. See the [CLI / API reference](./cli-apicli-reference.md)
-for the command group details.
+`lmctl serve` starts the single always-on daemon (HTTP 127.0.0.1:8787 by
+default). `lmctl api ...` commands talk to that daemon over HTTP. See the
+[CLI / API reference](./cli-apicli-reference.md) for the command group details.
 
 When auth is enabled, set:
 
 ```bash
-export LMCTL_NEXT_API_URL=http://127.0.0.1:8787
-export LMCTL_NEXT_API_TOKEN=<token>
+export LMCTL_API_URL=http://127.0.0.1:8787
+export LMCTL_API_TOKEN=<token>
 ```
 
 ## Session, team seed, and sessiondir
@@ -89,7 +89,7 @@ native conversation cache.
 Run `team seed` after adding members:
 
 ```bash
-lmctl-next team seed my-team
+lmctl team seed my-team
 ```
 
 Seeding starts each provider CLI once, captures the session id, and snapshots
