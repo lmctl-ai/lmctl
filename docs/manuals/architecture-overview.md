@@ -5,9 +5,11 @@ sidebar_position: 4
 
 # Architecture overview
 
-lmctl is single-operator and runs on Linux/WSL2. `lmctl serve` is the single
-always-on daemon documented here; the CLI, the hosted web console, and MCP
-bridges are HTTP satellites of it.
+lmctl is single-operator and runs on Linux/WSL2. The `lmctl` CLI sets up and
+operates everything on its own. `lmctl serve` is the single always-on daemon
+documented here; the CLI and MCP bridges are HTTP satellites of it. The hosted
+web console at [lmctl.ai](https://lmctl.ai) is an optional satellite — a
+subscription feature (free and premium tiers), not required to run lmctl.
 
 ## Pipeline as the organizing layer
 
@@ -23,9 +25,10 @@ workflow and inputs; the workflow controls the sequence.
 `lmctl serve` starts the single always-on daemon, which listens over HTTP on
 `127.0.0.1:8787`. `lmctl api ...` commands are an HTTP client of that daemon.
 Project, workflow, team, job, run, issue, and attention state is stored in a
-SQLite profile under `~/.lmctl/` (better-sqlite3, compiled at npm install). The
-hosted web console at lmctl.ai and MCP bridges are also HTTP satellites of the
-daemon.
+SQLite profile under `~/.lmctl/` (better-sqlite3, compiled at npm install). MCP
+bridges are also HTTP satellites of the daemon. The optional hosted web console
+at [lmctl.ai](https://lmctl.ai) (a free/premium subscription) is another client
+of the same API — everything it does is also doable from the CLI.
 
 ```bash
 lmctl serve > lmctl.log 2>&1 &

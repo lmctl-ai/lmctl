@@ -71,7 +71,7 @@ lmctl api attention ack <attention_id>
 
 `lmctl serve` starts the single always-on daemon (HTTP 127.0.0.1:8787 by
 default). `lmctl api ...` commands talk to that daemon over HTTP. See the
-[CLI / API reference](./cli-apicli-reference.md) for the command group details.
+[CLI / API reference](./cli-reference.md) for the command group details.
 
 When auth is enabled, set:
 

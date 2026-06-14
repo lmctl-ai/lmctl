@@ -23,8 +23,9 @@ lmctl serve > lmctl.log 2>&1 &
 ```
 
 `lmctl serve` runs a single always-on daemon that listens over HTTP on
-`127.0.0.1:8787` by default. The CLI and web UI are HTTP satellites of this
-daemon.
+`127.0.0.1:8787` by default. The CLI is the primary client of this daemon; the
+optional [lmctl.ai](https://lmctl.ai) web console (a free/premium subscription)
+is another.
 
 ## Project, team, and workflow setup
 

@@ -23,7 +23,7 @@ const tutorials = [
 const manuals = [
   {
     title: 'CLI / API reference',
-    href: '/docs/manuals/cli-apicli-reference',
+    href: '/docs/manuals/cli-reference',
     text: 'Lookup commands for projects, teams, workflows, jobs, runs, attentions, and issues.',
   },
   {

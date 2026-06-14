@@ -40,8 +40,8 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: 'category',
-          label: 'CLI / API Reference',
-          items: ['manuals/cli-apicli-reference'],
+          label: 'CLI Reference',
+          items: ['manuals/cli-reference'],
         },
         'manuals/operations-runbook',
         'manuals/configuration-environment',
