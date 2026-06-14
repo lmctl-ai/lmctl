@@ -1,0 +1,53 @@
+# Build the Docusaurus site and publish it to lmctl.com/lmctl/ via AWS OIDC.
+#
+# No stored AWS keys: GitHub Actions presents an OIDC token, AWS exchanges it
+# for short-lived credentials by assuming `lmctl-website-deploy`. That role is
+# scoped to ONLY the s3://lmctl-website-prod/lmctl/* prefix and CreateInvalidation
+# on the lmctl.com CloudFront distribution, and trusts only this repo's `main`.
+#
+# Trigger: every push to main (auto-publish), or manual dispatch.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # mint the OIDC token AWS verifies
+
+# One deploy at a time; let an in-flight publish finish (don't cancel mid-sync).
+concurrency:
+  group: site-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      S3_BUCKET: lmctl-website-prod
+      CF_DISTRIBUTION_ID: E1GKUWTM93U7IV
+      AWS_REGION: us-east-1
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the static site (baseUrl /lmctl/)
+        run: npm run build
+
+      - name: Assume the deploy role via OIDC (no stored keys)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::254332045686:role/lmctl-website-deploy
+          aws-region: us-east-1
+
+      - name: Sync to S3 + invalidate CloudFront
+        run: bash scripts/deploy.sh
