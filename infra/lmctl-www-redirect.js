@@ -12,6 +12,11 @@ function handler(event) {
     return request;
   }
 
+  if (uri === '/lmprobe' || uri === '/lmprobe/') {
+    request.uri = '/lmprobe/index.html';
+    return request;
+  }
+
   if (uri.indexOf('/lmctl/') !== 0) {
     return request;
   }
