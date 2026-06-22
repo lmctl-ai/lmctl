@@ -1,0 +1,17 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: system-ui, -apple-system, sans-serif; color: #333; line-height: 1.6; background: #fafafa; }
+header { text-align: center; padding: 60px 20px 40px; background: #1a1a2e; color: #fff; }
+header h1 { font-size: 48px; font-weight: 700; letter-spacing: -1px; }
+header .tagline { font-size: 18px; color: #aaa; margin-top: 8px; }
+main { max-width: 700px; margin: 0 auto; padding: 40px 20px; }
+section { margin-bottom: 36px; }
+h2 { font-size: 22px; margin-bottom: 12px; color: #1a1a2e; }
+p { margin-bottom: 12px; }
+ul { margin-left: 20px; margin-bottom: 12px; }
+li { margin-bottom: 6px; }
+.cta { margin-top: 16px; }
+.cta a { display: inline-block; padding: 10px 24px; background: #1a1a2e; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px; }
+.cta a:hover { background: #2d2d4e; }
+a { color: #0066cc; }
+footer { text-align: center; padding: 24px; color: #999; font-size: 14px; border-top: 1px solid #eee; }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; background: #efeff3; padding: 2px 6px; border-radius: 4px; }
