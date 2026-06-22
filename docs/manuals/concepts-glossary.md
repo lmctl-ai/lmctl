@@ -6,10 +6,21 @@ sidebar_position: 1
 # Concepts & glossary
 
 lmctl is the workflow-driven AI-agent platform. The command documented here is
-`lmctl`.
+`lmctl`; install it from npm as `@lmctl-ai/lmctl`.
 
 The main objects are projects, teams, workflows, jobs, runs, attentions,
 provider sessions, and durable-memory.
+
+The current positioning is practical:
+
+- **Provider-agnostic control plane** — one CLI over Claude, Codex, Gemini,
+  Copilot, OpenCode, Qwen, and Antigravity (`agy`).
+- **Cross-provider multi-agent review** — teams can mix providers so one model
+  reviews another model's work.
+- **Durable, scalable sessions** — durable-memory carries project knowledge;
+  provider sessions are useful caches, not the only source of truth.
+- **Cost-aware model routing** — assign stronger models to architecture and
+  design roles, and leaner models to focused coding or routine roles.
 
 ## Core model
 
@@ -94,6 +105,17 @@ lmctl team seed my-team
 
 Seeding starts each provider CLI once, captures the session id, and snapshots
 the member prompt so workflows can address members by alias.
+
+For teamfile wiring and `_CONNECT_` edges, see
+[Teams & cross-team connections](./teams-connect.md).
+
+## Model routing
+
+Members can carry role-specific model assignments. Use that to route expensive,
+top-tier models to architecture, design, or review work and leaner models to
+focused implementation or routine checks. `lmctl lint <teamfile.lmctl>`
+validates configured models against the tested catalog for Claude, Codex,
+Gemini, Copilot, Qwen, Antigravity, and the lmctl-managed OpenCode model list.
 
 ## Durable-memory versus sessions
 

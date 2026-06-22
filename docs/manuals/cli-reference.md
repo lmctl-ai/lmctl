@@ -46,6 +46,42 @@ lmctl team seed my-team
 lmctl workflow load image-qa workflows/image-qa.compound.json
 ```
 
+Verified usage:
+
+```text
+lmctl project create <name> --local-path P --workflow W --team T
+lmctl team add-member <team-name> --alias A --provider P [--model M] [--role R] [--sessiondir D]
+lmctl workflow load <name> <path-to-json | lmctl://workflow/<name>>
+```
+
+## Teamfiles, clone, connect, lint, seed
+
+`.lmctl` teamfiles are editable team documents. Use `clone` to copy a teamfile
+without carrying over session ids:
+
+```bash
+lmctl clone ./backend/backend.lmctl ./backend-v2/backend-v2.lmctl
+```
+
+Use `connect` to append a cross-team `_CONNECT_` edge from one teamfile to a
+target member in another teamfile:
+
+```bash
+lmctl connect ./frontend/frontend.lmctl ./backend/backend.lmctl Reviewer
+lmctl lint ./frontend/frontend.lmctl
+lmctl seed ./frontend/frontend.lmctl
+```
+
+`lmctl lint <teamfile.lmctl>` validates teamfile syntax, session placeholders,
+and configured models. `lmctl seed <teamfile.lmctl>` fills missing or
+placeholder session ids by calling the configured native providers.
+
+Generate a starter team document for a directory:
+
+```bash
+lmctl plan ./backend --provider codex
+```
+
 ## Inspecting state
 
 These `lmctl api <noun>` commands read and act on your local lmctl state:
@@ -53,19 +89,16 @@ These `lmctl api <noun>` commands read and act on your local lmctl state:
 ```bash
 lmctl api status
 lmctl api projects
-lmctl api projects <name>
 lmctl api teams
-lmctl api teams <name>
 lmctl api workflows --json
-lmctl api workflows <name>
 lmctl api runs
 lmctl api run <id>
 lmctl api jobs
 lmctl api job <id>
-lmctl api daemon
-lmctl api stats
+lmctl api daemon state
+lmctl api daemon cycle
+lmctl api stats run-throughput
 lmctl api attentions
-lmctl api sessions
 lmctl api external-objects
 lmctl api external-signals
 ```
@@ -83,6 +116,12 @@ lmctl api submit-job \
 ```
 
 The command blocks until the workflow reaches a terminal state.
+
+The top-level workflow runner exposes the same shape:
+
+```bash
+lmctl workflow run --workflow image-qa --project my-project --inputs '{"image_path":"/tmp/my-project/sample.png","prompt":"describe this"}'
+```
 
 ## Upload files
 
@@ -116,6 +155,33 @@ lmctl api issues claim <id> --assigned-run-id <run_id>
 
 Use issues for failed QA chapters, bugs found during workflow runs, and
 operator-visible follow-up work.
+
+## Sessions and managed runs
+
+```bash
+lmctl ls
+lmctl ls --runs --limit 10
+lmctl terminal <teamfile>:<alias>
+lmctl terminal --run <id>
+lmctl terminal --project my-project --team my-team --alias QA --size --json
+lmctl tail --run <id> --watch
+lmctl info <teamfile>
+lmctl info --run <id>
+```
+
+`terminal --size` reports message count, transcript bytes, and a local token
+estimate. It does not compact or change the session.
+
+## Device and MCP
+
+```bash
+lmctl device init
+lmctl device id
+lmctl device prompt --root ./team.lmctl --text "Summarize current status"
+lmctl mcp
+```
+
+`lmctl mcp` starts the stdio MCP bridge backed by local API config.
 
 ## Connecting to a remote daemon (advanced)
 

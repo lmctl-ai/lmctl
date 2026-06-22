@@ -15,6 +15,12 @@ workspace, project, and directory are the same unit.
 A team is a named set of members. A member is an agent alias backed by a native
 provider CLI, optional model, and provider session directory.
 
+## _CONNECT_
+
+An explicit cross-team edge in a `.lmctl` teamfile. `_CONNECT_ alias=<M>
+teamfile=<T>` lets the source team's Lead send to member `<M>` of another team
+`<T>`.
+
 ## workflow / archetype
 
 A workflow is a routed state machine. An archetype is a reusable primitive such
@@ -39,16 +45,6 @@ markdown chapters. durable-memory survives fresh sessions and provider changes.
 
 A markdown test file under a project's `ai-test/` directory. QA workflows use
 chapters to drive repeatable checks.
-
-## lock
-
-A soft, per-project workflow lock held only during active execution. User
-submissions always queue and are never refused; the lock just serializes
-execution. If recovery is needed, force release with:
-
-```bash
-lmctl project unlock <name>
-```
 
 ## session / sessiondir
 

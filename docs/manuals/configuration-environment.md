@@ -5,26 +5,33 @@ sidebar_position: 5
 
 # Configuration & environment
 
-lmctl resolves its local state from a SQLite profile. The variables below
-control which profile it uses and, optionally, how to reach a remote daemon.
+lmctl resolves its local state from a SQLite database, normally through the
+active workspace. The variables below control which database or workspace it
+uses and, optionally, how to reach a remote daemon.
 
-## Database and profile resolution
+## Database and workspace resolution
 
-CLI commands resolve the database in this order:
+The verified global selectors are:
 
-1. `--db PATH`
-2. `LMCTL_DB`
-3. `--profile NAME`
-4. `LMCTL_PROFILE`
-5. `~/.lmctl/active-profile`
-6. `~/.lmctl/state.db`
+- `--db PATH` to point one command at a specific SQLite database.
+- `--workspace NAME` to run against an isolated workspace.
+- `lmctl workspace use <name>` to select the active workspace for later
+  commands.
 
-Most users can use the default profile. Use explicit profiles when you want
-separate local environments:
+Profiles are legacy. Use `lmctl workspace migrate` when you need to migrate old
+profile state into workspaces.
+
+Use workspaces when you want separate local environments. In a non-interactive
+shell, provide the basedir and provider slots explicitly:
 
 ```bash
-lmctl profile create test-profile
-lmctl --profile test-profile status
+lmctl workspace init --name test-workspace \
+  --basedir /tmp/lmctl-workspaces \
+  --provider1 claude \
+  --provider2 codex \
+  --provider3 gemini
+lmctl workspace use test-workspace
+lmctl --workspace test-workspace status
 ```
 
 ## Daemon URL and token
@@ -61,13 +68,34 @@ Provider CLIs authenticate themselves. Install and authenticate at least one of:
 claude
 codex
 gemini
+copilot
 opencode
 qwen
+agy
 ```
+
+`agy` is the Antigravity CLI. It is distinct from Gemini even though its session
+state lives under `~/.gemini/antigravity-cli`.
 
 Then seed a team member with that provider:
 
 ```bash
 lmctl team add-member my-team --alias QA --provider claude
 lmctl team seed my-team
+```
+
+For `.lmctl` teamfiles, use the top-level seed command:
+
+```bash
+lmctl lint ./my-team.lmctl
+lmctl seed ./my-team.lmctl
+```
+
+`lmctl lint` validates teamfile structure, warns on stale or placeholder session
+ids, and checks configured models against the tested provider catalog. Use
+per-member `--model` values when you want cost-aware routing by role:
+
+```bash
+lmctl team add-member my-team --alias Architect --provider claude --model <model>
+lmctl team add-member my-team --alias Coder --provider codex --model <model>
 ```

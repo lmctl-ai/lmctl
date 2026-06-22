@@ -25,6 +25,9 @@ lmctl team add-member qa-team --alias Interpreter --provider claude
 lmctl team seed qa-team
 ```
 
+This setup intentionally mixes providers: one agent records observations and
+another interprets them. Cross-provider review is one of lmctl's strengths.
+
 Load the workflow:
 
 ```bash

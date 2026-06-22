@@ -32,6 +32,29 @@ provider, run, and attention information.
 | Read one run | `lmctl api run <id>` |
 | List recent runs | `lmctl api runs` |
 
+## Reuse a team as a template
+
+Use `clone` when you want to copy a `.lmctl` teamfile without carrying over the
+source team's session ids:
+
+```bash
+lmctl clone ./backend/backend.lmctl ./backend-v2/backend-v2.lmctl
+lmctl lint ./backend-v2/backend-v2.lmctl
+lmctl seed ./backend-v2/backend-v2.lmctl
+```
+
+Use `connect` when one team needs an explicit cross-team edge to a member in
+another team:
+
+```bash
+lmctl connect ./frontend/frontend.lmctl ./backend/backend.lmctl Reviewer
+lmctl lint ./frontend/frontend.lmctl
+lmctl seed ./frontend/frontend.lmctl
+```
+
+`connect` appends a team-level `_CONNECT_` entry to the source teamfile. See
+[Teams & cross-team connections](../manuals/teams-connect.md) for the semantics.
+
 ## Answer workflow escalations
 
 Some workflows pause for human input. List pending escalations:

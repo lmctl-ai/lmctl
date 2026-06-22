@@ -35,6 +35,12 @@ Respond to an escalation:
 lmctl api escalations respond <attention_id> "Use the smaller scope and continue."
 ```
 
+Show one escalation when you need the exact prompt:
+
+```bash
+lmctl api escalations show <attention_id> --json
+```
+
 ## What happened in a run?
 
 List recent runs and inspect one:
@@ -65,6 +71,12 @@ lmctl api submit-job \
 
 `submit-job` waits for the run to reach a terminal state.
 
+You can also use the top-level runner:
+
+```bash
+lmctl workflow run --workflow qa-suite --project my-project --inputs '{"project_name":"my-project"}' --json
+```
+
 ## Diagnose a stuck run
 
 Start with:
@@ -72,6 +84,7 @@ Start with:
 ```bash
 lmctl status
 lmctl api run <id>
+lmctl api run timeline <id>
 lmctl api attentions --json
 lmctl diagnose
 ```
@@ -99,5 +112,16 @@ lmctl api issues create my-project \
 Close an issue after the fix is verified:
 
 ```bash
-lmctl api issues close <id> --commit-hash <sha>
+lmctl api issues close <id> --commit-hash <sha> --closed-run-id <run>
 ```
+
+## Teamfile maintenance
+
+```bash
+lmctl lint ./team.lmctl
+lmctl seed ./team.lmctl
+lmctl clone ./team.lmctl ./team-template.lmctl
+lmctl connect ./frontend.lmctl ./backend.lmctl Reviewer
+```
+
+Run `lint` before `seed` after editing a teamfile or adding `_CONNECT_` edges.

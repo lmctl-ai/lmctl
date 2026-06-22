@@ -31,7 +31,7 @@ const sidebars: SidebarsConfig = {
         {
           type: 'category',
           label: 'Concepts',
-          items: ['manuals/concepts-glossary'],
+          items: ['manuals/concepts-glossary', 'manuals/teams-connect'],
         },
         {
           type: 'category',

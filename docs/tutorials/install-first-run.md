@@ -5,8 +5,8 @@ sidebar_position: 1
 
 # Install & first run
 
-This tutorial gets `lmctl` installed, initializes provider access, and
-checks that the local environment is usable.
+This tutorial installs `@lmctl-ai/lmctl` 0.1.5, initializes provider access,
+and checks that the local environment is usable.
 
 In these docs, lmctl is the product/platform name, and `lmctl` is the command
 you run locally.
@@ -16,7 +16,7 @@ you run locally.
 - Linux or WSL2. (macOS is untested; native Windows is unsupported.)
 - Node 22 or newer.
 - At least one native AI provider CLI installed and authenticated:
-  `claude`, `codex`, `gemini`, `opencode`, or `qwen`.
+  `claude`, `codex`, `gemini`, `copilot`, `opencode`, `qwen`, or `agy`.
 - A shell where you can build native Node packages. SQLite is provided through
   `better-sqlite3`, which is compiled during `npm install`.
 
@@ -25,8 +25,7 @@ through its own CLI and config directory.
 
 ## Install
 
-Install the published package globally, then initialize your local lmctl
-profile:
+Install the published package globally, then initialize your local lmctl state:
 
 ```bash
 npm install -g @lmctl-ai/lmctl
@@ -36,8 +35,8 @@ lmctl status
 
 After `npm install -g`, the `lmctl` command is on your `PATH`.
 
-During `init`, lmctl checks for provider CLIs and guides you through missing
-install or authentication steps.
+During `init`, lmctl checks for installed and authenticated provider CLIs:
+Claude, Codex, Gemini, Copilot, OpenCode, Qwen, and Antigravity (`agy`).
 
 ## Where lmctl keeps state
 
@@ -55,5 +54,8 @@ lmctl status
 The command reports the active profile, current project context when one can be
 resolved from your working directory, recent runs, open attentions, and detected
 providers.
+
+lmctl is provider-agnostic: it gives you one local control plane across those
+provider CLIs, so a project can mix models instead of locking into one vendor.
 
 You now have enough setup for the first workflow tutorial.

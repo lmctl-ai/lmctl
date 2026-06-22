@@ -40,6 +40,10 @@ You can use a different provider if that CLI is installed and authenticated:
 lmctl team add-member my-team --alias QA --provider codex
 ```
 
+lmctl supports mixed-provider teams. A common pattern is to let one provider do
+the work and another review it, which catches different failure modes than a
+single-model loop.
+
 ## Load the workflow
 
 ```bash

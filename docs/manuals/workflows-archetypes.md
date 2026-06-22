@@ -27,6 +27,12 @@ lmctl api submit-job \
   --inputs '{"image_path":"/tmp/my-project/sample.png","prompt":"describe this"}'
 ```
 
+Or use the top-level workflow runner:
+
+```bash
+lmctl workflow run --workflow image-qa --project my-project --inputs '{"image_path":"/tmp/my-project/sample.png","prompt":"describe this"}' --json
+```
+
 ## Archetypes
 
 Archetypes are reusable step types that the workflow engine knows how to lower

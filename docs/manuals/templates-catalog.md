@@ -21,7 +21,7 @@ operator then edits. They cover a project's `ai-test/` chapters and its
 
 ## Workflow definitions
 
-The 19 shipped workflow definitions in `workflows/`. Load any of them with
+The shipped workflow definitions live in `workflows/`. Load any of them with
 `lmctl workflow load <name> workflows/<name>.compound.json`, then submit a job
 by workflow name.
 

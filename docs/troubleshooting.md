@@ -77,20 +77,27 @@ export LMCTL_API_URL=http://127.0.0.1:8788
 lmctl api status
 ```
 
-## A project seems stuck behind a lock
+## A run seems stuck
 
-First check the active run and attentions:
+First check the active run, timeline, and attentions:
 
 ```bash
 lmctl status
 lmctl api runs
+lmctl api run timeline <id>
 lmctl api attentions --unacked
 ```
 
-If you confirm the lock should be released:
+Use `lmctl diagnose` or `lmctl diagnose-prompt <prompt_id>` when you need a
+sanitized support bundle or a focused prompt-pending diagnostic.
+
+## A teamfile has stale sessions or model warnings
+
+Run lint, then seed missing or placeholder sessions:
 
 ```bash
-lmctl project unlock <name>
+lmctl lint ./team.lmctl
+lmctl seed ./team.lmctl
 ```
 
 ## A submitted job failed
