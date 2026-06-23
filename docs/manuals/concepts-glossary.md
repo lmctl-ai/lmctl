@@ -15,6 +15,11 @@ The current positioning is practical:
 
 - **Provider-agnostic control plane** — one CLI over Claude, Codex, Gemini,
   Copilot, OpenCode, Qwen, and Antigravity (`agy`).
+  > **Gemini note:** the `gemini` provider requires an **API or enterprise**
+  > Google account. Google has retired the Gemini CLI for **personal**
+  > subscriptions — personal-subscription users should use **`agy`**
+  > (Antigravity) instead. `lmctl lint` prints a reminder when a member uses
+  > `provider=gemini`.
 - **Cross-provider multi-agent review** — teams can mix providers so one model
   reviews another model's work.
 - **Durable, scalable sessions** — durable-memory carries project knowledge;
