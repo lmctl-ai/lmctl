@@ -3,79 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>lmctl — orchestrate teams of AI coding agents</title>
-    <meta name="description" content="lmctl is a local-first CLI for running teams of AI coding agents across providers (Claude Code, Codex, Gemini, Qwen, OpenCode, Antigravity) — define a team, route work, keep a human in the loop.">
+    <title>lmctl — AI Control Plane</title>
+    <meta name="description" content="lmctl is a local-first control plane for AI coding agents — run teams of agents across providers, route work through a lead, and keep humans in the loop.">
     <link rel="canonical" href="https://lmctl.com/">
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="lmctl — orchestrate teams of AI coding agents">
-    <meta property="og:description" content="A local-first CLI for running teams of AI coding agents across providers. Define a team, route work between agents, keep a human in the loop.">
+    <meta property="og:title" content="lmctl — AI Control Plane">
+    <meta property="og:description" content="A local-first control plane for AI coding agents — run teams of agents across providers, route work through a lead, and keep humans in the loop.">
     <meta property="og:url" content="https://lmctl.com/">
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="lmctl — orchestrate teams of AI coding agents">
-    <meta name="twitter:description" content="A local-first CLI for running teams of AI coding agents across providers. Define a team, route work, keep a human in the loop.">
+    <meta name="twitter:title" content="lmctl — AI Control Plane">
+    <meta name="twitter:description" content="A local-first control plane for AI coding agents — run teams of agents across providers, route work through a lead, and keep humans in the loop.">
     <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
     <header>
         <h1>lmctl</h1>
-        <p class="tagline">Orchestrate teams of AI coding agents — across providers.</p>
+        <p class="tagline">A control plane for teams of AI coding agents.</p>
     </header>
     <main>
         <section>
-            <p>lmctl is a local-first CLI for running <strong>teams of AI agents</strong>. You define a team in a plain-text teamfile — a <strong>Lead</strong> plus members, each backed by whichever provider you choose (Claude Code, Codex, Gemini, Qwen, OpenCode, Antigravity) — then route work between them and keep a human in the loop on the steps that matter.</p>
-            <p>It's not an IDE and not another chatbot. It coordinates the agent CLIs you already run.</p>
+            <p>lmctl is a local-first control plane for AI agents. As coding tools evolve from assistants into autonomous agents, the hard part shifts from generation to <strong>coordination</strong> — supervising, routing, and governing the work.</p>
+            <p>With lmctl you run a <strong>team</strong> of agents instead of one: a lead takes your intent and delegates to members across providers — Claude Code, Codex, Gemini, local models — with a human approving what matters. Not an IDE, not another chatbot; it coordinates the agent tools you already use.</p>
             <div class="cta">
                 <a href="/lmctl">Read the docs →</a>
-                <span class="muted">already shipped — install and use it today</span>
+                <span class="muted">shipped — install and use it today</span>
             </div>
             <pre><code>npm install -g @lmctl-ai/lmctl</code></pre>
         </section>
 
         <section>
-            <h2>Define a team, then put it to work</h2>
-            <pre><code># team.lmctl — a plain-text team of agents
-_MEMBER_ alias=Lead      provider=claude    # orchestrates, talks to you
-_MEMBER_ alias=Coder     provider=codex     # implements
-_MEMBER_ alias=Reviewer1 provider=codex     # reviews
-_MEMBER_ alias=Reviewer2 provider=claude    # cross-provider review
-_MEMBER_ alias=Reviewer3 provider=agy</code></pre>
-            <pre><code>lmctl plan .            # generate a starter team for a repo
-lmctl seed team.lmctl   # spin up the agents
-lmctl chat ...          # hand work to the Lead</code></pre>
-        </section>
-
-        <section>
-            <h2>How work flows</h2>
-            <pre>            you
-             |
-        Lead  (claude)
-      .------+----------------.
-    Coder              Reviewers
-   (codex)       (codex / claude / agy)
-      '------------+----------'
-              human approval
-                   |
-               execution</pre>
-            <p>The Lead delegates, members work in parallel across providers, reviewers check each other's output, and you approve the steps that matter. Teams can also connect to <em>other</em> teams (cross-team edges) for larger pipelines.</p>
+            <h2>What lmctl does</h2>
+            <ul>
+                <li>Coordinates Claude Code, Codex, Gemini, OpenCode, Qwen, Antigravity, and local models</li>
+                <li>Runs persistent AI workers, not one-shot prompts</li>
+                <li>Routes work from a lead agent to specialized members</li>
+                <li>Keeps a human in the loop on the decisions that matter</li>
+                <li>Local-first — runs on your machine; a browser control surface is optional</li>
+            </ul>
         </section>
 
         <section>
             <h2>Why lmctl</h2>
             <ul>
-                <li><strong>Provider-agnostic.</strong> One control plane over Claude, Codex, Gemini, Copilot, OpenCode, Qwen, and Antigravity — mix per agent, no lock-in.</li>
+                <li><strong>Provider-agnostic.</strong> One control plane over many AI tools — mix providers per agent, no lock-in.</li>
                 <li><strong>Cross-provider review.</strong> Have one provider review another's work; in practice that beats a single model reviewing itself.</li>
                 <li><strong>Durable sessions.</strong> Each agent keeps a persistent durable-memory, so long projects stay coherent instead of leaning on session compaction.</li>
-                <li><strong>Cost-aware routing.</strong> Put top-tier models on architecture and design, leaner focused models on coding and routine roles.</li>
+                <li><strong>Cost-aware routing.</strong> Top-tier models for architecture and design, leaner focused models for coding and routine roles.</li>
             </ul>
         </section>
 
         <section>
             <h2>Get started</h2>
-            <pre><code>npm install -g @lmctl-ai/lmctl
-lmctl init            # detect + auth your provider CLIs
-lmctl plan .          # generate a starter team</code></pre>
-            <p>Docs &amp; tutorials: <a href="/lmctl">lmctl.com/lmctl</a>. Local-first — it runs on your machine against the agent CLIs you already have; a browser control surface is optional.</p>
+            <pre><code>npm install -g @lmctl-ai/lmctl</code></pre>
+            <p>Then head to the <a href="/lmctl">docs</a> to define your first team.</p>
         </section>
     </main>
     <footer>
