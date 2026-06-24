@@ -4,16 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>lmctl — AI Control Plane</title>
-    <meta name="description" content="lmctl is a local-first control plane for AI coding agents — run teams of agents across providers, route work through a lead, and keep humans in the loop.">
+    <meta name="description" content="lmctl is a local-first control plane for teams of AI coding agents — provider-agnostic, with independent cross-provider review and durable memory that outlives any single session.">
     <link rel="canonical" href="https://lmctl.com/">
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
     <meta property="og:type" content="website">
     <meta property="og:title" content="lmctl — AI Control Plane">
-    <meta property="og:description" content="A local-first control plane for AI coding agents — run teams of agents across providers, route work through a lead, and keep humans in the loop.">
+    <meta property="og:description" content="A local-first control plane for teams of AI coding agents — provider-agnostic, independent cross-provider review, and durable memory that outlives any single session.">
     <meta property="og:url" content="https://lmctl.com/">
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="lmctl — AI Control Plane">
-    <meta name="twitter:description" content="A local-first control plane for AI coding agents — run teams of agents across providers, route work through a lead, and keep humans in the loop.">
+    <meta name="twitter:description" content="A local-first control plane for teams of AI coding agents — provider-agnostic, independent cross-provider review, and durable memory that outlives any single session.">
     <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
@@ -23,8 +23,8 @@
     </header>
     <main>
         <section>
-            <p>lmctl is a local-first control plane for AI agents. As coding tools evolve from assistants into autonomous agents, the hard part shifts from generation to <strong>coordination</strong> — supervising, routing, and governing the work.</p>
-            <p>With lmctl you run a <strong>team</strong> of agents instead of one: a lead takes your intent and delegates to members across providers — Claude Code, Codex, Gemini, local models — with a human approving what matters. Not an IDE, not another chatbot; it coordinates the agent tools you already use.</p>
+            <p>AI agents shouldn't be locked to one provider, one workflow, or one context window. lmctl is a local-first control plane for running <strong>teams</strong> of AI coding agents — across providers, with independent review and durable memory, composed in plain text.</p>
+            <p>Not an IDE, not another chatbot. It coordinates the agent tools you already use.</p>
             <div class="cta">
                 <a href="/lmctl">Read the docs →</a>
                 <span class="muted">shipped — install and use it today</span>
@@ -33,24 +33,17 @@
         </section>
 
         <section>
-            <h2>What lmctl does</h2>
-            <ul>
-                <li>Coordinates Claude Code, Codex, Gemini, OpenCode, Qwen, Antigravity, and local models</li>
-                <li>Runs persistent AI workers, not one-shot prompts</li>
-                <li>Routes work from a lead agent to specialized members</li>
-                <li>Keeps a human in the loop on the decisions that matter</li>
-                <li>Local-first — runs on your machine; a browser control surface is optional</li>
-            </ul>
-        </section>
-
-        <section>
             <h2>Why lmctl</h2>
-            <ul>
-                <li><strong>Provider-agnostic.</strong> One control plane over many AI tools — mix providers per agent, no lock-in.</li>
-                <li><strong>Cross-provider review.</strong> Have one provider review another's work; in practice that beats a single model reviewing itself.</li>
-                <li><strong>Durable sessions.</strong> Each agent keeps a persistent durable-memory, so long projects stay coherent instead of leaning on session compaction.</li>
-                <li><strong>Cost-aware routing.</strong> Top-tier models for architecture and design, leaner focused models for coding and routine roles.</li>
-            </ul>
+            <p>Every agentic tool wants to be the whole platform. That leaves you with three kinds of lock-in:</p>
+
+            <h3>Provider lock-in</h3>
+            <p>You're trapped in one ecosystem — and a Claude agent reviewing Claude's own work is not independent review. lmctl makes agents <strong>provider-agnostic</strong>: a Claude lead can hand coding to Codex and have Gemini review it, so the reviewer is genuinely independent of the author.</p>
+
+            <h3>Workflow lock-in</h3>
+            <p>Most frameworks hard-code how agents collaborate — fixed fan-out, fixed pipelines. lmctl gives you the <strong>building blocks</strong> instead: a lead talks to its members, and teams connect to other teams. You compose any structure in plain text, and choose which provider and model plays each role — top-tier for design, leaner models for routine coding.</p>
+
+            <h3>Context-window lock-in</h3>
+            <p>The industry keeps chasing bigger context windows; we think that's a dead end. Projects outgrow any single session, and a session is bound to one provider and one folder. lmctl spreads work across specialized agents — planning, coding, review — and keeps a provider- and directory-agnostic memory (<strong>durable-memory</strong>). If a session fills up or breaks, start a fresh one — nothing is lost.</p>
         </section>
 
         <section>
