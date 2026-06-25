@@ -1,0 +1,534 @@
+{
+  "schema_version": "lmctl/v3",
+  "definition_schema_version": 3,
+  "name": "bugfix-pr-fixer-direct-v2",
+  "version": 1,
+  "description": "Runs a direct bugfix pull-request workflow for a known task, using coder and reviewer agents to produce and verify a change.",
+  "estimated_duration_ms": 240000,
+  "default_task_timeout_ms": 1800000,
+  "steps": [
+    {
+      "id": "s-reproduce-6107",
+      "name": "reproduce",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "writes_to_project_path": true,
+        "max_loops": 2
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "Work in {{project.local_path}}. If that directory does not contain a checkout of {{project.owner}}/{{project.repo}}, `git clone https://github.com/{{project.owner}}/{{project.repo}}.git {{project.local_path}}` first. Then `cd {{project.local_path}}` before any further commands. Do NOT operate inside your agent sessiondir.\n\nReproduce the bug reported in {{job_payload.issue_url}}:\n1. `gh issue view {{job_payload.issue_url}}` to read the body.\n2. Install dependencies if needed (the project's test command is the focused_test step downstream — match it).\n3. Write the minimum repro from the issue body inside {{project.local_path}}.\n4. Run the project's test command against the bug's area to confirm reproduction (the repro should fail before the fix).\n5. Save the repro snippet so the reviewer can verify.\n\nReturn STANCE: <reproduced|failed>"
+        },
+        "reviewers": [
+          {
+            "team": "default",
+            "alias": "Reviewer1"
+          }
+        ]
+      }
+    },
+    {
+      "id": "s-root-cause-141d",
+      "name": "root_cause",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "`cd {{project.local_path}}` first; investigate inside the project checkout, not your sessiondir.\n\nYou just reproduced {{job_payload.issue_url}}. Find the root cause:\n1. Investigate the codebase via grep/cat/etc inside {{project.local_path}}.\n2. Identify the exact file + line + reason for the bug.\n3. Return STANCE: <found|hypothesized|none|failed>"
+        }
+      }
+    },
+    {
+      "id": "s-fix-72b7",
+      "name": "fix",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "writes_to_project_path": true,
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "`cd {{project.local_path}}` first. All git operations must happen in the project checkout, NOT your sessiondir — the branch + commit are read back from {{project.local_path}} by downstream steps.\n\nApply the fix you root-caused for {{job_payload.issue_url}}:\n1. `cd {{project.local_path}}` and create a feature branch: `git checkout -b lmctl-next/run-{{run_id}}-issue-X` (replace X with the issue number).\n2. Edit the buggy file.\n3. Add a regression test in the project's test layout (tests/, *_test.go, etc.).\n4. Run the project's test command (matches the focused_test step downstream) to confirm all tests pass.\n5. `git add` + `git commit` on the branch with a concise subject like `Fix issue #X: <short summary>`.\n\nSTANCE: <applied|failed>"
+        }
+      }
+    },
+    {
+      "id": "s-focused-test-cd73",
+      "name": "focused_test",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "parameters": {
+        "command": "{{project.test_command}}",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-code-review-f34d",
+      "name": "code_review",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "writes_to_project_path": true,
+        "max_loops": 3
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "`cd {{project.local_path}}` first. Confirm the fix for {{job_payload.issue_url}} is committed on the feature branch and tests pass.\n\nRun `git log -1` to verify the commit exists and `git diff <repo-default-branch>..HEAD --stat` (the repo's actual default branch: usually `main` or `master`) to summarize. Verify HEAD is on the feature branch you created in the fix step.\n\nSTANCE: committed | failed"
+        },
+        "reviewers": [
+          {
+            "team": "default",
+            "alias": "Reviewer1"
+          }
+        ]
+      }
+    },
+    {
+      "id": "s-internal-pr-artifact-0d9a",
+      "name": "internal_pr_artifact",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "Draft a PR body for the fix you applied to {{job_payload.issue_url}}.\n\nInclude: brief problem statement, root cause, the change, focused test summary. NO emoji, NO AI tells (claude/codex/gemini/anthropic/openai), NO 'Generated with' or 'Co-Authored-By' lines, NO 'as an AI' phrases. Plain professional prose.\n\nSave the body to /tmp/lmctl-next-run-{{run_id}}-pr-draft.md and reply with STANCE: built | failed"
+        }
+      }
+    },
+    {
+      "id": "s-polish-9d25",
+      "name": "polish",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Polisher",
+          "prompt_template": "Read /tmp/lmctl-next-run-{{run_id}}-pr-draft.md. Tighten it: remove redundant phrases, make it concise. Preserve all technical content. NO emoji, NO AI tells.\n\nOverwrite the file with the polished version. STANCE: rewrote | failed"
+        }
+      }
+    },
+    {
+      "id": "s-scrub-648b",
+      "name": "scrub",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "parameters": {
+        "command": "perl /home/mma/bugfix/factory/pr_lint.pl /tmp/lmctl-next-pr-draft.md",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-finalize-b207",
+      "name": "finalize",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "writes_to_project_path": true,
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "Move the polished PR body from /tmp/lmctl-next-run-{{run_id}}-pr-draft.md to {{project.local_path}}/PR_BODY.md so the operator can use it directly.\n\n1. cat /tmp/lmctl-next-run-{{run_id}}-pr-draft.md\n2. cp /tmp/lmctl-next-run-{{run_id}}-pr-draft.md {{project.local_path}}/PR_BODY.md\n3. Print the file path + size to confirm.\n\nSTANCE: finalized | failed"
+        }
+      }
+    },
+    {
+      "id": "s-human-escalate-gate-79fe",
+      "name": "human_escalate_gate",
+      "type": "lmctl/interactive",
+      "typeVersion": 1,
+      "parameters": {
+        "termination": {
+          "operator_signal": true,
+          "max_turns": 1
+        }
+      },
+      "members": {
+        "agent": {
+          "team": "default",
+          "alias": "Coder",
+          "initial_prompt_template": "Workflow ready for human submit. Branch + PR_BODY.md + diff are local; review and run: gh pr create --draft --base main --body-file PR_BODY.md\n\nWhen you have reviewed and chosen to approve or reject, signal done."
+        }
+      }
+    },
+    {
+      "id": "s-human-escalate-decide-9562",
+      "name": "human_escalate_decide",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "The operator has reviewed the PR artifacts. Based on the conversation context, determine their decision.\n\nIf the operator approved: STANCE: approved\nIf the operator rejected: STANCE: rejected"
+        }
+      }
+    },
+    {
+      "id": "s-terminal-not-reproducible-f69c",
+      "name": "terminal:not_reproducible",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "not_reproducible",
+        "kind": "neutral"
+      }
+    },
+    {
+      "id": "s-terminal-aborted-2f5c",
+      "name": "terminal:aborted",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "aborted",
+        "kind": "failure"
+      }
+    },
+    {
+      "id": "s-terminal-pr-ready-043e",
+      "name": "terminal:pr_ready",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "pr_ready",
+        "kind": "success"
+      }
+    }
+  ],
+  "connections": {
+    "s-reproduce-6107": {
+      "approve": [
+        [
+          {
+            "step_id": "s-root-cause-141d",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "request_changes": [
+        [
+          {
+            "step_id": "s-reproduce-6107",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "max_loops_exceeded": [
+        [
+          {
+            "step_id": "s-terminal-not-reproducible-f69c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-root-cause-141d": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2f5c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "found": [
+        [
+          {
+            "step_id": "s-fix-72b7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "hypothesized": [
+        [
+          {
+            "step_id": "s-fix-72b7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "none": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2f5c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2f5c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-fix-72b7": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2f5c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "applied": [
+        [
+          {
+            "step_id": "s-focused-test-cd73",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2f5c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-focused-test-cd73": {
+      "exit_0": [
+        [
+          {
+            "step_id": "s-code-review-f34d",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "exit_default": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2f5c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-code-review-f34d": {
+      "approve": [
+        [
+          {
+            "step_id": "s-internal-pr-artifact-0d9a",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "request_changes": [
+        [
+          {
+            "step_id": "s-code-review-f34d",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "max_loops_exceeded": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2f5c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-internal-pr-artifact-0d9a": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2f5c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "built": [
+        [
+          {
+            "step_id": "s-polish-9d25",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2f5c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-polish-9d25": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2f5c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "rewrote": [
+        [
+          {
+            "step_id": "s-scrub-648b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2f5c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-scrub-648b": {
+      "exit_0": [
+        [
+          {
+            "step_id": "s-finalize-b207",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "exit_default": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2f5c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-finalize-b207": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2f5c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "finalized": [
+        [
+          {
+            "step_id": "s-human-escalate-gate-79fe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2f5c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-human-escalate-gate-79fe": {
+      "done": [
+        [
+          {
+            "step_id": "s-human-escalate-decide-9562",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-human-escalate-decide-9562": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2f5c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "approved": [
+        [
+          {
+            "step_id": "s-terminal-pr-ready-043e",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "rejected": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2f5c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "entry_step_id": "s-reproduce-6107"
+}

@@ -1,0 +1,969 @@
+{
+  "schema_version": "lmctl/v3",
+  "definition_schema_version": 3,
+  "name": "pr-followup-v2",
+  "version": 1,
+  "description": "Follows up on pull-request feedback, applies needed changes, verifies them, and reports whether the PR is ready.",
+  "estimated_duration_ms": 120000,
+  "default_task_timeout_ms": 1800000,
+  "requires": {
+    "tools": ["gh", "git"],
+    "auth": ["gh"]
+  },
+  "steps": [
+    {
+      "id": "s-fetch-pr-state-f4e3",
+      "name": "fetch_pr_state",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "PRWatcher",
+          "prompt_template": "Fetch the current state of PR {{job_payload.pr_url}}:\n  gh pr view {{job_payload.pr_url}} --json number,title,url,state,isDraft,author,headRefName,headRefOid,baseRefName,mergeStateStatus,reviewDecision,latestReviews,comments,updatedAt,closed,mergedAt\n\nSave the JSON to /tmp/lmctl-next-run-{{run_id}}-pr-state.json.\n\nIf the call returns 404 but the PR was previously known (job_payload may include a hint), return `visibility_blocked`.\n\nSTANCE: open | merged | closed_unmerged | not_found | visibility_blocked | failed"
+        }
+      }
+    },
+    {
+      "id": "s-fetch-checks-6264",
+      "name": "fetch_checks",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "PRWatcher",
+          "prompt_template": "Fetch the checks for {{job_payload.pr_url}}:\n  gh pr checks {{job_payload.pr_url}}\n\nSave raw output to /tmp/lmctl-next-run-{{run_id}}-pr-checks.json (parse the table into a JSON array if helpful).\n\nClassify:\n- All checks passed → `checks_green`\n- Any check failed → `checks_red`\n- Some pending, none failed → `checks_pending`\n- gh errored or no checks configured → `checks_unavailable`\n\nDo NOT abort on `checks_unavailable` — continue the workflow.\n\nSTANCE: checks_green | checks_red | checks_pending | checks_unavailable"
+        }
+      }
+    },
+    {
+      "id": "s-delta-since-cutoff-f38d",
+      "name": "delta_since_cutoff",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "PRWatcher",
+          "prompt_template": "Determine what's new on {{job_payload.pr_url}} since the cutoff.\n\nCutoff source order:\n1. job_payload.since_cutoff (if set)\n2. submitted_pr.last_followup_at for this PR (operator-provided context in the payload)\n3. submitted_pr.submitted_at as fallback\n\nUse the state JSON from /tmp/lmctl-next-run-{{run_id}}-pr-state.json plus any additional gh calls needed (e.g. `gh pr view --json comments` again with timestamp filtering).\n\nProduce /tmp/lmctl-next-run-{{run_id}}-pr-delta.json with arrays: `new_comments`, `new_reviews`, `new_check_state_changes` (each entry with timestamp, actor, body or summary, source_url).\n\nSTANCE:\n- `no_delta`: nothing new since cutoff → workflow ends at monitored_no_action\n- `has_delta`: continue to classification\n- `merged` / `closed`: state transition observed; route to terminal\n- `visibility_blocked`: PR became inaccessible; escalate"
+        }
+      }
+    },
+    {
+      "id": "s-classify-each-comment-8454",
+      "name": "classify_each_comment",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "PRWatcher",
+          "prompt_template": "Classify each entry in /tmp/lmctl-next-run-{{run_id}}-pr-delta.json.\n\nDeterministic pre-rules (apply first, don't waste budget on agent classification):\n- actor matches `github-actions[bot]`, `dependabot[bot]`, `codecov[bot]`, similar → `bot_noise` (skip)\n- body matches /^CLA|DCO|sign-off/i or actor is `cla-bot` → `cla_dco`\n- review state `CHANGES_REQUESTED` → `request_changes`\n- review state `APPROVED` + check_state `green` → `merge` (route may be approval → no_action with note)\n- comment from PR author mentioning own commit → `bot_noise` (skip)\n\nAgent classification for everything else, using this taxonomy:\n- `maintainer_action`: maintainer asking for a code change, asking a question, requesting more info\n- `maintainer_correction`: maintainer indicates the patch is wrong or the issue was misunderstood\n- `ci_red`: CI failure trail explicitly tied to our changes\n- `duplicate`: maintainer says \"duplicate of #N\" or \"already fixed in #M\"\n- `security_sensitive`: anything involving credentials, supply chain, RCE — escalate\n- `other`: ambiguous\n\nWrite /tmp/lmctl-next-run-{{run_id}}-classifications.json.\n\nDetermine overall STANCE based on the highest-priority class observed:\n- ci_red present → `ci_red`\n- request_changes present → `request_changes`\n- maintainer_correction present → `maintainer_correction`\n- cla_dco present (and nothing more severe) → `cla_dco`\n- duplicate/closed signal → `duplicate_or_closed`\n- only bot_noise / no_action → `no_action`\n- security_sensitive or `other`-ambiguous → `needs_human`"
+        }
+      }
+    },
+    {
+      "id": "s-investigate-ci-red-3723",
+      "name": "investigate_ci_red",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "`cd {{project.local_path}}` first. classify_each_comment determined this PR is `ci_red` — investigate the failing checks on {{job_payload.pr_url}}.\n\n1. Fetch the failing job log via `gh run view <run_id> --log` or `gh pr checks {{job_payload.pr_url}}` for the link.\n2. Identify the failing job and failing command.\n3. Determine relatedness to our patch:\n   - Reproduce locally if practical (small command, no full-suite re-run)\n   - If not practical, collect evidence (e.g. failure existed on main without our patch, intermittent failure history)\n4. If we caused it AND fix is small: produce a candidate patch at /tmp/lmctl-next-run-{{run_id}}-followup-patch.diff (use this canonical name; downstream recommend_action expects it).\n5. ALWAYS write findings to /tmp/lmctl-next-run-{{run_id}}-draft-response.md — at minimum a short note explaining why no action is needed (so the operator has SOMETHING to read at the Interactive gate).\n6. Write detailed reasoning to /tmp/lmctl-next-run-{{run_id}}-ci-investigation.md.\n\nSTANCE:\n- `unrelated_or_flaky`: not our patch's fault → write a polite \"CI failure looks unrelated to this PR; here's what I see\" draft_response and no patch\n- `related_patch_drafted`: small follow-up patch ready (patch.diff exists) + draft_response explaining the patch\n- `related_needs_full_fix`: scope is too broad for inline patch; draft_response says we'll spawn a fix workflow; no patch\n- `cannot_determine`: insufficient access or info; draft_response asks the maintainer for log access\n- `needs_human`: anything risky"
+        }
+      }
+    },
+    {
+      "id": "s-handle-reviewer-request-changes-6f13",
+      "name": "handle_reviewer_request_changes",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "`cd {{project.local_path}}` first. classify_each_comment determined this PR has unresolved `request_changes` from a reviewer. Analyze the change requests from /tmp/lmctl-next-run-{{run_id}}-classifications.json (entries with class `request_changes`) and the full PR delta at /tmp/lmctl-next-run-{{run_id}}-pr-delta.json.\n\nFor each request:\n- If it's a clear code change → draft a follow-up patch.\n- If it's a question → draft a textual response.\n- If we believe the reviewer is mistaken → draft a response explaining (politely, with evidence).\n\n**MANDATORY outputs (do NOT skip — recommend_action assumes these exist):**\n- /tmp/lmctl-next-run-{{run_id}}-draft-response.md — the public reply text (this is the artifact the operator reads at the Interactive gate)\n- /tmp/lmctl-next-run-{{run_id}}-review-analysis.md — your reasoning\n- /tmp/lmctl-next-run-{{run_id}}-followup-patch.diff — patch if applicable (omit only if `comment_ready` STANCE)\n\nKeep draft-response.md professional, concise, no emoji, no AI tells (claude/codex/gemini/anthropic/openai), no \"as an AI\" phrases.\n\nSTANCE:\n- `patch_ready`: patch + response drafted (both files exist)\n- `comment_ready`: response only, no code change (draft-response.md exists, patch.diff may be absent)\n- `needs_clarification`: we need maintainer to clarify; draft-response.md ASKS for the clarification\n- `should_withdraw`: reviewer is right; draft-response.md acknowledges + says we'll close\n- `needs_human`: scope too unclear or risky"
+        }
+      }
+    },
+    {
+      "id": "s-handle-maintainer-correction-bbd9",
+      "name": "handle_maintainer_correction",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "PRWatcher",
+          "prompt_template": "classify_each_comment determined a `maintainer_correction` on {{job_payload.pr_url}}. Analyze the correction entries in /tmp/lmctl-next-run-{{run_id}}-classifications.json.\n\nRules:\n- If the maintainer is right and our patch is wrong: draft an honest response acknowledging the error; recommend close/withdraw via STANCE: close_recommended.\n- If the issue description was wrong but our patch fixes a valid variant: draft a clarification response.\n- If the maintainer asks for evidence: produce concise reproduction/test evidence.\n- If the correction implies a code change: STANCE needs_human (let operator decide if a re-classification to request_changes makes sense).\n\n**MANDATORY outputs:**\n- /tmp/lmctl-next-run-{{run_id}}-draft-response.md — public reply text (always)\n- /tmp/lmctl-next-run-{{run_id}}-maintainer-correction-analysis.md — your reasoning\n- /tmp/lmctl-next-run-{{run_id}}-followup-patch.diff — only if STANCE: patch_ready\n\nKeep draft-response.md professional, concise, no emoji, no AI tells.\n\nSTANCE: comment_ready | patch_ready | close_recommended | wait | needs_human"
+        }
+      }
+    },
+    {
+      "id": "s-handle-cla-dco-8b13",
+      "name": "handle_cla_dco",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "PRWatcher",
+          "prompt_template": "classify_each_comment determined CLA/DCO signals on {{job_payload.pr_url}}. Analyze the bot comments from /tmp/lmctl-next-run-{{run_id}}-classifications.json.\n\nDO NOT forge legal action. CLA signing stays human action.\n\n**MANDATORY outputs:**\n- /tmp/lmctl-next-run-{{run_id}}-paperwork-status.md — exact instructions + bot link + what the user must do\n- /tmp/lmctl-next-run-{{run_id}}-draft-response.md — short polite note explaining the paperwork state (operator may post this if helpful)\n\nOutcomes:\n- `user_action_required`: user must sign CLA or amend DCO; instructions in paperwork-status.md\n- `empty_commit_retrigger_recommended`: bot expects a retrigger commit; draft the suggested `git commit --allow-empty -m '...'` command (DO NOT execute)\n- `dco_patch_ready`: a DCO-style amend can be done locally (rebase + signoff); draft the steps as a patch under /tmp/lmctl-next-run-{{run_id}}-followup-patch.diff\n- `wait`: bot still processing\n- `needs_human`: ambiguous\n\nSTANCE: user_action_required | empty_commit_retrigger_recommended | dco_patch_ready | wait | needs_human"
+        }
+      }
+    },
+    {
+      "id": "s-recommend-action-5325",
+      "name": "recommend_action",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "PRWatcher",
+          "prompt_template": "Reduce the prior branch's outcome into a single recommendation for {{job_payload.pr_url}}.\n\nClassify outcome: `{{outcomes.classify_each_comment}}`. Only ONE of the branches below ran (deterministic routing from classify):\n- ci: `{{outcomes.investigate_ci_red}}` (empty if classify was not ci_red)\n- review: `{{outcomes.handle_reviewer_request_changes}}` (empty if classify was not request_changes)\n- correction: `{{outcomes.handle_maintainer_correction}}` (empty if classify was not maintainer_correction)\n- paperwork: `{{outcomes.handle_cla_dco}}` (empty if classify was not cla_dco)\n\n**Verify the draft artifact exists before recommending comment_only / push_patch.** The active branch was REQUIRED to write /tmp/lmctl-next-run-{{run_id}}-draft-response.md. Run `ls /tmp/lmctl-next-run-{{run_id}}-draft-response.md` to confirm. If it's missing, STANCE: escalated (don't recommend comment_only without the artifact).\n\nWrite /tmp/lmctl-next-run-{{run_id}}-followup-recommendation.json.\n\nSTANCE map:\n- recommended_action `wait` → STANCE: wait\n- recommended_action `comment_only` → STANCE: comment_drafted (routes to operator_review_comment Interactive next)\n- recommended_action `push_patch` → STANCE: patch_drafted (routes to operator_review_patch Interactive)\n- recommended_action `close_pr` → STANCE: close_recommended → terminal closed_recommendation\n- recommended_action `paperwork_user_action` → STANCE: paperwork_required → terminal paperwork_required\n- recommended_action `escalate_human` → STANCE: escalated → terminal escalated_human\n\nPhase 1: even when patch/comment is recommended, the workflow PARKS at the operator_review_* Interactive gate. NEVER execute the external action automatically."
+        }
+      }
+    },
+    {
+      "id": "s-operator-review-comment-gate-a8ee",
+      "name": "operator_review_comment_gate",
+      "type": "lmctl/interactive",
+      "typeVersion": 1,
+      "parameters": {
+        "termination": {
+          "operator_signal": true,
+          "max_turns": 1
+        }
+      },
+      "members": {
+        "agent": {
+          "team": "default",
+          "alias": "PRWatcher",
+          "initial_prompt_template": "PR follow-up: comment drafted for {{job_payload.pr_url}}. Review /tmp/lmctl-next-run-{{run_id}}-draft-response.md and /tmp/lmctl-next-run-{{run_id}}-followup-recommendation.json. Choose: approve_comment (operator will run `gh pr comment` themselves), revise_comment, reject_comment, or wait. Signal done when decided."
+        }
+      }
+    },
+    {
+      "id": "s-operator-review-comment-decide-d91c",
+      "name": "operator_review_comment_decide",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "PRWatcher",
+          "prompt_template": "The operator has reviewed the drafted comment for {{job_payload.pr_url}}. Based on the conversation context, determine their decision.\n\nSTANCE: approve_comment | revise_comment | reject_comment | wait"
+        }
+      }
+    },
+    {
+      "id": "s-operator-review-patch-gate-4e09",
+      "name": "operator_review_patch_gate",
+      "type": "lmctl/interactive",
+      "typeVersion": 1,
+      "parameters": {
+        "termination": {
+          "operator_signal": true,
+          "max_turns": 1
+        }
+      },
+      "members": {
+        "agent": {
+          "team": "default",
+          "alias": "PRWatcher",
+          "initial_prompt_template": "PR follow-up: patch drafted for {{job_payload.pr_url}}. Review /tmp/lmctl-next-run-{{run_id}}-followup-patch.diff and /tmp/lmctl-next-run-{{run_id}}-followup-recommendation.json. The patch is in {{project.local_path}}; HEAD is on the PR branch. Choose: approve_patch (operator will `git push` + optionally `gh pr comment` themselves), revise_patch, reject_patch, or wait. Signal done when decided."
+        }
+      }
+    },
+    {
+      "id": "s-operator-review-patch-decide-7a80",
+      "name": "operator_review_patch_decide",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "PRWatcher",
+          "prompt_template": "The operator has reviewed the drafted patch for {{job_payload.pr_url}}. Based on the conversation context, determine their decision.\n\nSTANCE: approve_patch | revise_patch | reject_patch | wait"
+        }
+      }
+    },
+    {
+      "id": "s-terminal-aborted-4b55",
+      "name": "terminal:aborted",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "aborted",
+        "kind": "failure"
+      }
+    },
+    {
+      "id": "s-terminal-merged-67bd",
+      "name": "terminal:merged",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "merged",
+        "kind": "success"
+      }
+    },
+    {
+      "id": "s-terminal-closed-unmerged-ddf4",
+      "name": "terminal:closed_unmerged",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "closed_unmerged",
+        "kind": "neutral"
+      }
+    },
+    {
+      "id": "s-terminal-escalated-human-c3bd",
+      "name": "terminal:escalated_human",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "escalated_human",
+        "kind": "neutral"
+      }
+    },
+    {
+      "id": "s-terminal-monitored-no-action-b485",
+      "name": "terminal:monitored_no_action",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "monitored_no_action",
+        "kind": "neutral"
+      }
+    },
+    {
+      "id": "s-terminal-closed-recommendation-c61b",
+      "name": "terminal:closed_recommendation",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "closed_recommendation",
+        "kind": "neutral"
+      }
+    },
+    {
+      "id": "s-terminal-paperwork-required-4dd2",
+      "name": "terminal:paperwork_required",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "paperwork_required",
+        "kind": "neutral"
+      }
+    },
+    {
+      "id": "s-terminal-comment-drafted-pending-approval-165b",
+      "name": "terminal:comment_drafted_pending_approval",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "comment_drafted_pending_approval",
+        "kind": "success"
+      }
+    },
+    {
+      "id": "s-terminal-patch-drafted-pending-approval-879a",
+      "name": "terminal:patch_drafted_pending_approval",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "patch_drafted_pending_approval",
+        "kind": "success"
+      }
+    }
+  ],
+  "connections": {
+    "s-fetch-pr-state-f4e3": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-4b55",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "open": [
+        [
+          {
+            "step_id": "s-fetch-checks-6264",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "merged": [
+        [
+          {
+            "step_id": "s-terminal-merged-67bd",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "closed_unmerged": [
+        [
+          {
+            "step_id": "s-terminal-closed-unmerged-ddf4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "not_found": [
+        [
+          {
+            "step_id": "s-terminal-aborted-4b55",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "visibility_blocked": [
+        [
+          {
+            "step_id": "s-terminal-escalated-human-c3bd",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-4b55",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-fetch-checks-6264": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-4b55",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "checks_green": [
+        [
+          {
+            "step_id": "s-delta-since-cutoff-f38d",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "checks_red": [
+        [
+          {
+            "step_id": "s-delta-since-cutoff-f38d",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "checks_pending": [
+        [
+          {
+            "step_id": "s-delta-since-cutoff-f38d",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "checks_unavailable": [
+        [
+          {
+            "step_id": "s-delta-since-cutoff-f38d",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-delta-since-cutoff-f38d": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-4b55",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "no_delta": [
+        [
+          {
+            "step_id": "s-terminal-monitored-no-action-b485",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "has_delta": [
+        [
+          {
+            "step_id": "s-classify-each-comment-8454",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "merged": [
+        [
+          {
+            "step_id": "s-terminal-merged-67bd",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "closed": [
+        [
+          {
+            "step_id": "s-terminal-closed-unmerged-ddf4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "visibility_blocked": [
+        [
+          {
+            "step_id": "s-terminal-escalated-human-c3bd",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-classify-each-comment-8454": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-4b55",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "no_action": [
+        [
+          {
+            "step_id": "s-terminal-monitored-no-action-b485",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "ci_red": [
+        [
+          {
+            "step_id": "s-investigate-ci-red-3723",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "request_changes": [
+        [
+          {
+            "step_id": "s-handle-reviewer-request-changes-6f13",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "maintainer_correction": [
+        [
+          {
+            "step_id": "s-handle-maintainer-correction-bbd9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "cla_dco": [
+        [
+          {
+            "step_id": "s-handle-cla-dco-8b13",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "duplicate_or_closed": [
+        [
+          {
+            "step_id": "s-terminal-closed-recommendation-c61b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "needs_human": [
+        [
+          {
+            "step_id": "s-terminal-escalated-human-c3bd",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-investigate-ci-red-3723": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-4b55",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "unrelated_or_flaky": [
+        [
+          {
+            "step_id": "s-recommend-action-5325",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "related_patch_drafted": [
+        [
+          {
+            "step_id": "s-recommend-action-5325",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "related_needs_full_fix": [
+        [
+          {
+            "step_id": "s-recommend-action-5325",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "cannot_determine": [
+        [
+          {
+            "step_id": "s-recommend-action-5325",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "needs_human": [
+        [
+          {
+            "step_id": "s-terminal-escalated-human-c3bd",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-handle-reviewer-request-changes-6f13": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-4b55",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "patch_ready": [
+        [
+          {
+            "step_id": "s-recommend-action-5325",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "comment_ready": [
+        [
+          {
+            "step_id": "s-recommend-action-5325",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "needs_clarification": [
+        [
+          {
+            "step_id": "s-recommend-action-5325",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "should_withdraw": [
+        [
+          {
+            "step_id": "s-recommend-action-5325",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "needs_human": [
+        [
+          {
+            "step_id": "s-terminal-escalated-human-c3bd",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-handle-maintainer-correction-bbd9": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-4b55",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "comment_ready": [
+        [
+          {
+            "step_id": "s-recommend-action-5325",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "patch_ready": [
+        [
+          {
+            "step_id": "s-recommend-action-5325",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "wait": [
+        [
+          {
+            "step_id": "s-terminal-monitored-no-action-b485",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "close_recommended": [
+        [
+          {
+            "step_id": "s-terminal-closed-recommendation-c61b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "needs_human": [
+        [
+          {
+            "step_id": "s-terminal-escalated-human-c3bd",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-handle-cla-dco-8b13": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-4b55",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "user_action_required": [
+        [
+          {
+            "step_id": "s-terminal-paperwork-required-4dd2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "empty_commit_retrigger_recommended": [
+        [
+          {
+            "step_id": "s-terminal-paperwork-required-4dd2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "dco_patch_ready": [
+        [
+          {
+            "step_id": "s-recommend-action-5325",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "wait": [
+        [
+          {
+            "step_id": "s-terminal-monitored-no-action-b485",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "needs_human": [
+        [
+          {
+            "step_id": "s-terminal-escalated-human-c3bd",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-recommend-action-5325": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-4b55",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "wait": [
+        [
+          {
+            "step_id": "s-terminal-monitored-no-action-b485",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "comment_drafted": [
+        [
+          {
+            "step_id": "s-operator-review-comment-gate-a8ee",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "patch_drafted": [
+        [
+          {
+            "step_id": "s-operator-review-patch-gate-4e09",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "close_recommended": [
+        [
+          {
+            "step_id": "s-terminal-closed-recommendation-c61b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "paperwork_required": [
+        [
+          {
+            "step_id": "s-terminal-paperwork-required-4dd2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "escalated": [
+        [
+          {
+            "step_id": "s-terminal-escalated-human-c3bd",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-operator-review-comment-gate-a8ee": {
+      "done": [
+        [
+          {
+            "step_id": "s-operator-review-comment-decide-d91c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-operator-review-comment-decide-d91c": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-4b55",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "approve_comment": [
+        [
+          {
+            "step_id": "s-terminal-comment-drafted-pending-approval-165b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "revise_comment": [
+        [
+          {
+            "step_id": "s-terminal-escalated-human-c3bd",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "reject_comment": [
+        [
+          {
+            "step_id": "s-terminal-monitored-no-action-b485",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "wait": [
+        [
+          {
+            "step_id": "s-terminal-monitored-no-action-b485",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-operator-review-patch-gate-4e09": {
+      "done": [
+        [
+          {
+            "step_id": "s-operator-review-patch-decide-7a80",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-operator-review-patch-decide-7a80": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-4b55",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "approve_patch": [
+        [
+          {
+            "step_id": "s-terminal-patch-drafted-pending-approval-879a",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "revise_patch": [
+        [
+          {
+            "step_id": "s-terminal-escalated-human-c3bd",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "reject_patch": [
+        [
+          {
+            "step_id": "s-terminal-monitored-no-action-b485",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "wait": [
+        [
+          {
+            "step_id": "s-terminal-monitored-no-action-b485",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "entry_step_id": "s-fetch-pr-state-f4e3"
+}

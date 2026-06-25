@@ -1,0 +1,185 @@
+{
+  "schema_version": "lmctl/v3",
+  "definition_schema_version": 3,
+  "name": "durable-memory-consolidation-v2",
+  "version": 1,
+  "description": "Consolidates durable project memory from recent work so future sessions can recover important context quickly.",
+  "estimated_duration_ms": 180000,
+  "default_task_timeout_ms": 600000,
+  "steps": [
+    {
+      "id": "s-survey-93ff",
+      "name": "survey",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "Read `<project>/durable-memory/index.md` and the full set of entries. Identify: (a) stale entries (referring to retired work, deleted features, obsolete decisions); (b) duplicated entries (same fact spread across multiple files); (c) orphan entries (no longer relevant to the current project state). Propose changes: list which to delete, which to merge, which to update. Output STANCE: `changes_proposed` (with proposal artifact) OR `all_clean` (no work needed)."
+        },
+        "reviewers": []
+      }
+    },
+    {
+      "id": "s-review-proposal-acb3",
+      "name": "review_proposal",
+      "type": "lmctl/interactive",
+      "typeVersion": 1,
+      "parameters": {
+        "termination": {
+          "operator_signal": true,
+          "max_turns": 5
+        }
+      },
+      "members": {
+        "agent": {
+          "team": "default",
+          "alias": "Coder",
+          "initial_prompt_template": "You just surveyed the durable-memory entries and proposed consolidation changes. Walk the operator through your proposal and wait for their decision (approve / reject / request edits). When the operator responds, acknowledge and proceed accordingly."
+        }
+      }
+    },
+    {
+      "id": "s-apply-changes-fad1",
+      "name": "apply_changes",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "Apply the approved consolidation changes to durable-memory. Use Write to update or delete entries under `<project>/durable-memory/`. Output STANCE: `applied` (with a brief summary of what changed) OR `failed` (with reason)."
+        },
+        "reviewers": []
+      }
+    },
+    {
+      "id": "s-terminal-no-action-d438",
+      "name": "terminal:no_action",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "no_action",
+        "kind": "success"
+      }
+    },
+    {
+      "id": "s-terminal-max-iterations-ed61",
+      "name": "terminal:max_iterations",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "max_iterations",
+        "kind": "failure"
+      }
+    },
+    {
+      "id": "s-terminal-consolidated-9ef9",
+      "name": "terminal:consolidated",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "consolidated",
+        "kind": "success"
+      }
+    },
+    {
+      "id": "s-terminal-apply-failed-3898",
+      "name": "terminal:apply_failed",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "apply_failed",
+        "kind": "failure"
+      }
+    }
+  ],
+  "connections": {
+    "s-survey-93ff": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-no-action-d438",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "changes_proposed": [
+        [
+          {
+            "step_id": "s-review-proposal-acb3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "all_clean": [
+        [
+          {
+            "step_id": "s-terminal-no-action-d438",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-review-proposal-acb3": {
+      "done": [
+        [
+          {
+            "step_id": "s-apply-changes-fad1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "timeout": [
+        [
+          {
+            "step_id": "s-terminal-max-iterations-ed61",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-apply-changes-fad1": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-consolidated-9ef9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "applied": [
+        [
+          {
+            "step_id": "s-terminal-consolidated-9ef9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-apply-failed-3898",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "entry_step_id": "s-survey-93ff"
+}

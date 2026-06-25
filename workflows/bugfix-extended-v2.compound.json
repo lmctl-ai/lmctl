@@ -1,0 +1,1018 @@
+{
+  "schema_version": "lmctl/v3",
+  "definition_schema_version": 3,
+  "name": "bugfix-extended-v2",
+  "version": 1,
+  "description": "Investigates a bug report, develops a fix through coder and reviewer turns, verifies the result, and reports the final status.",
+  "estimated_duration_ms": 600000,
+  "default_task_timeout_ms": 1800000,
+  "steps": [
+    {
+      "id": "s-stage1-filter-score-96d7",
+      "name": "stage1_filter_score",
+      "type": "lmctl/loop",
+      "typeVersion": 1,
+      "parameters": {
+        "over": "job.payload.candidate_urls",
+        "item_var": "current_url",
+        "body": "stage1_score_item",
+        "stop_on_error": true,
+        "max_items": 1000
+      }
+    },
+    {
+      "id": "s-stage1-score-item-6ceb",
+      "name": "stage1_score_item",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder"
+        }
+      }
+    },
+    {
+      "id": "s-claim-check-e442",
+      "name": "claim_check",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder"
+        }
+      }
+    },
+    {
+      "id": "s-dedup-check-5c02",
+      "name": "dedup_check",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "parameters": {
+        "command": "lmdedup --repo {{project.owner}}/{{project.repo}} --issue-url {{job_payload.issue_url}} --json",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-feasibility-1f3e",
+      "name": "feasibility",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder"
+        }
+      }
+    },
+    {
+      "id": "s-reproduce-21c8",
+      "name": "reproduce",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "writes_to_project_path": true,
+        "max_loops": 2
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder"
+        },
+        "reviewers": [
+          {
+            "team": "default",
+            "alias": "Reviewer1"
+          }
+        ]
+      }
+    },
+    {
+      "id": "s-root-cause-585a",
+      "name": "root_cause",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder"
+        }
+      }
+    },
+    {
+      "id": "s-fix-952d",
+      "name": "fix",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "writes_to_project_path": true,
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder"
+        }
+      }
+    },
+    {
+      "id": "s-focused-test-f5d4",
+      "name": "focused_test",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "parameters": {
+        "command": "{{project.test_command}}",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-code-review-4ee7",
+      "name": "code_review",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "writes_to_project_path": true,
+        "max_loops": 3
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder"
+        },
+        "reviewers": [
+          {
+            "team": "default",
+            "alias": "Reviewer1"
+          }
+        ]
+      }
+    },
+    {
+      "id": "s-internal-pr-artifact-ac9f",
+      "name": "internal_pr_artifact",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder"
+        }
+      }
+    },
+    {
+      "id": "s-polish-a13a",
+      "name": "polish",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Polisher"
+        }
+      }
+    },
+    {
+      "id": "s-template-detect-9e21",
+      "name": "template_detect",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "parameters": {
+        "command": "detect_pr_template.pl",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "2": "@terminal:exit_2",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-conform-45a7",
+      "name": "conform",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Conformer"
+        }
+      }
+    },
+    {
+      "id": "s-final-review-a726",
+      "name": "final_review",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 2
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Polisher"
+        },
+        "reviewers": [
+          {
+            "team": "default",
+            "alias": "FinalReviewer"
+          }
+        ]
+      }
+    },
+    {
+      "id": "s-pr-request-compose-549d",
+      "name": "pr_request_compose",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "parameters": {
+        "command": "compose_pr_request.pl",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-pr-lint-3943",
+      "name": "pr_lint",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "parameters": {
+        "command": "pr_lint.pl",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-pr-dedup-check-862c",
+      "name": "pr_dedup_check",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "parameters": {
+        "command": "lmdedup --repo {{project.owner}}/{{project.repo}} --pr-file {{project.local_path}}/.lmctl-pr-request.txt --json",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-pr-submit-dry-run-29b7",
+      "name": "pr_submit_dry_run",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "parameters": {
+        "command": "submit_pr_from_request.pl --dry-run",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-human-escalate-gate-fef1",
+      "name": "human_escalate_gate",
+      "type": "lmctl/interactive",
+      "typeVersion": 1,
+      "parameters": {
+        "termination": {
+          "operator_signal": true,
+          "max_turns": 1
+        }
+      },
+      "members": {
+        "agent": {
+          "team": "default",
+          "alias": "Coder",
+          "initial_prompt_template": "Workflow ready for human submit. Branch + PR_BODY.md + diff are local; please review and run: gh pr create --draft --base main --body-file PR_BODY.md\n\nWhen you have reviewed and are ready to proceed (approve or reject), signal done."
+        }
+      }
+    },
+    {
+      "id": "s-human-escalate-decide-6c5f",
+      "name": "human_escalate_decide",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "The operator has reviewed the PR artifacts. Based on the conversation context, determine their decision.\n\nIf the operator approved: STANCE: approved\nIf the operator rejected: STANCE: rejected"
+        }
+      }
+    },
+    {
+      "id": "s-terminal-aborted-646b",
+      "name": "terminal:aborted",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "aborted",
+        "kind": "failure"
+      }
+    },
+    {
+      "id": "s-terminal-claimed-0705",
+      "name": "terminal:claimed",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "claimed",
+        "kind": "neutral"
+      }
+    },
+    {
+      "id": "s-terminal-dup-pr-active-8423",
+      "name": "terminal:dup_pr_active",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "dup_pr_active",
+        "kind": "neutral"
+      }
+    },
+    {
+      "id": "s-terminal-clarification-pr-f4db",
+      "name": "terminal:clarification_pr",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "clarification_pr",
+        "kind": "neutral"
+      }
+    },
+    {
+      "id": "s-terminal-not-reproducible-b1f4",
+      "name": "terminal:not_reproducible",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "not_reproducible",
+        "kind": "neutral"
+      }
+    },
+    {
+      "id": "s-terminal-pr-ready-da6b",
+      "name": "terminal:pr_ready",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "pr_ready",
+        "kind": "success"
+      }
+    }
+  ],
+  "connections": {
+    "s-stage1-filter-score-96d7": {
+      "ok": [
+        [
+          {
+            "step_id": "s-claim-check-e442",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "error": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-stage1-score-item-6ceb": {
+      "1": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "2": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "3": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "4": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "5": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-claim-check-e442": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "open": [
+        [
+          {
+            "step_id": "s-dedup-check-5c02",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "claimed": [
+        [
+          {
+            "step_id": "s-terminal-claimed-0705",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "dup_pr_active": [
+        [
+          {
+            "step_id": "s-terminal-dup-pr-active-8423",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "closed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-dedup-check-5c02": {
+      "exit_0": [
+        [
+          {
+            "step_id": "s-feasibility-1f3e",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "exit_default": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-feasibility-1f3e": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "tractable": [
+        [
+          {
+            "step_id": "s-reproduce-21c8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "blocked_setup": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "requires_clarification": [
+        [
+          {
+            "step_id": "s-terminal-clarification-pr-f4db",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-reproduce-21c8": {
+      "approve": [
+        [
+          {
+            "step_id": "s-root-cause-585a",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "request_changes": [
+        [
+          {
+            "step_id": "s-reproduce-21c8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "max_loops_exceeded": [
+        [
+          {
+            "step_id": "s-terminal-not-reproducible-b1f4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-root-cause-585a": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "found": [
+        [
+          {
+            "step_id": "s-fix-952d",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "hypothesized": [
+        [
+          {
+            "step_id": "s-fix-952d",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "none": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-fix-952d": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "applied": [
+        [
+          {
+            "step_id": "s-focused-test-f5d4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-focused-test-f5d4": {
+      "exit_0": [
+        [
+          {
+            "step_id": "s-code-review-4ee7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "exit_default": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-code-review-4ee7": {
+      "approve": [
+        [
+          {
+            "step_id": "s-internal-pr-artifact-ac9f",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "request_changes": [
+        [
+          {
+            "step_id": "s-code-review-4ee7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "max_loops_exceeded": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-internal-pr-artifact-ac9f": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "built": [
+        [
+          {
+            "step_id": "s-polish-a13a",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-polish-a13a": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "rewrote": [
+        [
+          {
+            "step_id": "s-template-detect-9e21",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-template-detect-9e21": {
+      "exit_0": [
+        [
+          {
+            "step_id": "s-conform-45a7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "exit_2": [
+        [
+          {
+            "step_id": "s-final-review-a726",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "exit_default": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-conform-45a7": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "conformed": [
+        [
+          {
+            "step_id": "s-final-review-a726",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-final-review-a726": {
+      "approve": [
+        [
+          {
+            "step_id": "s-pr-request-compose-549d",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "request_changes": [
+        [
+          {
+            "step_id": "s-final-review-a726",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "max_loops_exceeded": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-pr-request-compose-549d": {
+      "exit_0": [
+        [
+          {
+            "step_id": "s-pr-lint-3943",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "exit_default": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-pr-lint-3943": {
+      "exit_0": [
+        [
+          {
+            "step_id": "s-pr-dedup-check-862c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "exit_default": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-pr-dedup-check-862c": {
+      "exit_0": [
+        [
+          {
+            "step_id": "s-pr-submit-dry-run-29b7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "exit_default": [
+        [
+          {
+            "step_id": "s-pr-submit-dry-run-29b7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-pr-submit-dry-run-29b7": {
+      "exit_0": [
+        [
+          {
+            "step_id": "s-human-escalate-gate-fef1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "exit_default": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-human-escalate-gate-fef1": {
+      "done": [
+        [
+          {
+            "step_id": "s-human-escalate-decide-6c5f",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-human-escalate-decide-6c5f": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "approved": [
+        [
+          {
+            "step_id": "s-terminal-pr-ready-da6b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "rejected": [
+        [
+          {
+            "step_id": "s-terminal-aborted-646b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "entry_step_id": "s-stage1-filter-score-96d7"
+}

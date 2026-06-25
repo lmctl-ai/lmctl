@@ -1,0 +1,129 @@
+{
+  "schema_version": "lmctl/v3",
+  "definition_schema_version": 3,
+  "name": "newspaper",
+  "version": 1,
+  "description": "Builds a newspaper-style summary from project or external inputs, organizing findings into a readable generated artifact.",
+  "estimated_duration_ms": 120000,
+  "errors": {
+    "on_unhandled_failure": {
+      "attention_kind": "workflow_failed",
+      "severity": "error",
+      "capture_evidence": true
+    }
+  },
+  "triggers": [
+    {
+      "id": "daily-digest",
+      "type": "lmctl/trigger-schedule",
+      "parameters": {
+        "cron": "0 6 * * *",
+        "timezone": "UTC"
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "name": "topics",
+      "type": "array",
+      "required": true,
+      "description": "Topics to include in the digest."
+    },
+    {
+      "name": "output_dir",
+      "type": "string",
+      "required": false,
+      "description": "Optional output directory for digest markdown."
+    }
+  ],
+  "outputs": [
+    {
+      "name": "digest_md",
+      "type": "string",
+      "source_step_id": "s-gather-digest-4f0a",
+      "source_field": "consolidated_output",
+      "description": "Daily digest markdown."
+    }
+  ],
+  "steps": [
+    {
+      "id": "s-gather-digest-4f0a",
+      "name": "gather",
+      "type": "lmctl/consolidate",
+      "typeVersion": 1,
+      "parameters": {
+        "research_artifact_prefix": "newspaper"
+      },
+      "members": {
+        "researchers": [
+          {
+            "team": "default",
+            "alias": "Researcher1",
+            "topic": "Topic set A",
+            "prompt_template": "Research the first slice of the requested daily digest topics.\n\nTopics: {{job_payload.topics}}\nOutput directory: {{job_payload.output_dir}}"
+          },
+          {
+            "team": "default",
+            "alias": "Researcher2",
+            "topic": "Topic set B",
+            "prompt_template": "Research a second independent slice of the requested daily digest topics. Note contradictions and uncertainty.\n\nTopics: {{job_payload.topics}}\nOutput directory: {{job_payload.output_dir}}"
+          },
+          {
+            "team": "default",
+            "alias": "Researcher3",
+            "topic": "Topic set C",
+            "prompt_template": "Research a third independent slice of the requested daily digest topics. Prefer concise facts and source-quality notes.\n\nTopics: {{job_payload.topics}}\nOutput directory: {{job_payload.output_dir}}"
+          }
+        ],
+        "consolidator": {
+          "team": "default",
+          "alias": "Consolidator",
+          "prompt_template": "Merge the research into a readable daily newspaper-style markdown digest. Group by topic, keep it concise, and include caveats.\n\nIf job_payload.output_dir is set, write the digest markdown there.\n\nEnd with exactly:\nSTANCE: ok"
+        }
+      }
+    },
+    {
+      "id": "s-terminal-done-a615",
+      "name": "terminal:done",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "done",
+        "kind": "success"
+      }
+    },
+    {
+      "id": "s-terminal-aborted-cc74",
+      "name": "terminal:aborted",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "aborted",
+        "kind": "failure"
+      }
+    }
+  ],
+  "connections": {
+    "s-gather-digest-4f0a": {
+      "ok": [
+        [
+          {
+            "step_id": "s-terminal-done-a615",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "error": [
+        [
+          {
+            "step_id": "s-terminal-aborted-cc74",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "entry_step_id": "s-gather-digest-4f0a"
+}

@@ -1,0 +1,120 @@
+{
+  "schema_version": "lmctl/v3",
+  "definition_schema_version": 3,
+  "name": "info-qa",
+  "version": 1,
+  "description": "Runs an information-oriented QA workflow that checks project facts, evidence, and expected outcomes without modifying the project.",
+  "estimated_duration_ms": 90000,
+  "errors": {
+    "on_unhandled_failure": {
+      "attention_kind": "workflow_failed",
+      "severity": "error",
+      "capture_evidence": true
+    }
+  },
+  "inputs": [
+    {
+      "name": "question",
+      "type": "string",
+      "required": true,
+      "description": "Question to answer."
+    },
+    {
+      "name": "output_path",
+      "type": "string",
+      "required": false,
+      "description": "Optional markdown path for the consolidated answer."
+    }
+  ],
+  "outputs": [
+    {
+      "name": "answer",
+      "type": "string",
+      "source_step_id": "s-info-qa-7b4c",
+      "source_field": "consolidated_output",
+      "description": "Consolidated answer."
+    }
+  ],
+  "steps": [
+    {
+      "id": "s-info-qa-7b4c",
+      "name": "info_qa",
+      "type": "lmctl/consolidate",
+      "typeVersion": 1,
+      "estimated_duration_ms": 90000,
+      "parameters": {
+        "research_artifact_prefix": "info_qa"
+      },
+      "members": {
+        "researchers": [
+          {
+            "team": "default",
+            "alias": "ClaudeResearcher",
+            "topic": "Claude research perspective",
+            "prompt_template": "Research the question carefully and identify key facts, caveats, and source-quality concerns.\n\nQuestion: {{job_payload.question}}"
+          },
+          {
+            "team": "default",
+            "alias": "CodexResearcher",
+            "topic": "Codex research perspective",
+            "prompt_template": "Analyze the question from a second perspective. Focus on concrete evidence, contradictions, and what an operator should verify.\n\nQuestion: {{job_payload.question}}"
+          },
+          {
+            "team": "default",
+            "alias": "GeminiResearcher",
+            "topic": "Gemini research perspective",
+            "prompt_template": "Produce an independent answer draft with assumptions, uncertainty, and practical next steps.\n\nQuestion: {{job_payload.question}}"
+          }
+        ],
+        "consolidator": {
+          "team": "default",
+          "alias": "Consolidator",
+          "prompt_template": "Merge the research notes into one concise answer for a non-specialist. Keep claims grounded, identify uncertainty, and include next steps when useful.\n\nIf job_payload.output_path is set, write the final markdown answer there.\n\nEnd with exactly:\nSTANCE: ok"
+        }
+      }
+    },
+    {
+      "id": "s-terminal-done-f1a8",
+      "name": "terminal:done",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "done",
+        "kind": "success"
+      }
+    },
+    {
+      "id": "s-terminal-aborted-3d2e",
+      "name": "terminal:aborted",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "aborted",
+        "kind": "failure"
+      }
+    }
+  ],
+  "connections": {
+    "s-info-qa-7b4c": {
+      "ok": [
+        [
+          {
+            "step_id": "s-terminal-done-f1a8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "error": [
+        [
+          {
+            "step_id": "s-terminal-aborted-3d2e",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "entry_step_id": "s-info-qa-7b4c"
+}

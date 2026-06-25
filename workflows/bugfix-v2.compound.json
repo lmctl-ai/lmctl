@@ -1,0 +1,856 @@
+{
+  "schema_version": "lmctl/v3",
+  "definition_schema_version": 3,
+  "name": "bugfix-v2",
+  "version": 1,
+  "description": "Takes a bug description, asks an agent to diagnose and fix it in the project, then verifies and reports the outcome.",
+  "estimated_duration_ms": 300000,
+  "steps": [
+    {
+      "id": "s-claim-check-0862",
+      "name": "claim_check",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder"
+        }
+      }
+    },
+    {
+      "id": "s-dedup-check-62e6",
+      "name": "dedup_check",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "parameters": {
+        "command": "lmdedup --json",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-feasibility-dab8",
+      "name": "feasibility",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder"
+        }
+      }
+    },
+    {
+      "id": "s-reproduce-ad6a",
+      "name": "reproduce",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "writes_to_project_path": true,
+        "max_loops": 2
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder"
+        },
+        "reviewers": [
+          {
+            "team": "default",
+            "alias": "Reviewer1"
+          }
+        ]
+      }
+    },
+    {
+      "id": "s-root-cause-864d",
+      "name": "root_cause",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder"
+        }
+      }
+    },
+    {
+      "id": "s-fix-10e0",
+      "name": "fix",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "writes_to_project_path": true,
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder"
+        }
+      }
+    },
+    {
+      "id": "s-focused-test-2f91",
+      "name": "focused_test",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "parameters": {
+        "command": "{{project.test_command}}",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-code-review-432b",
+      "name": "code_review",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "writes_to_project_path": true,
+        "max_loops": 3
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder"
+        },
+        "reviewers": [
+          {
+            "team": "default",
+            "alias": "Reviewer1"
+          }
+        ]
+      }
+    },
+    {
+      "id": "s-pr-quality-review-c646",
+      "name": "pr_quality_review",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "writes_to_project_path": true,
+        "max_loops": 3
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder"
+        },
+        "reviewers": [
+          {
+            "team": "default",
+            "alias": "Reviewer1"
+          }
+        ]
+      }
+    },
+    {
+      "id": "s-internal-pr-artifact-7055",
+      "name": "internal_pr_artifact",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder"
+        }
+      }
+    },
+    {
+      "id": "s-polish-236f",
+      "name": "polish",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Polisher"
+        }
+      }
+    },
+    {
+      "id": "s-template-detect-40a7",
+      "name": "template_detect",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "parameters": {
+        "command": "detect_pr_template.pl",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "2": "@terminal:exit_2",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-conform-48a4",
+      "name": "conform",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Conformer"
+        }
+      }
+    },
+    {
+      "id": "s-final-review-624a",
+      "name": "final_review",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 2
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Polisher"
+        },
+        "reviewers": [
+          {
+            "team": "default",
+            "alias": "FinalReviewer"
+          }
+        ]
+      }
+    },
+    {
+      "id": "s-pr-request-compose-ec01",
+      "name": "pr_request_compose",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "parameters": {
+        "command": "compose_pr_request.pl",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-pr-lint-c269",
+      "name": "pr_lint",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "parameters": {
+        "command": "pr_lint.pl",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-pr-submit-dry-run-3226",
+      "name": "pr_submit_dry_run",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "parameters": {
+        "command": "submit_pr_from_request.pl --dry-run",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-terminal-aborted-2379",
+      "name": "terminal:aborted",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "aborted",
+        "kind": "failure"
+      }
+    },
+    {
+      "id": "s-terminal-claimed-86ed",
+      "name": "terminal:claimed",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "claimed",
+        "kind": "neutral"
+      }
+    },
+    {
+      "id": "s-terminal-dup-pr-active-f6f0",
+      "name": "terminal:dup_pr_active",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "dup_pr_active",
+        "kind": "neutral"
+      }
+    },
+    {
+      "id": "s-terminal-clarification-pr-6a6a",
+      "name": "terminal:clarification_pr",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "clarification_pr",
+        "kind": "neutral"
+      }
+    },
+    {
+      "id": "s-terminal-not-reproducible-b178",
+      "name": "terminal:not_reproducible",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "not_reproducible",
+        "kind": "neutral"
+      }
+    },
+    {
+      "id": "s-terminal-pr-ready-043f",
+      "name": "terminal:pr_ready",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "pr_ready",
+        "kind": "success"
+      }
+    }
+  ],
+  "connections": {
+    "s-claim-check-0862": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "open": [
+        [
+          {
+            "step_id": "s-dedup-check-62e6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "claimed": [
+        [
+          {
+            "step_id": "s-terminal-claimed-86ed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "dup_pr_active": [
+        [
+          {
+            "step_id": "s-terminal-dup-pr-active-f6f0",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "closed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-dedup-check-62e6": {
+      "exit_0": [
+        [
+          {
+            "step_id": "s-feasibility-dab8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "exit_default": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-feasibility-dab8": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "tractable": [
+        [
+          {
+            "step_id": "s-reproduce-ad6a",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "blocked_setup": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "requires_clarification": [
+        [
+          {
+            "step_id": "s-terminal-clarification-pr-6a6a",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-reproduce-ad6a": {
+      "approve": [
+        [
+          {
+            "step_id": "s-root-cause-864d",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "request_changes": [
+        [
+          {
+            "step_id": "s-reproduce-ad6a",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "max_loops_exceeded": [
+        [
+          {
+            "step_id": "s-terminal-not-reproducible-b178",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-root-cause-864d": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "found": [
+        [
+          {
+            "step_id": "s-fix-10e0",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "hypothesized": [
+        [
+          {
+            "step_id": "s-fix-10e0",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "none": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-fix-10e0": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "applied": [
+        [
+          {
+            "step_id": "s-focused-test-2f91",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-focused-test-2f91": {
+      "exit_0": [
+        [
+          {
+            "step_id": "s-code-review-432b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "exit_default": [
+        [
+          {
+            "step_id": "s-fix-10e0",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-code-review-432b": {
+      "approve": [
+        [
+          {
+            "step_id": "s-pr-quality-review-c646",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "request_changes": [
+        [
+          {
+            "step_id": "s-code-review-432b",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "max_loops_exceeded": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-pr-quality-review-c646": {
+      "approve": [
+        [
+          {
+            "step_id": "s-internal-pr-artifact-7055",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "request_changes": [
+        [
+          {
+            "step_id": "s-pr-quality-review-c646",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "max_loops_exceeded": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-internal-pr-artifact-7055": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "built": [
+        [
+          {
+            "step_id": "s-polish-236f",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-polish-236f": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "rewrote": [
+        [
+          {
+            "step_id": "s-template-detect-40a7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-template-detect-40a7": {
+      "exit_0": [
+        [
+          {
+            "step_id": "s-conform-48a4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "exit_2": [
+        [
+          {
+            "step_id": "s-final-review-624a",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "exit_default": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-conform-48a4": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "conformed": [
+        [
+          {
+            "step_id": "s-final-review-624a",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-final-review-624a": {
+      "approve": [
+        [
+          {
+            "step_id": "s-pr-request-compose-ec01",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "request_changes": [
+        [
+          {
+            "step_id": "s-final-review-624a",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "max_loops_exceeded": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-pr-request-compose-ec01": {
+      "exit_0": [
+        [
+          {
+            "step_id": "s-pr-lint-c269",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "exit_default": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-pr-lint-c269": {
+      "exit_0": [
+        [
+          {
+            "step_id": "s-pr-submit-dry-run-3226",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "exit_default": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-pr-submit-dry-run-3226": {
+      "exit_0": [
+        [
+          {
+            "step_id": "s-terminal-pr-ready-043f",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "exit_default": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2379",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "entry_step_id": "s-claim-check-0862"
+}

@@ -1,0 +1,200 @@
+{
+  "schema_version": "lmctl/v3",
+  "definition_schema_version": 3,
+  "name": "example-v2",
+  "version": 1,
+  "description": "Demonstrates a simple multi-step workflow with agent work and review for smoke testing and template examples.",
+  "estimated_duration_ms": 30000,
+  "errors": {
+    "on_unhandled_failure": {
+      "attention_kind": "workflow_failed",
+      "severity": "error",
+      "capture_evidence": true
+    }
+  },
+  "steps": [
+    {
+      "id": "s-research-c47b",
+      "name": "research",
+      "type": "lmctl/consolidate",
+      "typeVersion": 1,
+      "parameters": {
+        "research_artifact_prefix": "research"
+      },
+      "members": {
+        "researchers": [
+          {
+            "team": "default",
+            "alias": "Researcher",
+            "prompt_template": "Research the existing test patterns in the project at {{project.local_path}} and summarise your findings.",
+            "topic": "existing tests and test patterns"
+          },
+          {
+            "team": "default",
+            "alias": "Researcher2",
+            "prompt_template": "Summarise the bug described in: {{job_payload.description}}",
+            "topic": "bug description from job payload"
+          }
+        ],
+        "consolidator": {
+          "team": "default",
+          "alias": "Consolidator",
+          "prompt_template": "Given the research inputs below, produce a consolidated analysis plan. End with STANCE: ok"
+        }
+      }
+    },
+    {
+      "id": "s-code-review-dd5c",
+      "name": "code_review",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "pre_checks": [
+          {
+            "kind": "shell",
+            "command": "git -C {{project.local_path}} diff --quiet HEAD || true",
+            "description": "check repo accessible"
+          }
+        ],
+        "writes_to_project_path": true,
+        "max_loops": 3
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "Fix the bug described in {{job_payload.description}} in {{project.local_path}}. When done, respond with STANCE: done"
+        },
+        "reviewers": [
+          {
+            "team": "default",
+            "alias": "Reviewer",
+            "prompt_template": "Review the coder's work. If satisfactory respond STANCE: approve, otherwise respond STANCE: request_changes followed by feedback."
+          }
+        ]
+      }
+    },
+    {
+      "id": "s-interactive-handoff-7a4f",
+      "name": "interactive_handoff",
+      "type": "lmctl/interactive",
+      "typeVersion": 1,
+      "parameters": {
+        "termination": {
+          "operator_signal": true,
+          "agent_signal": "HANDOFF_COMPLETE",
+          "max_turns": 5
+        },
+        "artifact_name": "handoff_summary"
+      },
+      "members": {
+        "agent": {
+          "team": "default",
+          "alias": "Coder",
+          "initial_prompt_template": "The fix has been reviewed and approved. Please summarise the changes made to {{project.local_path}} for the operator. When you are done, include the text HANDOFF_COMPLETE in your response."
+        }
+      }
+    },
+    {
+      "id": "s-terminal-aborted-df78",
+      "name": "terminal:aborted",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "aborted",
+        "kind": "failure"
+      }
+    },
+    {
+      "id": "s-terminal-done-bb66",
+      "name": "terminal:done",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "done",
+        "kind": "success"
+      }
+    }
+  ],
+  "connections": {
+    "s-research-c47b": {
+      "ok": [
+        [
+          {
+            "step_id": "s-code-review-dd5c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "error": [
+        [
+          {
+            "step_id": "s-terminal-aborted-df78",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-code-review-dd5c": {
+      "approve": [
+        [
+          {
+            "step_id": "s-interactive-handoff-7a4f",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "request_changes": [
+        [
+          {
+            "step_id": "s-code-review-dd5c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "fail_pre_check": [
+        [
+          {
+            "step_id": "s-terminal-aborted-df78",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "max_loops_exceeded": [
+        [
+          {
+            "step_id": "s-terminal-aborted-df78",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-interactive-handoff-7a4f": {
+      "done": [
+        [
+          {
+            "step_id": "s-terminal-done-bb66",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "timeout": [
+        [
+          {
+            "step_id": "s-terminal-aborted-df78",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "entry_step_id": "s-research-c47b"
+}

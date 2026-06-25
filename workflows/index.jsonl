@@ -1,0 +1,19 @@
+{"name":"bugfix-extended-v2","file":"bugfix-extended-v2.compound.json","description":"Investigates a bug report, develops a fix through coder and reviewer turns, verifies the result, and reports the final status."}
+{"name":"bugfix-pr-fixer-autosubmit-v2","file":"bugfix-pr-fixer-autosubmit-v2.compound.json","description":"Claims a bugfix task, repairs it with review, and prepares an autosubmitted pull request when the fix is ready."}
+{"name":"bugfix-pr-fixer-direct-v2","file":"bugfix-pr-fixer-direct-v2.compound.json","description":"Runs a direct bugfix pull-request workflow for a known task, using coder and reviewer agents to produce and verify a change."}
+{"name":"bugfix-pr-fixer-v2","file":"bugfix-pr-fixer-v2.compound.json","description":"Claims a bugfix project work item, fixes it with a coder/reviewer loop, and prepares the project for pull-request follow-up."}
+{"name":"bugfix-v2","file":"bugfix-v2.compound.json","description":"Takes a bug description, asks an agent to diagnose and fix it in the project, then verifies and reports the outcome."}
+{"name":"claim-check-spike-v2","file":"claim-check-spike-v2.compound.json","description":"Explores whether project issue claiming and follow-up work queues behave correctly for a small spike workflow."}
+{"name":"document-creation","file":"document-creation.compound.json","description":"Creates or revises a project document through agent drafting and review, then writes the accepted document to the project."}
+{"name":"durable-memory-consolidation-v2","file":"durable-memory-consolidation-v2.compound.json","description":"Consolidates durable project memory from recent work so future sessions can recover important context quickly."}
+{"name":"example-v2","file":"example-v2.compound.json","description":"Demonstrates a simple multi-step workflow with agent work and review for smoke testing and template examples."}
+{"name":"image-qa","file":"image-qa.compound.json","description":"Reviews image or visual output against expected criteria and produces a QA verdict with evidence."}
+{"name":"info-qa","file":"info-qa.compound.json","description":"Runs an information-oriented QA workflow that checks project facts, evidence, and expected outcomes without modifying the project."}
+{"name":"newspaper","file":"newspaper.compound.json","description":"Builds a newspaper-style summary from project or external inputs, organizing findings into a readable generated artifact."}
+{"name":"pr-fix","file":"pr-fix.compound.json","description":"Claims one project issue, reads the failing test chapter, fixes the project with coder/reviewer loop, commits, and closes the issue."}
+{"name":"pr-followup-v2","file":"pr-followup-v2.compound.json","description":"Follows up on pull-request feedback, applies needed changes, verifies them, and reports whether the PR is ready."}
+{"name":"provider-probe","file":"provider-probe.compound.json","description":"Checks whether configured AI providers and team members can respond successfully in the current environment."}
+{"name":"qa-suite","file":"qa-suite.compound.json","description":"Runs project QA chapters, interprets failures, creates project issues for failing chapters, and reports the open issue count."}
+{"name":"research","file":"research.compound.json","description":"Fans a research question out to three researchers in parallel, then has Lead consolidate one final answer."}
+{"name":"spec-driven-task","file":"spec-driven-task.compound.json","description":"Turns a written task specification into project changes through agent implementation, review, and verification."}
+{"name":"triage-v2","file":"triage-v2.compound.json","description":"Triages incoming issues, filters duplicates or unclear reports, assesses fixability, and produces candidate work items."}

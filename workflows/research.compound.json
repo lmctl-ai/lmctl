@@ -1,0 +1,120 @@
+{
+  "schema_version": "lmctl/v3",
+  "definition_schema_version": 3,
+  "name": "research",
+  "version": 1,
+  "description": "Fans a research question out to three researchers in parallel, then has Lead consolidate one final answer.",
+  "estimated_duration_ms": 120000,
+  "errors": {
+    "on_unhandled_failure": {
+      "attention_kind": "workflow_failed",
+      "severity": "error",
+      "capture_evidence": true
+    }
+  },
+  "inputs": [
+    {
+      "name": "research_question",
+      "type": "string",
+      "required": true,
+      "description": "Research question to answer."
+    },
+    {
+      "name": "output_path",
+      "type": "string",
+      "required": false,
+      "description": "Optional markdown path for the consolidated answer."
+    }
+  ],
+  "outputs": [
+    {
+      "name": "answer",
+      "type": "string",
+      "source_step_id": "s-research-consolidate-8f31",
+      "source_field": "consolidated_output",
+      "description": "Consolidated answer from Lead."
+    }
+  ],
+  "steps": [
+    {
+      "id": "s-research-consolidate-8f31",
+      "name": "research",
+      "type": "lmctl/consolidate",
+      "typeVersion": 1,
+      "estimated_duration_ms": 120000,
+      "parameters": {
+        "research_artifact_prefix": "research"
+      },
+      "members": {
+        "researchers": [
+          {
+            "team": "default",
+            "alias": "Researcher1",
+            "topic": "Evidence and primary facts",
+            "prompt_template": "Research the question independently. Focus on concrete facts, primary evidence, and what is known versus unknown.\n\nQuestion: {{job_payload.research_question}}"
+          },
+          {
+            "team": "default",
+            "alias": "Researcher2",
+            "topic": "Contradictions and caveats",
+            "prompt_template": "Research the same question from a second angle. Look for contradictions, caveats, weak assumptions, and source-quality concerns.\n\nQuestion: {{job_payload.research_question}}"
+          },
+          {
+            "team": "default",
+            "alias": "Researcher3",
+            "topic": "Implications and next steps",
+            "prompt_template": "Research the same question with emphasis on practical implications, open questions, and recommended next checks.\n\nQuestion: {{job_payload.research_question}}"
+          }
+        ],
+        "consolidator": {
+          "team": "default",
+          "alias": "Lead",
+          "prompt_template": "Consolidate the three research notes into one clear answer. Preserve important caveats, call out uncertainty, and avoid unsupported claims.\n\nQuestion: {{job_payload.research_question}}\n\nIf job_payload.output_path is set, write the final markdown answer there.\n\nEnd with exactly:\nSTANCE: ok"
+        }
+      }
+    },
+    {
+      "id": "s-terminal-done-c4d8",
+      "name": "terminal:done",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "done",
+        "kind": "success"
+      }
+    },
+    {
+      "id": "s-terminal-aborted-f07c",
+      "name": "terminal:aborted",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "aborted",
+        "kind": "failure"
+      }
+    }
+  ],
+  "connections": {
+    "s-research-consolidate-8f31": {
+      "ok": [
+        [
+          {
+            "step_id": "s-terminal-done-c4d8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "error": [
+        [
+          {
+            "step_id": "s-terminal-aborted-f07c",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "entry_step_id": "s-research-consolidate-8f31"
+}

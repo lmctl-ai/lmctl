@@ -1,0 +1,186 @@
+{
+  "schema_version": "lmctl/v3",
+  "definition_schema_version": 3,
+  "name": "qa-suite",
+  "version": 1,
+  "description": "Runs project QA chapters, interprets failures, creates project issues for failing chapters, and reports the open issue count.",
+  "estimated_duration_ms": 90000,
+  "errors": {
+    "on_unhandled_failure": {
+      "attention_kind": "workflow_failed",
+      "severity": "error",
+      "capture_evidence": true
+    }
+  },
+  "inputs": [
+    {
+      "name": "project_name",
+      "type": "string",
+      "required": true,
+      "description": "Project to test. The project's team must include Tester and Interpreter aliases. Different providers are recommended for cross-LLM checking."
+    },
+    {
+      "name": "chapter_filter",
+      "type": "string",
+      "required": false,
+      "description": "Optional substring filter applied to ai-test chapter paths."
+    },
+    {
+      "name": "retest_mode",
+      "type": "boolean",
+      "required": false,
+      "description": "Reserved for closed-issue retest mode; MVP still runs all matching chapters."
+    }
+  ],
+  "outputs": [
+    {
+      "name": "open_issue_count",
+      "type": "number",
+      "source_step_id": "s-aggregate-c9d0",
+      "source_field": "open_count",
+      "description": "Open project_issue count after qa-suite finishes."
+    }
+  ],
+  "steps": [
+    {
+      "id": "s-discover-chapters-a1b2",
+      "name": "discover_chapters",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "estimated_duration_ms": 5000,
+      "parameters": {
+        "command": "node -e 'const fs=require(\"fs\"), path=require(\"path\"); const root=path.join(process.argv[1],\"ai-test\"); const filter=process.argv[2] || \"\"; const files=fs.existsSync(root)?fs.readdirSync(root).filter((f)=>f.endsWith(\".md\")&&f!==\"index.md\").sort().map((f)=>\"ai-test/\"+f):[]; console.log(JSON.stringify(filter?files.filter((f)=>f.includes(filter)):files));' \"{{project.local_path}}\" \"={{ context.inputs.chapter_filter || '' }}\"",
+        "capture_output_to": "qa_suite_chapters",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-run-test-c3d4",
+      "name": "run_test",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "estimated_duration_ms": 40000,
+      "parameters": {
+        "max_loops": 1
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Tester",
+          "prompt_template": "You are the QA Tester for project {{project.name}}.\n\nThe project has AI-driven test chapters under {{project.local_path}}/ai-test. Execute the Setup and Action sections for the matching chapters, compare observations against Expected, and summarize the result. The follow-up Interpreter agent will independently judge pass/fail.\n\nProject name: ={{ context.inputs.project_name }}\nChapter filter: ={{ context.inputs.chapter_filter || '' }}\n\nRequired team setup: this workflow expects aliases Tester and Interpreter on the project team. Different providers are recommended.\n\nEnd with exactly:\nSTANCE: tested\n\nIf the test environment is unavailable, end with:\nSTANCE: blocked"
+        },
+        "reviewers": []
+      }
+    },
+    {
+      "id": "s-interpret-e5f6",
+      "name": "interpret",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "estimated_duration_ms": 30000,
+      "parameters": {
+        "max_loops": 1
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Interpreter",
+          "prompt_template": "You are the independent Interpreter for project {{project.name}}.\n\nReview the AI test corpus under {{project.local_path}}/ai-test and the Tester result from the prior workflow step if visible in the session. Decide the overall suite verdict:\n- pass: all matching chapters satisfy Expected\n- fail: at least one matching chapter fails Expected\n- inconclusive: evidence is insufficient or the test itself is ambiguous\n\nEnd with exactly one line:\nSTANCE: pass | fail | inconclusive"
+        },
+        "reviewers": []
+      }
+    },
+    {
+      "id": "s-create-issues-a7b8",
+      "name": "create_issues",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "estimated_duration_ms": 10000,
+      "parameters": {
+        "command": "node -e 'const fs=require(\"fs\"), path=require(\"path\"), cp=require(\"child_process\"); const project=process.argv[1], root=path.join(process.argv[2],\"ai-test\"), runId=process.argv[3], filter=process.argv[4]||\"\"; let created=0; if(fs.existsSync(root)){ for(const file of fs.readdirSync(root).filter((f)=>f.endsWith(\".md\")&&f!==\"index.md\").sort()){ const rel=\"ai-test/\"+file; if(filter && !rel.includes(filter)) continue; const full=path.join(root,file); const body=fs.readFileSync(full,\"utf8\"); if(!/EXPECTED_QA_STATUS:\\s*fail/.test(body)) continue; const title=\"AI test failed: \"+rel; const result=cp.spawnSync(\"lmctl\",[\"api\",\"--direct\",\"issues\",\"create\",project,\"--title\",title,\"--body\",body,\"--severity\",\"medium\",\"--labels\",\"[\\\"qa-suite\\\"]\",\"--ai-test-path\",rel,\"--source-run-id\",runId,\"--json\"],{encoding:\"utf8\",env:process.env}); if(result.status!==0){ process.stderr.write(result.stderr||result.stdout||\"issue create failed\"); process.exit(result.status||1); } created++; }} console.log(JSON.stringify({created}));' \"{{project.name}}\" \"{{project.local_path}}\" \"{{run_id}}\" \"={{ context.inputs.chapter_filter || '' }}\"",
+        "capture_output_to": "qa_suite_created_issues",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-aggregate-c9d0",
+      "name": "aggregate",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "estimated_duration_ms": 5000,
+      "parameters": {
+        "command": "node -e 'const cp=require(\"child_process\"); const project=process.argv[1]; const result=cp.spawnSync(\"lmctl\",[\"api\",\"--direct\",\"issues\",\"list\",project,\"--status\",\"open\",\"--json\"],{encoding:\"utf8\",env:process.env}); if(result.status!==0){ process.stderr.write(result.stderr||result.stdout||\"issues list failed\"); process.exit(result.status||1); } const rows=JSON.parse(result.stdout||\"[]\"); console.log(JSON.stringify({open_count:rows.length})); process.exit(rows.length===0?0:1);' \"{{project.name}}\"",
+        "capture_output_to": "qa_suite_open_issue_count",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "1": "@terminal:exit_1",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-terminal-clean-1111",
+      "name": "terminal:clean",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "clean",
+        "kind": "success"
+      }
+    },
+    {
+      "id": "s-terminal-has-failures-2222",
+      "name": "terminal:has-failures",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "has-failures",
+        "kind": "neutral"
+      }
+    },
+    {
+      "id": "s-terminal-aborted-3333",
+      "name": "terminal:aborted",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "aborted",
+        "kind": "failure"
+      }
+    }
+  ],
+  "connections": {
+    "s-discover-chapters-a1b2": {
+      "exit_0": [[{ "step_id": "s-run-test-c3d4", "type": "main", "index": 0 }]],
+      "exit_default": [[{ "step_id": "s-terminal-aborted-3333", "type": "main", "index": 0 }]]
+    },
+    "s-run-test-c3d4": {
+      "tested": [[{ "step_id": "s-interpret-e5f6", "type": "main", "index": 0 }]],
+      "blocked": [[{ "step_id": "s-terminal-aborted-3333", "type": "main", "index": 0 }]],
+      "failed": [[{ "step_id": "s-terminal-aborted-3333", "type": "main", "index": 0 }]]
+    },
+    "s-interpret-e5f6": {
+      "pass": [[{ "step_id": "s-aggregate-c9d0", "type": "main", "index": 0 }]],
+      "fail": [[{ "step_id": "s-create-issues-a7b8", "type": "main", "index": 0 }]],
+      "inconclusive": [[{ "step_id": "s-aggregate-c9d0", "type": "main", "index": 0 }]],
+      "blocked": [[{ "step_id": "s-terminal-aborted-3333", "type": "main", "index": 0 }]],
+      "failed": [[{ "step_id": "s-terminal-aborted-3333", "type": "main", "index": 0 }]]
+    },
+    "s-create-issues-a7b8": {
+      "exit_0": [[{ "step_id": "s-aggregate-c9d0", "type": "main", "index": 0 }]],
+      "exit_default": [[{ "step_id": "s-terminal-aborted-3333", "type": "main", "index": 0 }]]
+    },
+    "s-aggregate-c9d0": {
+      "exit_0": [[{ "step_id": "s-terminal-clean-1111", "type": "main", "index": 0 }]],
+      "exit_1": [[{ "step_id": "s-terminal-has-failures-2222", "type": "main", "index": 0 }]],
+      "exit_default": [[{ "step_id": "s-terminal-aborted-3333", "type": "main", "index": 0 }]]
+    }
+  },
+  "entry_step_id": "s-discover-chapters-a1b2"
+}

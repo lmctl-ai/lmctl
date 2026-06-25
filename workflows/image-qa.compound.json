@@ -1,0 +1,128 @@
+{
+  "schema_version": "lmctl/v3",
+  "definition_schema_version": 3,
+  "name": "image-qa",
+  "version": 1,
+  "description": "Reviews image or visual output against expected criteria and produces a QA verdict with evidence.",
+  "estimated_duration_ms": 90000,
+  "errors": {
+    "on_unhandled_failure": {
+      "attention_kind": "workflow_failed",
+      "severity": "error",
+      "capture_evidence": true
+    }
+  },
+  "inputs": [
+    {
+      "name": "image_path",
+      "type": "string",
+      "required": true,
+      "description": "Absolute path to the uploaded image or document."
+    },
+    {
+      "name": "prompt",
+      "type": "string",
+      "required": true,
+      "description": "Question or instruction for the image."
+    }
+  ],
+  "outputs": [
+    {
+      "name": "answer",
+      "type": "string",
+      "source_step_id": "image_qa:coder[0]",
+      "source_field": "image_qa:coder[0]_transcript",
+      "description": "Coder's markdown answer about the uploaded image."
+    }
+  ],
+  "steps": [
+    {
+      "id": "s-image-qa-4f9a",
+      "name": "image_qa",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "estimated_duration_ms": 90000,
+      "parameters": {
+        "max_loops": 1
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "You are an agent answering a layman's question about an image or document they uploaded.\n\nImage path: ={{ context.inputs.image_path }}\nUser's question: ={{ context.inputs.prompt }}\n\nPlease read the file at the path above. Then answer the user's question with specific visual details. If it is a document, bill, or letter, transcribe the visible text you can read. Return your answer as markdown.\n\nEnd with exactly:\nSTANCE: ok\n\nIf you cannot read the file, explain the limitation and end with exactly:\nSTANCE: blocked"
+        },
+        "reviewers": []
+      }
+    },
+    {
+      "id": "s-terminal-done-a9c1",
+      "name": "terminal:done",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "done",
+        "kind": "success"
+      }
+    },
+    {
+      "id": "s-terminal-aborted-b6e2",
+      "name": "terminal:aborted",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "aborted",
+        "kind": "failure"
+      }
+    }
+  ],
+  "connections": {
+    "s-image-qa-4f9a": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-done-a9c1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "ok": [
+        [
+          {
+            "step_id": "s-terminal-done-a9c1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "blocked": [
+        [
+          {
+            "step_id": "s-terminal-aborted-b6e2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "aborted": [
+        [
+          {
+            "step_id": "s-terminal-aborted-b6e2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "rejected": [
+        [
+          {
+            "step_id": "s-terminal-aborted-b6e2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "entry_step_id": "s-image-qa-4f9a"
+}

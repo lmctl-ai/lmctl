@@ -1,0 +1,183 @@
+{
+  "schema_version": "lmctl/v3",
+  "definition_schema_version": 3,
+  "name": "pr-fix",
+  "version": 1,
+  "description": "Claims one project issue, reads the failing test chapter, fixes the project with coder/reviewer loop, commits, and closes the issue.",
+  "estimated_duration_ms": 300000,
+  "requires": {
+    "tools": ["git", "node"]
+  },
+  "errors": {
+    "on_unhandled_failure": {
+      "attention_kind": "workflow_failed",
+      "severity": "error",
+      "capture_evidence": true
+    }
+  },
+  "inputs": [
+    {
+      "name": "project_name",
+      "type": "string",
+      "required": true,
+      "description": "Project issue queue to drain. The project's team should include Coder and Reviewer aliases."
+    }
+  ],
+  "outputs": [
+    {
+      "name": "issue_id",
+      "type": "number",
+      "source_step_id": "s-claim-issue-b1c2",
+      "source_field": "id",
+      "description": "Claimed project_issue id."
+    },
+    {
+      "name": "commit_hash",
+      "type": "string",
+      "source_step_id": "s-commit-result-f5a6",
+      "source_field": "hash",
+      "description": "Commit hash recorded before closing the issue."
+    }
+  ],
+  "steps": [
+    {
+      "id": "s-claim-issue-b1c2",
+      "name": "claim_issue",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "parameters": {
+        "command": "node -e 'const fs=require(\"fs\"), cp=require(\"child_process\"); const project=process.argv[1], runId=process.argv[2]; const claim=cp.spawnSync(\"lmctl\",[\"api\",\"--direct\",\"issues\",\"claim-next\",project,\"--assigned-run-id\",runId,\"--json\"],{encoding:\"utf8\",env:process.env}); const out=(claim.stdout||\"\").trim(); if(claim.status===0 && out.length>0){ fs.writeFileSync(`/tmp/lmctl-next-run-${runId}-claimed-issue.json`,out); console.log(out); process.exit(0); } if(/queue_empty/.test(out) || /404/.test(claim.stderr||\"\") || /404/.test(out)){ console.log(JSON.stringify({status:\"nothing-to-do\"})); process.exit(2); } process.stderr.write(claim.stderr||out||\"issue claim-next failed\"); process.exit(claim.status||1);' \"{{project.name}}\" \"{{run_id}}\"",
+        "capture_output_to": "claimed_issue_json",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "2": "@terminal:exit_2",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-read-chapter-d3e4",
+      "name": "read_chapter",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "parameters": {
+        "command": "node -e 'const fs=require(\"fs\"), path=require(\"path\"); const root=path.resolve(process.argv[1]), runId=process.argv[2]; const issue=JSON.parse(fs.readFileSync(`/tmp/lmctl-next-run-${runId}-claimed-issue.json`,\"utf8\")); const rel=issue.ai_test_path; if(typeof rel!==\"string\"||rel.length===0){ process.stderr.write(\"claimed issue has no ai_test_path\"); process.exit(1); } const full=path.resolve(root,rel); if(full!==root && !full.startsWith(root+path.sep)){ process.stderr.write(\"ai_test_path escapes project root\"); process.exit(1); } const body=fs.readFileSync(full,\"utf8\"); fs.writeFileSync(`/tmp/lmctl-next-run-${runId}-ai-test.md`,body); console.log(body);' \"{{project.local_path}}\" \"{{run_id}}\"",
+        "capture_output_to": "claimed_ai_test_chapter",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-fix-loop-e4f5",
+      "name": "fix_loop",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 3,
+        "writes_to_project_path": true,
+        "loop_feedback_artifact": "pr_fix_review_feedback"
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "You are fixing one project_issue claimed by pr-fix.\n\nRead these local artifacts first:\n- Claimed issue JSON: /tmp/lmctl-next-run-{{run_id}}-claimed-issue.json\n- AI test chapter: /tmp/lmctl-next-run-{{run_id}}-ai-test.md\n\nApply a focused code change in {{project.local_path}} that makes the AI test pass. Keep the diff narrow and update tests where appropriate. Do not close the issue yourself; the workflow closes it after review and commit.\n\nEnd with STANCE: ready when the patch is ready for review, or STANCE: failed if blocked."
+        },
+        "reviewers": [
+          {
+            "team": "default",
+            "alias": "Reviewer",
+            "prompt_template": "Review the Coder patch against the claimed project_issue and AI test chapter. Approve only if the issue is fixed narrowly and verification evidence is credible.\n\nRespond with STANCE: approve or STANCE: request_changes."
+          }
+        ]
+      }
+    },
+    {
+      "id": "s-commit-result-f5a6",
+      "name": "commit_result",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "parameters": {
+        "command": "node -e 'const fs=require(\"fs\"), cp=require(\"child_process\"); const runId=process.argv[1]; const issue=JSON.parse(fs.readFileSync(`/tmp/lmctl-next-run-${runId}-claimed-issue.json`,\"utf8\")); const title=String(issue.title||\"AI test issue\").replace(/[\\r\\n]+/g,\" \").slice(0,80); const add=cp.spawnSync(\"git\",[\"add\",\"-A\"],{encoding:\"utf8\",env:process.env}); if(add.status!==0){ process.stderr.write(add.stderr||add.stdout||\"git add failed\"); process.exit(add.status||1); } const diff=cp.spawnSync(\"git\",[\"diff\",\"--cached\",\"--quiet\"],{encoding:\"utf8\",env:process.env}); if(diff.status!==0){ const commit=cp.spawnSync(\"git\",[\"commit\",\"-m\",`Fix: ${title} (#${issue.id})`],{encoding:\"utf8\",env:process.env}); if(commit.status!==0){ process.stderr.write(commit.stderr||commit.stdout||\"git commit failed\"); process.exit(commit.status||1); }} const rev=cp.spawnSync(\"git\",[\"rev-parse\",\"HEAD\"],{encoding:\"utf8\",env:process.env}); if(rev.status!==0){ process.stderr.write(rev.stderr||rev.stdout||\"git rev-parse failed\"); process.exit(rev.status||1); } const hash=rev.stdout.trim(); fs.writeFileSync(`/tmp/lmctl-next-run-${runId}-commit.txt`,hash); console.log(JSON.stringify({hash}));' \"{{run_id}}\"",
+        "capture_output_to": "pr_fix_commit_json",
+        "writes_to_project_path": true,
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-close-issue-a6b7",
+      "name": "close_issue",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "parameters": {
+        "command": "node -e 'const fs=require(\"fs\"), cp=require(\"child_process\"); const runId=process.argv[1]; const issue=JSON.parse(fs.readFileSync(`/tmp/lmctl-next-run-${runId}-claimed-issue.json`,\"utf8\")); const hash=fs.readFileSync(`/tmp/lmctl-next-run-${runId}-commit.txt`,\"utf8\").trim(); const result=cp.spawnSync(\"lmctl\",[\"api\",\"--direct\",\"issues\",\"close\",String(issue.id),\"--closed-run-id\",runId,\"--commit-hash\",hash,\"--json\"],{encoding:\"utf8\",env:process.env}); if(result.status!==0){ process.stderr.write(result.stderr||result.stdout||\"issue close failed\"); process.exit(result.status||1); } console.log(result.stdout.trim());' \"{{run_id}}\"",
+        "capture_output_to": "closed_issue_json",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-terminal-fixed-1a2b",
+      "name": "terminal:fixed",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "fixed",
+        "kind": "success"
+      }
+    },
+    {
+      "id": "s-terminal-idle-2b3c",
+      "name": "terminal:idle",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "idle",
+        "kind": "neutral"
+      }
+    },
+    {
+      "id": "s-terminal-aborted-3c4d",
+      "name": "terminal:aborted",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "aborted",
+        "kind": "failure"
+      }
+    }
+  ],
+  "connections": {
+    "s-claim-issue-b1c2": {
+      "exit_0": [[{ "step_id": "s-read-chapter-d3e4", "type": "main", "index": 0 }]],
+      "exit_2": [[{ "step_id": "s-terminal-idle-2b3c", "type": "main", "index": 0 }]],
+      "exit_default": [[{ "step_id": "s-terminal-aborted-3c4d", "type": "main", "index": 0 }]]
+    },
+    "s-read-chapter-d3e4": {
+      "exit_0": [[{ "step_id": "s-fix-loop-e4f5", "type": "main", "index": 0 }]],
+      "exit_default": [[{ "step_id": "s-terminal-aborted-3c4d", "type": "main", "index": 0 }]]
+    },
+    "s-fix-loop-e4f5": {
+      "approve": [[{ "step_id": "s-commit-result-f5a6", "type": "main", "index": 0 }]],
+      "request_changes": [[{ "step_id": "s-fix-loop-e4f5", "type": "main", "index": 0 }]],
+      "max_loops_exceeded": [[{ "step_id": "s-terminal-aborted-3c4d", "type": "main", "index": 0 }]],
+      "failed": [[{ "step_id": "s-terminal-aborted-3c4d", "type": "main", "index": 0 }]]
+    },
+    "s-commit-result-f5a6": {
+      "exit_0": [[{ "step_id": "s-close-issue-a6b7", "type": "main", "index": 0 }]],
+      "exit_default": [[{ "step_id": "s-terminal-aborted-3c4d", "type": "main", "index": 0 }]]
+    },
+    "s-close-issue-a6b7": {
+      "exit_0": [[{ "step_id": "s-terminal-fixed-1a2b", "type": "main", "index": 0 }]],
+      "exit_default": [[{ "step_id": "s-terminal-aborted-3c4d", "type": "main", "index": 0 }]]
+    }
+  },
+  "entry_step_id": "s-claim-issue-b1c2"
+}

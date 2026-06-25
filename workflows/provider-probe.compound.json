@@ -1,0 +1,107 @@
+{
+  "schema_version": "lmctl/v3",
+  "definition_schema_version": 3,
+  "name": "provider-probe",
+  "version": 1,
+  "description": "Checks whether configured AI providers and team members can respond successfully in the current environment.",
+  "estimated_duration_ms": 30000,
+  "inputs": [
+    {
+      "name": "provider_team_path",
+      "type": "string",
+      "required": true,
+      "description": "Path to the provider research teamfile used for operator setup."
+    },
+    {
+      "name": "prompt",
+      "type": "string",
+      "required": true,
+      "description": "Probe prompt to send to the Researcher member."
+    }
+  ],
+  "outputs": [
+    {
+      "name": "answer",
+      "type": "string",
+      "source_step_id": "s-provider-probe-4d2a",
+      "source_field": "output",
+      "description": "Researcher answer captured from the probe."
+    }
+  ],
+  "steps": [
+    {
+      "id": "s-provider-probe-4d2a",
+      "name": "probe",
+      "type": "lmctl/interactive",
+      "typeVersion": 1,
+      "parameters": {
+        "termination": {
+          "operator_signal": true,
+          "agent_signal": "PROVIDER_PROBE_DONE",
+          "max_turns": 1
+        },
+        "artifact_name": "provider_probe_answer"
+      },
+      "members": {
+        "agent": {
+          "team": "default",
+          "alias": "Researcher",
+          "teamfile_path": "={{ context.inputs.provider_team_path }}",
+          "initial_prompt_template": "{{job_payload.prompt}}\n\nIf you can answer, include PROVIDER_PROBE_DONE at the end."
+        }
+      }
+    },
+    {
+      "id": "s-terminal-done-7e42",
+      "name": "terminal:done",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "done",
+        "kind": "success"
+      }
+    },
+    {
+      "id": "s-terminal-aborted-91be",
+      "name": "terminal:aborted",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "aborted",
+        "kind": "failure"
+      }
+    }
+  ],
+  "connections": {
+    "s-provider-probe-4d2a": {
+      "done": [
+        [
+          {
+            "step_id": "s-terminal-done-7e42",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "timeout": [
+        [
+          {
+            "step_id": "s-terminal-aborted-91be",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "aborted": [
+        [
+          {
+            "step_id": "s-terminal-aborted-91be",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "entry_step_id": "s-provider-probe-4d2a"
+}

@@ -1,0 +1,460 @@
+{
+  "schema_version": "lmctl/v3",
+  "definition_schema_version": 3,
+  "name": "spec-driven-task",
+  "version": 1,
+  "description": "Turns a written task specification into project changes through agent implementation, review, and verification.",
+  "estimated_duration_ms": 300000,
+  "inputs": [
+    {
+      "name": "task_description",
+      "type": "string",
+      "required": true,
+      "description": "What the operator wants built or changed."
+    },
+    {
+      "name": "slug",
+      "type": "string",
+      "required": true,
+      "description": "Directory name under specs/ for stage artifacts."
+    },
+    {
+      "name": "from_requirement",
+      "type": "string",
+      "required": false,
+      "description": "Existing requirement.md path; skips requirement elicitation when set."
+    },
+    {
+      "name": "from_plan",
+      "type": "string",
+      "required": false,
+      "description": "Existing plan.md path; skips plan creation when set."
+    },
+    {
+      "name": "from_design",
+      "type": "string",
+      "required": false,
+      "description": "Existing design.md path; skips design dialogue when set."
+    }
+  ],
+  "steps": [
+    {
+      "id": "s-from-requirement-1a01",
+      "name": "from_requirement?",
+      "type": "lmctl/choice",
+      "typeVersion": 1,
+      "parameters": {
+        "branches": [
+          {
+            "when": "={{ context.inputs.from_requirement != null && context.inputs.from_requirement != \"\" }}",
+            "next": "@terminal:skip"
+          }
+        ],
+        "default_next": "@terminal:run"
+      }
+    },
+    {
+      "id": "s-requirement-1a02",
+      "name": "requirement",
+      "type": "lmctl/interactive",
+      "typeVersion": 1,
+      "parameters": {
+        "termination": {
+          "operator_signal": true,
+          "agent_signal": "SPEC_STAGE_DONE",
+          "max_turns": 8
+        },
+        "artifact_name": "requirement_md",
+        "durable_memory_tags": [
+          "code",
+          "requirements"
+        ]
+      },
+      "members": {
+        "agent": {
+          "team": "default",
+          "alias": "Coder",
+          "initial_prompt_template": "You are collecting requirements for this task in {{project.local_path}}.\n\nTask: ={{ context.inputs.task_description }}\nSpec slug: ={{ context.inputs.slug }}\n\nInterview the operator until the requirement is clear. When ready, produce the complete Markdown content for specs/={{ context.inputs.slug }}/requirement.md in your response and include SPEC_STAGE_DONE."
+        }
+      }
+    },
+    {
+      "id": "s-from-plan-2a01",
+      "name": "from_plan?",
+      "type": "lmctl/choice",
+      "typeVersion": 1,
+      "parameters": {
+        "branches": [
+          {
+            "when": "={{ context.inputs.from_plan != null && context.inputs.from_plan != \"\" }}",
+            "next": "@terminal:skip"
+          }
+        ],
+        "default_next": "@terminal:run"
+      }
+    },
+    {
+      "id": "s-plan-2a02",
+      "name": "plan",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "writes_to_project_path": true,
+        "max_loops": 1
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "Create a technical plan for this task.\n\nTask: ={{ context.inputs.task_description }}\nRequirement source: ={{ context.inputs.from_requirement || 'requirement stage output' }}\nProject: {{project.local_path}}\n\nWrite the plan to {{project.local_path}}/specs/={{ context.inputs.slug }}/plan.md. Create the directory if needed. Keep it concise and implementation-oriented."
+        },
+        "reviewers": []
+      }
+    },
+    {
+      "id": "s-from-design-3a01",
+      "name": "from_design?",
+      "type": "lmctl/choice",
+      "typeVersion": 1,
+      "parameters": {
+        "branches": [
+          {
+            "when": "={{ context.inputs.from_design != null && context.inputs.from_design != \"\" }}",
+            "next": "@terminal:skip"
+          }
+        ],
+        "default_next": "@terminal:run"
+      }
+    },
+    {
+      "id": "s-design-3a02",
+      "name": "design",
+      "type": "lmctl/interactive",
+      "typeVersion": 1,
+      "parameters": {
+        "termination": {
+          "operator_signal": true,
+          "agent_signal": "SPEC_STAGE_DONE",
+          "max_turns": 8
+        },
+        "artifact_name": "design_md",
+        "durable_memory_tags": [
+          "code",
+          "design"
+        ]
+      },
+      "members": {
+        "agent": {
+          "team": "default",
+          "alias": "Coder",
+          "initial_prompt_template": "You are refining the design for this task in {{project.local_path}}.\n\nTask: ={{ context.inputs.task_description }}\nSpec slug: ={{ context.inputs.slug }}\nPlan source: ={{ context.inputs.from_plan || 'plan.md from the prior stage' }}\n\nAsk targeted design questions. When ready, produce the complete Markdown content for specs/={{ context.inputs.slug }}/design.md in your response and include SPEC_STAGE_DONE."
+        }
+      }
+    },
+    {
+      "id": "s-design-review-4a01",
+      "name": "design-review",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "writes_to_project_path": true,
+        "max_loops": 3,
+        "loop_feedback_artifact": "design_review_feedback"
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "Review and tighten the design for this task.\n\nTask: ={{ context.inputs.task_description }}\nDesign source: ={{ context.inputs.from_design || 'design stage output' }}\nProject: {{project.local_path}}\n\nWrite review notes to {{project.local_path}}/specs/={{ context.inputs.slug }}/design-review.md. End with a concise summary for reviewers."
+        },
+        "reviewers": [
+          {
+            "team": "default",
+            "alias": "Reviewer",
+            "prompt_template": "Review the design notes. Respond with STANCE: approve if the design is implementable and appropriately scoped; otherwise STANCE: request_changes followed by concrete feedback."
+          }
+        ]
+      }
+    },
+    {
+      "id": "s-implementation-5a01",
+      "name": "implementation",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "writes_to_project_path": true,
+        "max_loops": 5,
+        "loop_feedback_artifact": "implementation_feedback"
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "Implement the approved spec in {{project.local_path}}.\n\nTask: ={{ context.inputs.task_description }}\nSpec directory: {{project.local_path}}/specs/={{ context.inputs.slug }}\n\nMake the smallest coherent code change, add or update focused tests, and leave the repo ready for review."
+        },
+        "reviewers": [
+          {
+            "team": "default",
+            "alias": "Reviewer",
+            "prompt_template": "Review the implementation diff and tests. Respond with STANCE: approve if it satisfies the spec; otherwise STANCE: request_changes followed by precise fixes."
+          }
+        ]
+      }
+    },
+    {
+      "id": "s-code-review-6a01",
+      "name": "code-review",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "writes_to_project_path": true,
+        "max_loops": 3,
+        "loop_feedback_artifact": "code_review_feedback"
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "Prepare the final code-review report for this spec.\n\nTask: ={{ context.inputs.task_description }}\nProject: {{project.local_path}}\n\nInspect the final diff and tests, then write {{project.local_path}}/specs/={{ context.inputs.slug }}/code-review.md with findings, verification, and residual risks."
+        },
+        "reviewers": [
+          {
+            "team": "default",
+            "alias": "Reviewer",
+            "prompt_template": "Review the final code-review report and implementation state. Respond with STANCE: approve if ready; otherwise STANCE: request_changes with exact blockers."
+          }
+        ]
+      }
+    },
+    {
+      "id": "s-terminal-done-9a01",
+      "name": "terminal:done",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "done",
+        "kind": "success"
+      }
+    },
+    {
+      "id": "s-terminal-aborted-9a02",
+      "name": "terminal:aborted",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "aborted",
+        "kind": "failure"
+      }
+    }
+  ],
+  "connections": {
+    "s-from-requirement-1a01": {
+      "skip": [
+        [
+          {
+            "step_id": "s-from-plan-2a01",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "run": [
+        [
+          {
+            "step_id": "s-requirement-1a02",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-requirement-1a02": {
+      "done": [
+        [
+          {
+            "step_id": "s-from-plan-2a01",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "timeout": [
+        [
+          {
+            "step_id": "s-terminal-aborted-9a02",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-from-plan-2a01": {
+      "skip": [
+        [
+          {
+            "step_id": "s-from-design-3a01",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "run": [
+        [
+          {
+            "step_id": "s-plan-2a02",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-plan-2a02": {
+      "approve": [
+        [
+          {
+            "step_id": "s-from-design-3a01",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "max_loops_exceeded": [
+        [
+          {
+            "step_id": "s-terminal-aborted-9a02",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-from-design-3a01": {
+      "skip": [
+        [
+          {
+            "step_id": "s-design-review-4a01",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "run": [
+        [
+          {
+            "step_id": "s-design-3a02",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-design-3a02": {
+      "done": [
+        [
+          {
+            "step_id": "s-design-review-4a01",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "timeout": [
+        [
+          {
+            "step_id": "s-terminal-aborted-9a02",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-design-review-4a01": {
+      "approve": [
+        [
+          {
+            "step_id": "s-implementation-5a01",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "request_changes": [
+        [
+          {
+            "step_id": "s-design-review-4a01",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "max_loops_exceeded": [
+        [
+          {
+            "step_id": "s-terminal-aborted-9a02",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-implementation-5a01": {
+      "approve": [
+        [
+          {
+            "step_id": "s-code-review-6a01",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "request_changes": [
+        [
+          {
+            "step_id": "s-implementation-5a01",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "max_loops_exceeded": [
+        [
+          {
+            "step_id": "s-terminal-aborted-9a02",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-code-review-6a01": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-done-9a01",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "request_changes": [
+        [
+          {
+            "step_id": "s-code-review-6a01",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "max_loops_exceeded": [
+        [
+          {
+            "step_id": "s-terminal-aborted-9a02",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "entry_step_id": "s-from-requirement-1a01"
+}

@@ -1,0 +1,721 @@
+{
+  "schema_version": "lmctl/v3",
+  "definition_schema_version": 3,
+  "name": "triage-v2",
+  "version": 1,
+  "description": "Triages incoming issues, filters duplicates or unclear reports, assesses fixability, and produces candidate work items.",
+  "estimated_duration_ms": 60000,
+  "default_task_timeout_ms": 1800000,
+  "steps": [
+    {
+      "id": "s-list-open-bug-issues-6cd1",
+      "name": "list_open_bug_issues",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Triager",
+          "prompt_template": "List open bug issues for {{project.owner}}/{{project.repo}} (job payload: {{job_payload}}).\n\nFirst try label-aware:\n  gh issue list --repo {{project.owner}}/{{project.repo}} --state open --label bug --limit 50 --json number,title,url,labels,assignees,createdAt,updatedAt,author,comments\nIf the repo does not use 'bug' label, fall back to a search query:\n  gh issue list --repo {{project.owner}}/{{project.repo}} --state open --search 'created:>=<since_days_ago> bug OR crash OR panic OR regression OR fails' --limit 50 --json ...\n\nUse the job_payload.since_days (default 2), .max_issues (default 50), and .labels (default ['bug']) if set.\n\nSave the raw JSON list to /tmp/lmctl-next-run-{{run_id}}-issue-list.json. Print a short numbered summary (issue # + title + URL).\n\nSTANCE: issues_found | empty | gh_unavailable | failed"
+        }
+      }
+    },
+    {
+      "id": "s-fetch-issue-bodies-492d",
+      "name": "fetch_issue_bodies",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Triager",
+          "prompt_template": "For each issue URL in /tmp/lmctl-next-run-{{run_id}}-issue-list.json, fetch its body + comments:\n  gh issue view <N> --repo {{project.owner}}/{{project.repo}} --json number,title,url,state,body,labels,assignees,author,comments,createdAt,updatedAt\n\nAggregate to /tmp/lmctl-next-run-{{run_id}}-issue-details.json (one entry per issue).\n\nIf at least one fetched successfully but some failed, return `partial`. If all failed, return `fetch_failed`.\n\nSTANCE: details_ready | partial | fetch_failed"
+        }
+      }
+    },
+    {
+      "id": "s-filter-non-bugs-5a56",
+      "name": "filter_non_bugs",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Triager",
+          "prompt_template": "Read /tmp/lmctl-next-run-{{run_id}}-issue-details.json. For each issue, classify `kept` vs `dropped`.\n\nDeterministic drops (don't waste budget on agent classification):\n- labels include any of: enhancement, feature, feature-request, question, discussion, docs, documentation, help-wanted (when standalone), wontfix, invalid\n- title or body explicitly says 'feature request', 'support question', 'how do I', 'discussion'\n\nKept criteria (agent body-read for ambiguous):\n- describes incorrect behavior, crash, regression, data loss, test failure, or API inconsistency\n- has expected vs actual behavior, repro snippet, stack trace, failing command, or enough code pointers\n- not a pure feature request, open-ended design discussion, support question, dependency upgrade, or vague complaint\n\nEmit /tmp/lmctl-next-run-{{run_id}}-filtered.json with per-issue: `{ url, kept: true|false, reason, confidence: 0..1, evidence: \"short body excerpt\" }`.\n\nIf you cannot classify >50% of issues, return `needs_human`.\n\nSTANCE: kept_some | none_kept | needs_human"
+        }
+      }
+    },
+    {
+      "id": "s-open-unassigned-unclaimed-1cb7",
+      "name": "open_unassigned_unclaimed",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Triager",
+          "prompt_template": "For each kept issue from /tmp/lmctl-next-run-{{run_id}}-filtered.json, check claim signals using the data already in /tmp/lmctl-next-run-{{run_id}}-issue-details.json:\n\nMark per issue:\n- `open_unclaimed`: state open, no assignees, no linked open PR, no maintainer 'I'll take this' / 'working on it' / 'assigned to me', no recent active claim from a contributor\n- `assigned`: has assignees\n- `claimed`: maintainer/contributor comment indicates active work\n- `closed`: state is closed (sanity check)\n- `needs_human`: signals conflict (e.g. assigned but assignee says 'help wanted')\n\nEmit /tmp/lmctl-next-run-{{run_id}}-claim-check.json.\n\nSTANCE: unclaimed_some | all_claimed | needs_human"
+        }
+      }
+    },
+    {
+      "id": "s-dedupe-794a",
+      "name": "dedupe",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Triager",
+          "prompt_template": "For each `open_unclaimed` issue from /tmp/lmctl-next-run-{{run_id}}-claim-check.json, run lmdedup:\n  lmdedup --repo {{project.owner}}/{{project.repo}} --issue-url <ISSUE_URL> --json\n\nNotes:\n- GITHUB_TOKEN must be set; lmdedup also needs 30+ min timeout for large corpora — use `timeout 1800 lmdedup ...` if your shell respects it.\n- Save each per-issue lmdedup JSON to /tmp/lmctl-next-run-{{run_id}}-lmdedup-<issue_number>.json.\n\nAggregate to /tmp/lmctl-next-run-{{run_id}}-dedupe.json with per issue: `{ url, dedupe_outcome: distinct|duplicate|active_pr_exists|ambiguous, evidence }`.\n\nSTANCE: dedupe_done | dedupe_failed"
+        }
+      }
+    },
+    {
+      "id": "s-repro-clarity-c5ca",
+      "name": "repro_clarity",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Triager",
+          "prompt_template": "For each `distinct` issue from /tmp/lmctl-next-run-{{run_id}}-dedupe.json, score repro clarity from the body in /tmp/lmctl-next-run-{{run_id}}-issue-details.json:\n\n- 5: exact repro command/test/case\n- 4: clear code path + expected/actual\n- 3: enough detail for a repo expert to reproduce\n- 2: plausible but missing setup\n- 1: vague\n- 0: not reproducible from report\n\nClassification:\n- score >= 3 → `clear`\n- score == 2 → `needs_human`\n- score < 2 → `unclear` (will be skipped downstream)\n\nEmit /tmp/lmctl-next-run-{{run_id}}-repro-clarity.json.\n\nSTANCE: scored | needs_human"
+        }
+      }
+    },
+    {
+      "id": "s-fix-locality-and-test-availability-11a0",
+      "name": "fix_locality_and_test_availability",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "writes_to_project_path": true,
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "`cd {{project.local_path}}` first. If that directory does not contain a checkout of {{project.owner}}/{{project.repo}}, `git clone https://github.com/{{project.owner}}/{{project.repo}}.git {{project.local_path}}` first.\n\nFor each `clear`-scored issue from /tmp/lmctl-next-run-{{run_id}}-repro-clarity.json:\n- read the body from /tmp/lmctl-next-run-{{run_id}}-issue-details.json\n- inspect likely files via `rg`/`grep`/`cat` (do NOT edit)\n- identify suspected touchpoints (file + approximate line)\n- identify the test framework and likely focused test command\n- do NOT run a full build\n\nEmit /tmp/lmctl-next-run-{{run_id}}-fixability.json per issue: `{ url, likely_files: [..], test_command: \"npm test\" | \"go test ./...\" | ..., risk: \"low|medium|high\", estimated_size: \"small|medium|large\", notes }`.\n\nClassification:\n- file pointers identified + test command found → `local_and_testable`\n- file pointers identified but tests unclear → `local_but_tests_unclear`\n- broad/risky scope → `broad_or_risky`\n- ambiguous → `needs_human`\n\nSTANCE: assessed | needs_human"
+        }
+      }
+    },
+    {
+      "id": "s-local-clone-toolchain-check-2388",
+      "name": "local_clone_toolchain_check",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "`cd {{project.local_path}}` first.\n\nVerify:\n1. Git checkout exists (`git rev-parse --is-inside-work-tree` returns true).\n2. Worktree is clean enough for branching (`git status --short` empty, unless job_payload.allow_existing_clone_dirty=true).\n3. Toolchain present for the test_command identified in fix_locality_and_test_availability — try `node --version`, `go version`, `python --version`, `cargo --version`, etc. as appropriate.\n\nDo NOT run a full build.\n\nSTANCE: ready | missing_clone | dirty_worktree | toolchain_missing | needs_human"
+        }
+      }
+    },
+    {
+      "id": "s-mark-33ff",
+      "name": "mark",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Triager",
+          "prompt_template": "Reduce all prior per-issue artifacts into a single triage_results.json.\n\nFor each issue from /tmp/lmctl-next-run-{{run_id}}-issue-details.json:\n- Join filtered.json + claim-check.json + dedupe.json + repro-clarity.json + fixability.json.\n- Status mapping:\n  - `candidate`: kept + open_unclaimed + distinct + repro >= 3 + (local_and_testable or local_but_tests_unclear)\n  - `assigned`: assignees present OR maintainer claim\n  - `dup`: duplicate OR active_pr_exists\n  - `skip`: non-bug OR repro < 2 OR broad_or_risky OR closed\n  - `needs_human`: ambiguous dup OR repro == 2 OR conflicting signals\n\nWrite the final aggregate to /tmp/lmctl-next-run-{{run_id}}-triage_results.json (NOT inside {{project.local_path}} — triage MUST NOT dirty the target repo checkout).\n\nReturn STANCE: candidates_found (>=1 candidate), empty (no candidates), or needs_operator_review (mixed signals)."
+        }
+      }
+    },
+    {
+      "id": "s-assert-repo-clean-e754",
+      "name": "assert_repo_clean",
+      "type": "lmctl/shell-step",
+      "typeVersion": 1,
+      "parameters": {
+        "command": "test -z \"$(git -C {{project.local_path}} status --short)\"",
+        "outcomes_from_exit": {
+          "0": "@terminal:exit_0",
+          "default": "@terminal:exit_default"
+        }
+      }
+    },
+    {
+      "id": "s-operator-review-candidates-gate-596f",
+      "name": "operator_review_candidates_gate",
+      "type": "lmctl/interactive",
+      "typeVersion": 1,
+      "parameters": {
+        "termination": {
+          "operator_signal": true,
+          "max_turns": 1
+        }
+      },
+      "members": {
+        "agent": {
+          "team": "default",
+          "alias": "Triager",
+          "initial_prompt_template": "Triage produced candidates. Review /tmp/lmctl-next-run-{{run_id}}-triage_results.json (run artifact area; the target repo at {{project.local_path}} is left clean). Choose: approve_selected (write /tmp/lmctl-next-run-{{run_id}}-approved.json listing issue URLs to fix), approve_all_candidates (all status=candidate), reject_all, or needs_more_triage. Signal done when decided."
+        }
+      }
+    },
+    {
+      "id": "s-operator-review-candidates-decide-90a2",
+      "name": "operator_review_candidates_decide",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Triager",
+          "prompt_template": "The operator has reviewed the triage candidates. Based on the conversation context, determine their decision.\n\nIf the operator approved selected issues (wrote /tmp/lmctl-next-run-{{run_id}}-approved.json): STANCE: approve_selected\nIf the operator approved all candidates: STANCE: approve_all_candidates\nIf the operator rejected all: STANCE: reject_all\nIf the operator wants more triage: STANCE: needs_more_triage"
+        }
+      }
+    },
+    {
+      "id": "s-enqueue-fix-jobs-1d1d",
+      "name": "enqueue_fix_jobs",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Triager",
+          "prompt_template": "Operator outcome: {{outcomes.operator_review_candidates_decide}}.\n\nDetermine the approved issue URL set:\n- If outcome was `approve_all_candidates`: take every issue with status `candidate` from /tmp/lmctl-next-run-{{run_id}}-triage_results.json.\n- If outcome was `approve_selected`: read /tmp/lmctl-next-run-{{run_id}}-approved.json (operator-written list of URLs).\n\nFor each approved URL, enqueue a bugfix-pr-fixer job. The engine parses fenced ```spawn_jobs``` blocks from your reply — emit ONE such block containing a JSON array, one entry per approved URL:\n\n```spawn_jobs\n[\n  {\"project_id\": {{project.id}}, \"payload\": {\"issue_url\": \"<URL1>\"}},\n  {\"project_id\": {{project.id}}, \"payload\": {\"issue_url\": \"<URL2>\"}}\n]\n```\n\nIf no URLs are approved, return STANCE: nothing_to_enqueue and emit no spawn_jobs block.\nOn success, STANCE: enqueued.\nOn parse/IO failure, STANCE: failed."
+        }
+      }
+    },
+    {
+      "id": "s-terminal-aborted-3149",
+      "name": "terminal:aborted",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "aborted",
+        "kind": "failure"
+      }
+    },
+    {
+      "id": "s-terminal-triage-empty-b170",
+      "name": "terminal:triage_empty",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "triage_empty",
+        "kind": "neutral"
+      }
+    },
+    {
+      "id": "s-terminal-triage-complete-070a",
+      "name": "terminal:triage_complete",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "triage_complete",
+        "kind": "success"
+      }
+    },
+    {
+      "id": "s-terminal-triage-partial-7311",
+      "name": "terminal:triage_partial",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "triage_partial",
+        "kind": "neutral"
+      }
+    }
+  ],
+  "connections": {
+    "s-list-open-bug-issues-6cd1": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-3149",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "issues_found": [
+        [
+          {
+            "step_id": "s-fetch-issue-bodies-492d",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "empty": [
+        [
+          {
+            "step_id": "s-terminal-triage-empty-b170",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "gh_unavailable": [
+        [
+          {
+            "step_id": "s-terminal-aborted-3149",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-3149",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-fetch-issue-bodies-492d": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-3149",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "details_ready": [
+        [
+          {
+            "step_id": "s-filter-non-bugs-5a56",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "partial": [
+        [
+          {
+            "step_id": "s-filter-non-bugs-5a56",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "fetch_failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-3149",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-filter-non-bugs-5a56": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-3149",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "kept_some": [
+        [
+          {
+            "step_id": "s-open-unassigned-unclaimed-1cb7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "none_kept": [
+        [
+          {
+            "step_id": "s-terminal-triage-empty-b170",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "needs_human": [
+        [
+          {
+            "step_id": "s-open-unassigned-unclaimed-1cb7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-open-unassigned-unclaimed-1cb7": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-3149",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "unclaimed_some": [
+        [
+          {
+            "step_id": "s-dedupe-794a",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "all_claimed": [
+        [
+          {
+            "step_id": "s-terminal-triage-empty-b170",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "needs_human": [
+        [
+          {
+            "step_id": "s-dedupe-794a",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-dedupe-794a": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-3149",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "dedupe_done": [
+        [
+          {
+            "step_id": "s-repro-clarity-c5ca",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "dedupe_failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-3149",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-repro-clarity-c5ca": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-3149",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "scored": [
+        [
+          {
+            "step_id": "s-fix-locality-and-test-availability-11a0",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "needs_human": [
+        [
+          {
+            "step_id": "s-fix-locality-and-test-availability-11a0",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-fix-locality-and-test-availability-11a0": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-3149",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "assessed": [
+        [
+          {
+            "step_id": "s-local-clone-toolchain-check-2388",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "needs_human": [
+        [
+          {
+            "step_id": "s-local-clone-toolchain-check-2388",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-local-clone-toolchain-check-2388": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-3149",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "ready": [
+        [
+          {
+            "step_id": "s-mark-33ff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "missing_clone": [
+        [
+          {
+            "step_id": "s-terminal-aborted-3149",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "dirty_worktree": [
+        [
+          {
+            "step_id": "s-terminal-aborted-3149",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "toolchain_missing": [
+        [
+          {
+            "step_id": "s-terminal-aborted-3149",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "needs_human": [
+        [
+          {
+            "step_id": "s-mark-33ff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-mark-33ff": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-3149",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "candidates_found": [
+        [
+          {
+            "step_id": "s-assert-repo-clean-e754",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "empty": [
+        [
+          {
+            "step_id": "s-terminal-triage-empty-b170",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "needs_operator_review": [
+        [
+          {
+            "step_id": "s-assert-repo-clean-e754",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-assert-repo-clean-e754": {
+      "exit_0": [
+        [
+          {
+            "step_id": "s-operator-review-candidates-gate-596f",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "exit_default": [
+        [
+          {
+            "step_id": "s-terminal-aborted-3149",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-operator-review-candidates-gate-596f": {
+      "done": [
+        [
+          {
+            "step_id": "s-operator-review-candidates-decide-90a2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-operator-review-candidates-decide-90a2": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-3149",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "approve_selected": [
+        [
+          {
+            "step_id": "s-enqueue-fix-jobs-1d1d",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "approve_all_candidates": [
+        [
+          {
+            "step_id": "s-enqueue-fix-jobs-1d1d",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "reject_all": [
+        [
+          {
+            "step_id": "s-terminal-triage-complete-070a",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "needs_more_triage": [
+        [
+          {
+            "step_id": "s-terminal-triage-partial-7311",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-enqueue-fix-jobs-1d1d": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-3149",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "enqueued": [
+        [
+          {
+            "step_id": "s-terminal-triage-complete-070a",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "nothing_to_enqueue": [
+        [
+          {
+            "step_id": "s-terminal-triage-complete-070a",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-3149",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "entry_step_id": "s-list-open-bug-issues-6cd1"
+}

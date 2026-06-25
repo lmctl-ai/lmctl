@@ -1,0 +1,200 @@
+{
+  "schema_version": "lmctl/v3",
+  "definition_schema_version": 3,
+  "name": "document-creation",
+  "version": 1,
+  "description": "Creates or revises a project document through agent drafting and review, then writes the accepted document to the project.",
+  "estimated_duration_ms": 120000,
+  "errors": {
+    "on_unhandled_failure": {
+      "attention_kind": "workflow_failed",
+      "severity": "error",
+      "capture_evidence": true
+    }
+  },
+  "inputs": [
+    {
+      "name": "task_description",
+      "type": "string",
+      "required": true,
+      "description": "Document request."
+    },
+    {
+      "name": "slug",
+      "type": "string",
+      "required": true,
+      "description": "Filesystem-safe document slug."
+    },
+    {
+      "name": "output_dir",
+      "type": "string",
+      "required": false,
+      "description": "Optional output directory for markdown draft artifacts."
+    }
+  ],
+  "outputs": [
+    {
+      "name": "document_md",
+      "type": "string",
+      "source_step_id": "s-review-document-0d4a",
+      "source_field": "output",
+      "description": "Reviewed markdown document."
+    },
+    {
+      "name": "document_docx",
+      "type": "string",
+      "source_step_id": "s-render-docx-a02a",
+      "source_field": "output_path",
+      "description": "Rendered DOCX output path."
+    }
+  ],
+  "steps": [
+    {
+      "id": "s-chat-draft-9c12",
+      "name": "chat",
+      "type": "lmctl/interactive",
+      "typeVersion": 1,
+      "parameters": {
+        "termination": {
+          "operator_signal": true,
+          "agent_signal": "DOCUMENT_CHAT_DONE",
+          "max_turns": 8
+        },
+        "artifact_name": "chat_output_md"
+      },
+      "members": {
+        "agent": {
+          "team": "default",
+          "alias": "Coder",
+          "initial_prompt_template": "Work with the operator to draft a markdown document.\n\nTask: {{job_payload.task_description}}\nSlug: {{job_payload.slug}}\nOutput directory: {{job_payload.output_dir}}\n\nWhen the draft is ready for review, include DOCUMENT_CHAT_DONE in your response."
+        }
+      }
+    },
+    {
+      "id": "s-review-document-0d4a",
+      "name": "review",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 2
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "Refine the markdown draft from the chat stage into a polished document.\n\nTask: {{job_payload.task_description}}\nSlug: {{job_payload.slug}}\nOutput directory: {{job_payload.output_dir}}\n\nReturn the final markdown body and end with STANCE: done."
+        },
+        "reviewers": [
+          {
+            "team": "default",
+            "alias": "Reviewer",
+            "prompt_template": "Review the markdown document for clarity, completeness, and audience fit. Respond STANCE: approve if ready; otherwise STANCE: request_changes followed by concise revision notes."
+          }
+        ]
+      }
+    },
+    {
+      "id": "s-render-docx-a02a",
+      "name": "render",
+      "type": "lmctl/render-docx",
+      "typeVersion": 1,
+      "parameters": {
+        "markdown_source": "={{ context.outcomes.review.output }}",
+        "output_path": "={{ (context.inputs.output_dir || 'drafts') + '/' + context.inputs.slug + '.docx' }}",
+        "title": "={{ context.inputs.task_description }}"
+      }
+    },
+    {
+      "id": "s-terminal-done-f7c0",
+      "name": "terminal:done",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "done",
+        "kind": "success"
+      }
+    },
+    {
+      "id": "s-terminal-aborted-2e91",
+      "name": "terminal:aborted",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "aborted",
+        "kind": "failure"
+      }
+    }
+  ],
+  "connections": {
+    "s-chat-draft-9c12": {
+      "done": [
+        [
+          {
+            "step_id": "s-review-document-0d4a",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "timeout": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2e91",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-review-document-0d4a": {
+      "approve": [
+        [
+          {
+            "step_id": "s-render-docx-a02a",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "request_changes": [
+        [
+          {
+            "step_id": "s-review-document-0d4a",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "max_loops_exceeded": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2e91",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s-render-docx-a02a": {
+      "done": [
+        [
+          {
+            "step_id": "s-terminal-done-f7c0",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "error": [
+        [
+          {
+            "step_id": "s-terminal-aborted-2e91",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "entry_step_id": "s-chat-draft-9c12"
+}

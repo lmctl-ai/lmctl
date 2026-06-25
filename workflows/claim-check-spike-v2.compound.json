@@ -1,0 +1,136 @@
+{
+  "schema_version": "lmctl/v3",
+  "definition_schema_version": 3,
+  "name": "claim-check-spike-v2",
+  "version": 1,
+  "description": "Explores whether project issue claiming and follow-up work queues behave correctly for a small spike workflow.",
+  "estimated_duration_ms": 60000,
+  "default_task_timeout_ms": 1800000,
+  "steps": [
+    {
+      "id": "s-claim-check-6e5a",
+      "name": "claim_check",
+      "type": "lmctl/review",
+      "typeVersion": 1,
+      "parameters": {
+        "max_loops": 5
+      },
+      "members": {
+        "coder": {
+          "team": "default",
+          "alias": "Coder",
+          "prompt_template": "You are evaluating whether a GitHub issue is open and unclaimed. The job payload is JSON with an issue_url field.\n\nJob payload:\n{{job_payload}}\n\nSteps:\n1. Run `gh issue view <issue_url> --json state,assignees,labels,comments --jq '{state, assignees: [.assignees[].login], labels: [.labels[].name], comments: [.comments[] | {author: .author.login, body: .body[0:200]}]}'` and read the result.\n2. Decide one of these outcomes:\n   - `open`: state is open and no human assignee is actively working it (auto-triage assignees are OK; comments do not say \"working on this\")\n   - `claimed`: state is open and a human says they're working on it OR an active assignee has commented within the last 7 days\n   - `dup_pr_active`: comments mention an open PR addressing this issue\n   - `closed`: state is closed\n   - `failed`: gh call errored or output is malformed\n3. Reply with prose explaining your reading, then close with `STANCE: <outcome>`.\n\nOnly output one final STANCE line."
+        }
+      }
+    },
+    {
+      "id": "s-terminal-aborted-34b4",
+      "name": "terminal:aborted",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "aborted",
+        "kind": "failure"
+      }
+    },
+    {
+      "id": "s-terminal-open-3378",
+      "name": "terminal:open",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "open",
+        "kind": "success"
+      }
+    },
+    {
+      "id": "s-terminal-claimed-f484",
+      "name": "terminal:claimed",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "claimed",
+        "kind": "neutral"
+      }
+    },
+    {
+      "id": "s-terminal-dup-pr-active-77cd",
+      "name": "terminal:dup_pr_active",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "dup_pr_active",
+        "kind": "neutral"
+      }
+    },
+    {
+      "id": "s-terminal-closed-f026",
+      "name": "terminal:closed",
+      "type": "lmctl/terminal",
+      "typeVersion": 1,
+      "parameters": {
+        "name": "closed",
+        "kind": "neutral"
+      }
+    }
+  ],
+  "connections": {
+    "s-claim-check-6e5a": {
+      "approve": [
+        [
+          {
+            "step_id": "s-terminal-aborted-34b4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "open": [
+        [
+          {
+            "step_id": "s-terminal-open-3378",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "claimed": [
+        [
+          {
+            "step_id": "s-terminal-claimed-f484",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "dup_pr_active": [
+        [
+          {
+            "step_id": "s-terminal-dup-pr-active-77cd",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "closed": [
+        [
+          {
+            "step_id": "s-terminal-closed-f026",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "failed": [
+        [
+          {
+            "step_id": "s-terminal-aborted-34b4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "entry_step_id": "s-claim-check-6e5a"
+}
