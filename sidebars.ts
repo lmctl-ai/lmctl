@@ -48,6 +48,8 @@ const sidebars: SidebarsConfig = {
         'manuals/ai-test-chapter-format',
         'troubleshooting',
         'glossary',
+        'changelog',
+        'license',
       ],
     },
   ],
