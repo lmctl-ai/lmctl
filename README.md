@@ -1,79 +1,78 @@
-# lmctl-website
+# lmctl
 
-Documentation site for **lmctl** — tutorials and manuals — published to
-`lmctl.com/lmctl/` via S3 + CloudFront.
+> A provider-agnostic control plane for teams of AI coding agents.
 
-## Development
+[**lmctl.com**](https://lmctl.com) · [**Documentation**](https://lmctl.com/lmctl) · [**npm**](https://www.npmjs.com/package/@lmctl-ai/lmctl)
+
+AI agents shouldn't be locked to one provider, one workflow, or one context
+window. **lmctl** is a local-first control plane for running *teams* of AI
+coding agents — across providers, with independent review and durable memory,
+composed in plain text.
+
+It's not an IDE and not another chatbot. lmctl coordinates the agent CLIs you
+already use (Claude, Codex, Gemini, and more), so a Claude *lead* can hand
+coding to *Codex* and have *Gemini* review it — the reviewer genuinely
+independent of the author.
+
+```bash
+npm install -g @lmctl-ai/lmctl
+```
+
+## Why lmctl — the three lock-ins
+
+Every agentic tool wants to be the whole platform. That leaves you with three
+kinds of lock-in. lmctl is built to remove each one:
+
+- **Provider lock-in.** A Claude agent reviewing Claude's own work isn't
+  independent review. lmctl makes agents provider-agnostic: pick the provider
+  and model for each role, and let an independent provider review the work.
+- **Workflow lock-in.** Most frameworks hard-code how agents collaborate —
+  fixed fan-out, fixed pipelines. lmctl gives you the building blocks instead: a
+  lead talks to its members, and teams connect to other teams. You compose any
+  structure in plain text, and choose top-tier models for design and leaner
+  models for routine coding.
+- **Context-window lock-in.** A bigger window still eventually loses to a
+  long-running project, and a session is bound to one provider and one folder.
+  lmctl spreads work across specialized agents (planning, coding, review) and
+  keeps a provider- and directory-agnostic **durable-memory** — the team's
+  shared brain. If a session fills up or breaks, start a fresh one; nothing is
+  lost.
+
+## How it works
+
+- **Teams in plain text.** Define a team in a `.lmctl` file — members, the
+  provider/model each one uses, and the connections between them. No DSL to
+  learn; it reads like a list.
+- **durable-memory.** Every member, whatever its provider, reads
+  `durable-memory/` as shared context. Knowledge survives fresh sessions and
+  swapped-in agents.
+- **Workflows you can run from a URL.** Orchestrations are plain JSON. Run a
+  hosted one directly:
+
+  ```bash
+  lmctl run https://lmctl.com/workflows/research.compound.json
+  ```
+
+## Get started
+
+1. Install: `npm install -g @lmctl-ai/lmctl`
+2. Follow [**Install & first run**](https://lmctl.com/lmctl/docs/tutorials/install-first-run)
+   and the other [**tutorials**](https://lmctl.com/lmctl/docs/category/tutorials)
+   to define your first team and run it.
+3. Browse the [**CLI reference**](https://lmctl.com/lmctl/docs/manuals/cli-reference)
+   and [**glossary**](https://lmctl.com/lmctl/docs/glossary) for the full command
+   and teamfile reference.
+
+## About this repository
+
+This repo is the source of **lmctl.com** — the homepage and the documentation
+site (plus the runnable `workflows/`, `skills/`, and `examples/` catalogs hosted
+on the site). The lmctl CLI itself is distributed on npm as
+[`@lmctl-ai/lmctl`](https://www.npmjs.com/package/@lmctl-ai/lmctl).
+
+To work on the docs locally and deploy the site, see [`DEPLOY.md`](./DEPLOY.md):
 
 ```bash
 npm ci
 npm run start
 ```
-
-## Build
-
-```bash
-npm ci
-npm run build
-```
-
-The static artifact is written to `build/` with Docusaurus `baseUrl` set to
-`/lmctl/`.
-
-## Deploy
-
-The production defaults target `s3://lmctl-website-prod/lmctl/` and CloudFront
-distribution `E1GKUWTM93U7IV`:
-
-```bash
-./scripts/deploy.sh
-```
-
-Operators can override either target with env vars:
-
-```bash
-S3_BUCKET=<bucket> CF_DISTRIBUTION_ID=<distribution-id> ./scripts/deploy.sh
-```
-
-The deploy script syncs the artifact to `s3://$S3_BUCKET/lmctl/`, sets
-long-lived immutable caching for hashed `assets/*`, sets no-cache headers for
-HTML and `sitemap.xml`, and invalidates `/lmctl/*`.
-
-CloudFront constraints for the `/lmctl/*` behavior:
-
-- Origin Path must be empty. Objects already live under the `lmctl/` key prefix;
-  setting Origin Path to `/lmctl` double-prefixes requests and returns 404.
-- The production viewer-request CloudFront Function is
-  `lmctl-www-redirect`, with source in `infra/lmctl-www-redirect.js`. It keeps
-  the existing `www.lmctl.com` to apex redirect and adds `/lmctl/*` clean-URL
-  resolution. It does not implement 404 handling.
-
-Rollback source for the prior LIVE function is kept in `.rollback/`. To roll
-back the function, update DEVELOPMENT with the saved source, then publish the
-returned ETag:
-
-```bash
-aws cloudfront update-function \
-  --name lmctl-www-redirect \
-  --if-match <current-ETag> \
-  --function-config Comment="301 redirect www.lmctl.com to lmctl.com",Runtime=cloudfront-js-2.0 \
-  --function-code fileb://.rollback/lmctl-www-redirect.LIVE.js
-
-aws cloudfront publish-function \
-  --name lmctl-www-redirect \
-  --if-match <rollback-update-ETag>
-```
-
-### 404 Strategy
-
-Docusaurus emits `build/404.html`; confirm it is present before deploy. The
-runtime 404 strategy is topology-dependent and deferred to the operator's
-CloudFront decision:
-
-- Dedicated docs distribution: use distribution-level custom error responses
-  for 403/404 to `/lmctl/404.html`, with response code 404.
-- Shared `/templates/` distribution: use Lambda@Edge origin-response on the
-  `/lmctl/*` behavior to map both S3 403 and 404 responses to
-  `/lmctl/404.html` and force the final response status to 404.
-  Distribution-level custom error responses are distribution-wide and would
-  affect the `/templates/` co-tenant.
