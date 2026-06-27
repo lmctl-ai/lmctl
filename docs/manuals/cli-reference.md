@@ -11,7 +11,7 @@ Nothing it does leaves your machine unless you opt into the cloud console.
 
 Its commands come in two shapes, both part of the same CLI:
 
-- **top-level commands** — `lmctl init`, `lmctl status`, `lmctl serve`,
+- **top-level commands** — `lmctl status`, `lmctl serve`,
   `lmctl project`, `lmctl team`, `lmctl workflow`, `lmctl diagnose`, and so on.
 - **the `lmctl api <noun>` group** — inspect and act on jobs, runs, attentions,
   and issues. `api` is just the name of a command group; it is not a separate
@@ -20,7 +20,6 @@ Its commands come in two shapes, both part of the same CLI:
 ## Setup and status
 
 ```bash
-lmctl init
 lmctl status
 lmctl diagnose
 lmctl serve > lmctl.log 2>&1 &

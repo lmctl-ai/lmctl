@@ -1,61 +1,87 @@
 ---
-title: Install & First Run
+title: Install & first run
 sidebar_position: 1
 ---
 
 # Install & first run
 
-This tutorial installs `@lmctl-ai/lmctl` 0.1.5, initializes provider access,
-and checks that the local environment is usable.
+This is the easy on-ramp: install `lmctl`, make sure at least one AI provider is
+ready, and look around. In these docs, **lmctl** is the product/platform name and
+`lmctl` is the command you run locally.
 
-In these docs, lmctl is the product/platform name, and `lmctl` is the command
-you run locally.
+## Prerequisites
 
-## Requirements
+- **Linux or WSL2.** (macOS is untested; native Windows is unsupported.)
+- **Node.js 24.15 or newer.** lmctl uses Node's built-in SQLite, which is
+  stable from Node 24.15.0.
+- **At least one provider CLI, installed and authenticated** (next section).
 
-- Linux or WSL2. (macOS is untested; native Windows is unsupported.)
-- Node 22 or newer.
-- At least one native AI provider CLI installed and authenticated:
-  `claude`, `codex`, `gemini`, `copilot`, `opencode`, `qwen`, or `agy`.
-- A shell where you can build native Node packages. SQLite is provided through
-  `better-sqlite3`, which is compiled during `npm install`.
+lmctl does **not** store provider API keys. Each provider authenticates through
+its own CLI and config directory; lmctl just drives them.
 
-`lmctl` does not store provider API keys. Each provider authenticates
-through its own CLI and config directory.
-
-## Install
-
-Install the published package globally, then initialize your local lmctl state:
+## Install lmctl
 
 ```bash
 npm install -g @lmctl-ai/lmctl
-lmctl init
-lmctl status
+lmctl --version
 ```
 
 After `npm install -g`, the `lmctl` command is on your `PATH`.
 
-During `init`, lmctl checks for installed and authenticated provider CLIs:
-Claude, Codex, Gemini, Copilot, OpenCode, Qwen, and Antigravity (`agy`).
+## Install & authenticate a provider
 
-## Where lmctl keeps state
+A team member ("player") is backed by a native provider CLI. Install the ones
+you want and sign in with each tool's own flow — lmctl reads their existing
+sessions, it doesn't manage their credentials. Common players:
 
-lmctl stores its local state under `~/.lmctl/`. User-facing environment
-variables are prefixed `LMCTL_`.
+| Provider | CLI | Authenticate |
+| --- | --- | --- |
+| Claude | `claude` (Claude Code) | run `claude` and complete login |
+| Codex | `codex` | run `codex` and complete login |
+| GitHub Copilot | `copilot` | sign in via the Copilot CLI |
+| OpenCode | `opencode` | per-provider creds in `~/.config/opencode/opencode.json` (see the [sample](https://lmctl.com/examples/opencode.json)) |
+| Qwen | `qwen` | run `qwen` and authenticate |
+| Antigravity | `agy` | run `agy` and sign in |
+| Gemini | `gemini` | **API/enterprise Google accounts only** — personal-subscription users should use **`agy`** instead |
 
-## Verify the setup
+> You don't need all of them — one is enough to start. The OpenCode provider
+> alone reaches almost any model (local Ollama or remote), so it's a good
+> single-provider start. See [Players & model diversity](../why/players-and-diversity.md).
 
-Run:
+You don't run a setup command — lmctl detects a missing provider or credential
+at the moment it needs one (during `seed` or `chat`) and tells you exactly what
+to fix.
+
+## Look around
+
+Confirm the install and see your current context:
 
 ```bash
 lmctl status
 ```
 
-The command reports the active profile, current project context when one can be
-resolved from your working directory, recent runs, open attentions, and detected
-providers.
+`status` reports the current project (when one resolves from your working
+directory), the active run, open attentions, and recent runs.
 
-lmctl is provider-agnostic: it gives you one local control plane across those
-provider CLIs, so a project can mix models instead of locking into one vendor.
+### See your provider sessions
 
-You now have enough setup for the first workflow tutorial.
+Once a provider CLI has been used (by you directly, or by lmctl), you can browse
+its sessions:
+
+```bash
+lmctl ls                      # list native provider sessions in scope
+lmctl ls --runs               # list recent lmctl runs instead
+lmctl tail <session-id>       # print a session's messages (add --watch to follow)
+lmctl info <session-id>       # session state + token usage
+```
+
+`lmctl ls` is your "what's here?", `lmctl tail` is your "read it", and
+`lmctl info` is your "how big / what state". These work across every provider —
+one set of commands, whatever CLI produced the session.
+
+## Where lmctl keeps state
+
+lmctl stores local state under `~/.lmctl/`. User-facing environment variables are
+prefixed `LMCTL_`.
+
+You now have enough setup for the [first workflow tutorial](./first-workflow-job-image-qa.md).
