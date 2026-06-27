@@ -6,13 +6,13 @@
 
 AI agents shouldn't be locked to one provider, one workflow, or one context
 window. **lmctl** is a local-first control plane for running *teams* of AI
-coding agents — across providers, with independent review and durable memory,
-composed in plain text.
+coding agents — across providers, with adversarial cross-provider review and
+durable memory, composed in plain text.
 
 It's not an IDE and not another chatbot. lmctl coordinates the agent CLIs you
 already use (Claude, Codex, Gemini, and more), so a Claude *lead* can hand
-coding to *Codex* and have *Gemini* review it — the reviewer genuinely
-independent of the author.
+coding to *Codex* and have *Gemini* review it — the reviewer a different
+provider *and* model from the author, not the same model in a different hat.
 
 ```bash
 npm install -g @lmctl-ai/lmctl
@@ -23,14 +23,18 @@ npm install -g @lmctl-ai/lmctl
 Every agentic tool wants to be the whole platform. That leaves you with three
 kinds of lock-in. lmctl is built to remove each one:
 
-- **Provider lock-in.** A Claude agent reviewing Claude's own work isn't
-  independent review. lmctl makes agents provider-agnostic: pick the provider
-  and model for each role, and let an independent provider review the work.
-- **Workflow lock-in.** Most frameworks hard-code how agents collaborate —
-  fixed fan-out, fixed pipelines. lmctl gives you the building blocks instead: a
-  lead talks to its members, and teams connect to other teams. You compose any
-  structure in plain text, and choose top-tier models for design and leaner
-  models for routine coding.
+- **Provider lock-in.** Most "AI code review" is really *self-review* — one
+  model grading its own work in a different hat, which rubber-stamps its own
+  blind spots. lmctl makes review **adversarial**: the reviewer is a different
+  provider *and* model from the author, so the check is genuinely independent of
+  the work.
+- **Workflow lock-in.** When most tools say "multi-agent," one provider
+  auto-spawns the agents and you just watch. lmctl puts **you** in charge: you
+  divide the work and build the team in plain text (a lead talks to its members;
+  teams connect to other teams), choose which provider and model plays each role
+  — top-tier for design, leaner models for routine coding — and tune how they
+  interact. Agents from different providers, orchestrated by you, not clones of
+  one.
 - **Context-window lock-in.** A bigger window still eventually loses to a
   long-running project, and a session is bound to one provider and one folder.
   lmctl spreads work across specialized agents (planning, coding, review) and

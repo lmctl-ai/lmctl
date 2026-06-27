@@ -12,8 +12,11 @@ hosted web console at [lmctl.ai](https://lmctl.ai) is optional — a subscriptio
 feature (free and premium tiers), not required to run lmctl.
 
 The architecture is provider-agnostic. Teams can mix Claude, Codex, Gemini,
-Copilot, OpenCode, Qwen, and Antigravity, which makes cross-provider review and
-cost-aware role routing first-class operating patterns.
+Copilot, OpenCode, Qwen, and Antigravity, which makes **adversarial
+cross-provider review** (the reviewer is a different provider and model than the
+author, not the same model self-reviewing) and cost-aware role routing
+first-class operating patterns. The operator composes and tunes these teams in
+plain text — agents are not auto-spawned by a single provider.
 
 ## Pipeline as the organizing layer
 

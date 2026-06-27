@@ -20,8 +20,16 @@ The current positioning is practical:
   > subscriptions — personal-subscription users should use **`agy`**
   > (Antigravity) instead. `lmctl lint` prints a reminder when a member uses
   > `provider=gemini`.
-- **Cross-provider multi-agent review** — teams can mix providers so one model
-  reviews another model's work.
+- **Adversarial cross-provider review** — review is done by a *different
+  provider and model* than the author, not the same model self-reviewing in a
+  different hat (a Claude lead can hand coding to Codex and have Gemini review
+  it). A model can't rubber-stamp its own blind spots when the reviewer isn't
+  that model.
+- **Operator-built teams, not auto-spawned agents** — unlike tools where one
+  provider spawns agents you can't steer, in lmctl *you* divide the work and
+  compose the team in plain text, choose which provider and model plays each
+  role, and tune how a lead talks to its members and how teams connect to other
+  teams.
 - **Durable, scalable sessions** — durable-memory carries project knowledge;
   provider sessions are useful caches, not the only source of truth.
 - **Cost-aware model routing** — assign stronger models to architecture and
