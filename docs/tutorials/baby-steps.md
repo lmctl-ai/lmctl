@@ -13,7 +13,14 @@ This is the gentle path for developers who already live in a native AI CLI.
 
 You already use a native AI CLI — Claude Code, Codex, Gemini, and so on. Without
 writing a teamfile or changing anything, lmctl can give you **one read-only
-window over all of those sessions**:
+window over all of those sessions**. You don't even have to install it — try it
+with `npx` (needs Node 24.15+):
+
+```bash
+npx @lmctl-ai/lmctl ls      # no install — list your sessions across providers
+```
+
+Or, once installed (`npm install -g @lmctl-ai/lmctl`):
 
 ```bash
 lmctl ls                    # list native provider sessions, across providers
@@ -21,19 +28,23 @@ lmctl info <sessionid>      # one session's state + token usage
 lmctl tail --session <id>   # read its messages (add --watch to follow live)
 ```
 
-That's it — you've used lmctl. No setup, no lock-in: it's just a better lens on
-the sessions you already have. (`lmctl ls --runs` shows lmctl's own runs instead,
-once you have any.)
+`lmctl ls` prints one line per session, across Claude, Codex, Gemini, and the
+rest — in one place. That's it: you've used lmctl. No setup, no lock-in, just a
+better lens on the sessions you already have. (`lmctl ls --runs` shows lmctl's own
+runs instead, once you have any.)
 
 ## Step 2 — Give sessions human-friendly names
 
-Raw sessionids are cryptic. Write a tiny `.lmctl` teamfile that maps a friendly
-**alias** to each member, then seed it so lmctl captures the underlying session:
+Raw sessionids are cryptic. Here's the nice part: `lmctl ls` already prints
+`_MEMBER_` lines in teamfile format, so you don't write a teamfile from scratch —
+you **paste its output into a `.lmctl` file and just fill in `alias=`**:
 
 ```md
 _MEMBER_ alias=Coder    provider=codex  sessiondir=/path/to/repo
 _MEMBER_ alias=Reviewer provider=claude sessiondir=/path/to/repo
 ```
+
+Then seed it so lmctl captures (or confirms) each underlying session:
 
 ```bash
 lmctl seed ./team.lmctl       # starts each provider once, captures the session id
