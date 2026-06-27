@@ -40,8 +40,8 @@ Raw sessionids are cryptic. Here's the nice part: `lmctl ls` already prints
 you **paste its output into a `.lmctl` file and just fill in `alias=`**:
 
 ```md
-_MEMBER_ alias=Coder    provider=codex  sessiondir=/path/to/repo
-_MEMBER_ alias=Reviewer provider=claude sessiondir=/path/to/repo
+_MEMBER_ alias=Coder    provider=codex
+_MEMBER_ alias=Reviewer provider=claude
 ```
 
 Then seed it so lmctl captures (or confirms) each underlying session:

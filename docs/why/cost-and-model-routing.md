@@ -25,9 +25,9 @@ Set the model per member with `model=` on each `_MEMBER_` line. Use
 `effort=<variant>` to pick a reasoning variant for OpenCode reasoning models.
 
 ```text
-_MEMBER_ alias=Lead     provider=claude    model=<top-tier-id>   sessiondir=/path/to/project
-_MEMBER_ alias=Coder    provider=opencode  model=<lean-id>       sessiondir=/path/to/project
-_MEMBER_ alias=Reviewer provider=codex     model=<top-tier-id>   sessiondir=/path/to/project
+_MEMBER_ alias=Lead     provider=claude    model=<top-tier-id>
+_MEMBER_ alias=Coder    provider=opencode  model=<lean-id>
+_MEMBER_ alias=Reviewer provider=codex     model=<top-tier-id>
 ```
 
 A top-tier Lead and Reviewer keep the judgment sharp; a leaner Coder does the

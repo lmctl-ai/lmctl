@@ -32,9 +32,9 @@ We've used and tested two pairings intensively:
 Both put a strong, independent model on the review seat. A teamfile for the first:
 
 ```text
-_MEMBER_ alias=Lead     provider=claude  sessiondir=/path/to/project
-_MEMBER_ alias=Coder    provider=codex   sessiondir=/path/to/project
-_MEMBER_ alias=Reviewer provider=codex   sessiondir=/path/to/project
+_MEMBER_ alias=Lead     provider=claude
+_MEMBER_ alias=Coder    provider=codex
+_MEMBER_ alias=Reviewer provider=codex
 ```
 
 The Lead plans and delegates, the Coder implements, and the Reviewer — a

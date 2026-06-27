@@ -67,9 +67,9 @@ You compose players in plain text. A team is the first `_MEMBER_` (the Lead) plu
 the members it works with:
 
 ```text
-_MEMBER_ alias=Lead     provider=claude  model=<id>  sessiondir=/path/to/project
-_MEMBER_ alias=Coder    provider=codex   model=<id>  sessiondir=/path/to/project
-_MEMBER_ alias=Reviewer provider=agy     model=<id>  sessiondir=/path/to/project
+_MEMBER_ alias=Lead     provider=claude  model=<id>
+_MEMBER_ alias=Coder    provider=codex   model=<id>
+_MEMBER_ alias=Reviewer provider=agy     model=<id>
 ```
 
 When a team pattern recurs, capture it as a **workflow** (`.compound.json`).
