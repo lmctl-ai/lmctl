@@ -1,0 +1,552 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "z-ai-coding": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Z.AI Coding Plan",
+      "options": {
+        "baseURL": "https://api.z.ai/api/coding/paas/v4",
+        "apiKey": "{env:ZAI_API_KEY}"
+      },
+      "models": {
+        "GLM-4.7": {
+          "name": "GLM-4.7"
+        },
+        "GLM-5.1": {
+          "name": "GLM-5.1"
+        },
+        "GLM-5.2": {
+          "name": "GLM-5.2"
+        },
+        "GLM-5": {
+          "name": "GLM-5"
+        },
+        "GLM-5-Turbo": {
+          "name": "GLM-5-Turbo"
+        },
+        "GLM-4.5-air": {
+          "name": "GLM-4.5 Air"
+        }
+      }
+    },
+    "ollama-local": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Local Ollama (Windows)",
+      "options": {
+        "baseURL": "http://172.18.32.1:11434/v1"
+      },
+      "models": {
+        "qwen3.5:9b": {
+          "name": "Qwen 3.5 9B"
+        }
+      }
+    },
+    "deepseek": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "DeepSeek",
+      "options": {
+        "baseURL": "https://api.deepseek.com/v1",
+        "apiKey": "{env:DEEPSEEK_API_KEY}"
+      },
+      "models": {
+        "deepseek-chat": {
+          "name": "deepseek-chat"
+        },
+        "deepseek-reasoner": {
+          "name": "deepseek-reasoner"
+        },
+        "deepseek-v4-flash": {
+          "name": "deepseek-v4-flash"
+        },
+        "deepseek-v4-pro": {
+          "name": "deepseek-v4-pro"
+        }
+      }
+    },
+    "openrouter": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "OpenRouter",
+      "options": {
+        "baseURL": "https://openrouter.ai/api/v1",
+        "apiKey": "{env:OPENROUTER_API_KEY}"
+      },
+      "models": {
+        "qwen/qwen3-coder": {
+          "name": "qwen/qwen3-coder"
+        },
+        "qwen/qwen3-coder-plus": {
+          "name": "qwen/qwen3-coder-plus"
+        },
+        "qwen/qwen3-coder-flash": {
+          "name": "qwen/qwen3-coder-flash"
+        },
+        "qwen/qwen3.5-9b": {
+          "name": "qwen/qwen3.5-9b"
+        },
+        "qwen/qwen3.5-397b-a17b": {
+          "name": "qwen/qwen3.5-397b-a17b"
+        },
+        "qwen/qwen3.5-plus-20260420": {
+          "name": "qwen/qwen3.5-plus-20260420"
+        },
+        "qwen/qwen3.6-flash": {
+          "name": "qwen/qwen3.6-flash"
+        },
+        "qwen/qwen3.6-plus": {
+          "name": "qwen/qwen3.6-plus"
+        },
+        "qwen/qwen3.6-max-preview": {
+          "name": "qwen/qwen3.6-max-preview"
+        },
+        "qwen/qwen3.7-plus": {
+          "name": "qwen/qwen3.7-plus"
+        }
+      }
+    },
+    "github-copilot": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "GitHub Copilot",
+      "api": "https://api.githubcopilot.com",
+      "options": {
+        "baseURL": ""
+      },
+      "models": {
+        "claude-fable-5": {
+          "name": "Claude Fable 5",
+          "reasoning": true,
+          "provider": {
+            "npm": "@ai-sdk/anthropic",
+            "api": "https://api.githubcopilot.com/v1"
+          },
+          "variants": {
+            "high": {
+              "thinking": {
+                "type": "adaptive",
+                "display": "summarized"
+              },
+              "effort": "high"
+            },
+            "xhigh": {
+              "thinking": {
+                "type": "adaptive",
+                "display": "summarized"
+              },
+              "effort": "xhigh"
+            },
+            "max": {
+              "thinking": {
+                "type": "adaptive",
+                "display": "summarized"
+              },
+              "effort": "max"
+            }
+          }
+        },
+        "claude-haiku-4.5": {
+          "name": "Claude Haiku 4.5",
+          "reasoning": true,
+          "provider": {
+            "npm": "@ai-sdk/anthropic",
+            "api": "https://api.githubcopilot.com/v1"
+          },
+          "variants": {
+            "high": {
+              "thinking": {
+                "type": "enabled",
+                "budgetTokens": 16000
+              }
+            },
+            "max": {
+              "thinking": {
+                "type": "enabled",
+                "budgetTokens": 31999
+              }
+            }
+          }
+        },
+        "claude-opus-4.5": {
+          "name": "Claude Opus 4.5",
+          "reasoning": true,
+          "provider": {
+            "npm": "@ai-sdk/anthropic",
+            "api": "https://api.githubcopilot.com/v1"
+          },
+          "variants": {
+            "high": {
+              "effort": "high"
+            }
+          }
+        },
+        "claude-opus-4.6": {
+          "name": "Claude Opus 4.6",
+          "reasoning": true,
+          "provider": {
+            "npm": "@ai-sdk/anthropic",
+            "api": "https://api.githubcopilot.com/v1"
+          },
+          "variants": {
+            "high": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "high"
+            },
+            "max": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "max"
+            }
+          }
+        },
+        "claude-opus-4.7": {
+          "name": "Claude Opus 4.7",
+          "reasoning": true,
+          "provider": {
+            "npm": "@ai-sdk/anthropic",
+            "api": "https://api.githubcopilot.com/v1"
+          },
+          "variants": {
+            "high": {
+              "thinking": {
+                "type": "adaptive",
+                "display": "summarized"
+              },
+              "effort": "high"
+            },
+            "xhigh": {
+              "thinking": {
+                "type": "adaptive",
+                "display": "summarized"
+              },
+              "effort": "xhigh"
+            },
+            "max": {
+              "thinking": {
+                "type": "adaptive",
+                "display": "summarized"
+              },
+              "effort": "max"
+            }
+          }
+        },
+        "claude-opus-4.8": {
+          "name": "Claude Opus 4.8",
+          "reasoning": true,
+          "provider": {
+            "npm": "@ai-sdk/anthropic",
+            "api": "https://api.githubcopilot.com/v1"
+          },
+          "variants": {
+            "high": {
+              "thinking": {
+                "type": "adaptive",
+                "display": "summarized"
+              },
+              "effort": "high"
+            },
+            "xhigh": {
+              "thinking": {
+                "type": "adaptive",
+                "display": "summarized"
+              },
+              "effort": "xhigh"
+            },
+            "max": {
+              "thinking": {
+                "type": "adaptive",
+                "display": "summarized"
+              },
+              "effort": "max"
+            }
+          }
+        },
+        "claude-sonnet-4": {
+          "name": "Claude Sonnet 4",
+          "reasoning": true,
+          "provider": {
+            "npm": "@ai-sdk/anthropic",
+            "api": "https://api.githubcopilot.com/v1"
+          },
+          "variants": {
+            "high": {
+              "thinking": {
+                "type": "enabled",
+                "budgetTokens": 16000
+              }
+            },
+            "max": {
+              "thinking": {
+                "type": "enabled",
+                "budgetTokens": 31999
+              }
+            }
+          }
+        },
+        "claude-sonnet-4.5": {
+          "name": "Claude Sonnet 4.5",
+          "reasoning": true,
+          "provider": {
+            "npm": "@ai-sdk/anthropic",
+            "api": "https://api.githubcopilot.com/v1"
+          },
+          "variants": {
+            "high": {
+              "thinking": {
+                "type": "enabled",
+                "budgetTokens": 16000
+              }
+            },
+            "max": {
+              "thinking": {
+                "type": "enabled",
+                "budgetTokens": 31999
+              }
+            }
+          }
+        },
+        "claude-sonnet-4.6": {
+          "name": "Claude Sonnet 4.6",
+          "reasoning": true,
+          "provider": {
+            "npm": "@ai-sdk/anthropic",
+            "api": "https://api.githubcopilot.com/v1"
+          },
+          "variants": {
+            "high": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "high"
+            },
+            "max": {
+              "thinking": {
+                "type": "adaptive"
+              },
+              "effort": "max"
+            }
+          }
+        },
+        "gemini-2.5-pro": {
+          "name": "Gemini 2.5 Pro",
+          "provider": {
+            "npm": "@ai-sdk/github-copilot"
+          }
+        },
+        "gemini-3-flash-preview": {
+          "name": "Gemini 3 Flash Preview",
+          "provider": {
+            "npm": "@ai-sdk/github-copilot"
+          }
+        },
+        "gemini-3.1-pro-preview": {
+          "name": "Gemini 3.1 Pro Preview",
+          "provider": {
+            "npm": "@ai-sdk/github-copilot"
+          }
+        },
+        "gemini-3.5-flash": {
+          "name": "Gemini 3.5 Flash",
+          "provider": {
+            "npm": "@ai-sdk/github-copilot"
+          }
+        },
+        "gpt-4.1": {
+          "name": "gpt-4.1"
+        },
+        "gpt-4.1-2025-04-14": {
+          "name": "gpt-4.1-2025-04-14"
+        },
+        "gpt-4o-mini": {
+          "name": "gpt-4o-mini"
+        },
+        "gpt-4o-mini-2024-07-18": {
+          "name": "gpt-4o-mini-2024-07-18"
+        },
+        "gpt-5-mini": {
+          "name": "GPT-5 mini",
+          "reasoning": true,
+          "provider": {
+            "npm": "@ai-sdk/github-copilot"
+          },
+          "variants": {
+            "high": {
+              "reasoningEffort": "high",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            }
+          }
+        },
+        "gpt-5.2": {
+          "name": "GPT-5.2",
+          "reasoning": true,
+          "provider": {
+            "npm": "@ai-sdk/github-copilot"
+          },
+          "variants": {
+            "high": {
+              "reasoningEffort": "high",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "xhigh": {
+              "reasoningEffort": "xhigh",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            }
+          }
+        },
+        "gpt-5.2-codex": {
+          "name": "GPT-5.2 Codex",
+          "reasoning": true,
+          "provider": {
+            "npm": "@ai-sdk/github-copilot"
+          },
+          "variants": {
+            "high": {
+              "reasoningEffort": "high",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "xhigh": {
+              "reasoningEffort": "xhigh",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            }
+          }
+        },
+        "gpt-5.3-codex": {
+          "name": "GPT-5.3 Codex",
+          "reasoning": true,
+          "provider": {
+            "npm": "@ai-sdk/github-copilot"
+          },
+          "variants": {
+            "high": {
+              "reasoningEffort": "high",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "xhigh": {
+              "reasoningEffort": "xhigh",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            }
+          }
+        },
+        "gpt-5.4": {
+          "name": "GPT-5.4",
+          "reasoning": true,
+          "provider": {
+            "npm": "@ai-sdk/github-copilot"
+          },
+          "variants": {
+            "high": {
+              "reasoningEffort": "high",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "xhigh": {
+              "reasoningEffort": "xhigh",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            }
+          }
+        },
+        "gpt-5.4-mini": {
+          "name": "GPT-5.4 mini",
+          "reasoning": true,
+          "provider": {
+            "npm": "@ai-sdk/github-copilot"
+          },
+          "variants": {
+            "high": {
+              "reasoningEffort": "high",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "xhigh": {
+              "reasoningEffort": "xhigh",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            }
+          }
+        },
+        "gpt-5.4-nano": {
+          "name": "GPT-5.4 nano",
+          "reasoning": true,
+          "provider": {
+            "npm": "@ai-sdk/github-copilot"
+          },
+          "variants": {
+            "high": {
+              "reasoningEffort": "high",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "xhigh": {
+              "reasoningEffort": "xhigh",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            }
+          }
+        },
+        "gpt-5.5": {
+          "name": "GPT-5.5",
+          "reasoning": true,
+          "provider": {
+            "npm": "@ai-sdk/github-copilot"
+          },
+          "variants": {
+            "high": {
+              "reasoningEffort": "high",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            },
+            "xhigh": {
+              "reasoningEffort": "xhigh",
+              "reasoningSummary": "auto",
+              "include": [
+                "reasoning.encrypted_content"
+              ]
+            }
+          }
+        },
+        "mai-code-1-flash-picker": {
+          "name": "MAI-Code-1-Flash",
+          "provider": {
+            "npm": "@ai-sdk/github-copilot"
+          }
+        }
+      }
+    }
+  }
+}

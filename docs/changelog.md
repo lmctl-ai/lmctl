@@ -13,7 +13,7 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
   - Chat/MCP path: sends opencode ACP `session/set_config_option` for `model`, then `effort`.
   - Seed path: uses `opencode run --model <id> --variant <effort>`.
 - Added managed opencode provider entries for GitHub Copilot, DeepSeek, and OpenRouter-backed Qwen models.
-- Added `examples/opencode.github-copilot.json` as a copyable opencode provider/variant sample.
+- Added `examples/opencode.json` as a copyable opencode provider/variant sample.
 - `lmctl lint` now warns when:
   - `effort=` is used outside `provider=opencode`;
   - opencode `effort=` is set without `model=`;
