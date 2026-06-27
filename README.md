@@ -27,7 +27,10 @@ kinds of lock-in. lmctl is built to remove each one:
   model grading its own work in a different hat, which rubber-stamps its own
   blind spots. lmctl makes review **adversarial**: the reviewer is a different
   provider *and* model from the author, so the check is genuinely independent of
-  the work.
+  the work. And "provider-agnostic" is literal — alongside the major CLIs, the
+  OpenCode provider reaches **any model, local (Ollama) or remote** (DeepSeek,
+  Qwen, OpenRouter, Copilot's GPT/Claude/Gemini, …); pick any collection and put
+  them in one team, not one model at a time.
 - **Workflow lock-in.** When most tools say "multi-agent," one provider
   auto-spawns the agents and you just watch. lmctl puts **you** in charge: you
   divide the work and build the team in plain text (a lead talks to its members;

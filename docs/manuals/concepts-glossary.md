@@ -14,7 +14,12 @@ provider sessions, and durable-memory.
 The current positioning is practical:
 
 - **Provider-agnostic control plane** — one CLI over Claude, Codex, Gemini,
-  Copilot, OpenCode, Qwen, and Antigravity (`agy`).
+  Copilot, OpenCode, Qwen, and Antigravity (`agy`). Through the **OpenCode**
+  provider this reaches essentially *any* model — local (Ollama) or remote
+  (DeepSeek, Qwen, OpenRouter, GitHub Copilot's GPT/Claude/Gemini, any
+  OpenAI-compatible endpoint). A single team can mix any collection of these
+  models, working together — not one model at a time. See
+  [the sample config](https://lmctl.com/examples/opencode.json).
   > **Gemini note:** the `gemini` provider requires an **API or enterprise**
   > Google account. Google has retired the Gemini CLI for **personal**
   > subscriptions — personal-subscription users should use **`agy`**
