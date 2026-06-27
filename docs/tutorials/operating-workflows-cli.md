@@ -43,17 +43,10 @@ lmctl lint ./backend-v2/backend-v2.lmctl
 lmctl seed ./backend-v2/backend-v2.lmctl
 ```
 
-Use `connect` when one team needs an explicit cross-team edge to a member in
-another team:
-
-```bash
-lmctl connect ./frontend/frontend.lmctl ./backend/backend.lmctl Reviewer
-lmctl lint ./frontend/frontend.lmctl
-lmctl seed ./frontend/frontend.lmctl
-```
-
-`connect` appends a team-level `_CONNECT_` entry to the source teamfile. See
-[Teams & cross-team connections](../manuals/teams-connect.md) for the semantics.
+When one team needs to reach a member in another team, no setup is required:
+cross-team calls work automatically at runtime, with runtime cycle protection
+against runaway loops. See
+[Cross-team calls](../manuals/teams-connect.md) for the semantics.
 
 ## Answer workflow escalations
 

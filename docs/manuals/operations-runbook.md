@@ -121,7 +121,7 @@ lmctl api issues close <id> --commit-hash <sha> --closed-run-id <run>
 lmctl lint ./team.lmctl
 lmctl seed ./team.lmctl
 lmctl clone ./team.lmctl ./team-template.lmctl
-lmctl connect ./frontend.lmctl ./backend.lmctl Reviewer
 ```
 
-Run `lint` before `seed` after editing a teamfile or adding `_CONNECT_` edges.
+Run `lint` before `seed` after editing a teamfile. Cross-team calls work
+automatically at runtime — there is nothing to wire up.

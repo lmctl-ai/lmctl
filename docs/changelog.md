@@ -9,6 +9,7 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 
 ## Unreleased
 
+- Removed the static `_CONNECT_` cross-team statement and the `lmctl connect` command. Cross-team calls now work automatically at runtime, with automatic cycle protection (a cross-team send is stopped when its target is an active ancestor and it either recurs within ~60s or has been revisited more than twice — fan-out and slow back-and-forth are allowed). Legacy `_CONNECT_` lines are ignored with a `lmctl lint` deprecation warning. DB migration v38 drops the `team_connection` table.
 - Added `provider=opencode` model-effort selection with `_MEMBER_ ... model=<id> effort=<variant>`.
   - Chat/MCP path: sends opencode ACP `session/set_config_option` for `model`, then `effort`.
   - Seed path: uses `opencode run --model <id> --variant <effort>`.

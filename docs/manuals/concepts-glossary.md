@@ -124,8 +124,8 @@ lmctl team seed my-team
 Seeding starts each provider CLI once, captures the session id, and snapshots
 the member prompt so workflows can address members by alias.
 
-For teamfile wiring and `_CONNECT_` edges, see
-[Teams & cross-team connections](./teams-connect.md).
+Cross-team calls work automatically at runtime — no teamfile wiring is needed.
+See [Cross-team calls](./teams-connect.md).
 
 ## Model routing
 

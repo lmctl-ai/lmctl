@@ -15,11 +15,13 @@ workspace, project, and directory are the same unit.
 A team is a named set of members. A member is an agent alias backed by a native
 provider CLI, optional model, and provider session directory.
 
-## _CONNECT_
+## cross-team call
 
-An explicit cross-team edge in a `.lmctl` teamfile. `_CONNECT_ alias=<M>
-teamfile=<T>` lets the source team's Lead send to member `<M>` of another team
-`<T>`.
+A message from one team's Lead to a member of another team. Cross-team calls
+work automatically at runtime over the chat / MCP path — no declaration is
+needed. Runtime cycle protection stops only genuine runaway recursion. The old
+`_CONNECT_` statement and `lmctl connect` command have been removed; legacy
+`_CONNECT_` lines are ignored with a lint deprecation warning.
 
 ## workflow / archetype
 

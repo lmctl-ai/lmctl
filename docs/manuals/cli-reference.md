@@ -54,23 +54,19 @@ lmctl team add-member <team-name> --alias A --provider P [--model M] [--role R] 
 lmctl workflow load <name> <path-to-json | lmctl://workflow/<name>>
 ```
 
-## Teamfiles, clone, connect, lint, seed
+## Teamfiles, clone, lint, seed
 
 `.lmctl` teamfiles are editable team documents. Use `clone` to copy a teamfile
 without carrying over session ids:
 
 ```bash
 lmctl clone ./backend/backend.lmctl ./backend-v2/backend-v2.lmctl
+lmctl lint ./backend-v2/backend-v2.lmctl
+lmctl seed ./backend-v2/backend-v2.lmctl
 ```
 
-Use `connect` to append a cross-team `_CONNECT_` edge from one teamfile to a
-target member in another teamfile:
-
-```bash
-lmctl connect ./frontend/frontend.lmctl ./backend/backend.lmctl Reviewer
-lmctl lint ./frontend/frontend.lmctl
-lmctl seed ./frontend/frontend.lmctl
-```
+Cross-team calls work automatically at runtime — there is no command to wire
+them up. See [Cross-team calls](./teams-connect.md).
 
 `lmctl lint <teamfile.lmctl>` validates teamfile syntax, session placeholders,
 and configured models. `lmctl seed <teamfile.lmctl>` fills missing or
