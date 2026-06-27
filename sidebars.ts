@@ -29,6 +29,7 @@ const sidebars: SidebarsConfig = {
       },
       items: [
         'tutorials/install-first-run',
+        'tutorials/baby-steps',
         'tutorials/first-workflow-job-image-qa',
         'tutorials/qa-suite-ai-test-chapters',
         'tutorials/operating-workflows-cli',
