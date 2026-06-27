@@ -1,6 +1,23 @@
 import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
 
 const sidebars: SidebarsConfig = {
+  whySidebar: [
+    {
+      type: 'category',
+      label: 'Why lmctl',
+      link: {
+        type: 'generated-index',
+        title: 'Why lmctl',
+        description: 'The ideas behind lmctl: diverse players, adversarial review, scalable context, and cost-aware model routing.',
+      },
+      items: [
+        'why/players-and-diversity',
+        'why/adversarial-review',
+        'why/context-and-durable-memory',
+        'why/cost-and-model-routing',
+      ],
+    },
+  ],
   tutorialSidebar: [
     {
       type: 'category',

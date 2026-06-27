@@ -67,6 +67,12 @@ const config: Config = {
       items: [
         {
           type: 'docSidebar',
+          sidebarId: 'whySidebar',
+          position: 'left',
+          label: 'Why lmctl',
+        },
+        {
+          type: 'docSidebar',
           sidebarId: 'tutorialSidebar',
           position: 'left',
           label: 'Tutorials',
