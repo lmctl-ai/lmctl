@@ -29,7 +29,10 @@ The current positioning is practical:
   provider and model* than the author, not the same model self-reviewing in a
   different hat (a Claude lead can hand coding to Codex and have Gemini review
   it). A model can't rubber-stamp its own blind spots when the reviewer isn't
-  that model.
+  that model. This is the value of **model diversity**: different models have
+  different (uncorrelated) blind spots, so a varied team catches what one model —
+  or its own clones — can't, the same reason ensembles beat a single model and
+  you don't review your own code.
 - **Operator-built teams, not auto-spawned agents** — unlike tools where one
   provider spawns agents you can't steer, in lmctl *you* divide the work and
   compose the team in plain text, choose which provider and model plays each

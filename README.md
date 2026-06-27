@@ -27,7 +27,9 @@ kinds of lock-in. lmctl is built to remove each one:
   model grading its own work in a different hat, which rubber-stamps its own
   blind spots. lmctl makes review **adversarial**: the reviewer is a different
   provider *and* model from the author, so the check is genuinely independent of
-  the work. And "provider-agnostic" is literal — alongside the major CLIs, the
+  the work — different models have different (uncorrelated) blind spots, and that
+  diversity is the point: a varied team catches what one model, or its clones,
+  can't. And "provider-agnostic" is literal — alongside the major CLIs, the
   OpenCode provider reaches **any model, local (Ollama) or remote** (DeepSeek,
   Qwen, OpenRouter, Copilot's GPT/Claude/Gemini, …); pick any collection and put
   them in one team, not one model at a time.
