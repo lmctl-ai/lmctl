@@ -72,11 +72,11 @@ its sessions:
 lmctl ls                      # list native provider sessions in scope
 lmctl ls --runs               # list recent lmctl runs instead
 lmctl tail <session-id>       # print a session's messages (add --watch to follow)
-lmctl info <session-id>       # session state + token usage
+lmctl health <session-id>       # session state + token usage
 ```
 
 `lmctl ls` is your "what's here?", `lmctl tail` is your "read it", and
-`lmctl info` is your "how big / what state". These work across every provider —
+`lmctl health` is your "how big / what state". These work across every provider —
 one set of commands, whatever CLI produced the session.
 
 ## Where lmctl keeps state

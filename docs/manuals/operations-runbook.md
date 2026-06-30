@@ -208,7 +208,7 @@ This is subjective; lmctl does not auto-detect it. The maintenance procedure:
 3. **Then refresh** the member: `lmctl refresh ./team.lmctl <member>`. The fresh
    session drops the drifted history but re-reads `durable-memory/`.
 
-`lmctl info ./team.lmctl <member>` shows the session's size / token usage as a
+`lmctl health ./team.lmctl <member>` shows the session's size / token usage as a
 rough signal that a session is getting large (a common precursor to drift). A
-richer per-member liveness view may evolve from `lmctl info` later; for now the
+richer per-member liveness view may evolve from `lmctl health` later; for now the
 judgment of "large and drifting → refresh" is yours.

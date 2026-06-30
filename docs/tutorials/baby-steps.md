@@ -24,7 +24,7 @@ Or, once installed (`npm install -g @lmctl-ai/lmctl`):
 
 ```bash
 lmctl ls                    # list native provider sessions, across providers
-lmctl info <sessionid>      # one session's state + token usage
+lmctl health <sessionid>      # one session's state + token usage
 lmctl tail --session <id>   # read its messages (add --watch to follow live)
 ```
 
@@ -49,7 +49,7 @@ Then seed it so lmctl captures (or confirms) each underlying session:
 ```bash
 lmctl seed ./team.lmctl       # starts each provider once, captures the session id
 lmctl tail ./team.lmctl Coder # now address by alias, not a cryptic id
-lmctl info ./team.lmctl Reviewer
+lmctl health ./team.lmctl Reviewer
 ```
 
 Now you work with names — `Coder`, `Reviewer` — instead of copying sessionids

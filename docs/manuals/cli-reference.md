@@ -160,8 +160,8 @@ lmctl terminal <teamfile>:<alias>
 lmctl terminal --run <id>
 lmctl terminal --project my-project --team my-team --alias QA --size --json
 lmctl tail --run <id> --watch
-lmctl info <teamfile>
-lmctl info --run <id>
+lmctl health <teamfile>
+lmctl health --run <id>
 ```
 
 `terminal --size` reports message count, transcript bytes, and a local token
