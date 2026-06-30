@@ -152,6 +152,17 @@ So `124` usually means "delivered, in progress," and `1` often means "busy, retr
 later" — do **not** blindly retry a `1` before checking whether it was a
 busy/servicing rejection.
 
+**Wait vs background is the caller's choice.** `lmctl chat` waits by default — it
+blocks for the member's turn and returns the reply. To fire-and-forget, *the
+client* backgrounds the call (e.g. `lmctl chat … &`, a `timeout` wrapper, or your
+orchestrator's own job runner). lmctl has no detach flag because that is a client
+concern; the `lmctl_chat` MCP tool likewise points batch/background work at the
+CLI.
+
+**Busy means "not ready yet" — just try again.** A `1` with `<member> is servicing
+…` means the member is mid-turn. There is no queue: wait and re-send. It is not a
+failure and not a reason to declare the team blocked.
+
 ## A freshly-seeded session is not instantly chat-ready
 
 `lmctl seed` returns once it has captured the session id, but the member then
@@ -185,3 +196,19 @@ a hung Lead.
 If a member→member handoff (a Lead's `lmctl_chat` to its Coder) returns
 `aborted`, the calling agent's turn was cancelled mid-handoff — fall back to a
 backup member or retry, rather than declaring the team blocked.
+
+## When a member drifts (long sessions)
+
+Over a long session a member can drift — output degrades or wanders off-track.
+This is subjective; lmctl does not auto-detect it. The maintenance procedure:
+
+1. **Check `durable-memory/`** — is the project's current state captured there?
+2. **Update it if not** — have the member (or you) write what matters into
+   `durable-memory/` so it survives a fresh session.
+3. **Then refresh** the member: `lmctl refresh ./team.lmctl <member>`. The fresh
+   session drops the drifted history but re-reads `durable-memory/`.
+
+`lmctl info ./team.lmctl <member>` shows the session's size / token usage as a
+rough signal that a session is getting large (a common precursor to drift). A
+richer per-member liveness view may evolve from `lmctl info` later; for now the
+judgment of "large and drifting → refresh" is yours.
