@@ -197,6 +197,16 @@ If a member→member handoff (a Lead's `lmctl_chat` to its Coder) returns
 `aborted`, the calling agent's turn was cancelled mid-handoff — fall back to a
 backup member or retry, rather than declaring the team blocked.
 
+**If a Lead says it delegated but the member never receives the task**, the Lead
+most likely narrated intent ("Coder is getting the task now") without actually
+**calling** `lmctl_chat`. lmctl provides the delegation tool as an *option* — it
+does not force a Lead to invoke it. On some providers (e.g. codex) the tool is
+*deferred* behind a tool-search, so the Lead has to discover it and then call it
+in the **same turn**; a Lead that stops after "I'll load the tool" never
+delegates. If a Lead keeps stalling here, re-onboard it with a **delegation-first**
+instruction ("call `lmctl_chat` now to send Coder X") rather than a plan-first
+one, or hand the task to a backup member.
+
 ## When a member drifts (long sessions)
 
 Over a long session a member can drift — output degrades or wanders off-track.
