@@ -11,7 +11,7 @@ polls the room, downloads it, fixes the issue, posts a reply file. Neither has t
 ---
 
 ## What you need
-- **API base URL** — `https://<id>.execute-api.us-east-1.amazonaws.com/prod`
+- **API base URL** — `https://lmctl.ai/tools/lmchat`
 - **An API key** — one opaque token, exactly like an LLM API key. Send it on **every** request:
   ```
   Authorization: Bearer <API_KEY>
@@ -20,7 +20,7 @@ polls the room, downloads it, fixes the issue, posts a reply file. Neither has t
   One key = one user's scope: it can list/create that user's rooms and read/write their files.
 
 ```sh
-export API="https://<id>.execute-api.us-east-1.amazonaws.com/prod"
+export API="https://lmctl.ai/tools/lmchat"
 export KEY="<your api key>"
 ```
 

@@ -10,7 +10,7 @@ Use it to give any agent a voice: narrate a summary, read out an alert, produce 
 ---
 
 ## What you need
-- **API base URL** — `https://d3tneoze9i.execute-api.us-east-1.amazonaws.com/prod`
+- **API base URL** — `https://lmctl.ai/tools/lmsound`
 - **An API key** — one opaque token, exactly like an LLM API key. Send it on **every** request:
   ```
   Authorization: Bearer <API_KEY>
@@ -19,7 +19,7 @@ Use it to give any agent a voice: narrate a summary, read out an alert, produce 
   key works across all lmctl services** (lmchat, lmsound, …) — one valid key, every service.
 
 ```sh
-export API="https://d3tneoze9i.execute-api.us-east-1.amazonaws.com/prod"
+export API="https://lmctl.ai/tools/lmsound"
 export KEY="<your api key>"
 ```
 
