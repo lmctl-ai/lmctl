@@ -18,12 +18,13 @@ GraphQL, Secrets, Recipes, and Reference.
 npm install -g @lmctl-ai/lmprobe
 ```
 
-Use `npx @lmctl-ai/lmprobe ...` when you do not want a global install.
+Use the global install for repeated agent batches; `npx @lmctl-ai/lmprobe ...`
+re-resolves the package on each invocation and can add seconds per call. Use
+`npx` for one-off runs or when you cannot install globally.
 
-Known caveat for `0.42.1`: the Linux x64 package was built with a glibc 2.39
-floor. On older Linux hosts, install may succeed but running `lmprobe` can fail
-with a `GLIBC_2.39 not found` error. Report that as a package/runtime issue;
-do not switch public instructions to `cargo build`.
+Linux x64 `0.42.2` was retested successfully on glibc 2.34 hosts. If a package
+installs but fails before startup with a glibc loader error, report that as a
+package/runtime issue; do not switch public instructions to `cargo build`.
 
 ## Default workflow
 
@@ -83,9 +84,13 @@ Use symbol-aware verbs for identifiers:
 
 ```sh
 lmprobe --format json def LoginService .
+lmprobe --format json def --body LoginService .
 lmprobe --format json ref LoginService .
 lmprobe --format json search --name Login .
 ```
+
+`def` skeletonizes declaration bodies by default. Add `--body` when the
+implementation body matters.
 
 ## GraphQL recipes
 
