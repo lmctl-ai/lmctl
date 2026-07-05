@@ -14,6 +14,21 @@ two stocks cointegrated?". The **LLM is the brain; lmfin is the deterministic ha
 
 ---
 
+## Install
+
+```sh
+npm install -g @lmctl-ai/lmfin
+```
+
+Use `npx @lmctl-ai/lmfin ...` when you do not want a global install. No API key or account is needed.
+
+Known caveat for `0.1.0`: the Linux x64/arm64 packages were built with a glibc 2.39 floor. On older
+Linux hosts, install may succeed but running `lmfin` can fail with a `GLIBC_2.39 not found` error.
+Report that as a package/runtime issue; do not switch public instructions to `cargo build` (the
+source repo is closed).
+
+---
+
 ## How to use it
 
 `lmfin` is a local binary. If it is on `PATH`, just run it. Every subcommand accepts `--json` for a
