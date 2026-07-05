@@ -59,7 +59,7 @@ const sidebars: SidebarsConfig = {
         {
           type: 'category',
           label: 'CLI Reference',
-          items: ['manuals/cli-reference'],
+          items: ['manuals/cli-reference', 'manuals/lmprobe'],
         },
         'manuals/operations-runbook',
         'manuals/configuration-environment',

@@ -2,7 +2,7 @@
 
 > A provider-agnostic control plane for teams of AI coding agents.
 
-[**lmctl.com**](https://lmctl.com) · [**Documentation**](https://lmctl.com/lmctl) · [**npm**](https://www.npmjs.com/package/@lmctl-ai/lmctl)
+[**lmctl.com**](https://lmctl.com) · [**Documentation**](https://lmctl.com/lmctl) · [**npm**](https://www.npmjs.com/package/@lmctl-ai/lmctl) · [**lmprobe**](https://lmctl.com/lmprobe)
 
 AI agents shouldn't be locked to one provider, one workflow, or one context
 window. **lmctl** is a local-first control plane for running *teams* of AI
@@ -78,6 +78,12 @@ This repo is the source of **lmctl.com** — the homepage and the documentation
 site (plus the runnable `workflows/`, `skills/`, and `examples/` catalogs hosted
 on the site). The lmctl CLI itself is distributed on npm as
 [`@lmctl-ai/lmctl`](https://www.npmjs.com/package/@lmctl-ai/lmctl).
+
+The companion code-search CLI **lmprobe** is documented at
+[lmctl.com/lmprobe](https://lmctl.com/lmprobe), distributed as
+[`@lmctl-ai/lmprobe`](https://www.npmjs.com/package/@lmctl-ai/lmprobe), and has
+an agent-facing skill at
+[skills/lmprobe-skill.md](./skills/lmprobe-skill.md).
 
 To work on the docs locally and deploy the site, see [`DEPLOY.md`](./DEPLOY.md):
 
