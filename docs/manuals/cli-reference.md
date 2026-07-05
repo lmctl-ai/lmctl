@@ -162,7 +162,14 @@ lmctl terminal --project my-project --team my-team --alias QA --size --json
 lmctl tail --run <id> --watch
 lmctl health <teamfile>
 lmctl health --run <id>
+lmctl nudge <teamfile>[:alias]
 ```
+
+`lmctl nudge` delivers an idle Lead's completed-but-undelivered background
+delegations — it re-invokes the target so it processes results from jobs it
+launched with `chat --detach` but never got back (a Lead only processes those on
+its next turn). It is a read-only no-op when nothing is pending and skips a
+target that is mid-turn (busy), never interrupting it.
 
 `terminal --size` reports message count, transcript bytes, and a local token
 estimate. It does not compact or change the session.

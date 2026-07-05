@@ -33,6 +33,20 @@ and **pull** results with `lmctl jobs` when convenient — don't sit attached to
 mode:async`, Agy `run_command`, Qwen `monitor` — you can instead background the *blocking*
 `lmctl chat` and be notified natively.)
 
+## Re-invoke an idle Lead to drain finished work — `lmctl nudge`
+A Lead only *processes* its delegated jobs' results the next time it takes a turn. So if a Lead
+delegated with `--detach`, its jobs finished, and it then went **idle**, those results sit
+undelivered and the Lead never advances — it looks "stuck standing by." Push them on demand:
+```sh
+lmctl nudge "<teamA>.lmctl"          # deliver teamA's Lead's completed-but-undelivered results
+lmctl nudge "<teamA>.lmctl":Coder    # or a specific member
+```
+`nudge` re-invokes the target so it acts on results it delegated but never got back. It is a
+**read-only no-op** when nothing is pending, and it **respects the busy lease** — a Lead mid-turn is
+skipped, never interrupted. This is the clean way to unstick a fleet where Coders finished but the
+Lead "went quiet": `lmctl jobs` shows the jobs `done`, then `lmctl nudge` gets the Lead to process
+them. (Requires lmctl ≥ 0.1.79.)
+
 ## Warm up a newly-seeded Lead
 When you seed a team and start talking to its Lead, open with a connectivity ping:
 > "use `lmctl chat`/`lmctl_chat` to ping each of your members with 'reply OK' to confirm you can
