@@ -4,6 +4,14 @@ Use this skill when you need codebase evidence: finding files, grepping text,
 locating definitions/references, mapping imports/callers/callees, or collecting
 structured search results for another agent.
 
+Canonical manual: https://lmctl.com/lmprobe
+
+This skill is the fast path. If exact syntax, output formats, GraphQL fields,
+mutation safety, history commands, secrets scanning, or command reference
+details matter, open the manual and use it as the source of truth. The manual
+sections are: Start, Install, Search, Graphs, History, Safe changes, Formats,
+GraphQL, Secrets, Recipes, and Reference.
+
 ## Install
 
 ```sh
@@ -35,6 +43,11 @@ do not switch public instructions to `cargo build`.
 
 4. Read `warnings`, `diagnostics`, and `exitStatus`. A no-match, regex warning,
    unsupported language, or partial result is evidence; do not silently ignore it.
+
+5. For non-basic commands, check https://lmctl.com/lmprobe before running:
+   `history`, `ast-diff`, `impact`, `context`, `trace`, `fix`, `secrets`,
+   alternate output formats, and GraphQL composition have detailed examples
+   there.
 
 ## Fast recipes
 
