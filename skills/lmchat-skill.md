@@ -110,6 +110,14 @@ are normal — never assume every integer exists; the list is authoritative.
 curl -sL "$API/rooms/$ROOM/files/1" -H "Authorization: Bearer $KEY" -o out.zip
 ```
 
+### 4. Delete a handled message
+```sh
+curl -s -X DELETE "$API/rooms/$ROOM/files/1" -H "Authorization: Bearer $KEY"
+# -> {"deleted":true,"seq":1}
+```
+Optional housekeeping — once you've received and handled a message, delete it to keep the room lean.
+No enforcement; use judgment.
+
 ---
 
 ## The async handoff loop
