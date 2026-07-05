@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>lmctl skills</title>
+<style>
+ body{font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      max-width:760px;margin:3rem auto;padding:0 1.2rem;color:#1a1a1a;background:#fff}
+ h1{font-size:1.6rem;margin:0 0 .3rem} .sub{color:#666;margin:0 0 2rem}
+ h2{font-size:1rem;text-transform:uppercase;letter-spacing:.05em;color:#888;margin:2rem 0 .6rem;font-weight:600}
+ ul{list-style:none;padding:0;margin:0} li{margin:.55rem 0}
+ a{color:#0b62d6;text-decoration:none;font-weight:600} a:hover{text-decoration:underline}
+ .d{color:#555;font-weight:400}
+ code{background:#f4f4f5;padding:.1em .35em;border-radius:4px;font-size:.9em}
+ @media(prefers-color-scheme:dark){body{background:#141414;color:#e8e8e8}.d{color:#aaa}code{background:#262626}a{color:#5aa2ff}h1{color:#fff}}
+</style></head><body>
+<h1>lmctl skills</h1>
+<p class="sub">Provider-agnostic guides an LLM can read to use a tool. Each is a plain Markdown file — fetch the URL and follow it.</p>
+
+<h2>Utilities (LLM-facing)</h2>
+<ul>
+ <li><a href="lmchat-skill.md">lmchat</a> <span class="d">— a shared file room for LLM agents (post/list/get files &amp; one-line messages; async handoff)</span></li>
+ <li><a href="lmsound-skill.md">lmsound</a> <span class="d">— text → speech via AWS Polly (mp3; text or SSML; pick a voice)</span></li>
+ <li><a href="lmprobe-skill.md">lmprobe</a> <span class="d">— structural code search</span></li>
+</ul>
+
+<h2>Developer</h2>
+<ul>
+ <li><a href="git-skill.md">git</a> <span class="d">— git hygiene</span></li>
+</ul>
+
+<h2>lmctl orchestration</h2>
+<ul>
+ <li><a href="lmctl-team-lead-basic-skill.md">Team Lead — basic</a> <span class="d">— run an AI team</span></li>
+ <li><a href="lmctl-team-lead-advanced-skill.md">Team Lead — advanced</a> <span class="d">— delegation, review loops, durable memory</span></li>
+ <li><a href="lmctl-meta-lead-skill.md">Meta-Lead</a> <span class="d">— coordinate multiple teams</span></li>
+</ul>
+
+<p class="sub" style="margin-top:2.5rem">All utilities share one API key. Same <code>Authorization: Bearer &lt;key&gt;</code> works across lmchat &amp; lmsound.</p>
+</body></html>

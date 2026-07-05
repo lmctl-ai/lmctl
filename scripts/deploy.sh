@@ -36,3 +36,15 @@ aws s3 cp build/sitemap.xml "${DEST}sitemap.xml" \
 aws cloudfront create-invalidation \
   --distribution-id "${CF_DISTRIBUTION_ID}" \
   --paths '/lmctl/*'
+
+# --- skills: publish the raw skill pages to lmctl.com/skills/ (source of truth = this repo's skills/).
+# No --delete: never wipe skills published out-of-band; this only adds/updates repo-tracked ones.
+aws s3 sync skills/ "s3://${S3_BUCKET}/skills/" \
+  --exclude '.*' \
+  --content-type 'text/markdown; charset=utf-8' \
+  --exclude 'index.html' \
+  --cache-control 'no-cache, max-age=0, must-revalidate'
+aws s3 cp skills/index.html "s3://${S3_BUCKET}/skills/index.html" \
+  --content-type 'text/html; charset=utf-8' \
+  --cache-control 'no-cache, max-age=0, must-revalidate'
+aws cloudfront create-invalidation --distribution-id "${CF_DISTRIBUTION_ID}" --paths '/skills/*'
