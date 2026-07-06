@@ -14,18 +14,28 @@ two stocks cointegrated?". The **LLM is the brain; lmfin is the deterministic ha
 
 ---
 
-## Install
+## Install (local dogfood — build from source)
+
+lmfin is currently distributed for **local internal dogfooding only**. There is **no public package
+to install** right now — do not `npm install` or `npx` it. Use a locally built binary.
+
+Build it from the lmfin source with a normal Rust toolchain:
 
 ```sh
-npm install -g @lmctl-ai/lmfin
+cargo build --release        # produces ./target/release/lmfin
+# optional: put it on PATH
+cargo install --path .        # installs `lmfin` into ~/.cargo/bin
 ```
 
-Use `npx @lmctl-ai/lmfin ...` when you do not want a global install. No API key or account is needed.
+Or just run the operator-provided binary if it is already on your `PATH`. Confirm it works:
 
-Known caveat for `0.1.0`: the Linux x64/arm64 packages were built with a glibc 2.39 floor. On older
-Linux hosts, install may succeed but running `lmfin` can fail with a `GLIBC_2.39 not found` error.
-Report that as a package/runtime issue; do not switch public instructions to `cargo build` (the
-source repo is closed).
+```sh
+lmfin --version
+lmfin --help
+```
+
+No API key or account is needed — all data sources are keyless. (A public install channel may come
+later; until then, treat lmfin as a local tool you build/run on this machine.)
 
 ---
 
