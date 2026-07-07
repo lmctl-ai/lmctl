@@ -26,7 +26,7 @@ Set the model per member with `model=` on each `_MEMBER_` line. Use
 
 ```text
 _MEMBER_ alias=Lead     provider=claude    model=<top-tier-id>
-_MEMBER_ alias=Coder    provider=opencode  model=<lean-id> effort=<variant>
+_MEMBER_ alias=Coder    provider=qwen      model=qwen3-coder-plus
 _MEMBER_ alias=Reviewer provider=codex     model=<top-tier-id>
 ```
 
