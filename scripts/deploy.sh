@@ -19,6 +19,24 @@ if [[ ! -d build ]]; then
   exit 1
 fi
 
+aws s3 cp homepage/index.html "s3://${S3_BUCKET}/index.html" \
+  --content-type 'text/html; charset=utf-8' \
+  --cache-control 'no-cache, max-age=0, must-revalidate'
+aws s3 cp homepage/404.html "s3://${S3_BUCKET}/404.html" \
+  --content-type 'text/html; charset=utf-8' \
+  --cache-control 'no-cache, max-age=0, must-revalidate'
+aws s3 cp homepage/robots.txt "s3://${S3_BUCKET}/robots.txt" \
+  --content-type 'text/plain; charset=utf-8' \
+  --cache-control 'no-cache, max-age=0, must-revalidate'
+aws s3 cp homepage/sitemap.xml "s3://${S3_BUCKET}/sitemap.xml" \
+  --content-type 'application/xml; charset=utf-8' \
+  --cache-control 'no-cache, max-age=0, must-revalidate'
+aws s3 sync homepage/assets/ "s3://${S3_BUCKET}/assets/" \
+  --cache-control 'public, max-age=31536000, immutable'
+aws cloudfront create-invalidation \
+  --distribution-id "${CF_DISTRIBUTION_ID}" \
+  --paths '/' '/index.html' '/404.html' '/robots.txt' '/sitemap.xml' '/assets/*'
+
 DEST="s3://${S3_BUCKET}/lmctl/"
 
 aws s3 sync build/ "${DEST}" \

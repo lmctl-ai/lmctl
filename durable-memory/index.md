@@ -32,7 +32,8 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   sidebar, exposed the missing skills docs, removed a dead skills link, replaced
   stale CLI/storage wording, clarified Copilot vs OpenCode provider routing,
   removed brittle Qwen plan specifics, and made broken Markdown links fail the
-  Docusaurus build.
+  Docusaurus build. The deploy script now also publishes the root `homepage/`
+  files, not only `/lmctl/` docs and `/skills/`.
 - 2026-07-07: Added a public [Durable Memory Index](../docs/manuals/durable-memory-index.md)
   page adapted from the lmctl source project's internal `durable-memory/index.md`
   without private workspace paths or source-only implementation state.
