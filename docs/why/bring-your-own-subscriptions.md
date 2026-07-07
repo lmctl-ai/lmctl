@@ -42,7 +42,7 @@ provider's own CLI**, so every seat runs on whatever subscription you already ho
 | --- | --- |
 | Claude Pro / Max (Claude Code) | `provider=claude` |
 | ChatGPT / Codex | `provider=codex` |
-| GitHub Copilot (Pro / Pro+) | `provider=opencode` |
+| GitHub Copilot (Pro / Pro+) | `provider=copilot` for Copilot CLI, or `provider=opencode` for Copilot-backed model routing through OpenCode |
 | Google Antigravity | `provider=agy` |
 | **Alibaba Qwen Coding Plan (Qwen Code)** | **`provider=qwen`** |
 
@@ -52,10 +52,11 @@ relationship, no per-token surprises.
 ## Qwen Code, explicitly
 
 Alibaba's **[Qwen Coding Plan](https://www.alibabacloud.com/help/en/model-studio/coding-plan)**
-(on Model Studio) is a flat monthly subscription — from ~**$50/month**, roughly
-**90,000 requests/month** — for the latest **Qwen3.5-Plus** coding models (and
-others: GLM-5, Kimi, MiniMax). It works with **Qwen Code** (and Claude Code), so
-lmctl reaches it directly as `provider=qwen`.
+(on Model Studio) is a flat monthly subscription for Qwen Code. Plan names,
+included models, regional availability, and request limits can change, so treat
+Alibaba's plan page as the source of truth. For lmctl, the important bit is the
+shape: it is a subscription-backed coding CLI, so lmctl reaches it directly as
+`provider=qwen`.
 
 In lmctl, Qwen Code is a **first-class, equal member** — capable enough to take
 *any* seat (lead, reviewer, or coder), not only the cheap one. Put it where it
@@ -70,7 +71,8 @@ _MEMBER_ alias=Reviewer  provider=codex   model=<top-tier-id>
 ```
 
 Three subscriptions, one team, **adversarial cross-provider review** — and the
-heavy typing runs on the cheapest capable seat.
+heavy typing can move to the cheapest capable seat without removing the premium
+models from the team.
 
 ## Why this means no lock-in
 
@@ -88,12 +90,11 @@ The point of a diverse team isn't only quality (different models, different blin
 spots) — it's **leverage**: once you can mix providers freely, no single one can
 raise your costs or corner your workflow.
 
-## What's next (phase 2): API
+## API routing uses the same shape
 
-Subscriptions are where solo devs and small teams start. Once you've felt what
-*choice* is worth on flat plans, the same per-role routing extends to **per-token
-API** — bursty, high-throughput work — with the identical teamfile. Same freedom,
-different meter.
+Subscriptions are where solo devs and small teams often start. For bursty,
+high-throughput work, the same per-role routing also applies to **per-token API**
+models with the identical teamfile shape. Same freedom, different meter.
 
 ## Related
 

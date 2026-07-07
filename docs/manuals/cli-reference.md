@@ -6,10 +6,10 @@ sidebar_position: 2
 # CLI reference
 
 `lmctl` is a local command-line tool. It runs on your machine and works
-directly against your local lmctl state (the SQLite profile under `~/.lmctl/`).
-The lmctl database, daemon, and workflow state are local by default. Provider
-CLIs still use their own configured services when they run model turns, and the
-optional cloud console is an explicit opt-in.
+directly against your local lmctl state (a SQLite workspace database, normally
+under `~/.lmctl/`). The lmctl database, daemon, and workflow state are local by
+default. Provider CLIs still use their own configured services when they run
+model turns, and the optional cloud console is an explicit opt-in.
 
 Its commands come in two shapes, both part of the same CLI:
 

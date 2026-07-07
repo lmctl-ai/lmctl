@@ -27,6 +27,12 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-07-07: Ran a whole-site review with Coder, Reviewer1, and Reviewer3.
+  Follow-up fixes added the Bring Your Own Subscriptions page to the Why
+  sidebar, exposed the missing skills docs, removed a dead skills link, replaced
+  stale CLI/storage wording, clarified Copilot vs OpenCode provider routing,
+  removed brittle Qwen plan specifics, and made broken Markdown links fail the
+  Docusaurus build.
 - 2026-07-07: Added a public [Durable Memory Index](../docs/manuals/durable-memory-index.md)
   page adapted from the lmctl source project's internal `durable-memory/index.md`
   without private workspace paths or source-only implementation state.

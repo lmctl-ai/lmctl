@@ -10,9 +10,10 @@ coding agents — across providers, with adversarial cross-provider review and
 durable memory, composed in plain text.
 
 It's not an IDE and not another chatbot. lmctl coordinates the agent CLIs you
-already use (Claude, Codex, Gemini, and more), so a Claude *lead* can hand
-coding to *Codex* and have *Gemini* review it — the reviewer a different
-provider *and* model from the author, not the same model in a different hat.
+already use (Claude Code, Codex, Copilot CLI, Qwen Code, Antigravity, and more),
+so a Claude *lead* can hand coding to *Qwen* or *Codex* and have another
+provider review it — the reviewer a different provider *and* model from the
+author, not the same model in a different hat.
 
 ```bash
 npm install -g @lmctl-ai/lmctl
@@ -30,9 +31,10 @@ kinds of lock-in. lmctl is built to remove each one:
   the work — different models have different (uncorrelated) blind spots, and that
   diversity is the point: a varied team catches what one model, or its clones,
   can't. And "provider-agnostic" is literal — alongside the major CLIs, the
-  OpenCode provider reaches **any model, local (Ollama) or remote** (DeepSeek,
-  Qwen, OpenRouter, Copilot's GPT/Claude/Gemini, …); pick any collection and put
-  them in one team, not one model at a time.
+  first-class CLIs include Claude Code, Codex, Copilot CLI, Qwen Code, and
+  Antigravity, while the OpenCode provider reaches **any model, local (Ollama)
+  or remote** (DeepSeek, Qwen, OpenRouter, Copilot's GPT/Claude/Gemini, …);
+  pick any collection and put them in one team, not one model at a time.
 - **Workflow lock-in.** When most tools say "multi-agent," one provider
   auto-spawns the agents and you just watch. lmctl puts **you** in charge: you
   divide the work and build the team in plain text (a lead talks to its members;
@@ -50,8 +52,8 @@ kinds of lock-in. lmctl is built to remove each one:
 ## How it works
 
 - **Teams in plain text.** Define a team in a `.lmctl` file — members, the
-  provider/model each one uses, and the connections between them. No DSL to
-  learn; it reads like a list.
+  provider/model each one uses, and the role each member plays. No DSL to learn;
+  it reads like a list.
 - **durable-memory.** Every member, whatever its provider, reads
   `durable-memory/` as shared context. Knowledge survives fresh sessions and
   swapped-in agents.

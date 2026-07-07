@@ -5,7 +5,7 @@
   <circle cx="184" cy="149" r="9" fill="#f07c67"/>
   <circle cx="216" cy="149" r="9" fill="#f4c15d"/>
   <circle cx="248" cy="149" r="9" fill="#66c2b7"/>
-  <text x="205" y="260" font-family="Menlo, Consolas, monospace" font-size="34" fill="#e6f0ed">$ lmctl-next api submit-job --workflow image-qa</text>
+  <text x="205" y="260" font-family="Menlo, Consolas, monospace" font-size="34" fill="#e6f0ed">$ lmctl api submit-job --workflow image-qa</text>
   <text x="205" y="330" font-family="Menlo, Consolas, monospace" font-size="34" fill="#66c2b7">job queued -> run started -> terminal:ok</text>
   <text x="205" y="430" font-family="Menlo, Consolas, monospace" font-size="30" fill="#b9c7c3">Review -> Consolidate -> ShellStep -> AssertRepoClean</text>
   <text x="205" y="528" font-family="Menlo, Consolas, monospace" font-size="30" fill="#f07c67">durable-memory persists project knowledge</text>

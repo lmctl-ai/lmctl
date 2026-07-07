@@ -12,7 +12,7 @@ loops, PR fixer variants, triage, `qa-suite`, and `image-qa`.
 ## Workflow definitions
 
 Workflow files usually live under `workflows/` and are loaded into the local
-SQLite profile:
+SQLite workspace database:
 
 ```bash
 lmctl workflow load image-qa workflows/image-qa.compound.json

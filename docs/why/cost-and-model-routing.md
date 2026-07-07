@@ -48,8 +48,8 @@ models — including some that are essentially free to run:
 - **Local models via Ollama** — free to run on your own hardware.
 
 Wire these up in an `opencode.json` — see the
-[sample config](https://lmctl.com/examples/opencode.json) (five providers, 26
-Copilot models).
+[sample config](https://lmctl.com/examples/opencode.json) for current provider
+examples.
 
 We're deliberately not quoting prices here: provider pricing changes often, and a
 number that's right today is wrong next quarter. The durable advice is the
@@ -61,7 +61,7 @@ number that's right today is wrong next quarter. The durable advice is the
   Coder needs less.
 - [Players & model diversity](./players-and-diversity.md) — the providers you can
   route to.
+- [Bring your own subscriptions](./bring-your-own-subscriptions.md) — add a
+  provider without switching away from the plans you already use.
 - [Templates catalog](https://lmctl.com/lmctl/docs/manuals/templates-catalog) —
   team patterns to start from.
-
-> _Backed by real usage. A current price/quality comparison and recommended team presets are being prepared and will be presented here._

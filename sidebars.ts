@@ -8,13 +8,14 @@ const sidebars: SidebarsConfig = {
       link: {
         type: 'generated-index',
         title: 'Why lmctl',
-        description: 'The ideas behind lmctl: diverse players, adversarial review, scalable context, and cost-aware model routing.',
+        description: 'The ideas behind lmctl: diverse players, adversarial review, scalable context, cost-aware model routing, and bring-your-own subscriptions.',
       },
       items: [
         'why/players-and-diversity',
         'why/adversarial-review',
         'why/context-and-durable-memory',
         'why/cost-and-model-routing',
+        'why/bring-your-own-subscriptions',
       ],
     },
   ],

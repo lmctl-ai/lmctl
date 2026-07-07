@@ -64,5 +64,3 @@ can span days or weeks, and the team's overall memory stays sharp the whole time
   durable-memory too.
 - [Architecture overview](../manuals/architecture-overview.md) — durable-memory
   versus sessions.
-
-> _Backed by real long-running projects. A context-budget diagram and a multi-week case study are being prepared and will be presented here._

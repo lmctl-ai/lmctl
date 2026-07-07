@@ -6,7 +6,7 @@ const tutorials = [
   {
     title: 'Install & first run',
     href: '/docs/tutorials/install-first-run',
-    text: 'Install lmctl-next, initialize providers, and confirm the local setup.',
+    text: 'Install lmctl, confirm the CLI, and run your first local checks.',
   },
   {
     title: 'First workflow job',
@@ -78,7 +78,7 @@ export default function Home(): JSX.Element {
           <div className="container">
             <h2>What lmctl does</h2>
             <p>
-              <code>lmctl-next</code> runs structured workflows that spawn
+              <code>lmctl</code> runs structured workflows that spawn
               native AI provider CLIs as cooperating agents. A workflow
               definition controls sequencing and routing, so the pipeline is
               the organizing layer.

@@ -31,15 +31,13 @@ The "short blocking call" must be one your harness can wake you from:
   or a subagent. The harness **re-invokes you when it exits** (that's your wake). Do **NOT** fire-and-forget
   an external command — the harness holds no handle and cannot wake you.
 - **opencode / lmplayer** (run-based): a **blocking** `run` / `lmctl chat` whose return is
-  your wake; drive members with `lmctl loop`.
+  your wake; drive members with blocking `lmctl chat` calls or tracked
+  `lmctl chat --detach` jobs plus `lmctl jobs`.
 - **codex / gemini** (poll-only, no push): they cannot push a completion — use lmctl's tracked background
   jobs and **poll + harvest each loop** (check `lmctl jobs`).
 
 ## After compaction
 Compaction ends your turn → you go idle and will not auto-resume. So **before you would idle, arm your
-wake** (a blocking harness-tracked call) or ensure a driver (`lmctl loop`, or the operator mailbox) will
-re-prompt you. Never end a turn with outstanding work and no wake armed.
-
-## The durable fix (coming)
-lmplayer **background-submission** will inject a completion prompt back into your session on finish/error
-(native wake) — then a lead can fire N and be woken per completion. Until then, this loop is the workaround.
+wake** (a blocking harness-tracked call) or ensure a driver (operator prompt,
+tracked `lmctl jobs` polling, or the operator mailbox) will re-prompt you. Never
+end a turn with outstanding work and no wake armed.

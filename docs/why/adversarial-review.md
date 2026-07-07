@@ -61,5 +61,3 @@ adversarial reviewer is the only column with "yes" across all four rows.
 - [Context & durable memory](./context-and-durable-memory.md) — what the reviewer
   reads from.
 - [Concepts & glossary](../manuals/concepts-glossary.md)
-
-> _We have real usage data from running these setups intensively; side-by-side review examples and the measured analysis are being prepared and will be presented here._

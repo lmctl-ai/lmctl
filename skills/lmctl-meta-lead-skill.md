@@ -12,7 +12,7 @@ way a Lead administers members — seed, monitor, unblock, refresh — but never
 ```sh
 lmctl health "<teamA>.lmctl"        # per-team rollup, per each team you run
 lmctl tail "<teamA>.lmctl" Lead     # read a Lead's recent turns; does NOT wake it
-lmctl jobs                          # background delegations in flight
+lmctl jobs                          # currently running background delegations
 ```
 `health` + `tail` are read-only — use them to see who's progressing vs spinning **before** you send
 anything. In a git repo, `health` shows activity since the last commit: a Lead piling up messages
@@ -23,7 +23,7 @@ blindly.
 A Lead's turn can run for minutes. Submit and move on:
 ```sh
 lmctl chat "<teamA>.lmctl" Lead "coordinate the X change with your Coder+Reviewer" --detach
-lmctl jobs                 # what's in flight (tracked)
+lmctl jobs                 # tracked background delegations
 lmctl jobs watch <id>      # block until this one finishes + see the result
 lmctl jobs result <id>     # just the final result later
 ```

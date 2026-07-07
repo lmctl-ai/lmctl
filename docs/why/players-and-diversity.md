@@ -46,8 +46,8 @@ Through the **OpenCode** provider, lmctl reaches essentially *any* model — loc
 any OpenAI-compatible endpoint). You declare those models in an `opencode.json`
 config and then assign them to members like any other player.
 
-See the [sample config](https://lmctl.com/examples/opencode.json) — five
-providers and 26 Copilot models wired up and ready to use.
+See the [sample config](https://lmctl.com/examples/opencode.json) for OpenCode
+provider examples wired up and ready to use.
 
 ## How players talk
 
@@ -83,6 +83,6 @@ directly with `lmctl run <url>`.
 - [Adversarial review](./adversarial-review.md) — diversity applied to review.
 - [Cost & model routing](./cost-and-model-routing.md) — picking the right model
   per role.
+- [Bring your own subscriptions](./bring-your-own-subscriptions.md) — add Qwen
+  Code or another coding plan without switching away from your current tools.
 - [Concepts & glossary](../manuals/concepts-glossary.md) — the core objects.
-
-> _Backed by real usage. Diagrams of team / cross-team topologies and per-workflow pages are being prepared and will be presented here._

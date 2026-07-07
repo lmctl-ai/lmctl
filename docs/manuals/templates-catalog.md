@@ -9,7 +9,7 @@ This page is a reference for the two kinds of templates lmctl ships: the
 **workflow definitions** in `workflows/*.compound.json`, and the **`.lmctl`
 config templates** that lmctl scaffolds into a project.
 
-Workflows are loaded into the local SQLite profile by name:
+Workflows are loaded into the local SQLite workspace database by name:
 
 ```bash
 lmctl workflow load <name> workflows/<name>.compound.json

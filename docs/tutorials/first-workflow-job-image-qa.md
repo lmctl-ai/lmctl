@@ -50,7 +50,7 @@ single-model loop.
 lmctl workflow load image-qa workflows/image-qa.compound.json
 ```
 
-The workflow definition is stored in the local SQLite profile.
+The workflow definition is stored in the local SQLite workspace database.
 
 ## Start the daemon
 

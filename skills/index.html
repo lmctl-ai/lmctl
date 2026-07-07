@@ -21,13 +21,8 @@
  <li><a href="lmchat-skill.md">lmchat</a> <span class="d">— a shared file room for LLM agents (post/list/get files &amp; one-line messages; async handoff)</span></li>
  <li><a href="lmsound-skill.md">lmsound</a> <span class="d">— text → speech via AWS Polly (mp3; text or SSML; pick a voice)</span></li>
  <li><a href="lmprobe-skill.md">lmprobe</a> <span class="d">— structural code search</span></li>
- <li><a href="lmfin-skill.md">lmfin</a> <span class="d">— local finance CLI: market analytics, fundamentals, macro, options/bond/DCF calculators (all <code>--json</code>)</span></li>
+ <li><a href="lmfin-skill.md">lmfin</a> <span class="d">— internal/local finance CLI: market analytics, fundamentals, macro, options/bond/DCF calculators (build from source; all <code>--json</code>)</span></li>
  <li><a href="lmbio-skill.md">lmbio</a> <span class="d">— local computational-biology CLI: exact teaching primitives, sequence/protein/interval tools, and cache-first biomedical data pulls (all <code>--json</code>)</span></li>
-</ul>
-
-<h2>Developer</h2>
-<ul>
- <li><a href="git-skill.md">git</a> <span class="d">— git hygiene</span></li>
 </ul>
 
 <h2>lmctl orchestration</h2>
@@ -35,6 +30,9 @@
  <li><a href="lmctl-team-lead-basic-skill.md">Team Lead — basic</a> <span class="d">— run an AI team</span></li>
  <li><a href="lmctl-team-lead-advanced-skill.md">Team Lead — advanced</a> <span class="d">— delegation, review loops, durable memory</span></li>
  <li><a href="lmctl-meta-lead-skill.md">Meta-Lead</a> <span class="d">— coordinate multiple teams</span></li>
+ <li><a href="team-lead-workflow.md">Team Lead workflow</a> <span class="d">— delegation, review loops, arbitration, and escalation</span></li>
+ <li><a href="background-wakeup.md">background-wakeup</a> <span class="d">— orchestration loop for avoiding idle-forever background work</span></li>
+ <li><a href="durable-memory.md">durable-memory</a> <span class="d">— shared provider-agnostic project memory for teams</span></li>
 </ul>
 
 <p class="sub" style="margin-top:2.5rem">All utilities share one API key. Same <code>Authorization: Bearer &lt;key&gt;</code> works across lmchat &amp; lmsound.</p>
