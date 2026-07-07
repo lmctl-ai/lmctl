@@ -24,3 +24,13 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 — `aws s3 sync` to the `lmctl/` prefix plus a CloudFront invalidation. The same
 `scripts/deploy.sh` is the manual fallback for an operator with AWS access. See
 [`site-design.md`](site-design.md) for details.
+
+## Recent docs updates
+
+- 2026-07-07: Added a public [Durable Memory Index](../docs/manuals/durable-memory-index.md)
+  page adapted from the lmctl source project's internal `durable-memory/index.md`
+  without private workspace paths or source-only implementation state.
+- 2026-07-07: Folded `lmctldev` dogfood feedback into the public manuals:
+  first-class `lmctl chat` CLI reference, tracked delegation jobs, direct chat
+  versus background workflow guidance, `node:sqlite` backend wording, provider
+  `effort=` routing notes, and normalized `tail`/`health` examples.
