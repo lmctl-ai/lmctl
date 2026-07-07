@@ -1,9 +1,9 @@
 ---
 name: background-wakeup
-description: How an agent (Lead/meta-lead) avoids the "idle forever" trap — self-drive via the orchestration loop so you never stall after a turn or after compaction.
+description: The (N-1,1) method for avoiding the "idle forever" trap: background N-1 jobs, keep 1 shortest blocking job as your wake, then harvest.
 ---
 
-# Skill: Background wake-up (never idle, never stall)
+# Skill: Background wake-up — the (N-1,1) method
 
 ## The runtime truth (verified across opencode, lmplayer, Claude Code)
 **No harness wakes an idle LLM on a schedule. A turn starts ONLY on a new prompt.** After you finish a
@@ -11,6 +11,15 @@ turn — or after a **context compaction** — you go dormant and will **not** a
 **fire-and-forget background work gives you no completion callback**: you never learn a job finished
 unless you are re-prompted and choose to check. So if you delegate and then end your turn, the fleet
 keeps running but you go blind and stall.
+
+## The (N-1,1) method
+
+When you have **N jobs**, submit **N-1** as tracked background work and keep
+**1** job — the shortest useful one — as a blocking call. The blocking call is
+your wake. When it returns, harvest the background jobs, dispatch follow-ups, and
+repeat.
+
+This is the core anti-stall rule: **N-1 parallel jobs, 1 wake job**.
 
 ## The loop — do this every round
 1. **See N jobs**; estimate durations.
