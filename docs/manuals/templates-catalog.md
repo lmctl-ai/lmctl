@@ -76,3 +76,6 @@ canonical knowledge layer, read on demand by agents.
 | `skills_general.md` | General skills chapter. |
 | `skills_lmdebug.md` | Skills chapter for debugging with lmctl. |
 | `skills_lmprobe.md` | Skills chapter for probing with lmctl. |
+
+See [Durable Memory Index](./durable-memory-index.md) for what belongs in the
+index and how fresh agents should use it.
