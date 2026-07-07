@@ -9,6 +9,9 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 
 ## Unreleased
 
+- Documented the `(N-1,1)` Lead fan-out method for tracked background
+  delegation: detach N-1 longer `lmctl chat` turns, keep one shortest blocking
+  turn as the wake, then harvest with `lmctl jobs`/`nudge`.
 - Removed the top-level `lmctl init` command. Provider setup (install + authenticate each provider CLI) is documented in the [Install & first run](/lmctl/docs/tutorials/install-first-run) tutorial; lmctl reports a missing provider or credential at use time (`seed`/`chat`). `lmctl status` no longer shows a persisted active-providers list.
 - Removed the static `_CONNECT_` cross-team statement and the `lmctl connect` command. Cross-team calls now work automatically at runtime, with automatic cycle protection (a cross-team send is stopped when its target is an active ancestor and it either recurs within ~60s or has been revisited more than twice — fan-out and slow back-and-forth are allowed). Legacy `_CONNECT_` lines are ignored with a `lmctl lint` deprecation warning. DB migration v38 drops the `team_connection` table.
 - Added `provider=opencode` model-effort selection with `_MEMBER_ ... model=<id> effort=<variant>`.

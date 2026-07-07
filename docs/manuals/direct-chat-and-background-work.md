@@ -42,6 +42,29 @@ Provider sessions do not wake themselves just because background work finished.
 A Lead learns about completed detached work when it is prompted again, nudged,
 or asked to inspect `lmctl jobs`.
 
+## The (N-1,1) method
+
+When a Lead has **N** independent member jobs, the safe fan-out pattern is:
+
+1. Submit **N-1** longer jobs with `lmctl chat ... --detach`.
+2. Keep **1** shortest useful job as a blocking `lmctl chat` call.
+3. When that blocking call returns, inspect `lmctl jobs`, collect finished
+   results, dispatch follow-ups, and repeat.
+
+This keeps real parallelism without going blind. Detached jobs have ids and
+results in `lmctl jobs`; the one blocking job is the wake-up signal that brings
+the Lead back to harvest. See the raw
+[background-wakeup skill](https://lmctl.com/skills/background-wakeup.md) for the
+full loop.
+
+If a Lead already went idle after launching detached work, use `lmctl nudge` to
+deliver completed-but-undelivered results:
+
+```bash
+lmctl nudge ./team.lmctl
+lmctl jobs list --team ./team.lmctl
+```
+
 ## Daemon workflow jobs
 
 Use workflow jobs for repeatable pipelines:
@@ -63,5 +86,5 @@ Workflow jobs are executed by `lmctl serve`. Inspect workflow queue state with
 | Need | Use |
 | --- | --- |
 | Ask one member and wait | `lmctl chat <teamfile> <alias> "<prompt>"` |
-| Fan out member work and track completion | `lmctl chat ... --detach` plus `lmctl jobs` |
+| Fan out member work and track completion | `(N-1,1)`: `lmctl chat ... --detach` plus one blocking `lmctl chat` wake |
 | Run a repeatable workflow pipeline | `lmctl workflow run` / `lmctl api submit-job` plus `lmctl serve` |

@@ -184,6 +184,11 @@ When `--team` and `--from` are omitted, `jobs list` filters to the current
 directory's single `.lmctl` Lead when exactly one teamfile exists there;
 otherwise it lists all tracked delegation jobs.
 
+For Lead fan-out, use the `(N-1,1)` method described in
+[Direct chat vs background work](./direct-chat-and-background-work.md): launch
+N-1 member turns with `chat --detach`, keep one shortest turn blocking as the
+wake, then harvest via `lmctl jobs`.
+
 ## Upload files
 
 ```bash

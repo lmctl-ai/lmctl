@@ -165,6 +165,10 @@ backgrounding only when you deliberately do not need an lmctl job id or
 completion record. The synchronous `lmctl_chat` MCP tool is best kept for quick
 pings or backup paths; use CLI `--detach` for long background work.
 
+For parallel fan-out, use the `(N-1,1)` method: detach N-1 longer member turns,
+keep one shortest useful turn blocking as your wake, then harvest the detached
+results with `lmctl jobs`.
+
 **Busy means "not ready yet" — just try again.** A `1` with `<member> is servicing
 …` means the member is mid-turn. There is no queue: wait and re-send. It is not a
 failure and not a reason to declare the team blocked.

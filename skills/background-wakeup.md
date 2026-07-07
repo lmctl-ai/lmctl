@@ -15,9 +15,11 @@ keeps running but you go blind and stall.
 ## The (N-1,1) method
 
 When you have **N jobs**, submit **N-1** as tracked background work and keep
-**1** job — the shortest useful one — as a blocking call. The blocking call is
-your wake. When it returns, harvest the background jobs, dispatch follow-ups, and
-repeat.
+**1** job — the shortest useful one — as a blocking call. In lmctl team chat,
+tracked background work means `lmctl chat ... --detach` plus `lmctl jobs`; avoid
+plain shell `&` when you need a job id or completion record. The blocking call
+is your wake. When it returns, harvest the background jobs, dispatch follow-ups,
+and repeat.
 
 This is the core anti-stall rule: **N-1 parallel jobs, 1 wake job**.
 
