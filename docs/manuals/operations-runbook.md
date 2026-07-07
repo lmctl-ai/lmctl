@@ -131,33 +131,39 @@ automatically at runtime — there is nothing to wire up.
 When you orchestrate by hand — or a meta-Lead drives several sub-teams — you send
 work with `lmctl chat <teamfile>:<member> "<prompt>"`. Two behaviors to know:
 
-**`chat` blocks for the whole turn.** `lmctl chat … --idle-timeout 0` does not
-return when the message is delivered — it waits until the member finishes its
-turn and prints the full reply. For fire-and-forget nudges, wrap it in an
-external timeout:
+**`chat` blocks for the whole turn unless detached.** `lmctl chat …` waits until
+the member finishes its turn and prints the full reply. For tracked background
+delegation, prefer `--detach` and then inspect the job:
+
+```bash
+lmctl chat ./team.lmctl:Coder "Run the long verification pass." --detach
+lmctl jobs watch <job_id>
+lmctl jobs result <job_id>
+```
+
+For an intentionally blind local shell wrapper, `timeout` still has the usual
+shell semantics:
 
 ```bash
 timeout 60 lmctl chat ./team.lmctl:Coder "..." >/dev/null 2>&1
 ```
 
-**Interpreting the exit code (current behavior):**
+**Interpreting blocking-chat exit codes:**
 
 | Exit | Meaning |
 |------|---------|
 | `0` | The member finished its turn within the wait — delivered and done. |
-| `124` | Your external `timeout` fired — the message **was delivered**; the member is still processing. This is the normal case for a long turn, not a failure. |
+| `124` | Your external `timeout` wrapper fired. Treat this as blind/background shell behavior; prefer `--detach` when you need a tracked completion record. |
 | `1` | Either **busy** (`<member> is servicing <sender> since <ts>` — it is mid-turn) **or** a real error. These look the same today. |
 
-So `124` usually means "delivered, in progress," and `1` often means "busy, retry
-later" — do **not** blindly retry a `1` before checking whether it was a
-busy/servicing rejection.
+So `1` often means "busy, retry later" — do **not** blindly retry before checking
+whether it was a busy/servicing rejection.
 
-**Wait vs background is the caller's choice.** `lmctl chat` waits by default — it
-blocks for the member's turn and returns the reply. To fire-and-forget, *the
-client* backgrounds the call (e.g. `lmctl chat … &`, a `timeout` wrapper, or your
-orchestrator's own job runner). lmctl has no detach flag because that is a client
-concern; the `lmctl_chat` MCP tool likewise points batch/background work at the
-CLI.
+**Wait vs background is explicit.** `lmctl chat` waits by default. Add `--detach`
+when you want tracked background delegation with `lmctl jobs`; use shell
+backgrounding only when you deliberately do not need an lmctl job id or
+completion record. The synchronous `lmctl_chat` MCP tool is best kept for quick
+pings or backup paths; use CLI `--detach` for long background work.
 
 **Busy means "not ready yet" — just try again.** A `1` with `<member> is servicing
 …` means the member is mid-turn. There is no queue: wait and re-send. It is not a
