@@ -77,6 +77,43 @@ Generate a starter team document for a directory:
 lmctl plan ./backend --provider codex
 ```
 
+## Direct member chat
+
+Use `lmctl chat` when an operator or Lead needs to drive a specific member
+directly. The common teamfile forms are:
+
+```bash
+lmctl chat ./team.lmctl:Coder "Implement the smallest safe fix."
+lmctl chat ./team.lmctl Coder "Implement the smallest safe fix."
+lmctl chat ./team.lmctl Reviewer "Review Coder's latest change." --from ./team.lmctl:Lead
+```
+
+`chat` is synchronous by default: it sends one prompt and blocks until that
+provider turn finishes or errors. It returns the provider result on success and
+exits non-zero on delivery, provider, busy, or runtime errors. For raw provider
+sessions, use one of:
+
+```bash
+lmctl chat <sessionid> "Prompt text" --provider codex
+lmctl chat --provider codex --session <sessionid> "Prompt text"
+```
+
+To answer a paused managed run:
+
+```bash
+lmctl chat --run <id> "Operator answer" --done
+```
+
+For tracked background delegation, add `--detach` and inspect completion through
+`lmctl jobs`:
+
+```bash
+lmctl chat ./team.lmctl Coder "Run the long verification pass." --detach
+lmctl jobs list --team ./team.lmctl
+lmctl jobs watch <job_id>
+lmctl jobs result <job_id>
+```
+
 ## Inspecting state
 
 These `lmctl api <noun>` commands read and act on your local lmctl state:
@@ -103,6 +140,9 @@ will parse the output.
 
 ## Submit jobs
 
+Workflow jobs are the daemon-executed async path for repeatable workflows. Keep
+`lmctl serve` running, submit the job, then inspect jobs/runs and attentions.
+
 ```bash
 lmctl api submit-job \
   --workflow image-qa \
@@ -117,6 +157,30 @@ The top-level workflow runner exposes the same shape:
 ```bash
 lmctl workflow run --workflow image-qa --project my-project --inputs '{"image_path":"/tmp/my-project/sample.png","prompt":"describe this"}'
 ```
+
+See [Direct chat vs background work](./direct-chat-and-background-work.md) for
+when to use synchronous `chat`, tracked chat delegations, or daemon workflow
+jobs.
+
+## Tracked delegation jobs
+
+`lmctl jobs` is for chat delegations launched with `lmctl chat ... --detach`.
+It is separate from `lmctl api jobs`, which lists workflow jobs in the local
+workflow queue.
+
+```bash
+lmctl jobs list
+lmctl jobs list --team ./team.lmctl
+lmctl jobs list --from ./team.lmctl:Lead --status running --json
+lmctl jobs watch <job_id>
+lmctl jobs result <job_id>
+lmctl jobs show <job_id> --json
+lmctl jobs cancel <job_id>
+```
+
+When `--team` and `--from` are omitted, `jobs list` filters to the current
+directory's single `.lmctl` Lead when exactly one teamfile exists there;
+otherwise it lists all tracked delegation jobs.
 
 ## Upload files
 
@@ -159,8 +223,13 @@ lmctl ls --runs --limit 10
 lmctl terminal <teamfile>:<alias>
 lmctl terminal --run <id>
 lmctl terminal --project my-project --team my-team --alias QA --size --json
+lmctl tail <session-id> --provider codex
+lmctl tail ./team.lmctl Coder
+lmctl tail --session <session-id> --provider codex
 lmctl tail --run <id> --watch
 lmctl health <teamfile>
+lmctl health ./team.lmctl Coder
+lmctl health <session-id> --provider codex
 lmctl health --run <id>
 lmctl nudge <teamfile>[:alias]
 ```

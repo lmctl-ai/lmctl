@@ -99,3 +99,32 @@ per-member `--model` values when you want cost-aware routing by role:
 lmctl team add-member my-team --alias Architect --provider claude --model <model>
 lmctl team add-member my-team --alias Coder --provider codex --model <model>
 ```
+
+For `.lmctl` teamfiles, the same routing lives on `_MEMBER_` lines:
+
+```text
+_MEMBER_ alias=Architect provider=claude model=<model>
+_MEMBER_ alias=Coder provider=opencode model=<model> effort=<variant>
+```
+
+`effort=` is the teamfile spelling for provider model variants such as OpenCode
+reasoning effort. It is currently supported for `provider=opencode`; lint warns
+when `effort=` is used with a provider that does not support it.
+
+## Provider session locations
+
+`lmctl ls`, `tail`, and `health` read provider-native session stores. When a
+session is missing, check the provider's own storage and environment overrides:
+
+| Provider | Native session storage |
+| --- | --- |
+| `claude` | Claude Code's native config/cache under the user's home directory. |
+| `codex` | Codex CLI's native session store under the user's home directory. |
+| `gemini` | Gemini CLI's native session store under the user's home directory. |
+| `agy` | Antigravity CLI state under `~/.gemini/antigravity-cli`. |
+| `opencode` | OpenCode's local database, commonly under the XDG data/config paths; `OPENCODE_DB` can point at a specific database. |
+| `qwen` | Qwen CLI's native session store under the user's home directory. |
+| `copilot` | Copilot CLI's native auth/session store. |
+
+If a provider supports multiple channels or database paths, make sure `lmctl`
+is reading the same path that the provider CLI wrote.

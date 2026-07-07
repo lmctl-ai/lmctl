@@ -24,8 +24,8 @@ Or, once installed (`npm install -g @lmctl-ai/lmctl`):
 
 ```bash
 lmctl ls                    # list native provider sessions, across providers
-lmctl health <sessionid>      # one session's state + token usage
-lmctl tail --session <id>   # read its messages (add --watch to follow live)
+lmctl health <sessionid> --provider codex  # one session's state + token usage
+lmctl tail --session <id> --provider codex # read its messages
 ```
 
 `lmctl ls` prints one line per session, across Claude, Codex, Gemini, and the

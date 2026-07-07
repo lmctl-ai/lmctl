@@ -71,8 +71,8 @@ its sessions:
 ```bash
 lmctl ls                      # list native provider sessions in scope
 lmctl ls --runs               # list recent lmctl runs instead
-lmctl tail <session-id>       # print a session's messages (add --watch to follow)
-lmctl health <session-id>       # session state + token usage
+lmctl tail <session-id> --provider codex     # print a session's messages
+lmctl health <session-id> --provider codex   # session state + token usage
 ```
 
 `lmctl ls` is your "what's here?", `lmctl tail` is your "read it", and

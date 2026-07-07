@@ -26,13 +26,15 @@ Set the model per member with `model=` on each `_MEMBER_` line. Use
 
 ```text
 _MEMBER_ alias=Lead     provider=claude    model=<top-tier-id>
-_MEMBER_ alias=Coder    provider=opencode  model=<lean-id>
+_MEMBER_ alias=Coder    provider=opencode  model=<lean-id> effort=<variant>
 _MEMBER_ alias=Reviewer provider=codex     model=<top-tier-id>
 ```
 
 A top-tier Lead and Reviewer keep the judgment sharp; a leaner Coder does the
 bulk of the typing. `lmctl lint <teamfile.lmctl>` validates the models you pick
-against the tested catalog.
+against the tested catalog. `effort=` selects a provider variant such as an
+OpenCode reasoning-effort profile; lmctl rejects or warns on unsupported
+provider/effort combinations.
 
 ## Cheap-and-capable coder models
 

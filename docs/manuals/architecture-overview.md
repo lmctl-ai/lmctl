@@ -32,9 +32,9 @@ workflow and inputs; the workflow controls the sequence.
 `lmctl serve` starts the local always-on daemon — the queue worker and agent
 services that actually *execute* your jobs and runs. Project, workflow, team,
 job, run, issue, and attention state lives in a SQLite profile under `~/.lmctl/`
-(better-sqlite3, compiled at npm install). The `lmctl` CLI reads and writes that
-local state directly; you start `serve` once and leave it running so submitted
-work gets executed. The optional hosted web console at
+using Node's built-in `node:sqlite` backend. The `lmctl` CLI reads and writes
+that local state directly; you start `serve` once and leave it running so
+submitted work gets executed. The optional hosted web console at
 [lmctl.ai](https://lmctl.ai) (a free/premium subscription) connects to the same
 local daemon — everything it does is also doable from the CLI.
 

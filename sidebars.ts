@@ -49,7 +49,11 @@ const sidebars: SidebarsConfig = {
         {
           type: 'category',
           label: 'Concepts',
-          items: ['manuals/concepts-glossary', 'manuals/teams-connect'],
+          items: [
+            'manuals/concepts-glossary',
+            'manuals/teams-connect',
+            'manuals/direct-chat-and-background-work',
+          ],
         },
         {
           type: 'category',
