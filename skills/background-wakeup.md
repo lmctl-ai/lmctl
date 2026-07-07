@@ -28,12 +28,12 @@ keeps running but you go blind and stall.
 ## Arm the wake correctly for YOUR harness
 The "short blocking call" must be one your harness can wake you from:
 - **Claude Code:** wrap a **blocking** call in a harness-tracked background tool — `Bash(…, run_in_background:true)`
-  or a subagent. The harness **re-invokes you when it exits** (that's your wake). Do **NOT** rely on
-  fire-and-forget externals like `lmctl chat --detach` — the harness holds no handle and cannot wake you.
-- **opencode / lmplayer** (run-based): a **blocking** `run` / `lmctl chat` (no `--detach`) whose return is
+  or a subagent. The harness **re-invokes you when it exits** (that's your wake). Do **NOT** fire-and-forget
+  an external command — the harness holds no handle and cannot wake you.
+- **opencode / lmplayer** (run-based): a **blocking** `run` / `lmctl chat` whose return is
   your wake; drive members with `lmctl loop`.
-- **codex / gemini** (poll-only, no push): use `lmctl chat --detach` (tracked) and **poll + harvest each
-  loop** — they cannot push a completion.
+- **codex / gemini** (poll-only, no push): they cannot push a completion — use lmctl's tracked background
+  jobs and **poll + harvest each loop** (check `lmctl jobs`).
 
 ## After compaction
 Compaction ends your turn → you go idle and will not auto-resume. So **before you would idle, arm your
