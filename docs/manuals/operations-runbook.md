@@ -175,9 +175,10 @@ whether it was a busy/servicing rejection.
 **Wait vs background is explicit.** `lmctl chat` waits by default. For parallel
 fan-out, launch tracked invocations in the background, then block on scoped
 `lmctl wait --json`. `wait` can also wake on scoped inbound mailbox mail. Use
-`lmctl exec --json -- <command>` when you need a tracked local command and exact
-invocation id. The synchronous `lmctl_chat` MCP tool is best kept for quick
-pings or backup paths.
+`lmctl exec --from ./team.lmctl:Lead -- <command>` for tracked local commands;
+background it with your harness or shell, then keep looping `lmctl wait` in the
+same caller/team scope for first-return completions. The synchronous
+`lmctl_chat` MCP tool is best kept for quick pings or backup paths.
 
 **Busy means "not ready yet" — just try again.** A `1` with `<member> is servicing
 …` means the member is mid-turn. There is no queue: wait and re-send. It is not a

@@ -187,27 +187,33 @@ which lists workflow jobs in the local workflow queue.
 lmctl wait --json
 lmctl wait ./team.lmctl --json
 lmctl wait --from ./team.lmctl:Lead --json
-lmctl wait --id 123,124 --json
 lmctl wait --timeout 300 --interval 5 --json
 ```
 
 Default scope is the calling member's own invocations, inferred from
 `LMCTL_SELF_SESSIONID`. Use `--from` for an explicit sender, a teamfile
-positional for invocations targeting that team, or `--id` for exact tracked
-invocation ids. For caller scopes, `wait` also wakes when the caller has
-inbound mailbox mail and includes non-destructive previews in the `mail` array.
-There is intentionally no system-wide wait scope.
+positional for invocations targeting that team, or default self scope from
+inside a member session. For caller scopes, `wait` also wakes when the caller
+has inbound mailbox mail and includes non-destructive previews in the `mail`
+array. There is intentionally no system-wide wait scope and no `wait --id`; the
+model is interactive first-return over the scoped queue.
 
 Exit codes are `0` for completed or idle (inspect `status` in the output), `1`
 for timeout, and `2` for usage or scope errors.
 
 `lmctl exec` runs any local command as a tracked invocation so `lmctl wait` can
-wake on it:
+wake on it. `exec` is blocking, so background one or more invocations with your
+harness or shell, then call `wait` in the same scope and loop until no work
+remains:
 
 ```bash
-lmctl exec --json -- npm test &
+lmctl exec --from ./team.lmctl:Lead -- npm test &
 lmctl exec --from ./team.lmctl:Lead -- sh -lc 'npm test && npm run build' &
+lmctl wait --from ./team.lmctl:Lead --json
 ```
+
+There is no lmctl-native `--detach` path for `chat` or `exec`; backgrounding is
+outside lmctl (`&`, Claude Code `run_in_background`, or equivalent).
 
 ## Mailbox send and receive
 

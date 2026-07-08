@@ -27,6 +27,14 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-07-08: Processed the 0.1.91 `lmctl wait --id` removal. Public docs now
+  describe `wait` as an interactive first-return primitive over default-self,
+  `--from <teamfile:alias>`, or positional `<teamfile>` scopes only. Dogfood
+  used the 0.1.91 source binary with two background `lmctl exec` invocations
+  from one caller: the first `wait --from ... --json` returned one finished row
+  plus one in-flight row; the next `wait` returned the remaining completion.
+  The docs also state that `chat`/`exec` remain blocking commands and
+  backgrounding is done by the harness or shell, not by `--detach`.
 - 2026-07-08: Processed `lmctldoc` room backlog seq 7-8 after the lmchat
   Unicode filename download fix. The published Lead/background docs now cover
   0.1.89/0.1.90 mailbox semantics: `send`/`recv`, `wait` peeking inbound mail
@@ -42,8 +50,9 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 - 2026-07-08: Processed `lmctldoc` room backlog seq 4-6. The published async
   guidance now uses the current `lmctl wait` model: launch tracked invocations
   with backgrounded `lmctl chat` or `lmctl exec`, then block on scoped
-  `lmctl wait`. Do not document a system-wide wait scope; current scopes are
-  default self, `--from <teamfile:alias>`, positional `<teamfile>`, and `--id`.
+  `lmctl wait`. Superseded on 2026-07-08 by 0.1.91: do not document
+  system-wide wait or `wait --id`; current scopes are default self,
+  `--from <teamfile:alias>`, and positional `<teamfile>`.
 - 2026-07-07: Named the previous background wake-up orchestration pattern in the
   public skill catalog. This was superseded on 2026-07-08 by `lmctl wait`.
 - 2026-07-07: Ran a whole-site review with Coder, Reviewer1, and Reviewer3.

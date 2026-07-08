@@ -51,8 +51,9 @@ caller's mailbox has inbound mail. If it returns `status: "completed"`, inspect
 both `finished` and `mail`: a mail-only wake has `finished: []` and populated
 mail previews. Use `recv` for any messages you intend to handle. If it returns
 `status: "idle"`, pull more work from your queue or chatroom. For local
-commands, use `lmctl exec --json -- <command> &` and `lmctl wait --id <id>
---json` when you need an exact handle.
+commands, use `lmctl exec --from "<teamfile>.lmctl:Lead" -- <command> &`, then
+wait in that same caller scope with `lmctl wait --from "<teamfile>.lmctl:Lead"
+--json`. `wait --id` is not part of the interactive wake model.
 
 ## Watch a member without disturbing it
 ```sh

@@ -50,7 +50,7 @@ out work without freezing on every long turn:
 
 ```bash
 lmctl chat ./team.lmctl Coder "Run the long verification pass." --from ./team.lmctl:Lead &
-lmctl exec --json -- npm test &
+lmctl exec --from ./team.lmctl:Lead -- npm test &
 lmctl wait --from ./team.lmctl:Lead --json
 ```
 
@@ -59,15 +59,13 @@ it blocks without spending model tokens and returns when the first invocation in
 scope finishes or the scoped caller has inbound mail. Scope it intentionally.
 The default scope is the caller's own invocations and mailbox via
 `LMCTL_SELF_SESSIONID`; otherwise use `--from <teamfile:alias>`, a positional
-`<teamfile>`, or `--id <id[,id...]>`. There is no system-wide wait scope.
+`<teamfile>`, or the default self scope from inside a member session. There is
+no system-wide wait scope and no `wait --id`; launch work in the background,
+then let `wait` return the first completion in that caller/team scope.
 
-For commands where you need a zero-race handle, start with `lmctl exec --json`
-and wait on the exact id it prints:
-
-```bash
-lmctl exec --json -- npm test &
-lmctl wait --id <id> --json
-```
+`lmctl chat` and `lmctl exec` are blocking commands. lmctl has no native
+`--detach` path; backgrounding is done by your harness or shell (`&`, Claude
+Code `run_in_background`, or equivalent).
 
 ## The wait loop
 

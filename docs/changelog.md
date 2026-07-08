@@ -9,6 +9,12 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 
 ## Unreleased
 
+- Updated `lmctl wait` guidance for 0.1.91. `wait --id` is removed; `wait` is
+  now documented as an interactive first-return primitive over the caller/team
+  scope: launch tracked `chat` or `exec` invocations in the background, call
+  scoped `lmctl wait`, react to the first completion, and loop. The docs now
+  state that `chat`/`exec` are blocking commands and backgrounding is done by
+  the harness or shell, not by an lmctl `--detach` path.
 - Documented the 0.1.89/0.1.90 mailbox flow: `lmctl send`, `lmctl recv`, and
   `lmctl wait` mailbox wakeups. Public guidance now distinguishes turn-driving
   `chat` from mailbox `send`/`recv`, notes that `wait` peeks mail

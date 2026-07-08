@@ -1,6 +1,6 @@
 ---
 name: background-wakeup
-description: Use lmctl wait as the wake primitive: launch tracked invocations, wake on completions or mailbox mail, harvest, and repeat.
+description: Use lmctl wait as the wake primitive: have your harness background blocking lmctl invocations, wake on first completion or mailbox mail, harvest, and repeat.
 ---
 
 # Skill: Background wake-up with `lmctl wait`
@@ -14,21 +14,27 @@ keeps running but you go blind and stall.
 
 ## The wait method
 
-When you have **N jobs**, launch all N as tracked invocations, then block on
-`lmctl wait`. Its return is your wake. It polls local tracked-invocation state,
-burns no model tokens, and returns when the first invocation in scope reaches a
-terminal state or when the scoped caller has inbound mailbox mail.
+When you have **N jobs**, have your harness or shell launch all N as tracked
+background invocations, then block on `lmctl wait`. Its return is your wake. It
+polls local tracked-invocation state, burns no model tokens, and returns when
+the first invocation in scope reaches a terminal state or when the scoped caller
+has inbound mailbox mail.
 
 Tracked invocations are:
 
 - a backgrounded blocking member call, for example
   `lmctl chat "<team>.lmctl" Coder "<task>" --from "<team>.lmctl:Lead" &`
 - a tracked command wrapper, for example
-  `lmctl exec --json -- npm test &`
+  `lmctl exec --from "<team>.lmctl:Lead" -- npm test &`
 
-Scope `wait` deliberately. There is no system-wide wait scope. Use the default
-caller scope from `LMCTL_SELF_SESSIONID`, or pass `--from <teamfile:alias>`,
-`<teamfile>`, or `--id <id[,id...]>`.
+`lmctl chat` and `lmctl exec` are blocking commands. lmctl does not provide
+native detached mode: there is no `--detach`, no jobs portal, and no id
+enumeration for `wait`. Backgrounding is the harness or shell's job (`&`,
+Claude Code `run_in_background`, or equivalent).
+
+Scope `wait` deliberately. There is no system-wide wait scope and no
+`wait --id`. Use the default caller scope from `LMCTL_SELF_SESSIONID`, or pass
+`--from <teamfile:alias>` or `<teamfile>`.
 
 Mailbox messages are also wake events. `lmctl wait` **peeks** mail
 non-destructively and returns previews in the `mail` array. It does not consume
@@ -46,8 +52,9 @@ Use the right delivery primitive:
 
 ## The loop — do this every round
 1. **See N jobs**; estimate durations.
-2. **Launch all N as tracked invocations** with `lmctl chat ... &` or
-   `lmctl exec ... &`.
+2. **Launch all N as tracked invocations** by backgrounding blocking
+   `lmctl chat ... --from <caller>` or `lmctl exec --from <caller> ...` calls
+   in your harness or shell.
 3. **Block on `lmctl wait --json`** in the right scope. It returns
    `status: "completed"` when one invocation finishes or mailbox mail is
    present. It returns `status: "idle"` when nothing is currently in flight and
@@ -55,11 +62,13 @@ Use the right delivery primitive:
 4. **On completed → HARVEST:** inspect both `finished` and `mail`. A mail-only
    wake has `finished: []`. If mail is present, call `lmctl recv --json` for
    that same receiver before you act on it; `wait` only peeked.
-5. **On idle → GENERATE work:** check your mailbox/chatrooms for new asks; spawn
+5. **Still work in flight?** Call `lmctl wait` again. It returns on the next
+   completion in the same interactive first-return loop.
+6. **On idle → GENERATE work:** check your mailbox/chatrooms for new asks; spawn
    a review or QA pass. A single idle result means "no tracked invocation in this
    scope right now", not "all possible work is done".
-6. **Overloaded → QUEUE** (hold tasks; submit as capacity frees — backpressure).
-7. **Operator input is just another queue item — never wait on the operator.**
+7. **Overloaded → QUEUE** (hold tasks; submit as capacity frees — backpressure).
+8. **Operator input is just another queue item — never wait on the operator.**
 
 ## Arm the wake correctly for YOUR harness
 The blocking `lmctl wait` call must be one your harness can wake you from:
