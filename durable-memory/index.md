@@ -27,6 +27,11 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-07-08: Tested and prepared the public `lmbio` skill update from
+  `~/lab/lmbio/skills/lmbio-skill.md`. Validation included the Rust unit test
+  suite, golden fixture replay, deterministic command examples, and bounded
+  cache-first network examples for PubMed, ClinicalTrials.gov, RxNorm, PubChem,
+  openFDA labels, iCite, and UniProt.
 - 2026-07-08: Processed `lmctldoc` room backlog seq 4-6. The published async
   guidance now uses the current `lmctl wait` model: launch tracked invocations
   with backgrounded `lmctl chat` or `lmctl exec`, then block on scoped

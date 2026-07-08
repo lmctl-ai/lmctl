@@ -10,9 +10,11 @@ Current stable surface:
 - Exact motif/PWM count, frequency, consensus, and candidate scoring.
 - Exact Needleman-Wunsch and Smith-Waterman alignment matrices and tracebacks.
 - Exact suffix array, BWT, inverse BWT, and FM-index backward-search intervals.
+- Exact Fisher/hypergeometric statistics, enrichment over-representation, and pharmacovigilance disproportionality.
 - Cache-first iCite and UniProt data pulls for lmmol review substrate work.
 - Local sequence, protein, and BED-like interval utilities.
 - Cache-first PubMed and ClinicalTrials.gov summary pulls.
+- Cache-first RxNorm, PubChem, and openFDA drug-label pulls.
 
 ## General rules
 
@@ -204,6 +206,36 @@ lmbio search backward --text GATTACA --pattern A --json
 
 The JSON includes half-open `[lo,hi)` interval, count, ascending text-position occurrences, and the sentinel/order rules. Empty or over-long patterns are value cases that return the empty interval, not errors.
 
+## Exact Stats Core
+
+Run Fisher's exact test over a 2x2 table. Counts are `a,b,c,d`, or labeled `a=...,b=...,c=...,d=...`:
+
+```bash
+lmbio stats fisher --counts 3,1,1,3 --alternative two-sided --json
+```
+
+The JSON includes exact table margins, exact observed hypergeometric probability, exact `p_value`, `p_value_float`, support bounds, and exact odds ratio where finite. Alternatives are `less`, `greater`, and `two-sided`.
+
+Run exact over-representation analysis with Benjamini-Hochberg correction:
+
+```bash
+lmbio enrich overrep \
+  --foreground BRCA1,TP53 \
+  --terms examples/term_genes.tsv \
+  --universe BRCA1,BRCA2,TP53,PIK3CA,PTEN,AKT1,EGFR \
+  --json
+```
+
+The terms file is tab-delimited `term<TAB>gene`. Each result includes `k`, `n`, `K`, `N`, matched IDs, exact hypergeometric upper-tail `p_value`, and exact BH `q_value_bh`.
+
+Run a lightweight pharmacovigilance disproportionality check:
+
+```bash
+lmbio pv dispro --counts 10,90,5,995 --json
+```
+
+The 2x2 table means `a=drug_event`, `b=drug_other_events`, `c=other_drugs_event`, `d=other_drugs_other_events`. The JSON includes exact PRR, ROR, chi-square, Fisher greater-tail p-value, a simple signal flag (`PRR>=2 and chi_square>=4 and a>=3`), and `signal_not_causation:true`.
+
 ## iCite
 
 Fetch review citation metrics in batches:
@@ -268,9 +300,12 @@ Merge or intersect BED-like half-open intervals:
 ```bash
 lmbio interval merge --input examples/intervals_a.bed --json
 lmbio interval intersect --a examples/intervals_a.bed --b examples/intervals_b.bed --json
+lmbio interval coverage --a examples/intervals_a.bed --b examples/intervals_b.bed --json
+lmbio interval complement --input examples/intervals_a.bed --genome examples/genome.sizes --json
+lmbio interval closest --a examples/intervals_a.bed --b examples/intervals_b.bed --json
 ```
 
-Input is tab-delimited `chrom start end [name]`. These commands are intentionally simple and memory-light; they are for small/medium feature sets and teaching/review substrate checks, not a full BEDTools replacement.
+Input is tab-delimited `chrom start end [name]`. Genome sizes for complement are `chrom<TAB>size`. Coverage reports exact reduced covered-base fractions and avoids double-counting overlapping B intervals. Closest returns all equally near B intervals. These commands are intentionally simple and memory-light; they are for small/medium feature sets and teaching/review substrate checks, not a full BEDTools replacement.
 
 ## PubMed
 
@@ -281,12 +316,13 @@ lmbio pubmed \
   --pmids 10549356,31452104,99999999 \
   --links \
   --max-links 5 \
+  --links-mode edges \
   --cache-dir /tmp/lmbio-example-cache \
   --refresh \
   --json
 ```
 
-The JSON is keyed by PMID under `papers` and includes title, source, journal, pubdate, year, authors, pubtypes, DOI, fetched date, provenance, `resolved`, and `errors`. Bad PMIDs become per-item `error` objects. `--links` adds bounded `references` and `cited_by` arrays using NCBI ELink; use `--max-links` to keep citation graphs small.
+The JSON is keyed by PMID under `papers` and includes title, source, journal, pubdate, year, authors, pubtypes, DOI, fetched date, provenance, `resolved`, and `errors`. Bad PMIDs become per-item `error` objects. `--links` adds bounded `references` and `cited_by` arrays using NCBI ELink; use `--max-links` to keep citation graphs small. `--links-mode edges` also emits top-level directed edge rows `{from,to,kind}` for review graph ingestion. Cached link arrays are truncated to the requested `--max-links` in the response and report a warning when truncation occurs.
 
 Raw sample download:
 
@@ -313,3 +349,31 @@ Raw sample download:
 ```bash
 curl -L 'https://clinicaltrials.gov/api/v2/studies/NCT04280705' -o /tmp/NCT04280705.json
 ```
+
+## Drug and Compound Data
+
+Resolve medication strings or RxCUIs with RxNorm:
+
+```bash
+lmbio drug rxnorm --names aspirin,remdesivir --json
+lmbio drug rxnorm --rxcuis 1191 --json
+```
+
+The JSON is keyed by input under `drugs` and includes RxCUI, name, TTY, synonym, suppress flag, UMLS CUI, ingredient concepts when available, RxNorm version, cache provenance, and per-item structured errors.
+
+Fetch PubChem compound properties by CID or name:
+
+```bash
+lmbio compound pubchem --cids 2244 --json
+lmbio compound pubchem --names aspirin --json
+```
+
+The JSON is keyed by input under `compounds` and includes CID, formula, molecular weight, canonical/isomeric SMILES when PubChem returns them, InChIKey, IUPAC name, XLogP, TPSA, title, and cache provenance. PubChem properties are fetched; lmbio is not doing RDKit-style local chemistry here.
+
+Fetch openFDA drug-label summaries:
+
+```bash
+lmbio drug label --search 'openfda.generic_name:"remdesivir"' --limit 1 --json
+```
+
+The JSON includes selected label sections: brand/generic/manufacturer names, product NDCs, indications, contraindications, warnings, boxed warnings, adverse reactions, drug interactions, effective time, provenance, and a disclaimer. Treat labels as regulatory source text, not medical advice.
