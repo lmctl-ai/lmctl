@@ -38,15 +38,16 @@ lmctl has two complementary orchestration models:
 - **Workflow jobs**: repeatable JSON or DSL-defined pipelines executed by
   `lmctl serve`.
 - **AI-Lead teams**: `.lmctl` teamfiles where a Lead drives named members
-  through `lmctl chat`, tracked delegation jobs, and provider sessions.
+  through `lmctl chat`, tracked invocations, `lmctl wait`, and provider
+  sessions.
 
 Both models need a memory layer outside any single model window. durable-memory
 lets an agent refresh a drifting session, switch providers, or hand work between
 members without losing the project record.
 
 See [Direct chat & background work](./direct-chat-and-background-work.md) for
-the runtime distinction between synchronous member chat, tracked chat
-delegations, and daemon workflow jobs.
+the runtime distinction between synchronous member chat, tracked invocations
+with `wait`, and daemon workflow jobs.
 
 ## What belongs in an index
 

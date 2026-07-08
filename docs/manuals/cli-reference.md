@@ -106,14 +106,12 @@ To answer a paused managed run:
 lmctl chat --run <id> "Operator answer" --done
 ```
 
-For tracked background delegation, add `--detach` and inspect completion through
-`lmctl jobs`:
+For tracked background work, run blocking member calls in the background and use
+`lmctl wait` as the wake primitive:
 
 ```bash
-lmctl chat ./team.lmctl Coder "Run the long verification pass." --detach
-lmctl jobs list --team ./team.lmctl
-lmctl jobs watch <job_id>
-lmctl jobs result <job_id>
+lmctl chat ./team.lmctl Coder "Run the long verification pass." --from ./team.lmctl:Lead &
+lmctl wait --from ./team.lmctl:Lead --json
 ```
 
 ## Inspecting state
@@ -161,33 +159,38 @@ lmctl workflow run --workflow image-qa --project my-project --inputs '{"image_pa
 ```
 
 See [Direct chat vs background work](./direct-chat-and-background-work.md) for
-when to use synchronous `chat`, tracked chat delegations, or daemon workflow
-jobs.
+when to use synchronous `chat`, tracked invocations with `wait`, or daemon
+workflow jobs.
 
-## Tracked delegation jobs
+## Tracked invocation wait
 
-`lmctl jobs` is for chat delegations launched with `lmctl chat ... --detach`.
-It is separate from `lmctl api jobs`, which lists workflow jobs in the local
-workflow queue.
+`lmctl wait` blocks until the first tracked invocation in scope finishes. It is
+separate from `lmctl api jobs`, which lists workflow jobs in the local workflow
+queue.
 
 ```bash
-lmctl jobs list
-lmctl jobs list --team ./team.lmctl
-lmctl jobs list --from ./team.lmctl:Lead --status running --json
-lmctl jobs watch <job_id>
-lmctl jobs result <job_id>
-lmctl jobs show <job_id> --json
-lmctl jobs cancel <job_id>
+lmctl wait --json
+lmctl wait ./team.lmctl --json
+lmctl wait --from ./team.lmctl:Lead --json
+lmctl wait --id 123,124 --json
+lmctl wait --timeout 300 --interval 5 --json
 ```
 
-When `--team` and `--from` are omitted, `jobs list` filters to the current
-directory's single `.lmctl` Lead when exactly one teamfile exists there;
-otherwise it lists all tracked delegation jobs.
+Default scope is the calling member's own invocations, inferred from
+`LMCTL_SELF_SESSIONID`. Use `--from` for an explicit sender, a teamfile
+positional for invocations targeting that team, or `--id` for exact tracked
+invocation ids. There is intentionally no system-wide wait scope.
 
-For Lead fan-out, use the `(N-1,1)` method described in
-[Direct chat vs background work](./direct-chat-and-background-work.md): launch
-N-1 member turns with `chat --detach`, keep one shortest turn blocking as the
-wake, then harvest via `lmctl jobs`.
+Exit codes are `0` for completed or idle (inspect `status` in the output), `1`
+for timeout, and `2` for usage or scope errors.
+
+`lmctl exec` runs any local command as a tracked invocation so `lmctl wait` can
+wake on it:
+
+```bash
+lmctl exec --json -- npm test &
+lmctl exec --from ./team.lmctl:Lead -- sh -lc 'npm test && npm run build' &
+```
 
 ## Upload files
 
@@ -238,14 +241,9 @@ lmctl health <teamfile>
 lmctl health ./team.lmctl Coder
 lmctl health <session-id> --provider codex
 lmctl health --run <id>
-lmctl nudge <teamfile>[:alias]
+lmctl wait --json
+lmctl wait --from ./team.lmctl:Lead --json
 ```
-
-`lmctl nudge` delivers an idle Lead's completed-but-undelivered background
-delegations — it re-invokes the target so it processes results from jobs it
-launched with `chat --detach` but never got back (a Lead only processes those on
-its next turn). It is a read-only no-op when nothing is pending and skips a
-target that is mid-turn (busy), never interrupting it.
 
 `terminal --size` reports message count, transcript bytes, and a local token
 estimate. It does not compact or change the session.

@@ -131,14 +131,13 @@ automatically at runtime — there is nothing to wire up.
 When you orchestrate by hand — or a meta-Lead drives several sub-teams — you send
 work with `lmctl chat <teamfile>:<member> "<prompt>"`. Two behaviors to know:
 
-**`chat` blocks for the whole turn unless detached.** `lmctl chat …` waits until
-the member finishes its turn and prints the full reply. For tracked background
-delegation, prefer `--detach` and then inspect the job:
+**`chat` blocks for the whole turn.** `lmctl chat …` waits until the member
+finishes its turn and prints the full reply. For tracked background work, run
+the blocking call in the background and use `lmctl wait` as your wake:
 
 ```bash
-lmctl chat ./team.lmctl:Coder "Run the long verification pass." --detach
-lmctl jobs watch <job_id>
-lmctl jobs result <job_id>
+lmctl chat ./team.lmctl:Coder "Run the long verification pass." --from ./team.lmctl:Lead &
+lmctl wait --from ./team.lmctl:Lead --json
 ```
 
 For an intentionally blind local shell wrapper, `timeout` still has the usual
@@ -153,21 +152,17 @@ timeout 60 lmctl chat ./team.lmctl:Coder "..." >/dev/null 2>&1
 | Exit | Meaning |
 |------|---------|
 | `0` | The member finished its turn within the wait — delivered and done. |
-| `124` | Your external `timeout` wrapper fired. Treat this as blind/background shell behavior; prefer `--detach` when you need a tracked completion record. |
+| `124` | Your external `timeout` wrapper fired. Treat this as blind/background shell behavior; prefer scoped `lmctl wait` when you need a tracked completion record. |
 | `1` | Either **busy** (`<member> is servicing <sender> since <ts>` — it is mid-turn) **or** a real error. These look the same today. |
 
 So `1` often means "busy, retry later" — do **not** blindly retry before checking
 whether it was a busy/servicing rejection.
 
-**Wait vs background is explicit.** `lmctl chat` waits by default. Add `--detach`
-when you want tracked background delegation with `lmctl jobs`; use shell
-backgrounding only when you deliberately do not need an lmctl job id or
-completion record. The synchronous `lmctl_chat` MCP tool is best kept for quick
-pings or backup paths; use CLI `--detach` for long background work.
-
-For parallel fan-out, use the `(N-1,1)` method: detach N-1 longer member turns,
-keep one shortest useful turn blocking as your wake, then harvest the detached
-results with `lmctl jobs`.
+**Wait vs background is explicit.** `lmctl chat` waits by default. For parallel
+fan-out, launch tracked invocations in the background, then block on scoped
+`lmctl wait --json`. Use `lmctl exec --json -- <command>` when you need a
+tracked local command and exact invocation id. The synchronous `lmctl_chat` MCP
+tool is best kept for quick pings or backup paths.
 
 **Busy means "not ready yet" — just try again.** A `1` with `<member> is servicing
 …` means the member is mid-turn. There is no queue: wait and re-send. It is not a

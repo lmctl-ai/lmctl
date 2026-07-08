@@ -18,18 +18,18 @@ can also call the MCP tool `lmctl_chat(team="<teamfile>", alias="Coder", prompt=
 **Delegation is an ACTION, not a plan**: to hand work to a member you must actually *run* the
 command / call the tool — narrating "I'll delegate to Coder" does nothing.
 
-## Don't block on long work — delegate in the background
-A member's turn can take minutes. Instead of waiting:
+## Don't go idle on long work — launch tracked work, then wait
+A member's turn can take minutes. Launch the blocking call in the background,
+then use `lmctl wait` as your wake:
 ```sh
-lmctl chat "<teamfile>.lmctl" Coder "big task" --detach     # returns a job id immediately
-lmctl jobs                      # list your background jobs
-lmctl jobs watch <id>           # follow one to completion
-lmctl jobs result <id>          # just the final result (verdict-safe, no progress noise)
+lmctl chat "<teamfile>.lmctl" Coder "big task" --from "<teamfile>.lmctl:Lead" &
+lmctl wait --from "<teamfile>.lmctl:Lead" --json
 ```
-`--detach` doesn't lock you and a second message can't abort it. (If your provider has a native
-background tool — Claude `Bash run_in_background`, Copilot `bash mode:async`, Agy `run_command`,
-Qwen `monitor` — you can instead run the *blocking* `lmctl chat …` inside it and get notified
-natively.)
+`wait` returns when the first tracked invocation in scope finishes. If it returns
+`status: "completed"`, harvest that result and dispatch the next step. If it
+returns `status: "idle"`, pull more work from your queue or chatroom. For local
+commands, use `lmctl exec --json -- <command> &` and `lmctl wait --id <id>
+--json` when you need an exact handle.
 
 ## Watch a member without disturbing it
 ```sh

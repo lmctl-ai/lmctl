@@ -12,40 +12,22 @@ way a Lead administers members — seed, monitor, unblock, refresh — but never
 ```sh
 lmctl health "<teamA>.lmctl"        # per-team rollup, per each team you run
 lmctl tail "<teamA>.lmctl" Lead     # read a Lead's recent turns; does NOT wake it
-lmctl jobs                          # currently running background delegations
 ```
 `health` + `tail` are read-only — use them to see who's progressing vs spinning **before** you send
 anything. In a git repo, `health` shows activity since the last commit: a Lead piling up messages
-and uncommitted files with **no new commit** is spinning — that's your signal to look, not to nudge
+and uncommitted files with **no new commit** is spinning — that's your signal to look, not to poke
 blindly.
 
-## Delegate to a Lead asynchronously — don't block
-A Lead's turn can run for minutes. Submit and move on:
+## Delegate to a Lead asynchronously — then wait in scope
+A Lead's turn can run for minutes. Launch the blocking call in the background,
+then let `lmctl wait` wake you when one tracked invocation finishes:
 ```sh
-lmctl chat "<teamA>.lmctl" Lead "coordinate the X change with your Coder+Reviewer" --detach
-lmctl jobs                 # tracked background delegations
-lmctl jobs watch <id>      # block until this one finishes + see the result
-lmctl jobs result <id>     # just the final result later
+lmctl chat "<teamA>.lmctl" Lead "coordinate the X change with your Coder+Reviewer" --from "<meta>.lmctl:Lead" &
+lmctl wait --from "<meta>.lmctl:Lead" --json
 ```
-`--detach` returns a job id immediately and is non-blocking. Submit, keep coordinating other teams,
-and **pull** results with `lmctl jobs` when convenient — don't sit attached to a multi-minute run.
-(If your provider has a native background tool — Claude `Bash run_in_background`, Copilot `bash
-mode:async`, Agy `run_command`, Qwen `monitor` — you can instead background the *blocking*
-`lmctl chat` and be notified natively.)
-
-## Re-invoke an idle Lead to drain finished work — `lmctl nudge`
-A Lead only *processes* its delegated jobs' results the next time it takes a turn. So if a Lead
-delegated with `--detach`, its jobs finished, and it then went **idle**, those results sit
-undelivered and the Lead never advances — it looks "stuck standing by." Push them on demand:
-```sh
-lmctl nudge "<teamA>.lmctl"          # deliver teamA's Lead's completed-but-undelivered results
-lmctl nudge "<teamA>.lmctl":Coder    # or a specific member
-```
-`nudge` re-invokes the target so it acts on results it delegated but never got back. It is a
-**read-only no-op** when nothing is pending, and it **respects the busy lease** — a Lead mid-turn is
-skipped, never interrupted. This is the clean way to unstick a fleet where Coders finished but the
-Lead "went quiet": `lmctl jobs` shows the jobs `done`, then `lmctl nudge` gets the Lead to process
-them. (Requires lmctl ≥ 0.1.79.)
+`wait` is intentionally scoped. Use default self-scope when running inside a
+member session, or `--from <teamfile:alias>` for an explicit sender. There is no
+system-wide wait scope; do not try to wake on unrelated teams' completions.
 
 ## Warm up a newly-seeded Lead
 When you seed a team and start talking to its Lead, open with a connectivity ping:
@@ -57,8 +39,8 @@ first hand-off.
 ## Message only idle Leads
 A Lead mid-turn **rejects** a new message with a busy notice (it serves one sender at a time) —
 the message is refused, not queued and not allowed to abort the in-flight turn, so **wait and
-retry**, or `lmctl tail` to watch. Still, **nudge only Leads whose last activity shows a finished
-turn** — use `tail`/`health` to tell busy from idle. Don't broadcast into a working fleet.
+retry**, or `lmctl tail` to watch. Use `tail`/`health` to tell busy from idle.
+Don't broadcast into a working fleet.
 
 ## Refresh a drifting Lead
 A Lead can't refresh the session it's running in — but you can:
@@ -90,7 +72,7 @@ If a Lead seems to "ignore" an instruction, it's almost never an lmctl bug — c
    separately, and keep concurrency modest (a handful of live teams, not a dozen+).
 
 ## What NOT to do
-- Don't auto-nudge on a timer — you'll interrupt working members and cause aborts.
+- Don't send empty "continue" prompts on a timer — you'll interrupt working members and cause aborts.
 - Don't chase a metric lmctl can't give (e.g. a context number a provider doesn't expose shows
   `n/a` — that's not a health signal, don't act on its absence).
 - Don't try to force a member to do something — lmctl offers tools; if a Lead isn't delegating,

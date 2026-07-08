@@ -21,49 +21,51 @@ This blocks until the provider turn finishes or errors. It is the right path
 for short handoffs, review requests, and operator answers where the shell should
 wait for the result.
 
-## Tracked background delegation
+## Tracked background invocations
 
-Use `lmctl chat ... --detach` when a Lead needs to fan out member work without
-freezing on every long turn:
+Use backgrounded blocking `lmctl chat` or `lmctl exec` when a Lead needs to fan
+out work without freezing on every long turn:
 
 ```bash
-lmctl chat ./team.lmctl Coder "Run the long verification pass." --detach
-lmctl jobs list --team ./team.lmctl
-lmctl jobs watch <job_id>
-lmctl jobs result <job_id>
+lmctl chat ./team.lmctl Coder "Run the long verification pass." --from ./team.lmctl:Lead &
+lmctl exec --json -- npm test &
+lmctl wait --from ./team.lmctl:Lead --json
 ```
 
-Detached chat creates a tracked delegation job. `lmctl jobs` is the portal for
-that job: list it, watch it, fetch the final result, or cancel it. This is
-different from plain shell backgrounding with `&`, which gives the caller no
-lmctl job id or completion record.
+These commands create tracked invocations. `lmctl wait` is the wake primitive:
+it blocks without spending model tokens and returns when the first invocation in
+scope finishes. Scope it intentionally. The default scope is the caller's own
+invocations via `LMCTL_SELF_SESSIONID`; otherwise use `--from
+<teamfile:alias>`, a positional `<teamfile>`, or `--id <id[,id...]>`. There is
+no system-wide wait scope.
 
-Provider sessions do not wake themselves just because background work finished.
-A Lead learns about completed detached work when it is prompted again, nudged,
-or asked to inspect `lmctl jobs`.
+For commands where you need a zero-race handle, start with `lmctl exec --json`
+and wait on the exact id it prints:
 
-## The (N-1,1) method
+```bash
+lmctl exec --json -- npm test &
+lmctl wait --id <id> --json
+```
+
+## The wait loop
 
 When a Lead has **N** independent member jobs, the safe fan-out pattern is:
 
-1. Submit **N-1** longer jobs with `lmctl chat ... --detach`.
-2. Keep **1** shortest useful job as a blocking `lmctl chat` call.
-3. When that blocking call returns, inspect `lmctl jobs`, collect finished
-   results, dispatch follow-ups, and repeat.
+1. Launch all N jobs as tracked invocations.
+2. Call `lmctl wait --json` in the correct scope.
+3. If wait returns `status: "completed"`, harvest the finished invocation,
+   dispatch follow-ups, and wait again.
+4. If wait returns `status: "idle"`, pull the next queue item or check the
+   chatroom/mailbox. One idle response means no tracked invocation is currently
+   in flight in that scope; it does not mean the broader backlog is empty.
 
-This keeps real parallelism without going blind. Detached jobs have ids and
-results in `lmctl jobs`; the one blocking job is the wake-up signal that brings
-the Lead back to harvest. See the raw
+This keeps real parallelism without going blind. The blocking `wait` call is the
+wake-up signal that brings the Lead back to harvest. See the raw
 [background-wakeup skill](https://lmctl.com/skills/background-wakeup.md) for the
 full loop.
 
-If a Lead already went idle after launching detached work, use `lmctl nudge` to
-deliver completed-but-undelivered results:
-
-```bash
-lmctl nudge ./team.lmctl
-lmctl jobs list --team ./team.lmctl
-```
+`lmctl wait` exits `0` for both `completed` and `idle`; branch on the `status`
+field. It exits `1` on timeout and `2` on usage or scope errors.
 
 ## Daemon workflow jobs
 
@@ -86,5 +88,5 @@ Workflow jobs are executed by `lmctl serve`. Inspect workflow queue state with
 | Need | Use |
 | --- | --- |
 | Ask one member and wait | `lmctl chat <teamfile> <alias> "<prompt>"` |
-| Fan out member work and track completion | `(N-1,1)`: `lmctl chat ... --detach` plus one blocking `lmctl chat` wake |
+| Fan out member work and wake on completion | backgrounded `lmctl chat` / `lmctl exec` plus scoped `lmctl wait` |
 | Run a repeatable workflow pipeline | `lmctl workflow run` / `lmctl api submit-job` plus `lmctl serve` |

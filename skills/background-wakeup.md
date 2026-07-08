@@ -1,9 +1,9 @@
 ---
 name: background-wakeup
-description: The (N-1,1) method for avoiding the "idle forever" trap: background N-1 jobs, keep 1 shortest blocking job as your wake, then harvest.
+description: Use lmctl wait as the wake primitive: launch tracked invocations, block on a scoped wait, harvest the first completion, and repeat.
 ---
 
-# Skill: Background wake-up — the (N-1,1) method
+# Skill: Background wake-up with `lmctl wait`
 
 ## The runtime truth (verified across opencode, lmplayer, Claude Code)
 **No harness wakes an idle LLM on a schedule. A turn starts ONLY on a new prompt.** After you finish a
@@ -12,43 +12,50 @@ turn — or after a **context compaction** — you go dormant and will **not** a
 unless you are re-prompted and choose to check. So if you delegate and then end your turn, the fleet
 keeps running but you go blind and stall.
 
-## The (N-1,1) method
+## The wait method
 
-When you have **N jobs**, submit **N-1** as tracked background work and keep
-**1** job — the shortest useful one — as a blocking call. In lmctl team chat,
-tracked background work means `lmctl chat ... --detach` plus `lmctl jobs`; avoid
-plain shell `&` when you need a job id or completion record. The blocking call
-is your wake. When it returns, harvest the background jobs, dispatch follow-ups,
-and repeat.
+When you have **N jobs**, launch all N as tracked invocations, then block on
+`lmctl wait`. Its return is your wake. It polls local tracked-invocation state,
+burns no model tokens, and returns when the first invocation in scope reaches a
+terminal state.
 
-This is the core anti-stall rule: **N-1 parallel jobs, 1 wake job**.
+Tracked invocations are:
+
+- a backgrounded blocking member call, for example
+  `lmctl chat "<team>.lmctl" Coder "<task>" --from "<team>.lmctl:Lead" &`
+- a tracked command wrapper, for example
+  `lmctl exec --json -- npm test &`
+
+Scope `wait` deliberately. There is no system-wide wait scope. Use the default
+caller scope from `LMCTL_SELF_SESSIONID`, or pass `--from <teamfile:alias>`,
+`<teamfile>`, or `--id <id[,id...]>`.
 
 ## The loop — do this every round
 1. **See N jobs**; estimate durations.
-2. **Background the N−1 longer jobs** (detached subprocesses / async members) — real parallelism.
-3. **Keep the single SHORTEST job as a BLOCKING call.** A blocking call is **free** (you spend no tokens
-   while it runs) and **its return is your wake.** Because it's the shortest, you return fast — on the
-   surface you never sleep; underneath the fleet runs in parallel.
-4. **On return → HARVEST:** quick, non-blocking peeks at the background jobs (`git log` / file / `lmctl
-   jobs`). Anything finished → collect the result, dispatch its follow-up.
-5. **Out of work → GENERATE work:** check your mailbox/chatrooms for new asks; spawn a review or QA pass.
-   Never run dry.
+2. **Launch all N as tracked invocations** with `lmctl chat ... &` or
+   `lmctl exec ... &`.
+3. **Block on `lmctl wait --json`** in the right scope. It returns
+   `status: "completed"` when one invocation finishes, or `status: "idle"` when
+   nothing is currently in flight.
+4. **On completed → HARVEST:** collect the finished invocation, dispatch any
+   follow-up, and continue waiting or launching work.
+5. **On idle → GENERATE work:** check your mailbox/chatrooms for new asks; spawn
+   a review or QA pass. A single idle result means "no tracked invocation in this
+   scope right now", not "all possible work is done".
 6. **Overloaded → QUEUE** (hold tasks; submit as capacity frees — backpressure).
 7. **Operator input is just another queue item — never wait on the operator.**
 
 ## Arm the wake correctly for YOUR harness
-The "short blocking call" must be one your harness can wake you from:
+The blocking `lmctl wait` call must be one your harness can wake you from:
 - **Claude Code:** wrap a **blocking** call in a harness-tracked background tool — `Bash(…, run_in_background:true)`
   or a subagent. The harness **re-invokes you when it exits** (that's your wake). Do **NOT** fire-and-forget
   an external command — the harness holds no handle and cannot wake you.
-- **opencode / lmplayer** (run-based): a **blocking** `run` / `lmctl chat` whose return is
-  your wake; drive members with blocking `lmctl chat` calls or tracked
-  `lmctl chat --detach` jobs plus `lmctl jobs`.
-- **codex / gemini** (poll-only, no push): they cannot push a completion — use lmctl's tracked background
-  jobs and **poll + harvest each loop** (check `lmctl jobs`).
+- **opencode / lmplayer / codex / gemini:** call `lmctl wait` as the blocking
+  step in your driver loop. Its return is the wake; then harvest, dispatch, and
+  call `wait` again.
 
 ## After compaction
 Compaction ends your turn → you go idle and will not auto-resume. So **before you would idle, arm your
-wake** (a blocking harness-tracked call) or ensure a driver (operator prompt,
-tracked `lmctl jobs` polling, or the operator mailbox) will re-prompt you. Never
-end a turn with outstanding work and no wake armed.
+wake** with a scoped blocking `lmctl wait`, or ensure a driver/operator prompt
+will re-prompt you. Never end a turn with outstanding tracked work and no wake
+armed.

@@ -27,13 +27,13 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
-- 2026-07-07: Named the background wake-up orchestration pattern the
-  `(N-1,1)` method in the public skill catalog: background N-1 tracked jobs,
-  keep 1 shortest blocking job as the wake, then harvest and repeat.
-- 2026-07-07: Processed `lmctldoc` room backlog seq 3. The requested loop
-  command is not present in the current CLI, so the published async guidance
-  stays on tracked `lmctl chat --detach`, `lmctl jobs`, `lmctl nudge`, and the
-  `(N-1,1)` method.
+- 2026-07-08: Processed `lmctldoc` room backlog seq 4-6. The published async
+  guidance now uses the current `lmctl wait` model: launch tracked invocations
+  with backgrounded `lmctl chat` or `lmctl exec`, then block on scoped
+  `lmctl wait`. Do not document a system-wide wait scope; current scopes are
+  default self, `--from <teamfile:alias>`, positional `<teamfile>`, and `--id`.
+- 2026-07-07: Named the previous background wake-up orchestration pattern in the
+  public skill catalog. This was superseded on 2026-07-08 by `lmctl wait`.
 - 2026-07-07: Ran a whole-site review with Coder, Reviewer1, and Reviewer3.
   Follow-up fixes added the Bring Your Own Subscriptions page to the Why
   sidebar, exposed the missing skills docs, removed a dead skills link, replaced
@@ -45,6 +45,6 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   page adapted from the lmctl source project's internal `durable-memory/index.md`
   without private workspace paths or source-only implementation state.
 - 2026-07-07: Folded `lmctldev` dogfood feedback into the public manuals:
-  first-class `lmctl chat` CLI reference, tracked delegation jobs, direct chat
+  first-class `lmctl chat` CLI reference, tracked invocations, direct chat
   versus background workflow guidance, `node:sqlite` backend wording, provider
   `effort=` routing notes, and normalized `tail`/`health` examples.
