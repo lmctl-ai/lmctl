@@ -1,6 +1,6 @@
 ---
 name: background-wakeup
-description: Use lmctl wait as the wake primitive: launch tracked invocations, block on a scoped wait, harvest the first completion, and repeat.
+description: Use lmctl wait as the wake primitive: launch tracked invocations, wake on completions or mailbox mail, harvest, and repeat.
 ---
 
 # Skill: Background wake-up with `lmctl wait`
@@ -17,7 +17,7 @@ keeps running but you go blind and stall.
 When you have **N jobs**, launch all N as tracked invocations, then block on
 `lmctl wait`. Its return is your wake. It polls local tracked-invocation state,
 burns no model tokens, and returns when the first invocation in scope reaches a
-terminal state.
+terminal state or when the scoped caller has inbound mailbox mail.
 
 Tracked invocations are:
 
@@ -30,15 +30,31 @@ Scope `wait` deliberately. There is no system-wide wait scope. Use the default
 caller scope from `LMCTL_SELF_SESSIONID`, or pass `--from <teamfile:alias>`,
 `<teamfile>`, or `--id <id[,id...]>`.
 
+Mailbox messages are also wake events. `lmctl wait` **peeks** mail
+non-destructively and returns previews in the `mail` array. It does not consume
+messages; use `lmctl recv --from <teamfile:alias> --json` to drain and remove
+them after you decide to handle them.
+
+Use the right delivery primitive:
+
+- `lmctl chat` drives a member turn and waits for a reply.
+- `lmctl send` sends a mailbox note. With a live same-host target it returns
+  quickly as `path: "enqueued"`; with a down same-host target it falls back to
+  synchronous chat delivery as `path: "chat-delivered"`; if that fallback is
+  refused or errors, it returns `path: "rejected"` with no queued mail left
+  behind. Cross-host targets are enqueued.
+
 ## The loop — do this every round
 1. **See N jobs**; estimate durations.
 2. **Launch all N as tracked invocations** with `lmctl chat ... &` or
    `lmctl exec ... &`.
 3. **Block on `lmctl wait --json`** in the right scope. It returns
-   `status: "completed"` when one invocation finishes, or `status: "idle"` when
-   nothing is currently in flight.
-4. **On completed → HARVEST:** collect the finished invocation, dispatch any
-   follow-up, and continue waiting or launching work.
+   `status: "completed"` when one invocation finishes or mailbox mail is
+   present. It returns `status: "idle"` when nothing is currently in flight and
+   no mail is pending.
+4. **On completed → HARVEST:** inspect both `finished` and `mail`. A mail-only
+   wake has `finished: []`. If mail is present, call `lmctl recv --json` for
+   that same receiver before you act on it; `wait` only peeked.
 5. **On idle → GENERATE work:** check your mailbox/chatrooms for new asks; spawn
    a review or QA pass. A single idle result means "no tracked invocation in this
    scope right now", not "all possible work is done".

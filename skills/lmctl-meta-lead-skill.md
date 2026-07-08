@@ -20,7 +20,8 @@ blindly.
 
 ## Delegate to a Lead asynchronously — then wait in scope
 A Lead's turn can run for minutes. Launch the blocking call in the background,
-then let `lmctl wait` wake you when one tracked invocation finishes:
+then let `lmctl wait` wake you when tracked work completes or scoped mailbox
+mail arrives:
 ```sh
 lmctl chat "<teamA>.lmctl" Lead "coordinate the X change with your Coder+Reviewer" --from "<meta>.lmctl:Lead" &
 lmctl wait --from "<meta>.lmctl:Lead" --json
@@ -28,6 +29,19 @@ lmctl wait --from "<meta>.lmctl:Lead" --json
 `wait` is intentionally scoped. Use default self-scope when running inside a
 member session, or `--from <teamfile:alias>` for an explicit sender. There is no
 system-wide wait scope; do not try to wake on unrelated teams' completions.
+
+For peer Lead status notes that should not steal a turn, use mailbox delivery:
+
+```sh
+lmctl send "<teamA>.lmctl" Lead --from "<meta>.lmctl:Lead" "status note"
+lmctl wait --from "<teamA>.lmctl:Lead" --json  # peeks mail
+lmctl recv --from "<teamA>.lmctl:Lead" --json  # drains mail
+```
+
+`send` enqueues when the target Lead is live or cross-host. If a same-host Lead
+is down, it falls back to synchronous chat delivery so the message is not
+stranded. If that fallback is refused or errors, `send` returns
+`path: "rejected"` without leaving queued mail behind.
 
 ## Warm up a newly-seeded Lead
 When you seed a team and start talking to its Lead, open with a connectivity ping:
@@ -37,10 +51,12 @@ This makes the Lead actually exercise delegation from turn one — teams that sk
 first hand-off.
 
 ## Message only idle Leads
-A Lead mid-turn **rejects** a new message with a busy notice (it serves one sender at a time) —
-the message is refused, not queued and not allowed to abort the in-flight turn, so **wait and
-retry**, or `lmctl tail` to watch. Use `tail`/`health` to tell busy from idle.
-Don't broadcast into a working fleet.
+A Lead mid-turn **rejects** a new `chat` with a busy notice (it serves one
+turn-driving sender at a time). That chat is refused, not queued, and not
+allowed to abort the in-flight turn, so **wait and retry**, or `lmctl tail` to
+watch. Use `tail`/`health` to tell busy from idle. For non-interrupting status
+notes, use `lmctl send`; live or cross-host Leads receive queued mailbox mail.
+Don't broadcast turn-driving chats into a working fleet.
 
 ## Refresh a drifting Lead
 A Lead can't refresh the session it's running in — but you can:

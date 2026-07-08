@@ -114,6 +114,21 @@ lmctl chat ./team.lmctl Coder "Run the long verification pass." --from ./team.lm
 lmctl wait --from ./team.lmctl:Lead --json
 ```
 
+For asynchronous peer coordination, use the mailbox commands:
+
+```bash
+lmctl send ./team.lmctl Coder --from ./team.lmctl:Lead "status note"
+lmctl wait --from ./team.lmctl:Coder --json
+lmctl recv --from ./team.lmctl:Coder --json
+```
+
+`send` is liveness-aware: live same-host targets get queued mail
+(`path: "enqueued"`), down same-host targets fall back to synchronous chat
+delivery (`path: "chat-delivered"`), and cross-host targets are queued. If chat
+fallback is refused or errors, `send` returns `path: "rejected"` without leaving
+queued mail behind. `wait` reports mailbox previews without consuming them;
+`recv` drains and removes the receiver's pending messages.
+
 ## Inspecting state
 
 These `lmctl api <noun>` commands read and act on your local lmctl state:
@@ -164,9 +179,9 @@ workflow jobs.
 
 ## Tracked invocation wait
 
-`lmctl wait` blocks until the first tracked invocation in scope finishes. It is
-separate from `lmctl api jobs`, which lists workflow jobs in the local workflow
-queue.
+`lmctl wait` blocks until the first tracked invocation in scope finishes or the
+scoped caller has inbound mailbox mail. It is separate from `lmctl api jobs`,
+which lists workflow jobs in the local workflow queue.
 
 ```bash
 lmctl wait --json
@@ -179,7 +194,9 @@ lmctl wait --timeout 300 --interval 5 --json
 Default scope is the calling member's own invocations, inferred from
 `LMCTL_SELF_SESSIONID`. Use `--from` for an explicit sender, a teamfile
 positional for invocations targeting that team, or `--id` for exact tracked
-invocation ids. There is intentionally no system-wide wait scope.
+invocation ids. For caller scopes, `wait` also wakes when the caller has
+inbound mailbox mail and includes non-destructive previews in the `mail` array.
+There is intentionally no system-wide wait scope.
 
 Exit codes are `0` for completed or idle (inspect `status` in the output), `1`
 for timeout, and `2` for usage or scope errors.
@@ -191,6 +208,33 @@ wake on it:
 lmctl exec --json -- npm test &
 lmctl exec --from ./team.lmctl:Lead -- sh -lc 'npm test && npm run build' &
 ```
+
+## Mailbox send and receive
+
+`lmctl send` delivers one message to a team member:
+
+```bash
+lmctl send ./team.lmctl Coder "status note"
+lmctl send ./team.lmctl Coder --from ./team.lmctl:Lead "status note" --json
+```
+
+If the target has a live same-host carrier, `send` enqueues mailbox mail and
+returns immediately. If the same-host target is down, `send` falls back to
+synchronous `chat` delivery so the message is not stranded. If that fallback is
+refused or errors, `send` returns `path: "rejected"` without leaving queued mail
+behind. Cross-host targets are enqueued.
+
+`lmctl recv` drains the calling member's mailbox:
+
+```bash
+lmctl recv --from ./team.lmctl:Coder --json
+lmctl recv --json
+```
+
+Without `--from`, `recv` uses `LMCTL_SELF_SESSIONID` to infer the caller. It
+refuses to guess when the caller cannot be inferred. A successful drain removes
+the returned messages; a second `recv` returns an empty list until new mail
+arrives.
 
 ## Upload files
 

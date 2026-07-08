@@ -41,15 +41,20 @@ or acts):
 - Use it to decide *proactively* — refresh a member **before** it degrades, not after.
 
 ## Don't fight the busy-guard
-A member serves one sender at a time. If you message a member that's mid-turn you'll get:
+A member serves one turn-driving sender at a time. If you `chat` a member that's mid-turn you'll get:
 `<alias> is servicing <sender> … — wait and retry, or inspect without waking it: lmctl tail …`
 That's expected. **Wait and retry**, or `lmctl tail` to watch — don't hammer it (a second inbound
-can't jump the queue and shouldn't try).
+chat can't jump the queue and shouldn't try). If you only need to leave a status
+note, use `lmctl send`; mailbox mail is queued or, for a down same-host target,
+delivered by synchronous chat so it is not stranded. If that fallback is refused
+or errors, `send` returns `path: "rejected"` without leaving queued mail behind.
 
 ## Cross-team calls
 A Lead can call a member of another team at runtime (cycle-protected automatically). The legacy
 static `_CONNECT_` directive is a **deprecated no-op** — ignore it; cross-team reach is just a
-normal runtime `lmctl chat` to the other team's member.
+normal runtime `lmctl chat` to the other team's member. For cross-team status
+notes that should not start a turn immediately, use `lmctl send`; cross-host
+targets are queued through the mailbox.
 
 ## Warm up the channel
 Right after seeding, ping each member once (`lmctl chat "<teamfile>" Coder "reply OK"`) before

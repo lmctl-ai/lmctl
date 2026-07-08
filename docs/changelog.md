@@ -9,6 +9,11 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 
 ## Unreleased
 
+- Documented the 0.1.89/0.1.90 mailbox flow: `lmctl send`, `lmctl recv`, and
+  `lmctl wait` mailbox wakeups. Public guidance now distinguishes turn-driving
+  `chat` from mailbox `send`/`recv`, notes that `wait` peeks mail
+  non-destructively, and documents liveness-aware `send` paths
+  (`enqueued`, `chat-delivered`, `rejected`).
 - Updated Lead fan-out guidance to the `lmctl wait` model: launch tracked
   background invocations with `lmctl chat ... &` or `lmctl exec ... &`, then use
   scoped `lmctl wait` as the wake primitive.

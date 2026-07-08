@@ -140,6 +140,20 @@ lmctl chat ./team.lmctl:Coder "Run the long verification pass." --from ./team.lm
 lmctl wait --from ./team.lmctl:Lead --json
 ```
 
+For asynchronous mailbox coordination, use `send`/`recv` instead of `chat`:
+
+```bash
+lmctl send ./team.lmctl Coder --from ./team.lmctl:Lead "status note"
+lmctl wait --from ./team.lmctl:Coder --json
+lmctl recv --from ./team.lmctl:Coder --json
+```
+
+`send` queues mail when the target has a live same-host or cross-host carrier.
+If a same-host target is down, it falls back to synchronous chat delivery so the
+message is not stranded. If that fallback is refused or errors, `send` returns
+`path: "rejected"` without leaving queued mail behind. `wait` only peeks mailbox
+mail; `recv` drains it.
+
 For an intentionally blind local shell wrapper, `timeout` still has the usual
 shell semantics:
 
@@ -160,9 +174,10 @@ whether it was a busy/servicing rejection.
 
 **Wait vs background is explicit.** `lmctl chat` waits by default. For parallel
 fan-out, launch tracked invocations in the background, then block on scoped
-`lmctl wait --json`. Use `lmctl exec --json -- <command>` when you need a
-tracked local command and exact invocation id. The synchronous `lmctl_chat` MCP
-tool is best kept for quick pings or backup paths.
+`lmctl wait --json`. `wait` can also wake on scoped inbound mailbox mail. Use
+`lmctl exec --json -- <command>` when you need a tracked local command and exact
+invocation id. The synchronous `lmctl_chat` MCP tool is best kept for quick
+pings or backup paths.
 
 **Busy means "not ready yet" — just try again.** A `1` with `<member> is servicing
 …` means the member is mid-turn. There is no queue: wait and re-send. It is not a

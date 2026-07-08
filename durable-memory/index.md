@@ -27,6 +27,13 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-07-08: Processed `lmctldoc` room backlog seq 7-8 after the lmchat
+  Unicode filename download fix. The published Lead/background docs now cover
+  0.1.89/0.1.90 mailbox semantics: `send`/`recv`, `wait` peeking inbound mail
+  without consuming it, and liveness-aware `send` paths (`enqueued`,
+  `chat-delivered`, `rejected`). Dogfood used the 0.1.90 source binary against
+  a scratch DB/team: two live-carrier sends enqueued, `wait` returned two mail
+  previews, `recv` drained both messages, and a second `recv` returned `[]`.
 - 2026-07-08: Tested and prepared the public `lmbio` skill update from
   `~/lab/lmbio/skills/lmbio-skill.md`. Validation included the Rust unit test
   suite, golden fixture replay, deterministic command examples, and bounded
