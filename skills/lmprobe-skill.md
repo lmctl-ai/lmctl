@@ -22,9 +22,9 @@ Use the global install for repeated agent batches; `npx @lmctl-ai/lmprobe ...`
 re-resolves the package on each invocation and can add seconds per call. Use
 `npx` for one-off runs or when you cannot install globally.
 
-Linux x64 `0.42.2` was retested successfully on glibc 2.34 hosts. If a package
-installs but fails before startup with a glibc loader error, report that as a
-package/runtime issue; do not switch public instructions to `cargo build`.
+If a package installs but fails before startup with a glibc loader error,
+report that as a package/runtime issue; do not switch public instructions to
+`cargo build`.
 
 ## Default workflow
 
@@ -87,10 +87,20 @@ lmprobe --format json def LoginService .
 lmprobe --format json def --body LoginService .
 lmprobe --format json ref LoginService .
 lmprobe --format json search --name Login .
+lmprobe --format json search --name Login --body .
 ```
 
 `def` skeletonizes declaration bodies by default. Add `--body` when the
-implementation body matters.
+implementation body matters. `search` returns full declaration content by
+default; `search --body` is accepted for parity and readability. The
+current-directory recipe `search --name Login .` is quiet. For other paths,
+prefer `search --name Login --path src/service` to avoid the positional
+query/path ambiguity warning.
+
+CLI JSON uses snake_case keys and lowercase enum-like values, for example
+`file_path`, `line_number`, `line_content`, and `exit_status: "matched"`.
+GraphQL uses camelCase keys and uppercase enum-style values, for example
+`filePath`, `lineNumber`, `lineContent`, and `exitStatus: MATCHED`.
 
 ## GraphQL recipes
 
