@@ -27,12 +27,21 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-07-10: Processed `lmctldoc` seq 16-18 and `lmctldev` seq 52-53 for
+  lmctl 0.1.95/0.1.96. Public docs now drop `--from` and `I_am=` entirely,
+  document `LMCTL_SELF_SESSIONID` as the automatic member-session identity
+  marker, add `/lmctl/docs/manual-invocation` as experimental/unsupported, add
+  `/lmctl/docs/mcp-manual-install`, and state that debug output goes to
+  `~/.lmctl/debug-*.log`. Dogfood against `lmctl 0.1.96` confirmed `chat`,
+  `send`, `wait`, `recv`, and `exec` help have no `--from`; `--from` failures
+  point to the manual-invocation page. A confusing `exec --root` manual-shell
+  behavior was reported to `lmctldev` seq 54.
 - 2026-07-08: Processed the 0.1.91 `lmctl wait --id` removal. Public docs now
-  describe `wait` as an interactive first-return primitive over default-self,
-  `--from <teamfile:alias>`, or positional `<teamfile>` scopes only. Dogfood
-  used the 0.1.91 source binary with two background `lmctl exec` invocations
-  from one caller: the first `wait --from ... --json` returned one finished row
-  plus one in-flight row; the next `wait` returned the remaining completion.
+  describe `wait` as an interactive first-return primitive over default-self or
+  positional `<teamfile>` scopes only. Dogfood used the 0.1.91 source binary
+  with two background `lmctl exec` invocations from one caller: the first wait
+  returned one finished row plus one in-flight row; the next `wait` returned
+  the remaining completion.
   The docs also state that `chat`/`exec` remain blocking commands and
   backgrounding is done by the harness or shell, not by `--detach`.
 - 2026-07-08: Processed `lmctldoc` room backlog seq 7-8 after the lmchat
@@ -51,8 +60,8 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   guidance now uses the current `lmctl wait` model: launch tracked invocations
   with backgrounded `lmctl chat` or `lmctl exec`, then block on scoped
   `lmctl wait`. Superseded on 2026-07-08 by 0.1.91: do not document
-  system-wide wait or `wait --id`; current scopes are default self,
-  `--from <teamfile:alias>`, and positional `<teamfile>`.
+  system-wide wait or `wait --id`; current scopes are default self and
+  positional `<teamfile>`.
 - 2026-07-07: Named the previous background wake-up orchestration pattern in the
   public skill catalog. This was superseded on 2026-07-08 by `lmctl wait`.
 - 2026-07-07: Ran a whole-site review with Coder, Reviewer1, and Reviewer3.

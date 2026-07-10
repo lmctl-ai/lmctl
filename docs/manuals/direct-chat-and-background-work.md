@@ -14,7 +14,7 @@ Use `lmctl chat` when you want one member to handle one prompt now:
 
 ```bash
 lmctl chat ./team.lmctl Coder "Implement the smallest safe fix."
-lmctl chat ./team.lmctl Reviewer "Review Coder's latest change." --from ./team.lmctl:Lead
+lmctl chat ./team.lmctl Reviewer "Review Coder's latest change."
 ```
 
 This blocks until the provider turn finishes or errors. It is the right path
@@ -23,13 +23,16 @@ wait for the result.
 
 ## Mailbox messages
 
-Use `lmctl send` when you need to notify another Lead/member without stealing
-its current turn:
+From inside a member session, use `lmctl send` when you need to notify another
+Lead/member without stealing its current turn:
 
 ```bash
-lmctl send ./team.lmctl Coder --from ./team.lmctl:Lead "status note"
-lmctl wait --from ./team.lmctl:Coder --json
-lmctl recv --from ./team.lmctl:Coder --json
+# sender member session
+lmctl send ./team.lmctl Coder "status note"
+
+# receiver member session
+lmctl wait --json
+lmctl recv --json
 ```
 
 `send` is liveness-aware. A live same-host target gets queued mail and `send`
@@ -39,29 +42,36 @@ not stranded. If that fallback is refused or errors, `send` returns
 `path: "rejected"` and does not leave queued mail behind. Cross-host targets are
 queued because the mailbox is the reachable path.
 
-`wait` wakes on inbound mail and reports previews in the `mail` array, but it
-does not consume those messages. `recv` drains all pending messages for that
-receiver and removes them.
+`wait` wakes on inbound mail for the calling member and reports previews in the
+`mail` array, but it does not consume those messages. `recv` drains all pending
+messages for that calling member and removes them.
 
 ## Tracked background invocations
 
-Use backgrounded blocking `lmctl chat` or `lmctl exec` when a Lead needs to fan
-out work without freezing on every long turn:
+Use backgrounded blocking `lmctl chat` when an operator or Lead needs to fan out
+member work without freezing on every long turn:
 
 ```bash
-lmctl chat ./team.lmctl Coder "Run the long verification pass." --from ./team.lmctl:Lead &
-lmctl exec --from ./team.lmctl:Lead -- npm test &
-lmctl wait --from ./team.lmctl:Lead --json
+lmctl chat ./team.lmctl Coder "Run the long verification pass." &
+lmctl wait ./team.lmctl --json
+```
+
+From inside a member session, `lmctl exec` can track local commands in the same
+wait loop:
+
+```bash
+lmctl exec -- npm test &
+lmctl wait --json
 ```
 
 These commands create tracked invocations. `lmctl wait` is the wake primitive:
 it blocks without spending model tokens and returns when the first invocation in
 scope finishes or the scoped caller has inbound mail. Scope it intentionally.
 The default scope is the caller's own invocations and mailbox via
-`LMCTL_SELF_SESSIONID`; otherwise use `--from <teamfile:alias>`, a positional
-`<teamfile>`, or the default self scope from inside a member session. There is
-no system-wide wait scope and no `wait --id`; launch work in the background,
-then let `wait` return the first completion in that caller/team scope.
+`LMCTL_SELF_SESSIONID`; a positional `<teamfile>` scopes wait to invocations
+targeting that team. There is no system-wide wait scope and no `wait --id` or
+`wait --all`; launch work in the background, then let `wait` return the first
+completion in that caller/team scope.
 
 `lmctl chat` and `lmctl exec` are blocking commands. lmctl has no native
 `--detach` path; backgrounding is done by your harness or shell (`&`, Claude

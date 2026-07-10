@@ -136,16 +136,20 @@ finishes its turn and prints the full reply. For tracked background work, run
 the blocking call in the background and use `lmctl wait` as your wake:
 
 ```bash
-lmctl chat ./team.lmctl:Coder "Run the long verification pass." --from ./team.lmctl:Lead &
-lmctl wait --from ./team.lmctl:Lead --json
+lmctl chat ./team.lmctl:Coder "Run the long verification pass." &
+lmctl wait ./team.lmctl --json
 ```
 
-For asynchronous mailbox coordination, use `send`/`recv` instead of `chat`:
+From inside a member session, use `send`/`recv` for asynchronous mailbox
+coordination instead of `chat`:
 
 ```bash
-lmctl send ./team.lmctl Coder --from ./team.lmctl:Lead "status note"
-lmctl wait --from ./team.lmctl:Coder --json
-lmctl recv --from ./team.lmctl:Coder --json
+# sender member session
+lmctl send ./team.lmctl Coder "status note"
+
+# receiver member session
+lmctl wait --json
+lmctl recv --json
 ```
 
 `send` queues mail when the target has a live same-host or cross-host carrier.
@@ -175,10 +179,9 @@ whether it was a busy/servicing rejection.
 **Wait vs background is explicit.** `lmctl chat` waits by default. For parallel
 fan-out, launch tracked invocations in the background, then block on scoped
 `lmctl wait --json`. `wait` can also wake on scoped inbound mailbox mail. Use
-`lmctl exec --from ./team.lmctl:Lead -- <command>` for tracked local commands;
-background it with your harness or shell, then keep looping `lmctl wait` in the
-same caller/team scope for first-return completions. The synchronous
-`lmctl_chat` MCP tool is best kept for quick pings or backup paths.
+`lmctl exec -- <command>` from inside a member session for tracked local
+commands; background it with your harness or shell, then keep looping
+`lmctl wait` in the same caller/team scope for first-return completions.
 
 **Busy means "not ready yet" — just try again.** A `1` with `<member> is servicing
 …` means the member is mid-turn. There is no queue: wait and re-send. It is not a
@@ -214,19 +217,11 @@ refresh the session it is itself running in** — run the refresh from outside t
 session (a meta-Lead, or you at the shell). That is the supported way to recover
 a hung Lead.
 
-If a member→member handoff (a Lead's `lmctl_chat` to its Coder) returns
-`aborted`, the calling agent's turn was cancelled mid-handoff — fall back to a
-backup member or retry, rather than declaring the team blocked.
-
-**If a Lead says it delegated but the member never receives the task**, the Lead
-most likely narrated intent ("Coder is getting the task now") without actually
-**calling** `lmctl_chat`. lmctl provides the delegation tool as an *option* — it
-does not force a Lead to invoke it. On some providers (e.g. codex) the tool is
-*deferred* behind a tool-search, so the Lead has to discover it and then call it
-in the **same turn**; a Lead that stops after "I'll load the tool" never
-delegates. If a Lead keeps stalling here, re-onboard it with a **delegation-first**
-instruction ("call `lmctl_chat` now to send Coder X") rather than a plan-first
-one, or hand the task to a backup member.
+If a member handoff fails or never lands, verify that the Lead actually ran
+`lmctl chat` rather than only narrating its intent. A Lead that says "Coder is
+getting the task now" but never executes the command has not delegated. Re-onboard
+it with a delegation-first instruction such as "run `lmctl chat ...` now to send
+Coder X", or hand the task to a backup member.
 
 ## When a member drifts (long sessions)
 

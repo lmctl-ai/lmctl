@@ -13,18 +13,21 @@ the basics; there is a separate **advanced** skill for refresh/model-swap/health
 ```sh
 lmctl chat "<teamfile>.lmctl" Coder "Implement X. Commit when tests pass."
 ```
-This sends the prompt to member `Coder` and returns its reply. From inside your own session you
-can also call the MCP tool `lmctl_chat(team="<teamfile>", alias="Coder", prompt="…")` — same thing.
-**Delegation is an ACTION, not a plan**: to hand work to a member you must actually *run* the
-command / call the tool — narrating "I'll delegate to Coder" does nothing.
+This sends the prompt to member `Coder` and returns its reply. A plain operator
+shell can use this flagless form for direct blocking chat. **Delegation is an
+ACTION, not a plan**: to hand work to a member you must actually run the command
+— narrating "I'll delegate to Coder" does nothing.
 
 ## Send mailbox notes without stealing the turn
 Use `lmctl send` when you need to notify another Lead/member asynchronously:
 
 ```sh
-lmctl send "<teamfile>.lmctl" Coder --from "<teamfile>.lmctl:Lead" "status note"
-lmctl wait --from "<teamfile>.lmctl:Coder" --json  # peeks; does not consume mail
-lmctl recv --from "<teamfile>.lmctl:Coder" --json  # drains and removes mail
+# sender member session
+lmctl send "<teamfile>.lmctl" Coder "status note"
+
+# receiver member session
+lmctl wait --json  # peeks; does not consume mail
+lmctl recv --json  # drains and removes mail
 ```
 
 `send` is liveness-aware. If the target has a live same-host carrier, it enqueues
@@ -37,23 +40,26 @@ reachable path.
 
 Keep the distinction sharp: `chat` is for driving a member turn and getting a
 reply; `send`/`recv` is for mailbox coordination. `wait` can wake on inbound
-mail, but it only peeks; call `recv` to consume messages.
+mail for the calling member, but it only peeks; call `recv` in that receiver's
+session to consume messages. `send`, `wait`, `recv`, and `exec` infer the caller
+from `LMCTL_SELF_SESSIONID` inside member sessions. There is no `--from` or
+`I_am=` flag.
 
 ## Don't go idle on long work — launch tracked work, then wait
 A member's turn can take minutes. Launch the blocking call in the background,
 then use `lmctl wait` as your wake:
 ```sh
-lmctl chat "<teamfile>.lmctl" Coder "big task" --from "<teamfile>.lmctl:Lead" &
-lmctl wait --from "<teamfile>.lmctl:Lead" --json
+lmctl chat "<teamfile>.lmctl" Coder "big task" &
+lmctl wait --json
 ```
 `wait` returns when the first tracked invocation in scope finishes or when that
 caller's mailbox has inbound mail. If it returns `status: "completed"`, inspect
 both `finished` and `mail`: a mail-only wake has `finished: []` and populated
 mail previews. Use `recv` for any messages you intend to handle. If it returns
-`status: "idle"`, pull more work from your queue or chatroom. For local
-commands, use `lmctl exec --from "<teamfile>.lmctl:Lead" -- <command> &`, then
-wait in that same caller scope with `lmctl wait --from "<teamfile>.lmctl:Lead"
---json`. `wait --id` is not part of the interactive wake model.
+`status: "idle"`, pull more work from your queue or chatroom. From a member
+session, use `lmctl exec -- <command> &` for tracked local commands, then wait
+in that same caller scope with `lmctl wait --json`. `wait --id` is not part of
+the interactive wake model.
 
 ## Watch a member without disturbing it
 ```sh

@@ -14,12 +14,15 @@ delegation channel works; then proceed with the task.
 Use the CLI:
 
 - `lmctl chat "<teamfile>" Coder "your task"`
-- `lmctl send "<teamfile>.lmctl" Coder --from "<teamfile>.lmctl:Lead" "status note"` for
-  mailbox coordination that should not steal the member's current turn
+- `lmctl send "<teamfile>.lmctl" Coder "status note"` for mailbox coordination
+  from inside a member session that should not steal the member's current turn
 
 Use `chat` when you need to drive a member turn and get a reply. Use `send` for
-asynchronous mailbox notes; the receiver handles them with `wait`/`recv`. For
-non-idle/background delegation patterns, read the background-wakeup skill.
+asynchronous mailbox notes; the receiver handles them with `wait`/`recv`.
+Member identity comes from `LMCTL_SELF_SESSIONID`; there is no identity flag to
+pass. A plain operator shell can drive direct `chat`, but cannot queue as a
+member. For non-idle/background delegation patterns, read the background-wakeup
+skill.
 
 Warmup/connectivity check first:
 

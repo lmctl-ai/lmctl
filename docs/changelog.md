@@ -9,6 +9,16 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 
 ## Unreleased
 
+- Documented the 0.1.95/0.1.96 identity cleanup. `--from` and `I_am=` are
+  removed; member-run commands infer identity from `LMCTL_SELF_SESSIONID`,
+  direct `lmctl chat <teamfile> <alias> "<prompt>"` works flaglessly from an
+  operator shell, and manual self-identity invocation is explicitly
+  experimental at `/lmctl/docs/manual-invocation`.
+- Added `/lmctl/docs/mcp-manual-install` for the optional `lmctl mcp` bridge.
+  lmctl no longer installs or relies on MCP by default, and stale cleanup is
+  shape-gated to entries named `lmctl`/`lmctl0` that actually invoke lmctl MCP.
+- Noted that debug output is written to `~/.lmctl/debug-*.log`, not terminal
+  output.
 - Updated `lmctl wait` guidance for 0.1.91. `wait --id` is removed; `wait` is
   now documented as an interactive first-return primitive over the caller/team
   scope: launch tracked `chat` or `exec` invocations in the background, call

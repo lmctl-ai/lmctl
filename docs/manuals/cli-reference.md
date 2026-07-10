@@ -87,7 +87,7 @@ directly. The common teamfile forms are:
 ```bash
 lmctl chat ./team.lmctl:Coder "Implement the smallest safe fix."
 lmctl chat ./team.lmctl Coder "Implement the smallest safe fix."
-lmctl chat ./team.lmctl Reviewer "Review Coder's latest change." --from ./team.lmctl:Lead
+lmctl chat ./team.lmctl Reviewer "Review Coder's latest change."
 ```
 
 `chat` is synchronous by default: it sends one prompt and blocks until that
@@ -110,24 +110,30 @@ For tracked background work, run blocking member calls in the background and use
 `lmctl wait` as the wake primitive:
 
 ```bash
-lmctl chat ./team.lmctl Coder "Run the long verification pass." --from ./team.lmctl:Lead &
-lmctl wait --from ./team.lmctl:Lead --json
+lmctl chat ./team.lmctl Coder "Run the long verification pass." &
+lmctl wait ./team.lmctl --json
 ```
 
-For asynchronous peer coordination, use the mailbox commands:
+From inside a member session, use the mailbox commands for asynchronous peer
+coordination:
 
 ```bash
-lmctl send ./team.lmctl Coder --from ./team.lmctl:Lead "status note"
-lmctl wait --from ./team.lmctl:Coder --json
-lmctl recv --from ./team.lmctl:Coder --json
+# sender member session
+lmctl send ./team.lmctl Coder "status note"
+
+# receiver member session
+lmctl wait --json
+lmctl recv --json
 ```
 
 `send` is liveness-aware: live same-host targets get queued mail
 (`path: "enqueued"`), down same-host targets fall back to synchronous chat
 delivery (`path: "chat-delivered"`), and cross-host targets are queued. If chat
 fallback is refused or errors, `send` returns `path: "rejected"` without leaving
-queued mail behind. `wait` reports mailbox previews without consuming them;
-`recv` drains and removes the receiver's pending messages.
+queued mail behind. A plain operator shell can drive direct `chat`, but it does
+not queue as a member when a target is busy. Inside the receiving member
+session, `wait` reports mailbox previews without consuming them; `recv` drains
+and removes that receiver's pending messages.
 
 ## Inspecting state
 
@@ -186,42 +192,45 @@ which lists workflow jobs in the local workflow queue.
 ```bash
 lmctl wait --json
 lmctl wait ./team.lmctl --json
-lmctl wait --from ./team.lmctl:Lead --json
 lmctl wait --timeout 300 --interval 5 --json
 ```
 
 Default scope is the calling member's own invocations, inferred from
-`LMCTL_SELF_SESSIONID`. Use `--from` for an explicit sender, a teamfile
-positional for invocations targeting that team, or default self scope from
-inside a member session. For caller scopes, `wait` also wakes when the caller
-has inbound mailbox mail and includes non-destructive previews in the `mail`
-array. There is intentionally no system-wide wait scope and no `wait --id`; the
-model is interactive first-return over the scoped queue.
+`LMCTL_SELF_SESSIONID`. Use a teamfile positional for invocations targeting
+that team, or default self scope from inside a member session. For caller
+scopes, `wait` also wakes when the caller has inbound mailbox mail and includes
+non-destructive previews in the `mail` array. There is intentionally no
+system-wide wait scope and no `wait --id` or `wait --all`; the model is
+interactive first-return over the scoped queue.
 
 Exit codes are `0` for completed or idle (inspect `status` in the output), `1`
 for timeout, and `2` for usage or scope errors.
 
-`lmctl exec` runs any local command as a tracked invocation so `lmctl wait` can
-wake on it. `exec` is blocking, so background one or more invocations with your
-harness or shell, then call `wait` in the same scope and loop until no work
-remains:
+From inside a member session, `lmctl exec` runs any local command as a tracked
+invocation so `lmctl wait` can wake on it. `exec` is blocking, so background one
+or more invocations with your harness or shell, then call `wait` in the same
+scope and loop until no work remains:
 
 ```bash
-lmctl exec --from ./team.lmctl:Lead -- npm test &
-lmctl exec --from ./team.lmctl:Lead -- sh -lc 'npm test && npm run build' &
-lmctl wait --from ./team.lmctl:Lead --json
+lmctl exec -- npm test &
+lmctl exec -- sh -lc 'npm test && npm run build' &
+lmctl wait --json
 ```
 
-There is no lmctl-native `--detach` path for `chat` or `exec`; backgrounding is
-outside lmctl (`&`, Claude Code `run_in_background`, or equivalent).
+`exec` infers the sender from `LMCTL_SELF_SESSIONID` inside member sessions.
+Manual use outside a member session is experimental; see
+[Manual invocation](/lmctl/docs/manual-invocation). There is no lmctl-native
+`--detach` path for `chat` or `exec`; backgrounding is outside lmctl (`&`,
+Claude Code `run_in_background`, or equivalent).
 
 ## Mailbox send and receive
 
-`lmctl send` delivers one message to a team member:
+From inside a member session, `lmctl send` delivers one message to a team
+member:
 
 ```bash
 lmctl send ./team.lmctl Coder "status note"
-lmctl send ./team.lmctl Coder --from ./team.lmctl:Lead "status note" --json
+lmctl send ./team.lmctl Coder "status note" --json
 ```
 
 If the target has a live same-host carrier, `send` enqueues mailbox mail and
@@ -233,14 +242,12 @@ behind. Cross-host targets are enqueued.
 `lmctl recv` drains the calling member's mailbox:
 
 ```bash
-lmctl recv --from ./team.lmctl:Coder --json
 lmctl recv --json
 ```
 
-Without `--from`, `recv` uses `LMCTL_SELF_SESSIONID` to infer the caller. It
-refuses to guess when the caller cannot be inferred. A successful drain removes
-the returned messages; a second `recv` returns an empty list until new mail
-arrives.
+`recv` uses `LMCTL_SELF_SESSIONID` to infer the caller. It refuses to guess when
+the caller cannot be inferred. A successful drain removes the returned messages;
+a second `recv` returns an empty list until new mail arrives.
 
 ## Upload files
 
@@ -291,8 +298,7 @@ lmctl health <teamfile>
 lmctl health ./team.lmctl Coder
 lmctl health <session-id> --provider codex
 lmctl health --run <id>
-lmctl wait --json
-lmctl wait --from ./team.lmctl:Lead --json
+lmctl wait ./team.lmctl --json
 ```
 
 `terminal --size` reports message count, transcript bytes, and a local token
@@ -304,10 +310,17 @@ estimate. It does not compact or change the session.
 lmctl device init
 lmctl device id
 lmctl device prompt --root ./team.lmctl --text "Summarize current status"
-lmctl mcp
 ```
 
-`lmctl mcp` starts the stdio MCP bridge backed by local API config.
+The `lmctl mcp` bridge exists for optional manual experiments, but lmctl no
+longer installs or relies on it by default. See
+[MCP manual install](/lmctl/docs/mcp-manual-install).
+
+## Debug logs
+
+Debug output goes to `~/.lmctl/debug-*.log`, not the terminal. Set
+`LMCTL_DEBUG=1` before a command, then inspect the newest debug file if you need
+provider or transport diagnostics.
 
 ## Connecting to a remote daemon (advanced)
 

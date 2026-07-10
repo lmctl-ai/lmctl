@@ -23,19 +23,23 @@ A Lead's turn can run for minutes. Launch the blocking call in the background,
 then let `lmctl wait` wake you when tracked work completes or scoped mailbox
 mail arrives:
 ```sh
-lmctl chat "<teamA>.lmctl" Lead "coordinate the X change with your Coder+Reviewer" --from "<meta>.lmctl:Lead" &
-lmctl wait --from "<meta>.lmctl:Lead" --json
+lmctl chat "<teamA>.lmctl" Lead "coordinate the X change with your Coder+Reviewer" &
+lmctl wait --json
 ```
-`wait` is intentionally scoped. Use default self-scope when running inside a
-member session, or `--from <teamfile:alias>` for an explicit sender. There is no
-system-wide wait scope; do not try to wake on unrelated teams' completions.
+`wait` is intentionally scoped. Default self-scope comes from
+`LMCTL_SELF_SESSIONID` when running inside a member session. There is no
+identity flag and no system-wide wait scope; do not try to wake on unrelated
+teams' completions.
 
 For peer Lead status notes that should not steal a turn, use mailbox delivery:
 
 ```sh
-lmctl send "<teamA>.lmctl" Lead --from "<meta>.lmctl:Lead" "status note"
-lmctl wait --from "<teamA>.lmctl:Lead" --json  # peeks mail
-lmctl recv --from "<teamA>.lmctl:Lead" --json  # drains mail
+# sender member session
+lmctl send "<teamA>.lmctl" Lead "status note"
+
+# receiver Lead session
+lmctl wait --json  # peeks mail
+lmctl recv --json  # drains mail
 ```
 
 `send` enqueues when the target Lead is live or cross-host. If a same-host Lead
@@ -45,7 +49,7 @@ stranded. If that fallback is refused or errors, `send` returns
 
 ## Warm up a newly-seeded Lead
 When you seed a team and start talking to its Lead, open with a connectivity ping:
-> "use `lmctl chat`/`lmctl_chat` to ping each of your members with 'reply OK' to confirm you can
+> "use `lmctl chat` to ping each of your members with 'reply OK' to confirm you can
 > reach them, then proceed."
 This makes the Lead actually exercise delegation from turn one — teams that skip it stall at the
 first hand-off.

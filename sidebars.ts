@@ -55,6 +55,8 @@ const sidebars: SidebarsConfig = {
             'manuals/teams-connect',
             'manuals/direct-chat-and-background-work',
             'manuals/durable-memory-index',
+            'manual-invocation',
+            'mcp-manual-install',
           ],
         },
         {
