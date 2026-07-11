@@ -50,6 +50,18 @@ inspect finished invocations and receipts. If it returns `status: "idle"`, run
 backlog/chatroom. From a member session, use `lmctl exec -- <command> &` for tracked
 local commands, then wait in that same caller scope with `lmctl wait --json`.
 
+## If you learned an older lmctl (removed commands)
+
+| Old habit | Use now |
+| --- | --- |
+| `chat --detach` + `lmctl jobs` | Background normal `lmctl chat ... &` or `lmctl exec -- ... &`, then `lmctl wait --json`. |
+| `--from` / `I_am=` | No identity flag. Member identity is `LMCTL_SELF_SESSIONID` only. |
+| `lmctl send` / `lmctl recv` / `lmctl loop` | Member-run `chat` auto-queues a busy target; `push` flushes lanes; `check` inspects. |
+| `_CONNECT_` / `lmctl connect` | Direct cross-team `lmctl chat ../other-team.lmctl <alias> "..."`; `_CONNECT_` is a dead no-op. |
+| `wait --id` / `wait --all` / `chat --force` | Gone. `wait` is self-scoped, state-based, first-return. |
+
+Never sleep to wait on a member; `wait` answers finished, `check` answers busy.
+
 ## Watch a member without disturbing it
 ```sh
 lmctl tail "<teamfile>.lmctl" Coder          # read its recent turns; does NOT wake it

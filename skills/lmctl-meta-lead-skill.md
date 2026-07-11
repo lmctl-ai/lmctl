@@ -31,6 +31,10 @@ lmctl wait --json
 identity flag and no system-wide wait scope; do not try to wake on unrelated
 teams' completions.
 
+If you remember older lmctl forms, read the removed-command block in the basic
+Lead skill. Meta-Lead work still uses the same current surface: `chat`, `check`,
+`push`, and `wait`.
+
 For peer Lead status notes from inside your member session, use `chat`. If the
 target Lead is busy, lmctl queues the message in your sender-to-receiver lane:
 

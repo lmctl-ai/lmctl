@@ -35,6 +35,10 @@ Tracked invocations are:
 has no ids and no system-wide wait scope. Backgrounding is the harness or
 shell's job (`&`, Claude Code `run_in_background`, or equivalent).
 
+If you learned older lmctl async commands, use the migration table in the basic
+Lead skill. This skill assumes the current surface: `chat`, `check`, `push`,
+and `wait`.
+
 Scope `wait` deliberately:
 
 - default scope: the calling member's invocations and delivered receipts, inferred from

@@ -27,6 +27,13 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-07-11: Added a compact "If you learned an older lmctl" warning to the
+  public Team Lead basic skill, with short pointers from the Meta-Lead and
+  background wake-up skills. The block maps removed forms such as
+  `chat --detach`, `lmctl jobs`, `--from`, `I_am=`, `send`, `recv`, `loop`,
+  `_CONNECT_`, `lmctl connect`, `wait --id`, `wait --all`, and `chat --force`
+  to the current `chat` / `check` / `push` / `wait` push-mode loop and
+  reinforces the no-sleep rule.
 - 2026-07-10: Processed lmctl 0.1.97-0.1.100 push-mode docs. Public
   orchestration guidance now centers on `chat` / `check` / `push` / `wait`:
   member-run chat queues for busy targets, check reads outbound queued lanes,
