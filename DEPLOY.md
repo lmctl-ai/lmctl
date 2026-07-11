@@ -49,11 +49,12 @@ repo and sync it under the matching prefix.
 
 `scripts/deploy-lmprobe.sh` publishes the lmprobe static manual to
 `s3://$S3_BUCKET/lmprobe/` and invalidates `/lmprobe` plus `/lmprobe/*`. Its
-default source is `../lmprobe-src/site`, with `../lmprobe-src/LICENSE` and
-`../lmprobe-src/ATTRIBUTION.md` copied when present. Override the bundle with
+default source is `../lmprobe`, with `../lmprobe/LICENSE` and
+`../lmprobe/ATTRIBUTION.md` copied when present. Override the bundle with
 `LMPROBE_SITE_DIR=/path/to/site` and the metadata root with
-`LMPROBE_REPO_DIR=/path/to/lmprobe-src`. Use `DRY_RUN=1` to preview the scoped S3
-sync without invalidating CloudFront.
+`LMPROBE_REPO_DIR=/path/to/lmprobe`. Use `DRY_RUN=1` to preview the scoped S3
+sync without invalidating CloudFront. Hidden files such as `.git/` are stripped
+from the staging tree before upload.
 
 ## CloudFront constraints for prefix behaviors
 

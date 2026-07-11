@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Publish the lmprobe static manual to lmctl.com/lmprobe/.
 #
-# Source of truth is lmprobe-src/site by default. Override with LMPROBE_SITE_DIR
+# Source of truth is the public lmprobe repo by default. Override with LMPROBE_SITE_DIR
 # when testing a prepared bundle. The sync is scoped to the lmprobe/ S3 prefix.
 set -euo pipefail
 
 S3_BUCKET="${S3_BUCKET:-lmctl-website-prod}"
 CF_DISTRIBUTION_ID="${CF_DISTRIBUTION_ID:-E1GKUWTM93U7IV}"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SRC="${LMPROBE_SITE_DIR:-$REPO_ROOT/../lmprobe-src/site}"
+SRC="${LMPROBE_SITE_DIR:-$REPO_ROOT/../lmprobe}"
 LMPROBE_REPO_DIR="${LMPROBE_REPO_DIR:-}"
 DEST="s3://${S3_BUCKET}/lmprobe/"
 DRY_RUN_ARGS=()
@@ -47,6 +47,7 @@ fi
 
 STAGE="$(mktemp -d)"
 cp -R "${SRC}/." "${STAGE}/"
+find "${STAGE}" -mindepth 1 -name '.*' -prune -exec rm -rf {} +
 
 if [[ -f "${LMPROBE_REPO_DIR}/LICENSE" ]]; then
   cp "${LMPROBE_REPO_DIR}/LICENSE" "${STAGE}/LICENSE"
