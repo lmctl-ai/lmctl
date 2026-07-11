@@ -16,15 +16,15 @@ to declare anything else for members of the same team.
 
 ## Cross-team calls
 
-Cross-team calls work automatically at runtime. A team's Lead can send to a
-member of another team over the chat / MCP path without any declaration in the
+Cross-team calls work automatically at runtime. A team's Lead can call a member
+of another team over the chat path without any declaration in the
 teamfile — there is nothing to wire up or maintain. Address the target member of
 the other team and the message is delivered.
 
 ## Runtime cycle protection
 
 Because cross-team calls are unrestricted, lmctl applies runtime cycle
-protection so a runaway loop cannot spin forever. A cross-team send is stopped
+protection so a runaway loop cannot spin forever. A cross-team call is stopped
 when its target is already an active ancestor in the live call chain **and**
 either:
 

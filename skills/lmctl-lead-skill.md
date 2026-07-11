@@ -17,25 +17,22 @@ lmctl chat "<teamfile>.lmctl" Coder "Implement X. Commit when tests pass."
 ```
 
 `chat` drives one member turn and waits for the reply. A plain operator shell
-can use this flagless form. If the target is busy, retry later or inspect with
-`tail`; do not assume the task queued.
+can use this flagless form. From inside your member session, if the target is
+busy, `chat` queues the message in your sender-to-receiver lane.
 
-Leave a non-interrupting mailbox note from a member session:
+Check and push queued outbound work from your member session:
 
 ```sh
-# sender member session
-lmctl send "<teamfile>.lmctl" Coder "status note"
-
-# receiver member session
-lmctl wait --json
-lmctl recv --json
+lmctl check --json
+lmctl push --json
 ```
 
-`send` is liveness-aware. A live same-host or cross-host target receives queued
-mail; a down same-host target falls back to synchronous chat delivery. `wait`
-peeks inbound mail for the calling member and `recv` drains that calling
-member's mailbox. Member sessions inherit identity from `LMCTL_SELF_SESSIONID`;
-there is no `--from` or `I_am=` flag.
+The queue lifecycle is `queued -> in-flight -> delivered with receipt`.
+`check` is read-only. `push` is blocking and sequentially delivers queued
+outbound lanes for idle receivers, skipping busy receivers for later. Neither
+command requires `lmctl serve`. Delivery is at-least-once, so a crash may cause
+duplicate delivery rather than lost work. Member sessions inherit identity from
+`LMCTL_SELF_SESSIONID`.
 
 Fan out long work without going blind:
 
@@ -44,10 +41,10 @@ lmctl chat "<teamfile>.lmctl" Coder "big task" &
 lmctl wait --json
 ```
 
-`wait` returns the first completed tracked invocation or a mailbox wake. Loop it
-until no work is in flight, then generate or pull the next item. There is no
-`wait --id`, no `wait --all`, and no lmctl-native `--detach`; the harness or
-shell backgrounds blocking commands.
+`wait` returns the first completed tracked invocation or delivered receipt.
+Continue until no work is in flight, then run `lmctl check --json`, push queued
+lanes, or pull the next item. The harness or shell backgrounds blocking
+commands.
 
 Inspect without disturbing a member:
 

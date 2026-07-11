@@ -114,26 +114,22 @@ lmctl chat ./team.lmctl Coder "Run the long verification pass." &
 lmctl wait ./team.lmctl --json
 ```
 
-From inside a member session, use the mailbox commands for asynchronous peer
-coordination:
+From inside a member session, the same `chat` command is also the queueing
+primitive. If the target is idle, `chat` drives a normal blocking turn. If the
+target is busy, lmctl queues the message in that sender-to-receiver lane:
 
 ```bash
-# sender member session
-lmctl send ./team.lmctl Coder "status note"
-
-# receiver member session
-lmctl wait --json
-lmctl recv --json
+lmctl chat ./team.lmctl Coder "status note"
+lmctl check --json
+lmctl push --json
 ```
 
-`send` is liveness-aware: live same-host targets get queued mail
-(`path: "enqueued"`), down same-host targets fall back to synchronous chat
-delivery (`path: "chat-delivered"`), and cross-host targets are queued. If chat
-fallback is refused or errors, `send` returns `path: "rejected"` without leaving
-queued mail behind. A plain operator shell can drive direct `chat`, but it does
-not queue as a member when a target is busy. Inside the receiving member
-session, `wait` reports mailbox previews without consuming them; `recv` drains
-and removes that receiver's pending messages.
+`check` is read-only: it shows the calling member's background invocations and
+outbound queued lanes. `push` is blocking: it delivers queued outbound lanes
+sequentially for idle receivers and skips receivers that are still busy. Neither
+`check` nor `push` requires `lmctl serve`; workflow jobs still do. A plain
+operator shell can drive direct `chat`, but it cannot queue as a member when a
+target is busy.
 
 ## Inspecting state
 
@@ -186,8 +182,8 @@ workflow jobs.
 ## Tracked invocation wait
 
 `lmctl wait` blocks until the first tracked invocation in scope finishes or the
-scoped caller has inbound mailbox mail. It is separate from `lmctl api jobs`,
-which lists workflow jobs in the local workflow queue.
+calling member has a delivered queue receipt. It is separate from `lmctl api
+jobs`, which lists workflow jobs in the local workflow queue.
 
 ```bash
 lmctl wait --json
@@ -198,10 +194,9 @@ lmctl wait --timeout 300 --interval 5 --json
 Default scope is the calling member's own invocations, inferred from
 `LMCTL_SELF_SESSIONID`. Use a teamfile positional for invocations targeting
 that team, or default self scope from inside a member session. For caller
-scopes, `wait` also wakes when the caller has inbound mailbox mail and includes
-non-destructive previews in the `mail` array. There is intentionally no
-system-wide wait scope and no `wait --id` or `wait --all`; the model is
-interactive first-return over the scoped queue.
+scopes, `wait` also wakes when queued outbound messages have been delivered and
+receipt text is available. There is intentionally no system-wide wait scope and
+no id/all mode; the model is interactive first-return over the scoped queue.
 
 Exit codes are `0` for completed or idle (inspect `status` in the output), `1`
 for timeout, and `2` for usage or scope errors.
@@ -217,37 +212,45 @@ lmctl exec -- sh -lc 'npm test && npm run build' &
 lmctl wait --json
 ```
 
-`exec` infers the sender from `LMCTL_SELF_SESSIONID` inside member sessions.
+`exec` infers the caller from `LMCTL_SELF_SESSIONID` inside member sessions.
 Manual use outside a member session is experimental; see
 [Manual invocation](/lmctl/docs/manual-invocation). There is no lmctl-native
-`--detach` path for `chat` or `exec`; backgrounding is outside lmctl (`&`,
-Claude Code `run_in_background`, or equivalent).
+detached mode for `chat` or `exec`; backgrounding is outside lmctl (`&`, Claude
+Code `run_in_background`, or equivalent).
 
-## Mailbox send and receive
+## Queued delivery, check, and push
 
-From inside a member session, `lmctl send` delivers one message to a team
-member:
+The member-to-member lifecycle is:
 
-```bash
-lmctl send ./team.lmctl Coder "status note"
-lmctl send ./team.lmctl Coder "status note" --json
+```text
+queued -> in-flight -> delivered with receipt
 ```
 
-If the target has a live same-host carrier, `send` enqueues mailbox mail and
-returns immediately. If the same-host target is down, `send` falls back to
-synchronous `chat` delivery so the message is not stranded. If that fallback is
-refused or errors, `send` returns `path: "rejected"` without leaving queued mail
-behind. Cross-host targets are enqueued.
+Delivery is sender-driven. From inside a member session, `chat` queues when the
+target is busy and delivers directly when the target is idle. When a delivery
+turn runs, lmctl sends the queued lane as one provider turn and records the
+target response as the receipt. Delivery is at-least-once: if a process dies
+after sending but before marking rows delivered, lmctl may deliver the same
+queued message again. A duplicate is preferable to losing work.
 
-`lmctl recv` drains the calling member's mailbox:
+Use `check` to inspect outbound state without mutating it:
 
 ```bash
-lmctl recv --json
+lmctl check --json
 ```
 
-`recv` uses `LMCTL_SELF_SESSIONID` to infer the caller. It refuses to guess when
-the caller cannot be inferred. A successful drain removes the returned messages;
-a second `recv` returns an empty list until new mail arrives.
+Use `push` to deliver queued outbound lanes sequentially for idle receivers:
+
+```bash
+lmctl push --json
+lmctl push --json &
+lmctl wait --json
+```
+
+`push` is blocking, sender-driven, and one instance per member may run at a
+time. It processes lanes sequentially, skips busy receivers, and leaves queued
+messages for skipped lanes until a later `chat` or `push` can deliver them. It
+does not require `lmctl serve`.
 
 ## Upload files
 

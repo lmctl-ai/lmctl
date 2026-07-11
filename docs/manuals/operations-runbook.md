@@ -140,23 +140,22 @@ lmctl chat ./team.lmctl:Coder "Run the long verification pass." &
 lmctl wait ./team.lmctl --json
 ```
 
-From inside a member session, use `send`/`recv` for asynchronous mailbox
-coordination instead of `chat`:
+From inside a member session, `chat` is also the queueing primitive. If the
+target is busy, lmctl queues the message in the sender-to-receiver lane. Inspect
+and flush outbound queued lanes with `check` and `push`:
 
 ```bash
-# sender member session
-lmctl send ./team.lmctl Coder "status note"
-
-# receiver member session
-lmctl wait --json
-lmctl recv --json
+lmctl chat ./team.lmctl Coder "status note"
+lmctl check --json
+lmctl push --json
 ```
 
-`send` queues mail when the target has a live same-host or cross-host carrier.
-If a same-host target is down, it falls back to synchronous chat delivery so the
-message is not stranded. If that fallback is refused or errors, `send` returns
-`path: "rejected"` without leaving queued mail behind. `wait` only peeks mailbox
-mail; `recv` drains it.
+The delivery lifecycle is `queued -> in-flight -> delivered with receipt`.
+`check` is read-only. `push` is blocking and sequentially delivers currently
+available outbound lanes for idle receivers, skipping busy receivers for a later
+attempt. Neither command requires `lmctl serve`. Delivery is at-least-once;
+duplicate delivery can happen after a crash, but a queued message should not be
+lost.
 
 For an intentionally blind local shell wrapper, `timeout` still has the usual
 shell semantics:
@@ -178,14 +177,17 @@ whether it was a busy/servicing rejection.
 
 **Wait vs background is explicit.** `lmctl chat` waits by default. For parallel
 fan-out, launch tracked invocations in the background, then block on scoped
-`lmctl wait --json`. `wait` can also wake on scoped inbound mailbox mail. Use
-`lmctl exec -- <command>` from inside a member session for tracked local
-commands; background it with your harness or shell, then keep looping
-`lmctl wait` in the same caller/team scope for first-return completions.
+`lmctl wait --json`. `wait` can also wake when queued outbound messages are
+delivered and receipt text is available. Use `lmctl exec -- <command>` from
+inside a member session for tracked local commands; background it with your
+harness or shell, then keep looping `lmctl wait` in the same caller/team scope
+for first-return completions.
 
-**Busy means "not ready yet" — just try again.** A `1` with `<member> is servicing
-…` means the member is mid-turn. There is no queue: wait and re-send. It is not a
-failure and not a reason to declare the team blocked.
+**Busy means "not ready yet."** From an operator shell, a busy target returns a
+busy error and does not queue. From inside a member session, `chat` queues the
+message for that sender/receiver lane. Use `lmctl check --json` to see outbound
+queued work and `lmctl push --json` to try delivery again when receivers become
+idle.
 
 ## A freshly-seeded session is not instantly chat-ready
 
@@ -220,7 +222,7 @@ a hung Lead.
 If a member handoff fails or never lands, verify that the Lead actually ran
 `lmctl chat` rather than only narrating its intent. A Lead that says "Coder is
 getting the task now" but never executes the command has not delegated. Re-onboard
-it with a delegation-first instruction such as "run `lmctl chat ...` now to send
+it with a delegation-first instruction such as "run `lmctl chat ...` now to give
 Coder X", or hand the task to a backup member.
 
 ## When a member drifts (long sessions)

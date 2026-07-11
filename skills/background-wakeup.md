@@ -1,6 +1,6 @@
 ---
 name: background-wakeup
-description: Use lmctl wait as the wake primitive: background tracked lmctl invocations, wake on first completion or mailbox mail, harvest, and repeat.
+description: Use lmctl wait as the wake primitive: background tracked lmctl invocations, wake on first completion or delivered queue receipt, harvest, and repeat.
 ---
 
 # Skill: Background wake-up with `lmctl wait`
@@ -20,61 +20,68 @@ your wake.
 When you have N jobs, launch them as tracked background invocations, then block
 on `lmctl wait`. It polls local tracked-invocation state, burns no model tokens,
 and returns when the first invocation in scope reaches a terminal state or when
-the scoped caller has inbound mailbox mail.
+the scoped caller has a delivered queue receipt.
 
 Tracked invocations are:
 
 - a backgrounded blocking member call, for example
   `lmctl chat "<team>.lmctl" Coder "<task>" &`
+- a backgrounded queue flush from inside a member session, for example
+  `lmctl push --json &`
 - a tracked command wrapper from inside a member session, for example
   `lmctl exec -- npm test &`
 
-`lmctl chat` and `lmctl exec` are blocking commands. lmctl wait has no ids:
-there is no `wait --id` and no system-wide wait scope. Backgrounding is the
-harness or shell's job (`&`, Claude Code `run_in_background`, or equivalent).
+`lmctl chat`, `lmctl push`, and `lmctl exec` are blocking commands. lmctl wait
+has no ids and no system-wide wait scope. Backgrounding is the harness or
+shell's job (`&`, Claude Code `run_in_background`, or equivalent).
 
 Scope `wait` deliberately:
 
-- default scope: the calling member's invocations and mailbox, inferred from
+- default scope: the calling member's invocations and delivered receipts, inferred from
   `LMCTL_SELF_SESSIONID`
 - positional teamfile scope: `lmctl wait "<team>.lmctl" --json` for
   invocations targeting that team
 
 Normal users do not set `LMCTL_SELF_SESSIONID`; lmctl sets it for member
 sessions it starts through `chat` and `terminal`, and child commands inherit it.
-If `wait`, `recv`, or `exec` reports that the marker is missing while you are
+If `check`, `push`, `wait`, or `exec` reports that the marker is missing while you are
 experimenting manually, see `/lmctl/docs/manual-invocation`.
 
-Mailbox messages are also wake events. `lmctl wait` peeks mail
-non-destructively and returns previews in the `mail` array. It does not consume
-messages; use `lmctl recv --json` from the receiving member session to drain and
-remove them after you decide to handle them.
+Queue receipts are also wake events. The message lifecycle is:
+
+```text
+queued -> in-flight -> delivered with receipt
+```
+
+`lmctl check --json` is read-only and shows the calling member's outbound queued
+lanes. `lmctl push --json` sequentially delivers currently available outbound
+lanes for idle receivers and skips busy receivers. Neither command requires
+`lmctl serve`. Delivery is at-least-once: after a crash, a queued message may be
+delivered again rather than lost.
 
 Use the right delivery primitive:
 
-- `lmctl chat` drives a member turn and waits for a reply.
-- `lmctl send` sends a mailbox note. With a live same-host target it returns
-  quickly as `path: "enqueued"`; with a down same-host target it falls back to
-  synchronous chat delivery as `path: "chat-delivered"`; if that fallback is
-  refused or errors, it returns `path: "rejected"` with no queued mail left
-  behind. Cross-host targets are enqueued.
+- `lmctl chat` drives a member turn and waits for a reply. From inside a member
+  session, it queues if the target is busy.
+- `lmctl check` reports your outbound queued lanes without mutating them.
+- `lmctl push` sequentially flushes your outbound queued lanes for idle receivers.
 
 ## The loop
 
 1. See N jobs and estimate durations.
-2. Launch all N as tracked invocations by backgrounding blocking `lmctl chat`
-   or `lmctl exec` calls.
+2. Launch all N as tracked invocations by backgrounding blocking `lmctl chat`,
+   `lmctl push`, or `lmctl exec` calls.
 3. Block on `lmctl wait --json` in the right scope. It returns
-   `status: "completed"` when one invocation finishes or mailbox mail is
+   `status: "completed"` when one invocation finishes or a queue receipt is
    present. It returns `status: "idle"` when nothing is currently in flight and
-   no mail is pending.
-4. On completed, harvest both `finished` and `mail`. A mail-only wake has
-   `finished: []`. If mail is present, call `lmctl recv --json` for that same
-   receiver before acting on it; `wait` only peeked.
+   no receipt is pending.
+4. On completed, harvest both finished invocations and delivered receipts. A
+   receipt-only wake has no finished invocation; use the receipt text to decide
+   the next step.
 5. Still work in flight? Call `lmctl wait` again. It returns on the next
    completion in the same interactive first-return loop.
-6. On idle, generate work: check your mailbox/chatrooms for new asks, spawn a
-   review or QA pass, or pull the next queue item. A single idle result means no
+6. On idle, run `lmctl check --json`, push eligible outbound lanes, spawn a
+   review or QA pass, or claim the next external/backlog item. A single idle result means no
    tracked invocation is running in this scope right now, not that the broader
    backlog is empty.
 7. Overloaded: queue follow-up work and submit as capacity frees.
@@ -106,8 +113,8 @@ The blocking `lmctl wait` call must be one your harness can wake you from:
 - opencode / lmplayer: use a run-based driver loop; a blocking `lmctl wait`
   return is the wake, then harvest, dispatch, and call `wait` again.
 - codex / gemini: these are poll-only from lmctl's point of view. Background
-  tracked `lmctl chat` / `lmctl exec`, then block in `lmctl wait`; there is no
-  provider completion push.
+  tracked `lmctl chat` / `lmctl push` / `lmctl exec`, then block in
+  `lmctl wait`; there is no provider completion push.
 
 Avoid a single shell command that backgrounds several children and then runs
 `lmctl wait` while the outer shell itself is the harness-tracked process. Some

@@ -5,7 +5,7 @@ sidebar_position: 3
 
 # Direct chat & background work
 
-lmctl has four different execution paths. Pick the one that matches how you
+lmctl has four common execution paths. Pick the one that matches how you
 need to wait, observe, and resume work.
 
 ## Synchronous direct chat
@@ -21,30 +21,27 @@ This blocks until the provider turn finishes or errors. It is the right path
 for short handoffs, review requests, and operator answers where the shell should
 wait for the result.
 
-## Mailbox messages
+## Queued member messages
 
-From inside a member session, use `lmctl send` when you need to notify another
-Lead/member without stealing its current turn:
+From inside a member session, `lmctl chat` also handles asynchronous queueing.
+If the target is idle, it delivers a normal blocking turn. If the target is
+busy, lmctl queues the message in the sender-to-receiver lane:
 
 ```bash
-# sender member session
-lmctl send ./team.lmctl Coder "status note"
-
-# receiver member session
-lmctl wait --json
-lmctl recv --json
+lmctl chat ./team.lmctl Coder "status note"
+lmctl check --json
+lmctl push --json
 ```
 
-`send` is liveness-aware. A live same-host target gets queued mail and `send`
-returns immediately with `path: "enqueued"`. A down same-host target falls back
-to synchronous chat delivery with `path: "chat-delivered"` so the message is
-not stranded. If that fallback is refused or errors, `send` returns
-`path: "rejected"` and does not leave queued mail behind. Cross-host targets are
-queued because the mailbox is the reachable path.
+The lifecycle is `queued -> in-flight -> delivered with receipt`. Delivered
+messages are marked with the target's response as a receipt. Delivery is
+at-least-once: if a process dies after sending but before marking delivery, a
+later `chat` or `push` may deliver the same queued message again.
 
-`wait` wakes on inbound mail for the calling member and reports previews in the
-`mail` array, but it does not consume those messages. `recv` drains all pending
-messages for that calling member and removes them.
+`check` is instant and read-only: it reports this member's background jobs and
+outbound queued lanes. `push` is blocking and sender-driven: it sequentially
+delivers currently available outbound lanes whose receivers are idle, and skips
+busy receivers for a later attempt. Neither command requires `lmctl serve`.
 
 ## Tracked background invocations
 
@@ -66,16 +63,17 @@ lmctl wait --json
 
 These commands create tracked invocations. `lmctl wait` is the wake primitive:
 it blocks without spending model tokens and returns when the first invocation in
-scope finishes or the scoped caller has inbound mail. Scope it intentionally.
-The default scope is the caller's own invocations and mailbox via
+scope finishes or the scoped caller has a delivered queue receipt. Scope it
+intentionally.
+The default scope is the caller's own invocations and delivered receipts via
 `LMCTL_SELF_SESSIONID`; a positional `<teamfile>` scopes wait to invocations
-targeting that team. There is no system-wide wait scope and no `wait --id` or
-`wait --all`; launch work in the background, then let `wait` return the first
-completion in that caller/team scope.
+targeting that team. There is no system-wide wait scope and no id/all mode;
+launch work in the background, then let `wait` return the first completion in
+that caller/team scope.
 
 `lmctl chat` and `lmctl exec` are blocking commands. lmctl has no native
-`--detach` path; backgrounding is done by your harness or shell (`&`, Claude
-Code `run_in_background`, or equivalent).
+detached mode; backgrounding is done by your harness or shell (`&`, Claude Code
+`run_in_background`, or equivalent).
 
 ## The wait loop
 
@@ -83,11 +81,10 @@ When a Lead has **N** independent member jobs, the safe fan-out pattern is:
 
 1. Launch all N jobs as tracked invocations.
 2. Call `lmctl wait --json` in the correct scope.
-3. If wait returns `status: "completed"`, inspect both `finished` and `mail`.
-   A mail-only wake has `finished: []`; call `recv` for messages you intend to
-   handle, dispatch follow-ups, and wait again.
-4. If wait returns `status: "idle"`, pull the next queue item or check the
-   chatroom/mailbox. One idle response means no tracked invocation is currently
+3. If wait returns `status: "completed"`, inspect completed invocations and
+   delivered queue receipts, dispatch follow-ups, and wait again.
+4. If wait returns `status: "idle"`, run `lmctl check --json`, claim the next
+   external/backlog item, or push eligible outbound lanes. One idle response means no tracked invocation is currently
    in flight in that scope; it does not mean the broader backlog is empty.
 
 This keeps real parallelism without going blind. The blocking `wait` call is the
@@ -119,6 +116,6 @@ Workflow jobs are executed by `lmctl serve`. Inspect workflow queue state with
 | Need | Use |
 | --- | --- |
 | Ask one member and wait | `lmctl chat <teamfile> <alias> "<prompt>"` |
-| Notify a Lead/member without stealing its turn | `lmctl send`, then `lmctl wait` / `lmctl recv` on the receiver |
-| Fan out member work and wake on completion | backgrounded `lmctl chat` / `lmctl exec` plus scoped `lmctl wait` |
+| Queue work for a busy member | member-run `lmctl chat`, then `lmctl check` / `lmctl push` |
+| Fan out member work and wake on completion | backgrounded `lmctl chat` / `lmctl push` / `lmctl exec` plus scoped `lmctl wait` |
 | Run a repeatable workflow pipeline | `lmctl workflow run` / `lmctl api submit-job` plus `lmctl serve` |
