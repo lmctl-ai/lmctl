@@ -86,6 +86,9 @@ The companion code-search CLI **lmprobe** is documented at
 [`@lmctl-ai/lmprobe`](https://www.npmjs.com/package/@lmctl-ai/lmprobe), and has
 an agent-facing skill at
 [skills/lmprobe-skill.md](./skills/lmprobe-skill.md).
+The hosted lmprobe manual is sourced from `../lmprobe-src/site` and published to
+the `s3://lmctl-website-prod/lmprobe/` prefix via
+[`scripts/deploy-lmprobe.sh`](./scripts/deploy-lmprobe.sh).
 
 To work on the docs locally and deploy the site, see [`DEPLOY.md`](./DEPLOY.md):
 

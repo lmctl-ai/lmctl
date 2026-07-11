@@ -1,3 +1,12 @@
+// Viewer-request routing for the shared lmctl.com distribution.
+// - Keep www.lmctl.com -> lmctl.com redirect first.
+// - Rewrite /lmctl and /lmctl/ to /lmctl/index.html.
+// - Rewrite /lmprobe and /lmprobe/ to /lmprobe/index.html.
+// - Rewrite /internal/lmctl and /internal/lmctl/ to /internal/lmctl/index.html.
+// - For /lmctl/* and /lmprobe/* static pages, redirect trailing slashes to
+//   slashless canonical URLs and append .html to extensionless paths.
+// - Leave root, /opendev/*, /internal/* non-root, assets, and extensioned
+//   requests untouched.
 function handler(event) {
   var request = event.request;
   var host = request.headers.host.value;
@@ -17,7 +26,14 @@ function handler(event) {
     return request;
   }
 
-  if (uri.indexOf('/lmctl/') !== 0) {
+  if (uri === '/internal/lmctl' || uri === '/internal/lmctl/') {
+    request.uri = '/internal/lmctl/index.html';
+    return request;
+  }
+
+  var isCleanUrlPrefix = uri.indexOf('/lmctl/') === 0 || uri.indexOf('/lmprobe/') === 0;
+
+  if (!isCleanUrlPrefix) {
     return request;
   }
 

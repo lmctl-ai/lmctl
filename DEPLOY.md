@@ -3,7 +3,8 @@
 This repository is the source of **lmctl.com** — the homepage plus the
 Docusaurus documentation site published to `lmctl.com/lmctl/` via S3 +
 CloudFront. It also hosts the runnable assets at `lmctl.com/workflows/`,
-`lmctl.com/skills/`, and `lmctl.com/examples/`.
+`lmctl.com/skills/`, `lmctl.com/examples/`, and the lmprobe static manual at
+`lmctl.com/lmprobe/`.
 
 ## Develop the docs locally
 
@@ -27,6 +28,7 @@ The static artifact is written to `build/` with Docusaurus `baseUrl` set to
 | Target | Script |
 | --- | --- |
 | Docs (`/lmctl/`) | `./scripts/deploy.sh` |
+| lmprobe static manual (`/lmprobe/`) | `./scripts/deploy-lmprobe.sh` |
 | Homepage (root) | `./scripts/deploy-homepage.sh` |
 | Workflow catalog (`/workflows/`) | `./scripts/deploy-workflows.sh` |
 | Example configs (`/examples/`) | `./scripts/deploy-examples.sh` |
@@ -45,14 +47,26 @@ HTML and `sitemap.xml`, and invalidates `/lmctl/*`. The `deploy-workflows.sh` /
 `deploy-examples.sh` scripts mirror their content from the canonical lmctl-src
 repo and sync it under the matching prefix.
 
-## CloudFront constraints for the `/lmctl/*` behavior
+`scripts/deploy-lmprobe.sh` publishes the lmprobe static manual to
+`s3://$S3_BUCKET/lmprobe/` and invalidates `/lmprobe` plus `/lmprobe/*`. Its
+default source is `../lmprobe-src/site`, with `../lmprobe-src/LICENSE` and
+`../lmprobe-src/ATTRIBUTION.md` copied when present. Override the bundle with
+`LMPROBE_SITE_DIR=/path/to/site` and the metadata root with
+`LMPROBE_REPO_DIR=/path/to/lmprobe-src`. Use `DRY_RUN=1` to preview the scoped S3
+sync without invalidating CloudFront.
+
+## CloudFront constraints for prefix behaviors
 
 - Origin Path must be empty. Objects already live under the `lmctl/` key prefix;
-  setting Origin Path to `/lmctl` double-prefixes requests and returns 404.
+  setting Origin Path to `/lmctl` double-prefixes requests and returns 404. The
+  same rule applies to `lmprobe/` and `internal/lmctl/` objects.
 - The production viewer-request CloudFront Function is `lmctl-www-redirect`,
   with source in `infra/lmctl-www-redirect.js`. It keeps the existing
-  `www.lmctl.com` → apex redirect and adds `/lmctl/*` clean-URL resolution. It
-  does not implement 404 handling.
+  `www.lmctl.com` → apex redirect, adds `/lmctl/*` and `/lmprobe/*` clean-URL
+  resolution, and rewrites bare `/internal/lmctl` to
+  `/internal/lmctl/index.html`. lmprobe assets are written with `/lmprobe/...`
+  absolute URLs, so no Origin Path is needed. The function does not implement
+  404 handling.
 
 Rollback source for the prior LIVE function is kept in `.rollback/`. To roll
 back the function, update DEVELOPMENT with the saved source, then publish the
