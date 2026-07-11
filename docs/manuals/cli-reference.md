@@ -107,11 +107,11 @@ lmctl chat --run <id> "Operator answer" --done
 ```
 
 For tracked background work, run blocking member calls in the background and use
-`lmctl wait` as the wake primitive:
+`lmctl more` as the wake primitive:
 
 ```bash
 lmctl chat ./team.lmctl Coder "Run the long verification pass." &
-lmctl wait ./team.lmctl --json
+lmctl more ./team.lmctl --json
 ```
 
 From inside a member session, the same `chat` command is also the queueing
@@ -120,16 +120,16 @@ target is busy, lmctl queues the message in that sender-to-receiver lane:
 
 ```bash
 lmctl chat ./team.lmctl Coder "status note"
-lmctl check --json
-lmctl push --json
+lmctl more --json
 ```
 
-`check` is read-only: it shows the calling member's background invocations and
-outbound queued lanes. `push` is blocking: it delivers queued outbound lanes
-sequentially for idle receivers and skips receivers that are still busy. Neither
-`check` nor `push` requires `lmctl serve`; workflow jobs still do. A plain
-operator shell can drive direct `chat`, but it cannot queue as a member when a
-target is busy.
+`more` is the member wake loop: it flushes queued outbound mail to idle
+receivers, shows this member's jobs plus outbound queue, and returns delivered
+receipts plus finished tracked jobs. If work is running but nothing has
+finished, it blocks. If the member is idle and has no finished work, it returns
+immediately with nothing more. It does not require `lmctl serve`; workflow jobs
+still do. A plain operator shell can drive direct `chat`, but it cannot queue as
+a member when a target is busy.
 
 ## Inspecting state
 
@@ -176,40 +176,38 @@ lmctl workflow run --workflow image-qa --project my-project --inputs '{"image_pa
 ```
 
 See [Direct chat vs background work](./direct-chat-and-background-work.md) for
-when to use synchronous `chat`, tracked invocations with `wait`, or daemon
+when to use synchronous `chat`, tracked invocations with `more`, or daemon
 workflow jobs.
 
-## Tracked invocation wait
+## Tracked invocation wake loop
 
-`lmctl wait` blocks until the first tracked invocation in scope finishes or the
-calling member has a delivered queue receipt. It is separate from `lmctl api
-jobs`, which lists workflow jobs in the local workflow queue.
+`lmctl more` is the two-command orchestration partner to `chat`. It does three
+things, in order: flushes queued outbound mail to idle receivers, shows this
+member's jobs plus outbound queue, and returns finished work as delivered
+receipts plus completed tracked jobs. It is separate from `lmctl api jobs`,
+which lists workflow jobs in the local workflow queue.
 
 ```bash
-lmctl wait --json
-lmctl wait ./team.lmctl --json
-lmctl wait --timeout 300 --interval 5 --json
+lmctl more --json
+lmctl more ./team.lmctl --json
 ```
 
-Default scope is the calling member's own invocations, inferred from
-`LMCTL_SELF_SESSIONID`. Use a teamfile positional for invocations targeting
-that team, or default self scope from inside a member session. For caller
-scopes, `wait` also wakes when queued outbound messages have been delivered and
-receipt text is available. There is intentionally no system-wide wait scope and
-no id/all mode; the model is interactive first-return over the scoped queue.
-
-Exit codes are `0` for completed or idle (inspect `status` in the output), `1`
-for timeout, and `2` for usage or scope errors.
+Default scope is the calling member, inferred from `LMCTL_SELF_SESSIONID`. Use a
+teamfile positional for invocations targeting that team, or default self scope
+from inside a member session. If something is running but nothing has finished,
+`more` blocks. If the scope is idle and there is no finished work, it returns
+immediately with nothing more. There is intentionally no id/all mode; the model
+is caller/teamfile-scoped, state-based first-return.
 
 From inside a member session, `lmctl exec` runs any local command as a tracked
-invocation so `lmctl wait` can wake on it. `exec` is blocking, so background one
-or more invocations with your harness or shell, then call `wait` in the same
-scope and loop until no work remains:
+invocation so `more` can return it. `exec` is blocking, so background one or
+more invocations with your harness or shell, then call `more` in the same scope
+and loop until no work remains:
 
 ```bash
 lmctl exec -- npm test &
 lmctl exec -- sh -lc 'npm test && npm run build' &
-lmctl wait --json
+lmctl more --json
 ```
 
 `exec` infers the caller from `LMCTL_SELF_SESSIONID` inside member sessions.
@@ -218,7 +216,7 @@ Manual use outside a member session is experimental; see
 detached mode for `chat` or `exec`; backgrounding is outside lmctl (`&`, Claude
 Code `run_in_background`, or equivalent).
 
-## Queued delivery, check, and push
+## Queued delivery and more
 
 The member-to-member lifecycle is:
 
@@ -228,29 +226,22 @@ queued -> in-flight -> delivered with receipt
 
 Delivery is sender-driven. From inside a member session, `chat` queues when the
 target is busy and delivers directly when the target is idle. When a delivery
-turn runs, lmctl sends the queued lane as one provider turn and records the
-target response as the receipt. Delivery is at-least-once: if a process dies
+turn runs, the queued lane is sent as one provider turn and the target response
+is recorded as the receipt. Delivery is at-least-once: if a process dies
 after sending but before marking rows delivered, lmctl may deliver the same
 queued message again. A duplicate is preferable to losing work.
 
-Use `check` to inspect outbound state without mutating it:
+Use `more` after member-run `chat` or backgrounded work:
 
 ```bash
-lmctl check --json
+lmctl more --json
 ```
 
-Use `push` to deliver queued outbound lanes sequentially for idle receivers:
-
-```bash
-lmctl push --json
-lmctl push --json &
-lmctl wait --json
-```
-
-`push` is blocking, sender-driven, and one instance per member may run at a
-time. It processes lanes sequentially, skips busy receivers, and leaves queued
-messages for skipped lanes until a later `chat` or `push` can deliver them. It
-does not require `lmctl serve`.
+`more` flushes queued outbound lanes sequentially for idle receivers, skips busy
+receivers, reports what is still running or queued, and returns delivered
+receipts plus finished tracked jobs. Do not sleep to wait on a member: `more`
+answers whether anything finished, and its status output answers whether work
+is busy. It does not require `lmctl serve`.
 
 ## Upload files
 
@@ -301,7 +292,7 @@ lmctl health <teamfile>
 lmctl health ./team.lmctl Coder
 lmctl health <session-id> --provider codex
 lmctl health --run <id>
-lmctl wait ./team.lmctl --json
+lmctl more ./team.lmctl --json
 ```
 
 `terminal --size` reports message count, transcript bytes, and a local token

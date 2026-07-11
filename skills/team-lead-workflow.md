@@ -14,14 +14,13 @@ delegation channel works; then proceed with the task.
 Use the CLI:
 
 - `lmctl chat "<teamfile>" Coder "your task"`
-- `lmctl check --json` to inspect your outbound queued lanes
-- `lmctl push --json` to sequentially deliver queued lanes whose receivers are idle
+- `lmctl more --json` to flush queued lanes, inspect status, and collect finished work
 
 Use `chat` when you need to drive a member turn and get a reply. From inside a
 member session, `chat` queues if the target is busy; a plain operator shell can
 drive direct `chat`, but cannot queue as a member. Queued work follows
-`queued -> in-flight -> delivered with receipt` and is at-least-once. `check`
-and `push` do not require `lmctl serve`. For
+`queued -> in-flight -> delivered with receipt` and is at-least-once. `more`
+does not require `lmctl serve`. For
 non-idle/background delegation patterns, read the background-wakeup skill.
 
 Warmup/connectivity check first:

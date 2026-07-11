@@ -133,29 +133,28 @@ work with `lmctl chat <teamfile>:<member> "<prompt>"`. Two behaviors to know:
 
 **`chat` blocks for the whole turn.** `lmctl chat …` waits until the member
 finishes its turn and prints the full reply. For tracked background work, run
-the blocking call in the background and use `lmctl wait` as your wake:
+the blocking call in the background and use `lmctl more` as your wake:
 
 ```bash
 lmctl chat ./team.lmctl:Coder "Run the long verification pass." &
-lmctl wait ./team.lmctl --json
+lmctl more ./team.lmctl --json
 ```
 
 From inside a member session, `chat` is also the queueing primitive. If the
-target is busy, lmctl queues the message in the sender-to-receiver lane. Inspect
-and flush outbound queued lanes with `check` and `push`:
+target is busy, lmctl queues the message in the sender-to-receiver lane. Call
+`more` to flush queued outbound mail to idle receivers, inspect status, and
+return finished receipts or jobs:
 
 ```bash
 lmctl chat ./team.lmctl Coder "status note"
-lmctl check --json
-lmctl push --json
+lmctl more --json
 ```
 
 The delivery lifecycle is `queued -> in-flight -> delivered with receipt`.
-`check` is read-only. `push` is blocking and sequentially delivers currently
-available outbound lanes for idle receivers, skipping busy receivers for a later
-attempt. Neither command requires `lmctl serve`. Delivery is at-least-once;
-duplicate delivery can happen after a crash, but a queued message should not be
-lost.
+`more` blocks if something is running but nothing has finished, and returns
+immediately with nothing more when idle. It does not require `lmctl serve`.
+Delivery is at-least-once; duplicate delivery can happen after a crash, but a
+queued message should not be lost.
 
 For an intentionally blind local shell wrapper, `timeout` still has the usual
 shell semantics:
@@ -168,26 +167,25 @@ timeout 60 lmctl chat ./team.lmctl:Coder "..." >/dev/null 2>&1
 
 | Exit | Meaning |
 |------|---------|
-| `0` | The member finished its turn within the wait — delivered and done. |
-| `124` | Your external `timeout` wrapper fired. Treat this as blind/background shell behavior; prefer scoped `lmctl wait` when you need a tracked completion record. |
+| `0` | The member finished its turn within the blocking chat call — delivered and done. |
+| `124` | Your external `timeout` wrapper fired. Treat this as blind/background shell behavior; prefer scoped `lmctl more` when you need a tracked completion record. |
 | `1` | Either **busy** (`<member> is servicing <sender> since <ts>` — it is mid-turn) **or** a real error. These look the same today. |
 
 So `1` often means "busy, retry later" — do **not** blindly retry before checking
 whether it was a busy/servicing rejection.
 
-**Wait vs background is explicit.** `lmctl chat` waits by default. For parallel
+**More vs background is explicit.** `lmctl chat` waits by default. For parallel
 fan-out, launch tracked invocations in the background, then block on scoped
-`lmctl wait --json`. `wait` can also wake when queued outbound messages are
-delivered and receipt text is available. Use `lmctl exec -- <command>` from
+`lmctl more --json`. `more` also flushes queued outbound mail, shows status, and
+returns delivered receipts when available. Use `lmctl exec -- <command>` from
 inside a member session for tracked local commands; background it with your
-harness or shell, then keep looping `lmctl wait` in the same caller/team scope
+harness or shell, then keep looping `lmctl more` in the same caller/team scope
 for first-return completions.
 
 **Busy means "not ready yet."** From an operator shell, a busy target returns a
 busy error and does not queue. From inside a member session, `chat` queues the
-message for that sender/receiver lane. Use `lmctl check --json` to see outbound
-queued work and `lmctl push --json` to try delivery again when receivers become
-idle.
+message for that sender/receiver lane. Use `lmctl more --json` to flush queued
+work to idle receivers, inspect busy lanes, and collect finished receipts.
 
 ## A freshly-seeded session is not instantly chat-ready
 

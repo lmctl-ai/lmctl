@@ -20,17 +20,17 @@ lmctl chat "<teamfile>.lmctl" Coder "Implement X. Commit when tests pass."
 can use this flagless form. From inside your member session, if the target is
 busy, `chat` queues the message in your sender-to-receiver lane.
 
-Check and push queued outbound work from your member session:
+Ask for more from your member session:
 
 ```sh
-lmctl check --json
-lmctl push --json
+lmctl more --json
 ```
 
 The queue lifecycle is `queued -> in-flight -> delivered with receipt`.
-`check` is read-only. `push` is blocking and sequentially delivers queued
-outbound lanes for idle receivers, skipping busy receivers for later. Neither
-command requires `lmctl serve`. Delivery is at-least-once, so a crash may cause
+`more` flushes queued outbound mail to idle receivers, shows your jobs plus
+outbound queue, and returns delivered receipts plus finished tracked jobs. If
+something is running but nothing has finished, it blocks; if idle, it returns
+nothing more immediately. Delivery is at-least-once, so a crash may cause
 duplicate delivery rather than lost work. Member sessions inherit identity from
 `LMCTL_SELF_SESSIONID`.
 
@@ -38,13 +38,13 @@ Fan out long work without going blind:
 
 ```sh
 lmctl chat "<teamfile>.lmctl" Coder "big task" &
-lmctl wait --json
+lmctl more --json
 ```
 
-`wait` returns the first completed tracked invocation or delivered receipt.
-Continue until no work is in flight, then run `lmctl check --json`, push queued
-lanes, or pull the next item. The harness or shell backgrounds blocking
-commands.
+`more` flushes queued outbound mail, reports your jobs and queue, and returns
+the first completed tracked invocation or delivered receipt. Empty `more` means
+this scope is idle: pull the next item or exit. The harness or shell backgrounds
+blocking commands.
 
 Inspect without disturbing a member:
 
@@ -87,5 +87,5 @@ cannot refresh the exact session it is currently running in.
 - [Team Lead advanced](lmctl-team-lead-advanced-skill.md) covers refresh,
   model swaps, health, and drift recovery.
 - [Team Lead workflow](team-lead-workflow.md) is the short operating checklist.
-- [Background wake-up](background-wakeup.md) explains the `lmctl wait` loop.
+- [Background wake-up](background-wakeup.md) explains the `lmctl more` loop.
 - [Durable memory](durable-memory.md) explains what to persist and why.

@@ -27,18 +27,22 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-07-11: Processed lmctl 0.1.103. Public docs and skills now collapse the
+  push-mode surface to `chat` and `more`: `chat` puts work in and auto-queues
+  busy receivers; `more` flushes queued outbound mail, shows jobs/queue status,
+  and returns delivered receipts plus finished tracked jobs. The rationale is
+  explicit in public docs: fewer commands means less confusion for Leads.
 - 2026-07-11: Added a compact "If you learned an older lmctl" warning to the
   public Team Lead basic skill, with short pointers from the Meta-Lead and
   background wake-up skills. The block maps removed forms such as
   `chat --detach`, `lmctl jobs`, `--from`, `I_am=`, `send`, `recv`, `loop`,
   `_CONNECT_`, `lmctl connect`, `wait --id`, `wait --all`, and `chat --force`
-  to the current `chat` / `check` / `push` / `wait` push-mode loop and
+  to the current `chat` / `more` loop and
   reinforces the no-sleep rule.
 - 2026-07-10: Processed lmctl 0.1.97-0.1.100 push-mode docs. Public
-  orchestration guidance now centers on `chat` / `check` / `push` / `wait`:
-  member-run chat queues for busy targets, check reads outbound queued lanes,
-  push delivers queued lanes for idle receivers, and wait wakes on tracked
-  completions or delivered receipts. Added the public lifecycle
+  orchestration guidance centered on `chat` plus separate check/push/wait
+  commands. This was superseded on 2026-07-11 by 0.1.103's `more` command.
+  Added the public lifecycle
   `queued -> in-flight -> delivered with receipt` and at-least-once delivery
   note.
 - 2026-07-10: Processed `lmctldoc` seq 16-18 and `lmctldev` seq 52-53 for
@@ -47,14 +51,14 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   marker, add `/lmctl/docs/manual-invocation` as experimental/unsupported, add
   `/lmctl/docs/mcp-manual-install`, and state that debug output goes to
   `~/.lmctl/debug-*.log`. Dogfood against `lmctl 0.1.96` confirmed `chat`,
-  `wait`, and `exec` help had no old identity flag; removed-flag failures
+  wait, and `exec` help had no old identity flag; removed-flag failures
   pointed to the manual-invocation page. A confusing `exec --root` manual-shell
   behavior was reported to `lmctldev` seq 54.
 - 2026-07-08: Processed the 0.1.91 wait-id removal. Public docs then
-  describe `wait` as an interactive first-return primitive over default-self or
+  described wait as an interactive first-return primitive over default-self or
   positional `<teamfile>` scopes only. Dogfood used the 0.1.91 source binary
-  with two background `lmctl exec` invocations from one caller: the first wait
-  returned one finished row plus one in-flight row; the next `wait` returned
+  with two background `lmctl exec` invocations from one caller: the first call
+  returned one finished row plus one in-flight row; the next call returned
   the remaining completion.
   The docs also state that `chat`/`exec` remain blocking commands and
   backgrounding is done by the harness or shell, not by a detached-mode flag.
@@ -67,13 +71,13 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   cache-first network examples for PubMed, ClinicalTrials.gov, RxNorm, PubChem,
   openFDA labels, iCite, and UniProt.
 - 2026-07-08: Processed `lmctldoc` room backlog seq 4-6. The published async
-  guidance now uses the current `lmctl wait` model: launch tracked invocations
+  guidance then used the current wait model: launch tracked invocations
   with backgrounded `lmctl chat` or `lmctl exec`, then block on scoped
-  `lmctl wait`. Superseded on 2026-07-08 by 0.1.91: do not document
+  wake. Superseded on 2026-07-08 by 0.1.91: do not document
   system-wide wait or wait-by-id; current scopes are default self and
   positional `<teamfile>`.
 - 2026-07-07: Named the previous background wake-up orchestration pattern in the
-  public skill catalog. This was superseded on 2026-07-08 by `lmctl wait`.
+  public skill catalog. This was superseded on 2026-07-08 by wait-based wakeups.
 - 2026-07-07: Ran a whole-site review with Coder, Reviewer1, and Reviewer3.
   Follow-up fixes added the Bring Your Own Subscriptions page to the Why
   sidebar, exposed the missing skills docs, removed a dead skills link, replaced

@@ -5,7 +5,7 @@ sidebar_position: 3
 
 # Direct chat & background work
 
-lmctl has four common execution paths. Pick the one that matches how you
+lmctl has a few common execution paths. Pick the one that matches how you
 need to wait, observe, and resume work.
 
 ## Synchronous direct chat
@@ -29,19 +29,19 @@ busy, lmctl queues the message in the sender-to-receiver lane:
 
 ```bash
 lmctl chat ./team.lmctl Coder "status note"
-lmctl check --json
-lmctl push --json
+lmctl more --json
 ```
 
 The lifecycle is `queued -> in-flight -> delivered with receipt`. Delivered
 messages are marked with the target's response as a receipt. Delivery is
 at-least-once: if a process dies after sending but before marking delivery, a
-later `chat` or `push` may deliver the same queued message again.
+later `chat` or `more` may deliver the same queued message again.
 
-`check` is instant and read-only: it reports this member's background jobs and
-outbound queued lanes. `push` is blocking and sender-driven: it sequentially
-delivers currently available outbound lanes whose receivers are idle, and skips
-busy receivers for a later attempt. Neither command requires `lmctl serve`.
+`more` is the member wake loop: it flushes queued outbound mail to idle
+receivers, shows this member's jobs plus outbound queue, and returns delivered
+receipts plus finished tracked jobs. It blocks if something is running but
+nothing has finished, and returns immediately with nothing more when idle. It
+does not require `lmctl serve`.
 
 ## Tracked background invocations
 
@@ -50,50 +50,46 @@ member work without freezing on every long turn:
 
 ```bash
 lmctl chat ./team.lmctl Coder "Run the long verification pass." &
-lmctl wait ./team.lmctl --json
+lmctl more ./team.lmctl --json
 ```
 
 From inside a member session, `lmctl exec` can track local commands in the same
-wait loop:
+`more` loop:
 
 ```bash
 lmctl exec -- npm test &
-lmctl wait --json
+lmctl more --json
 ```
 
-These commands create tracked invocations. `lmctl wait` is the wake primitive:
-it blocks without spending model tokens and returns when the first invocation in
-scope finishes or the scoped caller has a delivered queue receipt. Scope it
-intentionally.
+These commands create tracked invocations. `lmctl more` is the wake primitive:
+it blocks without spending model tokens when work is running and returns when
+the first invocation in scope finishes or the scoped caller has a delivered
+queue receipt. Scope it intentionally.
 The default scope is the caller's own invocations and delivered receipts via
-`LMCTL_SELF_SESSIONID`; a positional `<teamfile>` scopes wait to invocations
-targeting that team. There is no system-wide wait scope and no id/all mode;
-launch work in the background, then let `wait` return the first completion in
+`LMCTL_SELF_SESSIONID`; a positional `<teamfile>` scopes `more` to invocations
+targeting that team. There is no system-wide id/all mode; launch work in the
+background, then let `more` return the first completion in
 that caller/team scope.
 
 `lmctl chat` and `lmctl exec` are blocking commands. lmctl has no native
 detached mode; backgrounding is done by your harness or shell (`&`, Claude Code
 `run_in_background`, or equivalent).
 
-## The wait loop
+## The more loop
 
 When a Lead has **N** independent member jobs, the safe fan-out pattern is:
 
 1. Launch all N jobs as tracked invocations.
-2. Call `lmctl wait --json` in the correct scope.
-3. If wait returns `status: "completed"`, inspect completed invocations and
-   delivered queue receipts, dispatch follow-ups, and wait again.
-4. If wait returns `status: "idle"`, run `lmctl check --json`, claim the next
-   external/backlog item, or push eligible outbound lanes. One idle response means no tracked invocation is currently
-   in flight in that scope; it does not mean the broader backlog is empty.
+2. Call `lmctl more --json` in the correct scope.
+3. If `more` returns finished jobs or delivered receipts, inspect them,
+   dispatch follow-ups, and call `more` again.
+4. If `more` returns nothing more, the scope is idle: claim the next
+   external/backlog item or exit.
 
-This keeps real parallelism without going blind. The blocking `wait` call is the
+This keeps real parallelism without going blind. The blocking `more` call is the
 wake-up signal that brings the Lead back to harvest. See the raw
 [background-wakeup skill](https://lmctl.com/skills/background-wakeup.md) for the
 full loop.
-
-`lmctl wait` exits `0` for both `completed` and `idle`; branch on the `status`
-field. It exits `1` on timeout and `2` on usage or scope errors.
 
 ## Daemon workflow jobs
 
@@ -116,6 +112,6 @@ Workflow jobs are executed by `lmctl serve`. Inspect workflow queue state with
 | Need | Use |
 | --- | --- |
 | Ask one member and wait | `lmctl chat <teamfile> <alias> "<prompt>"` |
-| Queue work for a busy member | member-run `lmctl chat`, then `lmctl check` / `lmctl push` |
-| Fan out member work and wake on completion | backgrounded `lmctl chat` / `lmctl push` / `lmctl exec` plus scoped `lmctl wait` |
+| Queue work for a busy member | member-run `lmctl chat`, then `lmctl more` |
+| Fan out member work and wake on completion | backgrounded `lmctl chat` / `lmctl exec` plus scoped `lmctl more` |
 | Run a repeatable workflow pipeline | `lmctl workflow run` / `lmctl api submit-job` plus `lmctl serve` |

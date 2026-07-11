@@ -19,8 +19,8 @@ It is not a model name. lmctl derives that slot from the session id in
 
 lmctl sets `LMCTL_SELF_SESSIONID` automatically for member sessions it starts
 through `lmctl chat` and `lmctl terminal`. Child lmctl commands inherit it, so
-member-run `check`, `push`, `wait`, and `exec` know which member is acting.
-`chat` also uses this marker when it needs to queue a message for a busy target.
+member-run `more` and `exec` know which member is acting. `chat` also uses this
+marker when it needs to queue a message for a busy target.
 
 If you run one of those commands manually outside a member session, lmctl may
 print:
