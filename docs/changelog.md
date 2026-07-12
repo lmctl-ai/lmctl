@@ -9,15 +9,16 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 
 ## Unreleased
 
-- Documented the 0.1.103 two-command push model. The public orchestration
-  surface is now `chat` and `more`: `chat` puts a task in and auto-enqueues if
-  the receiver is busy; `more` flushes queued outbound mail to idle receivers,
+- Documented the 0.1.113 two-command push model. The public orchestration
+  surface is now `chat` and `notify_me`: `chat` puts a task in and auto-enqueues if
+  the receiver is busy; `notify_me` flushes queued outbound mail to idle receivers,
   shows this member's jobs plus outbound queue, and returns delivered receipts
   plus finished tracked jobs. The older check/push/wait commands are removed and
-  report `use lmctl more`; fewer commands means fewer orchestration choices for
-  Leads to confuse.
+  report `use lmctl notify_me`; the older `more` command is also renamed/removed.
+  Fewer commands means fewer orchestration choices for Leads to confuse.
 - Superseded the 0.1.97-0.1.100 sender-driven push model, which used separate
-  check, push, and wait commands, with the 0.1.103 `more` command.
+  check, push, and wait commands, and the 0.1.103 `more` spelling, with the
+  0.1.113 `notify_me` command.
 - Added the concise queue lifecycle: `queued -> in-flight -> delivered with
   receipt`. Delivery is at-least-once, so a duplicate delivery can happen after a
   crash, but queued work should not be lost.

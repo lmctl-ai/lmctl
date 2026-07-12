@@ -45,7 +45,7 @@ A member serves one turn-driving sender at a time. If you `chat` a member that's
 `<alias> is servicing <sender> … — wait and retry, or inspect without waking it: lmctl tail …`
 That's expected. **Wait and retry**, or `lmctl tail` to watch — don't hammer it (a second inbound
 operator chat can't jump the queue. From inside a member session, `chat` queues
-for a busy target instead of interrupting it. Use `lmctl more --json` to flush
+for a busy target instead of interrupting it. Use `lmctl notify_me --json` to flush
 outbound queued mail to idle receivers, inspect busy lanes, and collect finished
 receipts.
 
@@ -54,7 +54,7 @@ A Lead can call a member of another team at runtime (cycle-protected automatical
 static `_CONNECT_` directive is a **deprecated no-op** — ignore it; cross-team reach is just a
 normal runtime `lmctl chat` to the other team's member. From a member session,
 busy cross-team targets are queued in the same sender-to-receiver lifecycle and
-later delivered sequentially by `lmctl more`.
+later delivered sequentially by `lmctl notify_me`.
 
 ## Warm up the channel
 Right after seeding, ping each member once (`lmctl chat "<teamfile>" Coder "reply OK"`) before

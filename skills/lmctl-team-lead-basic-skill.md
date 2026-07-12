@@ -21,48 +21,51 @@ to a member you must actually run the command — narrating "I'll delegate to
 Coder" does nothing.
 
 ## Manage queued outbound work
-Use `lmctl more` when member-run `chat` queued work for a busy target:
+Use `lmctl notify_me` when member-run `chat` queued work for a busy target:
 
 ```sh
-lmctl more --json
+lmctl notify_me --json
 ```
 
-`more` flushes queued outbound mail to idle receivers, shows your jobs plus
+`notify_me` flushes queued outbound mail to idle receivers, shows your jobs plus
 outbound queue, and returns delivered receipts plus finished tracked jobs. If
 work is running but nothing has finished, it blocks. If idle, it returns
 immediately with nothing more. The lifecycle is
 `queued -> in-flight -> delivered with receipt`. Delivery is at-least-once, so
 duplicate delivery is possible after a crash; losing queued work is worse.
 
-## Don't go idle on long work — launch tracked work, then ask for more
+## Don't go idle on long work — launch tracked work, then notify_me
 A member's turn can take minutes. Launch the blocking call in the background,
-then use `lmctl more` as your wake:
+then use `lmctl notify_me` as your wake:
 ```sh
 lmctl chat "<teamfile>.lmctl" Coder "big task" &
-lmctl more --json
+lmctl notify_me --json
 ```
-`more` returns when the first tracked invocation in scope finishes or when a
-delivered queue receipt is available. It also flushes outbound queued mail and
-shows your current jobs/queue. Empty `more` means this scope is idle: claim more
-work from your external backlog/chatroom or exit. From a member session, use
+Think: "I'm done with this round; my delegations are all running in the
+background; take a break — notify me when something lands." Call it in the
+FOREGROUND; it holds your process and returns when a member finishes.
+`notify_me` also flushes outbound queued mail and shows your current jobs/queue.
+Empty `notify_me` means this scope is idle: claim more work from your external
+backlog/chatroom or exit. From a member session, use
 `lmctl exec -- <command> &` for tracked local commands, then call
-`lmctl more --json` in that same caller scope.
+`lmctl notify_me --json` in that same caller scope.
 
 ## If you learned an older lmctl (removed commands)
 
 The surface collapsed because fewer commands are less confusing: use `chat` to
-put work in, then use `more` to flush, inspect, and harvest.
+put work in, then use `notify_me` to flush, inspect, and harvest.
 
 | Old habit | Use now |
 | --- | --- |
-| `chat --detach` + `lmctl jobs` | Background normal `lmctl chat ... &` or `lmctl exec -- ... &`, then `lmctl more --json`. |
+| `chat --detach` + `lmctl jobs` | Background normal `lmctl chat ... &` or `lmctl exec -- ... &`, then `lmctl notify_me --json`. |
 | `--from` / `I_am=` | No identity flag. Member identity is `LMCTL_SELF_SESSIONID` only. |
-| `lmctl send` / `lmctl recv` / `lmctl loop` | Member-run `chat` auto-queues a busy target; `more` flushes lanes, shows status, and returns finished work. |
+| `lmctl send` / `lmctl recv` / `lmctl loop` | Member-run `chat` auto-queues a busy target; `notify_me` flushes lanes, shows status, and returns finished work. |
 | `_CONNECT_` / `lmctl connect` | Direct cross-team `lmctl chat ../other-team.lmctl <alias> "..."`; `_CONNECT_` is a dead no-op. |
-| `check` / `push` / `wait` | Removed; the CLI says `use lmctl more`. |
-| `wait --id` / `wait --all` / `chat --force` | Gone. `more` is scoped, state-based, first-return. |
+| `check` / `push` / `wait` | Removed; the CLI says `use lmctl notify_me`. |
+| `more` | Removed/renamed; use `notify_me`. |
+| `wait --id` / `wait --all` / `chat --force` | Gone. `notify_me` is scoped, state-based, first-return. |
 
-Never sleep to wait on a member; `more` answers finished and shows busy state.
+Never sleep to wait on a member; `notify_me` answers finished and shows busy state.
 
 ## Watch a member without disturbing it
 ```sh

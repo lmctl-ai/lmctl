@@ -107,11 +107,11 @@ lmctl chat --run <id> "Operator answer" --done
 ```
 
 For tracked background work, run blocking member calls in the background and use
-`lmctl more` as the wake primitive:
+`lmctl notify_me` as the wake primitive:
 
 ```bash
 lmctl chat ./team.lmctl Coder "Run the long verification pass." &
-lmctl more ./team.lmctl --json
+lmctl notify_me ./team.lmctl --json
 ```
 
 From inside a member session, the same `chat` command is also the queueing
@@ -120,10 +120,10 @@ target is busy, lmctl queues the message in that sender-to-receiver lane:
 
 ```bash
 lmctl chat ./team.lmctl Coder "status note"
-lmctl more --json
+lmctl notify_me --json
 ```
 
-`more` is the member wake loop: it flushes queued outbound mail to idle
+`notify_me` is the member wake loop: it flushes queued outbound mail to idle
 receivers, shows this member's jobs plus outbound queue, and returns delivered
 receipts plus finished tracked jobs. If work is running but nothing has
 finished, it blocks. If the member is idle and has no finished work, it returns
@@ -176,38 +176,41 @@ lmctl workflow run --workflow image-qa --project my-project --inputs '{"image_pa
 ```
 
 See [Direct chat vs background work](./direct-chat-and-background-work.md) for
-when to use synchronous `chat`, tracked invocations with `more`, or daemon
+when to use synchronous `chat`, tracked invocations with `notify_me`, or daemon
 workflow jobs.
 
 ## Tracked invocation wake loop
 
-`lmctl more` is the two-command orchestration partner to `chat`. It does three
-things, in order: flushes queued outbound mail to idle receivers, shows this
-member's jobs plus outbound queue, and returns finished work as delivered
-receipts plus completed tracked jobs. It is separate from `lmctl api jobs`,
-which lists workflow jobs in the local workflow queue.
+`lmctl notify_me` is the two-command orchestration partner to `chat`: "I'm done
+with this round; my delegations are all running in the background; take a break
+— notify me when something lands." Call it in the FOREGROUND; it holds your
+process and returns when a member finishes. It does three things, in order:
+flushes queued outbound mail to idle receivers, shows this member's jobs plus
+outbound queue, and returns finished work as delivered receipts plus completed
+tracked jobs. It is separate from `lmctl api jobs`, which lists workflow jobs in
+the local workflow queue.
 
 ```bash
-lmctl more --json
-lmctl more ./team.lmctl --json
+lmctl notify_me --json
+lmctl notify_me ./team.lmctl --json
 ```
 
 Default scope is the calling member, inferred from `LMCTL_SELF_SESSIONID`. Use a
 teamfile positional for invocations targeting that team, or default self scope
 from inside a member session. If something is running but nothing has finished,
-`more` blocks. If the scope is idle and there is no finished work, it returns
+`notify_me` blocks. If the scope is idle and there is no finished work, it returns
 immediately with nothing more. There is intentionally no id/all mode; the model
 is caller/teamfile-scoped, state-based first-return.
 
 From inside a member session, `lmctl exec` runs any local command as a tracked
-invocation so `more` can return it. `exec` is blocking, so background one or
-more invocations with your harness or shell, then call `more` in the same scope
+invocation so `notify_me` can return it. `exec` is blocking, so background one or
+more invocations with your harness or shell, then call `notify_me` in the same scope
 and loop until no work remains:
 
 ```bash
 lmctl exec -- npm test &
 lmctl exec -- sh -lc 'npm test && npm run build' &
-lmctl more --json
+lmctl notify_me --json
 ```
 
 `exec` infers the caller from `LMCTL_SELF_SESSIONID` inside member sessions.
@@ -216,7 +219,7 @@ Manual use outside a member session is experimental; see
 detached mode for `chat` or `exec`; backgrounding is outside lmctl (`&`, Claude
 Code `run_in_background`, or equivalent).
 
-## Queued delivery and more
+## Queued delivery and notify_me
 
 The member-to-member lifecycle is:
 
@@ -231,15 +234,15 @@ is recorded as the receipt. Delivery is at-least-once: if a process dies
 after sending but before marking rows delivered, lmctl may deliver the same
 queued message again. A duplicate is preferable to losing work.
 
-Use `more` after member-run `chat` or backgrounded work:
+Use `notify_me` after member-run `chat` or backgrounded work:
 
 ```bash
-lmctl more --json
+lmctl notify_me --json
 ```
 
-`more` flushes queued outbound lanes sequentially for idle receivers, skips busy
+`notify_me` flushes queued outbound lanes sequentially for idle receivers, skips busy
 receivers, reports what is still running or queued, and returns delivered
-receipts plus finished tracked jobs. Do not sleep to wait on a member: `more`
+receipts plus finished tracked jobs. Do not sleep to wait on a member: `notify_me`
 answers whether anything finished, and its status output answers whether work
 is busy. It does not require `lmctl serve`.
 
@@ -292,7 +295,7 @@ lmctl health <teamfile>
 lmctl health ./team.lmctl Coder
 lmctl health <session-id> --provider codex
 lmctl health --run <id>
-lmctl more ./team.lmctl --json
+lmctl notify_me ./team.lmctl --json
 ```
 
 `terminal --size` reports message count, transcript bytes, and a local token

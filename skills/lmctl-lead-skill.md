@@ -20,14 +20,14 @@ lmctl chat "<teamfile>.lmctl" Coder "Implement X. Commit when tests pass."
 can use this flagless form. From inside your member session, if the target is
 busy, `chat` queues the message in your sender-to-receiver lane.
 
-Ask for more from your member session:
+Ask to be notified from your member session:
 
 ```sh
-lmctl more --json
+lmctl notify_me --json
 ```
 
 The queue lifecycle is `queued -> in-flight -> delivered with receipt`.
-`more` flushes queued outbound mail to idle receivers, shows your jobs plus
+`notify_me` flushes queued outbound mail to idle receivers, shows your jobs plus
 outbound queue, and returns delivered receipts plus finished tracked jobs. If
 something is running but nothing has finished, it blocks; if idle, it returns
 nothing more immediately. Delivery is at-least-once, so a crash may cause
@@ -38,13 +38,16 @@ Fan out long work without going blind:
 
 ```sh
 lmctl chat "<teamfile>.lmctl" Coder "big task" &
-lmctl more --json
+lmctl notify_me --json
 ```
 
-`more` flushes queued outbound mail, reports your jobs and queue, and returns
-the first completed tracked invocation or delivered receipt. Empty `more` means
+`notify_me` flushes queued outbound mail, reports your jobs and queue, and returns
+the first completed tracked invocation or delivered receipt. Empty `notify_me` means
 this scope is idle: pull the next item or exit. The harness or shell backgrounds
-blocking commands.
+blocking commands. Think: "I'm done with this round; my delegations are all
+running in the background; take a break — notify me when something lands."
+Call it in the FOREGROUND; it holds your process and returns when a member
+finishes.
 
 Inspect without disturbing a member:
 
@@ -87,5 +90,5 @@ cannot refresh the exact session it is currently running in.
 - [Team Lead advanced](lmctl-team-lead-advanced-skill.md) covers refresh,
   model swaps, health, and drift recovery.
 - [Team Lead workflow](team-lead-workflow.md) is the short operating checklist.
-- [Background wake-up](background-wakeup.md) explains the `lmctl more` loop.
+- [Background wake-up](background-wakeup.md) explains the `lmctl notify_me` loop.
 - [Durable memory](durable-memory.md) explains what to persist and why.

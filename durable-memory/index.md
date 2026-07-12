@@ -27,7 +27,11 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
-- 2026-07-11: Processed lmctl 0.1.103. Public docs and skills now collapse the
+- 2026-07-12: Processed lmctl 0.1.113. Public docs and skills now name the
+  foreground wake command `notify_me`; the older `more` spelling is removed.
+  `notify_me` flushes queued outbound mail, shows jobs/queue status, and returns
+  delivered receipts plus finished tracked jobs.
+- 2026-07-11: Processed lmctl 0.1.103. Public docs and skills collapsed the
   push-mode surface to `chat` and `more`: `chat` puts work in and auto-queues
   busy receivers; `more` flushes queued outbound mail, shows jobs/queue status,
   and returns delivered receipts plus finished tracked jobs. The rationale is
@@ -37,11 +41,12 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   background wake-up skills. The block maps removed forms such as
   `chat --detach`, `lmctl jobs`, `--from`, `I_am=`, `send`, `recv`, `loop`,
   `_CONNECT_`, `lmctl connect`, `wait --id`, `wait --all`, and `chat --force`
-  to the current `chat` / `more` loop and
+  to the current `chat` / `notify_me` loop and
   reinforces the no-sleep rule.
 - 2026-07-10: Processed lmctl 0.1.97-0.1.100 push-mode docs. Public
   orchestration guidance centered on `chat` plus separate check/push/wait
-  commands. This was superseded on 2026-07-11 by 0.1.103's `more` command.
+  commands. This was superseded on 2026-07-11 by 0.1.103's `more` command and
+  then renamed on 2026-07-12 to `notify_me`.
   Added the public lifecycle
   `queued -> in-flight -> delivered with receipt` and at-least-once delivery
   note.
