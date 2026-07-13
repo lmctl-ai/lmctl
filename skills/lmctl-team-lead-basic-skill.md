@@ -27,9 +27,9 @@ harnesses, shells, and supervisors own concurrency and wake behavior. If you
 need parallelism, let the surrounding runtime run several synchronous chats and
 wake you when those processes finish.
 
-Do not call a separate lmctl wake command from an LLM session. Future
-`notify_all` is a daemon/supervisor for down Leads with unharvested work, not
-an LLM-called command.
+Do not call a separate lmctl wake command from an LLM session. If an outer
+runtime supervises background work, that supervision happens outside lmctl's
+LLM-called command surface.
 
 ## If you learned an older lmctl (removed commands)
 

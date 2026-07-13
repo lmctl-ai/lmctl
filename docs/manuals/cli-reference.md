@@ -180,9 +180,8 @@ workflow jobs.
 LLM-called wait/wake command in 0.1.116. Provider runtimes and harnesses own
 backgrounding, callbacks, and wake behavior.
 
-Future `notify_all` is a daemon/supervisor concern for down Leads with
-unharvested work. It is not an LLM-called command and should not appear in Lead
-instructions.
+External supervisors may watch background work, but that is outside lmctl's
+LLM-called command surface and should not appear as a Lead instruction.
 
 ## Queued delivery
 

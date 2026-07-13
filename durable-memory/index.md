@@ -30,9 +30,8 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 - 2026-07-12: Processed lmctl 0.1.116. Public docs and skills now remove live
   wake-loop command guidance. `chat` is synchronous and returns the member reply;
   lmctl is agnostic to foreground/background execution, and provider runtimes,
-  shells, harnesses, or supervisors own concurrency. Future `notify_all` is a
-  daemon/supervisor concern for down Leads with unharvested work, not an
-  LLM-called command.
+  shells, harnesses, or external supervisors own concurrency and wake behavior;
+  do not document a separate LLM-called command for this.
 - 2026-07-12: Processed lmctl 0.1.113 historical wake-command docs. This was
   superseded by 0.1.116; do not teach that command as live guidance.
 - 2026-07-11: Processed lmctl 0.1.103 historical wake-command docs. This was

@@ -47,7 +47,7 @@ When you seed a team and start talking to its Lead, open with a connectivity pin
 This makes the Lead actually exercise delegation from turn one — teams that skip it stall at the
 first hand-off.
 
-## Message only idle Leads
+## Inspect before messaging Leads
 A Lead mid-turn **rejects** a new `chat` with a busy notice (it serves one
 turn-driving sender at a time). Operator-shell chat is refused, not queued, and
 not allowed to abort the in-flight turn. Member-session chat queues for that

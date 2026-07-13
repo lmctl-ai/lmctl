@@ -12,8 +12,7 @@ surface: it is synchronous, blocks for one member turn, and returns that
 member's reply.
 
 lmctl is agnostic to foreground/background execution. Provider runtimes,
-harnesses, shells, and supervisors own concurrency and wake behavior. A future
-daemon/supervisor may notify operators about down Leads with unharvested work,
-but that is not an LLM-called command.
+harnesses, shells, and external supervisors own concurrency and wake behavior.
+Do not document a separate lmctl command for LLMs to call.
 
 Use the Lead skill for current delegation guidance.

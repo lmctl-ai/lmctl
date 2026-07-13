@@ -31,8 +31,8 @@ in its own background jobs and wake when those jobs finish.
 Do not teach an LLM to call a separate lmctl-managed wake command. Those commands are not
 part of the 0.1.116 public surface.
 
-Future `notify_all` is a daemon/supervisor for down Leads with unharvested
-work. It is not an LLM-called command.
+Any external supervisor that watches background work is outside lmctl's
+LLM-called command surface.
 
 ## Queued member messages
 

@@ -14,8 +14,8 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
   member reply. lmctl is agnostic to foreground/background execution; providers,
   runtimes, shells, harnesses, and supervisors own wake and concurrency.
 - Retired the historical 0.1.103/0.1.113 wake-loop docs. Those commands are not
-  in the 0.1.116 help surface. Future `notify_all` is a daemon/supervisor for
-  down Leads with unharvested work, not an LLM-called command.
+  in the 0.1.116 help surface, and no extra supervision command is documented
+  as an LLM-called command.
 - Historical note: 0.1.97-0.1.100 used separate check/push/wait commands,
   0.1.103 briefly used a `more` spelling, and 0.1.113 briefly used a
   foreground wake-command spelling. These are no longer live command guidance.

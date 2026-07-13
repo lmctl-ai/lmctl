@@ -171,10 +171,9 @@ So `1` often means "busy, retry later" — do **not** blindly retry before check
 whether it was a busy/servicing rejection.
 
 **Background is outside lmctl.** `lmctl chat` waits by default. For parallel
-fan-out, let the provider runtime, shell, harness, or supervisor run multiple
-synchronous chats and wake you when those processes finish. Future `notify_all`
-is a daemon/supervisor for down Leads with unharvested work, not an LLM-called
-command.
+fan-out, let the provider runtime, shell, harness, or external supervisor run
+multiple synchronous chats and wake you when those processes finish. Do not
+teach a separate lmctl command for this to LLMs.
 
 **Busy means "not ready yet."** From an operator shell, a busy target returns a
 busy error and does not queue. From inside a member session, `chat` queues the
