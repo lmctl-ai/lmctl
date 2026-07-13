@@ -106,12 +106,12 @@ To answer a paused managed run:
 lmctl chat --run <id> "Operator answer" --done
 ```
 
-For tracked background work, run blocking member calls in the background and use
-`lmctl notify_me` as the wake primitive:
+`lmctl` does not own foreground/background execution. If you need parallelism,
+use the provider runtime, harness, shell, or supervisor that is driving the
+process. `chat` itself remains synchronous:
 
 ```bash
 lmctl chat ./team.lmctl Coder "Run the long verification pass." &
-lmctl notify_me ./team.lmctl --json
 ```
 
 From inside a member session, the same `chat` command is also the queueing
@@ -120,16 +120,11 @@ target is busy, lmctl queues the message in that sender-to-receiver lane:
 
 ```bash
 lmctl chat ./team.lmctl Coder "status note"
-lmctl notify_me --json
 ```
 
-`notify_me` is the member wake loop: it flushes queued outbound mail to idle
-receivers, shows this member's jobs plus outbound queue, and returns delivered
-receipts plus finished tracked jobs. If work is running but nothing has
-finished, it blocks. If the member is idle and has no finished work, it returns
-immediately with nothing more. It does not require `lmctl serve`; workflow jobs
-still do. A plain operator shell can drive direct `chat`, but it cannot queue as
-a member when a target is busy.
+There is no LLM-called lmctl wake command in 0.1.116. A plain operator shell can
+drive direct `chat`, but it cannot queue as a member when a target is busy.
+Workflow jobs still use `lmctl serve`.
 
 ## Inspecting state
 
@@ -176,50 +171,20 @@ lmctl workflow run --workflow image-qa --project my-project --inputs '{"image_pa
 ```
 
 See [Direct chat vs background work](./direct-chat-and-background-work.md) for
-when to use synchronous `chat`, tracked invocations with `notify_me`, or daemon
+when to use synchronous `chat`, provider/runtime-owned concurrency, or daemon
 workflow jobs.
 
-## Tracked invocation wake loop
+## Foreground/background ownership
 
-`lmctl notify_me` is the two-command orchestration partner to `chat`: "I'm done
-with this round; my delegations are all running in the background; take a break
-— notify me when something lands." Call it in the FOREGROUND; it holds your
-process and returns when a member finishes. It does three things, in order:
-flushes queued outbound mail to idle receivers, shows this member's jobs plus
-outbound queue, and returns finished work as delivered receipts plus completed
-tracked jobs. It is separate from `lmctl api jobs`, which lists workflow jobs in
-the local workflow queue.
+`lmctl chat` blocks and returns a member reply. lmctl does not provide a live
+LLM-called wait/wake command in 0.1.116. Provider runtimes and harnesses own
+backgrounding, callbacks, and wake behavior.
 
-```bash
-lmctl notify_me --json
-lmctl notify_me ./team.lmctl --json
-```
+Future `notify_all` is a daemon/supervisor concern for down Leads with
+unharvested work. It is not an LLM-called command and should not appear in Lead
+instructions.
 
-Default scope is the calling member, inferred from `LMCTL_SELF_SESSIONID`. Use a
-teamfile positional for invocations targeting that team, or default self scope
-from inside a member session. If something is running but nothing has finished,
-`notify_me` blocks. If the scope is idle and there is no finished work, it returns
-immediately with nothing more. There is intentionally no id/all mode; the model
-is caller/teamfile-scoped, state-based first-return.
-
-From inside a member session, `lmctl exec` runs any local command as a tracked
-invocation so `notify_me` can return it. `exec` is blocking, so background one or
-more invocations with your harness or shell, then call `notify_me` in the same scope
-and loop until no work remains:
-
-```bash
-lmctl exec -- npm test &
-lmctl exec -- sh -lc 'npm test && npm run build' &
-lmctl notify_me --json
-```
-
-`exec` infers the caller from `LMCTL_SELF_SESSIONID` inside member sessions.
-Manual use outside a member session is experimental; see
-[Manual invocation](/lmctl/docs/manual-invocation). There is no lmctl-native
-detached mode for `chat` or `exec`; backgrounding is outside lmctl (`&`, Claude
-Code `run_in_background`, or equivalent).
-
-## Queued delivery and notify_me
+## Queued delivery
 
 The member-to-member lifecycle is:
 
@@ -234,17 +199,9 @@ is recorded as the receipt. Delivery is at-least-once: if a process dies
 after sending but before marking rows delivered, lmctl may deliver the same
 queued message again. A duplicate is preferable to losing work.
 
-Use `notify_me` after member-run `chat` or backgrounded work:
-
-```bash
-lmctl notify_me --json
-```
-
-`notify_me` flushes queued outbound lanes sequentially for idle receivers, skips busy
-receivers, reports what is still running or queued, and returns delivered
-receipts plus finished tracked jobs. Do not sleep to wait on a member: `notify_me`
-answers whether anything finished, and its status output answers whether work
-is busy. It does not require `lmctl serve`.
+There is no LLM-called command for harvesting queued receipts in 0.1.116.
+Leads should delegate with synchronous `chat` and let their provider runtime or
+supervisor handle wake/concurrency.
 
 ## Upload files
 
@@ -295,7 +252,6 @@ lmctl health <teamfile>
 lmctl health ./team.lmctl Coder
 lmctl health <session-id> --provider codex
 lmctl health --run <id>
-lmctl notify_me ./team.lmctl --json
 ```
 
 `terminal --size` reports message count, transcript bytes, and a local token

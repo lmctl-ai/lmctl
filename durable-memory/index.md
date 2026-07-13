@@ -27,26 +27,26 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
-- 2026-07-12: Processed lmctl 0.1.113. Public docs and skills now name the
-  foreground wake command `notify_me`; the older `more` spelling is removed.
-  `notify_me` flushes queued outbound mail, shows jobs/queue status, and returns
-  delivered receipts plus finished tracked jobs.
-- 2026-07-11: Processed lmctl 0.1.103. Public docs and skills collapsed the
-  push-mode surface to `chat` and `more`: `chat` puts work in and auto-queues
-  busy receivers; `more` flushes queued outbound mail, shows jobs/queue status,
-  and returns delivered receipts plus finished tracked jobs. The rationale is
-  explicit in public docs: fewer commands means less confusion for Leads.
+- 2026-07-12: Processed lmctl 0.1.116. Public docs and skills now remove live
+  wake-loop command guidance. `chat` is synchronous and returns the member reply;
+  lmctl is agnostic to foreground/background execution, and provider runtimes,
+  shells, harnesses, or supervisors own concurrency. Future `notify_all` is a
+  daemon/supervisor concern for down Leads with unharvested work, not an
+  LLM-called command.
+- 2026-07-12: Processed lmctl 0.1.113 historical wake-command docs. This was
+  superseded by 0.1.116; do not teach that command as live guidance.
+- 2026-07-11: Processed lmctl 0.1.103 historical wake-command docs. This was
+  superseded by 0.1.116; do not teach that command as live guidance.
 - 2026-07-11: Added a compact "If you learned an older lmctl" warning to the
   public Team Lead basic skill, with short pointers from the Meta-Lead and
   background wake-up skills. The block maps removed forms such as
   `chat --detach`, `lmctl jobs`, `--from`, `I_am=`, `send`, `recv`, `loop`,
   `_CONNECT_`, `lmctl connect`, `wait --id`, `wait --all`, and `chat --force`
-  to the current `chat` / `notify_me` loop and
-  reinforces the no-sleep rule.
+  to later wake-loop docs. This was superseded by 0.1.116.
 - 2026-07-10: Processed lmctl 0.1.97-0.1.100 push-mode docs. Public
   orchestration guidance centered on `chat` plus separate check/push/wait
-  commands. This was superseded on 2026-07-11 by 0.1.103's `more` command and
-  then renamed on 2026-07-12 to `notify_me`.
+  commands. This was superseded by later wake-loop docs, then by 0.1.116's
+  synchronous-chat guidance.
   Added the public lifecycle
   `queued -> in-flight -> delivered with receipt` and at-least-once delivery
   note.
@@ -56,16 +56,16 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   marker, add `/lmctl/docs/manual-invocation` as experimental/unsupported, add
   `/lmctl/docs/mcp-manual-install`, and state that debug output goes to
   `~/.lmctl/debug-*.log`. Dogfood against `lmctl 0.1.96` confirmed `chat`,
-  wait, and `exec` help had no old identity flag; removed-flag failures
-  pointed to the manual-invocation page. A confusing `exec --root` manual-shell
-  behavior was reported to `lmctldev` seq 54.
+  wait and local-command help had no old identity flag; removed-flag failures
+  pointed to the manual-invocation page. A confusing manual-shell behavior was
+  reported to `lmctldev` seq 54.
 - 2026-07-08: Processed the 0.1.91 wait-id removal. Public docs then
   described wait as an interactive first-return primitive over default-self or
   positional `<teamfile>` scopes only. Dogfood used the 0.1.91 source binary
-  with two background `lmctl exec` invocations from one caller: the first call
+  with two background local-command invocations from one caller: the first call
   returned one finished row plus one in-flight row; the next call returned
   the remaining completion.
-  The docs also state that `chat`/`exec` remain blocking commands and
+  The docs also stated that chat and local commands remained blocking and
   backgrounding is done by the harness or shell, not by a detached-mode flag.
 - 2026-07-08: Processed `lmctldoc` room backlog seq 7-8 after the lmchat
   Unicode filename download fix. That receiver-pull queue pass was superseded
@@ -77,7 +77,7 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   openFDA labels, iCite, and UniProt.
 - 2026-07-08: Processed `lmctldoc` room backlog seq 4-6. The published async
   guidance then used the current wait model: launch tracked invocations
-  with backgrounded `lmctl chat` or `lmctl exec`, then block on scoped
+  with backgrounded chat or local commands, then block on scoped
   wake. Superseded on 2026-07-08 by 0.1.91: do not document
   system-wide wait or wait-by-id; current scopes are default self and
   positional `<teamfile>`.

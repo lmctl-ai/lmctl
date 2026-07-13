@@ -14,14 +14,13 @@ delegation channel works; then proceed with the task.
 Use the CLI:
 
 - `lmctl chat "<teamfile>" Coder "your task"`
-- `lmctl notify_me --json` to flush queued lanes, inspect status, and collect finished work
 
 Use `chat` when you need to drive a member turn and get a reply. From inside a
 member session, `chat` queues if the target is busy; a plain operator shell can
 drive direct `chat`, but cannot queue as a member. Queued work follows
-`queued -> in-flight -> delivered with receipt` and is at-least-once. `notify_me`
-does not require `lmctl serve`. For
-non-idle/background delegation patterns, read the background-wakeup skill.
+`queued -> in-flight -> delivered with receipt` and is at-least-once.
+Foreground/background behavior belongs to the provider runtime, shell, harness,
+or supervisor, not an LLM-called lmctl wake command.
 
 Warmup/connectivity check first:
 

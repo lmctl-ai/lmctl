@@ -16,38 +16,13 @@ Delegate by actually running a command:
 lmctl chat "<teamfile>.lmctl" Coder "Implement X. Commit when tests pass."
 ```
 
-`chat` drives one member turn and waits for the reply. A plain operator shell
-can use this flagless form. From inside your member session, if the target is
-busy, `chat` queues the message in your sender-to-receiver lane.
+`chat` drives one member turn, blocks, and returns the member reply. A plain
+operator shell can use this flagless form. From inside your member session, if
+the target is busy, `chat` queues the message in your sender-to-receiver lane.
 
-Ask to be notified from your member session:
-
-```sh
-lmctl notify_me --json
-```
-
-The queue lifecycle is `queued -> in-flight -> delivered with receipt`.
-`notify_me` flushes queued outbound mail to idle receivers, shows your jobs plus
-outbound queue, and returns delivered receipts plus finished tracked jobs. If
-something is running but nothing has finished, it blocks; if idle, it returns
-nothing more immediately. Delivery is at-least-once, so a crash may cause
-duplicate delivery rather than lost work. Member sessions inherit identity from
-`LMCTL_SELF_SESSIONID`.
-
-Fan out long work without going blind:
-
-```sh
-lmctl chat "<teamfile>.lmctl" Coder "big task" &
-lmctl notify_me --json
-```
-
-`notify_me` flushes queued outbound mail, reports your jobs and queue, and returns
-the first completed tracked invocation or delivered receipt. Empty `notify_me` means
-this scope is idle: pull the next item or exit. The harness or shell backgrounds
-blocking commands. Think: "I'm done with this round; my delegations are all
-running in the background; take a break — notify me when something lands."
-Call it in the FOREGROUND; it holds your process and returns when a member
-finishes.
+lmctl is agnostic to foreground/background execution. If you need concurrency,
+use the provider runtime, shell, harness, or supervisor that is driving you.
+Do not call a separate lmctl wake command from an LLM session.
 
 Inspect without disturbing a member:
 
@@ -63,9 +38,10 @@ do not ask a model what model it is.
 ## Work loop
 
 1. Hand a concrete task to Coder.
-2. Send Coder's result to Reviewer1 for adversarial review.
-3. If review finds issues, route back to Coder, then re-review.
-4. You gate the final result, update durable memory, commit, and publish when
+2. Wait for the blocking `chat` reply.
+3. Send Coder's result to Reviewer1 for adversarial review.
+4. If review finds issues, route back to Coder, then re-review.
+5. You gate the final result, update durable memory, commit, and publish when
    appropriate.
 
 For complicated design work, ask all reviewers. If reviewers disagree and the
@@ -90,5 +66,4 @@ cannot refresh the exact session it is currently running in.
 - [Team Lead advanced](lmctl-team-lead-advanced-skill.md) covers refresh,
   model swaps, health, and drift recovery.
 - [Team Lead workflow](team-lead-workflow.md) is the short operating checklist.
-- [Background wake-up](background-wakeup.md) explains the `lmctl notify_me` loop.
 - [Durable memory](durable-memory.md) explains what to persist and why.

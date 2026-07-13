@@ -9,16 +9,16 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 
 ## Unreleased
 
-- Documented the 0.1.113 two-command push model. The public orchestration
-  surface is now `chat` and `notify_me`: `chat` puts a task in and auto-enqueues if
-  the receiver is busy; `notify_me` flushes queued outbound mail to idle receivers,
-  shows this member's jobs plus outbound queue, and returns delivered receipts
-  plus finished tracked jobs. The older check/push/wait commands are removed and
-  report `use lmctl notify_me`; the older `more` command is also renamed/removed.
-  Fewer commands means fewer orchestration choices for Leads to confuse.
-- Superseded the 0.1.97-0.1.100 sender-driven push model, which used separate
-  check, push, and wait commands, and the 0.1.103 `more` spelling, with the
-  0.1.113 `notify_me` command.
+- Documented the 0.1.116 command surface. `chat` is the live Lead delegation
+  primitive: it is synchronous, blocks for one member turn, and returns the
+  member reply. lmctl is agnostic to foreground/background execution; providers,
+  runtimes, shells, harnesses, and supervisors own wake and concurrency.
+- Retired the historical 0.1.103/0.1.113 wake-loop docs. Those commands are not
+  in the 0.1.116 help surface. Future `notify_all` is a daemon/supervisor for
+  down Leads with unharvested work, not an LLM-called command.
+- Historical note: 0.1.97-0.1.100 used separate check/push/wait commands,
+  0.1.103 briefly used a `more` spelling, and 0.1.113 briefly used a
+  foreground wake-command spelling. These are no longer live command guidance.
 - Added the concise queue lifecycle: `queued -> in-flight -> delivered with
   receipt`. Delivery is at-least-once, so a duplicate delivery can happen after a
   crash, but queued work should not be lost.
@@ -32,15 +32,14 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
   shape-gated to entries named `lmctl`/`lmctl0` that actually invoke lmctl MCP.
 - Noted that debug output is written to `~/.lmctl/debug-*.log`, not terminal
   output.
-- Updated wait guidance for 0.1.91. It was documented as an
+- Historical note: wait guidance for 0.1.91 documented an
   interactive first-return primitive over the caller/team scope: launch tracked
-  `chat` or `exec` invocations in the background, call the scoped wake command, react
-  to the first completion, and continue. The docs now state that `chat`/`exec`
-  are blocking commands and backgrounding is done by the harness or shell.
+  member or local invocations in the background, call the scoped wake command,
+  react to the first completion, and continue. This is not 0.1.116 guidance.
 - Superseded the 0.1.89/0.1.90 receiver-pull queue flow with the 0.1.100
   sender-push model.
-- Updated Lead fan-out guidance for tracked background invocations: launch
-  backgrounded `chat` or `exec`, then use the scoped wake primitive.
+- Historical note: older Lead fan-out guidance used tracked background
+  invocations and scoped wake primitives. This is not 0.1.116 guidance.
 - Removed the top-level `lmctl init` command. Provider setup (install + authenticate each provider CLI) is documented in the [Install & first run](/lmctl/docs/tutorials/install-first-run) tutorial; lmctl reports a missing provider or credential at use time (`seed`/`chat`). `lmctl status` no longer shows a persisted active-providers list.
 - Removed the static `_CONNECT_` cross-team statement and the `lmctl connect` command. Cross-team calls now work automatically at runtime, with automatic cycle protection (a cross-team call is stopped when its target is an active ancestor and it either recurs within ~60s or has been revisited more than twice — fan-out and slow back-and-forth are allowed). Legacy `_CONNECT_` lines are ignored with a `lmctl lint` deprecation warning. DB migration v38 drops the `team_connection` table.
 - Added `provider=opencode` model-effort selection with `_MEMBER_ ... model=<id> effort=<variant>`.

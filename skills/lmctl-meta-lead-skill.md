@@ -18,32 +18,25 @@ anything. In a git repo, `health` shows activity since the last commit: a Lead p
 and uncommitted files with **no new commit** is spinning — that's your signal to look, not to poke
 blindly.
 
-## Delegate to a Lead asynchronously — then notify_me in scope
-A Lead's turn can run for minutes. Launch the blocking call in the background,
-then let `lmctl notify_me` wake you when tracked work completes or a delivered queue
-receipt arrives:
+## Delegate to a Lead
+A Lead's turn can run for minutes. `lmctl chat` is synchronous: it blocks and
+returns the Lead reply.
 ```sh
-lmctl chat "<teamA>.lmctl" Lead "coordinate the X change with your Coder+Reviewer" &
-lmctl notify_me --json
+lmctl chat "<teamA>.lmctl" Lead "coordinate the X change with your Coder+Reviewer"
 ```
-`notify_me` is intentionally scoped. Default self-scope comes from
-`LMCTL_SELF_SESSIONID` when running inside a member session. There is no
-identity flag and no system-wide `notify_me` scope; do not try to wake on unrelated
-teams' completions.
+lmctl is agnostic to foreground/background execution. If you need concurrency,
+use the provider runtime, shell, harness, or supervisor that is driving you.
 
 If you remember older lmctl forms, read the removed-command block in the basic
-Lead skill. Meta-Lead work now uses the current surface: `chat` and `notify_me`.
+Lead skill. Meta-Lead work now uses synchronous `chat`.
 
 For peer Lead status notes from inside your member session, use `chat`. If the
 target Lead is busy, lmctl queues the message in your sender-to-receiver lane:
 
 ```sh
 lmctl chat "<teamA>.lmctl" Lead "status note"
-lmctl notify_me --json
 ```
 
-`notify_me` flushes queued outbound mail to idle receivers, shows your jobs plus
-outbound queue, and returns delivered receipts plus finished tracked jobs.
 Delivery is at-least-once: a duplicate delivery after a crash is possible;
 losing queued work is worse.
 
@@ -59,8 +52,8 @@ A Lead mid-turn **rejects** a new `chat` with a busy notice (it serves one
 turn-driving sender at a time). Operator-shell chat is refused, not queued, and
 not allowed to abort the in-flight turn. Member-session chat queues for that
 sender/receiver lane. Use `tail`/`health` to inspect without waking, then
-`notify_me` to flush idle lanes and collect finished receipts. Don't broadcast
-turn-driving chats into a working fleet.
+let the runtime/harness own wake and concurrency. Don't broadcast turn-driving
+chats into a working fleet.
 
 ## Refresh a drifting Lead
 A Lead can't refresh the session it's running in — but you can:
