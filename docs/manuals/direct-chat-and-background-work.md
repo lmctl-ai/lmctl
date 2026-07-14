@@ -19,8 +19,8 @@ lmctl chat ./team.lmctl Reviewer "Review Coder's latest change."
 ```
 
 This blocks until the provider turn finishes or errors. It is the right path
-for handoffs, review requests, and operator answers where the shell should wait
-for the result.
+for handoffs, review requests, and operator answers where the shell should stay
+attached to the result.
 
 ## Detached member delegation
 
@@ -78,7 +78,7 @@ Workflow jobs are executed by `lmctl serve`. Inspect workflow queue state with
 
 | Need | Use |
 | --- | --- |
-| Ask one member and wait | `lmctl chat <teamfile> <alias> "<prompt>"` |
+| Ask one member and receive the reply | `lmctl chat <teamfile> <alias> "<prompt>"` |
 | Fire-and-forget from a member session | `lmctl chat <teamfile> <alias> "<prompt>" --detach` |
 | Supervise down Leads / queued mail | root/supervisor tooling, not an LLM-called command |
 | Run a repeatable workflow pipeline | `lmctl workflow run` / `lmctl api submit-job` plus `lmctl serve` |

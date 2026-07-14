@@ -42,8 +42,8 @@ or acts):
 
 ## Don't fight the busy-guard
 A member serves one turn-driving sender at a time. If you `chat` a member that's mid-turn you'll get:
-`<alias> is servicing <sender> … — wait and retry, or inspect without waking it: lmctl tail …`
-That's expected. **Wait and retry**, or `lmctl tail` to watch — don't hammer it (a second inbound
+`<alias> is servicing <sender> … — pause and retry, or inspect without waking it: lmctl tail …`
+That's expected. **Pause and retry**, or `lmctl tail` to watch — don't hammer it (a second inbound
 operator chat can't jump the queue. From inside a member session, `chat` queues
 for a busy target instead of interrupting it. Use `chat --detach` only when
 fire-and-forget is intentional and your session has `LMCTL_SELF_SESSIONID`. Do

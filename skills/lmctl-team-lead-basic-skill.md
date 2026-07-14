@@ -43,15 +43,15 @@ Regular LLM agents do not call it.
 
 | Old habit | Use now |
 | --- | --- |
-| `chat --detach` + `lmctl jobs` | `chat --detach` is valid again, but do not use `lmctl jobs`; the response returns to the sender. |
+| Old detached-job patterns | `chat --detach` is valid again, but the old job-polling pattern is gone; the response returns to the sender. |
 | `--from` / `I_am=` | No identity flag. Member identity is `LMCTL_SELF_SESSIONID` only. |
 | `lmctl send` / `lmctl recv` / `lmctl loop` | Use member-run `chat`; queue handling is internal. |
 | `_CONNECT_` / `lmctl connect` | Direct cross-team `lmctl chat ../other-team.lmctl <alias> "..."`; `_CONNECT_` is a dead no-op. |
-| old wait/wake/harvest commands | Removed from the live surface. Do not call them from an LLM session. |
-| `wait --id` / `wait --all` / `chat --force` | Gone. Use synchronous `chat` or member-session `chat --detach`. |
+| old wake/harvest commands | Removed from the live surface. Do not call them from an LLM session. |
+| old id/all/force variants | Gone. Use synchronous `chat` or member-session `chat --detach`. |
 
-Never sleep to wait on a member. Either you are inside a blocking `chat`, or you
-used detached delegation and will receive the response as sender.
+Never sleep for member completion. Either you are inside a blocking `chat`, or
+you used detached delegation and will receive the response as sender.
 
 ## Watch a member without disturbing it
 ```sh

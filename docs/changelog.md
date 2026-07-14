@@ -25,9 +25,9 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 - Retired the historical 0.1.103/0.1.113 wake-loop docs. Those commands are not
   in the 0.1.116 help surface, and no extra supervision command is documented
   as an LLM-called command.
-- Historical note: 0.1.97-0.1.100 used separate check/push/wait commands,
-  0.1.103 briefly used a `more` spelling, and 0.1.113 briefly used a
-  foreground wake-command spelling. These are no longer live command guidance.
+- Historical note: 0.1.97-0.1.113 briefly used several wake/harvest command
+  spellings. These are no longer live command guidance and are intentionally not
+  named here.
 - Added the concise queue lifecycle: `queued -> in-flight -> delivered with
   receipt`. Delivery is at-least-once, so a duplicate delivery can happen after a
   crash, but queued work should not be lost.
@@ -41,12 +41,12 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
   shape-gated to entries named `lmctl`/`lmctl0` that actually invoke lmctl MCP.
 - Noted that debug output is written to `~/.lmctl/debug-*.log`, not terminal
   output.
-- Historical note: wait guidance for 0.1.91 documented an
-  interactive first-return primitive over the caller/team scope: launch tracked
-  member or local invocations in the background, call the scoped wake command,
-  react to the first completion, and continue. This is not 0.1.116 guidance.
+- Historical note: 0.1.91 documented an interactive first-return primitive over
+  the caller/team scope: launch tracked member or local invocations in the
+  background, call the scoped wake command, react to the first completion, and
+  continue. This is not current guidance.
 - Superseded the 0.1.89/0.1.90 receiver-pull queue flow with the 0.1.100
-  sender-push model.
+  sender-driven model.
 - Historical note: older Lead fan-out guidance used tracked background
   invocations and scoped wake primitives. This is not 0.1.116 guidance.
 - Removed the top-level `lmctl init` command. Provider setup (install + authenticate each provider CLI) is documented in the [Install & first run](/lmctl/docs/tutorials/install-first-run) tutorial; lmctl reports a missing provider or credential at use time (`seed`/`chat`). `lmctl status` no longer shows a persisted active-providers list.

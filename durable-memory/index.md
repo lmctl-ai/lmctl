@@ -44,14 +44,13 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   superseded by 0.1.116; do not teach that command as live guidance.
 - 2026-07-11: Added a compact "If you learned an older lmctl" warning to the
   public Team Lead basic skill, with short pointers from the Meta-Lead and
-  background wake-up skills. The block maps removed forms such as
-  `chat --detach`, `lmctl jobs`, `--from`, `I_am=`, `send`, `recv`, `loop`,
-  `_CONNECT_`, `lmctl connect`, `wait --id`, `wait --all`, and `chat --force`
-  to later wake-loop docs. This was superseded by 0.1.116.
-- 2026-07-10: Processed lmctl 0.1.97-0.1.100 push-mode docs. Public
-  orchestration guidance centered on `chat` plus separate check/push/wait
+  background wake-up skills. The block mapped several removed forms to later
+  wake-loop docs. This was superseded by 0.1.116 and then by 0.1.122's detached
+  chat guidance.
+- 2026-07-10: Processed lmctl 0.1.97-0.1.100 sender-driven docs. Public
+  orchestration guidance centered on `chat` plus separate wake/harvest
   commands. This was superseded by later wake-loop docs, then by 0.1.116's
-  synchronous-chat guidance.
+  synchronous-chat guidance and 0.1.122's detached chat option.
   Added the public lifecycle
   `queued -> in-flight -> delivered with receipt` and at-least-once delivery
   note.
@@ -60,12 +59,12 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   document `LMCTL_SELF_SESSIONID` as the automatic member-session identity
   marker, add `/lmctl/docs/manual-invocation` as experimental/unsupported, add
   `/lmctl/docs/mcp-manual-install`, and state that debug output goes to
-  `~/.lmctl/debug-*.log`. Dogfood against `lmctl 0.1.96` confirmed `chat`,
-  wait and local-command help had no old identity flag; removed-flag failures
+  `~/.lmctl/debug-*.log`. Dogfood against `lmctl 0.1.96` confirmed that current
+  member and local-command help had no old identity flag; removed-flag failures
   pointed to the manual-invocation page. A confusing manual-shell behavior was
   reported to `lmctldev` seq 54.
-- 2026-07-08: Processed the 0.1.91 wait-id removal. Public docs then
-  described wait as an interactive first-return primitive over default-self or
+- 2026-07-08: Processed the 0.1.91 scoped first-return cleanup. Public docs
+  then described an interactive first-return primitive over default-self or
   positional `<teamfile>` scopes only. Dogfood used the 0.1.91 source binary
   with two background local-command invocations from one caller: the first call
   returned one finished row plus one in-flight row; the next call returned
@@ -74,20 +73,18 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   backgrounding is done by the harness or shell, not by a detached-mode flag.
 - 2026-07-08: Processed `lmctldoc` room backlog seq 7-8 after the lmchat
   Unicode filename download fix. That receiver-pull queue pass was superseded
-  by the 0.1.100 push-mode docs above.
+  by later sender-driven docs.
 - 2026-07-08: Tested and prepared the public `lmbio` skill update from
   `~/lab/lmbio/skills/lmbio-skill.md`. Validation included the Rust unit test
   suite, golden fixture replay, deterministic command examples, and bounded
   cache-first network examples for PubMed, ClinicalTrials.gov, RxNorm, PubChem,
   openFDA labels, iCite, and UniProt.
 - 2026-07-08: Processed `lmctldoc` room backlog seq 4-6. The published async
-  guidance then used the current wait model: launch tracked invocations
-  with backgrounded chat or local commands, then block on scoped
-  wake. Superseded on 2026-07-08 by 0.1.91: do not document
-  system-wide wait or wait-by-id; current scopes are default self and
-  positional `<teamfile>`.
+  guidance then used a scoped first-return model with backgrounded chat or local
+  commands. That guidance is superseded by 0.1.122.
 - 2026-07-07: Named the previous background wake-up orchestration pattern in the
-  public skill catalog. This was superseded on 2026-07-08 by wait-based wakeups.
+  public skill catalog. This was later superseded by scoped first-return
+  wakeups, then by 0.1.122 detached chat.
 - 2026-07-07: Ran a whole-site review with Coder, Reviewer1, and Reviewer3.
   Follow-up fixes added the Bring Your Own Subscriptions page to the Why
   sidebar, exposed the missing skills docs, removed a dead skills link, replaced
