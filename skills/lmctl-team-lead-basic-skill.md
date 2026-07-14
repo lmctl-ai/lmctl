@@ -20,30 +20,38 @@ queues the message in your sender-to-receiver lane. **Delegation is an ACTION,
 not a plan**: to hand work to a member you must actually run the command —
 narrating "I'll delegate to Coder" does nothing.
 
-## Foreground/background belongs to the runtime
+## Optional async delegation
 
-lmctl is agnostic to foreground/background execution. Provider runtimes,
-harnesses, shells, and supervisors own concurrency and wake behavior. If you
-need parallelism, let the surrounding runtime run several synchronous chats and
-wake you when those processes finish.
+From inside your member session, use `--detach` when you want fire-and-forget
+delegation:
 
-Do not call a separate lmctl wake command from an LLM session. If an outer
-runtime supervises background work, that supervision happens outside lmctl's
-LLM-called command surface.
+```sh
+lmctl chat "<teamfile>.lmctl" Coder "Run the long verification pass." --detach
+```
+
+`--detach` is unconditional enqueue/fire-and-forget. It requires
+`LMCTL_SELF_SESSIONID`; without that marker, lmctl rejects the call. The message
+is relayed and the response returns to you as sender. Do not pair it with a
+separate lmctl wake/harvest command.
+
+Supervisor notifications are not regular agent work. `notify_all` is real only
+as root/supervisor tooling (`admincli notify`, `admincli watch`, standalone
+`notify_all.py`). It is observe-only by default; `--wake` relays queued mail.
+Regular LLM agents do not call it.
 
 ## If you learned an older lmctl (removed commands)
 
 | Old habit | Use now |
 | --- | --- |
-| `chat --detach` + `lmctl jobs` | Run normal synchronous `lmctl chat ...`; backgrounding belongs to the runtime/harness. |
+| `chat --detach` + `lmctl jobs` | `chat --detach` is valid again, but do not use `lmctl jobs`; the response returns to the sender. |
 | `--from` / `I_am=` | No identity flag. Member identity is `LMCTL_SELF_SESSIONID` only. |
 | `lmctl send` / `lmctl recv` / `lmctl loop` | Use member-run `chat`; queue handling is internal. |
 | `_CONNECT_` / `lmctl connect` | Direct cross-team `lmctl chat ../other-team.lmctl <alias> "..."`; `_CONNECT_` is a dead no-op. |
-| old wait/wake/harvest commands | Removed from the live 0.1.116 surface. Do not call them from an LLM session. |
-| `wait --id` / `wait --all` / `chat --force` | Gone. Use synchronous `chat` and runtime-owned concurrency. |
+| old wait/wake/harvest commands | Removed from the live surface. Do not call them from an LLM session. |
+| `wait --id` / `wait --all` / `chat --force` | Gone. Use synchronous `chat` or member-session `chat --detach`. |
 
-Never sleep to wait on a member. Either you are inside a blocking `chat`, or the
-runtime/harness owns the wait.
+Never sleep to wait on a member. Either you are inside a blocking `chat`, or you
+used detached delegation and will receive the response as sender.
 
 ## Watch a member without disturbing it
 ```sh

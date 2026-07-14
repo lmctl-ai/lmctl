@@ -27,6 +27,12 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-07-14: Processed lmctl 0.1.122. Public docs and skills now document the
+  default synchronous `lmctl chat` path plus optional `lmctl chat --detach` for
+  member-session fire-and-forget delegation. `--detach` requires
+  `LMCTL_SELF_SESSIONID`; without the marker, lmctl rejects the call. The docs
+  keep removed wake/local-command surfaces out of live guidance and frame
+  `notify_all` as supervisor/root tooling only.
 - 2026-07-12: Processed lmctl 0.1.116. Public docs and skills now remove live
   wake-loop command guidance. `chat` is synchronous and returns the member reply;
   lmctl is agnostic to foreground/background execution, and provider runtimes,

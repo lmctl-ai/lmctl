@@ -24,11 +24,19 @@ returns the Lead reply.
 ```sh
 lmctl chat "<teamA>.lmctl" Lead "coordinate the X change with your Coder+Reviewer"
 ```
-lmctl is agnostic to foreground/background execution. If you need concurrency,
-use the provider runtime, shell, harness, or supervisor that is driving you.
+For fire-and-forget delegation from a member session:
+
+```sh
+lmctl chat "<teamA>.lmctl" Lead "coordinate the X change with your Coder+Reviewer" --detach
+```
+
+`--detach` requires `LMCTL_SELF_SESSIONID`; without that marker, lmctl rejects
+the call. The response returns to you as sender. Regular LLM agents do not call
+supervisor notification tooling.
 
 If you remember older lmctl forms, read the removed-command block in the basic
-Lead skill. Meta-Lead work now uses synchronous `chat`.
+Lead skill. Meta-Lead work now uses synchronous `chat` by default and
+member-session `chat --detach` when fire-and-forget is intentional.
 
 For peer Lead status notes from inside your member session, use `chat`. If the
 target Lead is busy, lmctl queues the message in your sender-to-receiver lane:

@@ -131,14 +131,23 @@ automatically at runtime — there is nothing to wire up.
 When you orchestrate by hand — or a meta-Lead drives several sub-teams — you send
 work with `lmctl chat <teamfile>:<member> "<prompt>"`. Two behaviors to know:
 
-**`chat` blocks for the whole turn.** `lmctl chat ...` waits until the member
-finishes its turn and prints the full reply. lmctl is agnostic to
-foreground/background execution; provider runtimes, shells, harnesses, and
-supervisors own concurrency and wake behavior.
+**`chat` blocks for the whole turn by default.** `lmctl chat ...` waits until
+the member finishes its turn and prints the full reply.
 
 ```bash
 lmctl chat ./team.lmctl:Coder "Run the long verification pass."
 ```
+
+For optional async delegation from inside a member session, detach the chat:
+
+```bash
+lmctl chat ./team.lmctl:Coder "Run the long verification pass." --detach
+```
+
+`--detach` is unconditional enqueue/fire-and-forget. It requires
+`LMCTL_SELF_SESSIONID`; without that marker, lmctl rejects the call because it
+cannot identify the sender. The message is relayed and the response returns to
+the sender.
 
 From inside a member session, `chat` is also the queueing primitive. If the
 target is busy, lmctl queues the message in the sender-to-receiver lane:
@@ -149,8 +158,7 @@ lmctl chat ./team.lmctl Coder "status note"
 
 The delivery lifecycle is `queued -> in-flight -> delivered with receipt`.
 Delivery is at-least-once; duplicate delivery can happen after a crash, but a
-queued message should not be lost. There is no LLM-called lmctl wake command in
-0.1.116.
+queued message should not be lost.
 
 For an intentionally blind local shell wrapper, `timeout` still has the usual
 shell semantics:
@@ -170,15 +178,15 @@ timeout 60 lmctl chat ./team.lmctl:Coder "..." >/dev/null 2>&1
 So `1` often means "busy, retry later" — do **not** blindly retry before checking
 whether it was a busy/servicing rejection.
 
-**Background is outside lmctl.** `lmctl chat` waits by default. For parallel
-fan-out, let the provider runtime, shell, harness, or external supervisor run
-multiple synchronous chats and wake you when those processes finish. Do not
-teach a separate lmctl command for this to LLMs.
+**Supervisor notification is not regular agent work.** `notify_all` is real only
+as supervisor/root tooling: `admincli notify`, `admincli watch`, or standalone
+`notify_all.py`. It is observe-only by default; `--wake` relays queued mail.
+Regular LLM agents do not call it.
 
 **Busy means "not ready yet."** From an operator shell, a busy target returns a
 busy error and does not queue. From inside a member session, `chat` queues the
-message for that sender/receiver lane. Do not teach the Lead a separate lmctl
-wake command.
+message for that sender/receiver lane. Use `--detach` only when you want
+unconditional enqueue/fire-and-forget from a member identity.
 
 ## A freshly-seeded session is not instantly chat-ready
 

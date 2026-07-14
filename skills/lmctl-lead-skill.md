@@ -20,9 +20,16 @@ lmctl chat "<teamfile>.lmctl" Coder "Implement X. Commit when tests pass."
 operator shell can use this flagless form. From inside your member session, if
 the target is busy, `chat` queues the message in your sender-to-receiver lane.
 
-lmctl is agnostic to foreground/background execution. If you need concurrency,
-use the provider runtime, shell, harness, or supervisor that is driving you.
-Do not call a separate lmctl wake command from an LLM session.
+For optional async delegation from a member session:
+
+```sh
+lmctl chat "<teamfile>.lmctl" Coder "Run the long verification pass." --detach
+```
+
+`--detach` is unconditional enqueue/fire-and-forget. It requires
+`LMCTL_SELF_SESSIONID`; without that marker, lmctl rejects the call. The message
+is relayed and the response returns to you as sender. Do not call a separate
+lmctl wake/harvest command from an LLM session.
 
 Inspect without disturbing a member:
 

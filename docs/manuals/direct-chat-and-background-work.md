@@ -5,8 +5,9 @@ sidebar_position: 3
 
 # Direct chat & background work
 
-lmctl 0.1.116 has one live member-delegation command for Leads: `lmctl chat`.
-It is synchronous, blocks for one member turn, and returns the member reply.
+lmctl 0.1.122 defaults to synchronous `lmctl chat`: it blocks for one member
+turn and returns the member reply. Optional async delegation exists through
+`lmctl chat --detach` from a member session.
 
 ## Synchronous direct chat
 
@@ -21,18 +22,21 @@ This blocks until the provider turn finishes or errors. It is the right path
 for handoffs, review requests, and operator answers where the shell should wait
 for the result.
 
-## Foreground/background is outside lmctl
+## Detached member delegation
 
-lmctl is agnostic to foreground/background execution. If you need concurrency,
-use the provider runtime, shell, harness, or supervisor that is driving the
-process. For example, an outer harness may run several synchronous `chat` calls
-in its own background jobs and wake when those jobs finish.
+Use `--detach` only from inside a member session:
 
-Do not teach an LLM to call a separate lmctl-managed wake command. Those commands are not
-part of the 0.1.116 public surface.
+```bash
+lmctl chat ./team.lmctl Coder "Run the long verification pass." --detach
+```
 
-Any external supervisor that watches background work is outside lmctl's
-LLM-called command surface.
+`--detach` is unconditional enqueue/fire-and-forget. It requires
+`LMCTL_SELF_SESSIONID`; without that marker, lmctl rejects the call because it
+cannot identify the sender. The message is relayed to the receiver and the
+response returns to the sender.
+
+Do not pair this with a separate lmctl harvest command. Provider runtimes,
+shells, harnesses, and supervisors own wake/concurrency outside the chat call.
 
 ## Queued member messages
 
@@ -44,9 +48,15 @@ queued -> in-flight -> delivered with receipt
 ```
 
 Delivery is at-least-once: after a crash, a queued message may be delivered
-again rather than lost. There is no LLM-called command for harvesting queued
-receipts in 0.1.116; use synchronous `chat` and let the surrounding runtime own
-wake/concurrency.
+again rather than lost. There is no separate LLM-called harvest command in
+0.1.122; use synchronous `chat` by default, or `chat --detach` from a member
+session when fire-and-forget is the right fit.
+
+## Supervisor notifications
+
+`notify_all` is real only as supervisor/root tooling: `admincli notify`,
+`admincli watch`, or standalone `notify_all.py`. It is observe-only by default;
+`--wake` relays queued mail. Regular LLM agents do not call it.
 
 ## Daemon workflow jobs
 
@@ -69,5 +79,6 @@ Workflow jobs are executed by `lmctl serve`. Inspect workflow queue state with
 | Need | Use |
 | --- | --- |
 | Ask one member and wait | `lmctl chat <teamfile> <alias> "<prompt>"` |
-| Coordinate parallel member work | provider runtime / shell / harness / supervisor |
+| Fire-and-forget from a member session | `lmctl chat <teamfile> <alias> "<prompt>" --detach` |
+| Supervise down Leads / queued mail | root/supervisor tooling, not an LLM-called command |
 | Run a repeatable workflow pipeline | `lmctl workflow run` / `lmctl api submit-job` plus `lmctl serve` |

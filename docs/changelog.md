@@ -9,6 +9,15 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 
 ## Unreleased
 
+- Documented the 0.1.122 command surface. The default path remains synchronous
+  `lmctl chat`, and optional async delegation is `lmctl chat --detach`.
+  `--detach` is unconditional enqueue/fire-and-forget, requires
+  `LMCTL_SELF_SESSIONID`, is rejected without the marker, and relays the
+  response back to the sender.
+- Clarified that `notify_all` is supervisor/root tooling only:
+  `admincli notify`, `admincli watch`, or standalone `notify_all.py`.
+  It is observe-only by default; `--wake` relays queued mail. Regular LLM agents
+  do not call it.
 - Documented the 0.1.116 command surface. `chat` is the live Lead delegation
   primitive: it is synchronous, blocks for one member turn, and returns the
   member reply. lmctl is agnostic to foreground/background execution; providers,

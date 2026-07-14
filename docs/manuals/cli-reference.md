@@ -106,12 +106,10 @@ To answer a paused managed run:
 lmctl chat --run <id> "Operator answer" --done
 ```
 
-`lmctl` does not own foreground/background execution. If you need parallelism,
-use the provider runtime, harness, shell, or supervisor that is driving the
-process. `chat` itself remains synchronous:
+By default, `chat` remains synchronous:
 
 ```bash
-lmctl chat ./team.lmctl Coder "Run the long verification pass." &
+lmctl chat ./team.lmctl Coder "Run the long verification pass."
 ```
 
 From inside a member session, the same `chat` command is also the queueing
@@ -122,9 +120,18 @@ target is busy, lmctl queues the message in that sender-to-receiver lane:
 lmctl chat ./team.lmctl Coder "status note"
 ```
 
-There is no LLM-called lmctl wake command in 0.1.116. A plain operator shell can
-drive direct `chat`, but it cannot queue as a member when a target is busy.
-Workflow jobs still use `lmctl serve`.
+For optional async delegation from a member session, use `--detach`:
+
+```bash
+lmctl chat ./team.lmctl Coder "Run the long verification pass." --detach
+```
+
+`--detach` is unconditional enqueue/fire-and-forget. It requires
+`LMCTL_SELF_SESSIONID`; without that marker, lmctl rejects the call because it
+cannot identify the sender. The message is relayed to the receiver and the
+response returns to the sender. A plain operator shell can drive direct
+synchronous `chat`, but it cannot detach as a member unless it is running inside
+a member identity. Workflow jobs still use `lmctl serve`.
 
 ## Inspecting state
 
@@ -171,17 +178,18 @@ lmctl workflow run --workflow image-qa --project my-project --inputs '{"image_pa
 ```
 
 See [Direct chat vs background work](./direct-chat-and-background-work.md) for
-when to use synchronous `chat`, provider/runtime-owned concurrency, or daemon
+when to use synchronous `chat`, detached member delegation, or daemon
 workflow jobs.
 
 ## Foreground/background ownership
 
-`lmctl chat` blocks and returns a member reply. lmctl does not provide a live
-LLM-called wait/wake command in 0.1.116. Provider runtimes and harnesses own
-backgrounding, callbacks, and wake behavior.
+`lmctl chat` blocks and returns a member reply by default. `chat --detach` is
+the optional lmctl async path for member sessions: it enqueues and returns
+without waiting for the member reply.
 
-External supervisors may watch background work, but that is outside lmctl's
-LLM-called command surface and should not appear as a Lead instruction.
+`notify_all` is real only as supervisor/root tooling: `admincli notify`,
+`admincli watch`, or the standalone `notify_all.py`. It is observe-only by
+default; `--wake` relays queued mail. Regular LLM agents do not call it.
 
 ## Queued delivery
 
@@ -198,9 +206,9 @@ is recorded as the receipt. Delivery is at-least-once: if a process dies
 after sending but before marking rows delivered, lmctl may deliver the same
 queued message again. A duplicate is preferable to losing work.
 
-There is no LLM-called command for harvesting queued receipts in 0.1.116.
-Leads should delegate with synchronous `chat` and let their provider runtime or
-supervisor handle wake/concurrency.
+There is no separate LLM-called harvest command in 0.1.122. Use synchronous
+`chat` for the default path, or `chat --detach` from a member session when you
+want fire-and-forget delegation.
 
 ## Upload files
 
