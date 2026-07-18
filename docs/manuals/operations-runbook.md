@@ -158,14 +158,15 @@ target is busy, lmctl queues the message in the sender-to-receiver lane:
 lmctl chat ./team.lmctl Coder "status note"
 ```
 
+Exit 0 with `enqueued mailbox message N` means queued, not delivered yet.
 The delivery lifecycle is `queued -> in-flight -> delivered with receipt`.
 Delivery is at-least-once; duplicate delivery can happen after a crash, but a
 queued message should not be lost.
 
-Queued member mail is delivered by the `lmctl serve` daemon's mailbox relay.
-Keep `serve` running when you rely on queued lanes. If the receiver is still in
-a provider turn, or a human is holding it with `lmctl terminal`, the relay
-leaves the message queued and tries again after the receiver is free.
+Queued member mail is delivered by the next `lmctl chat` to that same receiver.
+When the receiver is free, that chat delivers the whole queued lane plus the new
+message in one turn. If the receiver is still in a provider turn, or a human is
+holding it with `lmctl terminal`, the mail waits.
 
 For an intentionally blind local shell wrapper, `timeout` still has the usual
 shell semantics:
@@ -187,8 +188,8 @@ whether it was a busy/servicing rejection.
 
 **Supervisor notification is not regular agent work.** `notify_all` is real only
 as supervisor/root tooling: `admincli notify`, `admincli watch`, or standalone
-`notify_all.py`. It is observe-only by default; `--wake` relays queued mail for
-supervisor-managed cases. Regular LLM agents do not call it.
+`notify_all.py`. It is observe-only by default. Regular LLM agents do not call
+it.
 
 **Busy means "not ready yet."** From an operator shell, a busy target returns a
 busy error and does not queue. From inside a member session, `chat` queues the

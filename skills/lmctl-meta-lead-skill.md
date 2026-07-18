@@ -48,9 +48,9 @@ lmctl chat "<teamA>.lmctl" Lead "status note"
 
 Delivery is at-least-once: a duplicate delivery after a crash is possible;
 losing queued work is worse.
-Keep `lmctl serve` running for normal queued member mail; its mailbox relay
-delivers after the receiver is free. A receiver held by `lmctl terminal` is
-correctly busy until the human exits the terminal.
+Queued member mail is delivered by the next `lmctl chat` to that same receiver
+after it is free. A receiver held by `lmctl terminal` is correctly busy until
+the human exits the terminal.
 
 ## Warm up a newly-seeded Lead
 When you seed a team and start talking to its Lead, open with a connectivity ping:

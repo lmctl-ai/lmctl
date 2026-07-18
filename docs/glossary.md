@@ -55,5 +55,6 @@ for continuity but are not the canonical project record.
 
 ## serve / api commands
 
-`lmctl serve` is the local always-on daemon that executes queued work.
+`lmctl serve` is the local daemon for daemon-backed workflow and service
+integrations.
 `lmctl api ...` are CLI commands that act on your local lmctl state directly.

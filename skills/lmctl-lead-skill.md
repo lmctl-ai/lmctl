@@ -32,9 +32,9 @@ is relayed and the response returns to you as sender. This is the current
 enqueue-only `chat --detach`, not the old detached delegation-job pattern. Do
 not call a separate lmctl wake/harvest command from an LLM session.
 
-Keep `lmctl serve` running for queued member mail. Its mailbox relay delivers
-queued lanes after the receiver is free; terminal-held receivers wait until the
-human exits `lmctl terminal`.
+Queued member mail is delivered by the next `lmctl chat` to that same receiver
+after it is free. That chat delivers the backlog plus the new message in one
+turn; terminal-held receivers wait until the human exits `lmctl terminal`.
 
 Inspect without disturbing a member:
 

@@ -7,7 +7,8 @@ sidebar_position: 4
 
 lmctl is single-operator and runs on Linux/WSL2. The `lmctl` CLI sets up and
 operates everything on its own, working directly against local state.
-`lmctl serve` is the local always-on daemon that executes queued work. The
+`lmctl serve` is the local daemon for daemon-backed workflow and service
+integrations. The
 hosted web console at [lmctl.ai](https://lmctl.ai) is optional — a subscription
 feature (free and premium tiers), not required to run lmctl.
 

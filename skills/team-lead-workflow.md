@@ -22,7 +22,7 @@ drive direct `chat`, but cannot queue as a member. Queued work follows
 `queued -> in-flight -> delivered with receipt` and is at-least-once.
 `--detach` requires `LMCTL_SELF_SESSIONID`; without that marker, lmctl rejects
 the call. Do not call a separate lmctl wake/harvest command from an LLM session.
-The `lmctl serve` daemon's mailbox relay delivers queued lanes after the
+The next `lmctl chat` to that same receiver delivers queued lanes after the
 receiver is free; if a human is holding the receiver with `lmctl terminal`, the
 queue waits until that lock is released.
 

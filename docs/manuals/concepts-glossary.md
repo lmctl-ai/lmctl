@@ -101,7 +101,8 @@ lmctl api attention ack <attention_id>
 
 ## serve and the api commands
 
-`lmctl serve` is the local always-on daemon that executes queued work. The
+`lmctl serve` is the local daemon for daemon-backed workflow and service
+integrations. The
 `lmctl api ...` commands are part of the CLI and act on your local lmctl state
 directly. See the [CLI reference](./cli-reference.md) for the full command list.
 

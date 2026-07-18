@@ -9,9 +9,6 @@ Current command surface: `lmctl chat` blocks for one member turn and returns
 the member reply by default. Optional async delegation exists through
 `lmctl chat --detach` from a member session.
 
-`lmctl serve` is not just a workflow daemon. It also runs the mailbox relay
-that delivers queued member mail after a busy receiver becomes available.
-
 ## Synchronous direct chat
 
 Use `lmctl chat` when you want one member to handle one prompt now:
@@ -40,14 +37,15 @@ response returns to the sender.
 
 This is the current `chat --detach`, shipped as enqueue-only member delegation.
 It is different from the old detached delegation-job pattern that was removed.
-Do not pair it with a separate LLM-called harvest command; mailbox delivery is
-owned by `lmctl serve` and supervisor/runtime processes, not by a command the
-receiving agent has to remember.
+Do not pair it with a separate LLM-called harvest command; queued delivery is
+handled by the next `lmctl chat` to that receiver.
 
 ## Queued member messages
 
 From inside a member session, `lmctl chat` can still put work into the
-sender-to-receiver path when the target is busy. The lifecycle remains:
+sender-to-receiver path when the target is busy. If it exits 0 with
+`enqueued mailbox message N`, that means queued, not delivered yet. The
+lifecycle remains:
 
 ```text
 queued -> in-flight -> delivered with receipt
@@ -56,30 +54,18 @@ queued -> in-flight -> delivered with receipt
 Delivery is at-least-once: after a crash, a queued message may be delivered
 again rather than lost.
 
-What delivers queued mail: the `lmctl serve` daemon's mailbox relay scans
-pending lanes and delivers messages once the receiver is free. If the receiver
-is still in a provider turn, or a human is holding that member with
-`lmctl terminal`, the relay leaves the message queued and tries again later.
+What delivers queued mail: your next `lmctl chat` to that same receiver. When
+the receiver is free, that chat delivers the whole queued lane plus the new
+message in one turn. If the receiver is still in a provider turn, or a human is
+holding that member with `lmctl terminal`, the mail waits. Nothing is lost.
 Run `lmctl status` to see pending outbound lanes and member busy/idle state.
 
 ## Supervisor notifications
 
 `notify_all` is real only as supervisor/root tooling: `admincli notify`,
 `admincli watch`, or standalone `notify_all.py`. It is observe-only by default;
-`--wake` relays queued mail for supervisor-managed cases. Regular LLM agents do
-not call it. For normal local queued member mail, keep `lmctl serve` running.
-
-## Start the daemon
-
-Start `serve` when you rely on queued member mail or daemon-backed workflow
-jobs:
-
-```bash
-lmctl serve > lmctl.log 2>&1 &
-```
-
-`lmctl serve` starts the local HTTP API, queue daemon, terminal manager, agent
-services, and mailbox relay.
+regular LLM agents do not call it. Queued member mail does not require a
+separate supervisor command.
 
 ## Daemon workflow jobs
 
@@ -102,6 +88,6 @@ Workflow jobs are executed by `lmctl serve`. Inspect workflow queue state with
 | --- | --- |
 | Ask one member and receive the reply | `lmctl chat <teamfile> <alias> "<prompt>"` |
 | Fire-and-forget from a member session | `lmctl chat <teamfile> <alias> "<prompt>" --detach` |
-| Keep queued member mail moving | `lmctl serve` for the mailbox relay daemon |
+| Deliver queued member mail | Send the next `lmctl chat` to the same receiver after it is free |
 | Supervise down Leads / queued mail | root/supervisor tooling, not an LLM-called command |
 | Run a repeatable workflow pipeline | `lmctl workflow run` / `lmctl api submit-job` plus `lmctl serve` |

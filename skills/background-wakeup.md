@@ -15,7 +15,7 @@ requires `LMCTL_SELF_SESSIONID`; without that marker, lmctl rejects the call.
 The message is relayed and the response returns to the sender.
 
 Do not document a separate lmctl wake/harvest command for LLMs to call.
-Queued member mail is delivered by the `lmctl serve` daemon's mailbox relay
+Queued member mail is delivered by the next `lmctl chat` to that same receiver
 after the receiver is free. Supervisor notification tooling is
 root/supervisor-only, not regular agent workflow.
 

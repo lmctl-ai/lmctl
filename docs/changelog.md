@@ -10,9 +10,10 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 ## Unreleased
 
 - Clarified the current queued-member-mail delivery model: `lmctl chat` to a
-  busy receiver enqueues, and `lmctl serve` runs the mailbox relay that delivers
-  queued lanes after the receiver is free. A live `lmctl terminal` lock is a
-  valid busy state, so queued mail waits until the human exits the terminal.
+  busy receiver enqueues, and the next `lmctl chat` to that same receiver
+  delivers the queued lane plus the new message once the receiver is free. A
+  live `lmctl terminal` lock is a valid busy state, so queued mail waits until
+  the human exits the terminal.
 - Documented the 0.1.122 command surface. The default path remains synchronous
   `lmctl chat`, and optional async delegation is `lmctl chat --detach`.
   `--detach` is unconditional enqueue/fire-and-forget, requires
@@ -20,8 +21,7 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
   response back to the sender.
 - Clarified that `notify_all` is supervisor/root tooling only:
   `admincli notify`, `admincli watch`, or standalone `notify_all.py`.
-  It is observe-only by default; `--wake` relays queued mail for
-  supervisor-managed cases. Regular LLM agents do not call it.
+  It is observe-only by default. Regular LLM agents do not call it.
 - Documented the 0.1.116 command surface. `chat` is the live Lead delegation
   primitive: it is synchronous, blocks for one member turn, and returns the
   member reply. lmctl is agnostic to foreground/background execution; providers,

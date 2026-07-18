@@ -35,14 +35,16 @@ is relayed and the response returns to you as sender. This is the current
 enqueue-only `chat --detach`, not the old detached delegation-job pattern. Do
 not pair it with a separate lmctl wake/harvest command.
 
-Queued member mail is delivered by the `lmctl serve` daemon's mailbox relay once
-the receiver is free. If a human is holding the receiver with `lmctl terminal`,
-the queue is supposed to wait until that terminal lock is released.
+Queued member mail is delivered by the next `lmctl chat` to that same receiver
+after it is free. That chat delivers the backlog plus the new message in one
+turn. Exit 0 with `enqueued mailbox message N` means queued, not delivered yet.
+If a human is holding the receiver with `lmctl terminal`, the queue is supposed
+to wait until that terminal lock is released.
 
 Supervisor notifications are not regular agent work. `notify_all` is real only
 as root/supervisor tooling (`admincli notify`, `admincli watch`, standalone
-`notify_all.py`). It is observe-only by default; `--wake` relays queued mail for
-supervisor-managed cases. Regular LLM agents do not call it.
+`notify_all.py`). It is observe-only by default. Regular LLM agents do not call
+it.
 
 ## If you learned an older lmctl (removed commands)
 
