@@ -16,6 +16,54 @@ lmctl diagnose
 `lmctl diagnose` collects a support bundle (DB snapshot, recent events, and
 config) that is useful when reporting a problem.
 
+## `lmctl seed` fails
+
+`lmctl seed <teamfile.lmctl>` seeds missing or placeholder session ids in a
+teamfile. Start with lint, then seed from the directory you expect:
+
+```bash
+pwd
+lmctl lint ./team.lmctl
+lmctl seed ./team.lmctl
+```
+
+`lmctl lint <teamfile.lmctl>` warns about stale or placeholder session ids. The
+teamfile argument is resolved from where you invoke the command; explicit
+relative `sessiondir=` values are resolved from the teamfile's directory. If the
+path context is confusing, `cd` to the repo root or use an absolute teamfile path
+before running `lint` and `seed`.
+
+Common seed messages:
+
+| Message | What to check |
+| --- | --- |
+| `usage: lmctl seed <teamfile.lmctl>` | Pass exactly one teamfile path. |
+| `error: <teamfile>: <fs/canonical error>` | The teamfile path cannot be read or canonicalized from the current directory. Check `pwd` and the path. |
+| `error: <alias>: Invalid provider "..."` | The member has a provider name lmctl does not recognize. |
+| `error: <alias>: sessiondir is empty` | Add a writable `sessiondir=` for that member. |
+| `warning: <alias>: sessionid is shorter than 5 chars; run lmctl seed to refresh it` | The recorded session id is stale or a placeholder; seed should refresh it. |
+| `warning: <alias>: sessiondir <path> is not writable (seed would fail: EACCES) — fix permissions or set a writable sessiondir` | Fix directory permissions or choose a writable `sessiondir=`. |
+| `warning: <alias>: existing sessionid preserved; skipping` | lmctl found an existing non-placeholder session id and left it unchanged. |
+| `error: <alias>: seed failed: <provider error>` | The provider process failed; read the surfaced provider stderr. Provider login/auth problems show up here through provider output. |
+| `error: <alias>: seed failed; provider did not report a sessionid; no new session was found for <cwd> (possible provider workspace/cwd mismatch)` | The provider ran, but lmctl could not extract a session id. Check `pwd`, `sessiondir=`, and whether the provider is using the same working directory. |
+
+Provider binary checks from related preflights can also point at the root cause:
+
+```text
+provider "claude" binary 'claude' not installed
+provider "claude" binary 'claude' found but `claude --version` failed to run cleanly
+unknown provider "foo" — no binary mapping
+```
+
+Stale or deleted session directories may surface later during chat as:
+
+```text
+sessiondir missing: <path>
+```
+
+In that case, recreate the directory, fix `sessiondir=`, or re-seed from the
+correct working directory.
+
 ## API commands report an auth error
 
 Set the daemon URL and bearer token:
