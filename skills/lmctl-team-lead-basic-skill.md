@@ -40,7 +40,7 @@ it.
 
 | Old habit | Use now |
 | --- | --- |
-| detached chat flags or detached-job patterns | Removed. Use normal `lmctl chat`; if a member-session receiver is busy, lmctl queues internally. |
+| old async chat flags or detached-job patterns | Removed. Use normal `lmctl chat`; if a member-session receiver is busy, lmctl queues internally. |
 | `--from` / `I_am=` | No identity flag. Member identity is `LMCTL_SELF_SESSIONID` only. |
 | old send/receive/loop verbs | Use member-run `chat`; queue handling is internal. |
 | `_CONNECT_` / `lmctl connect` | Direct cross-team `lmctl chat ../other-team.lmctl <alias> "..."`; `_CONNECT_` is a dead no-op. |

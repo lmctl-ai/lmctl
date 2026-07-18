@@ -140,15 +140,6 @@ Terminal-held chat can surface as:
 <alias> is held by a terminal on <host> since <time>; retry later
 ```
 
-## Workflow appears paused
-
-List attentions and escalations:
-
-```bash
-lmctl api attentions --json
-lmctl api escalations list --json
-```
-
 ## Non-default serve port
 
 If the daemon is running on a non-default port, update the API URL:

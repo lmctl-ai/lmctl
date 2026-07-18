@@ -34,14 +34,15 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   correctness; a daemon is only an optional accelerator. Do not document
   `lmctl serve` as the queued-mail delivery path. A live `lmctl terminal` lock
   makes a receiver legitimately busy; queued mail waits until the human exits
-  the terminal. Verified `lmctl 0.1.131` help no longer exposes detached chat.
+  the terminal. Verified `lmctl 0.1.131` help no longer exposes the old async
+  chat flag.
 - 2026-07-18: Processed lmctl 0.1.125 `status`. Public docs now state that
   `lmctl status` is zero-arg and team/SELF scoped from `LMCTL_SELF_SESSIONID` in
   member sessions; outside a member session it reports workspace scope with
   `identity: none`. Do not reintroduce project/cwd resolution, `status
   --project`, or `status --web`; both flags are removed for `status`.
-- 2026-07-14: Processed lmctl 0.1.122 detached-chat guidance. This was
-  superseded by 0.1.131 verification; do not teach detached chat as live
+- 2026-07-14: Processed lmctl 0.1.122 async-chat guidance. This was superseded
+  by 0.1.131 verification; do not teach the old async chat flag as live
   guidance.
 - 2026-07-12: Processed lmctl 0.1.116. Public docs and skills now remove live
   wake-loop command guidance. `chat` is synchronous and returns the member reply;
@@ -56,11 +57,11 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   public Team Lead basic skill, with short pointers from the Meta-Lead and
   background wake-up skills. The block mapped several removed forms to later
   wake-loop docs. This was superseded by 0.1.116 and then by 0.1.122's detached
-  chat guidance.
+  async-chat guidance.
 - 2026-07-10: Processed lmctl 0.1.97-0.1.100 sender-driven docs. Public
   orchestration guidance centered on `chat` plus separate wake/harvest
   commands. This was superseded by later wake-loop docs, then by 0.1.116's
-  synchronous-chat guidance and 0.1.122's detached chat option.
+  synchronous-chat guidance and 0.1.122's async-chat option.
   Added the public lifecycle
   `queued -> in-flight -> delivered with receipt` and at-least-once delivery
   note.
@@ -94,7 +95,7 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   commands. That guidance is superseded by 0.1.122.
 - 2026-07-07: Named the previous background wake-up orchestration pattern in the
   public skill catalog. This was later superseded by scoped first-return
-  wakeups, then by 0.1.122 detached chat.
+  wakeups, then by 0.1.122 async-chat guidance.
 - 2026-07-07: Ran a whole-site review with Coder, Reviewer1, and Reviewer3.
   Follow-up fixes added the Bring Your Own Subscriptions page to the Why
   sidebar, exposed the missing skills docs, removed a dead skills link, replaced
