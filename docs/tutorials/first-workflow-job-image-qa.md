@@ -93,12 +93,14 @@ lmctl api submit-job \
 `submit-job` waits until the run reaches a terminal state and prints structured
 result data.
 
-## Check status and attentions
+## Check team/self status and attentions
 
 ```bash
 lmctl status
 lmctl api attentions
 ```
 
-Use `status` for the operator-oriented view. Use `api attentions` to list
-persistent notifications such as workflow pauses, failures, or drift signals.
+Use `status` for the current caller/team view. It does not resolve a project
+from the current directory; it speaks teamfile, member, delegation, and mailbox
+vocabulary. Use `api attentions` to list persistent notifications such as
+workflow pauses, failures, or drift signals.

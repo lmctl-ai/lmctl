@@ -17,9 +17,10 @@ lmctl status
 lmctl api attentions --json
 ```
 
-`lmctl status` is context-aware. When you run it inside a project
-directory, it reports that project. Outside a project, it still reports profile,
-provider, run, and attention information.
+`lmctl status` is team/SELF scoped. In a seeded member session it resolves the
+caller from `LMCTL_SELF_SESSIONID` and reports that member's teamfile, member
+state, delegation activity, and mailbox lanes. Outside a member session it
+falls back to workspace scope with `identity: none`.
 
 ## Common requests
 

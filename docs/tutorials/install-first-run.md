@@ -54,14 +54,18 @@ to fix.
 
 ## Look around
 
-Confirm the install and see your current context:
+Confirm the install and see what lmctl can resolve on this machine:
 
 ```bash
 lmctl status
 ```
 
-`status` reports the current project (when one resolves from your working
-directory), the active run, open attentions, and recent runs.
+Before you seed a team member, this may show `scope: workspace` and
+`identity: none`, then list registered teams and recent activity. Inside a
+seeded member session, `status` switches to the team/SELF view: identity
+(`<teamfile>:<alias>`), teamfile path, member busy/idle state, recent
+delegation activity, and mailbox lanes. `status` does not take `--project` or
+`--web`.
 
 ### See your provider sessions
 

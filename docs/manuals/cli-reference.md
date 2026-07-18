@@ -13,7 +13,7 @@ model turns, and the optional cloud console is an explicit opt-in.
 
 Its commands come in two shapes, both part of the same CLI:
 
-- **top-level commands** — `lmctl status`, `lmctl serve`,
+- **top-level commands** — `lmctl status` for team/SELF state, `lmctl serve`,
   `lmctl project`, `lmctl team`, `lmctl workflow`, `lmctl diagnose`, and so on.
 - **the `lmctl api <noun>` group** — inspect and act on jobs, runs, attentions,
   and issues. `api` is just the name of a command group; it is not a separate
@@ -26,6 +26,12 @@ lmctl status
 lmctl diagnose
 lmctl serve > lmctl.log 2>&1 &
 ```
+
+`lmctl status` is zero-arg. In a seeded member session it identifies the caller
+from `LMCTL_SELF_SESSIONID` and reports identity, teamfile, member busy/idle
+state, recent delegation activity, and mailbox lanes. Outside a member session
+it reports workspace scope with `identity: none`. `--project` and `--web` are
+not `status` options; `--json` returns full unbounded status data.
 
 `lmctl serve` runs the local always-on daemon that *executes* queued work —
 jobs and runs are carried out by this background process. Start it once and

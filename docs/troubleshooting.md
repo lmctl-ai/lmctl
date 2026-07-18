@@ -16,6 +16,12 @@ lmctl diagnose
 `lmctl diagnose` collects a support bundle (DB snapshot, recent events, and
 config) that is useful when reporting a problem.
 
+`lmctl status` is zero-arg. In a seeded member session it uses
+`LMCTL_SELF_SESSIONID` to show the current identity, teamfile, member busy/idle
+state, recent delegation activity in both directions, and pending mailbox
+lanes. Outside a member session it falls back to workspace scope with
+`identity: none`.
+
 ## `lmctl seed` fails
 
 `lmctl seed <teamfile.lmctl>` seeds missing or placeholder session ids in a
@@ -81,9 +87,17 @@ lmctl api status
 
 ## `api status` and `status` show different output
 
-`lmctl status` is the operator-oriented view and can resolve project
-context from the current working directory. `lmctl api status` is the
-daemon status payload and requires the daemon API.
+`lmctl status` speaks team vocabulary. From a seeded member session, lmctl
+resolves the caller from `LMCTL_SELF_SESSIONID`; there is no `--project` or
+`--web` selector. It shows identity, teamfile, member busy/idle state, recent
+delegation activity in both directions, and pending mailbox lanes.
+`lmctl api status` is the daemon status payload and requires the daemon API.
+
+Passing a removed project flag now fails:
+
+```text
+error: unknown option --project; lmctl status is team/SELF scoped now
+```
 
 Use both when orienting:
 
@@ -127,7 +141,7 @@ lmctl api status
 
 ## A run seems stuck
 
-First check the active run, timeline, and attentions:
+First check the current team/self view, then the run, timeline, and attentions:
 
 ```bash
 lmctl status

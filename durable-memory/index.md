@@ -27,6 +27,11 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-07-18: Processed lmctl 0.1.125 `status`. Public docs now state that
+  `lmctl status` is zero-arg and team/SELF scoped from `LMCTL_SELF_SESSIONID` in
+  member sessions; outside a member session it reports workspace scope with
+  `identity: none`. Do not reintroduce project/cwd resolution, `status
+  --project`, or `status --web`; both flags are removed for `status`.
 - 2026-07-14: Processed lmctl 0.1.122. Public docs and skills now document the
   default synchronous `lmctl chat` path plus optional `lmctl chat --detach` for
   member-session fire-and-forget delegation. `--detach` requires

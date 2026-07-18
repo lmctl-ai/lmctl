@@ -15,8 +15,10 @@ lmctl status
 lmctl api attentions --json
 ```
 
-Use `lmctl status` for the human-readable operator view. It resolves the
-current project from your working directory when possible. Use
+Use `lmctl status` for the human-readable team/SELF view. In a member session
+it resolves the caller from `LMCTL_SELF_SESSIONID` and shows identity, teamfile,
+member busy/idle state, recent delegation activity, and pending mailbox lanes.
+Outside a member session it reports workspace scope with `identity: none`. Use
 `lmctl api status` when you need the daemon status payload.
 
 ## What is waiting for me?
