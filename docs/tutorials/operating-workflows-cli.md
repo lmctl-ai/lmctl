@@ -1,12 +1,13 @@
 ---
-title: Operating Workflows from the CLI
+title: Operating Teams from the CLI
 sidebar_position: 4
 ---
 
-# Operating workflows from the CLI
+# Operating teams from the CLI
 
-Operators use lmctl to inspect state, start workflows, answer escalations, and
-track issues through `lmctl` commands.
+Operators use lmctl to inspect team state, send Lead/member prompts, and track
+follow-up work. The current public command model is teamfile + members +
+`lmctl chat`.
 
 ## Orient first
 
@@ -14,7 +15,6 @@ Start each operating session with:
 
 ```bash
 lmctl status
-lmctl api attentions --json
 ```
 
 `lmctl status` is team/SELF scoped. In a seeded member session it resolves the
@@ -27,11 +27,10 @@ falls back to workspace scope with `identity: none`.
 | Operator goal | Command |
 | --- | --- |
 | See what is happening | `lmctl status` |
-| See open attentions | `lmctl api attentions --json` |
-| Run QA for a project | `lmctl api submit-job --workflow qa-suite --inputs '{"project_name":"my-project"}' --project my-project` |
-| List open issues | `lmctl api issues list my-project --status open --json` |
-| Read one run | `lmctl api run <id>` |
-| List recent runs | `lmctl api runs` |
+| Read a member without waking it | `lmctl tail ./team.lmctl Lead` |
+| Ask the Lead to coordinate QA | `lmctl chat ./team.lmctl Lead "Run the QA pass with Coder and Reviewer1, then report."` |
+| List provider sessions | `lmctl ls` |
+| Check a member session | `lmctl health ./team.lmctl Coder` |
 
 ## Reuse a team as a template
 
@@ -49,29 +48,12 @@ cross-team calls work automatically at runtime, with runtime cycle protection
 against runaway loops. See
 [Cross-team calls](../manuals/teams-connect.md) for the semantics.
 
-## Answer workflow escalations
-
-Some workflows pause for human input. List pending escalations:
-
-```bash
-lmctl api escalations list --json
-```
-
-Respond to one escalation by id:
-
-```bash
-lmctl api escalations respond <attention_id> "Use the smaller scope and continue."
-```
-
-The integrated escalation command handles the workflow response and attention
-acknowledgement together.
-
-## File project issues
+## File follow-up issues
 
 Use issues for bugs, failed QA chapters, and follow-up work:
 
 ```bash
-lmctl api issues create my-project \
+lmctl api issues create <scope> \
   --title "Status endpoint returned 500" \
   --body "Expected status data, received HTTP 500 during the smoke test." \
   --severity high \

@@ -14,14 +14,11 @@ delegation channel works; then proceed with the task.
 Use the CLI:
 
 - `lmctl chat "<teamfile>" Coder "your task"`
-- `lmctl chat "<teamfile>" Coder "your task" --detach` for fire-and-forget from a member session
 
 Use `chat` when you need to drive a member turn and get a reply. From inside a
 member session, `chat` queues if the target is busy; a plain operator shell can
 drive direct `chat`, but cannot queue as a member. Queued work follows
 `queued -> in-flight -> delivered with receipt` and is at-least-once.
-`--detach` requires `LMCTL_SELF_SESSIONID`; without that marker, lmctl rejects
-the call. Do not call a separate lmctl wake/harvest command from an LLM session.
 The next `lmctl chat` to that same receiver delivers queued lanes after the
 receiver is free; if a human is holding the receiver with `lmctl terminal`, the
 queue waits until that lock is released.

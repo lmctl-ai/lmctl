@@ -33,21 +33,18 @@ resume.
 
 ## Why lmctl uses it
 
-lmctl has two complementary orchestration models:
+lmctl's current public orchestration model is `.lmctl` teamfiles where a Lead
+drives named members through `lmctl chat` and provider sessions. Repeatability
+comes from the Lead instructions you write and the durable memory the team
+commits.
 
-- **Workflow jobs**: repeatable JSON or DSL-defined pipelines executed by
-  `lmctl serve`.
-- **AI-Lead teams**: `.lmctl` teamfiles where a Lead drives named members
-  through synchronous `lmctl chat`, optional detached chat from member sessions,
-  and provider sessions.
-
-Both models need a memory layer outside any single model window. durable-memory
-lets an agent refresh a drifting session, switch providers, or hand work between
-members without losing the project record.
+Teams need a memory layer outside any single model window. durable-memory lets
+an agent refresh a drifting session, switch providers, or hand work between
+members without losing the durable record.
 
 See [Direct chat & background work](./direct-chat-and-background-work.md) for
-the runtime distinction between synchronous member chat, detached member
-delegation, supervisor notifications, and daemon workflow jobs.
+the runtime distinction between blocking member chat, queued member messages,
+and optional daemon/supervisor infrastructure.
 
 ## What belongs in an index
 
@@ -57,7 +54,7 @@ a fresh agent to read, and point to focused chapters for detail.
 Include:
 
 - **Project identity**: what the project does and who uses it.
-- **Operating model**: the main workflows, team structure, and handoff rules.
+- **Operating model**: the main team patterns, team structure, and handoff rules.
 - **Canonical docs**: which files to read second, third, and only on demand.
 - **Current snapshot**: shipped state, schema or API versions, important feature
   flags, and known stale docs.
@@ -109,7 +106,7 @@ The public lmctl docs explain the product surface:
 - [Context & durable memory](../why/context-and-durable-memory.md) explains the
   product idea.
 - [Architecture overview](./architecture-overview.md) shows where
-  durable-memory fits into local jobs, runs, sessions, and attentions.
+  durable-memory fits into local sessions and team operation.
 - [Templates catalog](./templates-catalog.md) lists the durable-memory scaffold.
 - [Operations runbook](./operations-runbook.md) covers refresh and drift
   recovery.

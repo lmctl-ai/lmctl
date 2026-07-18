@@ -30,22 +30,19 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 - 2026-07-18: Corrected queued-member-mail delivery docs after operator/source
   confirmation. Public docs must say that `lmctl chat` to a busy receiver
   enqueues, and the next `lmctl chat` to that same receiver delivers the backlog
-  plus the new message once the receiver is free. Do not document `lmctl serve`
-  as the queued-mail delivery path. A live `lmctl terminal` lock makes a
-  receiver legitimately busy; queued mail waits until the human exits the
-  terminal. Current `chat --detach` is valid enqueue-only member delegation and
-  is distinct from the old removed delegation-job detach pattern.
+  plus the new message once the receiver is free. No daemon is required for
+  correctness; a daemon is only an optional accelerator. Do not document
+  `lmctl serve` as the queued-mail delivery path. A live `lmctl terminal` lock
+  makes a receiver legitimately busy; queued mail waits until the human exits
+  the terminal. Verified `lmctl 0.1.131` help no longer exposes detached chat.
 - 2026-07-18: Processed lmctl 0.1.125 `status`. Public docs now state that
   `lmctl status` is zero-arg and team/SELF scoped from `LMCTL_SELF_SESSIONID` in
   member sessions; outside a member session it reports workspace scope with
   `identity: none`. Do not reintroduce project/cwd resolution, `status
   --project`, or `status --web`; both flags are removed for `status`.
-- 2026-07-14: Processed lmctl 0.1.122. Public docs and skills now document the
-  default synchronous `lmctl chat` path plus optional `lmctl chat --detach` for
-  member-session fire-and-forget delegation. `--detach` requires
-  `LMCTL_SELF_SESSIONID`; without the marker, lmctl rejects the call. The docs
-  keep removed wake/local-command surfaces out of live guidance and frame
-  `notify_all` as supervisor/root tooling only.
+- 2026-07-14: Processed lmctl 0.1.122 detached-chat guidance. This was
+  superseded by 0.1.131 verification; do not teach detached chat as live
+  guidance.
 - 2026-07-12: Processed lmctl 0.1.116. Public docs and skills now remove live
   wake-loop command guidance. `chat` is synchronous and returns the member reply;
   lmctl is agnostic to foreground/background execution, and provider runtimes,

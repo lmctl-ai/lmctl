@@ -149,20 +149,6 @@ lmctl api attentions --json
 lmctl api escalations list --json
 ```
 
-If an escalation is waiting for input, respond through the integrated command:
-
-```bash
-lmctl api escalations respond <attention_id> "Continue with option A."
-```
-
-## `api workflows` is hard to parse
-
-Use JSON output:
-
-```bash
-lmctl api workflows --json
-```
-
 ## Non-default serve port
 
 If the daemon is running on a non-default port, update the API URL:
@@ -173,19 +159,17 @@ export LMCTL_API_URL=http://127.0.0.1:8788
 lmctl api status
 ```
 
-## A run seems stuck
+## Delegation seems stuck
 
-First check the current team/self view, then the run, timeline, and attentions:
+First check the current team/self view, then inspect the member without waking
+it:
 
 ```bash
 lmctl status
-lmctl api runs
-lmctl api run timeline <id>
-lmctl api attentions --unacked
+lmctl tail ./team.lmctl Coder
 ```
 
-Use `lmctl diagnose` or `lmctl diagnose-prompt <prompt_id>` when you need a
-sanitized support bundle or a focused prompt-pending diagnostic.
+Use `lmctl diagnose` when you need a sanitized support bundle.
 
 ## A teamfile has stale sessions or model warnings
 
@@ -196,14 +180,15 @@ lmctl lint ./team.lmctl
 lmctl seed ./team.lmctl
 ```
 
-## A submitted job failed
+## A delegated task failed
 
-Inspect the run and then file or update an issue with concrete evidence:
+Inspect the member transcript and then file or update an issue with concrete
+evidence:
 
 ```bash
-lmctl api run <id>
-lmctl api issues create my-project \
-  --title "Workflow failed during status smoke" \
-  --body "Expected success; observed terminal failure in run <id>." \
+lmctl tail ./team.lmctl Coder
+lmctl api issues create <scope> \
+  --title "Status smoke failed" \
+  --body "Expected success; observed terminal failure." \
   --severity high
 ```

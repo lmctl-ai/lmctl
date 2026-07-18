@@ -20,20 +20,10 @@ queues the message in your sender-to-receiver lane. **Delegation is an ACTION,
 not a plan**: to hand work to a member you must actually run the command —
 narrating "I'll delegate to Coder" does nothing.
 
-## Optional async delegation
+## Queued delegation
 
-From inside your member session, use `--detach` when you want fire-and-forget
-delegation:
-
-```sh
-lmctl chat "<teamfile>.lmctl" Coder "Run the long verification pass." --detach
-```
-
-`--detach` is unconditional enqueue/fire-and-forget. It requires
-`LMCTL_SELF_SESSIONID`; without that marker, lmctl rejects the call. The message
-is relayed and the response returns to you as sender. This is the current
-enqueue-only `chat --detach`, not the old detached delegation-job pattern. Do
-not pair it with a separate lmctl wake/harvest command.
+From inside your member session, `lmctl chat` queues when the receiver is busy.
+Exit 0 with `enqueued mailbox message N` means queued, not delivered yet.
 
 Queued member mail is delivered by the next `lmctl chat` to that same receiver
 after it is free. That chat delivers the backlog plus the new message in one
@@ -50,15 +40,16 @@ it.
 
 | Old habit | Use now |
 | --- | --- |
-| Old detached-job patterns | `chat --detach` is valid again, but the old job-polling pattern is gone; the response returns to the sender. |
+| detached chat flags or detached-job patterns | Removed. Use normal `lmctl chat`; if a member-session receiver is busy, lmctl queues internally. |
 | `--from` / `I_am=` | No identity flag. Member identity is `LMCTL_SELF_SESSIONID` only. |
-| `lmctl send` / `lmctl recv` / `lmctl loop` | Use member-run `chat`; queue handling is internal. |
+| old send/receive/loop verbs | Use member-run `chat`; queue handling is internal. |
 | `_CONNECT_` / `lmctl connect` | Direct cross-team `lmctl chat ../other-team.lmctl <alias> "..."`; `_CONNECT_` is a dead no-op. |
 | old wake/harvest commands | Removed from the live surface. Do not call them from an LLM session. |
-| old id/all/force variants | Gone. Use synchronous `chat` or member-session `chat --detach`. |
+| old id/all/force variants | Gone. Use normal `lmctl chat`. |
 
 Never sleep for member completion. Either you are inside a blocking `chat`, or
-you used detached delegation and will receive the response as sender.
+you are waiting for the receiver to become free so the next `chat` can deliver
+queued mail.
 
 ## Watch a member without disturbing it
 ```sh

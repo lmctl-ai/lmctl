@@ -19,6 +19,9 @@ if [[ ! -d build ]]; then
   exit 1
 fi
 
+SOURCE_REVISION="$(git rev-parse HEAD 2>/dev/null || printf 'unknown')"
+printf '{"sourceRevision":"%s"}\n' "${SOURCE_REVISION}" > build/sourceRevision.json
+
 aws s3 cp homepage/index.html "s3://${S3_BUCKET}/index.html" \
   --content-type 'text/html; charset=utf-8' \
   --cache-control 'no-cache, max-age=0, must-revalidate'

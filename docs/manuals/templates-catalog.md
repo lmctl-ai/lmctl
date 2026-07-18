@@ -5,27 +5,13 @@ sidebar_position: 6
 
 # Template catalog
 
-This page is a reference for the two kinds of templates lmctl ships: the
-**workflow definitions** in `workflows/*.compound.json`, and the **`.lmctl`
-config templates** that lmctl scaffolds into a project.
+This page is a reference for reusable delegation patterns and `.lmctl` teamfile
+templates. lmctl's current public model is teamfile + members + `lmctl chat`;
+use these patterns as prompts for the Lead, not as CLI-loaded workflow objects.
 
-Workflows are loaded into the local SQLite workspace database by name:
+## Delegation patterns
 
-```bash
-lmctl workflow load <name> workflows/<name>.compound.json
-```
-
-Config templates are scaffolding that lmctl writes into a project, which the
-operator then edits. They cover a project's `ai-test/` chapters and its
-`durable-memory/` knowledge layer.
-
-## Workflow definitions
-
-The shipped workflow definitions live in `workflows/`. Load any of them with
-`lmctl workflow load <name> workflows/<name>.compound.json`, then submit a job
-by workflow name.
-
-| Workflow | Description |
+| Pattern | Description |
 | --- | --- |
 | `bugfix-extended-v2` | Investigates a bug report, develops a fix through coder and reviewer turns, verifies, reports final status. |
 | `bugfix-v2` | Takes a bug description, an agent diagnoses and fixes it in the project, then verifies and reports. |
@@ -44,21 +30,21 @@ by workflow name.
 | `durable-memory-consolidation-v2` | Consolidates durable project memory from recent work so future sessions recover context quickly. |
 | `provider-probe` | Checks whether configured AI providers and team members can respond in the current environment. |
 | `example-v2` | Demonstrates a simple multi-step workflow (agent work + review) for smoke testing and as a template example. |
-| `claim-check-spike-v2` | Explores whether project issue claiming and follow-up work queues behave correctly (small spike). |
+| `claim-check-spike-v2` | Explores whether issue claiming and follow-up queues behave correctly (small spike). |
 
-Each definition is built from the compound archetypes described in
-[Workflows & archetypes](./workflows-archetypes.md): Review, Consolidate,
-Interactive, Loop, ShellStep, and AssertRepoClean.
+Each pattern is built from the delegation archetypes described in
+[Delegation patterns & archetypes](./workflows-archetypes.md): Review,
+Consolidate, Interactive, Loop, ShellStep, and AssertRepoClean.
 
 ## Config templates
 
-The `.lmctl` scaffolding lmctl writes into a project. Edit these after they are
+The `.lmctl` scaffolding lmctl writes for a team. Edit these after they are
 written; they are starting points, not fixed files.
 
 ### ai-test chapters
 
-Scaffold a project's `ai-test/` directory. These chapters are consumed by the
-`qa-suite` and `pr-fix` workflows.
+Scaffold an `ai-test/` directory. These chapters are useful as human-readable
+test prompts for a Lead-driven QA pass.
 
 | File | Purpose |
 | --- | --- |

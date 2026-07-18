@@ -20,18 +20,6 @@ lmctl chat "<teamfile>.lmctl" Coder "Implement X. Commit when tests pass."
 operator shell can use this flagless form. From inside your member session, if
 the target is busy, `chat` queues the message in your sender-to-receiver lane.
 
-For optional async delegation from a member session:
-
-```sh
-lmctl chat "<teamfile>.lmctl" Coder "Run the long verification pass." --detach
-```
-
-`--detach` is unconditional enqueue/fire-and-forget. It requires
-`LMCTL_SELF_SESSIONID`; without that marker, lmctl rejects the call. The message
-is relayed and the response returns to you as sender. This is the current
-enqueue-only `chat --detach`, not the old detached delegation-job pattern. Do
-not call a separate lmctl wake/harvest command from an LLM session.
-
 Queued member mail is delivered by the next `lmctl chat` to that same receiver
 after it is free. That chat delivers the backlog plus the new message in one
 turn; terminal-held receivers wait until the human exits `lmctl terminal`.

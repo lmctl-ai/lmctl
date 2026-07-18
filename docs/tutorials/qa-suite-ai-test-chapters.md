@@ -1,99 +1,84 @@
 ---
-title: Running QA Suite & ai-test Chapters
+title: Running QA with ai-test Chapters
 sidebar_position: 3
 ---
 
-# Running QA suite & ai-test chapters
+# Running QA with ai-test chapters
 
-The `qa-suite` workflow runs markdown test chapters from a project's
-`ai-test/` directory. Each chapter describes setup, action, expected result,
-and cleanup for one manual or semi-automated check.
+`ai-test/` chapters are markdown test prompts: setup, action, expected result,
+and cleanup for one manual or semi-automated check. In current lmctl, ask a
+Lead to run them with its members.
 
-## Prepare the project
+## Prepare a team
 
-Create or choose a project with a seeded team and a local path:
+Use a teamfile with a Lead, a Tester, and a Reviewer:
+
+```text
+_MEMBER_ alias=Lead     provider=codex
+_MEMBER_ alias=Tester   provider=codex
+_MEMBER_ alias=Reviewer provider=claude
+```
+
+Then seed it:
 
 ```bash
-lmctl project create qa-project \
-  --workflow qa-suite \
-  --team qa-team \
-  --local-path /tmp/qa-project
-
-lmctl team create qa-team
-lmctl team add-member qa-team --alias Tester --provider codex
-lmctl team add-member qa-team --alias Interpreter --provider claude
-lmctl team seed qa-team
+lmctl lint ./team.lmctl
+lmctl seed ./team.lmctl
 ```
 
 This setup intentionally mixes providers: one agent records observations and
-another interprets them. Cross-provider review is one of lmctl's strengths.
-
-Load the workflow:
-
-```bash
-lmctl workflow load qa-suite workflows/qa-suite.compound.json
-```
+another interprets them. Cross-provider review catches different failure modes
+than a single-model loop.
 
 ## Add a chapter
 
-Create a markdown file under the project directory:
+Create a markdown file under `ai-test/`:
 
 ```bash
-mkdir -p /tmp/qa-project/ai-test
+mkdir -p ai-test
 ```
 
-Use the chapter format from the reference page:
+Use this chapter shape:
 
 ````markdown
 ---
 name: api-status-ok
-description: Daemon status endpoint responds successfully
+description: Status command responds successfully
 type: smoke
-tags: [api, status]
+tags: [status]
 last_run_at: never
 last_run_status: unknown
 last_run_id: 0
 ---
 
-# Test: API status endpoint
+# Test: Status command
 
 ## Setup
 
-The lmctl daemon is running and API auth variables are set.
+lmctl is installed and provider CLIs are authenticated.
 
 ## Action
 
 Run:
 
 ```bash
-lmctl api status
+lmctl status
 ```
 
 ## Expected
 
 - Command exits 0.
-- Response includes status information.
+- Output includes team/member state or workspace summary.
 
 ## Cleanup
 
 No cleanup required.
 ````
 
-## Run the suite
-
-Start the daemon if it is not already running:
+## Ask the Lead to run the chapter
 
 ```bash
-lmctl serve > lmctl.log 2>&1 &
-```
-
-Submit the QA workflow:
-
-```bash
-lmctl api submit-job \
-  --workflow qa-suite \
-  --project qa-project \
-  --inputs '{"project_name":"qa-project"}'
+lmctl chat ./team.lmctl Lead "Run the ai-test/api-status-ok.md chapter. Ask Tester to execute it, ask Reviewer to verify the observation, then report STANCE: ok/blocked/inconclusive."
 ```
 
 ## Understand STANCE
@@ -107,6 +92,6 @@ Agents communicate routing outcomes with a final `STANCE:` line:
 | `inconclusive` | There is not enough evidence to decide. |
 | `rejected` | A reviewer rejected the result in a review loop. |
 
-The workflow maps these values to the next step or terminal state. Put
-`STANCE: <value>` on the final line when you are authoring agents or test
-instructions that participate in these workflows.
+The Lead's instructions decide the next handoff. Put `STANCE: <value>` on the
+final line when you are authoring agents or test instructions that participate
+in this style of QA.

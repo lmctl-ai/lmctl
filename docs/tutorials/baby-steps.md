@@ -84,16 +84,13 @@ provider and model* than the Coder, that review is genuinely independent — see
 
 ## Step 4 — Capture the pattern, and keep its memory
 
-Once a back-and-forth stabilizes, freeze it as a **workflow** so it runs the same
-way every time, and add **durable-memory** so the team's knowledge survives fresh
-sessions, provider swaps, and even moving the project to a new folder:
+Once a back-and-forth stabilizes, write it down as Lead instructions and add
+**durable-memory** so the team's knowledge survives fresh sessions, provider
+swaps, and moving the repo to a new folder. The current public model is
+teamfile + members + `lmctl chat`; repeatability comes from the prompt you give
+the Lead and the project facts committed under `durable-memory/`.
 
-```bash
-lmctl run https://lmctl.com/workflows/research.compound.json
-```
-
-Browse the [built-in workflows](../manuals/templates-catalog.md), and read why
-this scales to long projects in
+Read why this scales to long work in
 [Context & durable memory](../why/context-and-durable-memory.md).
 
 ---

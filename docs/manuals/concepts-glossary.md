@@ -5,11 +5,11 @@ sidebar_position: 1
 
 # Concepts & glossary
 
-lmctl is the workflow-driven AI-agent platform. The command documented here is
-`lmctl`; install it from npm as `@lmctl-ai/lmctl`.
+lmctl is a teamfile-driven AI-agent coordination tool. The command documented
+here is `lmctl`; install it from npm as `@lmctl-ai/lmctl`.
 
-The main objects are projects, teams, workflows, jobs, runs, attentions,
-provider sessions, and durable-memory.
+The main objects are teamfiles, teams, members, provider sessions, mailbox
+lanes, and durable-memory.
 
 The current positioning is practical:
 
@@ -38,73 +38,63 @@ The current positioning is practical:
   compose the team in plain text, choose which provider and model plays each
   role, and tune how a lead talks to its members and how teams connect to other
   teams.
-- **Durable, scalable sessions** — durable-memory carries project knowledge;
+- **Durable, scalable sessions** — durable-memory carries durable knowledge;
   provider sessions are useful caches, not the only source of truth.
 - **Cost-aware model routing** — assign stronger models to architecture and
   design roles, and leaner models to focused coding or routine roles.
 
 ## Core model
 
-- A **project** is a directory bound to a default workflow and a team.
-- A **team** is a named set of members.
+- A **teamfile** is the plain-text `.lmctl` document that names a Lead and
+  members.
+- A **team** is a named set of members, either from a teamfile or DB-backed
+  team metadata.
 - A **member** is an agent alias backed by a native provider CLI.
-- A **workflow** is a routed definition for sequencing agents and tool steps.
-- A **job** is a queued request to run a workflow.
-- A **run** is the live state-machine execution created from a job.
-- An **attention** is a persistent operator notification.
-- **durable-memory** is the project knowledge layer that survives provider
+- A **mailbox lane** is queued member-to-member mail for one sender and one
+  receiver.
+- **durable-memory** is the committed knowledge layer that survives provider
   sessions.
 
-## Workflow-driven orchestration
+## Lead-driven orchestration
 
-In lmctl, the workflow definition is the organizing layer. It determines which
-agent or tool step runs, how outputs are interpreted, and where each outcome
-routes next.
+In current lmctl, the Lead instruction is the organizing layer. It determines
+which member receives work, how review happens, and when to report back.
 
-This makes recurring patterns repeatable: once a pattern stabilizes, it can be
-captured as workflow definition instead of being reconstructed by hand every
-time.
+This makes recurring patterns repeatable: once a pattern stabilizes, write it
+down as Lead instructions and keep the load-bearing facts in durable memory.
 
-## Job and run lifecycle
+## Chat and mailbox lifecycle
 
-A job is the submitted request: run this workflow, against this project, with
-these inputs. A run is the execution record created from that job.
-
-The normal lifecycle is:
+`lmctl chat` drives one member turn when the receiver is idle. From a member
+session, if the receiver is busy, it queues in that sender-to-receiver mailbox
+lane. The queued-mail lifecycle is:
 
 ```text
-submit job -> create run -> execute workflow steps -> record terminal state
+queued -> in-flight -> delivered with receipt
 ```
 
-Inspect jobs when you care about queued or submitted work. Inspect runs when
-you care about step state, outputs, failures, or terminal state.
+The next `lmctl chat` to that same receiver delivers the queued lane plus the
+new message once the receiver is free. A receiver held by `lmctl terminal` is
+legitimately busy, so mail waits instead of failing.
 
 ```bash
-lmctl api jobs
-lmctl api runs
-lmctl api run <id>
+lmctl chat ./team.lmctl Coder "Implement the smallest safe fix."
+lmctl status
 ```
 
-## Attention and paused workflows
+## Status and mailbox state
 
-An attention is a durable operator notification. It can report a failed run,
-workflow pause, drift signal, forced lock, or other condition that should not
-disappear with a terminal session.
+`lmctl status` is team/SELF scoped. In a seeded member session it resolves the
+caller from `LMCTL_SELF_SESSIONID` and reports identity, teamfile, member
+busy/idle state, recent delegation activity, and pending mailbox lanes. Outside
+a member session it reports workspace scope with `identity: none`.
 
-A paused workflow surfaces as an attention waiting for operator input. List
-attentions and acknowledge them through the API command group:
+## serve and api commands
 
-```bash
-lmctl api attentions
-lmctl api attention ack <attention_id>
-```
-
-## serve and the api commands
-
-`lmctl serve` is the local daemon for daemon-backed workflow and service
-integrations. The
-`lmctl api ...` commands are part of the CLI and act on your local lmctl state
-directly. See the [CLI reference](./cli-reference.md) for the full command list.
+`lmctl serve` starts local daemon and service integrations. It is not required
+for queued member-mail correctness. The `lmctl api ...` commands are part of
+the CLI and act on local lmctl state or the local daemon where needed. See the
+[CLI reference](./cli-reference.md) for the full command list.
 
 To point the CLI at a remote daemon (advanced), set:
 

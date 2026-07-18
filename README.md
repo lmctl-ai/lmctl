@@ -57,12 +57,9 @@ kinds of lock-in. lmctl is built to remove each one:
 - **durable-memory.** Every member, whatever its provider, reads
   `durable-memory/` as shared context. Knowledge survives fresh sessions and
   swapped-in agents.
-- **Workflows you can run from a URL.** Orchestrations are plain JSON. Run a
-  hosted one directly:
-
-  ```bash
-  lmctl run https://lmctl.com/workflows/research.compound.json
-  ```
+- **Patterns you can reuse.** When a team handoff pattern works, write it down
+  as Lead instructions and durable memory. The current public model is
+  teamfile + members + `lmctl chat`.
 
 ## Get started
 

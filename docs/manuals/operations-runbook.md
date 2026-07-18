@@ -12,109 +12,61 @@ For the full command list, see the [CLI reference](./cli-reference.md).
 
 ```bash
 lmctl status
-lmctl api attentions --json
+lmctl diagnose
 ```
 
 Use `lmctl status` for the human-readable team/SELF view. In a member session
 it resolves the caller from `LMCTL_SELF_SESSIONID` and shows identity, teamfile,
 member busy/idle state, recent delegation activity, and pending mailbox lanes.
-Outside a member session it reports workspace scope with `identity: none`. Use
-`lmctl api status` when you need the daemon status payload.
+Outside a member session it reports workspace scope with `identity: none`.
 
 ## What is waiting for me?
 
 ```bash
-lmctl api attentions --json
-lmctl api escalations list --json
+lmctl status
+lmctl tail ./team.lmctl Lead
 ```
 
-Attentions are durable notifications. Escalations are workflow pauses waiting
-for operator input.
+`status` shows recent delegation activity in both directions and pending
+mailbox lanes. Use `tail` when you need the exact recent transcript for a
+member without waking it.
 
-Respond to an escalation:
-
-```bash
-lmctl api escalations respond <attention_id> "Use the smaller scope and continue."
-```
-
-Show one escalation when you need the exact prompt:
-
-```bash
-lmctl api escalations show <attention_id> --json
-```
-
-## What happened in a run?
-
-List recent runs and inspect one:
-
-```bash
-lmctl api runs
-lmctl api run <id>
-```
-
-List queued jobs:
-
-```bash
-lmctl api jobs
-lmctl api job <id>
-```
-
-A job is the queued request. A run is the workflow execution created from the
-job.
-
-## Run a workflow
-
-```bash
-lmctl api submit-job \
-  --workflow qa-suite \
-  --project my-project \
-  --inputs '{"project_name":"my-project"}'
-```
-
-`submit-job` waits for the run to reach a terminal state.
-
-You can also use the top-level runner:
-
-```bash
-lmctl workflow run --workflow qa-suite --project my-project --inputs '{"project_name":"my-project"}' --json
-```
-
-## Diagnose a stuck run
+## Diagnose stuck delegation
 
 Start with:
 
 ```bash
 lmctl status
-lmctl api run <id>
-lmctl api run timeline <id>
-lmctl api attentions --json
 lmctl diagnose
 ```
 
-If the run is paused for input, answer the escalation. If the run failed, use
-the run detail and diagnostic bundle as evidence for an issue.
+If `status` shows pending outbound mail, check whether the receiver is busy. A
+receiver can be busy because it is in a provider turn or because a human holds
+it with `lmctl terminal`; that is correct behavior. Send the next
+`lmctl chat` to that same receiver after it is free. That chat delivers the
+queued lane plus the new message in one turn.
 
 ## Issue lifecycle
 
 List open issues:
 
 ```bash
-lmctl api issues list my-project --status open --json
+lmctl api issues list <scope> --status open --json
 ```
 
 Create an issue:
 
 ```bash
-lmctl api issues create my-project \
+lmctl api issues create <scope> \
   --title "Status smoke failed" \
-  --body "Expected status data; observed a terminal failure in the workflow run." \
+  --body "Expected status data; observed a terminal failure." \
   --severity high
 ```
 
 Close an issue after the fix is verified:
 
 ```bash
-lmctl api issues close <id> --commit-hash <sha> --closed-run-id <run>
+lmctl api issues close <id> --commit-hash <sha>
 ```
 
 ## Teamfile maintenance
@@ -140,17 +92,6 @@ the member finishes its turn and prints the full reply.
 lmctl chat ./team.lmctl:Coder "Run the long verification pass."
 ```
 
-For optional async delegation from inside a member session, detach the chat:
-
-```bash
-lmctl chat ./team.lmctl:Coder "Run the long verification pass." --detach
-```
-
-`--detach` is unconditional enqueue/fire-and-forget. It requires
-`LMCTL_SELF_SESSIONID`; without that marker, lmctl rejects the call because it
-cannot identify the sender. The message is relayed and the response returns to
-the sender.
-
 From inside a member session, `chat` is also the queueing primitive. If the
 target is busy, lmctl queues the message in the sender-to-receiver lane:
 
@@ -165,8 +106,9 @@ queued message should not be lost.
 
 Queued member mail is delivered by the next `lmctl chat` to that same receiver.
 When the receiver is free, that chat delivers the whole queued lane plus the new
-message in one turn. If the receiver is still in a provider turn, or a human is
-holding it with `lmctl terminal`, the mail waits.
+message in one turn. No daemon is required for correctness; a daemon is only an
+optional accelerator. If the receiver is still in a provider turn, or a human
+is holding it with `lmctl terminal`, the mail waits.
 
 For an intentionally blind local shell wrapper, `timeout` still has the usual
 shell semantics:
@@ -193,8 +135,7 @@ it.
 
 **Busy means "not ready yet."** From an operator shell, a busy target returns a
 busy error and does not queue. From inside a member session, `chat` queues the
-message for that sender/receiver lane. Use `--detach` only when you want
-unconditional enqueue/fire-and-forget from a member identity.
+message for that sender/receiver lane.
 
 ## A freshly-seeded session is not instantly chat-ready
 

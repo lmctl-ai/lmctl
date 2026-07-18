@@ -14,11 +14,8 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
   delivers the queued lane plus the new message once the receiver is free. A
   live `lmctl terminal` lock is a valid busy state, so queued mail waits until
   the human exits the terminal.
-- Documented the 0.1.122 command surface. The default path remains synchronous
-  `lmctl chat`, and optional async delegation is `lmctl chat --detach`.
-  `--detach` is unconditional enqueue/fire-and-forget, requires
-  `LMCTL_SELF_SESSIONID`, is rejected without the marker, and relays the
-  response back to the sender.
+- Verified against `lmctl 0.1.131` help and removed stale detached-chat
+  guidance from the public manuals and skills.
 - Clarified that `notify_all` is supervisor/root tooling only:
   `admincli notify`, `admincli watch`, or standalone `notify_all.py`.
   It is observe-only by default. Regular LLM agents do not call it.

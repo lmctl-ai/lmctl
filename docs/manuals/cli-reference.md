@@ -7,16 +7,15 @@ sidebar_position: 2
 
 `lmctl` is a local command-line tool. It runs on your machine and works
 directly against your local lmctl state (a SQLite workspace database, normally
-under `~/.lmctl/`). The lmctl database, daemon, and workflow state are local by
-default. Provider CLIs still use their own configured services when they run
-model turns, and the optional cloud console is an explicit opt-in.
+under `~/.lmctl/`). Provider CLIs still use their own configured services when
+they run model turns, and the optional cloud console is an explicit opt-in.
 
 Its commands come in two shapes, both part of the same CLI:
 
-- **top-level commands** — `lmctl status` for team/SELF state, `lmctl serve`,
-  `lmctl project`, `lmctl team`, `lmctl workflow`, `lmctl diagnose`, and so on.
-- **the `lmctl api <noun>` group** — inspect and act on jobs, runs, attentions,
-  and issues. `api` is just the name of a command group; it is not a separate
+- **top-level commands** — `lmctl status` for team/SELF state, `lmctl chat`,
+  `lmctl team`, `lmctl seed`, `lmctl refresh`, `lmctl diagnose`, and so on.
+- **the `lmctl api <noun>` group** — call the local HTTP API or direct DAL
+  endpoints. `api` is just the name of a command group; it is not a separate
   binary or a remote client.
 
 ## Setup and status
@@ -33,32 +32,20 @@ state, recent delegation activity, and mailbox lanes. Outside a member session
 it reports workspace scope with `identity: none`. `--project` and `--web` are
 not `status` options; `--json` returns full unbounded status data.
 
-`lmctl serve` starts the local HTTP API, queue daemon, terminal manager, and
-agent services for daemon-backed workflows and local service integrations. The
-optional [lmctl.ai](https://lmctl.ai) web console (a free/premium subscription)
-connects to this same local daemon.
+`lmctl serve` starts the local HTTP API, web UI, queue daemon, terminal manager,
+and agent services for local service integrations. The optional
+[lmctl.ai](https://lmctl.ai) web console (a free/premium subscription) connects
+to this same local daemon.
 
-## Project, team, and workflow setup
+## DB teams
 
 ```bash
-lmctl project create my-project \
-  --workflow image-qa \
-  --team my-team \
-  --local-path /tmp/my-project
-
-lmctl team create my-team
-lmctl team add-member my-team --alias QA --provider claude
-lmctl team seed my-team
-
-lmctl workflow load image-qa workflows/image-qa.compound.json
-```
-
-Verified usage:
-
-```text
-lmctl project create <name> --local-path P --workflow W --team T
+lmctl team create <name>
+lmctl team list
+lmctl team show <name>
 lmctl team add-member <team-name> --alias A --provider P [--model M] [--role R] [--sessiondir D]
-lmctl workflow load <name> <path-to-json | lmctl://workflow/<name>>
+lmctl team seed <team-name> [--alias A]
+lmctl team refresh <team-name> --alias A
 ```
 
 ## Teamfiles, clone, lint, seed
@@ -106,12 +93,6 @@ lmctl chat <sessionid> "Prompt text" --provider codex
 lmctl chat --provider codex --session <sessionid> "Prompt text"
 ```
 
-To answer a paused managed run:
-
-```bash
-lmctl chat --run <id> "Operator answer" --done
-```
-
 By default, `chat` remains synchronous:
 
 ```bash
@@ -126,38 +107,21 @@ target is busy, lmctl queues the message in that sender-to-receiver lane:
 lmctl chat ./team.lmctl Coder "status note"
 ```
 
-For optional async delegation from a member session, use `--detach`:
-
-```bash
-lmctl chat ./team.lmctl Coder "Run the long verification pass." --detach
-```
-
-`--detach` is unconditional enqueue/fire-and-forget. It requires
-`LMCTL_SELF_SESSIONID`; without that marker, lmctl rejects the call because it
-cannot identify the sender. The message is relayed to the receiver and the
-response returns to the sender. A plain operator shell can drive direct
-synchronous `chat`, but it cannot detach as a member unless it is running inside
-a member identity.
-
-This is the current `chat --detach`, an enqueue-only member delegation path. It
-is different from the old detached delegation-job pattern that was removed.
+Exit 0 with `enqueued mailbox message N` means the prompt is queued, not
+delivered yet. The next `lmctl chat` to that same receiver delivers the queued
+lane plus the new message in one turn once the receiver is free. A receiver held
+by `lmctl terminal` is legitimately busy, so mail waits rather than failing.
 
 ## Inspecting state
 
-These `lmctl api <noun>` commands read and act on your local lmctl state:
+These `lmctl api <noun>` commands call the local lmctl API or selected direct
+DAL endpoints:
 
 ```bash
 lmctl api status
-lmctl api projects
 lmctl api teams
-lmctl api workflows --json
-lmctl api runs
-lmctl api run <id>
-lmctl api jobs
-lmctl api job <id>
 lmctl api daemon state
 lmctl api daemon cycle
-lmctl api stats run-throughput
 lmctl api attentions
 lmctl api external-objects
 lmctl api external-signals
@@ -166,39 +130,11 @@ lmctl api external-signals
 Many list commands support `--json`. Prefer JSON when another program or agent
 will parse the output.
 
-## Submit jobs
-
-Workflow jobs are the daemon-executed async path for repeatable workflows. Keep
-`lmctl serve` running, submit the job, then inspect jobs/runs and attentions.
-
-```bash
-lmctl api submit-job \
-  --workflow image-qa \
-  --project my-project \
-  --inputs '{"image_path":"/tmp/my-project/sample.png","prompt":"describe this"}'
-```
-
-The command blocks until the workflow reaches a terminal state.
-
-The top-level workflow runner exposes the same shape:
-
-```bash
-lmctl workflow run --workflow image-qa --project my-project --inputs '{"image_path":"/tmp/my-project/sample.png","prompt":"describe this"}'
-```
-
-See [Direct chat vs background work](./direct-chat-and-background-work.md) for
-when to use synchronous `chat`, detached member delegation, or daemon
-workflow jobs.
-
 ## Foreground/background ownership
 
-`lmctl chat` blocks and returns a member reply by default. `chat --detach` is
-the optional lmctl async path for member sessions: it enqueues and returns
-without waiting for the member reply.
-
-`notify_all` is real only as supervisor/root tooling: `admincli notify`,
-`admincli watch`, or the standalone `notify_all.py`. It is observe-only by
-default. Regular LLM agents do not call it.
+`lmctl chat` blocks and returns a member reply when it can drive the receiver
+now. From inside a member session, the same command queues if the receiver is
+busy. lmctl does not expose a separate LLM-called harvest command.
 
 ## Queued delivery
 
@@ -219,17 +155,16 @@ preferable to losing work.
 
 What delivers queued mail: the next `lmctl chat` to that same receiver. When
 the receiver is free, that chat delivers the whole queued lane plus the new
-message in one turn. If the receiver is still in a provider turn, or a human is
-holding that member with `lmctl terminal`, the mail waits. There is no separate
-LLM-called harvest command.
+message in one turn. No daemon is required for correctness; a daemon is only an
+optional accelerator. If the receiver is still in a provider turn, or a human
+is holding that member with `lmctl terminal`, the mail waits. There is no
+separate LLM-called harvest command.
 
 ## Upload files
 
-```bash
-lmctl api upload /tmp/my-project/sample.png --project my-project --json
-```
-
-Uploads return structured metadata including path, size, and MIME type.
+`lmctl api upload` is not part of the current public quick path. Use
+`lmctl api --help` and the local daemon documentation for API-specific upload
+experiments.
 
 ## Attentions
 
@@ -250,28 +185,22 @@ lmctl api issues show <id> --json
 lmctl api issues create my-project --title "Title" --body "Body"
 lmctl api issues close <id> --commit-hash <sha>
 lmctl api issues reopen <id>
-lmctl api issues claim <id> --assigned-run-id <run_id>
 ```
 
-Use issues for failed QA chapters, bugs found during workflow runs, and
-operator-visible follow-up work.
+Use issues for bugs, QA findings, and operator-visible follow-up work.
 
-## Sessions and managed runs
+## Sessions
 
 ```bash
 lmctl ls
 lmctl ls --runs --limit 10
 lmctl terminal <teamfile>:<alias>
-lmctl terminal --run <id>
-lmctl terminal --project my-project --team my-team --alias QA --size --json
 lmctl tail <session-id> --provider codex
 lmctl tail ./team.lmctl Coder
 lmctl tail --session <session-id> --provider codex
-lmctl tail --run <id> --watch
 lmctl health <teamfile>
 lmctl health ./team.lmctl Coder
 lmctl health <session-id> --provider codex
-lmctl health --run <id>
 ```
 
 `terminal --size` reports message count, transcript bytes, and a local token

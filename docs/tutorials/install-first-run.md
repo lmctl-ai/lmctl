@@ -74,7 +74,7 @@ its sessions:
 
 ```bash
 lmctl ls                      # list native provider sessions in scope
-lmctl ls --runs               # list recent lmctl runs instead
+lmctl ls --runs               # list recent managed executions instead
 lmctl tail <session-id> --provider codex     # print a session's messages
 lmctl health <session-id> --provider codex   # session state + token usage
 ```

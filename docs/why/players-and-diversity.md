@@ -69,7 +69,7 @@ provider examples wired up and ready to use.
 
 See [Cross-team calls](../manuals/teams-connect.md) for the full model.
 
-## Organizing players into teams — and into workflows
+## Organizing players into teams and patterns
 
 You compose players in plain text. A team is the first `_MEMBER_` (the Lead) plus
 the members it works with:
@@ -80,11 +80,10 @@ _MEMBER_ alias=Coder    provider=codex   model=<id>
 _MEMBER_ alias=Reviewer provider=agy     model=<id>
 ```
 
-When a team pattern recurs, capture it as a **workflow** (`.compound.json`).
-lmctl ships **19 built-in workflows**, browsable in the
-[templates catalog](https://lmctl.com/lmctl/docs/manuals/templates-catalog), with
-the hosted JSON at [lmctl.com/workflows/](https://lmctl.com/workflows/). Run one
-directly with `lmctl run <url>`.
+When a team pattern recurs, capture it as Lead instructions and durable memory.
+The current public model is teamfile + members + `lmctl chat`; repeatable work
+comes from the prompt you give the Lead and the review structure you ask it to
+enforce.
 
 ## Related
 
