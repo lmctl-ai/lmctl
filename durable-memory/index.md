@@ -27,6 +27,13 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-07-18: Processed lmctl 0.1.126 mailbox relay docs after real stranded
+  mail. Public docs must say that queued member mail is delivered by
+  `lmctl serve`'s mailbox relay, not by an LLM-called harvest command. A live
+  `lmctl terminal` lock makes a receiver legitimately busy; queued mail should
+  wait until the human exits the terminal. Current `chat --detach` is valid
+  enqueue-only member delegation and is distinct from the old removed
+  delegation-job detach pattern.
 - 2026-07-18: Processed lmctl 0.1.125 `status`. Public docs now state that
   `lmctl status` is zero-arg and team/SELF scoped from `LMCTL_SELF_SESSIONID` in
   member sessions; outside a member session it reports workspace scope with

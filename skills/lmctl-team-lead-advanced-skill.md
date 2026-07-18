@@ -47,7 +47,9 @@ That's expected. **Pause and retry**, or `lmctl tail` to watch — don't hammer 
 operator chat can't jump the queue. From inside a member session, `chat` queues
 for a busy target instead of interrupting it. Use `chat --detach` only when
 fire-and-forget is intentional and your session has `LMCTL_SELF_SESSIONID`. Do
-not hammer it; use `tail` or `health` to inspect without waking.
+not hammer it; use `tail` or `health` to inspect without waking. Queued member
+mail is delivered by the `lmctl serve` mailbox relay after the receiver is free;
+a live `lmctl terminal` lock is a valid reason to stay busy.
 
 ## Cross-team calls
 A Lead can call a member of another team at runtime (cycle-protected automatically). The legacy

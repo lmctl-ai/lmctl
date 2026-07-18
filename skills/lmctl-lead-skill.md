@@ -28,8 +28,13 @@ lmctl chat "<teamfile>.lmctl" Coder "Run the long verification pass." --detach
 
 `--detach` is unconditional enqueue/fire-and-forget. It requires
 `LMCTL_SELF_SESSIONID`; without that marker, lmctl rejects the call. The message
-is relayed and the response returns to you as sender. Do not call a separate
-lmctl wake/harvest command from an LLM session.
+is relayed and the response returns to you as sender. This is the current
+enqueue-only `chat --detach`, not the old detached delegation-job pattern. Do
+not call a separate lmctl wake/harvest command from an LLM session.
+
+Keep `lmctl serve` running for queued member mail. Its mailbox relay delivers
+queued lanes after the receiver is free; terminal-held receivers wait until the
+human exits `lmctl terminal`.
 
 Inspect without disturbing a member:
 
