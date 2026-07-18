@@ -22,24 +22,46 @@ lmctl's edge is *where* and *who* the reviewer is:
   diff. A remote SaaS reviewer sees the diff; a local adversarial player sees the
   project.
 
+<div className="whyDiagram">
+  <div className="whyDiagramTitle">Independence path</div>
+  <div className="whyFlow">
+    <div className="whyNode">
+      <strong>Author</strong>
+      <span>Coder on one provider/model makes the change.</span>
+    </div>
+    <div className="whyArrow">→</div>
+    <div className="whyNode">
+      <strong>Full project context</strong>
+      <span>Repo, git state, and durable-memory stay local.</span>
+    </div>
+    <div className="whyArrow">→</div>
+    <div className="whyNode">
+      <strong>Independent reviewer</strong>
+      <span>Different provider/model checks the work.</span>
+    </div>
+  </div>
+</div>
+
 ## Recommended setups
 
-We've used and tested two pairings intensively:
+A reliable setup pattern is:
 
-- **Claude as Lead + Codex as Reviewer**
-- **Codex as Lead + Claude as Reviewer**
+- Put a strong planning model in the **Lead** seat.
+- Put one provider/model in the **Coder** seat.
+- Put a different provider/model in the **Reviewer** seat.
 
-Both put a strong, independent model on the review seat. A teamfile for the first:
+For example:
 
 ```text
 _MEMBER_ alias=Lead     provider=claude
 _MEMBER_ alias=Coder    provider=codex
-_MEMBER_ alias=Reviewer provider=codex
+_MEMBER_ alias=Reviewer provider=agy
 ```
 
 The Lead plans and delegates, the Coder implements, and the Reviewer — a
-different provider than the Lead — reads the change against the full project and
-pushes back. Swap the providers to get the second setup.
+different provider/model than the Coder — reads the change against the full
+project and pushes back. Swap the providers to fit the subscriptions and models
+you already use.
 
 <figure className="screencastSlot" data-video-src="/assets/screencasts/handoff-review.mp4">
   <div className="screencastPlaceholder">

@@ -19,6 +19,25 @@ models on high-volume mechanical work.
 This pairs directly with [division of context](./context-and-durable-memory.md):
 a well-scoped Coder doesn't need a frontier model *or* a giant context window.
 
+<div className="whyMatrix whyMatrix4">
+  <div className="whyCell whyCellHead">Role</div>
+  <div className="whyCell whyCellHead">What it decides</div>
+  <div className="whyCell whyCellHead">Model posture</div>
+  <div className="whyCell whyCellHead">Why</div>
+  <div className="whyCell"><strong>Lead</strong></div>
+  <div className="whyCell">Plan, split work, arbitrate reviews</div>
+  <div className="whyCell">Top-tier</div>
+  <div className="whyCell"><span>Judgment errors propagate across the team.</span></div>
+  <div className="whyCell"><strong>Coder</strong></div>
+  <div className="whyCell">Implement scoped changes</div>
+  <div className="whyCell">Lean capable model</div>
+  <div className="whyCell"><span>High-volume work benefits from lower cost per turn.</span></div>
+  <div className="whyCell"><strong>Reviewer</strong></div>
+  <div className="whyCell">Challenge the result</div>
+  <div className="whyCell">Strong independent model</div>
+  <div className="whyCell"><span>Review quality depends on seeing what the author missed.</span></div>
+</div>
+
 ## Routing models in the teamfile
 
 Set the model per member with `model=` on each `_MEMBER_` line. Use

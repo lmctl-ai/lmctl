@@ -32,6 +32,21 @@ You're not betting the whole project on one vendor being cheapest *and* best. Yo
 mix them, and the cheap seats save you money without dragging down the seats that
 matter.
 
+<div className="whyMatrix whyMatrix3">
+  <div className="whyCell whyCellHead">Choice</div>
+  <div className="whyCell whyCellHead">What changes</div>
+  <div className="whyCell whyCellHead">What you keep</div>
+  <div className="whyCell"><strong>Switch</strong></div>
+  <div className="whyCell">Move the whole workflow to one cheaper provider.</div>
+  <div className="whyCell"><span>Little diversity; one provider still owns the path.</span></div>
+  <div className="whyCell"><strong>Add</strong></div>
+  <div className="whyCell">Add a provider/model for the role where it fits.</div>
+  <div className="whyCell"><span>Your trusted Lead/reviewer stays on the team.</span></div>
+  <div className="whyCell"><strong>Route</strong></div>
+  <div className="whyCell">Choose provider/model per role in the teamfile.</div>
+  <div className="whyCell"><span>Subscriptions become leverage, not lock-in.</span></div>
+</div>
+
 ## Phase 1: subscriptions, not metered API
 
 Most solo developers and small startups don't run on per-token API billing — they

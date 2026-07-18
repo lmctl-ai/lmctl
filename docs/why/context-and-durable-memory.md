@@ -50,6 +50,26 @@ Because the canonical state lives in durable-memory, it survives:
 - **session corruption** — a broken native session is no longer a loss,
 - **project relocation** — durable-memory travels with the project directory.
 
+<div className="whyDiagram">
+  <div className="whyDiagramTitle">What is disposable vs durable</div>
+  <div className="whyFlow">
+    <div className="whyNode">
+      <strong>Provider session</strong>
+      <span>Useful cache: chat history, native session state, model context.</span>
+    </div>
+    <div className="whyArrow">→</div>
+    <div className="whyNode">
+      <strong>durable-memory/</strong>
+      <span>Committed Markdown: decisions, current state, handoff notes.</span>
+    </div>
+    <div className="whyArrow">→</div>
+    <div className="whyNode">
+      <strong>Fresh member</strong>
+      <span>Reads the same record after refresh, model swap, or checkout.</span>
+    </div>
+  </div>
+</div>
+
 ## The net effect
 
 Division of context plus durable-memory means **project size is scalable**, runs

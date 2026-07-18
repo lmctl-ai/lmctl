@@ -39,6 +39,14 @@ lmctl drives seven native provider CLIs directly:
 > account. Personal-subscription users should use **`agy`** (Antigravity)
 > instead.
 
+## Provider surface at a glance
+
+| Surface | Good fit | Why it adds diversity |
+| --- | --- | --- |
+| Native hosted CLIs (`claude`, `codex`, `gemini`, `copilot`, `qwen`, `agy`) | Lead, coding, review, design | Different provider stacks, tools, and model families sit in one team. |
+| OpenCode (`opencode`) | Local models, OpenAI-compatible endpoints, routing through another model host | Brings models outside the first-class CLIs into the same teamfile shape. |
+| Plain `.lmctl` teamfile | Role assignment and provider/model selection | Diversity is visible and reviewable as text, not hidden inside one vendor workflow. |
+
 ## Any model can be a player
 
 Through the **OpenCode** provider, lmctl reaches essentially *any* model — local
