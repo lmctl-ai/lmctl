@@ -3,8 +3,9 @@ body { font-family: system-ui, -apple-system, sans-serif; color: #333; line-heig
 header { text-align: center; padding: 60px 20px 40px; background: #1a1a2e; color: #fff; }
 header h1 { font-size: 48px; font-weight: 700; letter-spacing: -1px; }
 header .tagline { font-size: 18px; color: #aaa; margin-top: 8px; }
-main { max-width: 700px; margin: 0 auto; padding: 40px 20px; }
+main { max-width: 980px; margin: 0 auto; padding: 40px 20px; }
 section { margin-bottom: 36px; }
+section:not(.hero-intro) { max-width: 700px; margin-left: auto; margin-right: auto; }
 h2 { font-size: 22px; margin-bottom: 12px; color: #1a1a2e; }
 p { margin-bottom: 12px; }
 ul { margin-left: 20px; margin-bottom: 12px; }
@@ -20,3 +21,13 @@ pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
 .cta { margin: 18px 0 8px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
 .muted { color: #777; font-size: 14px; }
 h3 { font-size: 17px; margin: 18px 0 6px; color: #1a1a2e; }
+.hero-intro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 360px); gap: 28px; align-items: center; }
+.hero-copy { min-width: 0; }
+.screencast-slot { margin: 18px 0 4px; min-width: 0; }
+.screencast-placeholder { border: 1px dashed #bfc7c4; background: #f6f8f7; border-radius: 8px; padding: 18px; color: #263230; display: grid; gap: 6px; }
+.screencast-placeholder strong { font-size: 18px; color: #1a1a2e; }
+.screencast-kicker { color: #777; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.screencast-slot figcaption { color: #777; font-size: 12px; margin-top: 6px; }
+@media (max-width: 820px) {
+  .hero-intro { grid-template-columns: 1fr; }
+}

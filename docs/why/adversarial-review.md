@@ -41,6 +41,15 @@ The Lead plans and delegates, the Coder implements, and the Reviewer — a
 different provider than the Lead — reads the change against the full project and
 pushes back. Swap the providers to get the second setup.
 
+<figure className="screencastSlot" data-video-src="/assets/screencasts/handoff-review.mp4">
+  <div className="screencastPlaceholder">
+    <span className="screencastKicker">Planned screencast</span>
+    <strong>“it hands work off for me”</strong>
+    <span>Show a Lead relaying a Coder change to a Reviewer on a different model.</span>
+  </div>
+  <figcaption>Future asset path: <code>/assets/screencasts/handoff-review.mp4</code></figcaption>
+</figure>
+
 ## How the approaches compare
 
 The qualities that matter for a reviewer, framed across three approaches:

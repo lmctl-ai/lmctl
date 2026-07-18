@@ -33,6 +33,15 @@ rest — in one place. That's it: you've used lmctl. No setup, no lock-in, just 
 better lens on the sessions you already have. (`lmctl ls --runs` shows lmctl's own
 runs instead, once you have any.)
 
+<figure className="screencastSlot" data-video-src="/assets/screencasts/my-data.mp4">
+  <div className="screencastPlaceholder">
+    <span className="screencastKicker">Planned screencast</span>
+    <strong>“that’s MY data”</strong>
+    <span>Show <code>lmctl ls</code> lighting up real sessions across Claude, Codex, and other providers.</span>
+  </div>
+  <figcaption>Future asset path: <code>/assets/screencasts/my-data.mp4</code></figcaption>
+</figure>
+
 ## Step 2 — Give sessions human-friendly names
 
 Raw sessionids are cryptic. Here's the nice part: `lmctl ls` already prints

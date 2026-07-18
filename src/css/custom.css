@@ -89,6 +89,38 @@
   border-left: 4px solid var(--lmctl-accent);
 }
 
+.screencastSlot {
+  margin: 1.5rem 0;
+}
+
+.screencastPlaceholder {
+  border: 1px dashed var(--lmctl-border);
+  border-radius: 8px;
+  background: var(--lmctl-band);
+  color: var(--lmctl-ink);
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+}
+
+.screencastPlaceholder strong {
+  font-size: 1.05rem;
+}
+
+.screencastKicker {
+  color: var(--lmctl-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.screencastSlot figcaption {
+  color: var(--lmctl-muted);
+  font-size: 0.8rem;
+  margin-top: 0.4rem;
+}
+
 @media (max-width: 640px) {
   .heroBanner {
     padding: 3.5rem 0 3rem;
