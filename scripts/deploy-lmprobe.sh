@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Publish the lmprobe static manual to lmctl.com/lmprobe/.
 #
-# Source of truth is the public lmprobe repo by default. Override with LMPROBE_SITE_DIR
-# when testing a prepared bundle. The sync is scoped to the lmprobe/ S3 prefix.
+# Source of truth is the public lmprobe repo by default, normally checked out
+# beside this repo as ../lmprobe. Do not deploy from ../lmprobe-src/site; it is
+# a stale staging tree. Override with LMPROBE_SITE_DIR only when testing a
+# prepared bundle. The sync is scoped to the lmprobe/ S3 prefix.
 set -euo pipefail
 
 S3_BUCKET="${S3_BUCKET:-lmctl-website-prod}"
