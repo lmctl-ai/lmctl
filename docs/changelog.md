@@ -9,6 +9,13 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 
 ## Unreleased
 
+- Verified queued delegation guidance against `lmctl 0.1.152` and documented
+  the machine-readable `lmctl chat --json` queued contract:
+  `status: "enqueued"` with `path: "enqueued"`. Exit code `0` alone is not a
+  delegated-work completion signal.
+- Corrected busy queueing language from shell/member context to sender
+  identity: calls with sender identity can queue for a busy receiver; calls
+  without sender identity have no lane and return busy instead.
 - Clarified the current queued-member-mail delivery model: `lmctl chat` to a
   busy receiver enqueues, and the next `lmctl chat` from that same sender to
   that same receiver delivers that sender's queued lane plus the new message

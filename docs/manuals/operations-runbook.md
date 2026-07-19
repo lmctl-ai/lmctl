@@ -93,8 +93,9 @@ the member finishes its turn and prints the full reply.
 lmctl chat ./team.lmctl:Coder "Run the long verification pass."
 ```
 
-From inside a member session, `chat` is also the queueing primitive. If the
-target is busy, lmctl queues the message in the sender-to-receiver lane:
+When lmctl can resolve a sender identity, `chat` is also the queueing
+primitive. If the target is busy, lmctl queues the message in the
+sender-to-receiver lane:
 
 ```bash
 lmctl chat ./team.lmctl Coder "status note"
@@ -120,25 +121,30 @@ shell semantics:
 timeout 60 lmctl chat ./team.lmctl:Coder "..." >/dev/null 2>&1
 ```
 
-**Interpreting blocking-chat exit codes:**
+**Interpreting blocking-chat results:**
 
-| Exit | Meaning |
+| Result | Meaning |
 |------|---------|
-| `0` | The member finished its turn within the blocking chat call — delivered and done. |
-| `124` | Your external `timeout` wrapper fired. Treat this as blind/background shell behavior owned by the wrapper, not lmctl. |
-| `1` | Either **busy** (`<member> is servicing <sender> since <ts>` — it is mid-turn) **or** a real error. These look the same today. |
+| Exit `0` with the member reply | The member turn ran and returned. |
+| Exit `0` with `enqueued mailbox message N` | Queued, not delivered and not complete. |
+| `--json` with `status: "enqueued"` and `path: "enqueued"` | Machine-readable queued contract. Track it with `lmctl status`. |
+| Exit `1` with a busy message | No queued lane was created for that call; commonly lmctl had no sender identity to attach to the message. |
+| Exit `124` | Your external `timeout` wrapper fired. Treat this as blind/background shell behavior owned by the wrapper, not lmctl. |
 
-So `1` often means "busy, retry later" — do **not** blindly retry before checking
-whether it was a busy/servicing rejection.
+Exit `0` alone does not prove delegated work is done. Prefer
+`lmctl chat ... --json` when another program or agent needs to tell queued work
+from a completed member reply. See [Verifying delegated work](./verifying-delegated-work.md).
 
 **Supervisor notification is not regular agent work.** `notify_all` is real only
 as supervisor/root tooling: `admincli notify`, `admincli watch`, or standalone
 `notify_all.py`. It is observe-only by default. Regular LLM agents do not call
 it.
 
-**Busy means "not ready yet."** From an operator shell, a busy target returns a
-busy error and does not queue. From inside a member session, `chat` queues the
-message for that sender/receiver lane.
+**Busy means "not ready yet."** Queueing depends on sender identity, not on
+whether the command came from a shell or a member transcript. If lmctl can
+resolve a sender identity, a busy receiver queues into that `(sender, receiver)`
+lane. If there is no sender identity, there is no lane; the busy call returns a
+busy error instead of queueing.
 
 ## A freshly-seeded session is not instantly chat-ready
 

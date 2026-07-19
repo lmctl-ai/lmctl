@@ -6,9 +6,9 @@ sidebar_position: 3
 # Direct chat & background work
 
 Current command surface: `lmctl chat` sends work to one member. When the
-receiver is idle it blocks for one member turn and returns the reply. From a
-member session, when the receiver is busy, the same command queues the message
-instead of dropping it.
+receiver is idle it blocks for one member turn and returns the reply. When
+lmctl can resolve a sender identity and the receiver is busy, the same command
+queues the message instead of dropping it.
 
 ## Synchronous direct chat
 
@@ -25,8 +25,8 @@ attached to the result.
 
 ## Queued member messages
 
-From inside a member session, `lmctl chat` can still put work into the
-sender-to-receiver path when the target is busy. If it exits 0 with
+When lmctl can resolve a sender identity, `lmctl chat` can still put work into
+the sender-to-receiver path when the target is busy. If it exits 0 with
 `enqueued mailbox message N`, that means queued, not delivered yet. The
 lifecycle remains:
 

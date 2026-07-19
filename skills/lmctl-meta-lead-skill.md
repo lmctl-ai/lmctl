@@ -25,11 +25,12 @@ returns the Lead reply.
 lmctl chat "<teamA>.lmctl" Lead "coordinate the X change with your Coder+Reviewer"
 ```
 If you remember older lmctl forms, read the removed-command block in the basic
-Lead skill. Meta-Lead work now uses synchronous `chat` by default and
-member-session queueing when a receiver is busy.
+Lead skill. Meta-Lead work now uses synchronous `chat` by default; busy
+queueing depends on sender identity.
 
-For peer Lead status notes from inside your member session, use `chat`. If the
-target Lead is busy, lmctl queues the message in your sender-to-receiver lane:
+For peer Lead status notes, use `chat`. If the target Lead is busy and lmctl
+can resolve your sender identity, lmctl queues the message in your
+sender-to-receiver lane:
 
 ```sh
 lmctl chat "<teamA>.lmctl" Lead "status note"
@@ -51,12 +52,12 @@ This makes the Lead actually exercise delegation from turn one — teams that sk
 first hand-off.
 
 ## Inspect before messaging Leads
-A Lead mid-turn **rejects** a new `chat` with a busy notice (it serves one
-turn-driving sender at a time). Operator-shell chat is refused, not queued, and
-not allowed to abort the in-flight turn. Member-session chat queues for that
-`(sender, receiver)` lane. Use `tail`/`health` to inspect without waking, then
-let the runtime/harness own wake and concurrency. Don't broadcast turn-driving
-chats into a working fleet.
+A Lead mid-turn serves one turn-driving sender at a time. Busy behavior depends
+on sender identity: if lmctl can resolve a sender, the chat queues for that
+`(sender, receiver)` lane; if there is no sender identity, busy is refused and
+not allowed to abort the in-flight turn. Use `tail`/`health` to inspect without
+waking, then let the runtime/harness own wake and concurrency. Don't broadcast
+turn-driving chats into a working fleet.
 
 ## Refresh a drifting Lead
 A Lead can't refresh the session it's running in — but you can:

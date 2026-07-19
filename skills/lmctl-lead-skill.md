@@ -16,9 +16,10 @@ Delegate by actually running a command:
 lmctl chat "<teamfile>.lmctl" Coder "Implement X. Commit when tests pass."
 ```
 
-`chat` drives one member turn, blocks, and returns the member reply. A plain
-operator shell can use this flagless form. From inside your member session, if
-the target is busy, `chat` queues the message in your sender-to-receiver lane.
+`chat` drives one member turn, blocks, and returns the member reply. If the
+target is busy and lmctl can resolve your sender identity, `chat` queues the
+message in your sender-to-receiver lane. If there is no sender identity, busy
+returns an error instead of creating anonymous queued mail.
 
 Queued member mail is delivered by the next `lmctl chat` from that same sender
 to that same receiver after it is free. A chat from another sender to the same

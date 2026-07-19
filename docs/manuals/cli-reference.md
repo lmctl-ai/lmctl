@@ -84,9 +84,9 @@ lmctl chat ./team.lmctl Reviewer "Review Coder's latest change."
 ```
 
 `chat` is synchronous by default: it sends one prompt and blocks until that
-provider turn finishes or errors. It returns the provider result on success and
-exits non-zero on delivery, provider, busy, or runtime errors. For raw provider
-sessions, use one of:
+provider turn finishes, queues, or errors. Exit code alone is not a completion
+contract: a busy receiver with a sender identity can enqueue the prompt and
+exit `0`. For raw provider sessions, use one of:
 
 ```bash
 lmctl chat <sessionid> "Prompt text" --provider codex
@@ -99,9 +99,9 @@ By default, `chat` remains synchronous:
 lmctl chat ./team.lmctl Coder "Run the long verification pass."
 ```
 
-From inside a member session, the same `chat` command is also the queueing
-primitive. If the target is idle, `chat` drives a normal blocking turn. If the
-target is busy, lmctl queues the message in that sender-to-receiver lane:
+When lmctl can resolve a sender identity, the same `chat` command is also the
+queueing primitive. If the target is idle, `chat` drives a normal blocking turn.
+If the target is busy, lmctl queues the message in that sender-to-receiver lane:
 
 ```bash
 lmctl chat ./team.lmctl Coder "status note"
@@ -113,6 +113,10 @@ delivers that sender's queued lane plus the new message in one turn once the
 receiver is free. A chat from another sender to the same receiver does not
 flush the lane. A receiver held by `lmctl terminal` is legitimately busy, so
 mail waits rather than failing.
+
+Use `lmctl chat ... --json` for automation. The queued contract is
+`status: "enqueued"` with `path: "enqueued"`. See
+[Verifying delegated work](./verifying-delegated-work.md).
 
 ## Inspecting state
 
@@ -135,8 +139,10 @@ will parse the output.
 ## Foreground/background ownership
 
 `lmctl chat` blocks and returns a member reply when it can drive the receiver
-now. From inside a member session, the same command queues if the receiver is
-busy. lmctl does not expose a separate LLM-called harvest command.
+now. With sender identity, the same command queues if the receiver is busy.
+Without sender identity, a busy receiver returns busy instead of creating
+anonymous queued mail. lmctl does not expose a separate LLM-called harvest
+command.
 
 ## Queued delivery
 
@@ -146,7 +152,7 @@ The member-to-member lifecycle is:
 queued -> in-flight -> delivered with receipt
 ```
 
-From inside a member session, `chat` queues when the target is busy and delivers
+With sender identity, `chat` queues when the target is busy and delivers
 directly when the target is idle. If `chat` exits 0 with
 `enqueued mailbox message N`, that means queued, not delivered yet. When a
 delivery turn runs, the queued lane is sent as one provider turn and the target

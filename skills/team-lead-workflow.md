@@ -15,9 +15,10 @@ Use the CLI:
 
 - `lmctl chat "<teamfile>" Coder "your task"`
 
-Use `chat` when you need to drive a member turn and get a reply. From inside a
-member session, `chat` queues if the target is busy; a plain operator shell can
-drive direct `chat`, but cannot queue as a member. Queued work follows
+Use `chat` when you need to drive a member turn and get a reply. Queueing
+depends on sender identity: if lmctl can resolve a sender, `chat` queues when
+the target is busy; if there is no sender identity, busy returns an error
+instead of creating anonymous mail. Queued work follows
 `queued -> in-flight -> delivered with receipt` and is at-least-once.
 The next `lmctl chat` from that same sender to that same receiver delivers that
 sender's queued lane after the receiver is free. A chat from another sender to

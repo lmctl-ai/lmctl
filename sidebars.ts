@@ -54,6 +54,7 @@ const sidebars: SidebarsConfig = {
             'manuals/concepts-glossary',
             'manuals/teams-connect',
             'manuals/direct-chat-and-background-work',
+            'manuals/verifying-delegated-work',
             'manuals/durable-memory-index',
             'manual-invocation',
             'mcp-manual-install',

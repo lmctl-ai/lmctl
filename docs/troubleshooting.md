@@ -148,6 +148,30 @@ receiver, the queued mail can sit indefinitely. Treat old `Waiting on: queued`
 rows in `lmctl status` as work that needs an explicit same-sender follow-up or
 operator escalation.
 
+## How do I know delegated work finished?
+
+Do not use exit code `0` alone as proof. `lmctl chat` can exit `0` with a
+completed member reply, or it can exit `0` with `enqueued mailbox message N`,
+which means queued and not delivered yet.
+
+For automation, use JSON:
+
+```bash
+lmctl chat ./team.lmctl Coder "Implement the fix." --json
+```
+
+If the response has `status: "enqueued"` and `path: "enqueued"`, the work is
+waiting in the `(sender, receiver)` lane. Confirm completion with:
+
+```bash
+lmctl status
+lmctl status --since 7d
+lmctl tail ./team.lmctl Coder
+```
+
+See [Verifying delegated work](./manuals/verifying-delegated-work.md) for the
+full contract.
+
 ## Non-default serve port
 
 If the daemon is running on a non-default port, update the API URL:

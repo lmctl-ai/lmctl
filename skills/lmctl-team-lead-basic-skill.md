@@ -14,16 +14,17 @@ the basics; there is a separate **advanced** skill for refresh/model-swap/health
 lmctl chat "<teamfile>.lmctl" Coder "Implement X. Commit when tests pass."
 ```
 This sends the prompt to member `Coder`, blocks for one member turn, and returns
-the member reply. A plain operator shell can use this flagless form for direct
-blocking chat. From inside your member session, if the target is busy, `chat`
-queues the message in your sender-to-receiver lane. **Delegation is an ACTION,
-not a plan**: to hand work to a member you must actually run the command —
-narrating "I'll delegate to Coder" does nothing.
+the member reply. If the target is busy and lmctl can resolve your sender
+identity, `chat` queues the message in your sender-to-receiver lane. If there
+is no sender identity, a busy receiver returns busy instead of creating
+anonymous queued mail. **Delegation is an ACTION, not a plan**: to hand work to
+a member you must actually run the command — narrating "I'll delegate to Coder"
+does nothing.
 
 ## Queued delegation
 
-From inside your member session, `lmctl chat` queues when the receiver is busy.
-Exit 0 with `enqueued mailbox message N` means queued, not delivered yet.
+With sender identity, `lmctl chat` queues when the receiver is busy. Exit 0
+with `enqueued mailbox message N` means queued, not delivered yet.
 
 Queued member mail is delivered by the next `lmctl chat` from that same sender
 to that same receiver after it is free. A chat from another sender to the same

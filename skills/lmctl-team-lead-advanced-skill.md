@@ -43,20 +43,22 @@ or acts):
 ## Don't fight the busy-guard
 A member serves one turn-driving sender at a time. If you `chat` a member that's mid-turn you'll get:
 `<alias> is servicing <sender> … — pause and retry, or inspect without waking it: lmctl tail …`
-That's expected. **Pause and retry**, or `lmctl tail` to watch — don't hammer it (a second inbound
-operator chat can't jump the queue. From inside a member session, `chat` queues
-for a busy target instead of interrupting it. Do not hammer it; use `tail` or
-`health` to inspect without waking. Queued member mail is delivered by the next
-`lmctl chat` from that same sender to that same receiver after the receiver is
-free; a chat from another sender to the same receiver does not flush it. If the
-sender is idle waiting for the reply and never sends again, this can deadlock.
-A live `lmctl terminal` lock is a valid reason to stay busy.
+That's expected. **Pause and retry**, or `lmctl tail` to watch — don't hammer it.
+Queueing depends on sender identity: if lmctl can resolve a sender, `chat`
+queues for a busy target instead of interrupting it; if there is no sender
+identity, busy returns an error instead of creating anonymous mail. Queued
+member mail is delivered by the next `lmctl chat` from that same sender to that
+same receiver after the receiver is free; a chat from another sender to the
+same receiver does not flush it. If the sender is idle waiting for the reply
+and never sends again, this can deadlock. A live `lmctl terminal` lock is a
+valid reason to stay busy.
 
 ## Cross-team calls
 A Lead can call a member of another team at runtime (cycle-protected automatically). The legacy
 static `_CONNECT_` directive is a **deprecated no-op** — ignore it; cross-team reach is just a
-normal runtime `lmctl chat` to the other team's member. From a member session,
-busy cross-team targets follow the same `(sender, receiver)` lane lifecycle.
+normal runtime `lmctl chat` to the other team's member. When lmctl can resolve
+a sender identity, busy cross-team targets follow the same `(sender, receiver)`
+lane lifecycle.
 
 ## Warm up the channel
 Right after seeding, ping each member once (`lmctl chat "<teamfile>" Coder "reply OK"`) before
