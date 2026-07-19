@@ -203,6 +203,41 @@ lmctl lint ./team.lmctl
 lmctl seed ./team.lmctl
 ```
 
+## A member is running the wrong model
+
+First upgrade to the current public binary:
+
+```bash
+npm install -g @lmctl-ai/lmctl@latest
+lmctl --version
+```
+
+Model-routed teams should use 0.1.151 or newer; this page was checked against
+0.1.152. Then verify the teamfile and the live member table:
+
+```bash
+lmctl lint ./team.lmctl
+lmctl seed ./team.lmctl
+lmctl health ./team.lmctl
+```
+
+Compare each `_MEMBER_ ... model=` value with the `MODEL` column. If they do
+not match, do not ask the model what it is; trust the CLI output and fix the
+teamfile, upgrade lmctl, or refresh/re-seed the member before assigning work.
+
+## Seed told me to use `lmctl_chat`, but the tool is missing
+
+Some older seed text may mention an MCP tool named `lmctl_chat`. The MCP bridge
+is optional and often not registered, so tool discovery can return no such
+tool. Use the CLI instead:
+
+```bash
+lmctl chat "<teamfile>" <alias> "your task"
+```
+
+The public docs deliberately prefer the CLI. Treat unavailable `lmctl_chat` as
+a stale seed instruction, not as a reason to stop delegation.
+
 ## A delegated task failed
 
 Inspect the member transcript and then file or update an issue with concrete

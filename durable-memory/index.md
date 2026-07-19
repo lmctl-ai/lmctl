@@ -27,6 +27,18 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-07-19: Processed independent review findings for `lmctl 0.1.152`.
+  Public docs and Lead skills now state that `lmctl chat` exit `0` is not a
+  delegated-work completion contract: `enqueued mailbox message N` means queued,
+  and `lmctl chat --json` exposes `status: "enqueued"` plus
+  `path: "enqueued"`. Queueing is identity-scoped, not shell-context scoped:
+  sender identity creates the `(sender, receiver)` lane; no sender identity
+  means a busy receiver cannot queue anonymous mail. Added
+  `/lmctl/docs/manuals/verifying-delegated-work`. Also added model-routing
+  version-floor guidance: use 0.1.151+ and verify post-seed `MODEL` values with
+  `lmctl health <teamfile>`. Added a known-issue note that stale seed text may
+  mention unavailable MCP `lmctl_chat`; public guidance remains CLI
+  `lmctl chat`.
 - 2026-07-18: Corrected queued-member-mail delivery docs after operator/source
   confirmation. Public docs must say that `lmctl chat` to a busy receiver
   enqueues, and the next `lmctl chat` from that same sender to that same
@@ -34,16 +46,16 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   receiver is free. A chat from another sender to the same receiver does not
   flush the lane. Do not document any daemon command as the queued-mail delivery
   path. A live `lmctl terminal` lock makes a receiver legitimately busy; queued
-  mail waits until the human exits the terminal. Verified `lmctl 0.1.146` help
-  no longer exposes the old removed chat flag.
+  mail waits until the human exits the terminal. Superseded by 2026-07-19
+  verification against `lmctl 0.1.152`.
 - 2026-07-18: Processed lmctl 0.1.125 `status`. Public docs now state that
   `lmctl status` is zero-arg and team/SELF scoped from `LMCTL_SELF_SESSIONID` in
   member sessions; outside a member session it reports workspace scope with
   `identity: none`. Do not reintroduce project/cwd resolution, `status
   --project`, or `status --web`; both flags are removed for `status`.
 - 2026-07-14: Processed lmctl 0.1.122 removed-flag guidance. This was
-  superseded by 0.1.146 verification; do not teach the old removed chat flag as live
-  guidance.
+  superseded by later verification; do not teach the old removed chat flag as
+  live guidance.
 - 2026-07-12: Processed lmctl 0.1.116. Public docs and skills now remove live
   wake-loop command guidance. `chat` is synchronous and returns the member reply;
   lmctl is agnostic to foreground/background execution, and provider runtimes,

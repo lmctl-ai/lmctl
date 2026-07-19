@@ -80,6 +80,10 @@ _MEMBER_ alias=Coder    provider=codex   model=<id>
 _MEMBER_ alias=Reviewer provider=agy     model=<id>
 ```
 
+Use `@lmctl-ai/lmctl` 0.1.151 or newer for `model=` routing (verified against
+0.1.152). After seeding, run `lmctl health <teamfile.lmctl>` and confirm each
+member's `MODEL` column matches the teamfile.
+
 When a team pattern recurs, capture it as Lead instructions and durable memory.
 The current public model is teamfile + members + `lmctl chat`; repeatable work
 comes from the prompt you give the Lead and the review structure you ask it to

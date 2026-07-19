@@ -16,13 +16,18 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 - Corrected busy queueing language from shell/member context to sender
   identity: calls with sender identity can queue for a busy receiver; calls
   without sender identity have no lane and return busy instead.
+- Added model-routing version-floor guidance. For routed `model=` teamfiles,
+  use 0.1.151 or newer and verify the post-seed `MODEL` column with
+  `lmctl health <teamfile.lmctl>`.
+- Added a known-issue note for stale seed text that mentions MCP `lmctl_chat`.
+  Public guidance remains the CLI: `lmctl chat <teamfile> <alias> "task"`.
 - Clarified the current queued-member-mail delivery model: `lmctl chat` to a
   busy receiver enqueues, and the next `lmctl chat` from that same sender to
   that same receiver delivers that sender's queued lane plus the new message
   once the receiver is free. A live `lmctl terminal` lock is a valid busy state,
   so queued mail waits until the human exits the terminal.
-- Verified against `lmctl 0.1.146` help and removed stale removed-flag
-  guidance from the public manuals and skills.
+- Removed stale removed-flag guidance from the public manuals and skills; the
+  current live command guidance above is verified against `lmctl 0.1.152`.
 - Clarified that `notify_all` is supervisor/root tooling only:
   `admincli notify`, `admincli watch`, or standalone `notify_all.py`.
   It is observe-only by default. Regular LLM agents do not call it.

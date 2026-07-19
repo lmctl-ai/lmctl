@@ -107,6 +107,17 @@ _MEMBER_ alias=Architect provider=claude model=<model>
 _MEMBER_ alias=Coder provider=opencode model=<model> effort=<variant>
 ```
 
+Model routing requires `@lmctl-ai/lmctl` 0.1.151 or newer for the current seed
+and terminal behavior (verified against 0.1.152). After seeding a model-routed
+team, run:
+
+```bash
+lmctl health ./my-team.lmctl
+```
+
+Confirm the `MODEL` column matches each `_MEMBER_ ... model=` value before
+trusting the routed run.
+
 `effort=` is the teamfile spelling for provider model variants such as OpenCode
 reasoning effort. It is currently supported for `provider=opencode`; lint warns
 when `effort=` is used with a provider that does not support it.

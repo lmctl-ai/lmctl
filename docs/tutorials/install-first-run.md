@@ -83,6 +83,16 @@ lmctl health <session-id> --provider codex   # session state + token usage
 `lmctl health` is your "how big / what state". These work across every provider —
 one set of commands, whatever CLI produced the session.
 
+When you later seed a teamfile with per-member `model=` values, verify the
+routing before assigning work:
+
+```bash
+lmctl health ./team.lmctl
+```
+
+The `MODEL` column should match the teamfile. Use `@lmctl-ai/lmctl` 0.1.151 or
+newer for model-routed teams; this page was checked against 0.1.152.
+
 ## Where lmctl keeps state
 
 lmctl stores local state under `~/.lmctl/`. User-facing environment variables are

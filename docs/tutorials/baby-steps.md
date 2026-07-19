@@ -65,6 +65,16 @@ Now you work with names — `Coder`, `Reviewer` — instead of copying sessionid
 around. See [Concepts & glossary](../manuals/concepts-glossary.md) for the
 teamfile format.
 
+If your `_MEMBER_` lines include `model=`, verify the routed model immediately
+after seed:
+
+```bash
+lmctl health ./team.lmctl
+```
+
+The `MODEL` column should match the teamfile. Use `@lmctl-ai/lmctl` 0.1.151 or
+newer for model-routed teams; this tutorial was checked against 0.1.152.
+
 ## Step 3 — Stop copy-pasting between sessions
 
 The usual chore: a Coder makes a change, and you hand-copy it into a Reviewer's
