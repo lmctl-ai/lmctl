@@ -20,6 +20,9 @@ The current public lmctl contract is simple:
 - Use `lmctl chat ... --prompt-file <path>` for non-trivial prompts. Positional
   prompts are built by the shell, so backticks, `$(...)`, `$VAR`, and quotes can
   change before lmctl sees them.
+- Run `lmctl status` before important sends and `lmctl status --since 7d` after
+  queued sends. Read `Waiting on:` and `mailbox outbound`; exit `0` can still
+  mean queued.
 - Current seed text may mention the `lmctl_chat` MCP tool, but normal installs
   do not provide it. Switch to the CLI command immediately. The CLI is the
   supported path.

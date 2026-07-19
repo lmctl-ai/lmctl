@@ -26,6 +26,10 @@ These docs currently describe `@lmctl-ai/lmctl` **0.1.154**. Run
   evidence, `--prompt-file` for safe prompt input, CLI fallback when seed text
   mentions `lmctl_chat` even though normal installs do not provide it, and
   durable-memory as portable working context.
+- Added the Lead send-status procedure to the Skills docs and raw Lead skills:
+  run `lmctl status` before important sends, and after queued sends use
+  `lmctl status --since 7d` to read `Waiting on:` / `mailbox outbound` instead
+  of inferring delivery from exit code `0`.
 - Expanded the homepage tutorial cards to include Baby steps and Operating
   teams, and changed the Install & first run handoff to point to Baby steps
   instead of jumping directly to the older workflow tutorial.

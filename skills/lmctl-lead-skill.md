@@ -28,6 +28,11 @@ backticks, `$(...)`, `$VAR`, or quotes before lmctl sees the text:
 lmctl chat "<teamfile>.lmctl" Coder --prompt-file task.md
 ```
 
+For important sends, run `lmctl status` first to see receiver busy/idle state
+and existing lanes. If the send queues, run `lmctl status --since 7d` and read
+`Waiting on:` / `mailbox outbound` instead of inferring delivery from exit code
+`0`.
+
 Queued member mail is delivered by the next `lmctl chat` from that same sender
 to that same receiver after it is free. A chat from another sender to the same
 receiver does not flush it. That chat delivers the sender's backlog plus the

@@ -31,6 +31,12 @@ A positional prompt is assembled by your shell first. Backticks, `$(...)`,
 `$VAR`, and quotes can change before lmctl sees the text. `--prompt-file`
 avoids that shell layer.
 
+For important sends, especially cross-team reports or anything likely to queue,
+run `lmctl status` before sending so you know the receiver and lane state. After
+the send, run `lmctl status --since 7d` if the command returned
+`enqueued mailbox message N` or if delivery matters. Read `Waiting on:` and
+`mailbox outbound`; do not infer delivery from exit code `0`.
+
 ## Queued delegation
 
 With sender identity, `lmctl chat` queues when the receiver is busy. Exit 0

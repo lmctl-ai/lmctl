@@ -36,7 +36,10 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   sections. Added `lmctl chat --prompt-file` guidance because 0.1.154 help
   documents it as the safe input path and it directly prevents shell expansion
   of backticks, `$()`, `$VAR`, and quotes in prompts. Keep that guidance in raw
-  Lead skills too, not only the Docusaurus docs.
+  Lead skills too, not only the Docusaurus docs. Also added the standard
+  send-status procedure to raw Lead skills: run `lmctl status` before important
+  sends, and after queued sends use `lmctl status --since 7d` to inspect
+  `Waiting on:` / `mailbox outbound` instead of trusting exit code `0`.
 - 2026-07-19: Tightened deploy/link verification after independent review
   finding #8. Same-origin `/lmctl/docs/...` links that Docusaurus can check
   should be relative Markdown links. External root-prefix surfaces such as

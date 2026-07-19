@@ -31,6 +31,10 @@ Prefer `--prompt-file` for prompts containing command examples, backticks,
 `$(...)`, `$VAR`, or quotes; positional prompts are assembled by your shell
 before lmctl sees them.
 
+Before important sends, run `lmctl status` to see receiver busy/idle state and
+queued lanes. After a queued send, run `lmctl status --since 7d` and read
+`Waiting on:` / `mailbox outbound`. Exit `0` can mean queued, not delivered.
+
 Warmup/connectivity check first:
 
 ```sh
