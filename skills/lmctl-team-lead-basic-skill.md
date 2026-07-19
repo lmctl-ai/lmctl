@@ -25,11 +25,14 @@ narrating "I'll delegate to Coder" does nothing.
 From inside your member session, `lmctl chat` queues when the receiver is busy.
 Exit 0 with `enqueued mailbox message N` means queued, not delivered yet.
 
-Queued member mail is delivered by the next `lmctl chat` to that same receiver
-after it is free. That chat delivers the backlog plus the new message in one
-turn. Exit 0 with `enqueued mailbox message N` means queued, not delivered yet.
-If a human is holding the receiver with `lmctl terminal`, the queue is supposed
-to wait until that terminal lock is released.
+Queued member mail is delivered by the next `lmctl chat` from that same sender
+to that same receiver after it is free. A chat from another sender to the same
+receiver does not flush it. That chat delivers the sender's backlog plus the new
+message in one turn. Exit 0 with `enqueued mailbox message N` means queued, not
+delivered yet. If the sender is idle waiting for the reply and never sends
+again, this can deadlock. If a human is holding the receiver with
+`lmctl terminal`, the queue is supposed to wait until that terminal lock is
+released.
 
 Supervisor notifications are not regular agent work. `notify_all` is real only
 as root/supervisor tooling (`admincli notify`, `admincli watch`, standalone
@@ -40,7 +43,7 @@ it.
 
 | Old habit | Use now |
 | --- | --- |
-| old async chat flags or detached-job patterns | Removed. Use normal `lmctl chat`; if a member-session receiver is busy, lmctl queues internally. |
+| old removed chat flags or background-job patterns | Removed. Use normal `lmctl chat`; if a member-session receiver is busy, lmctl queues internally. |
 | `--from` / `I_am=` | No identity flag. Member identity is `LMCTL_SELF_SESSIONID` only. |
 | old send/receive/loop verbs | Use member-run `chat`; queue handling is internal. |
 | `_CONNECT_` / `lmctl connect` | Direct cross-team `lmctl chat ../other-team.lmctl <alias> "..."`; `_CONNECT_` is a dead no-op. |
@@ -49,7 +52,7 @@ it.
 
 Never sleep for member completion. Either you are inside a blocking `chat`, or
 you are waiting for the receiver to become free so the next `chat` can deliver
-queued mail.
+queued mail from the same sender.
 
 ## Watch a member without disturbing it
 ```sh

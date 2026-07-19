@@ -47,14 +47,16 @@ That's expected. **Pause and retry**, or `lmctl tail` to watch — don't hammer 
 operator chat can't jump the queue. From inside a member session, `chat` queues
 for a busy target instead of interrupting it. Do not hammer it; use `tail` or
 `health` to inspect without waking. Queued member mail is delivered by the next
-`lmctl chat` to that same receiver after the receiver is free; a live
-`lmctl terminal` lock is a valid reason to stay busy.
+`lmctl chat` from that same sender to that same receiver after the receiver is
+free; a chat from another sender to the same receiver does not flush it. If the
+sender is idle waiting for the reply and never sends again, this can deadlock.
+A live `lmctl terminal` lock is a valid reason to stay busy.
 
 ## Cross-team calls
 A Lead can call a member of another team at runtime (cycle-protected automatically). The legacy
 static `_CONNECT_` directive is a **deprecated no-op** — ignore it; cross-team reach is just a
 normal runtime `lmctl chat` to the other team's member. From a member session,
-busy cross-team targets follow the same sender-to-receiver lifecycle.
+busy cross-team targets follow the same `(sender, receiver)` lane lifecycle.
 
 ## Warm up the channel
 Right after seeding, ping each member once (`lmctl chat "<teamfile>" Coder "reply OK"`) before

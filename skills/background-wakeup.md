@@ -11,8 +11,10 @@ Default delegation is synchronous `lmctl chat`: it blocks for one member turn
 and returns that member's reply.
 
 Do not document a separate lmctl wake/harvest command for LLMs to call.
-Queued member mail is delivered by the next `lmctl chat` to that same receiver
-after the receiver is free. Supervisor notification tooling is
-root/supervisor-only, not regular agent workflow.
+Queued member mail is delivered by the next `lmctl chat` from that same sender
+to that same receiver after the receiver is free. A chat from another sender to
+the same receiver does not flush it. If the sender is idle waiting for the
+reply and never sends again, this can deadlock. Supervisor notification tooling
+is root/supervisor-only, not regular agent workflow.
 
 Use the Lead skill for current delegation guidance.

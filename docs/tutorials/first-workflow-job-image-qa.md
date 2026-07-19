@@ -48,8 +48,9 @@ lmctl chat ./team.lmctl Lead "Run an image QA pass on /tmp/lmctl-image-qa/sample
 
 `lmctl chat` blocks for the Lead's turn and prints the reply. The Lead can
 delegate to members with the same command. If a member-session target is busy,
-lmctl queues the message; the next chat to that same receiver delivers the
-queued lane plus the new message once the receiver is free.
+lmctl queues the message in that `(sender, receiver)` lane. The next chat from
+that same sender to that same receiver delivers the queued lane plus the new
+message once the receiver is free.
 
 ## Check team/self status
 

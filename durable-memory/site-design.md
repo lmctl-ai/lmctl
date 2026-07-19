@@ -47,8 +47,10 @@ Content conventions (keep these consistent across pages):
 - The product/platform is **lmctl**; the command is **`lmctl`**.
 - Install is `npm install -g @lmctl-ai/lmctl`.
 - The `lmctl` CLI is a **direct, local** tool — it sets up *and* operates
-  everything; do not frame it as a network client. `lmctl serve` is the local
-  daemon that executes queued work.
+  everything; do not frame it as a network client. Do not describe `lmctl serve`
+  as the queued-member-mail delivery mechanism; base queued mail is scoped to a
+  `(sender, receiver)` lane and is delivered by the same sender's next chat to
+  that receiver.
 - The **lmctl.ai** web console is **optional** (free/premium subscription), not
   required.
 - Keep examples runnable. Redirect daemon logs in examples:

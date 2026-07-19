@@ -117,8 +117,9 @@ lmctl status
 Look at `mailbox outbound`. A pending sender-to-receiver lane means the message
 is queued; it has not disappeared. If the original `chat` exited 0 with
 `enqueued mailbox message N`, that also means queued, not delivered yet. The
-next `lmctl chat` to that same receiver delivers the queued lane plus the new
-message in one turn, once the receiver is free:
+next `lmctl chat` from that same sender to that same receiver delivers that
+sender's queued lane plus the new message in one turn, once the receiver is
+free. A chat from another sender to the same receiver does not flush your lane:
 
 ```bash
 lmctl chat <teamfile.lmctl> <alias> "Continue with this queued work."
@@ -132,13 +133,20 @@ lmctl health <teamfile.lmctl> <alias> --json
 
 A receiver can be legitimately busy because a human is holding it with
 `lmctl terminal`. That is correct behavior, not a stuck queue. While the
-terminal lock is live, the next chat cannot deliver the queued lane yet. It
-delivers after the human exits the terminal and the receiver is free.
+terminal lock is live, the same sender's next chat cannot deliver the queued
+lane yet. It delivers after the human exits the terminal and the receiver is
+free.
 Terminal-held chat can surface as:
 
 ```text
 <alias> is held by a terminal on <host> since <time>; retry later
 ```
+
+Deadlock case: if the sender stops because it is waiting for the queued reply,
+and nothing ever sends another `lmctl chat` from that same sender to that same
+receiver, the queued mail can sit indefinitely. Treat old `Waiting on: queued`
+rows in `lmctl status` as work that needs an explicit same-sender follow-up or
+operator escalation.
 
 ## Non-default serve port
 

@@ -29,20 +29,20 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 - 2026-07-18: Corrected queued-member-mail delivery docs after operator/source
   confirmation. Public docs must say that `lmctl chat` to a busy receiver
-  enqueues, and the next `lmctl chat` to that same receiver delivers the backlog
-  plus the new message once the receiver is free. No daemon is required for
-  correctness; a daemon is only an optional accelerator. Do not document
-  `lmctl serve` as the queued-mail delivery path. A live `lmctl terminal` lock
-  makes a receiver legitimately busy; queued mail waits until the human exits
-  the terminal. Verified `lmctl 0.1.131` help no longer exposes the old async
-  chat flag.
+  enqueues, and the next `lmctl chat` from that same sender to that same
+  receiver delivers that sender's queued lane plus the new message once the
+  receiver is free. A chat from another sender to the same receiver does not
+  flush the lane. Do not document any daemon command as the queued-mail delivery
+  path. A live `lmctl terminal` lock makes a receiver legitimately busy; queued
+  mail waits until the human exits the terminal. Verified `lmctl 0.1.146` help
+  no longer exposes the old removed chat flag.
 - 2026-07-18: Processed lmctl 0.1.125 `status`. Public docs now state that
   `lmctl status` is zero-arg and team/SELF scoped from `LMCTL_SELF_SESSIONID` in
   member sessions; outside a member session it reports workspace scope with
   `identity: none`. Do not reintroduce project/cwd resolution, `status
   --project`, or `status --web`; both flags are removed for `status`.
-- 2026-07-14: Processed lmctl 0.1.122 async-chat guidance. This was superseded
-  by 0.1.131 verification; do not teach the old async chat flag as live
+- 2026-07-14: Processed lmctl 0.1.122 removed-flag guidance. This was
+  superseded by 0.1.146 verification; do not teach the old removed chat flag as live
   guidance.
 - 2026-07-12: Processed lmctl 0.1.116. Public docs and skills now remove live
   wake-loop command guidance. `chat` is synchronous and returns the member reply;
@@ -56,12 +56,12 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 - 2026-07-11: Added a compact "If you learned an older lmctl" warning to the
   public Team Lead basic skill, with short pointers from the Meta-Lead and
   background wake-up skills. The block mapped several removed forms to later
-  wake-loop docs. This was superseded by 0.1.116 and then by 0.1.122's detached
-  async-chat guidance.
+  wake-loop docs. This was superseded by 0.1.116 and then by 0.1.122's
+  removed-flag guidance.
 - 2026-07-10: Processed lmctl 0.1.97-0.1.100 sender-driven docs. Public
   orchestration guidance centered on `chat` plus separate wake/harvest
   commands. This was superseded by later wake-loop docs, then by 0.1.116's
-  synchronous-chat guidance and 0.1.122's async-chat option.
+  synchronous-chat guidance and 0.1.122's removed-flag option.
   Added the public lifecycle
   `queued -> in-flight -> delivered with receipt` and at-least-once delivery
   note.
@@ -81,7 +81,7 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   returned one finished row plus one in-flight row; the next call returned
   the remaining completion.
   The docs also stated that chat and local commands remained blocking and
-  backgrounding is done by the harness or shell, not by a detached-mode flag.
+  backgrounding is done by the harness or shell, not by an lmctl flag.
 - 2026-07-08: Processed `lmctldoc` room backlog seq 7-8 after the lmchat
   Unicode filename download fix. That receiver-pull queue pass was superseded
   by later sender-driven docs.

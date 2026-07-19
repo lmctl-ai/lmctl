@@ -37,25 +37,22 @@ queued -> in-flight -> delivered with receipt
 Delivery is at-least-once: after a crash, a queued message may be delivered
 again rather than lost.
 
-What delivers queued mail: your next `lmctl chat` to that same receiver. When
-the receiver is free, that chat delivers the whole queued lane plus the new
-message in one turn. No daemon is required for correctness; a daemon is only an
-optional accelerator. If the receiver is still in a provider turn, or a human
-is holding that member with `lmctl terminal`, the mail waits. Nothing is lost.
-Run `lmctl status` to see pending outbound lanes and member busy/idle state.
+What delivers queued mail: the sender's next `lmctl chat` to that same
+receiver. Mail queued by a different sender is not affected; each `(sender,
+receiver)` pair has its own lane. When the receiver is free, that chat delivers
+that sender's queued lane plus the new message in one turn. If the receiver is
+still in a provider turn, or a human is holding that member with
+`lmctl terminal`, the mail waits. Nothing is lost.
 
-## Daemon and supervisor tooling
-
-`lmctl serve` starts local daemon and service integrations. It is not required
-for queued member-mail correctness. Regular LLM agents should treat background
-supervision as runtime/operator infrastructure, not as a separate command they
-must call to harvest member replies.
+Practical consequence: this can deadlock. If the sender is idle because it is
+waiting for the queued reply, and nobody sends another `lmctl chat` from that
+same sender to that receiver, the queued mail will not unblock itself. Run
+`lmctl status` to see pending outbound lanes and member busy/idle state.
 
 ## Quick choice
 
 | Need | Use |
 | --- | --- |
 | Ask one member and receive the reply | `lmctl chat <teamfile> <alias> "<prompt>"` |
-| Deliver queued member mail | Send the next `lmctl chat` to the same receiver after it is free |
+| Deliver queued member mail | Send the next `lmctl chat` from the same sender to the same receiver after it is free |
 | Inspect pending mailbox lanes | `lmctl status` |
-| Run local services | `lmctl serve` |

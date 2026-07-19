@@ -19,9 +19,11 @@ Use `chat` when you need to drive a member turn and get a reply. From inside a
 member session, `chat` queues if the target is busy; a plain operator shell can
 drive direct `chat`, but cannot queue as a member. Queued work follows
 `queued -> in-flight -> delivered with receipt` and is at-least-once.
-The next `lmctl chat` to that same receiver delivers queued lanes after the
-receiver is free; if a human is holding the receiver with `lmctl terminal`, the
-queue waits until that lock is released.
+The next `lmctl chat` from that same sender to that same receiver delivers that
+sender's queued lane after the receiver is free. A chat from another sender to
+the same receiver does not flush it. If the sender is idle waiting for the
+reply and never sends again, this can deadlock. If a human is holding the
+receiver with `lmctl terminal`, the queue waits until that lock is released.
 
 Warmup/connectivity check first:
 

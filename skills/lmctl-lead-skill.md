@@ -20,9 +20,12 @@ lmctl chat "<teamfile>.lmctl" Coder "Implement X. Commit when tests pass."
 operator shell can use this flagless form. From inside your member session, if
 the target is busy, `chat` queues the message in your sender-to-receiver lane.
 
-Queued member mail is delivered by the next `lmctl chat` to that same receiver
-after it is free. That chat delivers the backlog plus the new message in one
-turn; terminal-held receivers wait until the human exits `lmctl terminal`.
+Queued member mail is delivered by the next `lmctl chat` from that same sender
+to that same receiver after it is free. A chat from another sender to the same
+receiver does not flush it. That chat delivers the sender's backlog plus the
+new message in one turn. If the sender is idle waiting for the reply and never
+sends again, this can deadlock; terminal-held receivers wait until the human
+exits `lmctl terminal`.
 
 Inspect without disturbing a member:
 

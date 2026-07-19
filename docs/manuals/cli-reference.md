@@ -108,9 +108,11 @@ lmctl chat ./team.lmctl Coder "status note"
 ```
 
 Exit 0 with `enqueued mailbox message N` means the prompt is queued, not
-delivered yet. The next `lmctl chat` to that same receiver delivers the queued
-lane plus the new message in one turn once the receiver is free. A receiver held
-by `lmctl terminal` is legitimately busy, so mail waits rather than failing.
+delivered yet. The next `lmctl chat` from that same sender to that same receiver
+delivers that sender's queued lane plus the new message in one turn once the
+receiver is free. A chat from another sender to the same receiver does not
+flush the lane. A receiver held by `lmctl terminal` is legitimately busy, so
+mail waits rather than failing.
 
 ## Inspecting state
 
@@ -153,11 +155,13 @@ Delivery is at-least-once: if a process dies after sending but before marking
 rows delivered, lmctl may deliver the same queued message again. A duplicate is
 preferable to losing work.
 
-What delivers queued mail: the next `lmctl chat` to that same receiver. When
-the receiver is free, that chat delivers the whole queued lane plus the new
-message in one turn. No daemon is required for correctness; a daemon is only an
-optional accelerator. If the receiver is still in a provider turn, or a human
-is holding that member with `lmctl terminal`, the mail waits. There is no
+What delivers queued mail: the next `lmctl chat` from that same sender to that
+same receiver. When the receiver is free, that chat delivers that sender's
+queued lane plus the new message in one turn. Mail queued by a different sender
+is not affected; each `(sender, receiver)` pair has its own lane. If the
+receiver is still in a provider turn, or a human is holding that member with
+`lmctl terminal`, the mail waits. If the sender is idle waiting for the reply
+and never sends again, this is a deadlock rather than normal delay. There is no
 separate LLM-called harvest command.
 
 ## Upload files

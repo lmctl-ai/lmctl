@@ -10,11 +10,11 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 ## Unreleased
 
 - Clarified the current queued-member-mail delivery model: `lmctl chat` to a
-  busy receiver enqueues, and the next `lmctl chat` to that same receiver
-  delivers the queued lane plus the new message once the receiver is free. A
-  live `lmctl terminal` lock is a valid busy state, so queued mail waits until
-  the human exits the terminal.
-- Verified against `lmctl 0.1.131` help and removed stale detached-chat
+  busy receiver enqueues, and the next `lmctl chat` from that same sender to
+  that same receiver delivers that sender's queued lane plus the new message
+  once the receiver is free. A live `lmctl terminal` lock is a valid busy state,
+  so queued mail waits until the human exits the terminal.
+- Verified against `lmctl 0.1.146` help and removed stale removed-flag
   guidance from the public manuals and skills.
 - Clarified that `notify_all` is supervisor/root tooling only:
   `admincli notify`, `admincli watch`, or standalone `notify_all.py`.

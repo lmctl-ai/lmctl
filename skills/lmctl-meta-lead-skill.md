@@ -37,9 +37,11 @@ lmctl chat "<teamA>.lmctl" Lead "status note"
 
 Delivery is at-least-once: a duplicate delivery after a crash is possible;
 losing queued work is worse.
-Queued member mail is delivered by the next `lmctl chat` to that same receiver
-after it is free. A receiver held by `lmctl terminal` is correctly busy until
-the human exits the terminal.
+Queued member mail is delivered by the next `lmctl chat` from that same sender
+to that same receiver after it is free. A chat from another sender to the same
+receiver does not flush it. If the sender is idle waiting for the reply and
+never sends again, this can deadlock. A receiver held by `lmctl terminal` is
+correctly busy until the human exits the terminal.
 
 ## Warm up a newly-seeded Lead
 When you seed a team and start talking to its Lead, open with a connectivity ping:
@@ -52,7 +54,7 @@ first hand-off.
 A Lead mid-turn **rejects** a new `chat` with a busy notice (it serves one
 turn-driving sender at a time). Operator-shell chat is refused, not queued, and
 not allowed to abort the in-flight turn. Member-session chat queues for that
-sender/receiver lane. Use `tail`/`health` to inspect without waking, then
+`(sender, receiver)` lane. Use `tail`/`health` to inspect without waking, then
 let the runtime/harness own wake and concurrency. Don't broadcast turn-driving
 chats into a working fleet.
 
