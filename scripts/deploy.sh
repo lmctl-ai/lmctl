@@ -3,6 +3,7 @@ set -euo pipefail
 
 S3_BUCKET="${S3_BUCKET:-lmctl-website-prod}"
 CF_DISTRIBUTION_ID="${CF_DISTRIBUTION_ID:-E1GKUWTM93U7IV}"
+SITE_ORIGIN="${SITE_ORIGIN:-https://lmctl.com}"
 
 if [[ -z "${S3_BUCKET}" ]]; then
   echo "S3_BUCKET resolved empty. Set S3_BUCKET or restore the production default." >&2
@@ -80,4 +81,21 @@ aws s3api put-object \
   --body skills/index.html \
   --content-type 'text/html; charset=utf-8' \
   --cache-control 'no-cache, max-age=0, must-revalidate'
-aws cloudfront create-invalidation --distribution-id "${CF_DISTRIBUTION_ID}" --paths '/skills' '/skills/' '/skills/*'
+SKILLS_INVALIDATION_ID="$(
+  aws cloudfront create-invalidation \
+    --distribution-id "${CF_DISTRIBUTION_ID}" \
+    --paths '/skills' '/skills/' '/skills/*' \
+    --query 'Invalidation.Id' \
+    --output text
+)"
+aws cloudfront wait invalidation-completed \
+  --distribution-id "${CF_DISTRIBUTION_ID}" \
+  --id "${SKILLS_INVALIDATION_ID}"
+
+for path in '/skills' '/skills/' '/skills/index.html'; do
+  body="$(curl -fsS "${SITE_ORIGIN}${path}")"
+  if ! grep -q '<title>lmctl skills</title>' <<<"${body}"; then
+    echo "skills smoke failed for ${SITE_ORIGIN}${path}" >&2
+    exit 1
+  fi
+done
