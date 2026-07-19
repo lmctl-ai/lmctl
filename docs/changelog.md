@@ -24,6 +24,8 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 - Added 0.1.151+ status visibility notes for queued-mail troubleshooting.
   `Waiting on:` keeps old undelivered mail visible so old queued work does not
   disappear behind recency caps.
+- Clarified that exit `1` from `lmctl chat` can be busy or a real error; use
+  `--json` or the message text to tell retryable busy from non-busy failures.
 - Clarified the current queued-member-mail delivery model: `lmctl chat` to a
   busy receiver enqueues, and the next `lmctl chat` from that same sender to
   that same receiver delivers that sender's queued lane plus the new message

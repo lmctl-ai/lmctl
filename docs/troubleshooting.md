@@ -241,7 +241,7 @@ lmctl chat "<teamfile>" <alias> "your task"
 ```
 
 The public docs deliberately prefer the CLI. Treat unavailable `lmctl_chat` as
-a stale seed instruction, not as a reason to stop delegation.
+a stale seed instruction and switch to `lmctl chat`.
 
 ## A delegated task failed
 

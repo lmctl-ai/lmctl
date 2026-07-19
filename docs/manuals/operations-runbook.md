@@ -130,12 +130,14 @@ timeout 60 lmctl chat ./team.lmctl:Coder "..." >/dev/null 2>&1
 | Exit `0` with the member reply | The member turn ran and returned. |
 | Exit `0` with `enqueued mailbox message N` | Queued, not delivered and not complete. |
 | `--json` with `status: "enqueued"` and `path: "enqueued"` | Machine-readable queued contract. Track it with `lmctl status`. |
-| Exit `1` with a busy message | No queued lane was created for that call; commonly lmctl had no sender identity to attach to the message. |
+| Exit `1` with `--json` `status: "busy"` or a busy message | No queued lane was created for that call; commonly lmctl had no sender identity to attach to the message. Retry only after the receiver is free. |
+| Exit `1` with `--json` `status: "error"` or other error text | Provider, delivery, or runtime error. Do not treat this as a busy retry without reading the error. |
 | Exit `124` | Your external `timeout` wrapper fired. Treat this as blind/background shell behavior owned by the wrapper, not lmctl. |
 
 Exit `0` alone does not prove delegated work is done. Prefer
 `lmctl chat ... --json` when another program or agent needs to tell queued work
-from a completed member reply. See [Verifying delegated work](./verifying-delegated-work.md).
+from a completed member reply, and to separate busy from real errors on exit
+`1`. See [Verifying delegated work](./verifying-delegated-work.md).
 
 **Supervisor notification is not regular agent work.** `notify_all` is real only
 as supervisor/root tooling: `admincli notify`, `admincli watch`, or standalone

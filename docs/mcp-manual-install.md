@@ -23,8 +23,8 @@ form instead.
 lmctl chat "<teamfile>" <alias> "your task"
 ```
 
-Do not stop after discovering that `lmctl_chat` is unavailable. The supported
-delegation path is `lmctl chat`.
+If `lmctl_chat` is missing, switch directly to the supported delegation path:
+`lmctl chat`.
 
 ## Stale bridge cleanup
 

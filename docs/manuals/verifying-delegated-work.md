@@ -13,8 +13,8 @@ The important distinction:
 - Exit `0` with a member reply means the member turn ran and returned.
 - Exit `0` with `enqueued mailbox message N` means the prompt is queued, not
   delivered or complete.
-- Exit `1` with a busy response means no queued lane was created for that call,
-  usually because lmctl had no sender identity to attach to the message.
+- Exit `1` can mean a busy response or a real error. Use `--json` or read the
+  message text before deciding whether retry is appropriate.
 
 For machine-readable automation, call `chat` with `--json`:
 
@@ -71,7 +71,9 @@ comes from `LMCTL_SELF_SESSIONID`. Some console/operator invocations may also
 carry a real identity.
 
 When lmctl has no sender identity, there is no lane to queue into. A busy
-receiver returns a busy error instead of silently creating anonymous mail.
+receiver returns a busy error instead of silently creating anonymous mail. In
+JSON, `status: "busy"` is retryable after the receiver is free; `status:
+"error"` is not the same condition.
 
 Queued mail is delivered by the next `lmctl chat` from the same sender to that
 same receiver after the receiver is free. Mail queued by another sender is not

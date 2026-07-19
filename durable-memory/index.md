@@ -40,6 +40,10 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   mention unavailable MCP `lmctl_chat`; normal installs should not expect that
   tool to exist, and public guidance remains CLI `lmctl chat`. Status
   visibility for old queued mail depends on 0.1.151+ `Waiting on:` output.
+  Avoid wording that overlaps the bad seed phrase about discovering
+  `lmctl_chat`; say to switch directly to CLI chat. Exit `1` from `lmctl chat`
+  can be busy or a real error, so use `--json` or the message text before
+  retrying.
 - 2026-07-18: Corrected queued-member-mail delivery docs after operator/source
   confirmation. Public docs must say that `lmctl chat` to a busy receiver
   enqueues, and the next `lmctl chat` from that same sender to that same
