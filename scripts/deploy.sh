@@ -68,4 +68,16 @@ aws s3 sync skills/ "s3://${S3_BUCKET}/skills/" \
 aws s3 cp skills/index.html "s3://${S3_BUCKET}/skills/index.html" \
   --content-type 'text/html; charset=utf-8' \
   --cache-control 'no-cache, max-age=0, must-revalidate'
-aws cloudfront create-invalidation --distribution-id "${CF_DISTRIBUTION_ID}" --paths '/skills/*'
+aws s3api put-object \
+  --bucket "${S3_BUCKET}" \
+  --key 'skills/' \
+  --body skills/index.html \
+  --content-type 'text/html; charset=utf-8' \
+  --cache-control 'no-cache, max-age=0, must-revalidate'
+aws s3api put-object \
+  --bucket "${S3_BUCKET}" \
+  --key 'skills' \
+  --body skills/index.html \
+  --content-type 'text/html; charset=utf-8' \
+  --cache-control 'no-cache, max-age=0, must-revalidate'
+aws cloudfront create-invalidation --distribution-id "${CF_DISTRIBUTION_ID}" --paths '/skills' '/skills/' '/skills/*'
