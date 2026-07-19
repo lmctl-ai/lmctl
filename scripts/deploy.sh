@@ -55,9 +55,43 @@ aws s3 sync build/assets/ "${DEST}assets/" \
 aws s3 cp build/sitemap.xml "${DEST}sitemap.xml" \
   --cache-control 'no-cache, max-age=0, must-revalidate'
 
-aws cloudfront create-invalidation \
+LMCTL_INVALIDATION_ID="$(
+  aws cloudfront create-invalidation \
+    --distribution-id "${CF_DISTRIBUTION_ID}" \
+    --paths '/lmctl/*' \
+    --query 'Invalidation.Id' \
+    --output text
+)"
+aws cloudfront wait invalidation-completed \
   --distribution-id "${CF_DISTRIBUTION_ID}" \
-  --paths '/lmctl/*'
+  --id "${LMCTL_INVALIDATION_ID}"
+
+live_revision="$(curl -fsS "${SITE_ORIGIN}/lmctl/sourceRevision.json")"
+if ! grep -q "\"sourceRevision\":\"${SOURCE_REVISION}\"" <<<"${live_revision}"; then
+  echo "lmctl docs smoke failed sourceRevision for ${SITE_ORIGIN}/lmctl/sourceRevision.json" >&2
+  echo "expected ${SOURCE_REVISION}, got ${live_revision}" >&2
+  exit 1
+fi
+
+for spec in \
+  '/lmctl/|Teamfile-driven AI-agent coordination' \
+  '/lmctl/docs/skills|You were just seeded' \
+  '/lmctl/docs/tutorials/install-first-run|Baby steps' \
+  '/lmctl/docs/manuals/verifying-delegated-work|Verifying delegated work'
+do
+  path="${spec%%|*}"
+  marker="${spec#*|}"
+  headers="$(curl -fsSI "${SITE_ORIGIN}${path}")"
+  if ! grep -qi '^content-type: text/html' <<<"${headers}"; then
+    echo "lmctl docs smoke failed content-type for ${SITE_ORIGIN}${path}" >&2
+    exit 1
+  fi
+  body="$(curl -fsS "${SITE_ORIGIN}${path}")"
+  if ! grep -q "${marker}" <<<"${body}"; then
+    echo "lmctl docs smoke failed marker for ${SITE_ORIGIN}${path}: ${marker}" >&2
+    exit 1
+  fi
+done
 
 # --- skills: publish the raw skill pages to lmctl.com/skills/ (source of truth = this repo's skills/).
 # No --delete: never wipe skills published out-of-band; this only adds/updates repo-tracked ones.
@@ -101,6 +135,27 @@ for path in '/skills' '/skills/' '/skills/index.html'; do
   body="$(curl -fsS "${SITE_ORIGIN}${path}")"
   if ! grep -q '<title>lmctl skills</title>' <<<"${body}"; then
     echo "skills smoke failed for ${SITE_ORIGIN}${path}" >&2
+    exit 1
+  fi
+done
+
+for spec in \
+  '/lmprobe/|text/html|lmprobe Manual' \
+  '/skills/lmprobe-skill.md|text/markdown|# lmprobe skill' \
+  '/examples/opencode.json|application/json|"provider"'
+do
+  path="${spec%%|*}"
+  rest="${spec#*|}"
+  content_type="${rest%%|*}"
+  marker="${rest#*|}"
+  headers="$(curl -fsSI "${SITE_ORIGIN}${path}")"
+  if ! grep -qi "^content-type: ${content_type}" <<<"${headers}"; then
+    echo "public link smoke failed content-type for ${SITE_ORIGIN}${path}" >&2
+    exit 1
+  fi
+  body="$(curl -fsS "${SITE_ORIGIN}${path}")"
+  if ! grep -Fq "${marker}" <<<"${body}"; then
+    echo "public link smoke failed marker for ${SITE_ORIGIN}${path}: ${marker}" >&2
     exit 1
   fi
 done

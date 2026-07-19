@@ -226,7 +226,7 @@ lmctl device prompt --root ./team.lmctl --text "Summarize current status"
 
 The `lmctl mcp` bridge exists for optional manual experiments, but lmctl no
 longer installs or relies on it by default. See
-[MCP manual install](/lmctl/docs/mcp-manual-install).
+[MCP manual install](../mcp-manual-install.md).
 
 ## Debug logs
 

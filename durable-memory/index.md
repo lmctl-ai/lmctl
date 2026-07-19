@@ -27,15 +27,27 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-07-19: Tightened deploy/link verification after independent review
+  finding #8. Same-origin `/lmctl/docs/...` links that Docusaurus can check
+  should be relative Markdown links. External root-prefix surfaces such as
+  `/skills/`, `/examples/`, and `/lmprobe` remain published-site checks. The
+  manual deploy script now waits for `/lmctl/*` CloudFront invalidation and
+  smokes live `sourceRevision`, homepage, Skills docs, Install & first run, and
+  Verifying delegated work. It also smokes `/lmprobe/`,
+  `/skills/lmprobe-skill.md`, and `/examples/opencode.json` as the current
+  root-prefix links that Docusaurus cannot validate. The Skills docs page now
+  states that normal installs do not provide `lmctl_chat`; switch directly to
+  CLI chat.
 - 2026-07-19: Added a public `/lmctl/docs/skills` Docusaurus landing page so a
   seeded agent has a visible "read this first" entry point from the main docs,
   not only the raw `/skills/` prefix. The page states the current agent
   contract: use synchronous `lmctl chat`, treat chat exit status as transport
   status, verify delegated work with `lmctl chat --json` or `lmctl status`, use
-  CLI if seed text mentions unavailable `lmctl_chat`, and keep durable
-  knowledge in `durable-memory/`. The navbar, sidebar, and footer now expose
-  Skills. The homepage now lists Baby steps and Operating teams, and Install &
-  first run hands off to Baby steps instead of the older workflow tutorial.
+  CLI if seed text mentions `lmctl_chat` because normal installs do not provide
+  it, and keep durable knowledge in `durable-memory/`. The navbar, sidebar, and
+  footer now expose Skills. The homepage now lists Baby steps and Operating
+  teams, and Install & first run hands off to Baby steps instead of the older
+  workflow tutorial.
 - 2026-07-19: Processed independent review findings for `lmctl 0.1.152`.
   Public docs and Lead skills now state that `lmctl chat` exit `0` is not a
   delegated-work completion contract: `enqueued mailbox message N` means queued,
@@ -50,9 +62,9 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   tool to exist, and public guidance remains CLI `lmctl chat`. Status
   visibility for old queued mail depends on 0.1.151+ `Waiting on:` output.
   Avoid wording that overlaps the bad seed phrase about discovering
-  `lmctl_chat`; say to switch directly to CLI chat. Exit `1` from `lmctl chat`
-  can be busy or a real error, so use `--json` or the message text before
-  retrying.
+  `lmctl_chat`; say that normal installs do not provide it and to switch
+  directly to CLI chat. Exit `1` from `lmctl chat` can be busy or a real error,
+  so use `--json` or the message text before retrying.
 - 2026-07-18: Corrected queued-member-mail delivery docs after operator/source
   confirmation. Public docs must say that `lmctl chat` to a busy receiver
   enqueues, and the next `lmctl chat` from that same sender to that same

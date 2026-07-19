@@ -17,8 +17,9 @@ The current public lmctl contract is simple:
 - Treat `lmctl chat` exit status as transport status, not task completion.
 - Use `lmctl chat --json` and `lmctl status` to distinguish queued work from a
   finished member reply.
-- If a seed prompt mentions an unavailable `lmctl_chat` MCP tool, switch to the
-  CLI command immediately. The CLI is the supported path.
+- Current seed text may mention the `lmctl_chat` MCP tool, but normal installs
+  do not provide it. Switch to the CLI command immediately. The CLI is the
+  supported path.
 - Keep durable project knowledge in `durable-memory/` so a refreshed session or
   swapped provider keeps the same working memory.
 
@@ -31,7 +32,7 @@ Start here:
   for the everyday Lead loop.
 - [Verifying delegated work](./manuals/verifying-delegated-work.md) when you
   need to know whether a delegated turn actually finished.
-- [MCP manual install](./mcp-manual-install.md) if seed text mentioned
+- [MCP manual install](./mcp-manual-install.md) if seed text mentions
   `lmctl_chat` and no such tool exists in your session.
 
 ## lmctl team operation

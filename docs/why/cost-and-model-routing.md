@@ -88,5 +88,5 @@ number that's right today is wrong next quarter. The durable advice is the
   route to.
 - [Bring your own subscriptions](./bring-your-own-subscriptions.md) — add a
   provider without switching away from the plans you already use.
-- [Templates catalog](https://lmctl.com/lmctl/docs/manuals/templates-catalog) —
+- [Templates catalog](../manuals/templates-catalog.md) —
   team patterns to start from.

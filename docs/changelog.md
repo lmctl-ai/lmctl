@@ -9,12 +9,19 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 
 ## Unreleased
 
+- Converted same-origin `/lmctl/docs/...` links that Docusaurus can check into
+  relative Markdown links, and extended `scripts/deploy.sh` to wait for the
+  `/lmctl/*` CloudFront invalidation before smoke-checking the live
+  `sourceRevision`, homepage, Skills docs page, install tutorial, and delegated
+  work verification page. Root-prefix public links that stay outside the
+  Docusaurus build, such as `/lmprobe/`, `/skills/lmprobe-skill.md`, and
+  `/examples/opencode.json`, are now deploy-smoked against the live site.
 - Added a Docusaurus `/lmctl/docs/skills` landing page for newly seeded agents,
   exposed it in the navbar/sidebar/footer, and linked it to the raw
   `/skills/` files. The page leads with the current delegation contract:
   synchronous `lmctl chat`, `lmctl chat --json`/`lmctl status` for completion
-  evidence, CLI fallback when seed text mentions unavailable `lmctl_chat`, and
-  durable-memory as portable working context.
+  evidence, CLI fallback when seed text mentions `lmctl_chat` even though normal
+  installs do not provide it, and durable-memory as portable working context.
 - Expanded the homepage tutorial cards to include Baby steps and Operating
   teams, and changed the Install & first run handoff to point to Baby steps
   instead of jumping directly to the older workflow tutorial.
@@ -77,7 +84,7 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
   sender-driven model.
 - Historical note: older Lead fan-out guidance used tracked background
   invocations and scoped wake primitives. This is not 0.1.116 guidance.
-- Removed the top-level `lmctl init` command. Provider setup (install + authenticate each provider CLI) is documented in the [Install & first run](/lmctl/docs/tutorials/install-first-run) tutorial; lmctl reports a missing provider or credential at use time (`seed`/`chat`). `lmctl status` no longer shows a persisted active-providers list.
+- Removed the top-level `lmctl init` command. Provider setup (install + authenticate each provider CLI) is documented in the [Install & first run](./tutorials/install-first-run.md) tutorial; lmctl reports a missing provider or credential at use time (`seed`/`chat`). `lmctl status` no longer shows a persisted active-providers list.
 - Removed the static `_CONNECT_` cross-team statement and the `lmctl connect` command. Cross-team calls now work automatically at runtime, with automatic cycle protection (a cross-team call is stopped when its target is an active ancestor and it either recurs within ~60s or has been revisited more than twice — fan-out and slow back-and-forth are allowed). Legacy `_CONNECT_` lines are ignored with a `lmctl lint` deprecation warning. DB migration v38 drops the `team_connection` table.
 - Added `provider=opencode` model-effort selection with `_MEMBER_ ... model=<id> effort=<variant>`.
   - Chat/MCP path: sends opencode ACP `session/set_config_option` for `model`, then `effort`.
