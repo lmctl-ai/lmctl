@@ -21,6 +21,13 @@ target is busy and lmctl can resolve your sender identity, `chat` queues the
 message in your sender-to-receiver lane. If there is no sender identity, busy
 returns an error instead of creating anonymous queued mail.
 
+For non-trivial prompts, use `--prompt-file` so the shell cannot expand
+backticks, `$(...)`, `$VAR`, or quotes before lmctl sees the text:
+
+```sh
+lmctl chat "<teamfile>.lmctl" Coder --prompt-file task.md
+```
+
 Queued member mail is delivered by the next `lmctl chat` from that same sender
 to that same receiver after it is free. A chat from another sender to the same
 receiver does not flush it. That chat delivers the sender's backlog plus the

@@ -81,7 +81,7 @@ _MEMBER_ alias=Reviewer provider=agy     model=<id>
 ```
 
 Use `@lmctl-ai/lmctl` 0.1.151 or newer for `model=` routing (verified against
-0.1.152). After seeding, run `lmctl health <teamfile.lmctl>` and confirm each
+0.1.154). After seeding, run `lmctl health <teamfile.lmctl>` and confirm each
 member's `MODEL` column matches the teamfile.
 
 When a team pattern recurs, capture it as Lead instructions and durable memory.

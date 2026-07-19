@@ -14,6 +14,7 @@ delegation channel works; then proceed with the task.
 Use the CLI:
 
 - `lmctl chat "<teamfile>" Coder "your task"`
+- `lmctl chat "<teamfile>" Coder --prompt-file task.md` for non-trivial prompts
 
 Use `chat` when you need to drive a member turn and get a reply. Queueing
 depends on sender identity: if lmctl can resolve a sender, `chat` queues when
@@ -25,6 +26,10 @@ sender's queued lane after the receiver is free. A chat from another sender to
 the same receiver does not flush it. If the sender is idle waiting for the
 reply and never sends again, this can deadlock. If a human is holding the
 receiver with `lmctl terminal`, the queue waits until that lock is released.
+
+Prefer `--prompt-file` for prompts containing command examples, backticks,
+`$(...)`, `$VAR`, or quotes; positional prompts are assembled by your shell
+before lmctl sees them.
 
 Warmup/connectivity check first:
 

@@ -21,6 +21,16 @@ anonymous queued mail. **Delegation is an ACTION, not a plan**: to hand work to
 a member you must actually run the command — narrating "I'll delegate to Coder"
 does nothing.
 
+For non-trivial prompts, write the prompt to a file and use:
+
+```sh
+lmctl chat "<teamfile>.lmctl" Coder --prompt-file task.md
+```
+
+A positional prompt is assembled by your shell first. Backticks, `$(...)`,
+`$VAR`, and quotes can change before lmctl sees the text. `--prompt-file`
+avoids that shell layer.
+
 ## Queued delegation
 
 With sender identity, `lmctl chat` queues when the receiver is busy. Exit 0

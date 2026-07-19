@@ -93,6 +93,18 @@ lmctl chat <sessionid> "Prompt text" --provider codex
 lmctl chat --provider codex --session <sessionid> "Prompt text"
 ```
 
+For safe input, especially prompts that contain command examples, backticks,
+shell variables, or quotes, use `--prompt-file`:
+
+```bash
+lmctl chat ./team.lmctl Coder --prompt-file task.md
+lmctl chat ./team.lmctl Coder --prompt-file -
+```
+
+With a positional prompt, your shell expands backticks, `$(...)`, `$VAR`, and
+quotes before lmctl sees the text. `--prompt-file` bypasses that shell
+construction step.
+
 By default, `chat` remains synchronous:
 
 ```bash

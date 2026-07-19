@@ -17,6 +17,9 @@ The current public lmctl contract is simple:
 - Treat `lmctl chat` exit status as transport status, not task completion.
 - Use `lmctl chat --json` and `lmctl status` to distinguish queued work from a
   finished member reply.
+- Use `lmctl chat ... --prompt-file <path>` for non-trivial prompts. Positional
+  prompts are built by the shell, so backticks, `$(...)`, `$VAR`, and quotes can
+  change before lmctl sees them.
 - Current seed text may mention the `lmctl_chat` MCP tool, but normal installs
   do not provide it. Switch to the CLI command immediately. The CLI is the
   supported path.

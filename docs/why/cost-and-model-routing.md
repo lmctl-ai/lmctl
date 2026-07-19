@@ -56,7 +56,7 @@ OpenCode reasoning-effort profile; lmctl rejects or warns on unsupported
 provider/effort combinations.
 
 Version floor: use `@lmctl-ai/lmctl` 0.1.151 or newer for model-routed teams
-(verified against 0.1.152). Earlier public-preview builds could silently ignore
+(verified against 0.1.154). Earlier public-preview builds could silently ignore
 `model=` during some seed or terminal paths. After seeding, run
 `lmctl health <teamfile.lmctl>` and confirm the `MODEL` column matches the
 teamfile before trusting a routed run.

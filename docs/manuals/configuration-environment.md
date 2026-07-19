@@ -108,7 +108,7 @@ _MEMBER_ alias=Coder provider=opencode model=<model> effort=<variant>
 ```
 
 Model routing requires `@lmctl-ai/lmctl` 0.1.151 or newer for the current seed
-and terminal behavior (verified against 0.1.152). After seeding a model-routed
+and terminal behavior (verified against 0.1.154). After seeding a model-routed
 team, run:
 
 ```bash

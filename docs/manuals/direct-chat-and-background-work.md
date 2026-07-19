@@ -23,6 +23,18 @@ This blocks until the provider turn finishes or errors. It is the right path
 for handoffs, review requests, and operator answers where the shell should stay
 attached to the result.
 
+For anything non-trivial, put the prompt in a file and use `--prompt-file`:
+
+```bash
+lmctl chat ./team.lmctl Coder --prompt-file task.md
+lmctl chat ./team.lmctl Coder --prompt-file -
+```
+
+A positional prompt is built by your shell before lmctl sees it. Backticks,
+`$(...)`, `$VAR`, and quotes can be expanded locally. `--prompt-file` avoids
+that shell layer and is the safer form for review packages, command examples,
+and long prompts. This path is available in `@lmctl-ai/lmctl` 0.1.154.
+
 ## Queued member messages
 
 When lmctl can resolve a sender identity, `lmctl chat` can still put work into
@@ -50,7 +62,7 @@ same sender to that receiver, the queued mail will not unblock itself. Run
 `lmctl status` to see pending outbound lanes and member busy/idle state.
 Use `@lmctl-ai/lmctl` 0.1.151 or newer for the `Waiting on:` visibility that
 keeps old queued mail from aging out of the status view; this page was checked
-against 0.1.152.
+against 0.1.154.
 
 ## Quick choice
 
