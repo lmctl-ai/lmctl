@@ -93,6 +93,11 @@ aws cloudfront wait invalidation-completed \
   --id "${SKILLS_INVALIDATION_ID}"
 
 for path in '/skills' '/skills/' '/skills/index.html'; do
+  headers="$(curl -fsSI "${SITE_ORIGIN}${path}")"
+  if ! grep -qi '^content-type: text/html' <<<"${headers}"; then
+    echo "skills smoke failed content-type for ${SITE_ORIGIN}${path}" >&2
+    exit 1
+  fi
   body="$(curl -fsS "${SITE_ORIGIN}${path}")"
   if ! grep -q '<title>lmctl skills</title>' <<<"${body}"; then
     echo "skills smoke failed for ${SITE_ORIGIN}${path}" >&2

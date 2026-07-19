@@ -11,13 +11,13 @@ lmctl no longer installs or relies on its MCP bridge by default. Prefer the
 The internal stdio bridge still exists as `lmctl mcp` for manual experiments.
 This path is optional and not the normal support surface.
 
-## Known issue: seeded prompts may mention `lmctl_chat`
+## Known issue: seed prompts may mention `lmctl_chat`
 
-Some older seed text may still tell an agent to use an MCP tool named
+Current seed text may still tell an agent to use an MCP tool named
 `lmctl_chat`. That tool is not registered in normal installs, and lmctl cleanup
-can remove stale bridge entries named `lmctl` or `lmctl0`. Treat the seed text
-as stale; do not repair delegation by chasing MCP registration. Use the CLI
-form instead.
+can remove bridge entries named `lmctl` or `lmctl0`. Treat this as a runtime
+seed defect, not as a docs contradiction; do not repair delegation by chasing
+MCP registration. Use the CLI form instead.
 
 ```bash
 lmctl chat "<teamfile>" <alias> "your task"

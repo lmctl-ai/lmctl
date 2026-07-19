@@ -231,7 +231,7 @@ teamfile, upgrade lmctl, or refresh/re-seed the member before assigning work.
 
 ## Seed told me to use `lmctl_chat`, but the tool is missing
 
-Some older seed text may mention an MCP tool named `lmctl_chat`. That tool is
+Current seed text may mention an MCP tool named `lmctl_chat`. That tool is
 not registered in normal installs, and lmctl cleanup can remove stale bridge
 entries named `lmctl` or `lmctl0`. Do not repair delegation by chasing MCP
 registration; use the CLI instead:
@@ -241,7 +241,7 @@ lmctl chat "<teamfile>" <alias> "your task"
 ```
 
 The public docs deliberately prefer the CLI. Treat unavailable `lmctl_chat` as
-a stale seed instruction and switch to `lmctl chat`.
+a runtime seed defect and switch to `lmctl chat`.
 
 ## A delegated task failed
 
