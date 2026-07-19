@@ -114,8 +114,12 @@ First confirm whether the message is still queued:
 lmctl status
 ```
 
-Look at `mailbox outbound`. A pending sender-to-receiver lane means the message
-is queued; it has not disappeared. If the original `chat` exited 0 with
+Use `@lmctl-ai/lmctl` 0.1.151 or newer for the `Waiting on:` status section
+that keeps old undelivered mail visible; this page was checked against 0.1.152.
+
+Look at `Waiting on:` and `mailbox outbound`. A pending sender-to-receiver lane
+means the message is queued; it has not disappeared. If the original `chat`
+exited 0 with
 `enqueued mailbox message N`, that also means queued, not delivered yet. The
 next `lmctl chat` from that same sender to that same receiver delivers that
 sender's queued lane plus the new message in one turn, once the receiver is
@@ -227,9 +231,10 @@ teamfile, upgrade lmctl, or refresh/re-seed the member before assigning work.
 
 ## Seed told me to use `lmctl_chat`, but the tool is missing
 
-Some older seed text may mention an MCP tool named `lmctl_chat`. The MCP bridge
-is optional and often not registered, so tool discovery can return no such
-tool. Use the CLI instead:
+Some older seed text may mention an MCP tool named `lmctl_chat`. That tool is
+not registered in normal installs, and lmctl cleanup can remove stale bridge
+entries named `lmctl` or `lmctl0`. Do not repair delegation by chasing MCP
+registration; use the CLI instead:
 
 ```bash
 lmctl chat "<teamfile>" <alias> "your task"

@@ -21,6 +21,9 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
   `lmctl health <teamfile.lmctl>`.
 - Added a known-issue note for stale seed text that mentions MCP `lmctl_chat`.
   Public guidance remains the CLI: `lmctl chat <teamfile> <alias> "task"`.
+- Added 0.1.151+ status visibility notes for queued-mail troubleshooting.
+  `Waiting on:` keeps old undelivered mail visible so old queued work does not
+  disappear behind recency caps.
 - Clarified the current queued-member-mail delivery model: `lmctl chat` to a
   busy receiver enqueues, and the next `lmctl chat` from that same sender to
   that same receiver delivers that sender's queued lane plus the new message

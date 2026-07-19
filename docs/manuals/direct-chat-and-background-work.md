@@ -48,6 +48,9 @@ Practical consequence: this can deadlock. If the sender is idle because it is
 waiting for the queued reply, and nobody sends another `lmctl chat` from that
 same sender to that receiver, the queued mail will not unblock itself. Run
 `lmctl status` to see pending outbound lanes and member busy/idle state.
+Use `@lmctl-ai/lmctl` 0.1.151 or newer for the `Waiting on:` visibility that
+keeps old queued mail from aging out of the status view; this page was checked
+against 0.1.152.
 
 ## Quick choice
 

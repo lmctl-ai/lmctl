@@ -37,8 +37,9 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   `/lmctl/docs/manuals/verifying-delegated-work`. Also added model-routing
   version-floor guidance: use 0.1.151+ and verify post-seed `MODEL` values with
   `lmctl health <teamfile>`. Added a known-issue note that stale seed text may
-  mention unavailable MCP `lmctl_chat`; public guidance remains CLI
-  `lmctl chat`.
+  mention unavailable MCP `lmctl_chat`; normal installs should not expect that
+  tool to exist, and public guidance remains CLI `lmctl chat`. Status
+  visibility for old queued mail depends on 0.1.151+ `Waiting on:` output.
 - 2026-07-18: Corrected queued-member-mail delivery docs after operator/source
   confirmation. Public docs must say that `lmctl chat` to a busy receiver
   enqueues, and the next `lmctl chat` from that same sender to that same

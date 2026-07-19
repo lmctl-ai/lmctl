@@ -14,9 +14,10 @@ This path is optional and not the normal support surface.
 ## Known issue: seeded prompts may mention `lmctl_chat`
 
 Some older seed text may still tell an agent to use an MCP tool named
-`lmctl_chat`. In practice the bridge is often not registered, and a tool search
-can return no such tool. Treat that as a stale seed instruction, not as a docs
-contradiction: use the CLI form instead.
+`lmctl_chat`. That tool is not registered in normal installs, and lmctl cleanup
+can remove stale bridge entries named `lmctl` or `lmctl0`. Treat the seed text
+as stale; do not repair delegation by chasing MCP registration. Use the CLI
+form instead.
 
 ```bash
 lmctl chat "<teamfile>" <alias> "your task"

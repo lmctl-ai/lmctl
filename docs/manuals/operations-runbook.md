@@ -19,6 +19,8 @@ Use `lmctl status` for the human-readable team/SELF view. In a member session
 it resolves the caller from `LMCTL_SELF_SESSIONID` and shows identity, teamfile,
 member busy/idle state, recent delegation activity, and pending mailbox lanes.
 Outside a member session it reports workspace scope with `identity: none`.
+Use `@lmctl-ai/lmctl` 0.1.151 or newer for the `Waiting on:` section that keeps
+old undelivered mail visible; this page was checked against 0.1.152.
 
 ## What is waiting for me?
 
