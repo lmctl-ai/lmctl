@@ -27,6 +27,15 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-07-19: Added a public `/lmctl/docs/skills` Docusaurus landing page so a
+  seeded agent has a visible "read this first" entry point from the main docs,
+  not only the raw `/skills/` prefix. The page states the current agent
+  contract: use synchronous `lmctl chat`, treat chat exit status as transport
+  status, verify delegated work with `lmctl chat --json` or `lmctl status`, use
+  CLI if seed text mentions unavailable `lmctl_chat`, and keep durable
+  knowledge in `durable-memory/`. The navbar, sidebar, and footer now expose
+  Skills. The homepage now lists Baby steps and Operating teams, and Install &
+  first run hands off to Baby steps instead of the older workflow tutorial.
 - 2026-07-19: Processed independent review findings for `lmctl 0.1.152`.
   Public docs and Lead skills now state that `lmctl chat` exit `0` is not a
   delegated-work completion contract: `enqueued mailbox message N` means queued,

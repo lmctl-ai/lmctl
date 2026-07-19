@@ -73,6 +73,7 @@ const sidebars: SidebarsConfig = {
         'manuals/operations-runbook',
         'manuals/configuration-environment',
         'manuals/ai-test-chapter-format',
+        'skills',
         'troubleshooting',
         'glossary',
         'changelog',

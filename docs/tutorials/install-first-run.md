@@ -98,4 +98,5 @@ newer for model-routed teams; this page was checked against 0.1.152.
 lmctl stores local state under `~/.lmctl/`. User-facing environment variables are
 prefixed `LMCTL_`.
 
-You now have enough setup for the [first workflow tutorial](./first-workflow-job-image-qa.md).
+You now have enough setup for [Baby steps](./baby-steps.md), the gentlest path
+through sessions, teamfiles, and handoffs.

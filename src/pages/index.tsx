@@ -9,14 +9,24 @@ const tutorials = [
     text: 'Install lmctl, confirm the CLI, and run your first local checks.',
   },
   {
+    title: 'Baby steps',
+    href: '/docs/tutorials/baby-steps',
+    text: 'Start with the low-commitment path: list sessions, name them, and route a review.',
+  },
+  {
     title: 'First workflow job',
     href: '/docs/tutorials/first-workflow-job-image-qa',
-    text: 'Create a project and run the image-qa workflow end to end.',
+    text: 'Older walkthrough for the image-qa path while the teamfile-first docs are being reconciled.',
   },
   {
     title: 'QA suite',
     href: '/docs/tutorials/qa-suite-ai-test-chapters',
     text: 'Use ai-test chapters to drive repeatable manual checks through workflows.',
+  },
+  {
+    title: 'Operating teams',
+    href: '/docs/tutorials/operating-workflows-cli',
+    text: 'Inspect team state, send prompts, read sessions, and track follow-up from the CLI.',
   },
 ];
 
@@ -24,17 +34,17 @@ const manuals = [
   {
     title: 'CLI / API reference',
     href: '/docs/manuals/cli-reference',
-    text: 'Lookup commands for projects, teams, workflows, jobs, runs, attentions, and issues.',
+    text: 'Lookup current commands for status, teams, sessions, chat, tail, seed, refresh, and local APIs.',
   },
   {
     title: 'Workflows & archetypes',
     href: '/docs/manuals/workflows-archetypes',
-    text: 'Understand workflow JSON, compound primitives, and routed outcomes.',
+    text: 'Historical patterns being reframed as team delegation prompts and operating shapes.',
   },
   {
     title: 'Architecture overview',
     href: '/docs/manuals/architecture-overview',
-    text: 'See how the daemon, SQLite state, provider sessions, workflows, and durable-memory fit together.',
+    text: 'See how SQLite state, provider sessions, teamfiles, chat, and durable-memory fit together.',
   },
 ];
 
@@ -50,14 +60,14 @@ function Card({title, href, text}: {title: string; href: string; text: string}) 
 export default function Home(): JSX.Element {
   return (
     <Layout
-      title="Workflow-driven AI-agent platform"
-      description="lmctl documentation for workflow-driven AI-agent automation.">
+      title="Teamfile-driven AI-agent coordination"
+      description="lmctl documentation for teamfile-driven AI-agent coordination.">
       <header className="hero heroBanner">
         <div className="container">
           <h1 className="hero__title">lmctl</h1>
           <p className="hero__subtitle">
-            Workflow-driven AI-agent platform for single-operator, Linux/WSL2,
-            SQLite-backed automation.
+            Teamfile-driven AI-agent coordination for single-operator,
+            Linux/WSL2, SQLite-backed automation.
           </p>
           <div className="heroActions">
             <Link
@@ -78,10 +88,9 @@ export default function Home(): JSX.Element {
           <div className="container">
             <h2>What lmctl does</h2>
             <p>
-              <code>lmctl</code> runs structured workflows that spawn
-              native AI provider CLIs as cooperating agents. A workflow
-              definition controls sequencing and routing, so the pipeline is
-              the organizing layer.
+              <code>lmctl</code> gives native AI provider CLIs a shared local
+              teamfile, names for members, and a chat path for handoffs. The
+              team prompt and durable memory are the organizing layer.
             </p>
             <p>
               Provider sessions are treated as disposable caches. Project

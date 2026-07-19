@@ -4,7 +4,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'lmctl',
   tagline:
-    'Workflow-driven AI-agent platform for structured, local-first automation.',
+    'Teamfile-driven AI-agent coordination for structured, local-first automation.',
   favicon: 'img/favicon.svg',
 
   url: process.env.SITE_URL ?? 'https://lmctl.com',
@@ -89,6 +89,11 @@ const config: Config = {
           position: 'left',
         },
         {
+          to: '/docs/skills',
+          label: 'Skills',
+          position: 'left',
+        },
+        {
           to: '/docs/troubleshooting',
           label: 'Troubleshooting',
           position: 'left',
@@ -108,6 +113,10 @@ const config: Config = {
             {
               label: 'Manuals / Reference',
               to: '/docs/manuals/concepts-glossary',
+            },
+            {
+              label: 'Skills',
+              to: '/docs/skills',
             },
             {
               label: 'Troubleshooting',

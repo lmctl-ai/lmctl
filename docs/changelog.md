@@ -9,6 +9,15 @@ All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 
 ## Unreleased
 
+- Added a Docusaurus `/lmctl/docs/skills` landing page for newly seeded agents,
+  exposed it in the navbar/sidebar/footer, and linked it to the raw
+  `/skills/` files. The page leads with the current delegation contract:
+  synchronous `lmctl chat`, `lmctl chat --json`/`lmctl status` for completion
+  evidence, CLI fallback when seed text mentions unavailable `lmctl_chat`, and
+  durable-memory as portable working context.
+- Expanded the homepage tutorial cards to include Baby steps and Operating
+  teams, and changed the Install & first run handoff to point to Baby steps
+  instead of jumping directly to the older workflow tutorial.
 - Verified queued delegation guidance against `lmctl 0.1.152` and documented
   the machine-readable `lmctl chat --json` queued contract:
   `status: "enqueued"` with `path: "enqueued"`. Exit code `0` alone is not a
