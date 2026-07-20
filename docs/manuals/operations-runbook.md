@@ -20,7 +20,7 @@ it resolves the caller from `LMCTL_SELF_SESSIONID` and shows identity, teamfile,
 member busy/idle state, recent delegation activity, and pending mailbox lanes.
 Outside a member session it reports workspace scope with `identity: none`.
 Use `@lmctl-ai/lmctl` 0.1.151 or newer for the `Waiting on:` section that keeps
-old undelivered mail visible; this page was checked against 0.1.154.
+old undelivered mail visible; this page was checked against 0.1.157.
 
 ## What is waiting for me?
 
@@ -139,10 +139,10 @@ Exit `0` alone does not prove delegated work is done. Prefer
 from a completed member reply, and to separate busy from real errors on exit
 `1`. See [Verifying delegated work](./verifying-delegated-work.md).
 
-**Supervisor notification is not regular agent work.** `notify_all` is real only
-as supervisor/root tooling: `admincli notify`, `admincli watch`, or standalone
-`notify_all.py`. It is observe-only by default. Regular LLM agents do not call
-it.
+**There is no LLM-called wake or harvest command.** Public agent guidance stops
+at `lmctl chat`, `lmctl chat --json`, and `lmctl status`. Private supervisor
+mechanisms are outside the lmctl product surface and are not regular agent
+commands.
 
 **Busy means "not ready yet."** Queueing depends on sender identity, not on
 whether the command came from a shell or a member transcript. If lmctl can

@@ -29,14 +29,16 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 - 2026-07-19: Processed independent review finding #10. Public docs now carry a
   Docusaurus announcement banner naming the current docs target,
-  `@lmctl-ai/lmctl 0.1.154`; verify with `npm view @lmctl-ai/lmctl version`,
+  `@lmctl-ai/lmctl 0.1.157`; verify with `npm view @lmctl-ai/lmctl version`,
   `lmctl --version`, `lmctl --help`, `lmctl chat --help`, and
   `lmctl status --help` before changing it. `docs/changelog.md` is no longer a
   single Unreleased bucket; it has docs-site updates plus release-floor
-  sections. Added `lmctl chat --prompt-file` guidance because 0.1.154 help
+  sections. Added `lmctl chat --prompt-file` guidance because 0.1.154+ help
   documents it as the safe input path and it directly prevents shell expansion
-  of backticks, `$()`, `$VAR`, and quotes in prompts. Keep that guidance in raw
-  Lead skills too, not only the Docusaurus docs. Also added the standard
+  of backticks, `$()`, `$VAR`, and quotes in prompts. Rechecked against 0.1.157
+  and removed public references to private supervisor tooling; docs should
+  describe only the agent-facing CLI. Keep prompt-file guidance in raw Lead
+  skills too, not only the Docusaurus docs. Also added the standard
   send-status procedure to raw Lead skills: run `lmctl status` before important
   sends, and after queued sends use `lmctl status --since 7d` to inspect
   `Waiting on:` / `mailbox outbound` instead of trusting exit code `0`.
@@ -61,8 +63,8 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   footer now expose Skills. The homepage now lists Baby steps and Operating
   teams, and Install & first run hands off to Baby steps instead of the older
   workflow tutorial.
-- 2026-07-19: Processed independent review findings; current docs target is
-  `lmctl 0.1.154`.
+- 2026-07-19: Processed independent review findings; current docs target was
+  `lmctl 0.1.154`, later rechecked against 0.1.157.
   Public docs and Lead skills now state that `lmctl chat` exit `0` is not a
   delegated-work completion contract: `enqueued mailbox message N` means queued,
   and `lmctl chat --json` exposes `status: "enqueued"` plus
@@ -87,7 +89,7 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   flush the lane. Do not document any daemon command as the queued-mail delivery
   path. A live `lmctl terminal` lock makes a receiver legitimately busy; queued
   mail waits until the human exits the terminal. Superseded by 2026-07-19
-  verification against `lmctl 0.1.154`.
+  verification against `lmctl 0.1.157`.
 - 2026-07-18: Processed lmctl 0.1.125 `status`. Public docs now state that
   `lmctl status` is zero-arg and team/SELF scoped from `LMCTL_SELF_SESSIONID` in
   member sessions; outside a member session it reports workspace scope with

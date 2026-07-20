@@ -103,7 +103,8 @@ lmctl chat ./team.lmctl Coder --prompt-file -
 
 With a positional prompt, your shell expands backticks, `$(...)`, `$VAR`, and
 quotes before lmctl sees the text. `--prompt-file` bypasses that shell
-construction step.
+construction step. Write the prompt file with an editor or file-writing tool,
+not with `echo` or a heredoc, because those still go through your shell.
 
 By default, `chat` remains synchronous:
 

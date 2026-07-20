@@ -29,7 +29,8 @@ lmctl chat "<teamfile>.lmctl" Coder --prompt-file task.md
 
 A positional prompt is assembled by your shell first. Backticks, `$(...)`,
 `$VAR`, and quotes can change before lmctl sees the text. `--prompt-file`
-avoids that shell layer.
+avoids that shell layer. Write the prompt file with an editor or file-writing
+tool, not `echo` or a heredoc.
 
 For important sends, especially cross-team reports or anything likely to queue,
 run `lmctl status` before sending so you know the receiver and lane state. After
@@ -51,10 +52,9 @@ again, this can deadlock. If a human is holding the receiver with
 `lmctl terminal`, the queue is supposed to wait until that terminal lock is
 released.
 
-Supervisor notifications are not regular agent work. `notify_all` is real only
-as root/supervisor tooling (`admincli notify`, `admincli watch`, standalone
-`notify_all.py`). It is observe-only by default. Regular LLM agents do not call
-it.
+There is no LLM-called wake or harvest command. Your public delegation surface
+is `lmctl chat`, plus `lmctl chat --json` and `lmctl status` for evidence.
+Private supervisor mechanisms are not regular agent commands.
 
 ## If you learned an older lmctl (removed commands)
 

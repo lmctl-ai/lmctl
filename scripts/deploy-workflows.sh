@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sync the built-in lmctl workflow catalog to lmctl.com/workflows/.
+# Sync the retired catalog experiments to lmctl.com/workflows/.
 #   bash scripts/deploy-workflows.sh
 #
 # The CANONICAL source is the private lmctl-src repo (workflows/*.compound.json +
@@ -8,7 +8,8 @@
 # (lmctl-ai/lmctl, under workflows/) so they are version-controlled + auditable,
 # then pushes that mirror to S3 so each is fetchable at
 #   https://lmctl.com/workflows/<name>.compound.json
-# and runnable via `lmctl run https://lmctl.com/workflows/<name>.compound.json`.
+# Historical mirror target for workflow catalog experiments. Current public
+# lmctl no longer documents a workflow/run command surface.
 #
 # Workflows are LIVING documents (no versioning — Wikipedia model): cache-control
 # is no-cache so an update propagates on the next fetch. The S3 sync --delete is

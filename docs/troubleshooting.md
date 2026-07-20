@@ -115,7 +115,7 @@ lmctl status
 ```
 
 Use `@lmctl-ai/lmctl` 0.1.151 or newer for the `Waiting on:` status section
-that keeps old undelivered mail visible; this page was checked against 0.1.154.
+that keeps old undelivered mail visible; this page was checked against 0.1.157.
 
 Look at `Waiting on:` and `mailbox outbound`. A pending sender-to-receiver lane
 means the message is queued; it has not disappeared. If the original `chat`
@@ -217,7 +217,7 @@ lmctl --version
 ```
 
 Model-routed teams should use 0.1.151 or newer; this page was checked against
-0.1.154. Then verify the teamfile and the live member table:
+0.1.157. Then verify the teamfile and the live member table:
 
 ```bash
 lmctl lint ./team.lmctl

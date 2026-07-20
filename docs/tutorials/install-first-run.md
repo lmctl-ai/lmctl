@@ -91,7 +91,7 @@ lmctl health ./team.lmctl
 ```
 
 The `MODEL` column should match the teamfile. Use `@lmctl-ai/lmctl` 0.1.151 or
-newer for model-routed teams; this page was checked against 0.1.154.
+newer for model-routed teams; this page was checked against 0.1.157.
 
 ## Where lmctl keeps state
 

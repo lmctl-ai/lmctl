@@ -19,7 +19,8 @@ The current public lmctl contract is simple:
   finished member reply.
 - Use `lmctl chat ... --prompt-file <path>` for non-trivial prompts. Positional
   prompts are built by the shell, so backticks, `$(...)`, `$VAR`, and quotes can
-  change before lmctl sees them.
+  change before lmctl sees them. Write the prompt file with an editor or
+  file-writing tool, not `echo` or a heredoc.
 - Run `lmctl status` before important sends and `lmctl status --since 7d` after
   queued sends. Read `Waiting on:` and `mailbox outbound`; exit `0` can still
   mean queued.

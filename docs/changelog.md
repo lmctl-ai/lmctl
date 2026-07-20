@@ -7,7 +7,7 @@ sidebar_position: 97
 
 All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 
-These docs currently describe `@lmctl-ai/lmctl` **0.1.154**. Run
+These docs currently describe `@lmctl-ai/lmctl` **0.1.157**. Run
 `lmctl --version` before following command examples.
 
 ## Docs Site Updates
@@ -34,7 +34,16 @@ These docs currently describe `@lmctl-ai/lmctl` **0.1.154**. Run
   teams, and changed the Install & first run handoff to point to Baby steps
   instead of jumping directly to the older workflow tutorial.
 
-## lmctl 0.1.154
+## lmctl 0.1.157
+
+- Rechecked public command guidance against `lmctl --help`, `lmctl chat --help`,
+  and direct unknown-command probes. The public delegation surface remains
+  `lmctl chat`; no separate agent-facing wake, poll, harvest, or detached
+  delegation command is documented.
+- Removed public references to private supervisor tooling. Public docs describe
+  the agent-facing CLI only.
+
+## lmctl 0.1.154+
 
 - Verified the current command surface against `lmctl --help`, `lmctl chat
   --help`, and `lmctl status --help`.
@@ -55,9 +64,8 @@ These docs currently describe `@lmctl-ai/lmctl` **0.1.154**. Run
 
 ## lmctl 0.1.129+
 
-- Removed stale removed-flag guidance from the public manuals and skills:
-  `chat --detach`, `more`, `wait`, `check`, `push`, and `exec` are not current
-  agent-facing delegation commands.
+- Removed stale removed-flag and wake-loop guidance from the public manuals and
+  skills. The current agent-facing delegation path is normal `lmctl chat`.
 
 ## lmctl 0.1.125+
 
@@ -70,9 +78,8 @@ These docs currently describe `@lmctl-ai/lmctl` **0.1.154**. Run
 - Added a known-issue note for current seed text that mentions MCP
   `lmctl_chat`. Public guidance remains the CLI:
   `lmctl chat <teamfile> <alias> "task"`.
-- Clarified that `notify_all` is supervisor/root tooling only:
-  `admincli notify`, `admincli watch`, or standalone `notify_all.py`.
-  It is observe-only by default. Regular LLM agents do not call it.
+- Clarified that private supervisor tooling is outside the public agent-facing
+  lmctl command surface.
 
 ## lmctl 0.1.116+
 

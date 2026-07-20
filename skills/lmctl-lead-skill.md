@@ -28,6 +28,9 @@ backticks, `$(...)`, `$VAR`, or quotes before lmctl sees the text:
 lmctl chat "<teamfile>.lmctl" Coder --prompt-file task.md
 ```
 
+Write the prompt file with an editor or file-writing tool, not `echo` or a
+heredoc.
+
 For important sends, run `lmctl status` first to see receiver busy/idle state
 and existing lanes. If the send queues, run `lmctl status --since 7d` and read
 `Waiting on:` / `mailbox outbound` instead of inferring delivery from exit code

@@ -29,7 +29,8 @@ receiver with `lmctl terminal`, the queue waits until that lock is released.
 
 Prefer `--prompt-file` for prompts containing command examples, backticks,
 `$(...)`, `$VAR`, or quotes; positional prompts are assembled by your shell
-before lmctl sees them.
+before lmctl sees them. Write the prompt file with an editor or file-writing
+tool, not `echo` or a heredoc.
 
 Before important sends, run `lmctl status` to see receiver busy/idle state and
 queued lanes. After a queued send, run `lmctl status --since 7d` and read
