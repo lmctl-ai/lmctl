@@ -38,11 +38,12 @@ lmctl chat "<teamA>.lmctl" Lead "status note"
 
 Delivery is at-least-once: a duplicate delivery after a crash is possible;
 losing queued work is worse.
-Queued member mail is delivered by the next `lmctl chat` from that same sender
-to that same receiver after it is free. A chat from another sender to the same
-receiver does not flush it. If the sender is idle waiting for the reply and
-never sends again, this can deadlock. A receiver held by `lmctl terminal` is
-correctly busy until the human exits the terminal.
+Queued member mail is keyed by `(sender, receiver)` and delivered by the next
+`lmctl chat` from that same sender to that same receiver after it is free. A
+chat from another sender to the same receiver does not flush it. If the sender
+is idle waiting for the reply and never sends again, this can deadlock. A
+receiver held by `lmctl terminal` is correctly busy until the human exits the
+terminal.
 
 ## Warm up a newly-seeded Lead
 When you seed a team and start talking to its Lead, open with a connectivity ping:

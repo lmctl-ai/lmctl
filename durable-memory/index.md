@@ -88,8 +88,11 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   receiver is free. A chat from another sender to the same receiver does not
   flush the lane. Do not document any daemon command as the queued-mail delivery
   path. A live `lmctl terminal` lock makes a receiver legitimately busy; queued
-  mail waits until the human exits the terminal. Superseded by 2026-07-19
-  verification against `lmctl 0.1.157`.
+  mail waits until the human exits the terminal. If the sender goes idle waiting
+  for the queued reply, this is deadlock, not latency. Do not restate this rule
+  without naming the sender in the delivery clause and the explicit
+  `(sender, receiver)` lane key. Superseded by 2026-07-19 verification against
+  `lmctl 0.1.157`.
 - 2026-07-18: Processed lmctl 0.1.125 `status`. Public docs now state that
   `lmctl status` is zero-arg and team/SELF scoped from `LMCTL_SELF_SESSIONID` in
   member sessions; outside a member session it reports workspace scope with

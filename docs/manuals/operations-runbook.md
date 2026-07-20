@@ -44,10 +44,12 @@ lmctl diagnose
 
 If `status` shows pending outbound mail, check whether the receiver is busy. A
 receiver can be busy because it is in a provider turn or because a human holds
-it with `lmctl terminal`; that is correct behavior. Send the next
-`lmctl chat` from the same sender to that same receiver after it is free. That
-chat delivers that sender's queued lane plus the new message in one turn. A
-chat from another sender to the same receiver does not flush the lane.
+it with `lmctl terminal`; that is correct behavior. Queued mail is keyed by
+`(sender, receiver)`: send the next `lmctl chat` from the same sender to that
+same receiver after it is free. That chat delivers that sender's queued lane
+plus the new message in one turn. A chat from another sender to the same
+receiver does not flush the lane. If the sender goes idle waiting for the
+queued reply, this is a deadlock rather than normal delay.
 
 ## Issue lifecycle
 
@@ -108,13 +110,13 @@ The delivery lifecycle is `queued -> in-flight -> delivered with receipt`.
 Delivery is at-least-once; duplicate delivery can happen after a crash, but a
 queued message should not be lost.
 
-Queued member mail is delivered by the next `lmctl chat` from the same sender
-to that same receiver. When the receiver is free, that chat delivers that
-sender's queued lane plus the new message in one turn. A chat from another
-sender to the same receiver does not flush the lane. If the receiver is still
-in a provider turn, or a human is holding it with `lmctl terminal`, the mail
-waits. If the sender is idle waiting for the reply and never sends again, this
-is a deadlock rather than normal delay.
+Queued member mail is keyed by `(sender, receiver)` and is delivered by the
+next `lmctl chat` from the same sender to that same receiver. When the receiver
+is free, that chat delivers that sender's queued lane plus the new message in
+one turn. A chat from another sender to the same receiver does not flush the
+lane. If the receiver is still in a provider turn, or a human is holding it
+with `lmctl terminal`, the mail waits. If the sender is idle waiting for the
+reply and never sends again, this is a deadlock rather than normal delay.
 
 For an intentionally blind local shell wrapper, `timeout` still has the usual
 shell semantics:

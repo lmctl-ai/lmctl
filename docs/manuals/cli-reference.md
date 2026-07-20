@@ -121,11 +121,12 @@ lmctl chat ./team.lmctl Coder "status note"
 ```
 
 Exit 0 with `enqueued mailbox message N` means the prompt is queued, not
-delivered yet. The next `lmctl chat` from that same sender to that same receiver
-delivers that sender's queued lane plus the new message in one turn once the
-receiver is free. A chat from another sender to the same receiver does not
-flush the lane. A receiver held by `lmctl terminal` is legitimately busy, so
-mail waits rather than failing.
+delivered yet. The lane is keyed by `(sender, receiver)`: the next `lmctl chat`
+from that same sender to that same receiver delivers that sender's queued lane
+plus the new message in one turn once the receiver is free. A chat from another
+sender to the same receiver does not flush the lane. If the sender goes idle
+waiting for that queued reply, this can deadlock. A receiver held by
+`lmctl terminal` is legitimately busy, so mail waits rather than failing.
 
 Use `lmctl chat ... --json` for automation. The queued contract is
 `status: "enqueued"` with `path: "enqueued"`. See

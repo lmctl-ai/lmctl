@@ -73,12 +73,12 @@ lane. The queued-mail lifecycle is:
 queued -> in-flight -> delivered with receipt
 ```
 
-The next `lmctl chat` from that same sender to that same receiver delivers that
-sender's queued lane plus the new message once the receiver is free. A chat
-from another sender to the same receiver does not flush the lane. If the sender
-is idle waiting for the reply and never sends again, queued mail can deadlock.
-A receiver held by `lmctl terminal` is legitimately busy, so mail waits instead
-of failing.
+Queued mail is keyed by `(sender, receiver)`. The next `lmctl chat` from that
+same sender to that same receiver delivers that sender's queued lane plus the
+new message once the receiver is free. A chat from another sender to the same
+receiver does not flush the lane. If the sender is idle waiting for the reply
+and never sends again, queued mail can deadlock. A receiver held by
+`lmctl terminal` is legitimately busy, so mail waits instead of failing.
 
 ```bash
 lmctl chat ./team.lmctl Coder "Implement the smallest safe fix."

@@ -71,5 +71,5 @@ against 0.1.157.
 | Need | Use |
 | --- | --- |
 | Ask one member and receive the reply | `lmctl chat <teamfile> <alias> "<prompt>"` |
-| Deliver queued member mail | Send the next `lmctl chat` from the same sender to the same receiver after it is free |
+| Deliver queued member mail | Send the next `lmctl chat` from the same sender to the same receiver after it is free; that `(sender, receiver)` lane can deadlock if the sender goes idle |
 | Inspect pending mailbox lanes | `lmctl status` |

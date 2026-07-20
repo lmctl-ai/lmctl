@@ -40,8 +40,9 @@ the send, run `lmctl status --since 7d` if the command returned
 
 ## Queued delegation
 
-With sender identity, `lmctl chat` queues when the receiver is busy. Exit 0
-with `enqueued mailbox message N` means queued, not delivered yet.
+With sender identity, `lmctl chat` queues when the receiver is busy in a
+`(sender, receiver)` lane. Exit 0 with `enqueued mailbox message N` means
+queued, not delivered yet.
 
 Queued member mail is delivered by the next `lmctl chat` from that same sender
 to that same receiver after it is free. A chat from another sender to the same
@@ -68,8 +69,9 @@ Private supervisor mechanisms are not regular agent commands.
 | old id/all/force variants | Gone. Use normal `lmctl chat`. |
 
 Never sleep for member completion. Either you are inside a blocking `chat`, or
-you are waiting for the receiver to become free so the next `chat` can deliver
-queued mail from the same sender.
+you are waiting for the receiver to become free so the next `chat` from the
+same sender to that same receiver can deliver that `(sender, receiver)` lane.
+If that sender never sends again, the queued mail can deadlock.
 
 ## Watch a member without disturbing it
 ```sh

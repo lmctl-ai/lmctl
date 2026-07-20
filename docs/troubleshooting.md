@@ -117,9 +117,9 @@ lmctl status
 Use `@lmctl-ai/lmctl` 0.1.151 or newer for the `Waiting on:` status section
 that keeps old undelivered mail visible; this page was checked against 0.1.157.
 
-Look at `Waiting on:` and `mailbox outbound`. A pending sender-to-receiver lane
-means the message is queued; it has not disappeared. If the original `chat`
-exited 0 with
+Look at `Waiting on:` and `mailbox outbound`. A pending `(sender, receiver)`
+lane means the message is queued; it has not disappeared. If the original
+`chat` exited 0 with
 `enqueued mailbox message N`, that also means queued, not delivered yet. The
 next `lmctl chat` from that same sender to that same receiver delivers that
 sender's queued lane plus the new message in one turn, once the receiver is

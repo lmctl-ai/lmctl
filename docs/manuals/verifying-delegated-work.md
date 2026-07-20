@@ -77,4 +77,5 @@ JSON, `status: "busy"` is retryable after the receiver is free; `status:
 
 Queued mail is delivered by the next `lmctl chat` from the same sender to that
 same receiver after the receiver is free. Mail queued by another sender is not
-affected.
+affected. If the sender goes idle waiting for that queued reply and never sends
+again, this is deadlock, not latency.

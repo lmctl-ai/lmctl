@@ -36,12 +36,12 @@ and existing lanes. If the send queues, run `lmctl status --since 7d` and read
 `Waiting on:` / `mailbox outbound` instead of inferring delivery from exit code
 `0`.
 
-Queued member mail is delivered by the next `lmctl chat` from that same sender
-to that same receiver after it is free. A chat from another sender to the same
-receiver does not flush it. That chat delivers the sender's backlog plus the
-new message in one turn. If the sender is idle waiting for the reply and never
-sends again, this can deadlock; terminal-held receivers wait until the human
-exits `lmctl terminal`.
+Queued member mail is keyed by `(sender, receiver)` and delivered by the next
+`lmctl chat` from that same sender to that same receiver after it is free. A
+chat from another sender to the same receiver does not flush it. That chat
+delivers the sender's backlog plus the new message in one turn. If the sender
+is idle waiting for the reply and never sends again, this can deadlock;
+terminal-held receivers wait until the human exits `lmctl terminal`.
 
 Inspect without disturbing a member:
 

@@ -50,7 +50,9 @@ lmctl chat ./team.lmctl Lead "Run an image QA pass on /tmp/lmctl-image-qa/sample
 delegate to members with the same command. If a member-session target is busy,
 lmctl queues the message in that `(sender, receiver)` lane. The next chat from
 that same sender to that same receiver delivers the queued lane plus the new
-message once the receiver is free.
+message once the receiver is free. A chat from another sender does not flush
+that lane; if the original sender goes idle waiting for the queued reply, this
+can deadlock rather than just take longer.
 
 ## Check team/self status
 

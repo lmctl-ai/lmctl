@@ -99,7 +99,8 @@ These docs currently describe `@lmctl-ai/lmctl` **0.1.157**. Run
   busy receiver enqueues, and the next `lmctl chat` from that same sender to
   that same receiver delivers that sender's queued lane plus the new message
   once the receiver is free. A live `lmctl terminal` lock is a valid busy state,
-  so queued mail waits until the human exits the terminal.
+  so queued mail waits until the human exits the terminal. If the sender goes
+  idle waiting for the queued reply, this is deadlock, not latency.
 - Verified queued delegation guidance and documented the machine-readable
   `lmctl chat --json` queued contract: `status: "enqueued"` with
   `path: "enqueued"`. Exit code `0` alone is not a delegated-work completion
