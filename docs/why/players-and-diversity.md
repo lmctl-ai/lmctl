@@ -65,7 +65,7 @@ provider examples wired up and ready to use.
 - **Across teams:** cross-team calls work **automatically at runtime**. A Lead
   can message a member of another team with no static declaration, and lmctl
   applies **automatic cycle protection** so a runaway loop can't spin forever.
-  (The old `_CONNECT_` statement was removed — there is nothing to wire.)
+  (The old `_CONNECT_` statement is legacy metadata — there is nothing to wire.)
 
 See [Cross-team calls](../manuals/teams-connect.md) for the full model.
 
@@ -81,7 +81,7 @@ _MEMBER_ alias=Reviewer provider=agy     model=<id>
 ```
 
 Use `@lmctl-ai/lmctl` 0.1.151 or newer for `model=` routing (verified against
-0.1.157). After seeding, run `lmctl health <teamfile.lmctl>` and confirm each
+0.1.158). After seeding, run `lmctl health <teamfile.lmctl>` and confirm each
 member's `MODEL` column matches the teamfile.
 
 When a team pattern recurs, capture it as Lead instructions and durable memory.

@@ -59,9 +59,9 @@ const config: Config = {
   themeConfig: {
     image: 'img/lmctl-social-card.svg',
     announcementBar: {
-      id: 'docs-target-lmctl-0-1-157',
+      id: 'docs-target-lmctl-0-1-158',
       content:
-        'These docs describe @lmctl-ai/lmctl 0.1.157. Run npm install -g @lmctl-ai/lmctl@latest --prefer-online and lmctl --version before following command examples.',
+        'These docs describe @lmctl-ai/lmctl 0.1.158. Run npm install -g @lmctl-ai/lmctl@latest --prefer-online and lmctl --version before following command examples.',
       backgroundColor: '#edf5ff',
       textColor: '#172033',
       isCloseable: false,

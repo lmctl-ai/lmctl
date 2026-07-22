@@ -75,8 +75,9 @@ If a member drifts, grows sluggish, or loses the plot:
 3. Refresh from outside that member:
    `lmctl refresh "<teamfile>.lmctl":<alias>`.
 
-The refreshed member loses chat history and re-reads durable memory. A Lead
-cannot refresh the exact session it is currently running in.
+The refreshed member loses chat history and re-reads durable memory. A session
+cannot refresh itself while it is running; refresh the target from a different
+session, another member, or an operator shell.
 
 ## Details
 

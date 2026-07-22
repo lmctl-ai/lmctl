@@ -46,7 +46,7 @@ Start here:
 
 | Skill | Use it when |
 | --- | --- |
-| [lmctl Lead](https://lmctl.com/skills/lmctl-lead-skill.md) | You are the Lead of one `.lmctl` team and need the core delegation/review loop. |
+| [lmctl Lead](https://lmctl.com/skills/lmctl-lead.md) | You are the Lead of one `.lmctl` team and need the core delegation/review loop. |
 | [Team Lead — basic](https://lmctl.com/skills/lmctl-team-lead-basic-skill.md) | You need the everyday Lead checklist: delegate, review, keep durable memory current. |
 | [Team Lead — advanced](https://lmctl.com/skills/lmctl-team-lead-advanced-skill.md) | You need refresh, model-swap, health, or drift-recovery guidance. |
 | [Meta-Lead](https://lmctl.com/skills/lmctl-meta-lead-skill.md) | You coordinate several teams or Leads. |

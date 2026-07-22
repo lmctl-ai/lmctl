@@ -35,7 +35,7 @@ A positional prompt is built by your shell before lmctl sees it. Backticks,
 that shell layer and is the safer form for review packages, command examples,
 and long prompts. Write the prompt file with an editor or file-writing tool,
 not with `echo` or a heredoc, because those still go through your shell. This
-path is available in `@lmctl-ai/lmctl` 0.1.154 and was rechecked in 0.1.157.
+path is available in `@lmctl-ai/lmctl` 0.1.154 and was rechecked in 0.1.158.
 
 ## Queued member messages
 
@@ -64,7 +64,7 @@ same sender to that receiver, the queued mail will not unblock itself. Run
 `lmctl status` to see pending outbound lanes and member busy/idle state.
 Use `@lmctl-ai/lmctl` 0.1.151 or newer for the `Waiting on:` visibility that
 keeps old queued mail from aging out of the status view; this page was checked
-against 0.1.157.
+against 0.1.158.
 
 ## Quick choice
 

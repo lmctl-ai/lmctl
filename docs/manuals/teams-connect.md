@@ -41,13 +41,14 @@ When a call is stopped, the agent receives an error like:
 cross-team cycle detected (a.lmctl:Lead → b.lmctl:Coder → a.lmctl:Lead); stopping to prevent a runaway loop.
 ```
 
-## Deprecated: `_CONNECT_` and `lmctl connect`
+## Legacy: `_CONNECT_` and `lmctl connect`
 
-The static `_CONNECT_` teamfile statement and the `lmctl connect` command have
-been removed. You no longer declare cross-team edges. Legacy teamfiles that
-still contain `_CONNECT_` lines are not broken: the lines are parsed as a no-op
-and ignored, and `lmctl lint <teamfile.lmctl>` prints a deprecation warning
-suggesting you delete them.
+The static `_CONNECT_` teamfile statement and the `lmctl connect` command are
+not the current public cross-team setup. You no longer declare cross-team
+edges. Legacy teamfiles that still contain `_CONNECT_` lines are not broken:
+the lines are parsed as a no-op and ignored, and
+`lmctl lint <teamfile.lmctl>` prints a deprecation warning suggesting you delete
+them.
 
 `lmctl lint <teamfile.lmctl>` validates the teamfile and warns about stale or
 placeholder session ids. `lmctl seed <teamfile.lmctl>` fills missing or

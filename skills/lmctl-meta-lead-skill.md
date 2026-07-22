@@ -24,7 +24,7 @@ returns the Lead reply.
 ```sh
 lmctl chat "<teamA>.lmctl" Lead "coordinate the X change with your Coder+Reviewer"
 ```
-If you remember older lmctl forms, read the removed-command block in the basic
+If you remember older lmctl forms, read the old-command block in the basic
 Lead skill. Meta-Lead work now uses synchronous `chat` by default; busy
 queueing depends on sender identity.
 
@@ -61,7 +61,8 @@ waking, then let the runtime/harness own wake and concurrency. Don't broadcast
 turn-driving chats into a working fleet.
 
 ## Refresh a drifting Lead
-A Lead can't refresh the session it's running in — but you can:
+A running session cannot refresh itself. Refresh the target Lead from a
+different session:
 ```sh
 lmctl refresh "<teamA>.lmctl":Lead
 ```

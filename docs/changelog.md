@@ -7,11 +7,20 @@ sidebar_position: 97
 
 All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 
-These docs currently describe `@lmctl-ai/lmctl` **0.1.157**. Run
+These docs currently describe `@lmctl-ai/lmctl` **0.1.158**. Run
 `lmctl --version` before following command examples.
 
 ## Docs Site Updates
 
+- Rechecked public command guidance against `lmctl 0.1.158`. Top-level help
+  now lists status, diagnose, diagnose-prompt, serve, api, device, team, chat,
+  terminal, tail, health, recover, ls, lint, seed, hire, refresh, clone,
+  workspace, plan, and db. `mcp` remains help-dispatchable but hidden from
+  top-level help.
+- Split CLI reference API guidance into current surfaces and legacy
+  compatibility notes. Retired workflow/project-engine API endpoints may still
+  dispatch, but public docs should not teach them as normal current agent
+  workflow.
 - Converted same-origin `/lmctl/docs/...` links that Docusaurus can check into
   relative Markdown links, and extended `scripts/deploy.sh` to wait for the
   `/lmctl/*` CloudFront invalidation before smoke-checking the live
@@ -33,6 +42,17 @@ These docs currently describe `@lmctl-ai/lmctl` **0.1.157**. Run
 - Expanded the homepage tutorial cards to include Baby steps and Operating
   teams, and changed the Install & first run handoff to point to Baby steps
   instead of jumping directly to the older workflow tutorial.
+
+## lmctl 0.1.158
+
+- Verified the current help surface and hidden/compatibility caveats. Public
+  agent-facing docs should prefer top-level `chat`, `status`, `tail`, `health`,
+  `lint`, `seed`, `hire`, `refresh`, `clone`, `workspace`, `plan`, `recover`,
+  and troubleshooting commands. `chat --run ... --done` remains current for
+  answering paused managed runs; do not treat `--run` as blanket-removed.
+- Refresh guidance now uses the current self-only guard observed in source and
+  runtime behavior: a running session cannot refresh itself; refresh the target
+  from a different session, another member, or an operator shell.
 
 ## lmctl 0.1.157
 
@@ -119,7 +139,8 @@ These docs currently describe `@lmctl-ai/lmctl` **0.1.157**. Run
 ## lmctl 0.1.95+
 
 - Documented the 0.1.95/0.1.96 identity cleanup. Old explicit identity flags
-  are removed; member-run commands infer identity from `LMCTL_SELF_SESSIONID`,
+  are not current public command forms; member-run commands infer identity from
+  `LMCTL_SELF_SESSIONID`,
   direct `lmctl chat <teamfile> <alias> "<prompt>"` works flaglessly from an
   operator shell, and manual self-identity invocation is explicitly
   experimental at `/lmctl/docs/manual-invocation`.
@@ -135,10 +156,10 @@ These docs currently describe `@lmctl-ai/lmctl` **0.1.157**. Run
 - Removed the top-level `lmctl init` command. Provider setup is documented in
   the [Install & first run](./tutorials/install-first-run.md) tutorial; lmctl
   reports a missing provider or credential at use time (`seed`/`chat`).
-- Removed the static `_CONNECT_` cross-team statement and the `lmctl connect`
-  command. Cross-team calls now work automatically at runtime, with automatic
-  cycle protection. Legacy `_CONNECT_` lines are ignored with a `lmctl lint`
-  deprecation warning.
+- Retired public guidance for the static `_CONNECT_` cross-team statement and
+  the `lmctl connect` command. Cross-team calls now work automatically at
+  runtime, with automatic cycle protection. Legacy `_CONNECT_` lines are
+  ignored with a `lmctl lint` deprecation warning.
 - Added `provider=opencode` model-effort selection with `_MEMBER_ ...
   model=<id> effort=<variant>`.
 - Added managed opencode provider entries for GitHub Copilot, DeepSeek, and

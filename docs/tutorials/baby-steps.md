@@ -73,7 +73,7 @@ lmctl health ./team.lmctl
 ```
 
 The `MODEL` column should match the teamfile. Use `@lmctl-ai/lmctl` 0.1.151 or
-newer for model-routed teams; this tutorial was checked against 0.1.157.
+newer for model-routed teams; this tutorial was checked against 0.1.158.
 
 ## Step 3 — Stop copy-pasting between sessions
 

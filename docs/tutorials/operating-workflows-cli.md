@@ -48,21 +48,13 @@ cross-team calls work automatically at runtime, with runtime cycle protection
 against runaway loops. See
 [Cross-team calls](../manuals/teams-connect.md) for the semantics.
 
-## File follow-up issues
+## Record follow-up work
 
-Use issues for bugs, failed QA chapters, and follow-up work:
+Use your current tracker for bugs, failed QA chapters, and follow-up work. Keep
+the entry concrete enough that another operator or member can reproduce it:
 
-```bash
-lmctl api issues create <scope> \
-  --title "Status endpoint returned 500" \
-  --body "Expected status data, received HTTP 500 during the smoke test." \
-  --severity high \
-  --labels '["api","smoke"]' \
-  --ai-test-path "ai-test/api-status-ok.md"
-```
-
-Close an issue after the fix is verified:
-
-```bash
-lmctl api issues close <id> --commit-hash <sha>
-```
+- expected result
+- observed result
+- command or page tested
+- relevant `lmctl tail` or test output
+- verification needed before closure

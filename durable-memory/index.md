@@ -27,15 +27,24 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-07-22: Verified docs against `@lmctl-ai/lmctl 0.1.158` help. Top-level
+  help lists 21 public commands: status, diagnose, diagnose-prompt, serve, api,
+  device, team, chat, terminal, tail, health, recover, ls, lint, seed, hire,
+  refresh, clone, workspace, plan, and db. `mcp` is help-dispatchable but hidden
+  from top-level help. Public docs now split current `api` surfaces from legacy
+  compatibility, avoid teaching retired workflow/project-engine endpoints as the
+  normal path, keep `chat --run ... --done` for paused managed run answers, and
+  phrase refresh as a same-session self-refresh guard rather than a role-only
+  restriction.
 - 2026-07-19: Processed independent review finding #10. Public docs now carry a
-  Docusaurus announcement banner naming the current docs target,
-  `@lmctl-ai/lmctl 0.1.157`; verify with `npm view @lmctl-ai/lmctl version`,
+  Docusaurus announcement banner naming the docs target,
+  `@lmctl-ai/lmctl 0.1.158`; verify with `npm view @lmctl-ai/lmctl version`,
   `lmctl --version`, `lmctl --help`, `lmctl chat --help`, and
   `lmctl status --help` before changing it. `docs/changelog.md` is no longer a
   single Unreleased bucket; it has docs-site updates plus release-floor
   sections. Added `lmctl chat --prompt-file` guidance because 0.1.154+ help
   documents it as the safe input path and it directly prevents shell expansion
-  of backticks, `$()`, `$VAR`, and quotes in prompts. Rechecked against 0.1.157
+  of backticks, `$()`, `$VAR`, and quotes in prompts. Rechecked against 0.1.158
   and removed public references to private supervisor tooling; docs should
   describe only the agent-facing CLI. Keep prompt-file guidance in raw Lead
   skills too, not only the Docusaurus docs. Also added the standard
@@ -64,7 +73,7 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   teams, and Install & first run hands off to Baby steps instead of the older
   workflow tutorial.
 - 2026-07-19: Processed independent review findings; current docs target was
-  `lmctl 0.1.154`, later rechecked against 0.1.157.
+  `lmctl 0.1.154`, later rechecked against 0.1.158.
   Public docs and Lead skills now state that `lmctl chat` exit `0` is not a
   delegated-work completion contract: `enqueued mailbox message N` means queued,
   and `lmctl chat --json` exposes `status: "enqueued"` plus
@@ -92,12 +101,13 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   for the queued reply, this is deadlock, not latency. Do not restate this rule
   without naming the sender in the delivery clause and the explicit
   `(sender, receiver)` lane key. Superseded by 2026-07-19 verification against
-  `lmctl 0.1.157`.
-- 2026-07-18: Processed lmctl 0.1.125 `status`. Public docs now state that
-  `lmctl status` is zero-arg and team/SELF scoped from `LMCTL_SELF_SESSIONID` in
+  `lmctl 0.1.158`.
+- 2026-07-18: Processed lmctl 0.1.125 `status`. Public docs then stated that
+  `lmctl status` was team/SELF scoped from `LMCTL_SELF_SESSIONID` in
   member sessions; outside a member session it reports workspace scope with
   `identity: none`. Do not reintroduce project/cwd resolution, `status
-  --project`, or `status --web`; both flags are removed for `status`.
+  --project`, or `status --web`; neither flag appears in current public
+  `lmctl status --help`.
 - 2026-07-14: Processed lmctl 0.1.122 removed-flag guidance. This was
   superseded by later verification; do not teach the old removed chat flag as
   live guidance.

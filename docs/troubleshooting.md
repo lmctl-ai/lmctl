@@ -9,18 +9,17 @@ Start with the diagnostic commands:
 
 ```bash
 lmctl status
-lmctl api attentions --unacked
 lmctl diagnose
 ```
 
 `lmctl diagnose` collects a support bundle (DB snapshot, recent events, and
 config) that is useful when reporting a problem.
 
-`lmctl status` is zero-arg. In a seeded member session it uses
-`LMCTL_SELF_SESSIONID` to show the current identity, teamfile, member busy/idle
-state, recent delegation activity in both directions, and pending mailbox
-lanes. Outside a member session it falls back to workspace scope with
-`identity: none`.
+`lmctl status [--json] [--since <duration|ISO8601>]` uses
+`LMCTL_SELF_SESSIONID` in a seeded member session to show the current identity,
+teamfile, member busy/idle state, recent delegation activity in both
+directions, and pending mailbox lanes. Outside a member session it falls back
+to workspace scope with `identity: none`.
 
 ## `lmctl seed` fails
 
@@ -93,7 +92,7 @@ resolves the caller from `LMCTL_SELF_SESSIONID`; there is no `--project` or
 delegation activity in both directions, and pending mailbox lanes.
 `lmctl api status` is the daemon status payload and requires the daemon API.
 
-Passing a removed project flag now fails:
+Passing a project flag to `status` fails:
 
 ```text
 error: unknown option --project; lmctl status is team/SELF scoped now
@@ -115,7 +114,7 @@ lmctl status
 ```
 
 Use `@lmctl-ai/lmctl` 0.1.151 or newer for the `Waiting on:` status section
-that keeps old undelivered mail visible; this page was checked against 0.1.157.
+that keeps old undelivered mail visible; this page was checked against 0.1.158.
 
 Look at `Waiting on:` and `mailbox outbound`. A pending `(sender, receiver)`
 lane means the message is queued; it has not disappeared. If the original
@@ -217,7 +216,7 @@ lmctl --version
 ```
 
 Model-routed teams should use 0.1.151 or newer; this page was checked against
-0.1.157. Then verify the teamfile and the live member table:
+0.1.158. Then verify the teamfile and the live member table:
 
 ```bash
 lmctl lint ./team.lmctl
@@ -245,13 +244,12 @@ a runtime seed defect and switch to `lmctl chat`.
 
 ## A delegated task failed
 
-Inspect the member transcript and then file or update an issue with concrete
-evidence:
+Inspect the member transcript and record the concrete evidence in your normal
+tracker:
 
 ```bash
 lmctl tail ./team.lmctl Coder
-lmctl api issues create <scope> \
-  --title "Status smoke failed" \
-  --body "Expected success; observed terminal failure." \
-  --severity high
 ```
+
+Legacy issue API subcommands may still dispatch for compatibility, but they are
+not the normal current agent-facing way to drive lmctl.

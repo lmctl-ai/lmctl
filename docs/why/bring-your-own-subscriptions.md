@@ -90,7 +90,7 @@ heavy typing can move to the cheapest capable seat without removing the premium
 models from the team.
 
 Use `@lmctl-ai/lmctl` 0.1.151 or newer for this `model=` routing behavior
-(verified against 0.1.157). After `lmctl seed`, run
+(verified against 0.1.158). After `lmctl seed`, run
 `lmctl health <teamfile.lmctl>` and compare the `MODEL` column with the
 teamfile. If they differ, upgrade lmctl before continuing.
 

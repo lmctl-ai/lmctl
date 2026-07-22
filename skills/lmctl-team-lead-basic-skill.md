@@ -57,16 +57,16 @@ There is no LLM-called wake or harvest command. Your public delegation surface
 is `lmctl chat`, plus `lmctl chat --json` and `lmctl status` for evidence.
 Private supervisor mechanisms are not regular agent commands.
 
-## If you learned an older lmctl (removed commands)
+## If you learned an older lmctl (older command habits)
 
 | Old habit | Use now |
 | --- | --- |
-| old removed chat flags or background-job patterns | Removed. Use normal `lmctl chat`; if a member-session receiver is busy, lmctl queues internally. |
+| old detached/background-job patterns | Current public agent-facing guidance is normal `lmctl chat`; if lmctl can resolve sender identity and the receiver is busy, it queues internally. |
 | `--from` / `I_am=` | No identity flag. Member identity is `LMCTL_SELF_SESSIONID` only. |
 | old send/receive/loop verbs | Use member-run `chat`; queue handling is internal. |
-| `_CONNECT_` / `lmctl connect` | Direct cross-team `lmctl chat ../other-team.lmctl <alias> "..."`; `_CONNECT_` is a dead no-op. |
-| old wake/harvest commands | Removed from the live surface. Do not call them from an LLM session. |
-| old id/all/force variants | Gone. Use normal `lmctl chat`. |
+| `_CONNECT_` / `lmctl connect` | Direct cross-team `lmctl chat ../other-team.lmctl <alias> "..."`; `_CONNECT_` is legacy metadata, not current public cross-team setup. |
+| old wake/harvest commands | Not the current public agent-facing surface. Do not call them from an LLM session. |
+| old id/all/force variants | Not current public agent-facing guidance. Use normal `lmctl chat`. |
 
 Never sleep for member completion. Either you are inside a blocking `chat`, or
 you are waiting for the receiver to become free so the next `chat` from the

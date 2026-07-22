@@ -20,7 +20,7 @@ it resolves the caller from `LMCTL_SELF_SESSIONID` and shows identity, teamfile,
 member busy/idle state, recent delegation activity, and pending mailbox lanes.
 Outside a member session it reports workspace scope with `identity: none`.
 Use `@lmctl-ai/lmctl` 0.1.151 or newer for the `Waiting on:` section that keeps
-old undelivered mail visible; this page was checked against 0.1.157.
+old undelivered mail visible; this page was checked against 0.1.158.
 
 ## What is waiting for me?
 
@@ -51,9 +51,14 @@ plus the new message in one turn. A chat from another sender to the same
 receiver does not flush the lane. If the sender goes idle waiting for the
 queued reply, this is a deadlock rather than normal delay.
 
-## Issue lifecycle
+## Legacy issue compatibility
 
-List open issues:
+Some older issue API subcommands may still dispatch for compatibility, but they
+are not the normal current agent-facing way to drive lmctl. Prefer your
+operator's current tracker unless they explicitly ask for legacy API issue
+commands.
+
+List open legacy issues:
 
 ```bash
 lmctl api issues list <scope> --status open --json
@@ -68,7 +73,7 @@ lmctl api issues create <scope> \
   --severity high
 ```
 
-Close an issue after the fix is verified:
+Close a legacy issue after the fix is verified:
 
 ```bash
 lmctl api issues close <id> --commit-hash <sha>
@@ -178,9 +183,9 @@ lmctl refresh ./team.lmctl Lead       # the Lead, too
 `refresh` clears the member's session id and re-seeds it. The refreshed member
 loses its chat history but re-reads `durable-memory/`, so durable knowledge
 survives a refresh, a provider swap, or moving the project. A member **cannot
-refresh the session it is itself running in** — run the refresh from outside that
-session (a meta-Lead, or you at the shell). That is the supported way to recover
-a hung Lead.
+refresh the session it is itself running in**. Run the refresh from a different
+session, another member, or an operator shell. That is the supported way to
+recover a hung member or Lead.
 
 If a member handoff fails or never lands, verify that the Lead actually ran
 `lmctl chat` rather than only narrating its intent. A Lead that says "Coder is

@@ -103,6 +103,12 @@ aws s3 sync skills/ "s3://${S3_BUCKET}/skills/" \
 aws s3 cp skills/index.html "s3://${S3_BUCKET}/skills/index.html" \
   --content-type 'text/html; charset=utf-8' \
   --cache-control 'no-cache, max-age=0, must-revalidate'
+# Operator-facing short alias for the Lead skill. The canonical source file is
+# skills/lmctl-lead-skill.md; keep this copy in the deploy script so the raw
+# URL /skills/lmctl-lead.md stays usable without duplicating source content.
+aws s3 cp skills/lmctl-lead-skill.md "s3://${S3_BUCKET}/skills/lmctl-lead.md" \
+  --content-type 'text/markdown; charset=utf-8' \
+  --cache-control 'no-cache, max-age=0, must-revalidate'
 aws s3api put-object \
   --bucket "${S3_BUCKET}" \
   --key 'skills/' \
@@ -138,6 +144,17 @@ for path in '/skills' '/skills/' '/skills/index.html'; do
     exit 1
   fi
 done
+
+headers="$(curl -fsSI "${SITE_ORIGIN}/skills/lmctl-lead.md")"
+if ! grep -qi '^content-type: text/markdown' <<<"${headers}"; then
+  echo "skills smoke failed content-type for ${SITE_ORIGIN}/skills/lmctl-lead.md" >&2
+  exit 1
+fi
+body="$(curl -fsS "${SITE_ORIGIN}/skills/lmctl-lead.md")"
+if ! grep -q '# lmctl Lead skill' <<<"${body}"; then
+  echo "skills smoke failed marker for ${SITE_ORIGIN}/skills/lmctl-lead.md" >&2
+  exit 1
+fi
 
 for spec in \
   '/lmprobe/|text/html|lmprobe Manual' \

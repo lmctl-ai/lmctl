@@ -20,8 +20,9 @@ provider CLI, optional model, and provider session directory.
 A message from one team's Lead to a member of another team. Cross-team calls
 work automatically at runtime over the chat / MCP path — no declaration is
 needed. Runtime cycle protection stops only genuine runaway recursion. The old
-`_CONNECT_` statement and `lmctl connect` command have been removed; legacy
-`_CONNECT_` lines are ignored with a lint deprecation warning.
+`_CONNECT_` statement and `lmctl connect` command are legacy setup forms, not
+the current public cross-team path; legacy `_CONNECT_` lines are ignored with a
+lint deprecation warning.
 
 ## workflow / archetype
 

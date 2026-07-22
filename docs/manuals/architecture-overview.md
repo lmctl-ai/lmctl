@@ -73,11 +73,10 @@ provider changes. This is the load-bearing design idea: because canonical state
 lives in durable-memory and sessions are just cache, drift, compaction, and
 provider swaps are cheap.
 
-## Attentions
+## Operator notifications
 
-An attention is a durable operator notification. It lets the runtime preserve
-conditions that need visibility even after a shell session exits.
-
-```bash
-lmctl api attentions --json
-```
+An operator notification is durable state about a condition that needs
+visibility even after a shell session exits. Older API compatibility surfaces
+may expose this as "attentions", but current public agent workflows should use
+`lmctl status`, `lmctl tail`, and the operator's normal tracker instead of
+driving attention endpoints directly.

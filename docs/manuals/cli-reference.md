@@ -26,11 +26,10 @@ lmctl diagnose
 lmctl serve > lmctl.log 2>&1 &
 ```
 
-`lmctl status` is zero-arg. In a seeded member session it identifies the caller
-from `LMCTL_SELF_SESSIONID` and reports identity, teamfile, member busy/idle
-state, recent delegation activity, and mailbox lanes. Outside a member session
-it reports workspace scope with `identity: none`. `--project` and `--web` are
-not `status` options; `--json` returns full unbounded status data.
+`lmctl status [--json] [--since <duration|ISO8601>]` shows the member/team view
+when `LMCTL_SELF_SESSIONID` resolves, and a workspace summary otherwise.
+`--project` and `--web` are not `status` options; use `--since 7d` or an ISO
+timestamp to widen the activity window.
 
 `lmctl serve` starts the local HTTP API, web UI, queue daemon, terminal manager,
 and agent services for local service integrations. The optional
@@ -132,23 +131,25 @@ Use `lmctl chat ... --json` for automation. The queued contract is
 `status: "enqueued"` with `path: "enqueued"`. See
 [Verifying delegated work](./verifying-delegated-work.md).
 
-## Inspecting state
+## Current API surfaces
 
-These `lmctl api <noun>` commands call the local lmctl API or selected direct
-DAL endpoints:
+`lmctl api` calls the local HTTP API or selected direct DAL endpoints. Keep the
+current public docs focused on operational surfaces rather than retired
+workflow/project-engine endpoints:
 
 ```bash
 lmctl api status
 lmctl api teams
 lmctl api daemon state
 lmctl api daemon cycle
-lmctl api attentions
 lmctl api external-objects
 lmctl api external-signals
 ```
 
-Many list commands support `--json`. Prefer JSON when another program or agent
-will parse the output.
+Many API commands support `--json`. Prefer JSON when another program or agent
+will parse the output. Use `lmctl help api` to confirm the installed command
+shape, and treat subcommands as API-specific or advanced unless current
+operator guidance names them.
 
 ## Foreground/background ownership
 
@@ -184,34 +185,23 @@ receiver is still in a provider turn, or a human is holding that member with
 and never sends again, this is a deadlock rather than normal delay. There is no
 separate LLM-called harvest command.
 
-## Upload files
+## Legacy compatibility APIs
 
-`lmctl api upload` is not part of the current public quick path. Use
-`lmctl api --help` and the local daemon documentation for API-specific upload
-experiments.
-
-## Attentions
+Some older workflow/project-engine API subcommands may still dispatch for
+compatibility. They are not the normal current agent-facing way to drive lmctl:
 
 ```bash
-lmctl api attentions
-lmctl api attentions --unacked
-lmctl api attention ack <id>
+lmctl api attentions ...
+lmctl api issues ...
+lmctl api jobs ...
+lmctl api runs ...
+lmctl api workflows ...
+lmctl api projects ...
+lmctl api upload ...
 ```
 
-An attention is a persistent operator notification. Use `--unacked` to list the
-ones still awaiting acknowledgement, then ack them by id.
-
-## Issues
-
-```bash
-lmctl api issues list my-project --status open --json
-lmctl api issues show <id> --json
-lmctl api issues create my-project --title "Title" --body "Body"
-lmctl api issues close <id> --commit-hash <sha>
-lmctl api issues reopen <id>
-```
-
-Use issues for bugs, QA findings, and operator-visible follow-up work.
+Treat these as legacy compatibility or advanced API work unless your current
+operator workflow explicitly calls for them.
 
 ## Sessions
 

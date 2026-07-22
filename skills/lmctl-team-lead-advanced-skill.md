@@ -17,8 +17,8 @@ it's *why* you keep canonical context in durable-memory: refresh is then nearly 
   `durable-memory/`, not in the session.
 - Before refreshing: make sure `durable-memory/` is current (that's the member's memory across the
   refresh).
-- You can't refresh the session you're *currently running in* (a Lead can refresh its members; a
-  meta-Lead/operator can refresh a Lead).
+- A session cannot refresh itself while it is running. Refresh the target from a
+  different session, another member, or an operator shell.
 
 ## Model swap
 To move a member to a different model: remove its `sessionid` from the teamfile line, optionally
@@ -41,17 +41,18 @@ or acts):
 - Use it to decide *proactively* — refresh a member **before** it degrades, not after.
 
 ## Don't fight the busy-guard
-A member serves one turn-driving sender at a time. If you `chat` a member that's mid-turn you'll get:
-`<alias> is servicing <sender> … — pause and retry, or inspect without waking it: lmctl tail …`
-That's expected. **Pause and retry**, or `lmctl tail` to watch — don't hammer it.
-Queueing depends on sender identity: if lmctl can resolve a sender, `chat`
-queues for a busy target in a `(sender, receiver)` lane instead of interrupting
-it; if there is no sender identity, busy returns an error instead of creating
-anonymous mail. Queued member mail is delivered by the next `lmctl chat` from
-that same sender to that same receiver after the receiver is free; a chat from
-another sender to the same receiver does not flush it. If the sender is idle
-waiting for the reply and never sends again, this can deadlock. A live
-`lmctl terminal` lock is a valid reason to stay busy.
+A member serves one turn-driving sender at a time. Queueing depends on sender
+identity: if lmctl can resolve a sender, `chat` queues for a busy target in a
+`(sender, receiver)` lane instead of interrupting it; if there is no sender
+identity, busy returns an error instead of creating anonymous mail. In that
+no-identity case, pause and retry later, or inspect without waking it with
+`lmctl tail`.
+
+Queued member mail is delivered by the next `lmctl chat` from that same sender
+to that same receiver after the receiver is free; a chat from another sender to
+the same receiver does not flush it. If the sender is idle waiting for the
+reply and never sends again, this can deadlock. A live `lmctl terminal` lock is
+a valid reason to stay busy.
 
 ## Cross-team calls
 A Lead can call a member of another team at runtime (cycle-protected automatically). The legacy
