@@ -32,42 +32,50 @@ Write the prompt file with an editor or file-writing tool, not `echo` or a
 heredoc.
 
 For important sends, run `lmctl status` first to see receiver busy/idle state
-and existing lanes. If the send queues, run `lmctl status --since 7d` and read
-`Waiting on:` / `mailbox outbound` instead of inferring delivery from exit code
-`0`.
+and existing lanes. If the send queues, use
+`lmctl mail sent --to "<teamfile>:<alias>" --status queued --json` or
+`--status delivered --json` for the precise delivery state; keep
+`lmctl status --since 7d` as the broader team/activity view. Do not infer
+delivery from exit code `0`.
 
-Queued member mail is keyed by `(sender, receiver)` and delivered by the next
-`lmctl chat` from that same sender to that same receiver after it is free. A
-chat from another sender to the same receiver does not flush it. That chat
-delivers the sender's backlog plus the new message in one turn. If the sender
-is idle waiting for the reply and never sends again, this can deadlock;
-terminal-held receivers wait until the human exits `lmctl terminal`.
+Queued member mail is keyed by `(sender, receiver)`. When `lmctl serve start`
+runs with daemon loops enabled (the default), its mailbox relay auto-delivers
+queued lanes after the receiver is idle; no triggering chat is required.
+Without the relay, or before the relay's next poll, the fallback trigger is the
+next `lmctl chat` from that same sender to that same receiver. A chat from
+another sender to the same receiver does not flush it. Terminal-held receivers
+wait until the human exits `lmctl terminal`.
 
 Inspect without disturbing a member:
 
 ```sh
 lmctl tail "<teamfile>.lmctl" Coder
 lmctl health "<teamfile>.lmctl" Coder
+lmctl health "<teamfile>.lmctl" --json
 ```
 
 `tail` is read-only. `health` reports session/activity and, when the provider
 exposes it, size information. Use `health` to know configured model details;
-do not ask a model what model it is.
+do not ask a model what model it is. `lmctl health "<teamfile>.lmctl" --json`
+returns a full per-member busy/liveness rollup for that teamfile, even
+cross-team; use it when you need to know whether another team's Lead is busy.
 
 Inspect mail evidence when status is not enough:
 
 ```sh
-lmctl mail sent --to "<teamfile>:<alias>" --status queued
+lmctl mail sent --to "<teamfile>:<alias>" --status queued --json
+lmctl mail sent --to "<teamfile>:<alias>" --status delivered --json
 lmctl mail history <message_id>
 lmctl mail read <message_id>
 lmctl mail seen <message_id>
 ```
 
 Before assuming a delivery problem is a bug, check
-`lmctl mail sent --status queued`; most stuck mail is a genuinely busy or
-terminal-held receiver. Use `lmctl mail history <message_id>` for the event
-sequence behind one message when `lmctl status` is too coarse. For automation,
-add `--json`; mail JSON is the stable contract, while human text is not.
+`lmctl mail sent --to "<teamfile>:<alias>" --status queued --json`; most stuck
+mail is a genuinely busy or terminal-held receiver. Use `--status delivered
+--json` for delivered messages and `lmctl mail history <message_id>` for the
+event sequence behind one message when `lmctl status` is too coarse. Mail JSON
+is the stable contract, while human text is not.
 
 After you have read or acted on a message, record that active receipt with
 `lmctl mail ack <message_id>`. `ack` appends an acknowledgement event; it is not
