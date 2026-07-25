@@ -54,6 +54,25 @@ lmctl health "<teamfile>.lmctl" Coder
 exposes it, size information. Use `health` to know configured model details;
 do not ask a model what model it is.
 
+Inspect mail evidence when status is not enough:
+
+```sh
+lmctl mail sent --to "<teamfile>:<alias>" --status queued
+lmctl mail history <message_id>
+lmctl mail read <message_id>
+lmctl mail seen <message_id>
+```
+
+Before assuming a delivery problem is a bug, check
+`lmctl mail sent --status queued`; most stuck mail is a genuinely busy or
+terminal-held receiver. Use `lmctl mail history <message_id>` for the event
+sequence behind one message when `lmctl status` is too coarse. For automation,
+add `--json`; mail JSON is the stable contract, while human text is not.
+
+After you have read or acted on a message, record that active receipt with
+`lmctl mail ack <message_id>`. `ack` appends an acknowledgement event; it is not
+a read-only diagnostic.
+
 ## Work loop
 
 1. Hand a concrete task to Coder.
