@@ -73,6 +73,21 @@ After you have read or acted on a message, record that active receipt with
 `lmctl mail ack <message_id>`. `ack` appends an acknowledgement event; it is not
 a read-only diagnostic.
 
+If you are a terminal-held Lead, inbound mail addressed to you will not arrive
+as an injected turn while the human terminal is live. That is intentional: lmctl
+must not interrupt an interactive `lmctl terminal` session. Pull it explicitly:
+
+```sh
+lmctl status --json
+lmctl mail read <message_id>
+lmctl mail ack <message_id>
+```
+
+Use `mailbox.inbound_pending[]` in `status --json` to find queued message ids.
+`mail read` is a pure query and bypasses busy/terminal-hold state because it is
+not a delivery attempt. `ack` is optional; use it only after you read or handle
+the message.
+
 ## Work loop
 
 1. Hand a concrete task to Coder.
