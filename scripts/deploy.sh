@@ -158,6 +158,7 @@ fi
 
 for spec in \
   '/lmprobe/|text/html|lmprobe Manual' \
+  '/skills/lmctl-admin-skill.md|text/markdown|# lmctl-admin skill' \
   '/skills/lmprobe-skill.md|text/markdown|# lmprobe skill' \
   '/examples/opencode.json|application/json|"provider"'
 do
