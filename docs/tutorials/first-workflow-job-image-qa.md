@@ -48,11 +48,12 @@ lmctl chat ./team.lmctl Lead "Run an image QA pass on /tmp/lmctl-image-qa/sample
 
 `lmctl chat` blocks for the Lead's turn and prints the reply. The Lead can
 delegate to members with the same command. If a member-session target is busy,
-lmctl queues the message in that `(sender, receiver)` lane. The next chat from
-that same sender to that same receiver delivers the queued lane plus the new
-message once the receiver is free. A chat from another sender does not flush
-that lane; if the original sender goes idle waiting for the queued reply, this
-can deadlock rather than just take longer.
+lmctl queues the message in that `(sender, receiver)` lane. Base delivery is the
+next chat from that same sender to that same receiver once the receiver is free.
+A chat from another sender does not flush that lane. With `lmctl serve start`
+running in normal daemon mode, mailbox relay can drain queued lanes proactively;
+without that accelerator, if the original sender goes idle waiting for the
+queued reply, delivery can deadlock rather than just take longer.
 
 ## Check team/self status
 

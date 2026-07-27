@@ -27,6 +27,16 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-07-27: Verified the current docs draft against `@lmctl-ai/lmctl 0.1.218`
+  before review. Public docs now include `lmctl mail`, `lmctl serve
+  start/status/stop`, and `lmctl session`; retire public MCP setup guidance;
+  remove instructional `lmctl_chat`, `--detach`, and old workspace command
+  guidance; and add Kimi as a native provider. Current queued-mail guidance:
+  base delivery is the same sender's next `lmctl chat` to that receiver once it
+  is free; `lmctl serve start` in normal daemon mode is an optional accelerator
+  that can drain queued `(sender, receiver)` lanes proactively. Do not call the
+  daemon the only delivery path, and do not call same-sender chat a mere
+  fallback.
 - 2026-07-22: Verified docs against `@lmctl-ai/lmctl 0.1.158` help. Top-level
   help lists 21 public commands: status, diagnose, diagnose-prompt, serve, api,
   device, team, chat, terminal, tail, health, recover, ls, lint, seed, hire,
@@ -90,18 +100,14 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   `lmctl_chat`; say that normal installs do not provide it and to switch
   directly to CLI chat. Exit `1` from `lmctl chat` can be busy or a real error,
   so use `--json` or the message text before retrying.
-- 2026-07-18: Corrected queued-member-mail delivery docs after operator/source
-  confirmation. Public docs must say that `lmctl chat` to a busy receiver
-  enqueues, and the next `lmctl chat` from that same sender to that same
-  receiver delivers that sender's queued lane plus the new message once the
-  receiver is free. A chat from another sender to the same receiver does not
-  flush the lane. Do not document any daemon command as the queued-mail delivery
-  path. A live `lmctl terminal` lock makes a receiver legitimately busy; queued
-  mail waits until the human exits the terminal. If the sender goes idle waiting
-  for the queued reply, this is deadlock, not latency. Do not restate this rule
-  without naming the sender in the delivery clause and the explicit
-  `(sender, receiver)` lane key. Superseded by 2026-07-19 verification against
-  `lmctl 0.1.158`.
+- 2026-07-18: Historical queued-member-mail correction. This entry documented
+  same-sender chat delivery as the only path and explicitly said not to document
+  a daemon delivery path. That rule is **superseded** by 2026-07-27 verification
+  against `lmctl 0.1.218`: base delivery is same-sender next chat, while
+  mailbox relay under `lmctl serve start` is an optional accelerator. Keep the
+  `(sender, receiver)` lane key and "different senders do not flush each other's
+  lanes" nuance, but do not reuse this historical entry as current delivery
+  guidance.
 - 2026-07-18: Processed lmctl 0.1.125 `status`. Public docs then stated that
   `lmctl status` was team/SELF scoped from `LMCTL_SELF_SESSIONID` in
   member sessions; outside a member session it reports workspace scope with

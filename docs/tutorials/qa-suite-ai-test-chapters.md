@@ -68,7 +68,7 @@ lmctl status
 ## Expected
 
 - Command exits 0.
-- Output includes team/member state or workspace summary.
+- Output includes team/member state or the operator team/activity summary.
 
 ## Cleanup
 

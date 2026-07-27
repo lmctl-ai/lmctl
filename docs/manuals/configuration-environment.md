@@ -5,34 +5,30 @@ sidebar_position: 5
 
 # Configuration & environment
 
-lmctl resolves its local state from a SQLite database, normally through the
-active workspace. The variables below control which database or workspace it
-uses and, optionally, how to reach a remote daemon.
+lmctl resolves its local state from a SQLite database. The settings below cover
+which DB a command uses and, optionally, how to reach a remote daemon.
 
-## Database and workspace resolution
+## State DB resolution
 
-The verified global selectors are:
+Verified against `lmctl 0.1.218`: the current global state selector is:
 
 - `--db PATH` to point one command at a specific SQLite database.
-- `--workspace NAME` to run against an isolated workspace.
-- `lmctl workspace use <name>` to select the active workspace for later
-  commands.
+- `LMCTL_DB` to set the database for commands that do not pass `--db`.
+- `LMCTL_HOME` to move the default state root.
 
-Profiles are legacy. Use `lmctl workspace migrate` when you need to migrate old
-profile state into workspaces.
+Resolution order is `--db`, then `LMCTL_DB`, then
+`<LMCTL_HOME>/state.db`, then `~/.lmctl/state.db`.
 
-Use workspaces when you want separate local environments. In a non-interactive
-shell, provide the basedir and provider slots explicitly:
+Use a separate DB file when you want an isolated local test environment:
 
 ```bash
-lmctl workspace init --name test-workspace \
-  --basedir /tmp/lmctl-workspaces \
-  --provider1 claude \
-  --provider2 codex \
-  --provider3 gemini
-lmctl workspace use test-workspace
-lmctl --workspace test-workspace status
+lmctl --db /tmp/lmctl-doc-test/state.db status
+lmctl --db /tmp/lmctl-doc-test/state.db serve status
 ```
+
+The generic word "workspace" may still appear in prose to mean your local
+working directory or environment. Current command examples should use the
+state DB selector above rather than the old workspace command surface.
 
 ## Daemon URL and token
 
@@ -52,11 +48,11 @@ export LMCTL_API_TOKEN=<token>
 
 ## Serve port
 
-`lmctl serve` listens on port `8787` by default. If you run it on another
+`lmctl serve start` listens on port `8787` by default. If you run it on another
 port, keep the API URL in sync:
 
 ```bash
-lmctl serve --port 8788 > lmctl.log 2>&1 &
+setsid lmctl serve start --port 8788 > lmctl.log 2>&1 < /dev/null & disown
 export LMCTL_API_URL=http://127.0.0.1:8788
 ```
 
@@ -71,6 +67,7 @@ gemini
 copilot
 opencode
 qwen
+kimi
 agy
 ```
 
@@ -108,8 +105,8 @@ _MEMBER_ alias=Coder provider=opencode model=<model> effort=<variant>
 ```
 
 Model routing requires `@lmctl-ai/lmctl` 0.1.151 or newer for the current seed
-and terminal behavior (verified against 0.1.158). After seeding a model-routed
-team, run:
+and terminal behavior. This page's command shapes were checked against 0.1.218.
+After seeding a model-routed team, run:
 
 ```bash
 lmctl health ./my-team.lmctl
@@ -135,6 +132,7 @@ session is missing, check the provider's own storage and environment overrides:
 | `agy` | Antigravity CLI state under `~/.gemini/antigravity-cli`. |
 | `opencode` | OpenCode's local database, commonly under the XDG data/config paths; `OPENCODE_DB` can point at a specific database. |
 | `qwen` | Qwen CLI's native session store under the user's home directory. |
+| `kimi` | Kimi CLI's native session store under the user's home directory. |
 | `copilot` | Copilot CLI's native auth/session store. |
 
 If a provider supports multiple channels or database paths, make sure `lmctl`

@@ -33,18 +33,18 @@ heredoc.
 
 For important sends, run `lmctl status` first to see receiver busy/idle state
 and existing lanes. If the send queues, use
-`lmctl mail sent --to "<teamfile>:<alias>" --status queued --json` or
+`lmctl mail sent --to "/abs/path/team.lmctl:Alias" --status queued --json` or
 `--status delivered --json` for the precise delivery state; keep
 `lmctl status --since 7d` as the broader team/activity view. Do not infer
 delivery from exit code `0`.
 
-Queued member mail is keyed by `(sender, receiver)`. When `lmctl serve start`
-runs with daemon loops enabled (the default), its mailbox relay auto-delivers
-queued lanes after the receiver is idle; no triggering chat is required.
-Without the relay, or before the relay's next poll, the fallback trigger is the
-next `lmctl chat` from that same sender to that same receiver. A chat from
-another sender to the same receiver does not flush it. Terminal-held receivers
-wait until the human exits `lmctl terminal`.
+Queued member mail is keyed by `(sender, receiver)`. Base delivery is the next
+`lmctl chat` from that same sender to that same receiver once the receiver is
+free. A chat from another sender to the same receiver does not flush it. When
+`lmctl serve start` runs with daemon loops enabled, its mailbox relay is an
+optional accelerator that can drain queued lanes after the receiver is idle; no
+triggering chat is required. Terminal-held receivers wait until the human exits
+`lmctl terminal`.
 
 Inspect without disturbing a member:
 
@@ -63,23 +63,28 @@ cross-team; use it when you need to know whether another team's Lead is busy.
 Inspect mail evidence when status is not enough:
 
 ```sh
-lmctl mail sent --to "<teamfile>:<alias>" --status queued --json
-lmctl mail sent --to "<teamfile>:<alias>" --status delivered --json
+lmctl mail sent --to "/abs/path/team.lmctl:Alias" --status queued --json
+lmctl mail sent --to "/abs/path/team.lmctl:Alias" --status delivered --json
 lmctl mail history <message_id>
 lmctl mail read <message_id>
 lmctl mail seen <message_id>
+lmctl mail ack <message_id>
+lmctl mail tree --since 3d --json
 ```
 
 Before assuming a delivery problem is a bug, check
-`lmctl mail sent --to "<teamfile>:<alias>" --status queued --json`; most stuck
-mail is a genuinely busy or terminal-held receiver. Use `--status delivered
+`lmctl mail sent --to "/abs/path/team.lmctl:Alias" --status queued --json`;
+most stuck mail is a genuinely busy or terminal-held receiver. Use `--status delivered
 --json` for delivered messages and `lmctl mail history <message_id>` for the
 event sequence behind one message when `lmctl status` is too coarse. Mail JSON
-is the stable contract, while human text is not.
+is the stable contract, while human text is not. Mail identity filters are exact;
+use canonical absolute teamfile paths from `lmctl status` or `realpath`.
 
 After you have read or acted on a message, record that active receipt with
 `lmctl mail ack <message_id>`. `ack` appends an acknowledgement event; it is not
-a read-only diagnostic.
+a read-only diagnostic. `ack`, `seen`, and answered are separate facts:
+`seen` only answers whether this specific message id was observed in the
+historical provider transcript.
 
 If you are a terminal-held Lead, inbound mail addressed to you will not arrive
 as an injected turn while the human terminal is live. That is intentional: lmctl
@@ -88,13 +93,16 @@ must not interrupt an interactive `lmctl terminal` session. Pull it explicitly:
 ```sh
 lmctl status --json
 lmctl mail read <message_id>
+lmctl mail handle <message_id>
 lmctl mail ack <message_id>
 ```
 
 Use `mailbox.inbound_pending[]` in `status --json` to find queued message ids.
 `mail read` is a pure query and bypasses busy/terminal-hold state because it is
-not a delivery attempt. `ack` is optional; use it only after you read or handle
-the message.
+not a delivery attempt. If you will send causally related follow-up work from
+the terminal, run `mail handle` first so `mail tree` can attach those sends under
+the message you read; the causal pointer expires after one hour. `ack` is
+optional; use it only after you read or handle the message.
 
 ## Work loop
 

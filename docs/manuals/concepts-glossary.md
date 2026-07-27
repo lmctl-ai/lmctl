@@ -14,7 +14,7 @@ lanes, and durable-memory.
 The current positioning is practical:
 
 - **Provider-agnostic control plane** — one CLI over Claude, Codex, Gemini,
-  Copilot, OpenCode, Qwen, and Antigravity (`agy`). Through the **OpenCode**
+  Copilot, OpenCode, Qwen, Kimi, and Antigravity (`agy`). Through the **OpenCode**
   provider this reaches essentially *any* model — local (Ollama) or remote
   (DeepSeek, Qwen, OpenRouter, GitHub Copilot's GPT/Claude/Gemini, any
   OpenAI-compatible endpoint). A single team can mix any collection of these
@@ -73,12 +73,12 @@ lane. The queued-mail lifecycle is:
 queued -> in-flight -> delivered with receipt
 ```
 
-Queued mail is keyed by `(sender, receiver)`. The next `lmctl chat` from that
-same sender to that same receiver delivers that sender's queued lane plus the
-new message once the receiver is free. A chat from another sender to the same
-receiver does not flush the lane. If the sender is idle waiting for the reply
-and never sends again, queued mail can deadlock. A receiver held by
-`lmctl terminal` is legitimately busy, so mail waits instead of failing.
+Queued mail is keyed by `(sender, receiver)`. Base delivery is the next
+`lmctl chat` from that same sender to that same receiver once the receiver is
+free. A chat from another sender to the same receiver does not flush the lane.
+With `lmctl serve start` running in normal daemon mode, mailbox relay can drain
+queued lanes proactively. A receiver held by `lmctl terminal` is legitimately
+busy, so mail waits instead of failing.
 
 ```bash
 lmctl chat ./team.lmctl Coder "Implement the smallest safe fix."
@@ -90,11 +90,11 @@ lmctl status
 `lmctl status` is team/SELF scoped. In a seeded member session it resolves the
 caller from `LMCTL_SELF_SESSIONID` and reports identity, teamfile, member
 busy/idle state, recent delegation activity, and pending mailbox lanes. Outside
-a member session it reports workspace scope with `identity: none`.
+a member session it reports an operator team/activity view with `identity: none`.
 
 ## serve and api commands
 
-`lmctl serve` starts local daemon and service integrations. It is not required
+`lmctl serve start` starts local daemon and service integrations. It is not required
 for queued member-mail correctness. The `lmctl api ...` commands are part of
 the CLI and act on local lmctl state or the local daemon where needed. See the
 [CLI reference](./cli-reference.md) for the full command list.
@@ -130,7 +130,7 @@ Members can carry role-specific model assignments. Use that to route expensive,
 top-tier models to architecture, design, or review work and leaner models to
 focused implementation or routine checks. `lmctl lint <teamfile.lmctl>`
 validates configured models against the tested catalog for Claude, Codex,
-Gemini, Copilot, Qwen, Antigravity, and the lmctl-managed OpenCode model list.
+Gemini, Copilot, Qwen, Kimi, Antigravity, and the lmctl-managed OpenCode model list.
 
 ## Durable-memory versus sessions
 

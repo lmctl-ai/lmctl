@@ -19,7 +19,7 @@ single estimator, and the same reason you don't review your own code.
 
 ## The native players
 
-lmctl drives seven native provider CLIs directly:
+lmctl drives eight native provider CLIs directly:
 
 - **Claude** — Anthropic's Claude Code CLI. Strong all-rounder; common Lead and
   reviewer choice.
@@ -32,6 +32,7 @@ lmctl drives seven native provider CLIs directly:
 - **OpenCode** — the open, model-agnostic CLI; the bridge to *any* model (see
   below).
 - **Qwen** — Alibaba's Qwen coding CLI.
+- **Kimi** — Moonshot's Kimi CLI.
 - **Antigravity (`agy`)** — Google's Antigravity CLI; the recommended path for
   **personal** Google subscriptions.
 
@@ -43,7 +44,7 @@ lmctl drives seven native provider CLIs directly:
 
 | Surface | Good fit | Why it adds diversity |
 | --- | --- | --- |
-| Native hosted CLIs (`claude`, `codex`, `gemini`, `copilot`, `qwen`, `agy`) | Lead, coding, review, design | Different provider stacks, tools, and model families sit in one team. |
+| Native hosted CLIs (`claude`, `codex`, `gemini`, `copilot`, `qwen`, `kimi`, `agy`) | Lead, coding, review, design | Different provider stacks, tools, and model families sit in one team. |
 | OpenCode (`opencode`) | Local models, OpenAI-compatible endpoints, routing through another model host | Brings models outside the first-class CLIs into the same teamfile shape. |
 | Plain `.lmctl` teamfile | Role assignment and provider/model selection | Diversity is visible and reviewable as text, not hidden inside one vendor workflow. |
 
@@ -81,7 +82,7 @@ _MEMBER_ alias=Reviewer provider=agy     model=<id>
 ```
 
 Use `@lmctl-ai/lmctl` 0.1.151 or newer for `model=` routing (verified against
-0.1.158). After seeding, run `lmctl health <teamfile.lmctl>` and confirm each
+0.1.218). After seeding, run `lmctl health <teamfile.lmctl>` and confirm each
 member's `MODEL` column matches the teamfile.
 
 When a team pattern recurs, capture it as Lead instructions and durable memory.

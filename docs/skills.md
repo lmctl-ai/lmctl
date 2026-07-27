@@ -24,9 +24,6 @@ The current public lmctl contract is simple:
 - Run `lmctl status` before important sends and `lmctl status --since 7d` after
   queued sends. Read `Waiting on:` and `mailbox outbound`; exit `0` can still
   mean queued.
-- Current seed text may mention the `lmctl_chat` MCP tool, but normal installs
-  do not provide it. Switch to the CLI command immediately. The CLI is the
-  supported path.
 - Keep durable project knowledge in `durable-memory/` so a refreshed session or
   swapped provider keeps the same working memory.
 
@@ -39,8 +36,8 @@ Start here:
   for the everyday Lead loop.
 - [Verifying delegated work](./manuals/verifying-delegated-work.md) when you
   need to know whether a delegated turn actually finished.
-- [MCP manual install](./mcp-manual-install.md) if seed text mentions
-  `lmctl_chat` and no such tool exists in your session.
+- [Mail inspection](./manuals/mail.md) when `status` is not enough detail for
+  queued or delivered messages.
 
 ## lmctl team operation
 

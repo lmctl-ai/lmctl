@@ -20,7 +20,7 @@ lmctl status
 `lmctl status` is team/SELF scoped. In a seeded member session it resolves the
 caller from `LMCTL_SELF_SESSIONID` and reports that member's teamfile, member
 state, delegation activity, and mailbox lanes. Outside a member session it
-falls back to workspace scope with `identity: none`.
+falls back to an operator team/activity view with `identity: none`.
 
 ## Common requests
 

@@ -18,9 +18,10 @@ lmctl diagnose
 Use `lmctl status` for the human-readable team/SELF view. In a member session
 it resolves the caller from `LMCTL_SELF_SESSIONID` and shows identity, teamfile,
 member busy/idle state, recent delegation activity, and pending mailbox lanes.
-Outside a member session it reports workspace scope with `identity: none`.
+Outside a member session it reports an operator team/activity view with
+`identity: none`.
 Use `@lmctl-ai/lmctl` 0.1.151 or newer for the `Waiting on:` section that keeps
-old undelivered mail visible; this page was checked against 0.1.158.
+old undelivered mail visible; this page was checked against 0.1.218.
 
 ## What is waiting for me?
 
@@ -44,12 +45,18 @@ lmctl diagnose
 
 If `status` shows pending outbound mail, check whether the receiver is busy. A
 receiver can be busy because it is in a provider turn or because a human holds
-it with `lmctl terminal`; that is correct behavior. Queued mail is keyed by
-`(sender, receiver)`: send the next `lmctl chat` from the same sender to that
-same receiver after it is free. That chat delivers that sender's queued lane
-plus the new message in one turn. A chat from another sender to the same
-receiver does not flush the lane. If the sender goes idle waiting for the
-queued reply, this is a deadlock rather than normal delay.
+it with `lmctl terminal`; that is correct behavior. If the receiver is idle and
+queued mail is not moving, check the daemon:
+
+```bash
+lmctl serve status
+```
+
+Base delivery does not require a daemon: the next `lmctl chat` from the same
+sender to that same receiver delivers that sender's queued lane once the
+receiver is free. A chat from another sender to the same receiver does not flush
+the lane. With `lmctl serve start` running in normal daemon mode, mailbox relay
+can drain queued lanes proactively after the receiver goes idle.
 
 ## Legacy issue compatibility
 
@@ -115,20 +122,17 @@ The delivery lifecycle is `queued -> in-flight -> delivered with receipt`.
 Delivery is at-least-once; duplicate delivery can happen after a crash, but a
 queued message should not be lost.
 
-Queued member mail is keyed by `(sender, receiver)` and is delivered by the
-next `lmctl chat` from the same sender to that same receiver. When the receiver
-is free, that chat delivers that sender's queued lane plus the new message in
-one turn. A chat from another sender to the same receiver does not flush the
-lane. If the receiver is still in a provider turn, or a human is holding it
-with `lmctl terminal`, the mail waits. If the sender is idle waiting for the
-reply and never sends again, this is a deadlock rather than normal delay.
+Queued member mail is keyed by `(sender, receiver)`. Base delivery is the next
+`lmctl chat` from the same sender to that same receiver once the receiver is
+free. A chat from another sender to the same receiver does not flush the lane.
+With `lmctl serve start` running in normal daemon mode, mailbox relay can drain
+queued lanes proactively after the receiver goes idle. If the receiver is still
+in a provider turn, or a human is holding it with `lmctl terminal`, the mail
+waits.
 
-For an intentionally blind local shell wrapper, `timeout` still has the usual
-shell semantics:
-
-```bash
-timeout 60 lmctl chat ./team.lmctl:Coder "..." >/dev/null 2>&1
-```
+Do **not** wrap `lmctl chat` in shell-level `timeout`. Current `lmctl chat`
+keeps its caller turn open while its own dispatched work settles; a fixed shell
+timeout can kill in-flight delegated work underneath lmctl.
 
 **Interpreting blocking-chat results:**
 
@@ -139,7 +143,6 @@ timeout 60 lmctl chat ./team.lmctl:Coder "..." >/dev/null 2>&1
 | `--json` with `status: "enqueued"` and `path: "enqueued"` | Machine-readable queued contract. Track it with `lmctl status`. |
 | Exit `1` with `--json` `status: "busy"` or a busy message | No queued lane was created for that call; commonly lmctl had no sender identity to attach to the message. Retry only after the receiver is free. |
 | Exit `1` with `--json` `status: "error"` or other error text | Provider, delivery, or runtime error. Do not treat this as a busy retry without reading the error. |
-| Exit `124` | Your external `timeout` wrapper fired. Treat this as blind/background shell behavior owned by the wrapper, not lmctl. |
 
 Exit `0` alone does not prove delegated work is done. Prefer
 `lmctl chat ... --json` when another program or agent needs to tell queued work

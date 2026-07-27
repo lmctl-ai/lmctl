@@ -7,13 +7,13 @@ sidebar_position: 4
 
 lmctl is single-operator and runs on Linux/WSL2. The `lmctl` CLI sets up and
 operates everything on its own, working directly against local state.
-`lmctl serve` is the local daemon for daemon-backed workflow and service
+The `lmctl serve` command family manages the local daemon for daemon-backed workflow and service
 integrations. The
 hosted web console at [lmctl.ai](https://lmctl.ai) is optional — a subscription
 feature (free and premium tiers), not required to run lmctl.
 
 The architecture is provider-agnostic. Teams can mix Claude, Codex, Gemini,
-Copilot, OpenCode, Qwen, and Antigravity, which makes **adversarial
+Copilot, OpenCode, Qwen, Kimi, and Antigravity, which makes **adversarial
 cross-provider review** (the reviewer is a different provider and model than the
 author, not the same model self-reviewing) and cost-aware role routing
 first-class operating patterns. The operator composes and tunes these teams in
@@ -30,27 +30,29 @@ workflow and inputs; the workflow controls the sequence.
 
 ## The local daemon
 
-`lmctl serve` starts the local always-on daemon — the queue worker and agent
+`lmctl serve start` starts the local always-on daemon — the queue worker and agent
 services that actually *execute* your jobs and runs. Project, workflow, team,
 job, run, issue, and attention state lives in a SQLite workspace database,
 normally under `~/.lmctl/`, using Node's built-in `node:sqlite` backend. The
-`lmctl` CLI reads and writes that local state directly; you start `serve` once
-and leave it running so submitted work gets executed. The optional hosted web
+`lmctl` CLI reads and writes that local state directly; you start `serve start`
+once and leave it running so submitted work gets executed. The optional hosted web
 console at
 [lmctl.ai](https://lmctl.ai) (a free/premium subscription) connects to the same
 local daemon — everything it does is also doable from the CLI.
 
 ```bash
-lmctl serve > lmctl.log 2>&1 &
+setsid lmctl serve start > lmctl.log 2>&1 < /dev/null & disown
 lmctl api status
 ```
 
 ## Cloud transport and metering
 
 This applies only to the optional cloud console. It does not reach your machine
-directly; it exchanges messages with the hosted services over a **mailbox**
-backed by a cloud bucket (S3). The poll uses a GET-next-sequence protocol: each
-fetch asks for the next sequence number rather than listing object versions.
+directly; it exchanges messages with the hosted services over a **cloud mailbox
+transport** backed by a cloud bucket (S3). That cloud transport is separate from
+local member-to-member mailbox lanes in the event log. The poll uses a
+GET-next-sequence protocol: each fetch asks for the next sequence number rather
+than listing object versions.
 Cloud usage is metered against a quota. The local CLI does not use this path —
 it works directly against local state.
 

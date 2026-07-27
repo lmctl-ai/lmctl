@@ -48,11 +48,13 @@ identity, busy returns an error instead of creating anonymous mail. In that
 no-identity case, pause and retry later, or inspect without waking it with
 `lmctl tail`.
 
-Queued member mail is delivered by the next `lmctl chat` from that same sender
-to that same receiver after the receiver is free; a chat from another sender to
-the same receiver does not flush it. If the sender is idle waiting for the
-reply and never sends again, this can deadlock. A live `lmctl terminal` lock is
-a valid reason to stay busy.
+Base delivery is the next `lmctl chat` from that same sender to that same
+receiver once the receiver is free; a chat from another sender to the same
+receiver does not flush it. With `lmctl serve start` running in normal daemon
+mode, mailbox relay is an optional accelerator that can drain queued lanes
+proactively. If the sender is idle waiting for the reply and no relay drains the
+lane, delivery can deadlock. A live `lmctl terminal` lock is a valid reason to
+stay busy.
 
 ## Cross-team calls
 A Lead can call a member of another team at runtime (cycle-protected automatically). The legacy

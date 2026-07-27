@@ -75,7 +75,8 @@ receiver returns a busy error instead of silently creating anonymous mail. In
 JSON, `status: "busy"` is retryable after the receiver is free; `status:
 "error"` is not the same condition.
 
-Queued mail is delivered by the next `lmctl chat` from the same sender to that
-same receiver after the receiver is free. Mail queued by another sender is not
-affected. If the sender goes idle waiting for that queued reply and never sends
-again, this is deadlock, not latency.
+Base delivery is the next `lmctl chat` from the same sender to that same
+receiver after the receiver is free. Mail queued by another sender is not
+affected. With `lmctl serve start` running in normal daemon mode, mailbox relay
+can drain queued lanes proactively. If the sender goes idle waiting for that
+queued reply and no relay drains the lane, delivery can deadlock.

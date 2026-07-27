@@ -41,6 +41,7 @@ sessions, it doesn't manage their credentials. Common players:
 | GitHub Copilot | `copilot` | sign in via the Copilot CLI |
 | OpenCode | `opencode` | per-provider creds in `~/.config/opencode/opencode.json` (see the [sample](https://lmctl.com/examples/opencode.json)) |
 | Qwen | `qwen` | run `qwen` and authenticate |
+| Kimi | `kimi` | run `kimi` and authenticate |
 | Antigravity | `agy` | run `agy` and sign in |
 | Gemini | `gemini` | **API/enterprise Google accounts only** — personal-subscription users should use **`agy`** instead |
 
@@ -91,7 +92,7 @@ lmctl health ./team.lmctl
 ```
 
 The `MODEL` column should match the teamfile. Use `@lmctl-ai/lmctl` 0.1.151 or
-newer for model-routed teams; this page was checked against 0.1.158.
+newer for model-routed teams; this page was checked against 0.1.218.
 
 ## Where lmctl keeps state
 

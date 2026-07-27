@@ -19,7 +19,7 @@ config) that is useful when reporting a problem.
 `LMCTL_SELF_SESSIONID` in a seeded member session to show the current identity,
 teamfile, member busy/idle state, recent delegation activity in both
 directions, and pending mailbox lanes. Outside a member session it falls back
-to workspace scope with `identity: none`.
+to an operator team/activity view with `identity: none`.
 
 ## `lmctl seed` fails
 
@@ -111,22 +111,22 @@ First confirm whether the message is still queued:
 
 ```bash
 lmctl status
+lmctl mail sent --to "/abs/path/team.lmctl:Coder" --status queued --json
 ```
 
 Use `@lmctl-ai/lmctl` 0.1.151 or newer for the `Waiting on:` status section
-that keeps old undelivered mail visible; this page was checked against 0.1.158.
+that keeps old undelivered mail visible; this page was checked against 0.1.218.
 
 Look at `Waiting on:` and `mailbox outbound`. A pending `(sender, receiver)`
 lane means the message is queued; it has not disappeared. If the original
 `chat` exited 0 with
-`enqueued mailbox message N`, that also means queued, not delivered yet. The
-next `lmctl chat` from that same sender to that same receiver delivers that
-sender's queued lane plus the new message in one turn, once the receiver is
-free. A chat from another sender to the same receiver does not flush your lane:
+`enqueued mailbox message N`, that also means queued, not delivered yet.
 
-```bash
-lmctl chat <teamfile.lmctl> <alias> "Continue with this queued work."
-```
+Base delivery does not require a daemon: the next `lmctl chat` from that same
+sender to that same receiver delivers that sender's queued lane once the
+receiver is free. A chat from another sender to the same receiver does not flush
+your lane. With `lmctl serve start` running in normal daemon mode, mailbox relay
+can drain queued lanes proactively after the receiver goes idle.
 
 If `status` shows the receiver is busy, inspect its liveness:
 
@@ -145,11 +145,43 @@ Terminal-held chat can surface as:
 <alias> is held by a terminal on <host> since <time>; retry later
 ```
 
-Deadlock case: if the sender stops because it is waiting for the queued reply,
-and nothing ever sends another `lmctl chat` from that same sender to that same
-receiver, the queued mail can sit indefinitely. Treat old `Waiting on: queued`
-rows in `lmctl status` as work that needs an explicit same-sender follow-up or
-operator escalation.
+If the busy state points at a holder PID that is no longer running, treat it as
+a stale or phantom lock, not a live terminal hold. That can happen after a
+reboot or killed provider process. Do not wait for a human who is not actually
+holding the session.
+
+Whenever queued mail is not moving — whether the receiver looks idle or
+phantom-busy — check the daemon too:
+
+```bash
+lmctl serve status
+```
+
+If it is not running, start it:
+
+```bash
+setsid lmctl serve start > lmctl.log 2>&1 < /dev/null & disown
+```
+
+Base follow-up: send another `lmctl chat` from the same sender to the same
+receiver. If the sender stops because it is waiting for the queued reply and no
+relay drains the lane, the queued mail can sit indefinitely. Treat old
+`Waiting on: queued` rows in `lmctl status` as work that needs daemon recovery,
+an explicit same-sender follow-up, or operator escalation.
+
+If one message needs more detail than `status` provides, inspect the event-log
+evidence:
+
+```bash
+lmctl mail history <message_id> --json
+lmctl mail read <message_id> --json
+lmctl mail seen <message_id> --json
+```
+
+`mail history` shows the ordered event sequence for one message. `mail read`
+returns content and pending state without delivery or state change. `mail seen`
+answers only whether that message id was observed in historical provider
+transcript evidence; ack, seen, and answered are separate facts.
 
 ## How do I know delegated work finished?
 
@@ -180,7 +212,7 @@ full contract.
 If the daemon is running on a non-default port, update the API URL:
 
 ```bash
-lmctl serve --port 8788 > lmctl.log 2>&1 &
+setsid lmctl serve start --port 8788 > lmctl.log 2>&1 < /dev/null & disown
 export LMCTL_API_URL=http://127.0.0.1:8788
 lmctl api status
 ```
@@ -216,7 +248,7 @@ lmctl --version
 ```
 
 Model-routed teams should use 0.1.151 or newer; this page was checked against
-0.1.158. Then verify the teamfile and the live member table:
+0.1.218. Then verify the teamfile and the live member table:
 
 ```bash
 lmctl lint ./team.lmctl
@@ -227,20 +259,6 @@ lmctl health ./team.lmctl
 Compare each `_MEMBER_ ... model=` value with the `MODEL` column. If they do
 not match, do not ask the model what it is; trust the CLI output and fix the
 teamfile, upgrade lmctl, or refresh/re-seed the member before assigning work.
-
-## Seed told me to use `lmctl_chat`, but the tool is missing
-
-Current seed text may mention an MCP tool named `lmctl_chat`. That tool is
-not registered in normal installs, and lmctl cleanup can remove stale bridge
-entries named `lmctl` or `lmctl0`. Do not repair delegation by chasing MCP
-registration; use the CLI instead:
-
-```bash
-lmctl chat "<teamfile>" <alias> "your task"
-```
-
-The public docs deliberately prefer the CLI. Treat unavailable `lmctl_chat` as
-a runtime seed defect and switch to `lmctl chat`.
 
 ## A delegated task failed
 

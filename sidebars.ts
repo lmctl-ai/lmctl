@@ -57,7 +57,6 @@ const sidebars: SidebarsConfig = {
             'manuals/verifying-delegated-work',
             'manuals/durable-memory-index',
             'manual-invocation',
-            'mcp-manual-install',
           ],
         },
         {
@@ -68,7 +67,7 @@ const sidebars: SidebarsConfig = {
         {
           type: 'category',
           label: 'CLI Reference',
-          items: ['manuals/cli-reference', 'manuals/lmprobe'],
+          items: ['manuals/cli-reference', 'manuals/mail', 'manuals/daemon-session', 'manuals/lmprobe'],
         },
         'manuals/operations-runbook',
         'manuals/configuration-environment',

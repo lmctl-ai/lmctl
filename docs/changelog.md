@@ -7,16 +7,20 @@ sidebar_position: 97
 
 All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 
-These docs currently describe `@lmctl-ai/lmctl` **0.1.158**. Run
+These docs currently describe `@lmctl-ai/lmctl` **0.1.218**. Run
 `lmctl --version` before following command examples.
 
 ## Docs Site Updates
 
-- Rechecked public command guidance against `lmctl 0.1.158`. Top-level help
-  now lists status, diagnose, diagnose-prompt, serve, api, device, team, chat,
-  terminal, tail, health, recover, ls, lint, seed, hire, refresh, clone,
-  workspace, plan, and db. `mcp` remains help-dispatchable but hidden from
-  top-level help.
+- Rechecked public command guidance against `lmctl 0.1.218`. Top-level help
+  includes status, diagnose, diagnose-prompt, serve, api, device, mail, team,
+  chat, terminal, tail, session, health, recover, ls, lint, seed, hire,
+  refresh, clone, plan, and db. `mcp` remains directly dispatchable but hidden
+  from top-level help.
+- Added manual pages for `lmctl mail` and for daemon/session inspection:
+  `serve start/status/stop` and `session --query-file`.
+- Retired the public bridge-install page into a tombstone; delegation docs now
+  teach `lmctl chat` only.
 - Split CLI reference API guidance into current surfaces and legacy
   compatibility notes. Retired workflow/project-engine API endpoints may still
   dispatch, but public docs should not teach them as normal current agent

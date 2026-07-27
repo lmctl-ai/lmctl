@@ -18,8 +18,8 @@ provider CLI, optional model, and provider session directory.
 ## cross-team call
 
 A message from one team's Lead to a member of another team. Cross-team calls
-work automatically at runtime over the chat / MCP path — no declaration is
-needed. Runtime cycle protection stops only genuine runaway recursion. The old
+work automatically at runtime over `lmctl chat` — no declaration is needed.
+Runtime cycle protection stops only genuine runaway recursion. The old
 `_CONNECT_` statement and `lmctl connect` command are legacy setup forms, not
 the current public cross-team path; legacy `_CONNECT_` lines are ignored with a
 lint deprecation warning.
@@ -56,6 +56,6 @@ for continuity but are not the canonical project record.
 
 ## serve / api commands
 
-`lmctl serve` is the local daemon for daemon-backed workflow and service
+The `lmctl serve` command family manages the local daemon for daemon-backed workflow and service
 integrations.
 `lmctl api ...` are CLI commands that act on your local lmctl state directly.

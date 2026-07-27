@@ -60,6 +60,7 @@ provider's own CLI**, so every seat runs on whatever subscription you already ho
 | GitHub Copilot (Pro / Pro+) | `provider=copilot` for Copilot CLI, or `provider=opencode` for Copilot-backed model routing through OpenCode |
 | Google Antigravity | `provider=agy` |
 | **Alibaba Qwen Coding Plan (Qwen Code)** | **`provider=qwen`** |
+| Moonshot Kimi | `provider=kimi` |
 
 Put them in one team and each member uses your existing plan — no new billing
 relationship, no per-token surprises.
@@ -90,7 +91,7 @@ heavy typing can move to the cheapest capable seat without removing the premium
 models from the team.
 
 Use `@lmctl-ai/lmctl` 0.1.151 or newer for this `model=` routing behavior
-(verified against 0.1.158). After `lmctl seed`, run
+(verified against 0.1.218). After `lmctl seed`, run
 `lmctl health <teamfile.lmctl>` and compare the `MODEL` column with the
 teamfile. If they differ, upgrade lmctl before continuing.
 

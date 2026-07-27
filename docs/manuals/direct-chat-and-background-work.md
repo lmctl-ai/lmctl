@@ -35,7 +35,7 @@ A positional prompt is built by your shell before lmctl sees it. Backticks,
 that shell layer and is the safer form for review packages, command examples,
 and long prompts. Write the prompt file with an editor or file-writing tool,
 not with `echo` or a heredoc, because those still go through your shell. This
-path is available in `@lmctl-ai/lmctl` 0.1.154 and was rechecked in 0.1.158.
+path is available in `@lmctl-ai/lmctl` 0.1.154 and was rechecked in 0.1.218.
 
 ## Queued member messages
 
@@ -51,25 +51,33 @@ queued -> in-flight -> delivered with receipt
 Delivery is at-least-once: after a crash, a queued message may be delivered
 again rather than lost.
 
-What delivers queued mail: the sender's next `lmctl chat` to that same
-receiver. Mail queued by a different sender is not affected; each `(sender,
-receiver)` pair has its own lane. When the receiver is free, that chat delivers
-that sender's queued lane plus the new message in one turn. If the receiver is
-still in a provider turn, or a human is holding that member with
-`lmctl terminal`, the mail waits. Nothing is lost.
+If a provider process dies while holding an in-flight member lock, lmctl checks
+holder PID liveness on later access and can reclaim stale locks automatically.
+Treat that as normal self-healing; do not edit the DB by hand.
 
-Practical consequence: this can deadlock. If the sender is idle because it is
-waiting for the queued reply, and nobody sends another `lmctl chat` from that
-same sender to that receiver, the queued mail will not unblock itself. Run
-`lmctl status` to see pending outbound lanes and member busy/idle state.
+Base delivery does not require a daemon: the sender's next `lmctl chat` to that
+same receiver delivers that sender's queued lane once the receiver is free.
+Mail queued by a different sender is not affected; each `(sender, receiver)`
+pair has its own lane. With `lmctl serve start` running in normal daemon mode,
+mailbox relay is an optional accelerator that can drain queued lanes
+proactively after the receiver goes idle. If the receiver is still in a provider
+turn, or a human is holding that member with `lmctl terminal`, the mail waits.
+Nothing is lost.
+
+Practical consequence: if the sender is idle because it is waiting for the
+queued reply, and nobody sends another `lmctl chat` from that same sender to
+that receiver, the queued mail will not unblock itself unless the optional relay
+drains it. Run `lmctl status` to see pending outbound lanes and member busy/idle
+state. If queued mail is not moving and the receiver is idle or phantom-busy
+from a dead holder PID, run `lmctl serve status`.
 Use `@lmctl-ai/lmctl` 0.1.151 or newer for the `Waiting on:` visibility that
 keeps old queued mail from aging out of the status view; this page was checked
-against 0.1.158.
+against 0.1.218.
 
 ## Quick choice
 
 | Need | Use |
 | --- | --- |
 | Ask one member and receive the reply | `lmctl chat <teamfile> <alias> "<prompt>"` |
-| Deliver queued member mail | Send the next `lmctl chat` from the same sender to the same receiver after it is free; that `(sender, receiver)` lane can deadlock if the sender goes idle |
+| Deliver queued member mail | Send the next `lmctl chat` from the same sender to the same receiver after it is free; keep `lmctl serve start` running when you want relay to drain queues proactively |
 | Inspect pending mailbox lanes | `lmctl status` |

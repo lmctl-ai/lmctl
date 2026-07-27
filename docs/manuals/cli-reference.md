@@ -6,14 +6,15 @@ sidebar_position: 2
 # CLI reference
 
 `lmctl` is a local command-line tool. It runs on your machine and works
-directly against your local lmctl state (a SQLite workspace database, normally
-under `~/.lmctl/`). Provider CLIs still use their own configured services when
-they run model turns, and the optional cloud console is an explicit opt-in.
+directly against your local lmctl state DB, normally under `~/.lmctl/`.
+Provider CLIs still use their own configured services when they run model
+turns, and the optional cloud console is an explicit opt-in.
 
 Its commands come in two shapes, both part of the same CLI:
 
 - **top-level commands** — `lmctl status` for team/SELF state, `lmctl chat`,
-  `lmctl team`, `lmctl seed`, `lmctl refresh`, `lmctl diagnose`, and so on.
+  `lmctl mail`, `lmctl serve`, `lmctl team`, `lmctl seed`, `lmctl refresh`,
+  `lmctl diagnose`, and so on.
 - **the `lmctl api <noun>` group** — call the local HTTP API or direct DAL
   endpoints. `api` is just the name of a command group; it is not a separate
   binary or a remote client.
@@ -23,18 +24,19 @@ Its commands come in two shapes, both part of the same CLI:
 ```bash
 lmctl status
 lmctl diagnose
-lmctl serve > lmctl.log 2>&1 &
+setsid lmctl serve start > lmctl.log 2>&1 < /dev/null & disown
 ```
 
 `lmctl status [--json] [--since <duration|ISO8601>]` shows the member/team view
-when `LMCTL_SELF_SESSIONID` resolves, and a workspace summary otherwise.
+when `LMCTL_SELF_SESSIONID` resolves, and a team/activity summary from an
+operator shell otherwise.
 `--project` and `--web` are not `status` options; use `--since 7d` or an ISO
 timestamp to widen the activity window.
 
-`lmctl serve` starts the local HTTP API, web UI, queue daemon, terminal manager,
-and agent services for local service integrations. The optional
-[lmctl.ai](https://lmctl.ai) web console (a free/premium subscription) connects
-to this same local daemon.
+`lmctl serve start` starts the local HTTP API, web UI, queue daemon, terminal
+manager, and agent services for local service integrations. It runs in the
+foreground and blocks until stopped; background or supervise it yourself. See
+[Daemon and session inspection](./daemon-session.md).
 
 ## DB teams
 
@@ -120,11 +122,11 @@ lmctl chat ./team.lmctl Coder "status note"
 ```
 
 Exit 0 with `enqueued mailbox message N` means the prompt is queued, not
-delivered yet. The lane is keyed by `(sender, receiver)`: the next `lmctl chat`
-from that same sender to that same receiver delivers that sender's queued lane
-plus the new message in one turn once the receiver is free. A chat from another
-sender to the same receiver does not flush the lane. If the sender goes idle
-waiting for that queued reply, this can deadlock. A receiver held by
+delivered yet. The lane is keyed by `(sender, receiver)`. Base delivery is the
+next `lmctl chat` from that same sender to that same receiver once the receiver
+is free. A chat from another sender to the same receiver does not flush the
+lane. With `lmctl serve start` running in normal daemon mode, mailbox relay can
+drain queued lanes proactively after the receiver goes idle. A receiver held by
 `lmctl terminal` is legitimately busy, so mail waits rather than failing.
 
 Use `lmctl chat ... --json` for automation. The queued contract is
@@ -176,14 +178,14 @@ Delivery is at-least-once: if a process dies after sending but before marking
 rows delivered, lmctl may deliver the same queued message again. A duplicate is
 preferable to losing work.
 
-What delivers queued mail: the next `lmctl chat` from that same sender to that
-same receiver. When the receiver is free, that chat delivers that sender's
-queued lane plus the new message in one turn. Mail queued by a different sender
-is not affected; each `(sender, receiver)` pair has its own lane. If the
-receiver is still in a provider turn, or a human is holding that member with
-`lmctl terminal`, the mail waits. If the sender is idle waiting for the reply
-and never sends again, this is a deadlock rather than normal delay. There is no
-separate LLM-called harvest command.
+What delivers queued mail: base delivery is the next `lmctl chat` from that
+same sender to that same receiver once the receiver is free. Mail queued by a
+different sender is not affected; each `(sender, receiver)` pair has its own
+lane. With `lmctl serve start` running in normal daemon mode, mailbox relay can
+drain queued lanes proactively after the receiver goes idle. If the receiver is
+still in a provider turn, or a human is holding that member with
+`lmctl terminal`, the mail waits. There is no separate LLM-called harvest
+command.
 
 ## Legacy compatibility APIs
 
@@ -203,6 +205,26 @@ lmctl api upload ...
 Treat these as legacy compatibility or advanced API work unless your current
 operator workflow explicitly calls for them.
 
+## Mail evidence and actions
+
+`lmctl mail` works with event-log messages, historical delivery evidence, and
+causal lineage. Use `--json` for automation; mail JSON is the stable, versioned
+external contract. Most subcommands below are read-only; `ack` is an active
+acknowledgement that appends an event.
+
+```bash
+lmctl mail sent --to "/abs/path/team.lmctl:Coder" --status queued --json
+lmctl mail history <message_id> --json
+lmctl mail read <message_id> --json
+lmctl mail seen <message_id> --json
+lmctl mail ack <message_id> --json
+lmctl mail tree --since 3d --json
+```
+
+Use `mail sent --status queued` before assuming a delivery problem is a bug:
+most stuck mail is a genuinely busy or terminal-held receiver. See
+[Mail inspection](./mail.md).
+
 ## Sessions
 
 ```bash
@@ -220,17 +242,28 @@ lmctl health <session-id> --provider codex
 `terminal --size` reports message count, transcript bytes, and a local token
 estimate. It does not compact or change the session.
 
-## Device and MCP
+For low-level provider-session inspection, use `lmctl session --query-file`.
+This is not compact team status. Write a query file such as:
+
+```json
+{"teamfile":"/path/team.lmctl","alias":"Lead"}
+```
+
+Then run:
+
+```bash
+lmctl session --query-file session-query.json
+```
+
+See [Daemon and session inspection](./daemon-session.md).
+
+## Device
 
 ```bash
 lmctl device init
 lmctl device id
 lmctl device prompt --root ./team.lmctl --text "Summarize current status"
 ```
-
-The `lmctl mcp` bridge exists for optional manual experiments, but lmctl no
-longer installs or relies on it by default. See
-[MCP manual install](../mcp-manual-install.md).
 
 ## Debug logs
 

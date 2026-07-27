@@ -19,13 +19,16 @@ Use the CLI:
 Use `chat` when you need to drive a member turn and get a reply. Queueing
 depends on sender identity: if lmctl can resolve a sender, `chat` queues in a
 `(sender, receiver)` lane when the target is busy; if there is no sender
-identity, busy returns an error instead of creating anonymous mail. Queued work follows
-`queued -> in-flight -> delivered with receipt` and is at-least-once.
-The next `lmctl chat` from that same sender to that same receiver delivers that
-sender's queued lane after the receiver is free. A chat from another sender to
-the same receiver does not flush it. If the sender is idle waiting for the
-reply and never sends again, this can deadlock. If a human is holding the
-receiver with `lmctl terminal`, the queue waits until that lock is released.
+identity, busy returns an error instead of creating anonymous mail. Queued work
+follows `queued -> in-flight -> delivered with receipt` and is at-least-once.
+Base rule: the next `lmctl chat` from that same sender to that same receiver
+delivers that sender's queued lane once the receiver is free. A chat from
+another sender to the same receiver does not flush it. With `lmctl serve start`
+running in normal daemon mode, mailbox relay is an optional accelerator: it can
+drain queued lanes proactively after the receiver goes idle. If the sender is
+idle waiting for the reply and no relay drains the lane, delivery can deadlock.
+If a human is holding the receiver with `lmctl terminal`, the queue waits until
+that lock is released.
 
 Prefer `--prompt-file` for prompts containing command examples, backticks,
 `$(...)`, `$VAR`, or quotes; positional prompts are assembled by your shell
