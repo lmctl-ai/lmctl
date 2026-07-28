@@ -22,6 +22,22 @@ For machine-readable automation, call `chat` with `--json`:
 lmctl chat ./team.lmctl Coder "Implement the fix." --json
 ```
 
+Verified against `lmctl 0.1.223`: when the receiver is free and the synchronous
+turn is accepted, `chat --json` emits newline-delimited JSON. The first line is
+available as soon as the message is durably created; the final line arrives when
+the member turn finishes. Both lines carry the same `message_id`:
+
+```text
+{"status":"accepted","message_id":"msg_tcl_10919"}
+{"status":"ok","replyText":"OK","teamChatLogId":10919,"message_id":"msg_tcl_10919"}
+```
+
+Do not write automation that assumes a synchronous accepted send emits exactly
+one JSON line. Capture the early `message_id` if you need to track the message
+while the provider turn is still running. Use that `message_id` directly with
+`lmctl mail read` or `lmctl mail history` for inspection, and with
+`lmctl mail ack` when you intentionally acknowledge handling.
+
 An enqueued response looks like:
 
 ```json
@@ -29,6 +45,7 @@ An enqueued response looks like:
   "status": "enqueued",
   "path": "enqueued",
   "id": 123,
+  "message_id": "msg_mbx_123",
   "sender": {"teamfile": "/abs/path/team.lmctl", "alias": "Lead"},
   "receiver": {"teamfile": "/abs/path/team.lmctl", "alias": "Coder"}
 }

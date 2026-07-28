@@ -129,8 +129,24 @@ lane. With `lmctl serve start` running in normal daemon mode, mailbox relay can
 drain queued lanes proactively after the receiver goes idle. A receiver held by
 `lmctl terminal` is legitimately busy, so mail waits rather than failing.
 
-Use `lmctl chat ... --json` for automation. The queued contract is
-`status: "enqueued"` with `path: "enqueued"`. See
+Use `lmctl chat ... --json` for automation. Verified against `lmctl 0.1.223`:
+JSON results that create a real message include `message_id`, which can be used
+directly with `lmctl mail read` or `lmctl mail history` for inspection, and with
+`lmctl mail ack` when you intentionally acknowledge handling.
+
+If the receiver is free and the synchronous turn is accepted, `chat --json`
+emits newline-delimited JSON: first an early durable-creation line, then the
+final result line with the same `message_id`:
+
+```text
+{"status":"accepted","message_id":"msg_tcl_10919"}
+{"status":"ok","replyText":"OK","teamChatLogId":10919,"message_id":"msg_tcl_10919"}
+```
+
+The final line may instead be the existing stalled shape for a stalled turn.
+Busy and enqueued outcomes still emit one JSON line. The queued contract remains
+`status: "enqueued"` with `path: "enqueued"`; queued JSON keeps the existing
+`id` field and also includes `message_id`. See
 [Verifying delegated work](./verifying-delegated-work.md).
 
 ## Current API surfaces

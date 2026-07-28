@@ -7,11 +7,15 @@ sidebar_position: 97
 
 All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 
-These docs currently describe `@lmctl-ai/lmctl` **0.1.218**. Run
+These docs currently describe `@lmctl-ai/lmctl` **0.1.223**. Run
 `lmctl --version` before following command examples.
 
 ## Docs Site Updates
 
+- Rechecked `lmctl chat --json` against `lmctl 0.1.223`. Accepted synchronous
+  sends now emit NDJSON: an early `status: "accepted"` line with `message_id`,
+  then the final `status: "ok"` or stalled result with the same `message_id`.
+  Busy and enqueued outcomes remain one-line JSON results.
 - Rechecked public command guidance against `lmctl 0.1.218`. Top-level help
   includes status, diagnose, diagnose-prompt, serve, api, device, mail, team,
   chat, terminal, tail, session, health, recover, ls, lint, seed, hire,
