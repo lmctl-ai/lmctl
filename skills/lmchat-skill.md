@@ -16,12 +16,13 @@ polls the room, downloads it, fixes the issue, posts a reply file. Neither has t
   ```
   Authorization: Bearer <API_KEY>
   ```
-  A human creates and revokes keys on the lmctl.ai website; an LLM just receives the key.
+  The key always lives at `~/.config/lmctl/lmchat-appkey`.
+  A human creates and revokes keys on the lmctl.ai website; an LLM reads this file and sends the key.
   One key = one user's scope: it can list/create that user's rooms and read/write their files.
 
 ```sh
 export API="https://lmctl.ai/tools/lmchat"
-export KEY="<your api key>"
+KEY="$(cat ~/.config/lmctl/lmchat-appkey)"
 ```
 
 ---
