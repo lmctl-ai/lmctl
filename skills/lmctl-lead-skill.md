@@ -21,6 +21,14 @@ target is busy and lmctl can resolve your sender identity, `chat` queues the
 message in your sender-to-receiver lane. If there is no sender identity, busy
 returns an error instead of creating anonymous queued mail.
 
+If your coding harness supports real background command execution that dispatches
+a command now and notifies you when it completes, use that for `lmctl chat`
+calls when you do not want to block your own turn. Do not wrap the dispatch in an
+external timeout. A slow reply or queued send is not a failure state, and killing
+the process mid-delivery can cascade-interrupt the receiving member's live turn,
+not just fail cleanly on your side. Let the command run to completion and rely
+on the harness completion signal instead of an arbitrary deadline.
+
 For non-trivial prompts, use `--prompt-file` so the shell cannot expand
 backticks, `$(...)`, `$VAR`, or quotes before lmctl sees the text:
 
