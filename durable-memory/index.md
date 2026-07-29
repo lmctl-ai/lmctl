@@ -27,6 +27,13 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-07-29: Published the new public `lmmail` raw skill from
+  `/home/mma/repos/tools/lmmail/docs/lmmail-skill.md` as
+  `/skills/lmmail-skill.md`. The website copy uses the deployed API Gateway
+  stage URL in `LMMAIL_API_URL`, adds `lmmail` to the raw skills index and
+  Docusaurus Skills page, and includes `/skills/lmmail-skill.md` in manual
+  deploy smoke checks. Reviewer1 checked the source parity, command set against
+  local built `lmmail --help`, shared-appkey wording, and deploy convention.
 - 2026-07-27: Verified the current docs draft against `@lmctl-ai/lmctl 0.1.218`
   before review. Public docs now include `lmctl mail`, `lmctl serve
   start/status/stop`, and `lmctl session`; retire public MCP setup guidance;

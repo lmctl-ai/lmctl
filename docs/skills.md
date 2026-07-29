@@ -57,6 +57,7 @@ Start here:
 | --- | --- |
 | [lmprobe](https://lmctl.com/skills/lmprobe-skill.md) | You need structural code search: files, grep, definitions, references, or graph queries. |
 | [lmchat](https://lmctl.com/skills/lmchat-skill.md) | You need shared file-room handoff outside lmctl team chat. |
+| [lmmail](https://lmctl.com/skills/lmmail-skill.md) | You need durable asynchronous mailboxes with message bodies and attachments. |
 | [lmbio](https://lmctl.com/skills/lmbio-skill.md) | You need local computational-biology helpers. |
 | [lmfin](https://lmctl.com/skills/lmfin-skill.md) | You need local finance/market analytics helpers. |
 | [lmsound](https://lmctl.com/skills/lmsound-skill.md) | You need text-to-speech output. |
