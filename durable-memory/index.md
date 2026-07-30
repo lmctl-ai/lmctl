@@ -27,6 +27,14 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-07-29: Published the new public `lmsheet` raw skill from
+  `/home/mma/repos/tools/lmsheet/docs/lmsheet-skill.md` as
+  `/skills/lmsheet-skill.md`. The website copy substitutes the deployed API
+  Gateway stage URL from lmsheet deployment memory into `LMSHEET_API_URL`, adds
+  `lmsheet` to both skills indexes, and includes `/skills/lmsheet-skill.md` in
+  manual deploy smoke checks. Reviewer1 checked source parity, the command set
+  against local built `lmsheet --help` and source behavior for `--api`, shared
+  appkey wording, and deploy convention.
 - 2026-07-29: Published the new public `lmnote` raw skill from
   `/home/mma/repos/tools/lmnote/docs/lmnote-skill.md` as
   `/skills/lmnote-skill.md`. The website copy substitutes the deployed API

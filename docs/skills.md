@@ -59,6 +59,7 @@ Start here:
 | [lmchat](https://lmctl.com/skills/lmchat-skill.md) | You need shared file-room handoff outside lmctl team chat. |
 | [lmmail](https://lmctl.com/skills/lmmail-skill.md) | You need durable asynchronous mailboxes with message bodies and attachments. |
 | [lmnote](https://lmctl.com/skills/lmnote-skill.md) | You need private per-user notebook files for durable agent notes. |
+| [lmsheet](https://lmctl.com/skills/lmsheet-skill.md) | You need simple per-user spreadsheets with Excel-style A1 addressing. |
 | [lmbio](https://lmctl.com/skills/lmbio-skill.md) | You need local computational-biology helpers. |
 | [lmfin](https://lmctl.com/skills/lmfin-skill.md) | You need local finance/market analytics helpers. |
 | [lmsound](https://lmctl.com/skills/lmsound-skill.md) | You need text-to-speech output. |
