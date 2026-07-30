@@ -27,6 +27,14 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-07-29: Published the new public `lmnote` raw skill from
+  `/home/mma/repos/tools/lmnote/docs/lmnote-skill.md` as
+  `/skills/lmnote-skill.md`. The website copy substitutes the deployed API
+  Gateway stage URL from lmnote deployment memory into `LMNOTE_API_URL`, adds
+  `lmnote` to both skills indexes, and includes `/skills/lmnote-skill.md` in
+  manual deploy smoke checks. Reviewer1 checked source parity, the command set
+  against local built `lmnote --help` and source behavior for `--api`, shared
+  appkey wording, and deploy convention.
 - 2026-07-29: Published the new public `lmmail` raw skill from
   `/home/mma/repos/tools/lmmail/docs/lmmail-skill.md` as
   `/skills/lmmail-skill.md`. The website copy uses the deployed API Gateway
