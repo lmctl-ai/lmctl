@@ -183,6 +183,9 @@ returns content and pending state without delivery or state change. `mail seen`
 answers only whether that message id was observed in historical provider
 transcript evidence; ack, seen, and answered are separate facts.
 
+For a no-cost isolated reproduction of the discover-read-ack drain path, use
+the [ClaudeMock mailbox drain fixture](./manuals/claudemock-mailbox-drain-fixture.md).
+
 ## How do I know delegated work finished?
 
 Do not use exit code `0` alone as proof. `lmctl chat` can exit `0` with a

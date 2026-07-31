@@ -67,7 +67,13 @@ const sidebars: SidebarsConfig = {
         {
           type: 'category',
           label: 'CLI Reference',
-          items: ['manuals/cli-reference', 'manuals/mail', 'manuals/daemon-session', 'manuals/lmprobe'],
+          items: [
+            'manuals/cli-reference',
+            'manuals/mail',
+            'manuals/daemon-session',
+            'manuals/claudemock-mailbox-drain-fixture',
+            'manuals/lmprobe',
+          ],
         },
         'manuals/operations-runbook',
         'manuals/configuration-environment',

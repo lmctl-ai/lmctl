@@ -7,11 +7,18 @@ sidebar_position: 97
 
 All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 
-These docs currently describe `@lmctl-ai/lmctl` **0.1.223**. Run
+These docs currently describe `@lmctl-ai/lmctl` **0.1.227**. Run
 `lmctl --version` before following command examples.
 
 ## Docs Site Updates
 
+- Added a no-cost ClaudeMock mailbox drain fixture verified against
+  `lmctl 0.1.227`. The recipe uses a throwaway DB, `provider=ClaudeMock`,
+  `delayMs`, `lmctl mail pending`, and `relay-loop.pl --once --mode drain` to
+  prove `CREATE -> ENQUEUE -> MESSAGE_ACKNOWLEDGED` without touching the live
+  fleet DB or any real provider API. Rechecked `mail pending` scope: in
+  0.1.227 it defaults to `SELF` in a member session and remains fleet-scoped
+  from an operator shell.
 - Rechecked `lmctl chat --json` against `lmctl 0.1.223`. Accepted synchronous
   sends now emit NDJSON: an early `status: "accepted"` line with `message_id`,
   then the final `status: "ok"` or stalled result with the same `message_id`.

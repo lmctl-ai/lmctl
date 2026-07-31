@@ -27,6 +27,17 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-07-30: Drafted a ClaudeMock mailbox drain fixture for review, verified
+  hands-on against `@lmctl-ai/lmctl 0.1.227`. The fixture uses a throwaway
+  `LMCTL_DB`, `LMCTL_ENABLE_MOCK_PROVIDER=1`, capitalized `provider=ClaudeMock`,
+  a scripted `delayMs` busy turn, `mail pending --receiver`, and
+  `relay-loop.pl --once --mode drain` to prove `CREATE -> ENQUEUE ->
+  MESSAGE_ACKNOWLEDGED` without touching the live fleet DB. Important fixture
+  caveat: fire the chats sequentially with a small delay; simultaneous
+  `ClaudeMock` chats can race on the mock provider's JSON session store.
+  `mail pending` scope also changed by 0.1.227: it defaults to `SELF` in member
+  sessions and remains fleet-scoped from an operator shell, so scripts should
+  pass `--receiver` when the target matters.
 - 2026-07-29: Published the new public `lmsheet` raw skill from
   `/home/mma/repos/tools/lmsheet/docs/lmsheet-skill.md` as
   `/skills/lmsheet-skill.md`. The website copy substitutes the deployed API

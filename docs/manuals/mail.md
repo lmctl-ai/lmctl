@@ -5,7 +5,7 @@ sidebar_position: 3
 
 # Mail inspection
 
-Verified against `lmctl 0.1.218`.
+Verified against `lmctl 0.1.227`.
 
 `lmctl mail` inspects event-log messages, delivery evidence, and causal
 lineage. Use it when `lmctl status` tells you a message is queued or delivered
@@ -114,17 +114,18 @@ lmctl mail pending --limit 50 --json
 lmctl mail pending --receiver "/abs/path/team.lmctl:Lead" --limit 50 --json
 ```
 
-In `lmctl 0.1.218`, bare `mail pending` is fleet-scoped: it lists pending mail
-for every receiver in the local event-log projection. It does **not** self-scope
-to the caller. To poll your own incoming queue, pass the receiver explicitly:
+In `lmctl 0.1.227`, bare `mail pending` defaults to `SELF` in a member session.
+From an operator shell with no resolved `SELF`, it remains fleet-scoped and
+lists pending mail for every receiver in the local event-log projection. To
+avoid ambiguity in scripts and relay tooling, pass the receiver explicitly:
 
 ```bash
 lmctl mail pending --receiver "/abs/path/your-team.lmctl:Lead" --json
 ```
 
-This is intentionally called out because `mail sent` is asymmetric: `mail sent`
-self-scopes to messages sent from `SELF`, while `mail pending` does not
-self-scope in 0.1.218.
+This is intentionally called out because older public-preview builds were
+asymmetric: `mail sent` self-scoped while `mail pending` was fleet-scoped. Use
+an explicit `--receiver` whenever the receiver identity matters.
 
 `mail pending` is useful for relay or infrastructure discovery. It is not the
 normal Lead command for delegation. The reference script in `lmctl-src`,
@@ -132,3 +133,7 @@ normal Lead command for delegation. The reference script in `lmctl-src`,
 `mail ack --terminalize-pending`, and can be adapted to use `mail deliver` or
 custom handling. It is a reference script, not a core `lmctl` command and not
 part of this website repository.
+
+For a complete no-cost fixture that exercises `CREATE -> ENQUEUE ->
+MESSAGE_ACKNOWLEDGED`, see
+[ClaudeMock mailbox drain fixture](./claudemock-mailbox-drain-fixture.md).
