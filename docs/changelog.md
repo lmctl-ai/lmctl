@@ -12,6 +12,10 @@ These docs currently describe `@lmctl-ai/lmctl` **0.1.227**. Run
 
 ## Docs Site Updates
 
+- Added a known-limitation callout to the ClaudeMock mailbox drain fixture:
+  the busy-to-enqueue setup is timing-sensitive in `lmctl 0.1.227` because of a
+  mock-only session-store concurrency bug. The drain/read/ack path remains
+  valid once a pending row exists.
 - Added a no-cost ClaudeMock mailbox drain fixture verified against
   `lmctl 0.1.227`. The recipe uses a throwaway DB, `provider=ClaudeMock`,
   `delayMs`, `lmctl mail pending`, and `relay-loop.pl --once --mode drain` to

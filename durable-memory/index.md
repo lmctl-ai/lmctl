@@ -27,6 +27,12 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-08-01: Added a known-limitation caveat to the ClaudeMock mailbox drain
+  fixture after lmctl-src reported deterministic failures in the sequential
+  busy-to-enqueue setup on `lmctl 0.1.227`. The root cause is a mock-only
+  unlocked `sessions.json` read-modify-write race; once a pending row exists,
+  the `relay-loop.pl --mode drain` read/ack path remains valid. Remove this
+  caveat only after lmctl-src ships and we re-verify the file-lock fix.
 - 2026-07-30: Drafted a ClaudeMock mailbox drain fixture for review, verified
   hands-on against `@lmctl-ai/lmctl 0.1.227`. The fixture uses a throwaway
   `LMCTL_DB`, `LMCTL_ENABLE_MOCK_PROVIDER=1`, capitalized `provider=ClaudeMock`,

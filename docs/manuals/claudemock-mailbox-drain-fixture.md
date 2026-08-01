@@ -30,12 +30,23 @@ The provider name is case-sensitive: use `provider=ClaudeMock`. Lowercase
 error: Lead: Invalid provider "claudemock"
 ```
 
-Fire the two chats sequentially, not simultaneously. Two nearly simultaneous
+:::warning Known limitation in `lmctl 0.1.227`
+
+The busy-to-enqueue setup in this fixture is timing-sensitive because
+`ClaudeMock` has a mock-only session-store concurrency bug. If both chats error
+with `ClaudeMock session not found` and no pending row is created, that is this
+bug. Retry the setup, or wait for the fixed `lmctl` release.
+
+The drain/read/ack path itself is unaffected once a pending row exists:
+`relay-loop.pl --mode drain` still discovers, reads, and acknowledges that row.
+
+:::
+
+Fire the two chats sequentially, not simultaneously. Two overlapping
 `lmctl chat` calls to the same `ClaudeMock` receiver can race on the mock
-provider's unlocked `sessions.json` read-modify-write path and fail with
-`ClaudeMock session not found`. That is a test-fixture artifact. The stable
-shape is: start chat 1 in the background with an overlapping `delayMs`, wait a
-moment, then send chat 2.
+provider's unlocked `sessions.json` read-modify-write path. The least-bad shape
+for `0.1.227` is still: start chat 1 in the background with an overlapping
+`delayMs`, wait a moment, then send chat 2.
 
 ## Copy-paste fixture
 
