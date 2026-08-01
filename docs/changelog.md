@@ -7,15 +7,17 @@ sidebar_position: 97
 
 All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 
-These docs currently describe `@lmctl-ai/lmctl` **0.1.227**. Run
+These docs currently describe `@lmctl-ai/lmctl` **0.1.228**. Run
 `lmctl --version` before following command examples.
 
 ## Docs Site Updates
 
-- Added a known-limitation callout to the ClaudeMock mailbox drain fixture:
-  the busy-to-enqueue setup is timing-sensitive in `lmctl 0.1.227` because of a
-  mock-only session-store concurrency bug. The drain/read/ack path remains
-  valid once a pending row exists.
+- Rechecked the ClaudeMock mailbox drain fixture against `lmctl 0.1.228` after
+  the mock session-store file-lock fix. Three sequential-fire runs and three
+  concurrent-launch runs produced one queued row, no
+  `ClaudeMock session not found` errors, and
+  `CREATE -> ENQUEUE -> MESSAGE_ACKNOWLEDGED` after drain. Removed the
+  temporary known-limitation caveat from the page.
 - Added a no-cost ClaudeMock mailbox drain fixture verified against
   `lmctl 0.1.227`. The recipe uses a throwaway DB, `provider=ClaudeMock`,
   `delayMs`, `lmctl mail pending`, and `relay-loop.pl --once --mode drain` to
