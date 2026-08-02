@@ -36,7 +36,11 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   evidence before calling a target stuck. Verified current command surface
   against `@lmctl-ai/lmctl 0.1.237`; a missing relative teamfile now errors
   `teamfile not found`, and busy receiver evidence is available from
-  `lmctl health <teamfile> <alias> --json`.
+  `lmctl health <teamfile> <alias> --json`. Follow-up review clarified that
+  `mail sent --status queued` is only a durable stall signal while
+  `mailbox_queue_enabled` behavior applies; if queueing is disabled, the
+  equivalent signal is the immediate busy/held result plus `status --json` and
+  `health --json` holder evidence.
 - 2026-08-01: Removed the temporary ClaudeMock mailbox drain fixture caveat
   after installing `@lmctl-ai/lmctl 0.1.228` and re-verifying the file-lock fix.
   Test evidence: three sequential-fire runs and three concurrent-launch runs

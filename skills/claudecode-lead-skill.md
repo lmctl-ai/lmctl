@@ -105,6 +105,15 @@ lmctl mail sent --to "/abs/path/team.lmctl:Alias" --status delivered --json
 lmctl mail history <message_id> --json
 ```
 
+Treat the queued-mail check as queue-enabled evidence, not as a permanent
+stall contract. It is useful when the receiver's configuration allows
+`mailbox_queue_enabled` behavior: a busy send can create a queued row, and
+`mail sent --status queued` tells you the work has not delivered yet. When
+queueing is disabled, the equivalent signal is the immediate busy/held result
+from `lmctl chat`; inspect that result, then use `status --json` and
+`health --json` for the holder PID and last-activity evidence instead of
+expecting a queued mail row to exist.
+
 If `health --json` or the error text reports a holder PID, verify whether that
 process is actually alive and doing work:
 
