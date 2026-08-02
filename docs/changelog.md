@@ -7,11 +7,17 @@ sidebar_position: 97
 
 All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 
-These docs currently describe `@lmctl-ai/lmctl` **0.1.228**. Run
+These docs currently describe `@lmctl-ai/lmctl` **0.1.237**. Run
 `lmctl --version` before following command examples.
 
 ## Docs Site Updates
 
+- Added a raw Claude Code lmctl Lead skill for harness-specific operation:
+  dispatch every `lmctl chat` through Claude Code background execution, never
+  timeout-wrap it, resubmit work on background completion notifications, use
+  Monitor for inbound-mail wakeups, address cross-repo teams with absolute
+  teamfile paths, and verify liveness evidence before calling a target stuck.
+  Rechecked the referenced command surface against `lmctl 0.1.237`.
 - Rechecked the ClaudeMock mailbox drain fixture against `lmctl 0.1.228` after
   the mock session-store file-lock fix. Three sequential-fire runs and three
   concurrent-launch runs produced one queued row, no

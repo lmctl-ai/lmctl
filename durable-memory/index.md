@@ -27,6 +27,16 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-08-02: Drafted a new raw `claudecode-lead-skill.md` for Claude-Code
+  harness-specific lmctl Lead operation. It is intentionally narrower than
+  `lmctl-lead-skill.md`: use real Claude Code background execution for every
+  `lmctl chat`, never shell `timeout`, immediately resubmit work on background
+  completion notification, use Monitor for inbound-mail wakeups, use absolute
+  teamfile paths for cross-repo teams, and check `health --json` plus `ps`
+  evidence before calling a target stuck. Verified current command surface
+  against `@lmctl-ai/lmctl 0.1.237`; a missing relative teamfile now errors
+  `teamfile not found`, and busy receiver evidence is available from
+  `lmctl health <teamfile> <alias> --json`.
 - 2026-08-01: Removed the temporary ClaudeMock mailbox drain fixture caveat
   after installing `@lmctl-ai/lmctl 0.1.228` and re-verifying the file-lock fix.
   Test evidence: three sequential-fire runs and three concurrent-launch runs

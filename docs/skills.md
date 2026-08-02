@@ -44,6 +44,7 @@ Start here:
 | Skill | Use it when |
 | --- | --- |
 | [lmctl Lead](https://lmctl.com/skills/lmctl-lead.md) | You are the Lead of one `.lmctl` team and need the core delegation/review loop. |
+| [Claude Code lmctl Lead](https://lmctl.com/skills/claudecode-lead-skill.md) | You are running an lmctl Lead inside Claude Code and need background dispatch, notification, Monitor, and stall-evidence discipline. |
 | [lmctl-admin](https://lmctl.com/skills/lmctl-admin-skill.md) | You need read-only delivery, liveness, or orphan mailbox diagnostics over lmctl state. |
 | [Team Lead — basic](https://lmctl.com/skills/lmctl-team-lead-basic-skill.md) | You need the everyday Lead checklist: delegate, review, keep durable memory current. |
 | [Team Lead — advanced](https://lmctl.com/skills/lmctl-team-lead-advanced-skill.md) | You need refresh, model-swap, health, or drift-recovery guidance. |
