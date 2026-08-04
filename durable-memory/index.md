@@ -27,13 +27,31 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-08-04: Added draft raw `opencode-lead-skill.md` after the opencodedev
+  holdOpen background-job fix in `@lmctl-ai/lmctl 0.1.248`. Corrected after
+  opencode review: resubmission is required here too; nothing drives the Lead
+  session forward after its process exits. opencode's specific benefit is that a
+  fast background job can surface its result without manual `job get`/`job
+  output` polling while the live holdOpen-protected connection is still open.
+  Keep the caveat that there is no confirmed client-side signal yet to
+  distinguish an unattended/notification turn from an ordinary turn.
+- 2026-08-03: Re-baselined delivery docs against `@lmctl-ai/lmctl 0.1.248`
+  after the 0.1.241 synchronous-by-default change. Current default:
+  `lmctl chat` to a busy receiver returns a busy error and creates no queued
+  mail. Queued member mail remains real but is opt-in via
+  `mailbox_queue_enabled=true` or `LMCTL_MAILBOX_QUEUE_ENABLED=true`; when
+  enabled, the old `(sender, receiver)` lane and optional relay rules still
+  apply. ClaudeMock drain fixture recipes must export
+  `LMCTL_MAILBOX_QUEUE_ENABLED=true` before expecting
+  `CREATE -> ENQUEUE -> MESSAGE_ACKNOWLEDGED`.
 - 2026-08-02: Drafted a new raw `claudecode-lead-skill.md` for Claude-Code
   harness-specific lmctl Lead operation. It is intentionally narrower than
   `lmctl-lead-skill.md`: use real Claude Code background execution for every
-  `lmctl chat`, never shell `timeout`, immediately resubmit work on background
-  completion notification, use Monitor for inbound-mail wakeups, use absolute
-  teamfile paths for cross-repo teams, and check `health --json` plus `ps`
-  evidence before calling a target stuck. Verified current command surface
+  `lmctl chat`, never shell `timeout`, wake up and decide the next task on
+  background completion notification, use Monitor for inbound-mail wakeups only in
+  explicit queue-enabled configs, use absolute teamfile paths for cross-repo
+  teams, and check `health --json` plus `ps` evidence before calling a target
+  stuck. Verified current command surface
   against `@lmctl-ai/lmctl 0.1.237`; a missing relative teamfile now errors
   `teamfile not found`, and busy receiver evidence is available from
   `lmctl health <teamfile> <alias> --json`. Follow-up review clarified that
@@ -84,12 +102,10 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   before review. Public docs now include `lmctl mail`, `lmctl serve
   start/status/stop`, and `lmctl session`; retire public MCP setup guidance;
   remove instructional `lmctl_chat`, `--detach`, and old workspace command
-  guidance; and add Kimi as a native provider. Current queued-mail guidance:
-  base delivery is the same sender's next `lmctl chat` to that receiver once it
-  is free; `lmctl serve start` in normal daemon mode is an optional accelerator
-  that can drain queued `(sender, receiver)` lanes proactively. Do not call the
-  daemon the only delivery path, and do not call same-sender chat a mere
-  fallback.
+  guidance; and add Kimi as a native provider. That queued-mail guidance is now
+  superseded by the 2026-08-03 synchronous-by-default entry above; keep only the
+  fact that opt-in queues still use `(sender, receiver)` lanes and optional
+  relay.
 - 2026-07-22: Verified docs against `@lmctl-ai/lmctl 0.1.158` help. Top-level
   help lists 21 public commands: status, diagnose, diagnose-prompt, serve, api,
   device, team, chat, terminal, tail, health, recover, ls, lint, seed, hire,
@@ -135,7 +151,7 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
   footer now expose Skills. The homepage now lists Baby steps and Operating
   teams, and Install & first run hands off to Baby steps instead of the older
   workflow tutorial.
-- 2026-07-19: Processed independent review findings; current docs target was
+- 2026-07-19: Processed independent review findings; historical docs target was
   `lmctl 0.1.154`, later rechecked against 0.1.158.
   Public docs and Lead skills now state that `lmctl chat` exit `0` is not a
   delegated-work completion contract: `enqueued mailbox message N` means queued,

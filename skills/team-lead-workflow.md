@@ -17,18 +17,18 @@ Use the CLI:
 - `lmctl chat "<teamfile>" Coder --prompt-file task.md` for non-trivial prompts
 
 Use `chat` when you need to drive a member turn and get a reply. Queueing
-depends on sender identity: if lmctl can resolve a sender, `chat` queues in a
-`(sender, receiver)` lane when the target is busy; if there is no sender
-identity, busy returns an error instead of creating anonymous mail. Queued work
-follows `queued -> in-flight -> delivered with receipt` and is at-least-once.
-Base rule: the next `lmctl chat` from that same sender to that same receiver
-delivers that sender's queued lane once the receiver is free. A chat from
-another sender to the same receiver does not flush it. With `lmctl serve start`
-running in normal daemon mode, mailbox relay is an optional accelerator: it can
-drain queued lanes proactively after the receiver goes idle. If the sender is
-idle waiting for the reply and no relay drains the lane, delivery can deadlock.
-If a human is holding the receiver with `lmctl terminal`, the queue waits until
-that lock is released.
+is opt-in. By default, a busy target returns a busy error and creates no queued
+mail. If `mailbox_queue_enabled=true` or `LMCTL_MAILBOX_QUEUE_ENABLED=true` is
+set and lmctl can resolve a sender, `chat` queues in a `(sender, receiver)` lane
+when the target is busy. Queued work follows `queued -> in-flight -> delivered
+with receipt` and is at-least-once. Base queued rule: the next `lmctl chat`
+from that same sender to that same receiver delivers that sender's queued lane
+once the receiver is free. A chat from another sender to the same receiver does
+not flush it. With `lmctl serve start` running in normal daemon mode, mailbox
+relay is an optional accelerator: it can drain queued lanes proactively after
+the receiver goes idle. If the sender is idle waiting for the reply and no relay
+drains the lane, delivery can deadlock. If a human is holding the receiver with
+`lmctl terminal`, queued mail waits until that lock is released.
 
 Prefer `--prompt-file` for prompts containing command examples, backticks,
 `$(...)`, `$VAR`, or quotes; positional prompts are assembled by your shell
@@ -36,8 +36,9 @@ before lmctl sees them. Write the prompt file with an editor or file-writing
 tool, not `echo` or a heredoc.
 
 Before important sends, run `lmctl status` to see receiver busy/idle state and
-queued lanes. After a queued send, run `lmctl status --since 7d` and read
-`Waiting on:` / `mailbox outbound`. Exit `0` can mean queued, not delivered.
+queued lanes. In queue-enabled setups, after a queued send, run
+`lmctl status --since 7d` and read `Waiting on:` / `mailbox outbound`. Exit `0`
+can mean queued, not delivered.
 
 Warmup/connectivity check first:
 

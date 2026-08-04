@@ -50,7 +50,7 @@ The current positioning is practical:
 - A **team** is a named set of members, either from a teamfile or DB-backed
   team metadata.
 - A **member** is an agent alias backed by a native provider CLI.
-- A **mailbox lane** is queued member-to-member mail for one `(sender,
+- A **mailbox lane** is opt-in queued member-to-member mail for one `(sender,
   receiver)` pair.
 - **durable-memory** is the committed knowledge layer that survives provider
   sessions.
@@ -65,20 +65,22 @@ down as Lead instructions and keep the load-bearing facts in durable memory.
 
 ## Chat and mailbox lifecycle
 
-`lmctl chat` drives one member turn when the receiver is idle. From a member
-session, if the receiver is busy, it queues in that sender-to-receiver mailbox
-lane. The queued-mail lifecycle is:
+`lmctl chat` drives one member turn when the receiver is idle. By default, if
+the receiver is busy, `chat` returns a busy error and creates no queued mail
+row. If the mailbox queue is explicitly enabled with `mailbox_queue_enabled=true`
+or `LMCTL_MAILBOX_QUEUE_ENABLED=true`, busy member-to-member chat queues in that
+sender-to-receiver mailbox lane. The opt-in queued-mail lifecycle is:
 
 ```text
 queued -> in-flight -> delivered with receipt
 ```
 
-Queued mail is keyed by `(sender, receiver)`. Base delivery is the next
+Queued mail is keyed by `(sender, receiver)`. Base queued delivery is the next
 `lmctl chat` from that same sender to that same receiver once the receiver is
 free. A chat from another sender to the same receiver does not flush the lane.
 With `lmctl serve start` running in normal daemon mode, mailbox relay can drain
-queued lanes proactively. A receiver held by `lmctl terminal` is legitimately
-busy, so mail waits instead of failing.
+queued lanes proactively. When queueing is off, there is nothing for the relay
+to drain. A receiver held by `lmctl terminal` is legitimately busy.
 
 ```bash
 lmctl chat ./team.lmctl Coder "Implement the smallest safe fix."
@@ -94,9 +96,11 @@ a member session it reports an operator team/activity view with `identity: none`
 
 ## serve and api commands
 
-`lmctl serve start` starts local daemon and service integrations. It is not required
-for queued member-mail correctness. The `lmctl api ...` commands are part of
-the CLI and act on local lmctl state or the local daemon where needed. See the
+`lmctl serve start` starts local daemon and service integrations. It is not
+required for default synchronous chat. For opt-in queued member mail, its relay
+can drain queues proactively but is not the only delivery path. The
+`lmctl api ...` commands are part of the CLI and act on local lmctl state or the
+local daemon where needed. See the
 [CLI reference](./cli-reference.md) for the full command list.
 
 To point the CLI at a remote daemon (advanced), set:

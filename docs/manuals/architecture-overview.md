@@ -7,8 +7,10 @@ sidebar_position: 4
 
 lmctl is single-operator and runs on Linux/WSL2. The `lmctl` CLI sets up and
 operates everything on its own, working directly against local state.
-The `lmctl serve` command family manages the local daemon for daemon-backed workflow and service
-integrations. The
+The `lmctl serve start` daemon is optional local infrastructure for the HTTP
+API, web UI, terminal manager, agent services, and opt-in mailbox relay. With
+the default synchronous chat model, busy member chat does not create queued mail,
+so there may be nothing for the relay to drain. The
 hosted web console at [lmctl.ai](https://lmctl.ai) is optional — a subscription
 feature (free and premium tiers), not required to run lmctl.
 
@@ -30,12 +32,12 @@ workflow and inputs; the workflow controls the sequence.
 
 ## The local daemon
 
-`lmctl serve start` starts the local always-on daemon — the queue worker and agent
-services that actually *execute* your jobs and runs. Project, workflow, team,
+`lmctl serve start` starts the local daemon. It is useful for daemon-backed API,
+web UI, terminal, agent-service, and opt-in queue-relay use. Project, workflow, team,
 job, run, issue, and attention state lives in a SQLite workspace database,
 normally under `~/.lmctl/`, using Node's built-in `node:sqlite` backend. The
-`lmctl` CLI reads and writes that local state directly; you start `serve start`
-once and leave it running so submitted work gets executed. The optional hosted web
+`lmctl` CLI reads and writes that local state directly; start `serve start` when
+you need those daemon-backed services. The optional hosted web
 console at
 [lmctl.ai](https://lmctl.ai) (a free/premium subscription) connects to the same
 local daemon — everything it does is also doable from the CLI.

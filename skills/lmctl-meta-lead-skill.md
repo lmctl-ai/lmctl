@@ -26,11 +26,12 @@ lmctl chat "<teamA>.lmctl" Lead "coordinate the X change with your Coder+Reviewe
 ```
 If you remember older lmctl forms, read the old-command block in the basic
 Lead skill. Meta-Lead work now uses synchronous `chat` by default; busy
-queueing depends on sender identity.
+queueing is opt-in.
 
 For peer Lead status notes, use `chat`. If the target Lead is busy and lmctl
-can resolve your sender identity, lmctl queues the message in your
-sender-to-receiver lane:
+uses default queue settings, it returns a busy error and creates no queued mail.
+If the opt-in mailbox queue is enabled and lmctl can resolve your sender
+identity, lmctl queues the message in your sender-to-receiver lane:
 
 ```sh
 lmctl chat "<teamA>.lmctl" Lead "status note"
@@ -38,12 +39,13 @@ lmctl chat "<teamA>.lmctl" Lead "status note"
 
 Delivery is at-least-once: a duplicate delivery after a crash is possible;
 losing queued work is worse.
-Queued member mail is keyed by `(sender, receiver)`. Base delivery is the next
+Queued member mail is keyed by `(sender, receiver)`. Base queued delivery is the next
 `lmctl chat` from that same sender to that same receiver once the receiver is
 free. A chat from another sender to the same receiver does not flush it. With
 `lmctl serve start` running in normal daemon mode, mailbox relay is an optional
-accelerator that can drain queued lanes proactively. A receiver held by
-`lmctl terminal` is correctly busy until the human exits the terminal.
+accelerator that can drain queued lanes proactively. When queueing is off,
+there is nothing for the relay to drain. A receiver held by `lmctl terminal` is
+correctly busy until the human exits the terminal.
 
 ## Warm up a newly-seeded Lead
 When you seed a team and start talking to its Lead, open with a connectivity ping:
@@ -54,11 +56,11 @@ first hand-off.
 
 ## Inspect before messaging Leads
 A Lead mid-turn serves one turn-driving sender at a time. Busy behavior depends
-on sender identity: if lmctl can resolve a sender, the chat queues for that
-`(sender, receiver)` lane; if there is no sender identity, busy is refused and
-not allowed to abort the in-flight turn. Use `tail`/`health` to inspect without
-waking, then let the runtime/harness own wake and concurrency. Don't broadcast
-turn-driving chats into a working fleet.
+on the queue setting first: by default busy is refused and not allowed to abort
+the in-flight turn. If queueing is enabled and lmctl can resolve a sender, the
+chat queues for that `(sender, receiver)` lane. Use `tail`/`health` to inspect
+without waking, then let the runtime/harness own wake and concurrency. Don't
+broadcast turn-driving chats into a working fleet.
 
 ## Refresh a drifting Lead
 A running session cannot refresh itself. Refresh the target Lead from a

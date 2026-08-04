@@ -56,6 +56,6 @@ for continuity but are not the canonical project record.
 
 ## serve / api commands
 
-The `lmctl serve` command family manages the local daemon for daemon-backed workflow and service
-integrations.
+The `lmctl serve start` command manages the optional local daemon for API, web
+UI, terminal-manager, agent-service, and opt-in mailbox-relay integrations.
 `lmctl api ...` are CLI commands that act on your local lmctl state directly.

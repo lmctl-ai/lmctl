@@ -10,7 +10,7 @@ which DB a command uses and, optionally, how to reach a remote daemon.
 
 ## State DB resolution
 
-Verified against `lmctl 0.1.218`: the current global state selector is:
+Verified against `lmctl 0.1.248`: the current global state selector is:
 
 - `--db PATH` to point one command at a specific SQLite database.
 - `LMCTL_DB` to set the database for commands that do not pass `--db`.
@@ -45,6 +45,25 @@ non-default URL:
 export LMCTL_API_URL=http://127.0.0.1:8787
 export LMCTL_API_TOKEN=<token>
 ```
+
+## Mailbox queue mode
+
+Default member chat is synchronous: `lmctl chat` to a busy receiver returns a
+busy error and creates no queued mail row. Enable the retained queued-mail mode
+only when you intentionally want busy sends to enter `(sender, receiver)` lanes:
+
+```toml
+mailbox_queue_enabled = true
+```
+
+For one shell or fixture, use the environment override:
+
+```bash
+export LMCTL_MAILBOX_QUEUE_ENABLED=true
+```
+
+With queueing enabled, `lmctl serve start` can relay queued mail proactively.
+With queueing disabled, the daemon has no queued member mail to drain.
 
 ## Serve port
 
@@ -105,7 +124,7 @@ _MEMBER_ alias=Coder provider=opencode model=<model> effort=<variant>
 ```
 
 Model routing requires `@lmctl-ai/lmctl` 0.1.151 or newer for the current seed
-and terminal behavior. This page's command shapes were checked against 0.1.218.
+and terminal behavior. This page's command shapes were checked against 0.1.248.
 After seeding a model-routed team, run:
 
 ```bash

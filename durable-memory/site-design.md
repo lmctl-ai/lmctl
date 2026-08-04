@@ -47,11 +47,13 @@ Content conventions (keep these consistent across pages):
 - The product/platform is **lmctl**; the command is **`lmctl`**.
 - Install is `npm install -g @lmctl-ai/lmctl`.
 - The `lmctl` CLI is a **direct, local** tool — it sets up *and* operates
-  everything; do not frame it as a network client. Base queued-member-mail
-  delivery is the same sender's next `lmctl chat` to the same receiver once it
-  is free; `lmctl serve start` in normal daemon mode is an optional accelerator
-  that can drain queued lanes proactively. Different senders do not flush each
-  other's `(sender, receiver)` lanes.
+  everything; do not frame it as a network client. Default member chat is
+  synchronous: busy returns a busy error and creates no queued row. Queued
+  member mail is opt-in; when enabled, base delivery is the same sender's next
+  `lmctl chat` to the same receiver once it is free, and `lmctl serve start` in
+  normal daemon mode is an optional accelerator that can drain queued lanes
+  proactively. Different senders do not flush each other's `(sender, receiver)`
+  lanes.
 - The **lmctl.ai** web console is **optional** (free/premium subscription), not
   required.
 - Keep examples runnable. Redirect daemon logs in examples:

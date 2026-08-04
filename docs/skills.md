@@ -15,15 +15,18 @@ The current public lmctl contract is simple:
 
 - Delegate with synchronous `lmctl chat <teamfile> <alias> "<prompt>"`.
 - Treat `lmctl chat` exit status as transport status, not task completion.
-- Use `lmctl chat --json` and `lmctl status` to distinguish queued work from a
-  finished member reply.
+- By default, a busy receiver returns a busy error and creates no queued mail.
+  The mailbox queue is opt-in with `mailbox_queue_enabled=true` or
+  `LMCTL_MAILBOX_QUEUE_ENABLED=true`.
+- Use `lmctl chat --json` and `lmctl status` to distinguish a busy result,
+  opt-in queued work, and a finished member reply.
 - Use `lmctl chat ... --prompt-file <path>` for non-trivial prompts. Positional
   prompts are built by the shell, so backticks, `$(...)`, `$VAR`, and quotes can
   change before lmctl sees them. Write the prompt file with an editor or
   file-writing tool, not `echo` or a heredoc.
-- Run `lmctl status` before important sends and `lmctl status --since 7d` after
-  queued sends. Read `Waiting on:` and `mailbox outbound`; exit `0` can still
-  mean queued.
+- Run `lmctl status` before important sends. In queue-enabled setups, run
+  `lmctl status --since 7d` after queued sends and read `Waiting on:` /
+  `mailbox outbound`; exit `0` can still mean queued.
 - Keep durable project knowledge in `durable-memory/` so a refreshed session or
   swapped provider keeps the same working memory.
 
@@ -45,6 +48,7 @@ Start here:
 | --- | --- |
 | [lmctl Lead](https://lmctl.com/skills/lmctl-lead.md) | You are the Lead of one `.lmctl` team and need the core delegation/review loop. |
 | [Claude Code lmctl Lead](https://lmctl.com/skills/claudecode-lead-skill.md) | You are running an lmctl Lead inside Claude Code and need background dispatch, notification, Monitor, and stall-evidence discipline. |
+| [opencode lmctl Lead](https://lmctl.com/skills/opencode-lead-skill.md) | You are running an lmctl Lead on opencode and need the background-job / holdOpen details — resubmission still drives everything, same as Claude Code. |
 | [lmctl-admin](https://lmctl.com/skills/lmctl-admin-skill.md) | You need read-only delivery, liveness, or orphan mailbox diagnostics over lmctl state. |
 | [Team Lead — basic](https://lmctl.com/skills/lmctl-team-lead-basic-skill.md) | You need the everyday Lead checklist: delegate, review, keep durable memory current. |
 | [Team Lead — advanced](https://lmctl.com/skills/lmctl-team-lead-advanced-skill.md) | You need refresh, model-swap, health, or drift-recovery guidance. |

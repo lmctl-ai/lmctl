@@ -105,25 +105,53 @@ lmctl status
 lmctl api status
 ```
 
-## A queued member message never arrived
+## A busy member chat did not run
 
-First confirm whether the message is still queued:
+First determine which mode you are in. Verified against `lmctl 0.1.248`, the
+default is synchronous: a busy receiver returns an immediate busy error, exits
+non-zero, and creates no queued mail row.
+
+```bash
+lmctl health <teamfile.lmctl> <alias> --json
+lmctl status --json
+```
+
+A busy result can include the holder PID and liveness verdict:
+
+```text
+status:"busy" ... holder_pid=739451, live
+```
+
+If the holder PID is live, inspect whether it is actually making progress:
+
+```bash
+ps -p <pid> -o pid,stat,wchan:32,pcpu,time,etime,cmd
+```
+
+A receiver can be legitimately busy because it is in a provider turn or because
+a human is holding it with `lmctl terminal`. That is correct behavior. If the
+holder PID is dead, treat it as a stale or phantom lock, not a live terminal
+hold. Do not wait for a human who is not actually holding the session.
+
+## An opt-in queued member message never arrived
+
+Use this section only when `mailbox_queue_enabled=true` or
+`LMCTL_MAILBOX_QUEUE_ENABLED=true` is in effect, or when you are investigating
+older queued mail created before the default changed. First confirm whether the
+message is still queued:
 
 ```bash
 lmctl status
 lmctl mail sent --to "/abs/path/team.lmctl:Coder" --status queued --json
 ```
 
-Use `@lmctl-ai/lmctl` 0.1.151 or newer for the `Waiting on:` status section
-that keeps old undelivered mail visible; this page was checked against 0.1.218.
-
 Look at `Waiting on:` and `mailbox outbound`. A pending `(sender, receiver)`
 lane means the message is queued; it has not disappeared. If the original
 `chat` exited 0 with
 `enqueued mailbox message N`, that also means queued, not delivered yet.
 
-Base delivery does not require a daemon: the next `lmctl chat` from that same
-sender to that same receiver delivers that sender's queued lane once the
+Base queued delivery does not require a daemon: the next `lmctl chat` from that
+same sender to that same receiver delivers that sender's queued lane once the
 receiver is free. A chat from another sender to the same receiver does not flush
 your lane. With `lmctl serve start` running in normal daemon mode, mailbox relay
 can drain queued lanes proactively after the receiver goes idle.
@@ -189,8 +217,9 @@ the [ClaudeMock mailbox drain fixture](./manuals/claudemock-mailbox-drain-fixtur
 ## How do I know delegated work finished?
 
 Do not use exit code `0` alone as proof. `lmctl chat` can exit `0` with a
-completed member reply, or it can exit `0` with `enqueued mailbox message N`,
-which means queued and not delivered yet.
+completed member reply, and in opt-in queue mode it can also exit `0` with
+`enqueued mailbox message N`, which means queued and not delivered yet. With
+the default synchronous mode, a busy receiver exits non-zero with a busy result.
 
 For automation, use JSON:
 
@@ -198,8 +227,9 @@ For automation, use JSON:
 lmctl chat ./team.lmctl Coder "Implement the fix." --json
 ```
 
-If the response has `status: "enqueued"` and `path: "enqueued"`, the work is
-waiting in the `(sender, receiver)` lane. Confirm completion with:
+If the response has `status: "enqueued"` and `path: "enqueued"`, the opt-in
+queue accepted the work and it is waiting in the `(sender, receiver)` lane.
+Confirm completion with:
 
 ```bash
 lmctl status

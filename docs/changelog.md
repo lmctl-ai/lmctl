@@ -7,16 +7,29 @@ sidebar_position: 97
 
 All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 
-These docs currently describe `@lmctl-ai/lmctl` **0.1.237**. Run
+These docs currently describe `@lmctl-ai/lmctl` **0.1.248**. Run
 `lmctl --version` before following command examples.
 
 ## Docs Site Updates
 
+- Added a raw opencode lmctl Lead skill for the opencode fork's background-job
+  model: use opencode's `shell({background:true})` / `job` surface, trust
+  holdOpen after the `0.1.248` fix, and keep resubmission explicit — opencode
+  can surface a fast job result without polling while the live connection is
+  still open, but it does not drive the next Lead turn after the process exits.
+- Rechecked delivery behavior against `lmctl 0.1.248` after the 0.1.241
+  synchronous-by-default change. Public docs now teach busy receiver =
+  immediate busy error by default, with mailbox queueing retained as opt-in via
+  `mailbox_queue_enabled=true` or `LMCTL_MAILBOX_QUEUE_ENABLED=true`. Queue
+  lifecycle pages are bannered as opt-in rather than deleted. The ClaudeMock
+  mailbox drain fixture now exports `LMCTL_MAILBOX_QUEUE_ENABLED=true`.
 - Added a raw Claude Code lmctl Lead skill for harness-specific operation:
   dispatch every `lmctl chat` through Claude Code background execution, never
-  timeout-wrap it, resubmit work on background completion notifications, use
-  Monitor for inbound-mail wakeups, address cross-repo teams with absolute
-  teamfile paths, and verify liveness evidence before calling a target stuck.
+  timeout-wrap it, wake up and decide the next task on background completion
+  notifications, use Monitor for inbound-mail wakeups only in explicit
+  queue-enabled configs,
+  address cross-repo teams with absolute teamfile paths, and verify liveness
+  evidence before calling a target stuck.
   Rechecked the referenced command surface against `lmctl 0.1.237`.
 - Rechecked the ClaudeMock mailbox drain fixture against `lmctl 0.1.228` after
   the mock session-store file-lock fix. Three sequential-fire runs and three
@@ -142,12 +155,13 @@ These docs currently describe `@lmctl-ai/lmctl` **0.1.237**. Run
 
 ## lmctl 0.1.100+
 
-- Clarified the current queued-member-mail delivery model: `lmctl chat` to a
-  busy receiver enqueues, and the next `lmctl chat` from that same sender to
-  that same receiver delivers that sender's queued lane plus the new message
-  once the receiver is free. A live `lmctl terminal` lock is a valid busy state,
-  so queued mail waits until the human exits the terminal. If the sender goes
-  idle waiting for the queued reply, this is deadlock, not latency.
+- Clarified the then-current queued-member-mail delivery model: `lmctl chat` to
+  a busy receiver enqueues when queueing is enabled, and the next `lmctl chat`
+  from that same sender to that same receiver delivers that sender's queued lane
+  plus the new message once the receiver is free. A live `lmctl terminal` lock
+  is a valid busy state, so queued mail waits until the human exits the
+  terminal. If the sender goes idle waiting for the queued reply, this is
+  deadlock, not latency.
 - Verified queued delegation guidance and documented the machine-readable
   `lmctl chat --json` queued contract: `status: "enqueued"` with
   `path: "enqueued"`. Exit code `0` alone is not a delegated-work completion

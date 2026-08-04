@@ -20,8 +20,7 @@ it resolves the caller from `LMCTL_SELF_SESSIONID` and shows identity, teamfile,
 member busy/idle state, recent delegation activity, and pending mailbox lanes.
 Outside a member session it reports an operator team/activity view with
 `identity: none`.
-Use `@lmctl-ai/lmctl` 0.1.151 or newer for the `Waiting on:` section that keeps
-old undelivered mail visible; this page was checked against 0.1.218.
+This page was rechecked against `lmctl 0.1.248`.
 
 ## What is waiting for me?
 
@@ -43,20 +42,27 @@ lmctl status
 lmctl diagnose
 ```
 
-If `status` shows pending outbound mail, check whether the receiver is busy. A
-receiver can be busy because it is in a provider turn or because a human holds
-it with `lmctl terminal`; that is correct behavior. If the receiver is idle and
+By default, `lmctl chat` to a busy receiver returns a busy error immediately and
+creates no queued mail. Inspect the receiver before retrying:
+
+```bash
+lmctl health <teamfile.lmctl> <alias> --json
+```
+
+A receiver can be busy because it is in a provider turn or because a human holds
+it with `lmctl terminal`; that is correct behavior. If `status` shows pending
+outbound mail, you are looking at opt-in queued mail or older queued work. When
 queued mail is not moving, check the daemon:
 
 ```bash
 lmctl serve status
 ```
 
-Base delivery does not require a daemon: the next `lmctl chat` from the same
-sender to that same receiver delivers that sender's queued lane once the
-receiver is free. A chat from another sender to the same receiver does not flush
-the lane. With `lmctl serve start` running in normal daemon mode, mailbox relay
-can drain queued lanes proactively after the receiver goes idle.
+Base queued delivery does not require a daemon: the next `lmctl chat` from the
+same sender to that same receiver delivers that sender's queued lane once the
+receiver is free. A chat from another sender to the same receiver does not
+flush the lane. With `lmctl serve start` running in normal daemon mode, mailbox
+relay can drain queued lanes proactively after the receiver goes idle.
 
 ## Legacy issue compatibility
 
@@ -109,9 +115,16 @@ the member finishes its turn and prints the full reply.
 lmctl chat ./team.lmctl:Coder "Run the long verification pass."
 ```
 
-When lmctl can resolve a sender identity, `chat` is also the queueing
-primitive. If the target is busy, lmctl queues the message in the
-sender-to-receiver lane:
+With the default queue setting, a busy receiver returns a busy error and the
+caller owns retry, polling, or inspection:
+
+```bash
+lmctl chat ./team.lmctl Coder "status note" --json
+```
+
+If the opt-in mailbox queue is enabled with `mailbox_queue_enabled=true` or
+`LMCTL_MAILBOX_QUEUE_ENABLED=true`, `chat` can also be the queueing primitive.
+If the target is busy, lmctl queues the message in the sender-to-receiver lane:
 
 ```bash
 lmctl chat ./team.lmctl Coder "status note"
@@ -119,8 +132,8 @@ lmctl chat ./team.lmctl Coder "status note"
 
 Exit 0 with `enqueued mailbox message N` means queued, not delivered yet.
 The delivery lifecycle is `queued -> in-flight -> delivered with receipt`.
-Delivery is at-least-once; duplicate delivery can happen after a crash, but a
-queued message should not be lost.
+Delivery is at-least-once in queue-enabled mode; duplicate delivery can happen
+after a crash, but a queued message should not be lost.
 
 Queued member mail is keyed by `(sender, receiver)`. Base delivery is the next
 `lmctl chat` from the same sender to that same receiver once the receiver is
@@ -139,9 +152,9 @@ timeout can kill in-flight delegated work underneath lmctl.
 | Result | Meaning |
 |------|---------|
 | Exit `0` with the member reply | The member turn ran and returned. |
-| Exit `0` with `enqueued mailbox message N` | Queued, not delivered and not complete. |
-| `--json` with `status: "enqueued"` and `path: "enqueued"` | Machine-readable queued contract. Track it with `lmctl status`. |
-| Exit `1` with `--json` `status: "busy"` or a busy message | No queued lane was created for that call; commonly lmctl had no sender identity to attach to the message. Retry only after the receiver is free. |
+| Exit `0` with `enqueued mailbox message N` | Opt-in queue accepted the prompt; queued, not delivered and not complete. |
+| `--json` with `status: "enqueued"` and `path: "enqueued"` | Machine-readable opt-in queued contract. Track it with `lmctl status` and `lmctl mail`. |
+| Exit `1` with `--json` `status: "busy"` or a busy message | Default busy result; no queued lane was created for that call. Inspect holder/liveness and retry only when appropriate. |
 | Exit `1` with `--json` `status: "error"` or other error text | Provider, delivery, or runtime error. Do not treat this as a busy retry without reading the error. |
 
 Exit `0` alone does not prove delegated work is done. Prefer
@@ -154,11 +167,12 @@ at `lmctl chat`, `lmctl chat --json`, and `lmctl status`. Private supervisor
 mechanisms are outside the lmctl product surface and are not regular agent
 commands.
 
-**Busy means "not ready yet."** Queueing depends on sender identity, not on
-whether the command came from a shell or a member transcript. If lmctl can
-resolve a sender identity, a busy receiver queues into that `(sender, receiver)`
-lane. If there is no sender identity, there is no lane; the busy call returns a
-busy error instead of queueing.
+**Busy means "not ready yet."** By default it is returned synchronously as an
+error with no queued row. If the opt-in mailbox queue is enabled, queueing still
+depends on sender identity, not on whether the command came from a shell or a
+member transcript. If lmctl can resolve a sender identity, a busy receiver
+queues into that `(sender, receiver)` lane. If there is no sender identity,
+there is no lane; the busy call returns a busy error instead of queueing.
 
 ## A freshly-seeded session is not instantly chat-ready
 

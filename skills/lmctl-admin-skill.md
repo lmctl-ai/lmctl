@@ -2,8 +2,8 @@
 
 Use this skill when you need read-only diagnostics over lmctl team state:
 delivery classification, liveness/lock reconciliation, or orphaned mailbox row
-scans. `lmctl-admin` is a sibling project to lmctl, currently at
-`/home/mma/repos/lmctl-admin`.
+scans. `lmctl-admin` is a sibling project to lmctl; use the local checkout path
+for your machine.
 
 `lmctl-admin` is diagnostic only. Its current commands do not write state, call
 `lmctl chat`, or acknowledge mail.
@@ -13,11 +13,11 @@ scans. `lmctl-admin` is a sibling project to lmctl, currently at
 `lmctl-admin` depends on a built sibling `lmctl-src` checkout.
 
 ```sh
-cd /home/mma/repos/lmctl-src
+cd /path/to/lmctl-src
 npm install
 npm run build
 
-cd /home/mma/repos/lmctl-admin
+cd /path/to/lmctl-admin
 npm install
 npm run build
 ```
@@ -82,4 +82,4 @@ maintenance. The JSON groups by lane and message type, with
 - If a documented output field does not match the live command, report that as a
   docs or tool drift bug; do not guess from timestamps.
 
-Canonical local manual: `/home/mma/repos/lmctl-admin/README.md`.
+Canonical local manual: `README.md` in your local `lmctl-admin` checkout.

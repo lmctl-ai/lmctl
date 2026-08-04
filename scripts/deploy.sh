@@ -159,6 +159,7 @@ fi
 for spec in \
   '/lmprobe/|text/html|lmprobe Manual' \
   '/skills/claudecode-lead-skill.md|text/markdown|# Claude Code lmctl Lead skill' \
+  '/skills/opencode-lead-skill.md|text/markdown|# opencode lmctl Lead skill' \
   '/skills/lmctl-admin-skill.md|text/markdown|# lmctl-admin skill' \
   '/skills/lmprobe-skill.md|text/markdown|# lmprobe skill' \
   '/skills/lmmail-skill.md|text/markdown|# lmmail - simple asynchronous mail for LLM agents' \

@@ -5,7 +5,7 @@ sidebar_position: 4
 
 # Daemon and session inspection
 
-Verified against `lmctl 0.1.218`.
+Verified against `lmctl 0.1.248`.
 
 ## Local daemon
 
@@ -73,12 +73,14 @@ pid, start time, port, and DB. It exits `0` for both running and not-running.
 If `/api/daemon/state` cannot be read, it can still report running with health
 unknown.
 
-When queued mail is not moving and the receiver is idle or phantom-busy from a
-dead holder PID, check `serve status`.
-Base delivery is the same sender's next `lmctl chat` to that same receiver once
-it is free; no daemon is required for correctness. With `serve start` running in
-normal daemon mode, mailbox relay is an optional accelerator that can drain
-queued lanes proactively after the receiver goes idle.
+With the default synchronous chat mode, a busy receiver returns an immediate
+busy error and there is no queued mail for the daemon to relay. When the opt-in
+mailbox queue is enabled and queued mail is not moving, check `serve status`.
+Base queued delivery is the same sender's next `lmctl chat` to that same
+receiver once it is free; no daemon is required for correctness. With
+`serve start` running in normal daemon mode, mailbox relay is an optional
+accelerator that can drain queued lanes proactively after the receiver goes
+idle.
 
 ### Stop
 

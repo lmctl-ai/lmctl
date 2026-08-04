@@ -5,11 +5,17 @@ sidebar_position: 3
 
 # Mail inspection
 
-Verified against `lmctl 0.1.227`.
+Verified against `lmctl 0.1.248`.
 
 `lmctl mail` inspects event-log messages, delivery evidence, and causal
 lineage. Use it when `lmctl status` tells you a message is queued or delivered
 but you need the message-level evidence.
+
+Default `lmctl chat` is synchronous: a busy receiver returns a busy error and
+does not create queued mail. Queued mail appears when the mailbox queue is
+explicitly enabled (`mailbox_queue_enabled=true` in config or
+`LMCTL_MAILBOX_QUEUE_ENABLED=true`) or when you are inspecting older queued
+work.
 
 For every subcommand, `--json` is the stable, versioned external contract.
 Human-readable output is for people and is intentionally not a stable machine
@@ -29,9 +35,10 @@ lmctl mail sent --since 3d --limit 50 --json
 `schema_version=1`, `schema=event-log-v1`, identity, filters, messages, and
 `next_cursor`.
 
-Check `mail sent --status queued` before assuming a delivery problem is a bug:
-most stuck mail is a genuinely busy receiver or a receiver held by
-`lmctl terminal`.
+When queueing is enabled, check `mail sent --status queued` before assuming a
+delivery problem is a bug: most stuck mail is a genuinely busy receiver or a
+receiver held by `lmctl terminal`. With default synchronous behavior, a busy
+send returns a busy result instead of creating a queued row.
 
 Mail identity filters are exact. Use the canonical absolute teamfile identity
 shown by `lmctl status` or `realpath ./team.lmctl`; relative identities such as
@@ -100,9 +107,10 @@ later `handle` replaces it, and a matching `mail ack` clears it. It requires
 the same actor returns `appended: false` while refreshing the causal pointer.
 
 `mail deliver` attempts one real provider delivery for exactly one queued
-message. Unlike daemon lane batching, one `deliver` call sends only the named
-message; relay code owns ordering, retry, and batching. Delivery-attempt JSON
-uses an `outcome` field such as `delivered`, `skipped_busy`,
+message. It is useful only for opt-in queued mail or older queued rows. Unlike
+daemon lane batching, one `deliver` call sends only the named message; relay
+code owns ordering, retry, and batching. Delivery-attempt JSON uses an
+`outcome` field such as `delivered`, `skipped_busy`,
 `skipped_terminal`, or `error`. Unknown, terminal, or already-claimed messages
 return the standard error envelope; for example, a terminal message returns
 `errorKind: "invalid_state"`.
@@ -128,7 +136,8 @@ asymmetric: `mail sent` self-scoped while `mail pending` was fleet-scoped. Use
 an explicit `--receiver` whenever the receiver identity matters.
 
 `mail pending` is useful for relay or infrastructure discovery. It is not the
-normal Lead command for delegation. The reference script in `lmctl-src`,
+normal Lead command for delegation, and in the default synchronous mode it may
+be empty because busy sends do not queue. The reference script in `lmctl-src`,
 `scripts/relay-loop.pl`, composes `mail pending`, `mail read`, and
 `mail ack --terminalize-pending`, and can be adapted to use `mail deliver` or
 custom handling. It is a reference script, not a core `lmctl` command and not

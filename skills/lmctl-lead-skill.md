@@ -16,18 +16,21 @@ Delegate by actually running a command:
 lmctl chat "<teamfile>.lmctl" Coder "Implement X. Commit when tests pass."
 ```
 
-`chat` drives one member turn, blocks, and returns the member reply. If the
-target is busy and lmctl can resolve your sender identity, `chat` queues the
-message in your sender-to-receiver lane. If there is no sender identity, busy
-returns an error instead of creating anonymous queued mail.
+`chat` drives one member turn, blocks, and returns the member reply. By
+default, if the target is busy, `chat` returns a busy error and creates no
+queued mail. The client owns retry, polling, or inspection. If the mailbox
+queue is explicitly enabled (`mailbox_queue_enabled=true` or
+`LMCTL_MAILBOX_QUEUE_ENABLED=true`) and lmctl can resolve your sender identity,
+`chat` queues the message in your sender-to-receiver lane.
 
 If your coding harness supports real background command execution that dispatches
 a command now and notifies you when it completes, use that for `lmctl chat`
 calls when you do not want to block your own turn. Do not wrap the dispatch in an
-external timeout. A slow reply or queued send is not a failure state, and killing
-the process mid-delivery can cascade-interrupt the receiving member's live turn,
-not just fail cleanly on your side. Let the command run to completion and rely
-on the harness completion signal instead of an arbitrary deadline.
+external timeout. A slow reply, busy result, or queue-enabled send is not a
+failure state by itself, and killing the process mid-delivery can
+cascade-interrupt the receiving member's live turn, not just fail cleanly on
+your side. Let the command run to completion and rely on the harness completion
+signal instead of an arbitrary deadline.
 
 For non-trivial prompts, use `--prompt-file` so the shell cannot expand
 backticks, `$(...)`, `$VAR`, or quotes before lmctl sees the text:
@@ -40,19 +43,23 @@ Write the prompt file with an editor or file-writing tool, not `echo` or a
 heredoc.
 
 For important sends, run `lmctl status` first to see receiver busy/idle state
-and existing lanes. If the send queues, use
+and existing lanes. With the default queue setting, a busy result means no
+queued row was created; inspect holder/liveness evidence and retry later when
+appropriate. If queueing is enabled and the send queues, use
 `lmctl mail sent --to "/abs/path/team.lmctl:Alias" --status queued --json` or
 `--status delivered --json` for the precise delivery state; keep
 `lmctl status --since 7d` as the broader team/activity view. Do not infer
 delivery from exit code `0`.
 
-Queued member mail is keyed by `(sender, receiver)`. Base delivery is the next
+Queued member mail, when enabled, is keyed by `(sender, receiver)`. Base queued
+delivery is the next
 `lmctl chat` from that same sender to that same receiver once the receiver is
 free. A chat from another sender to the same receiver does not flush it. When
 `lmctl serve start` runs with daemon loops enabled, its mailbox relay is an
 optional accelerator that can drain queued lanes after the receiver is idle; no
-triggering chat is required. Terminal-held receivers wait until the human exits
-`lmctl terminal`.
+triggering chat is required. When queueing is off, there is nothing for the
+relay to drain. Terminal-held receivers are legitimately busy until the human
+exits `lmctl terminal`.
 
 Inspect without disturbing a member:
 
@@ -80,10 +87,11 @@ lmctl mail ack <message_id>
 lmctl mail tree --since 3d --json
 ```
 
-Before assuming a delivery problem is a bug, check
+When queueing is enabled, before assuming a delivery problem is a bug, check
 `lmctl mail sent --to "/abs/path/team.lmctl:Alias" --status queued --json`;
-most stuck mail is a genuinely busy or terminal-held receiver. Use `--status delivered
---json` for delivered messages and `lmctl mail history <message_id>` for the
+most stuck mail is a genuinely busy or terminal-held receiver. With default
+synchronous behavior, busy sends do not create queued rows. Use `--status
+delivered --json` for delivered messages and `lmctl mail history <message_id>` for the
 event sequence behind one message when `lmctl status` is too coarse. Mail JSON
 is the stable contract, while human text is not. Mail identity filters are exact;
 use canonical absolute teamfile paths from `lmctl status` or `realpath`.

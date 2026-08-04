@@ -19,8 +19,9 @@ It is not a model name. lmctl derives that slot from the session id in
 
 lmctl sets `LMCTL_SELF_SESSIONID` automatically for member sessions it starts
 through `lmctl chat` and `lmctl terminal`. Child lmctl commands inherit it, so
-member-run `chat` knows which member is acting when it needs to queue a message
-for a busy target.
+member-run `chat` knows which member is acting. With default queue settings,
+busy targets return a busy error; with the opt-in mailbox queue enabled,
+identity is what lets lmctl attach queued mail to a `(sender, receiver)` lane.
 
 If you run one of those commands manually outside a member session, lmctl may
 print:

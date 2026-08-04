@@ -5,7 +5,7 @@ sidebar_position: 5
 
 # ClaudeMock mailbox drain fixture
 
-Verified against `lmctl 0.1.228`.
+Verified against `lmctl 0.1.248`.
 
 Use this fixture when you need a no-cost, no-real-API reproduction of the
 mailbox event chain:
@@ -14,9 +14,10 @@ mailbox event chain:
 CREATE -> ENQUEUE -> MESSAGE_ACKNOWLEDGED
 ```
 
-It seeds a throwaway `ClaudeMock` team, creates one queued message while the
-receiver is genuinely busy, dry-runs the reference drain script, then drains the
-message and verifies the final event history.
+It seeds a throwaway `ClaudeMock` team, explicitly enables the opt-in mailbox
+queue, creates one queued message while the receiver is genuinely busy, dry-runs
+the reference drain script, then drains the message and verifies the final event
+history.
 
 ## Safety rules
 
@@ -35,6 +36,10 @@ The copy-paste recipe starts chat 1 in the background with an overlapping
 the drain steps inspect and acknowledge. The `0.1.228` file-lock fix was
 rechecked with both sequential-fire and concurrent chat shapes.
 
+Since `lmctl 0.1.241`, mailbox queueing is off by default. This fixture is a
+queue fixture, so it must opt in with `LMCTL_MAILBOX_QUEUE_ENABLED=true`.
+Without that export, chat 2 returns a busy error and no pending row is created.
+
 ## Copy-paste fixture
 
 Run this from any shell with `lmctl` on `PATH` and a local `lmctl-src` checkout
@@ -43,6 +48,7 @@ containing `scripts/relay-loop.pl`.
 ```bash
 ROOT="$(mktemp -d /tmp/lmctl-mockdrain.XXXXXX)"
 export LMCTL_ENABLE_MOCK_PROVIDER=1
+export LMCTL_MAILBOX_QUEUE_ENABLED=true
 export LMCTL_DB="$ROOT/state.db"
 LMSRC="${LMSRC:-$HOME/repos/lmctl-src}"
 TEAM="$ROOT/mock.lmctl"

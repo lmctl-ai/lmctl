@@ -15,9 +15,10 @@ Delegate with `lmctl chat`, but dispatch it through Claude Code's real
 background execution path: the Bash tool with `run_in_background: true`.
 
 Do not wrap `lmctl chat` in a shell `timeout`. Do not run a long delegation in
-the foreground just to wait synchronously. A slow reply or queued send is not a
-failure state, and killing `lmctl chat` mid-delivery can interrupt the receiving
-member's live turn instead of failing cleanly on your side.
+the foreground just to wait synchronously. A slow reply, busy result, or
+queue-enabled send is not a failure state by itself, and killing `lmctl chat`
+mid-delivery can interrupt the receiving member's live turn instead of failing
+cleanly on your side.
 
 Use prompt files for non-trivial work:
 
@@ -29,15 +30,19 @@ Write the prompt file with your file-writing tool. Do not use `echo` or heredoc
 prompt construction for task text that contains quotes, backticks, `$VAR`,
 `$(...)`, or command examples.
 
-## Resubmit when the harness notifies you
+## Wake up and decide the next task when the harness notifies you
 
-The background completion notification is your wake signal. When Claude Code
-notifies you that a background `lmctl chat` finished, immediately inspect the
-result and dispatch the next unit of work.
+The background completion notification is a wake signal, not a retry signal.
+When Claude Code notifies you that a background `lmctl chat` finished, that
+notification's only job is to bring your turn back to life — it carries no
+instruction of its own. What runs next is for you to decide from the result
+you just got: dispatch the next unit of work, review, repair, or escalate.
+Don't read this as "resend the same task" — the point is never to repeat the
+prior dispatch, it's to act on where things actually stand now.
 
 Do not end a turn with "I dispatched work and am waiting for both to complete"
 unless you have also armed a harness wakeup. That pattern can leave the Lead
-session idle with no resubmit mechanism: the process is blocked, no lmctl
+session idle with no wake mechanism: the process is blocked, no lmctl
 activity happens, and the eventual database row can look like an ordinary
 `done` reply even though the Lead made no progress for hours.
 
@@ -48,13 +53,23 @@ Operational rule:
 3. Dispatch the next task, review, repair, or escalation immediately.
 4. Stop only when there is no queued, running, or newly returned work to act on.
 
-## Use Monitor for inbound replies
+## You do not need to poll for inbound mail by default
 
-When you need to be notified that mail arrived for you, arm Claude Code's
-Monitor tool on a small polling script. Let the harness deliver one notification
-when the script exits; do not spend your LLM turn hand-polling or sleeping.
+Since `lmctl 0.1.241`, `mailbox_queue_enabled` defaults to `false`: a chat sent
+to you is either delivered synchronously — handled inline, in the same call the
+sender made — or the sender gets an immediate busy error. Neither case leaves
+anything queued for you to discover later. There is no "mail arrived while you
+were away" scenario to poll for under the default configuration, so do not arm
+a Monitor loop against `mail pending` as a standing pattern.
 
-Example monitor body:
+### If your configuration explicitly enables queueing
+
+Only relevant when `mailbox_queue_enabled = true` is explicitly set in
+`config.toml` or via `LMCTL_MAILBOX_QUEUE_ENABLED=true` — an opt-in, not the
+default. In that mode, a busy send can create a queued row instead of erroring,
+and you do need a way to learn it arrived. Arm Claude Code's Monitor tool on a
+small polling script rather than hand-polling or sleeping in your own turn; let
+the harness deliver one notification when the script exits:
 
 ```sh
 receiver="/abs/path/team.lmctl:Lead"
@@ -105,9 +120,10 @@ lmctl mail sent --to "/abs/path/team.lmctl:Alias" --status delivered --json
 lmctl mail history <message_id> --json
 ```
 
-Treat the queued-mail check as queue-enabled evidence, not as a permanent
-stall contract. It is useful when the receiver's configuration allows
-`mailbox_queue_enabled` behavior: a busy send can create a queued row, and
+Treat the queued-mail check as queue-enabled evidence, not as the default stall
+contract. Since `lmctl 0.1.241`, default busy behavior is synchronous: no queued
+row is created. When the receiver's configuration enables
+`mailbox_queue_enabled` behavior, a busy send can create a queued row, and
 `mail sent --status queued` tells you the work has not delivered yet. When
 queueing is disabled, the equivalent signal is the immediate busy/held result
 from `lmctl chat`; inspect that result, then use `status --json` and

@@ -33,9 +33,9 @@ operator shell otherwise.
 `--project` and `--web` are not `status` options; use `--since 7d` or an ISO
 timestamp to widen the activity window.
 
-`lmctl serve start` starts the local HTTP API, web UI, queue daemon, terminal
-manager, and agent services for local service integrations. It runs in the
-foreground and blocks until stopped; background or supervise it yourself. See
+`lmctl serve start` starts the local HTTP API, web UI, terminal manager, agent
+services, and opt-in queue daemon loops for local service integrations. It runs
+in the foreground and blocks until stopped; background or supervise it yourself. See
 [Daemon and session inspection](./daemon-session.md).
 
 ## DB teams
@@ -85,9 +85,11 @@ lmctl chat ./team.lmctl Reviewer "Review Coder's latest change."
 ```
 
 `chat` is synchronous by default: it sends one prompt and blocks until that
-provider turn finishes, queues, or errors. Exit code alone is not a completion
-contract: a busy receiver with a sender identity can enqueue the prompt and
-exit `0`. For raw provider sessions, use one of:
+provider turn finishes or errors. Verified against `lmctl 0.1.248`: with the
+default queue setting, a busy receiver returns a busy error, exits non-zero,
+and creates no queued mail row. Exit code alone is still not a task-completion
+contract; use `--json`, `status`, `health`, and mail evidence when automation
+needs to know the exact state. For raw provider sessions, use one of:
 
 ```bash
 lmctl chat <sessionid> "Prompt text" --provider codex
@@ -113,21 +115,24 @@ By default, `chat` remains synchronous:
 lmctl chat ./team.lmctl Coder "Run the long verification pass."
 ```
 
-When lmctl can resolve a sender identity, the same `chat` command is also the
-queueing primitive. If the target is idle, `chat` drives a normal blocking turn.
-If the target is busy, lmctl queues the message in that sender-to-receiver lane:
+The mailbox queue is opt-in. If `mailbox_queue_enabled=true` or
+`LMCTL_MAILBOX_QUEUE_ENABLED=true` is set, and lmctl can resolve a sender
+identity, the same `chat` command can queue work for a busy target. If the
+target is idle, `chat` drives a normal blocking turn. If the target is busy,
+lmctl queues the message in that sender-to-receiver lane:
 
 ```bash
 lmctl chat ./team.lmctl Coder "status note"
 ```
 
 Exit 0 with `enqueued mailbox message N` means the prompt is queued, not
-delivered yet. The lane is keyed by `(sender, receiver)`. Base delivery is the
-next `lmctl chat` from that same sender to that same receiver once the receiver
-is free. A chat from another sender to the same receiver does not flush the
-lane. With `lmctl serve start` running in normal daemon mode, mailbox relay can
-drain queued lanes proactively after the receiver goes idle. A receiver held by
-`lmctl terminal` is legitimately busy, so mail waits rather than failing.
+delivered yet. The lane is keyed by `(sender, receiver)`. Base queued delivery
+is the next `lmctl chat` from that same sender to that same receiver once the
+receiver is free. A chat from another sender to the same receiver does not
+flush the lane. With `lmctl serve start` running in normal daemon mode, mailbox
+relay can drain queued lanes proactively after the receiver goes idle. When the
+queue is off, there is nothing for the relay to drain. A receiver held by
+`lmctl terminal` is legitimately busy.
 
 Use `lmctl chat ... --json` for automation. Verified against `lmctl 0.1.223`:
 JSON results that create a real message include `message_id`, which can be used
@@ -144,9 +149,11 @@ final result line with the same `message_id`:
 ```
 
 The final line may instead be the existing stalled shape for a stalled turn.
-Busy and enqueued outcomes still emit one JSON line. The queued contract remains
-`status: "enqueued"` with `path: "enqueued"`; queued JSON keeps the existing
-`id` field and also includes `message_id`. See
+Busy and enqueued outcomes still emit one JSON line. With default synchronous
+behavior, a busy result has `status: "busy"` and no queued row. With the opt-in
+queue enabled, the queued contract remains `status: "enqueued"` with
+`path: "enqueued"`; queued JSON keeps the existing `id` field and also includes
+`message_id`. See
 [Verifying delegated work](./verifying-delegated-work.md).
 
 ## Current API surfaces
@@ -172,10 +179,10 @@ operator guidance names them.
 ## Foreground/background ownership
 
 `lmctl chat` blocks and returns a member reply when it can drive the receiver
-now. With sender identity, the same command queues if the receiver is busy.
-Without sender identity, a busy receiver returns busy instead of creating
-anonymous queued mail. lmctl does not expose a separate LLM-called harvest
-command.
+now. By default, a busy receiver returns a busy error. With the opt-in mailbox
+queue enabled and sender identity resolved, the same command queues if the
+receiver is busy. Without sender identity, there is no lane to queue into.
+lmctl does not expose a separate LLM-called harvest command.
 
 ## Queued delivery
 
@@ -185,14 +192,15 @@ The member-to-member lifecycle is:
 queued -> in-flight -> delivered with receipt
 ```
 
-With sender identity, `chat` queues when the target is busy and delivers
-directly when the target is idle. If `chat` exits 0 with
+This lifecycle is real only when the mailbox queue is explicitly enabled. With
+sender identity and queueing enabled, `chat` queues when the target is busy and
+delivers directly when the target is idle. If `chat` exits 0 with
 `enqueued mailbox message N`, that means queued, not delivered yet. When a
 delivery turn runs, the queued lane is sent as one provider turn and the target
-response is recorded as the receipt.
-Delivery is at-least-once: if a process dies after sending but before marking
-rows delivered, lmctl may deliver the same queued message again. A duplicate is
-preferable to losing work.
+response is recorded as the receipt. Delivery is at-least-once in queue-enabled
+mode: if a process dies after sending but before marking rows delivered, lmctl
+may deliver the same queued message again. A duplicate is preferable to losing
+work.
 
 What delivers queued mail: base delivery is the next `lmctl chat` from that
 same sender to that same receiver once the receiver is free. Mail queued by a
@@ -237,8 +245,9 @@ lmctl mail ack <message_id> --json
 lmctl mail tree --since 3d --json
 ```
 
-Use `mail sent --status queued` before assuming a delivery problem is a bug:
-most stuck mail is a genuinely busy or terminal-held receiver. See
+Use `mail sent --status queued` when the opt-in mailbox queue is enabled and
+you need to inspect queued work. With default synchronous behavior, a busy send
+returns an immediate busy result instead of creating a queued row. See
 [Mail inspection](./mail.md).
 
 ## Sessions
