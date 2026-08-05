@@ -5,12 +5,18 @@
 # scoped to ONLY the s3://lmctl-website-prod/lmctl/* prefix and CreateInvalidation
 # on the lmctl.com CloudFront distribution, and trusts only this repo's `main`.
 #
-# Trigger: every push to main (auto-publish), or manual dispatch.
+# DISABLED as of 2026-08-05 (operator decision: build+publish locally for now,
+# revisit Actions if traffic/business justifies the investment). Root cause on
+# record for whenever it's worth re-enabling: `scripts/deploy.sh` also syncs
+# the homepage to s3://lmctl-website-prod/index.html, which is OUTSIDE the
+# role's lmctl/* prefix scope -> every auto-run has been failing with
+# AccessDenied on that PutObject since at least 2026-08-01. Fix would be
+# either widening the role's scope or splitting deploy.sh so the homepage sync
+# uses a separately-scoped role/script. Manual dispatch still works below;
+# `push` trigger removed so it stops red-X'ing every commit in the meantime.
 name: deploy
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
