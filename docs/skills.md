@@ -68,6 +68,7 @@ Start here:
 | [lmbio](https://lmctl.com/skills/lmbio-skill.md) | You need local computational-biology helpers. |
 | [lmfin](https://lmctl.com/skills/lmfin-skill.md) | You need local finance/market analytics helpers. |
 | [lmsound](https://lmctl.com/skills/lmsound-skill.md) | You need text-to-speech output. |
+| [lmtext](https://lmctl.com/skills/lmtext-skill.md) | You need speech-to-text transcription for audio files. |
 
 The raw skills index is also available at
 [lmctl.com/skills](https://lmctl.com/skills/).

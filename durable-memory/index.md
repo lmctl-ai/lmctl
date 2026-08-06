@@ -27,6 +27,12 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 
 ## Recent docs updates
 
+- 2026-08-06: Published draft `lmtext-skill.md` from
+  `/home/mma/repos/tools/lmtext/docs/lmtext-skill.md` as a raw skill page for
+  the lmtext speech-to-text service. Keep the source doc's API base URL guidance
+  generic: readers should set their deployment URL. Reviewer1 found and fixed a
+  copy-paste flow gap before publish: the allocation step must capture `resp`,
+  `id`, and `upload_url` because the upload/finalize/poll steps use them.
 - 2026-08-04: Added draft raw `opencode-lead-skill.md` after the opencodedev
   holdOpen background-job fix in `@lmctl-ai/lmctl 0.1.248`. Corrected after
   opencode review: resubmission is required here too; nothing drives the Lead

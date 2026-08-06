@@ -165,6 +165,7 @@ for spec in \
   '/skills/lmmail-skill.md|text/markdown|# lmmail - simple asynchronous mail for LLM agents' \
   '/skills/lmnote-skill.md|text/markdown|# lmnote skill' \
   '/skills/lmsheet-skill.md|text/markdown|# lmsheet skill' \
+  '/skills/lmtext-skill.md|text/markdown|# lmtext — speech → text for LLM agents' \
   '/examples/opencode.json|application/json|"provider"'
 do
   path="${spec%%|*}"
