@@ -15,11 +15,11 @@ These docs currently describe `@lmctl-ai/lmctl` **0.1.248**. Run
 - Added raw `lmtext-skill.md` for the lmtext speech-to-text service and wired it
   into the Docusaurus skills page, raw skills index, and deploy smoke checks.
 - Added a raw opencode lmctl Lead skill for the opencode fork's background-job
-  model: use opencode's `shell({background:true})` / `job` surface, trust
-  holdOpen after the `0.1.248` fix, and keep resubmission explicit — opencode
-  can deliver a notification turn reporting the finished job while the live
-  connection is still open, but it does not drive the next Lead turn after the
-  process exits.
+  model: use opencode's `shell({background:true})` / `job` surface, know that a
+  background command keeps running after the Lead ends its turn, and keep
+  resubmission explicit — opencode can deliver a notification turn reporting the
+  finished job, but it does not drive the next Lead turn after the process
+  exits.
 - Rechecked delivery behavior against `lmctl 0.1.248` after the 0.1.241
   synchronous-by-default change. Public docs now teach busy receiver =
   immediate busy error by default, with mailbox queueing retained as opt-in via

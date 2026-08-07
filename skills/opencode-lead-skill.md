@@ -14,11 +14,11 @@ opencode supports running a CLI command in the background:
 `shell({command, background: true, ...})` returns immediately without waiting
 for the command to finish.
 
-When that job finishes **while your session's connection is still alive**
-(the window `holdOpen` keeps open), opencode starts a new turn on your session
-reporting the result — restricted to read-only `job` actions (`list` /
-`get` / `output`; no `stop`). You don't need to check on the job yourself;
-the result is already there when that turn starts.
+When that job finishes, opencode starts a new turn on your session reporting
+the result — restricted to read-only `job` actions (`list` / `get` /
+`output`; no `stop`). You don't need to check on the job yourself; the result
+is already there when that turn starts. You can end your turn right after
+dispatching the job — it keeps running, and the notification still arrives.
 
 ## Resubmission still drives your crew forward
 
@@ -28,14 +28,6 @@ dispatch the next task, etc.), something external — a human, a meta-Lead, a
 supervisor loop — has to resubmit `lmctl chat` to your session, exactly like
 Claude Code or Codex. Nothing continues your work on its own past that
 notification.
-
-## Why holdOpen matters
-
-Ending your turn used to close the connection immediately, which could kill a
-background job before it finished — fixed in `@lmctl-ai/lmctl@0.1.248`.
-`holdOpen` now keeps the connection open long enough for outstanding
-background work to register and finish, with a hard ceiling so it never hangs
-forever.
 
 ## Background job tool surface
 
