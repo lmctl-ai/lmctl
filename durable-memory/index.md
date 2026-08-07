@@ -36,9 +36,9 @@ the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
 - 2026-08-04: Added draft raw `opencode-lead-skill.md` after the opencodedev
   holdOpen background-job fix in `@lmctl-ai/lmctl 0.1.248`. Corrected after
   opencode review: resubmission is required here too; nothing drives the Lead
-  session forward after its process exits. opencode's specific benefit is that a
-  fast background job can surface its result without manual `job get`/`job
-  output` polling while the live holdOpen-protected connection is still open.
+  session forward after its process exits. opencode's specific behavior is that
+  a notification turn can report the finished job while the live
+  holdOpen-protected connection is still open.
   Keep the caveat that there is no confirmed client-side signal yet to
   distinguish an unattended/notification turn from an ordinary turn.
 - 2026-08-03: Re-baselined delivery docs against `@lmctl-ai/lmctl 0.1.248`
