@@ -139,8 +139,8 @@ ps -p <pid> -o pid,stat,wchan:32,pcpu,time,etime,cmd
 
 A live PID alone is not proof of progress. Near-zero accumulated CPU over a long
 elapsed time, especially with `WCHAN=do_epoll_wait`, is evidence of a stalled
-process. Combine that with lmctl's `agent_inflight`, `tracked_invocation`, and
-mail evidence before deciding whether to wait, resend, refresh, or escalate.
+process. Combine that with the health/status evidence above and the mail
+evidence before deciding whether to wait, resend, refresh, or escalate.
 
 If you have the sibling `lmctl-admin` tool available, use its read-only
 diagnostics for the same question:
