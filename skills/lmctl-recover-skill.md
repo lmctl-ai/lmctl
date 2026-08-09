@@ -243,12 +243,39 @@ deleted files this replay can't see and therefore can't correctly mark as `delet
 
 ---
 
+## Multi-agent teams: sweep every alias, don't stop at one
+
+**Known limitation, real-world-tested.** A live recovery pilot on a real 8-member team (Lead + several
+coders + advisors) recovered **0 files out of ~900 combined file-touching operations** when only one alias
+was tried. Root cause: `restore` replays one alias's session at a time. In the standard Lead/Coder split, a
+file is routinely created by one alias and edited by a different one in its own separate session — the
+editing alias's session then has no base to apply that edit against (`edit_base_missing`), even though the
+file's real history exists across the team. **Do not conclude a team's files are unrecoverable from one
+alias's `0 recovered` result.** Run `restore --dry-run` against every alias in the team and look at each
+one's plan — the alias that happens to hold the last full write of a given file is the one that can recover
+it, and that isn't always the alias you'd guess (often the Lead, but not always). This is being actively
+worked on as a real fix (session-stitching across a team's members); until it lands, sweeping every alias by
+hand is the reliable path.
+
+## `sed`/`awk -i`/interpreter edits are a permanent, easy-to-miss blind spot
+
+If a member does real file editing via raw shell (`sed -i`, `awk -i inplace`, a `python3 -c` rewrite) instead
+of the provider's own Edit tool, every one of those edits is **unreconstructable by design** — `restore`
+correctly refuses rather than guessing, but it isn't obvious this happened until you inspect results
+file-by-file. **If disaster recoverability matters to you, prefer the structured Edit tool over raw shell
+text-editing commands** for anything you'd want back after a data-loss event. This is not a bug to report —
+it's an inherent limit of transcript-based recovery — but it's worth planning around before you need it, not
+after.
+
+---
+
 ## End-to-end recovery checklist
 
 1. Confirm what's actually missing: just files, just the teamfile, or both.
 2. If the teamfile is gone: `lmctl restore-teamfile <name>`. If it reports nothing, you may still be able to
    proceed if you already know the provider/sessionid some other way — hand-author a minimal `_MEMBER_` line.
 3. `lmctl restore <teamfile> <alias> --dry-run --json` — always look at the plan before writing anything.
+   **For a multi-member team, do this for every alias, not just one** — see the warning above.
 4. Read `coverage` first. If `structuredReplay` is `"none"` or `"partial"` for this provider, expect real
    gaps and don't be surprised by a non-zero `unreplayable`/`unreplayedCalls` count.
 5. If the dry-run plan looks right, re-run without `--dry-run`. Use `--target` instead of restoring in place
