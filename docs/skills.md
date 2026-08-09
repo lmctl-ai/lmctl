@@ -52,6 +52,7 @@ Start here:
 | [lmctl-admin](https://lmctl.com/skills/lmctl-admin-skill.md) | You need read-only delivery, liveness, or orphan mailbox diagnostics over lmctl state. |
 | [Team Lead — basic](https://lmctl.com/skills/lmctl-team-lead-basic-skill.md) | You need the everyday Lead checklist: delegate, review, keep durable memory current. |
 | [Team Lead — advanced](https://lmctl.com/skills/lmctl-team-lead-advanced-skill.md) | You need refresh, model-swap, health, or drift-recovery guidance. |
+| [lmctl disaster recovery](https://lmctl.com/skills/lmctl-recover-skill.md) | A project directory, `.lmctl` teamfile, or files got deleted and you need to reconstruct them from local event history and provider session transcripts. |
 | [Meta-Lead](https://lmctl.com/skills/lmctl-meta-lead-skill.md) | You coordinate several teams or Leads. |
 | [Team Lead workflow](https://lmctl.com/skills/team-lead-workflow.md) | You need the shortest operating checklist for delegation and review. |
 | [Durable memory](https://lmctl.com/skills/durable-memory.md) | You need to know what belongs in `durable-memory/` and why it is committed. |
