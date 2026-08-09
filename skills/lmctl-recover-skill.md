@@ -14,7 +14,7 @@ There are two independent commands. Use one, the other, or both depending on wha
 
 | What you lost | Command | Depends on |
 | --- | --- | --- |
-| The `.lmctl` teamfile itself (renamed away, deleted, directory gone) | `lmctl restore-teamfile` | lmctl's local event log (`tracked_invocation`/`team_chat_log`) — **best-effort, optional** |
+| The `.lmctl` teamfile itself (renamed away, deleted, directory gone) | `lmctl restore-teamfile` | lmctl's local event history — **best-effort, optional** |
 | The project's actual files (source, notes, whatever a member wrote) | `lmctl restore` | The provider's own session transcript — **this is the essential, load-bearing recovery path** |
 
 If you lost both (the whole project directory, teamfile included), run `restore-teamfile` first to get a
@@ -93,9 +93,10 @@ Real output shape (`--json`):
   that path. This is not a bug to work around; it means either the team was truly never used, the local
   event history has rolled off, or you're on a version of lmctl that didn't record it yet. Fall back to
   whatever out-of-band information you have about the original members (the operator, a chat log, a
-  README) and hand-author the `_MEMBER_` lines instead — or, if you at least know the `sessionid`, you don't
-  strictly need the teamfile line to exist first: `lmctl restore` can be pointed at a session directly once
-  a teamfile with that member exists.
+  README) and hand-author the `_MEMBER_` lines instead. `lmctl restore` only ever takes a
+  `<teamfile> <alias>` (or `<teamfile>:<alias>`) pair, never a bare session id — so if you at least know the
+  `sessionid`, hand-write a minimal `_MEMBER_` line carrying it (`provider=`, `sessionid=`, and `alias=`
+  whatever you name it) into a teamfile yourself, then run `restore` against that alias.
 - **A restored member is missing `model=`** — that means the evidence never recorded a model value (the
   member likely never had one set). This is not a bug; omit it or set it yourself if you know it.
 - **You need a field this command doesn't restore** (`sessiondir`, custom extras) — add it by hand after
@@ -230,6 +231,7 @@ success just because the command didn't crash.
 | `unreplayable` | `edit_mismatch` | An edit's expected old content didn't match what the replay had built up — the edit couldn't be applied. | The session likely diverged from what actually happened on disk at the time; treat this file as unrecoverable via replay. |
 | `unreplayable` | `not_reconstructable` | A shell command mutated this file in a way the scanner can't reconstruct (`sed -i`, a script rewrite, an unrecognized command touching a tracked file). | Check `detail` for the exact responsible command — that's your best lead for recovering the content some other way (shell history, a backup, memory of what the command did). |
 | `unreplayable` | `patch_context_mismatch` | A Codex `apply_patch` hunk's surrounding context didn't match — the patch can't be safely applied. | The file likely diverged from what the patch expected; not safely recoverable via this patch. |
+| `unreplayable` | `move_source_unknown` | A shell `mv`/`cp` carried this file in from a source path whose content the replay never tracked. | The destination's true content was never observed in this session; look for the source file's own history elsewhere, or accept it's not recoverable from this session alone. |
 
 **`unreplayedCalls`** (a separate top-level list, not per-file) — tool calls the session-reading layer
 recognized as file operations but that this command's replay logic didn't turn into a file result at all.
