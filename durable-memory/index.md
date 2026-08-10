@@ -18,15 +18,25 @@ npm run serve   # preview the built artifact
 
 ## Publishing
 
-Automated and keyless: every push to `main` runs
-[`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml), which builds
-the site and publishes it via **GitHub Actions + AWS OIDC** (no stored AWS keys)
-— `aws s3 sync` to the `lmctl/` prefix plus a CloudFront invalidation. The same
-`scripts/deploy.sh` is the manual fallback for an operator with AWS access. See
-[`site-design.md`](site-design.md) for details.
+Current publishing is local/manual: build with `npm run build`, then deploy with
+`scripts/deploy.sh` from an operator environment that has AWS access. The GitHub
+Actions deploy workflow is still present for manual `workflow_dispatch`, but its
+push trigger is disabled because the OIDC role is prefix-scoped and cannot write
+the root homepage object that `scripts/deploy.sh` publishes.
+
+Treat `main` as publish-ready, not as a draft branch. For review-gated docs, work
+on a branch and merge/push to `main` only after the required review clears, then
+run the local build/deploy. See [`site-design.md`](site-design.md) for details.
 
 ## Recent docs updates
 
+- 2026-08-10: Delivery-model re-baseline at `380c7e0` passed both lmctl-src and
+  lmctl-admin review with no content fixes. Process lesson: review-gated docs
+  must stay on a branch until review clears; do not use `main` as the holding
+  area for a draft. Current publishing remains local/manual; the GitHub Actions
+  push trigger is disabled. Coordination change: engage `lmctl-admin` and
+  `lmctl.lmctl` directly for future reviews/questions instead of routing through
+  `lmctl-src.lmctl` as a relay hub.
 - 2026-08-06: Published draft `lmtext-skill.md` from
   `/home/mma/repos/tools/lmtext/docs/lmtext-skill.md` as a raw skill page for
   the lmtext speech-to-text service. Keep the source doc's API base URL guidance

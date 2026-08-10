@@ -90,21 +90,27 @@ publishing. The artifact builds fully offline.
   Origin Path** — objects already live under the `lmctl/` key prefix, so setting
   Origin Path `/lmctl` would double-prefix and 404.
 
-## Publishing (GitHub Actions + AWS OIDC)
+## Publishing
 
-Publishing is automated and **keyless** — no AWS credentials are stored in the
-repo. On every push to `main` (or a manual run), `.github/workflows/deploy.yml`:
+Current publishing is **local/manual**. Use an operator environment with AWS
+access:
 
-1. builds the site (`npm ci` + `npm run build`);
-2. assumes the `lmctl-website-deploy` IAM role via GitHub's OIDC provider
-   (`aws-actions/configure-aws-credentials`). GitHub mints a short-lived OIDC
-   token; AWS exchanges it for temporary credentials. The role **trusts only
-   this repo on `main`** and is scoped to **only** the `s3://lmctl-website-prod/
-   lmctl/*` prefix and `CreateInvalidation` on the `lmctl.com` distribution;
-3. runs `scripts/deploy.sh`, which `aws s3 sync`s `build/` to
-   `s3://lmctl-website-prod/lmctl/` (cache headers above, prefix-scoped
-   `--delete`) and issues a CloudFront invalidation for `/lmctl/*`.
+```bash
+npm run build
+S3_BUCKET=lmctl-website-prod CF_DISTRIBUTION_ID=E1GKUWTM93U7IV bash scripts/deploy.sh
+```
 
-**Manual fallback:** an operator with AWS access can publish the same way
-locally with `npm run build && S3_BUCKET=… CF_DISTRIBUTION_ID=… bash
-scripts/deploy.sh` — the workflow and the manual path run the identical script.
+`scripts/deploy.sh` publishes the Docusaurus build under `s3://lmctl-website-prod/lmctl/`,
+publishes the root homepage objects, syncs raw root-prefix artifacts such as
+`/skills/`, and issues CloudFront invalidations plus live smoke checks.
+
+The GitHub Actions deploy workflow still exists for `workflow_dispatch`, but the
+push trigger is disabled as of 2026-08-05. Root cause: the OIDC role
+`lmctl-website-deploy` is scoped to `s3://lmctl-website-prod/lmctl/*`, while
+`scripts/deploy.sh` also writes the root homepage object
+`s3://lmctl-website-prod/index.html`; automatic runs failed with `AccessDenied`
+on that write. Re-enable automation only after widening the role scope or
+splitting the homepage publish path.
+
+For review-gated docs, work on a branch and merge/push to `main` only after the
+review clears. Treat `main` as publish-ready, then deploy locally.
