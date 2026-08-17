@@ -32,6 +32,17 @@ cascade-interrupt the receiving member's live turn, not just fail cleanly on
 your side. Let the command run to completion and rely on the harness completion
 signal instead of an arbitrary deadline.
 
+`chat` also has its own built-in `--idle-timeout <duration>` (for example `2h`,
+`30m`), separate from any external shell timeout. Its default is already a
+generous 8 hours, specifically so a member that is still genuinely working —
+just slow, or quiet between output chunks — is not mistaken for a stuck one.
+Do not override it to a short duration (minutes, or even under a few hours) as
+a way to "fail fast": a too-short idle timeout kills an in-process member that
+is still actively producing output, not one that is actually stuck. If you
+suspect a member really is stuck, inspect it with `lmctl tail`/`lmctl health`
+first rather than lowering the timeout — and if you do set `--idle-timeout`
+explicitly for some reason, keep it at 8 hours or longer.
+
 For non-trivial prompts, use `--prompt-file` so the shell cannot expand
 backticks, `$(...)`, `$VAR`, or quotes before lmctl sees the text:
 
