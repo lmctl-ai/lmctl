@@ -30,6 +30,33 @@ run the local build/deploy. See [`site-design.md`](site-design.md) for details.
 
 ## Recent docs updates
 
+- 2026-08-14: Added `lmctl chat --idle-timeout` guidance to `lmctl-lead-skill.md`
+  and `lmctl-meta-lead-skill.md`: the default (8 hours) is generous on purpose
+  so a genuinely-still-working member/Lead isn't mistaken for a stuck one; a
+  Lead/Meta-Lead should not override it to a short duration. Reviewed and
+  passed by `lmctl-admin` on branch `lead-idle-timeout-guidance`, merged to
+  `main` at `e948629`, deployed. Verified directly against
+  `BaseProviderAdapter.DEFAULT_IDLE_TIMEOUT_MS` and the `--idle-timeout`
+  flag in lmctl-src by `lmctl.lmctl`.
+  **Known gap surfaced but NOT fixed this pass:** 7 skill pages
+  (`lmctl-lead-skill.md`, `lmctl-meta-lead-skill.md`,
+  `lmctl-team-lead-basic-skill.md`, `lmctl-team-lead-advanced-skill.md`,
+  `claudecode-lead-skill.md`, `team-lead-workflow.md`,
+  `background-wakeup.md` — checked precisely by grepping for
+  `mailbox_queue_enabled`/`LMCTL_MAILBOX_QUEUE_ENABLED`/"queued mail" etc.,
+  not just the generic words "queue"/"mailbox"; `opencode-lead-skill.md`,
+  `lmctl-admin-skill.md`, `lmchat-skill.md`, `lmmail-skill.md` use those
+  words for unrelated things and are NOT part of this gap) still describe
+  `mailbox_queue_enabled` as an opt-in feature. It was removed from
+  lmctl-src ENTIRELY as of `0.1.264` (no longer opt-in — the queue-delivery
+  code, `mailbox_relay`, and `lmctl mail deliver` are gone).
+  Separately, `lmctl-recover-skill.md` is dedicated entirely to the
+  `lmctl recover` command, which was removed entirely as of `0.1.263`
+  (checked: no other skill page references the actual command, only this
+  one). Both need a dedicated re-baseline pass against
+  `@lmctl-ai/lmctl 0.1.267`+, same discipline as the 2026-08-03 and
+  2026-07-22 entries below — not bundled
+  into this small change.
 - 2026-08-10: Delivery-model re-baseline at `380c7e0` passed both lmctl-src and
   lmctl-admin review with no content fixes. Process lesson: review-gated docs
   must stay on a branch until review clears; do not use `main` as the holding
