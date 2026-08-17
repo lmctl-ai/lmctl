@@ -19,14 +19,22 @@ and uncommitted files with **no new commit** is spinning — that's your signal 
 blindly.
 
 ## Delegate to a Lead
-A Lead's turn can run for minutes. `lmctl chat` is synchronous: it blocks and
-returns the Lead reply.
+A Lead's turn can run for minutes — coordinating its own Coder+Reviewer can
+take hours. `lmctl chat` is synchronous: it blocks and returns the Lead reply.
 ```sh
 lmctl chat "<teamA>.lmctl" Lead "coordinate the X change with your Coder+Reviewer"
 ```
 If you remember older lmctl forms, read the old-command block in the basic
 Lead skill. Meta-Lead work now uses synchronous `chat` by default; busy
 queueing is opt-in.
+
+`chat`'s built-in `--idle-timeout` defaults to a generous 8 hours precisely so
+a Lead that is still genuinely coordinating its team is not mistaken for a
+stuck one. Never override it to a short duration when dispatching to a
+Lead — a too-short idle timeout kills an in-process Lead (and cascades to
+whatever member it was mid-delegation with), not a genuinely stuck one. If a
+Lead seems stuck, inspect with `tail`/`health` first; don't lower the
+timeout to force a faster failure.
 
 For peer Lead status notes, use `chat`. If the target Lead is busy and lmctl
 uses default queue settings, it returns a busy error and creates no queued mail.
