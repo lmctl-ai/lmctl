@@ -32,6 +32,22 @@ cascade-interrupt the receiving member's live turn, not just fail cleanly on
 your side. Let the command run to completion and rely on the harness completion
 signal instead of an arbitrary deadline.
 
+If you are instead backgrounding a raw shell job yourself (a plain `&`, not
+your harness's own tracked background mechanism) to dispatch `lmctl chat` to
+another member and plan to wait on it, be aware that job lives inside your
+own interactive login session. On a systemd host with the common
+`KillUserProcesses=yes` default, the *entire* session — including every
+process it spawned, and any of your own `lmctl chat` client that is still
+alive holding open for that dispatch's completion — gets killed together the
+moment that login session ends, regardless of whether user lingering is
+enabled (lingering only keeps your user service manager itself running after
+logout; it does not protect a job launched directly inside a specific
+session's own scope). Both sides then show up independently as a confirmed-
+dead holder — a real, external kill, not an lmctl bug or cascade. Launch such
+a dispatch under a session-independent scope instead, for example
+`systemd-run --user --collect ... bash -lc 'lmctl chat ...'`, so it survives
+the session that launched it.
+
 `chat` also has its own built-in `--idle-timeout <duration>` (for example `2h`,
 `30m`), separate from any external shell timeout. Its default is already a
 generous 8 hours, specifically so a member that is still genuinely working —
