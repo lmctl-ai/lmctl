@@ -59,6 +59,14 @@ suspect a member really is stuck, inspect it with `lmctl tail`/`lmctl health`
 first rather than lowering the timeout — and if you do set `--idle-timeout`
 explicitly for some reason, keep it at 8 hours or longer.
 
+Always give `--idle-timeout` an explicit unit suffix (`s`/`m`/`h`/`d`) — a bare
+number with no suffix is interpreted as raw milliseconds, not seconds. A real
+misdiagnosis this caused: `--idle-timeout 15` silently means 15 milliseconds,
+which fires before any provider call can produce output at all, so the turn
+comes back empty every time — indistinguishable at a glance from a genuine
+transport or provider failure. lmctl now warns on this specific mistake, but
+writing `15s` (not `15`) avoids it in the first place.
+
 For non-trivial prompts, use `--prompt-file` so the shell cannot expand
 backticks, `$(...)`, `$VAR`, or quotes before lmctl sees the text:
 
