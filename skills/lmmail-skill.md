@@ -1,4 +1,4 @@
-# lmmail - simple asynchronous mail for LLM agents
+# lmmail — simple asynchronous mail for LLM agents
 
 Use lmmail when an agent or human needs a durable, connection-free handoff.
 The address is a globally unique mailbox name. One mail contains:
@@ -23,6 +23,7 @@ lmmail send build-owner --file ./handoff.md --attach ./logs.zip ./report.pdf
 lmmail list build-owner --status unread --after 0
 lmmail read build-owner 4 --out ./message-4
 lmmail delete build-owner 4
+lmmail delete-mailbox build-owner --yes  # irreversible
 ```
 
 `read` downloads the body and all attachments into the output directory and
@@ -44,7 +45,7 @@ Set `LMMAIL_API_URL` to the deployed API Gateway stage URL before using the
 raw-HTTP examples; do not assume the optional vanity route is live.
 
 ```sh
-export LMMAIL_API_URL="https://ecezfoozb3.execute-api.us-east-1.amazonaws.com/prod"
+export LMMAIL_API_URL="https://<api-id>.execute-api.us-east-1.amazonaws.com/prod"
 export API="$LMMAIL_API_URL"
 export KEY="<shared lmctl appkey>"
 ```
@@ -104,6 +105,8 @@ curl -sS "$API/mailboxes/build-owner/messages?status=unread&after=0" \
 
 Valid status values are `all`, `unread`, and `read`; default is `all`.
 `after` is exclusive and defaults to `0`. Sequence gaps are normal.
+Optional integer `wait_s` (`0..20`, default `0`) re-runs an empty filtered list
+with the original `after` every 500ms until a match or the deadline.
 
 Read metadata and obtain 120-second body/attachment download URLs:
 
@@ -125,14 +128,24 @@ curl -sS -X DELETE "$API/mailboxes/build-owner/messages/4" \
   -H "Authorization: Bearer $KEY"
 ```
 
+Irreversibly hard-delete an owned mailbox, including every message and stored
+object version. The response includes `deleted`, `mailbox_name`, and the
+`messages_deleted` count:
+
+```sh
+curl -sS -X DELETE "$API/mailboxes/build-owner" \
+  -H "Authorization: Bearer $KEY"
+```
+
 ## API summary
 
 ```text
 POST   /mailboxes
 GET    /mailboxes
+DELETE /mailboxes/{name}
 POST   /mailboxes/{name}/messages
 POST   /mailboxes/{name}/messages/{seq}/finalize
-GET    /mailboxes/{name}/messages?status=...&after=...
+GET    /mailboxes/{name}/messages?status=...&after=...&wait_s=0..20
 GET    /mailboxes/{name}/messages/{seq}
 DELETE /mailboxes/{name}/messages/{seq}
 ```
@@ -143,5 +156,6 @@ characters. There are no folders, threads, search, or replies in v1.
 
 For deployed-stack verification, the repository includes
 `cloud/test-integration/cli-aws.test.ts`. It is disabled unless
-`LMMAIL_INTEGRATION=1`; it requires `LMMAIL_API_URL`, a fresh globally unique
-`LMMAIL_TEST_MAILBOX`, and a shared appkey from the normal resolution chain.
+`LMMAIL_INTEGRATION=1`; it requires `LMMAIL_API_URL` and a shared appkey from
+the normal resolution chain. It reuses and cleans fixed test mailboxes;
+`LMMAIL_TEST_MAILBOX` optionally overrides the primary fixed name.

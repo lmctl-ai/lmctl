@@ -162,7 +162,7 @@ for spec in \
   '/skills/opencode-lead-skill.md|text/markdown|# opencode lmctl Lead skill' \
   '/skills/lmctl-admin-skill.md|text/markdown|# lmctl-admin skill' \
   '/skills/lmprobe-skill.md|text/markdown|# lmprobe skill' \
-  '/skills/lmmail-skill.md|text/markdown|# lmmail - simple asynchronous mail for LLM agents' \
+  '/skills/lmmail-skill.md|text/markdown|# lmmail — simple asynchronous mail for LLM agents' \
   '/skills/lmnote-skill.md|text/markdown|# lmnote skill' \
   '/skills/lmsheet-skill.md|text/markdown|# lmsheet skill' \
   '/skills/lmtext-skill.md|text/markdown|# lmtext — speech → text for LLM agents' \
