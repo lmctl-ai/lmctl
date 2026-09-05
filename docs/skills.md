@@ -64,6 +64,7 @@ Start here:
 | [lmprobe](https://lmctl.com/skills/lmprobe-skill.md) | You need structural code search: files, grep, definitions, references, or graph queries. |
 | [lmchat](https://lmctl.com/skills/lmchat-skill.md) | You need shared file-room handoff outside lmctl team chat. |
 | [lmmail](https://lmctl.com/skills/lmmail-skill.md) | You need durable asynchronous mailboxes with message bodies and attachments. |
+| [lmfeedback](https://lmctl.com/skills/lmfeedback-skill.md) | You need to embed website feedback and deliver submissions to an owner's lmmail mailbox. |
 | [lmnote](https://lmctl.com/skills/lmnote-skill.md) | You need private per-user notebook files for durable agent notes. |
 | [lmsheet](https://lmctl.com/skills/lmsheet-skill.md) | You need simple per-user spreadsheets with Excel-style A1 addressing. |
 | [lmbio](https://lmctl.com/skills/lmbio-skill.md) | You need local computational-biology helpers. |

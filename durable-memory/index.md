@@ -30,6 +30,16 @@ run the local build/deploy. See [`site-design.md`](site-design.md) for details.
 
 ## Recent docs updates
 
+- 2026-09-05: Prepared the new public `lmfeedback-skill.md` from
+  `/home/mma/repos/tools/lmfeedback/docs/lmfeedback-skill.md`. Before
+  publication, corrected the canonical source at `d5e4d98`: removed stale
+  pre-deployment statements, kept API examples deployment-neutral, removed
+  account-specific endpoint/bucket identifiers, and documented the integration
+  suite's scoped cleanup plus no-sequence full-mailbox fallback. The website
+  copy must remain byte-identical to that canonical file. Reviewer1 passed the
+  source and website integration; live `GET /feedback.js` returned 200 with
+  JavaScript and CORS, CLI packaging tests passed 8/8, and cloud unit tests
+  passed 97/97.
 - 2026-08-14: Added `lmctl chat --idle-timeout` guidance to `lmctl-lead-skill.md`
   and `lmctl-meta-lead-skill.md`: the default (8 hours) is generous on purpose
   so a genuinely-still-working member/Lead isn't mistaken for a stuck one; a
