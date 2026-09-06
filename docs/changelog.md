@@ -7,8 +7,56 @@ sidebar_position: 97
 
 All notable public-preview changes for `@lmctl-ai/lmctl` are recorded here.
 
-These docs currently describe `@lmctl-ai/lmctl` **0.1.248**. Run
+These docs currently describe `@lmctl-ai/lmctl` **0.1.302**. Run
 `lmctl --version` before following command examples.
+
+## lmctl 0.1.288 – 0.1.302
+
+Major changes only; not every patch release is listed.
+
+- **`lmctl running` grew a lot**: idle rows show `ran <duration>, idle <age>`
+  instead of a raw ISO timestamp (0.1.288); `status=error` idle rows show the
+  actual error message inline instead of requiring a separate lookup
+  (0.1.289); a new `--tree` flag renders a hierarchical dispatch-lineage view
+  (who dispatched whom, nested) instead of a flat list (0.1.291); `--json`
+  gained a matching nested tree shape under `--tree --json`, and plain
+  `--json` (no `--tree`) is unchanged (0.1.294).
+- **`lmctl seed` now writes an explicit, absolute `sessiondir=`** into the
+  teamfile for each newly-seeded member (0.1.290), instead of leaving it to
+  be re-derived from the teamfile's own location on every future invocation.
+  This makes a seeded team's identity invocation-path-independent (same
+  session resolves the same way whether reached via a symlink, a bind mount,
+  or a different relative path). This only applies to sessions seeded from
+  0.1.290 onward — an already-seeded member's sessiondir is fixed at
+  creation and is not backfilled, and should not be hand-edited afterward:
+  some provider CLIs bind a session to its original directory and will
+  reject it if the sessiondir is later changed underneath it.
+- **`state.db` forward/backward compatibility hardened.** A shared
+  `state.db` newer than a given build understands now degrades to a
+  one-time warning and keeps working on additive schema changes, instead of
+  hard-refusing to run any command at all (0.1.292). Separately, a
+  genuinely broken or unreadable `state.db` (corruption, or a truly
+  breaking migration this build's own code can't compile against) no
+  longer strands the user: it salvages essential config (team
+  registrations, canonical settings), backs the old file up, and starts a
+  fresh database rather than refusing to run (0.1.297) — unless the file
+  turns out to be a live, valid, newer database from an already-upgraded
+  peer sharing the same file, in which case it still refuses, to avoid
+  wiping another peer's real data.
+- **`lmctl lint` now checks `agy` (Antigravity) models against agy's own
+  live model catalog** (`agy models`) instead of a hand-maintained list
+  that goes stale every time a new model ships (0.1.298).
+- **kimi provider: dead tool-execution runtime is now detected and
+  logged.** After certain process interruptions, a kimi session can keep
+  conversing normally while every tool/subagent call fails inside kimi's
+  own runtime. lmctl now recognizes that failure signature in a kimi
+  reply and logs a distinct, queryable event instead of it looking like an
+  ordinary idle member (0.1.300). This does not fix the underlying kimi-side
+  issue — it makes it visible.
+- **A bare `provider=codex` member's default model is now `gpt-5.6-sol`**,
+  set by lmctl itself, instead of silently inheriting whatever a machine's
+  own local codex configuration happens to default to (0.1.302). A member
+  with an explicit `model=` is unaffected.
 
 ## Docs Site Updates
 
