@@ -1,0 +1,21 @@
+# Triple review — one Lead, three independent reviewers
+#
+# The Lead does the work; three Reviewers each look at it independently,
+# each on a different provider. Different models have different,
+# uncorrelated blind spots -- a bug or bad design that one model waves
+# through often gets caught by another. Use this when the cost of a miss is
+# high enough to be worth three separate opinions instead of one.
+#
+# This file uses ${Provider1..3}/${Model1..3} placeholders instead of naming
+# a specific provider -- `lmctl quickrun` fills them in with YOUR configured
+# providers/models (recorded by `lmctl init`), so this exact file works
+# whether you have one provider or several -- with only one provider
+# configured, all three reviewers resolve to it, and you're back to a single
+# opinion; the value of this pattern grows with how many providers you have.
+# See https://lmctl.com/lmctl/docs/manuals/teamfile-format for what a
+# _MEMBER_ line means and how to customize this after it's seeded.
+
+_MEMBER_ alias=Lead      provider=${Provider1} model="${Model1}"
+_MEMBER_ alias=Reviewer1 provider=${Provider1} model="${Model1}"
+_MEMBER_ alias=Reviewer2 provider=${Provider2} model="${Model2}"
+_MEMBER_ alias=Reviewer3 provider=${Provider3} model="${Model3}"

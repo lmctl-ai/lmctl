@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>lmctl templates</title>
+<base href="/templates/">
+<!-- Served at BOTH /templates and /templates/ (no redirect between them, mirrors skills/index.html).
+     Without <base>, every relative href below resolves against lmctl.com/ instead of lmctl.com/templates/
+     whenever someone links to the no-trailing-slash form. Keep this and keep the hrefs below relative. -->
+<style>
+ body{font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      max-width:760px;margin:3rem auto;padding:0 1.2rem;color:#1a1a1a;background:#fff}
+ h1{font-size:1.6rem;margin:0 0 .3rem} .sub{color:#666;margin:0 0 2rem}
+ h2{font-size:1rem;text-transform:uppercase;letter-spacing:.05em;color:#888;margin:2rem 0 .6rem;font-weight:600}
+ ul{list-style:none;padding:0;margin:0} li{margin:.55rem 0}
+ a{color:#0b62d6;text-decoration:none;font-weight:600} a:hover{text-decoration:underline}
+ .d{color:#555;font-weight:400}
+ code{background:#f4f4f5;padding:.1em .35em;border-radius:4px;font-size:.9em}
+ pre{background:#f4f4f5;padding:.9rem 1rem;border-radius:6px;overflow-x:auto;font-size:.88em}
+ pre code{background:none;padding:0}
+ @media(prefers-color-scheme:dark){body{background:#141414;color:#e8e8e8}.d{color:#aaa}code{background:#262626}pre{background:#262626}a{color:#5aa2ff}h1{color:#fff}}
+</style></head><body>
+<h1>lmctl templates</h1>
+<p class="sub">Team compositions worth trying, one <code>.lmctl</code> file each — fetch one with <code>lmctl quickrun &lt;url&gt;</code> to try it right away. The point is the variety of shapes, not any one file: start here, then read <a href="/lmctl/docs/manuals/teamfile-format">how a teamfile works</a> to shape it into what you actually need.</p>
+
+<h2>Available templates</h2>
+<ul>
+ <li><a href="solo.lmctl">solo.lmctl</a> <span class="d">— one member, no delegation. The smallest possible team.</span></li>
+ <li><a href="pair.lmctl">pair.lmctl</a> <span class="d">— Lead + Reviewer. A second opinion before anything ships.</span></li>
+ <li><a href="trio.lmctl">trio.lmctl</a> <span class="d">— Lead + Coder + Reviewer. A solid default for most real tasks.</span></li>
+ <li><a href="qa-squad.lmctl">qa-squad.lmctl</a> <span class="d">— Lead + Coder + Reviewer + QA. Adds an end-to-end verification pass.</span></li>
+ <li><a href="triple-review.lmctl">triple-review.lmctl</a> <span class="d">— one Lead, three independent reviewers across different providers.</span></li>
+</ul>
+
+<h2>Try one</h2>
+<pre><code>lmctl quickrun https://lmctl.com/templates/trio.lmctl</code></pre>
+<p class="sub">This fetches the file, fills in your own providers/models (see below), creates provider sessions, and drops you into a chat with the team — no editing required first.</p>
+
+<h2>The <code>${Provider1..3}</code> / <code>${Model1..3}</code> convention</h2>
+<p>A published template has to work for <strong>any</strong> user, regardless of which providers they have — so a template never names a real provider. Instead of <code>provider=claude</code>, every template writes <code>provider=${Provider1}</code> (or <code>${Provider2}</code>, <code>${Provider3}</code>), and instead of <code>model="claude-opus-5"</code> it writes <code>model="${Model1}"</code> (paired with the same-numbered provider). <code>lmctl init</code> records which providers you actually have and your top three models; <code>lmctl quickrun</code> substitutes those into the placeholders before seeding.</p>
+<p>A user with three configured providers gets three genuinely different <code>_MEMBER_</code> lines. A user with only one provider configured just has every slot resolve to that same provider — the file still runs, it's simply less diverse. That portability is the entire point: the same template file works for both users unmodified.</p>
+<p><code>quickrun</code> accepts any URL or local path, not just the ones on this page — these are examples, not a walled garden. If you're writing your own template:</p>
+<ul>
+ <li>Only ever write <code>${Provider1}</code>, <code>${Provider2}</code>, or <code>${Provider3}</code> as a <code>provider=</code> value — never a real provider name.</li>
+ <li>Pair each provider slot with the same-numbered model slot: a member using <code>${Provider2}</code> should use <code>model="${Model2}"</code>, not <code>${Model1}</code> or <code>${Model3}</code>.</li>
+ <li>A slot can back more than one member (see <code>qa-squad.lmctl</code>, where QA reuses <code>${Provider1}</code>) — you aren't limited to three members just because there are three slots.</li>
+ <li>Everything else about the file is a normal teamfile — see <a href="/lmctl/docs/manuals/teamfile-format">the teamfile format page</a> for the full <code>_MEMBER_</code> line grammar.</li>
+ <li>An unrendered template (with literal <code>${Provider1}</code> still in it) will fail <code>lmctl lint</code> — that's expected; it's meant to be fetched and substituted by <code>quickrun</code>, not linted directly.</li>
+</ul>
+
+<p class="sub" style="margin-top:2.5rem">Just want to check one provider is working at all, not try a team composition? See the <a href="/helloexample/">hello examples</a> instead.</p>
+</body></html>

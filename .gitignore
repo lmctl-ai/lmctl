@@ -6,6 +6,11 @@ build/
 .env
 .env.*
 *.lmctl
+# Exceptions: these .lmctl files ARE meant to be committed -- they're the public,
+# downloadable content this site serves (hello-check + template library), not local
+# team config like the rule above is for.
+!helloexample/*.lmctl
+!templates/*.lmctl
 .lmctl0/
 .lmctl/
 .mcp.json

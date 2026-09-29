@@ -156,6 +156,92 @@ if ! grep -q '# lmctl Lead skill' <<<"${body}"; then
   exit 1
 fi
 
+# --- helloexample: publish per-provider connectivity-check teamfiles to lmctl.com/helloexample/
+# (source of truth = this repo's helloexample/). Mirrors the skills/ pattern above exactly.
+# No --delete: never wipe files published out-of-band; this only adds/updates repo-tracked ones.
+aws s3 sync helloexample/ "s3://${S3_BUCKET}/helloexample/" \
+  --exclude '.*' \
+  --content-type 'text/plain; charset=utf-8' \
+  --exclude 'index.html' \
+  --cache-control 'no-cache, max-age=0, must-revalidate'
+for key in 'helloexample/index.html' 'helloexample/'; do
+  aws s3api put-object \
+    --bucket "${S3_BUCKET}" \
+    --key "${key}" \
+    --body helloexample/index.html \
+    --content-type 'text/html; charset=utf-8' \
+    --cache-control 'no-cache, max-age=0, must-revalidate' > /dev/null
+done
+aws s3api put-object \
+  --bucket "${S3_BUCKET}" \
+  --key 'helloexample' \
+  --body helloexample/index.html \
+  --content-type 'text/html; charset=utf-8' \
+  --cache-control 'no-cache, max-age=0, must-revalidate' > /dev/null
+HELLOEXAMPLE_INVALIDATION_ID="$(
+  aws cloudfront create-invalidation \
+    --distribution-id "${CF_DISTRIBUTION_ID}" \
+    --paths '/helloexample' '/helloexample/' '/helloexample/*' \
+    --query 'Invalidation.Id' \
+    --output text
+)"
+aws cloudfront wait invalidation-completed \
+  --distribution-id "${CF_DISTRIBUTION_ID}" \
+  --id "${HELLOEXAMPLE_INVALIDATION_ID}"
+
+for path in '/helloexample' '/helloexample/' '/helloexample/index.html'; do
+  headers="$(curl -fsSI "${SITE_ORIGIN}${path}")"
+  if ! grep -qi '^content-type: text/html' <<<"${headers}"; then
+    echo "helloexample smoke failed content-type for ${SITE_ORIGIN}${path}" >&2
+    exit 1
+  fi
+  body="$(curl -fsS "${SITE_ORIGIN}${path}")"
+  if ! grep -q '<title>lmctl hello examples</title>' <<<"${body}"; then
+    echo "helloexample smoke failed for ${SITE_ORIGIN}${path}" >&2
+    exit 1
+  fi
+done
+
+# --- templates: publish the ${Provider1..3}/${Model1..3}-slotted team-composition library to
+# lmctl.com/templates/ (source of truth = this repo's templates/). Mirrors the skills/ pattern above.
+# No --delete: never wipe files published out-of-band; this only adds/updates repo-tracked ones.
+aws s3 sync templates/ "s3://${S3_BUCKET}/templates/" \
+  --exclude '.*' \
+  --content-type 'text/plain; charset=utf-8' \
+  --exclude 'index.html' \
+  --cache-control 'no-cache, max-age=0, must-revalidate'
+for key in 'templates/index.html' 'templates/' 'templates'; do
+  aws s3api put-object \
+    --bucket "${S3_BUCKET}" \
+    --key "${key}" \
+    --body templates/index.html \
+    --content-type 'text/html; charset=utf-8' \
+    --cache-control 'no-cache, max-age=0, must-revalidate' > /dev/null
+done
+TEMPLATES_INVALIDATION_ID="$(
+  aws cloudfront create-invalidation \
+    --distribution-id "${CF_DISTRIBUTION_ID}" \
+    --paths '/templates' '/templates/' '/templates/*' \
+    --query 'Invalidation.Id' \
+    --output text
+)"
+aws cloudfront wait invalidation-completed \
+  --distribution-id "${CF_DISTRIBUTION_ID}" \
+  --id "${TEMPLATES_INVALIDATION_ID}"
+
+for path in '/templates' '/templates/' '/templates/index.html'; do
+  headers="$(curl -fsSI "${SITE_ORIGIN}${path}")"
+  if ! grep -qi '^content-type: text/html' <<<"${headers}"; then
+    echo "templates smoke failed content-type for ${SITE_ORIGIN}${path}" >&2
+    exit 1
+  fi
+  body="$(curl -fsS "${SITE_ORIGIN}${path}")"
+  if ! grep -q '<title>lmctl templates</title>' <<<"${body}"; then
+    echo "templates smoke failed for ${SITE_ORIGIN}${path}" >&2
+    exit 1
+  fi
+done
+
 for spec in \
   '/lmprobe/|text/html|lmprobe Manual' \
   '/skills/claudecode-lead-skill.md|text/markdown|# Claude Code lmctl Lead skill' \
@@ -167,7 +253,13 @@ for spec in \
   '/skills/lmnote-skill.md|text/markdown|# lmnote skill' \
   '/skills/lmsheet-skill.md|text/markdown|# lmsheet skill' \
   '/skills/lmtext-skill.md|text/markdown|# lmtext — speech → text for LLM agents' \
-  '/examples/opencode.json|application/json|"provider"'
+  '/examples/opencode.json|application/json|"provider"' \
+  '/helloexample/claude.lmctl|text/plain|_MEMBER_ alias=Lead provider=claude' \
+  '/helloexample/codex.lmctl|text/plain|_MEMBER_ alias=Lead provider=codex' \
+  '/helloexample/agy.lmctl|text/plain|_MEMBER_ alias=Lead provider=agy' \
+  '/helloexample/kimi.lmctl|text/plain|_MEMBER_ alias=Lead provider=kimi' \
+  '/templates/solo.lmctl|text/plain|provider=${Provider1}' \
+  '/templates/trio.lmctl|text/plain|provider=${Provider3}'
 do
   path="${spec%%|*}"
   rest="${spec#*|}"

@@ -1,0 +1,16 @@
+# Trio — Lead + Coder + Reviewer
+#
+# The classic three-role pattern: the Lead plans and delegates, the Coder
+# implements, and the Reviewer checks the Coder's work adversarially before
+# anything ships. A solid default for most real tasks.
+#
+# This file uses ${Provider1..3}/${Model1..3} placeholders instead of naming
+# a specific provider -- `lmctl quickrun` fills them in with YOUR configured
+# providers/models (recorded by `lmctl init`), so this exact file works
+# whether you have one provider or several. See
+# https://lmctl.com/lmctl/docs/manuals/teamfile-format for what a _MEMBER_
+# line means and how to customize this after it's seeded.
+
+_MEMBER_ alias=Lead     provider=${Provider1} model="${Model1}"
+_MEMBER_ alias=Coder    provider=${Provider2} model="${Model2}"
+_MEMBER_ alias=Reviewer provider=${Provider3} model="${Model3}"

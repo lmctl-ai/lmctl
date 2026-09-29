@@ -1,0 +1,11 @@
+# Hello, agy!
+#
+# A minimal single-member teamfile, fetched and seeded by `lmctl hello agy`.
+# It's a connectivity check -- "is Antigravity (agy) reachable in my
+# environment at all?" -- not a team you're meant to keep. Once it answers,
+# either keep chatting (`lmctl chat`) or delete the file.
+#
+# Want a real teamfile instead of a one-off check? See
+# https://lmctl.com/lmctl/docs/manuals/teamfile-format
+
+_MEMBER_ alias=Lead provider=agy
