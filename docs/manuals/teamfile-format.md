@@ -6,14 +6,19 @@ sidebar_position: 1.5
 # Teamfile format
 
 If you just ran `lmctl plan` (or `lmctl quickrun`), you have a new `<name>.lmctl`
-file. This page explains what's in it and how to change it.
+file and a comment inside it pointed you here. This page covers the whole
+loop: **generate → edit → lint → seed** — what you have, what it means, how
+to change it, and the two commands you run before talking to your team.
 
-**That file is an example, not a fixed contract.** `lmctl plan` makes a
-reasonable starting point based on what you asked for — it isn't the "correct"
-team for your project. Add members, remove them, swap providers, rename
-aliases. Nothing about the file is precious.
+## Generate: what `lmctl plan` gave you
 
-## What a teamfile is
+`lmctl plan` writes a starting point, not a finished team. It's a real,
+loadable teamfile — valid the moment it's generated — but it's built from
+whatever pattern or flags you asked for, not from your actual project. Add
+members, remove them, swap providers, rename aliases. Nothing about the file
+is precious, and nothing downstream cares that you changed it.
+
+## Edit: what's in the file
 
 A teamfile is a plain text file — no YAML, no JSON, no special editor needed.
 Every line that starts with `_MEMBER_` declares one team member. Everything
@@ -21,7 +26,7 @@ else in the file (headers, blank lines, notes to yourself) is free-form text.
 It isn't parsed, so you can write yourself reminders or instructions to the
 Lead anywhere outside a `_MEMBER_` line.
 
-## The `_MEMBER_` line
+### The `_MEMBER_` line
 
 A member line looks like this:
 
@@ -46,7 +51,7 @@ aren't needed.
 **Valid `provider=` values**: `claude`, `codex`, `gemini`, `copilot`,
 `opencode`, `qwen`, `agy`, `kimi`, `dsh`, `hermes`, `pi`, `lmplayer`.
 
-## Adding a member
+### Adding a member
 
 Copy an existing `_MEMBER_` line, give it a new `alias=`, and pick a
 `provider=`. Don't set `sessionid=` — `lmctl seed` creates one the next time
@@ -56,19 +61,19 @@ you run it.
 _MEMBER_ alias=QA provider=codex
 ```
 
-## Removing a member
+### Removing a member
 
 Delete the line. That's the whole procedure — there's nothing else to clean
 up elsewhere.
 
-## Renaming or reassigning a member
+### Renaming or reassigning a member
 
 Edit the `alias=` or `provider=` value in place. If you change `provider=`
 for a member that already has a `sessionid=`, delete the `sessionid=` too —
 it belongs to the old provider's session and won't work with a different one.
 `lmctl seed` will create a fresh one.
 
-## A full example
+### A full example
 
 ```
 # Backend team
@@ -80,14 +85,78 @@ _MEMBER_ alias=Coder    provider=codex model="gpt-5.6-luna"
 _MEMBER_ alias=Reviewer provider=claude
 ```
 
-## After you edit the file
+## Lint: check the file before seeding
 
 ```
-lmctl lint ./team.lmctl   # check the syntax and provider/model names are valid
-lmctl seed ./team.lmctl   # create provider sessions for any member missing a sessionid
-lmctl chat ./team.lmctl   # start talking to your team
+lmctl lint ./team.lmctl
 ```
 
-See the [CLI reference](./cli-reference) for what each command does, and
-[Concepts & glossary](./concepts-glossary) for the bigger picture of teamfiles,
-teams, and members.
+`lint` checks the file's syntax and, where it can, validates provider/model
+names against a known catalog. Run it after every hand-edit, before you seed
+— it catches typos and bad provider/model names before you spend a real
+provider session on them.
+
+Output looks like this:
+
+```
+notice: checking teamfile and models ...
+warning: [Lead] model "not-a-real-model-xyz" not found in lmprice catalog for provider "claude" (214 known); provider may still accept it
+ok
+```
+
+**Warnings are advisory — `lint` still exits `0` and prints `ok`.** A warning
+means "this might be wrong" (usually a model name lint doesn't recognize),
+not "this is broken." The provider may accept it anyway — lint's own catalog
+can be stale. If you want warnings to fail the command too (useful in a
+script or CI), add `--strict`.
+
+**Errors are different — they mean the file itself is malformed**, and
+`lint` exits `1` with no trailing `ok`:
+
+```
+notice: checking teamfile and models ...
+error: Lead: Invalid provider "cladue"
+```
+
+An error means fix the file before doing anything else with it — a typo'd
+`provider=`, a duplicate `alias=`, a line lint couldn't parse at all. Fix
+what it names and run `lint` again.
+
+## Seed: create the actual provider sessions
+
+```
+lmctl seed ./team.lmctl
+```
+
+Seeding is what turns the file from a plan into a real team: for every
+member whose `sessionid=` is missing, `seed` starts that member's provider
+CLI, creates a real session, and writes the resulting `sessionid=` (and a
+resolved `sessiondir=`) back into the file. **Only members missing a
+`sessionid=` are touched** — a member that already has one is left exactly
+as it is.
+
+That last point is also how you replace one member without disturbing the
+rest of the team: delete that member's `sessionid=` line value and run
+`lmctl seed` again. Only that member gets a fresh session; everyone else's
+`sessionid=` is untouched.
+
+```
+_MEMBER_ alias=Coder provider=codex model="gpt-5.6-luna"
+```
+(no `sessionid=` — the next `lmctl seed` fills in only this member)
+
+Seeding a member is a real provider call and can take a few seconds each;
+`seed` prints progress to stderr as it goes (a "still launching" line every
+5 seconds is normal, not a hang).
+
+## After seeding
+
+Once every member has a `sessionid=`, talk to your team:
+
+```
+lmctl prompt ./team.lmctl Lead "hello"
+```
+
+See the [CLI reference](./cli-reference) for the full command set, and
+[Concepts & glossary](./concepts-glossary) for the bigger picture of
+teamfiles, teams, and members.
