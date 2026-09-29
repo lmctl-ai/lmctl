@@ -13,17 +13,17 @@ delegation channel works; then proceed with the task.
 
 Use the CLI:
 
-- `lmctl chat "<teamfile>" Coder "your task"`
-- `lmctl chat "<teamfile>" Coder --prompt-file task.md` for non-trivial prompts
+- `lmctl prompt "<teamfile>" Coder "your task"`
+- `lmctl prompt "<teamfile>" Coder --prompt-file task.md` for non-trivial prompts
 
-Use `chat` when you need to drive a member turn and get a reply. Queueing
+Use `prompt` when you need to drive a member turn and get a reply. Queueing
 is opt-in. By default, a busy target returns a busy error and creates no queued
 mail. If `mailbox_queue_enabled=true` or `LMCTL_MAILBOX_QUEUE_ENABLED=true` is
-set and lmctl can resolve a sender, `chat` queues in a `(sender, receiver)` lane
+set and lmctl can resolve a sender, `prompt` queues in a `(sender, receiver)` lane
 when the target is busy. Queued work follows `queued -> in-flight -> delivered
-with receipt` and is at-least-once. Base queued rule: the next `lmctl chat`
+with receipt` and is at-least-once. Base queued rule: the next `lmctl prompt`
 from that same sender to that same receiver delivers that sender's queued lane
-once the receiver is free. A chat from another sender to the same receiver does
+once the receiver is free. A prompt from another sender to the same receiver does
 not flush it. With `lmctl serve start` running in normal daemon mode, mailbox
 relay is an optional accelerator: it can drain queued lanes proactively after
 the receiver goes idle. If the sender is idle waiting for the reply and no relay
@@ -43,7 +43,7 @@ can mean queued, not delivered.
 Warmup/connectivity check first:
 
 ```sh
-lmctl chat "<teamfile>" Coder "reply OK"
+lmctl prompt "<teamfile>" Coder "reply OK"
 ```
 
 ## Review loop

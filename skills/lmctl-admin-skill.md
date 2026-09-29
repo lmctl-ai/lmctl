@@ -6,7 +6,7 @@ scans. `lmctl-admin` is a sibling project to lmctl; use the local checkout path
 for your machine.
 
 `lmctl-admin` is diagnostic only. Its current commands do not write state, call
-`lmctl chat`, or acknowledge mail.
+`lmctl prompt`, or acknowledge mail.
 
 ## Setup
 

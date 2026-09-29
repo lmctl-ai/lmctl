@@ -49,7 +49,7 @@ lmctl restore-teamfile <name-or-path> [--force] [--json]
   recovery.
 - Refuses to overwrite an existing file unless `--force` is given — it will never silently clobber a
   teamfile that's actually there.
-- Never runs automatically as a side effect of any other command (`lint`, `status`, `chat`, …). You always
+- Never runs automatically as a side effect of any other command (`lint`, `status`, `prompt`, …). You always
   have to name the team and invoke it yourself.
 
 Real output shape (`--json`):

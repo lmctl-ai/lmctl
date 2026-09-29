@@ -100,22 +100,23 @@ Output looks like this:
 
 ```
 notice: checking teamfile and models ...
-warning: [Lead] model "not-a-real-model-xyz" not found in lmprice catalog for provider "claude" (214 known); provider may still accept it
+warning: [Lead] model "not-a-real-model-xyz" is unknown to the lmprice catalog for provider "claude" (214 known) -- not necessarily wrong: may be a model too new for lmprice to have published yet, or a typo. A matching lmprice catalog/alias entry would resolve this; lint cannot otherwise confirm whether claude accepts it.
+notice: 0 errors, 1 warning
 ok
 ```
 
-**Warnings are advisory — `lint` still exits `0` and prints `ok`.** A warning
-means "this might be wrong" (usually a model name lint doesn't recognize),
-not "this is broken." The provider may accept it anyway — lint's own catalog
-can be stale. If you want warnings to fail the command too (useful in a
-script or CI), add `--strict`.
+**Warnings are advisory — `lint` always exits `0` when the only findings are
+warnings**, no matter how many. A warning means "this might be wrong"
+(usually a model name lint doesn't recognize), not "this is broken" — the
+provider may accept it anyway, and lint's own catalog can be stale.
 
 **Errors are different — they mean the file itself is malformed**, and
-`lint` exits `1` with no trailing `ok`:
+`lint` exits `1`:
 
 ```
 notice: checking teamfile and models ...
 error: Lead: Invalid provider "cladue"
+notice: 1 error, 0 warnings
 ```
 
 An error means fix the file before doing anything else with it — a typo'd
@@ -134,6 +135,13 @@ CLI, creates a real session, and writes the resulting `sessionid=` (and a
 resolved `sessiondir=`) back into the file. **Only members missing a
 `sessionid=` are touched** — a member that already has one is left exactly
 as it is.
+
+If a seeded member had no `model=`, `seed` also observes which model the
+provider actually picked for that session and writes it back — it never
+overwrites a `model=` you already set, and if the provider's choice can't be
+determined, it leaves `model=` unset and warns instead of guessing. So
+seeing a `model=` appear on a member you didn't set one for isn't
+unexpected — that's `seed` recording what actually ran.
 
 That last point is also how you replace one member without disturbing the
 rest of the team: delete that member's `sessionid=` line value and run
