@@ -24,6 +24,22 @@ human sits at two boundaries, and nowhere in between:
 - **the loop** — runs; no human inside it
 - **human** — reviews what it produced
 
+You will read that the future developer must become an orchestrator of
+agents. Not here. Orchestration — sequencing, fanning out, waiting,
+consolidating, retrying — is what the workflow does, and it is code, not a
+craft to acquire. Your job is requirements, gates, and approval: say what
+must exist, and judge whether it does.
+
+The shared step library already does this concretely: one step fans out to
+three independent workers concurrently, and the consolidation step that
+follows **attributes disagreement rather than averaging it** — where
+independent workers disagree, that disagreement is the finding, since it
+marks the part of the question that was genuinely hard; smoothing it over
+would destroy the reason for running three in the first place. That width
+is fixed when the workflow is written, not chosen at runtime —
+`parallel(...)` requires a literal list of calls, a language constraint
+rather than a design choice, so don't expect arbitrary N.
+
 Both boundaries are real mechanics, not aspirations. At the front, a design
 phase runs and stops: it writes a design plus an independent review of it,
 changes no files, and exits — a separate invocation implements. The human
