@@ -1,11 +1,9 @@
-// plan.lms -- generate a teamfile from a request form, no wizard.
-//
+// plan.lms -- generate a teamfile from a request form.
 //   lmctl script plan.lms <request.json>
-//
-// `lmctl plan --pattern ...` covers one shape at a time from flags. This drives the
-// same command from a request form, so a team composition is DATA you can keep, diff,
-// and re-run -- not a sequence of flags nobody recorded.
+// Request form: { dir, name?, pattern?+provider?+model?, members?, force? }
+// Runs unedited. Safe to replace the DISPATCH block; do not move VALIDATE or VERIFY.
 
+// ==== VALIDATE -- do not move ====
 if (len(args) < 1) { println("usage: lmctl script plan.lms <request.json>"); lm_exit(2); }
 if (!file_exists(args[0])) { lm_error("no request form at " + args[0]); lm_exit(2); }
 req = json_parse_safe(read_file(args[0]), null);
@@ -23,22 +21,12 @@ force = get(req, "force", false);
 if (dir == "" || dir == "null") { push(bad, "missing required field: dir"); }
 else if (!file_exists(dir)) { push(bad, "dir does not exist: " + dir); }
 
-// EITHER an explicit member list OR a pattern+provider. Not both: two ways to say the
-// same thing is how a form starts meaning something different from what its author thought.
 has_members = (members != null && len(members) > 0);
 has_pattern = (pattern != "" && pattern != "null");
-if (has_members && has_pattern) {
-  push(bad, "give EITHER members OR pattern+provider, not both -- they describe the same thing");
-}
-if (!has_members && !has_pattern) {
-  push(bad, "need either members (a list of {alias, provider, model?}) or pattern (1|2|3) with provider");
-}
-if (has_pattern && (provider == "" || provider == "null")) {
-  push(bad, "pattern needs provider");
-}
-if (has_pattern && pattern != "1" && pattern != "2" && pattern != "3") {
-  push(bad, "pattern must be 1 (Lead), 2 (Lead+Reviewer) or 3 (Lead+Coder+Reviewer), got: " + pattern);
-}
+if (has_members && has_pattern) { push(bad, "give EITHER members OR pattern+provider, not both"); }
+if (!has_members && !has_pattern) { push(bad, "need either members (list of {alias, provider, model?}) or pattern (1|2|3) with provider"); }
+if (has_pattern && (provider == "" || provider == "null")) { push(bad, "pattern needs provider"); }
+if (has_pattern && pattern != "1" && pattern != "2" && pattern != "3") { push(bad, "pattern must be 1, 2, or 3, got: " + pattern); }
 if (len(bad) > 0) {
   lm_error("request form is not usable -- nothing was written:");
   for (i = 0; i < len(bad); i = i + 1) { lm_error("  - " + bad[i]); }
@@ -53,6 +41,7 @@ if (name == "" || name == "null") {
 }
 target = dir + "/" + name;
 
+// ==== DISPATCH -- edit surface: add/change lmctl plan flags here ====
 argv = ["lmctl", "plan", dir, "--output", target, "--non-interactive", "--no-seed"];
 if (force) { push(argv, "--force"); }
 if (has_pattern) {
@@ -73,11 +62,11 @@ if (get(r, "code", 1) != 0) {
   lm_error("plan failed: " + trim(str(get(r, "stderr", "")) + str(get(r, "stdout", ""))));
   lm_exit(70);
 }
-// Verify by reading the FILE, not by trusting the exit code: plan can report success
-// without producing the file if --output was misread.
+
+// ==== VERIFY -- do not move ====
 if (!file_exists(target)) {
   lm_error("plan reported success but " + target + " does not exist");
   lm_exit(70);
 }
 println("planned: " + target + " (" + str(len(split(read_file(target), "\n"))) + " lines)");
-println("Next: lint it before seeding -- lmctl lint " + target);
+println("Next: lmctl lint " + target);

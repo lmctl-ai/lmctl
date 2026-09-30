@@ -1,12 +1,9 @@
 // seed.lms -- create real provider sessions for a teamfile, verified against the file.
-//
 //   lmctl script seed.lms <request.json>
-//
-// Seeding is the stage that actually spends something: each member missing a
-// sessionid= gets a real provider session. This runs it, then checks the RESULT by
-// reading the file back -- seed writes sessionid= for every member it created, so the
-// file itself is the evidence, not the exit code alone.
+// Request form: { teamfile }
+// Runs unedited. Safe to replace the DISPATCH block; do not move VALIDATE or VERIFY.
 
+// ==== VALIDATE -- do not move ====
 if (len(args) < 1) { println("usage: lmctl script seed.lms <request.json>"); lm_exit(2); }
 if (!file_exists(args[0])) { lm_error("no request form at " + args[0]); lm_exit(2); }
 req = json_parse_safe(read_file(args[0]), null);
@@ -18,20 +15,15 @@ if (teamfile == "" || teamfile == "null") {
   lm_error("  - missing: teamfile");
   lm_exit(2);
 }
-if (!file_exists(teamfile)) {
-  lm_error("no teamfile at " + teamfile);
-  lm_exit(2);
-}
+if (!file_exists(teamfile)) { lm_error("no teamfile at " + teamfile); lm_exit(2); }
 
 before = split(read_file(teamfile), "\n");
 already_seeded = 0;
 for (i = 0; i < len(before); i = i + 1) {
-  if (starts_with(trim(before[i]), "_MEMBER_") && contains(before[i], "sessionid=")) {
-    already_seeded = already_seeded + 1;
-  }
+  if (starts_with(trim(before[i]), "_MEMBER_") && contains(before[i], "sessionid=")) { already_seeded = already_seeded + 1; }
 }
 
-println("seeding " + teamfile + " (this calls each provider for real)");
+// ==== DISPATCH -- edit surface: change the lmctl seed invocation here ====
 r = system(["lmctl", "seed", teamfile], 0);
 out = str(get(r, "stdout", "")) + str(get(r, "stderr", ""));
 if (get(r, "code", 1) != 0) {
@@ -39,20 +31,17 @@ if (get(r, "code", 1) != 0) {
   lm_exit(70);
 }
 
+// ==== VERIFY -- do not move ====
 after = split(read_file(teamfile), "\n");
 now_seeded = 0;
 for (i = 0; i < len(after); i = i + 1) {
-  if (starts_with(trim(after[i]), "_MEMBER_") && contains(after[i], "sessionid=")) {
-    now_seeded = now_seeded + 1;
-  }
+  if (starts_with(trim(after[i]), "_MEMBER_") && contains(after[i], "sessionid=")) { now_seeded = now_seeded + 1; }
 }
 newly = now_seeded - already_seeded;
-
 if (newly <= 0 && already_seeded == 0) {
   lm_error("seed exited 0 but no member has a sessionid -- nothing was actually created");
   lm_exit(70);
 }
-
-println(str(now_seeded) + " member(s) now carry a sessionid (" + str(newly) + " newly seeded this run)");
+println(str(now_seeded) + " member(s) carry a sessionid (" + str(newly) + " newly seeded)");
 if (trim(out) != "") { println(trim(out)); }
 println("ready: " + teamfile);
