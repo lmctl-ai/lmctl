@@ -1,0 +1,39 @@
+plan.txt -- teamfile shapes to read and adapt.
+
+This is a DOCUMENT, not a script. lmctl plan's whole purpose is to produce a
+teamfile -- so the useful artifact here is examples of the common shapes,
+not a program that builds a command line for you. Copy the block that
+matches your job into a `.lmctl` file, fill in `<your-provider>`, and run
+`lmctl lint` on it before `lmctl seed`.
+
+A teamfile is a plain-text file of `_MEMBER_` lines -- see
+https://lmctl.com/lmctl/docs/manuals/teamfile-format for the full grammar.
+
+-- solo: one member, no delegation. The smallest possible team. --
+
+_MEMBER_ alias=Lead provider=<your-provider> model="<a-model>"
+
+-- lead + reviewer: a second, independent opinion before anything ships --
+
+_MEMBER_ alias=Lead     provider=<your-provider> model="<a-model>"
+_MEMBER_ alias=Reviewer provider=<a-different-provider> model="<a-model>"
+
+-- lead + coder + reviewer: the classic three-role pattern --
+
+_MEMBER_ alias=Lead     provider=<your-provider> model="<a-model>"
+_MEMBER_ alias=Coder    provider=<a-different-provider> model="<a-model>"
+_MEMBER_ alias=Reviewer provider=<a-third-provider> model="<a-model>"
+
+-- multi-provider: three reviewers, three different providers --
+
+Different models have different, uncorrelated blind spots -- a bug one
+model waves through often gets caught by another. Use this when the cost
+of a miss is worth three opinions instead of one.
+
+_MEMBER_ alias=Lead      provider=<your-provider> model="<a-model>"
+_MEMBER_ alias=Reviewer1 provider=<your-provider> model="<a-model>"
+_MEMBER_ alias=Reviewer2 provider=<a-different-provider> model="<a-model>"
+_MEMBER_ alias=Reviewer3 provider=<a-third-provider> model="<a-model>"
+
+More shapes, ready to fetch and run with `lmctl quickrun` (not just read):
+https://lmctl.com/templates/

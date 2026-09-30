@@ -245,6 +245,12 @@ done
 # --- lmscript/commands: publish the curated per-command lmscript library to
 # lmctl.com/lmscript/commands/ (source of truth = this repo's lmscript/commands/). Mirrors the
 # templates/ pattern above. No --delete: never wipe files published out-of-band.
+# Exception: plan.lms and lint.lms are retired (plan -> plan.txt, a document, not a script;
+# lint needs no script at all -- lmctl lint <file> is already the whole operation). These are
+# OUR OWN prior publishes being genuinely removed, not out-of-band content, so they're deleted
+# explicitly rather than left to linger just because sync itself never deletes.
+aws s3 rm "s3://${S3_BUCKET}/lmscript/commands/plan.lms" 2>/dev/null || true
+aws s3 rm "s3://${S3_BUCKET}/lmscript/commands/lint.lms" 2>/dev/null || true
 aws s3 sync lmscript/commands/ "s3://${S3_BUCKET}/lmscript/commands/" \
   --exclude '.*' \
   --content-type 'text/plain; charset=utf-8' \
@@ -282,6 +288,16 @@ for path in '/lmscript/commands' '/lmscript/commands/' '/lmscript/commands/index
   fi
 done
 
+# plan.lms and lint.lms are retired -- confirm the deletion actually took, not just that the
+# sync step didn't error. A stale copy left live would silently outlive its own removal here.
+for path in '/lmscript/commands/plan.lms' '/lmscript/commands/lint.lms'; do
+  status="$(curl -s -o /dev/null -w '%{http_code}' "${SITE_ORIGIN}${path}")"
+  if [[ "${status}" != "404" ]]; then
+    echo "retired file still live at ${SITE_ORIGIN}${path} (status ${status})" >&2
+    exit 1
+  fi
+done
+
 for spec in \
   '/lmprobe/|text/html|lmprobe Manual' \
   '/skills/claudecode-lead-skill.md|text/markdown|# Claude Code lmctl Lead skill' \
@@ -300,8 +316,7 @@ for spec in \
   '/helloexample/kimi.lmctl|text/plain|_MEMBER_ alias=Lead provider=kimi' \
   '/templates/solo.lmctl|text/plain|provider=${Provider1}' \
   '/templates/trio.lmctl|text/plain|provider=${Provider3}' \
-  '/lmscript/commands/plan.lms|text/plain|lmctl script plan.lms' \
-  '/lmscript/commands/lint.lms|text/plain|lmctl script lint.lms' \
+  '/lmscript/commands/plan.txt|text/plain|plan.txt -- teamfile shapes to read and adapt' \
   '/lmscript/commands/seed.lms|text/plain|lmctl script seed.lms' \
   '/lmscript/commands/prompt.lms|text/plain|lmctl script prompt.lms'
 do
