@@ -1,0 +1,48 @@
+// lint.lms -- validate a teamfile, structured pass/fail.
+//   lmctl script lint.lms <request.json>
+// Request form: { teamfile }
+// Runs unedited. Safe to replace the DISPATCH/parse block; do not move VALIDATE or the exit logic.
+
+// ==== VALIDATE -- reads and checks the request form. Do not move. ====
+if (len(args) < 1) { println("usage: lmctl script lint.lms <request.json>"); lm_exit(2); }
+if (!file_exists(args[0])) { lm_error("no request form at " + args[0]); lm_exit(2); }
+req = json_parse_safe(read_file(args[0]), null);
+if (req == null) { lm_error(args[0] + " is not valid JSON"); lm_exit(2); }
+
+teamfile = str(get(req, "teamfile", ""));
+if (teamfile == "" || teamfile == "null") {
+  lm_error("request form is not usable -- nothing was linted:");
+  lm_error("  - missing: teamfile");
+  lm_exit(2);
+}
+if (!file_exists(teamfile)) { lm_error("no teamfile at " + teamfile); lm_exit(2); }
+
+// ==== DISPATCH -- runs `lmctl lint` and splits its text output into errors/warnings. Edit the "error:"/"warning:" match here if lint's own prefixes ever change. ====
+r = system(["lmctl", "lint", teamfile], 300000);
+out = str(get(r, "stdout", "")) + str(get(r, "stderr", ""));
+lines = split(out, "\n");
+errors = [];
+warnings = [];
+for (i = 0; i < len(lines); i = i + 1) {
+  t = trim(lines[i]);
+  if (starts_with(t, "error:")) { push(errors, t); }
+  if (starts_with(t, "warning:")) { push(warnings, t); }
+}
+
+println("teamfile: " + teamfile);
+println("errors:   " + str(len(errors)));
+println("warnings: " + str(len(warnings)));
+if (len(warnings) > 0) {
+  println("");
+  for (i = 0; i < len(warnings); i = i + 1) { println(warnings[i]); }
+}
+
+// ==== EXIT -- warnings pass (lint's own rule); any error, or a nonzero exit, fails. Do not move. ====
+if (get(r, "code", 1) != 0 || len(errors) > 0) {
+  println("");
+  for (i = 0; i < len(errors); i = i + 1) { println(errors[i]); }
+  lm_error("lint FAILED");
+  lm_exit(70);
+}
+println("");
+println("lint PASSED: " + teamfile);

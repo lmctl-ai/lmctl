@@ -1,0 +1,48 @@
+// seed.lms -- create real provider sessions for a teamfile, verified against the file.
+//   lmctl script seed.lms <request.json>
+// Request form: { teamfile }
+// Runs unedited. Safe to replace the DISPATCH block; do not move VALIDATE or VERIFY.
+
+// ==== VALIDATE -- reads and checks the request form. Do not move. ====
+if (len(args) < 1) { println("usage: lmctl script seed.lms <request.json>"); lm_exit(2); }
+if (!file_exists(args[0])) { lm_error("no request form at " + args[0]); lm_exit(2); }
+req = json_parse_safe(read_file(args[0]), null);
+if (req == null) { lm_error(args[0] + " is not valid JSON"); lm_exit(2); }
+
+teamfile = str(get(req, "teamfile", ""));
+if (teamfile == "" || teamfile == "null") {
+  lm_error("request form is not usable -- nothing was seeded:");
+  lm_error("  - missing: teamfile");
+  lm_exit(2);
+}
+if (!file_exists(teamfile)) { lm_error("no teamfile at " + teamfile); lm_exit(2); }
+
+// count sessionid= lines before seeding, so VERIFY can tell how many are genuinely new.
+before = split(read_file(teamfile), "\n");
+already_seeded = 0;
+for (i = 0; i < len(before); i = i + 1) {
+  if (starts_with(trim(before[i]), "_MEMBER_") && contains(before[i], "sessionid=")) { already_seeded = already_seeded + 1; }
+}
+
+// ==== DISPATCH -- runs the real `lmctl seed`, which calls each provider for real. Edit the invocation here. ====
+r = system(["lmctl", "seed", teamfile], 0);
+out = str(get(r, "stdout", "")) + str(get(r, "stderr", ""));
+if (get(r, "code", 1) != 0) {
+  lm_error("seed failed: " + trim(out));
+  lm_exit(70);
+}
+
+// ==== VERIFY -- re-reads the file for sessionid= lines; seed's exit code alone isn't proof. Do not move. ====
+after = split(read_file(teamfile), "\n");
+now_seeded = 0;
+for (i = 0; i < len(after); i = i + 1) {
+  if (starts_with(trim(after[i]), "_MEMBER_") && contains(after[i], "sessionid=")) { now_seeded = now_seeded + 1; }
+}
+newly = now_seeded - already_seeded;
+if (newly <= 0 && already_seeded == 0) {
+  lm_error("seed exited 0 but no member has a sessionid -- nothing was actually created");
+  lm_exit(70);
+}
+println(str(now_seeded) + " member(s) carry a sessionid (" + str(newly) + " newly seeded)");
+if (trim(out) != "") { println(trim(out)); }
+println("ready: " + teamfile);

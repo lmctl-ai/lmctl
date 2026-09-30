@@ -1,0 +1,58 @@
+// prompt.lms -- send one prompt to one seeded team member.
+//   lmctl script prompt.lms <request.json>
+// Request form: { teamfile, alias, prompt, acceptance: [...], out? }
+// Runs unedited. Safe to replace the DISPATCH/prompt-construction block; do not move
+// VALIDATE or the GUARDS after dispatch.
+
+// ==== VALIDATE -- reads and checks the request form. Do not move. ====
+if (len(args) < 1) { println("usage: lmctl script prompt.lms <request.json>"); lm_exit(2); }
+if (!file_exists(args[0])) { lm_error("no request form at " + args[0]); lm_exit(2); }
+req = json_parse_safe(read_file(args[0]), null);
+if (req == null) { lm_error(args[0] + " is not valid JSON"); lm_exit(2); }
+
+bad = [];
+teamfile = str(get(req, "teamfile", ""));
+if (teamfile == "" || teamfile == "null") { push(bad, "missing: teamfile"); }
+else if (!file_exists(teamfile)) { push(bad, "no teamfile at " + teamfile); }
+alias = str(get(req, "alias", ""));
+if (alias == "" || alias == "null") { push(bad, "missing: alias"); }
+task = str(get(req, "prompt", ""));
+if (task == "" || task == "null") { push(bad, "missing: prompt"); }
+acceptance = get(req, "acceptance", null);
+if (acceptance == null) { push(bad, "missing: acceptance"); }
+out = str(get(req, "out", "/tmp/prompt"));
+if (len(bad) > 0) {
+  lm_error("request form is not usable -- nothing was dispatched:");
+  for (i = 0; i < len(bad); i = i + 1) { lm_error("  - " + bad[i]); }
+  lm_exit(2);
+}
+
+// ==== DISPATCH -- wraps the task in the acceptance criteria + state-line contract, then sends it. Edit the prompt text/wrapper here. ====
+criteria = "";
+for (i = 0; i < len(acceptance); i = i + 1) {
+  criteria = criteria + "  " + str(i + 1) + ". " + str(acceptance[i]) + "\n";
+}
+full_prompt = task
+  + "\n\nYour reply must satisfy ALL of these. Address each by number, with evidence -- "
+  + "a command you ran, a file and line. Not an assurance.\n\n" + criteria
+  + "\nEnd your reply with exactly one of DONE / BLOCKED / OTHER on its own final line.";
+
+println("prompting " + alias + " (" + teamfile + ")");
+r = lm_prompt(teamfile, alias, full_prompt, {});
+
+// ==== GUARDS -- persist the reply, then reject a failed/empty/stateless/blocked turn before it's trusted. Do not move. ====
+raw = get(r, "reply", null);
+reply = str(raw);
+if (raw == null) { reply = ""; }
+write_file(out + "-reply.md", reply);
+
+if (str(get(r, "status", "?")) != "ok") { lm_error(alias + " failed: " + str(get(r, "error", ""))); lm_exit(70); }
+if (len(trim(reply)) == 0) { lm_error(alias + " gave an empty reply with status=ok"); lm_exit(70); }
+state = last_line_as_status(reply);
+if (state == null) { lm_error(alias + " gave no state line -- outcome unknown"); lm_exit(70); }
+if (state == "BLOCKED") { lm_error(alias + " reported BLOCKED -- read " + out + "-reply.md"); lm_exit(75); }
+
+write_file(out + "-VERDICT.md",
+  "# " + task + "\n\nstate: " + state + "\n\n## Criteria\n\n" + criteria
+  + "\nVerify the EVIDENCE given, not the claim.\n\n## Reply\n\n" + reply + "\n");
+println("done (" + state + ") -- verdict: " + out + "-VERDICT.md");
