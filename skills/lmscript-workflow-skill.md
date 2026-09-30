@@ -15,22 +15,32 @@ end. An lmscript workflow is provider-agnostic, actually executes, and
 carries a job across many steps in a single unattended run. A skill doc and
 a spec are static; a workflow turns them into a living, executable process.
 
-That is not "no humans" or "fully autonomous," in the sense of a human just
-asking for an outcome and an agent doing everything. Defining a workflow's
-spec and process is real collaborative work between a human and a metalead,
-not a prompt — and that's where the human effort actually goes. A skill or
-a spec spends that effort on every step, every single run, forever. A
-workflow spends it **once**, up front, defining the spec and process — then
-amortises that cost across every run after. That's the real economic
-difference, and it's the one a reader with their own repo actually wants to
-know before investing time writing one.
+That is not a human approving each cycle or unblocking each turn from
+inside the iteration — that's exactly what a skill or a spec forces. The
+human sits at two boundaries, and nowhere in between:
 
-That definition phase is genuinely expensive, and worth it: one real
-enhancement went through four design-and-review rounds before any code was
-written, and three of the requirements corrected in those rounds had been
-put there wrongly by the human in the first place. That's not a failure of
-autonomy — it's the definition phase doing its job, at a cost of minutes per
-round instead of a day spent implementing the wrong design and reverting it.
+- **human** — designs the loop
+- **metalead** — implements that design as an executable process
+- **the loop** — runs; no human inside it
+- **human** — reviews what it produced
+
+Both boundaries are real mechanics, not aspirations. At the front, a design
+phase runs and stops: it writes a design plus an independent review of it,
+changes no files, and exits — a separate invocation implements. The human
+decides in the gap between those two runs, because an unattended script
+can't judge an approval and shouldn't be asked to. At the end, every run
+finishes by writing one verdict document naming exactly what to check:
+whether the tree matches what the agent claims, and whether each new test
+was seen to fail before the change — that last claim is the easiest one to
+fake and the most valuable one to check, which is why it's named explicitly
+rather than left to the reader.
+
+The front boundary is where the real cost sits, and it's worth paying: one
+real enhancement went through four design-and-review rounds before any code
+was written, and three of the requirements corrected in those rounds had
+been put there wrongly by the human in the first place. That's the design
+boundary doing its job, at a cost of minutes per round instead of a day
+spent implementing the wrong design and reverting it.
 
 One real run makes the case for "provider-agnostic" concretely: an author on
 one vendor's model and a reviewer on another's, unattended, four turns
