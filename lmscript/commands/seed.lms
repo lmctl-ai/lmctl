@@ -10,7 +10,7 @@ if (len(args) < 1) { println("usage: lmctl script seed.lms <request.json>"); lm_
 if (!file_exists(args[0])) { lm_error("no request form at " + args[0]); lm_exit(2); }
 req = json_parse_safe(read_file(args[0]), null);
 if (req == null) { lm_error(args[0] + " is not valid JSON"); lm_exit(2); }
-teamfile = get(req, "teamfile", "");
+teamfile = getstr(req, "teamfile");
 if (teamfile == "") { lm_error("missing required field: teamfile"); lm_exit(2); }
 
 // count sessions already there, so we can tell how many are new
@@ -22,8 +22,8 @@ for (i = 0; i < len(before); i = i + 1) {
 
 // run lmctl seed -- this calls each provider for real
 r = system(["lmctl", "seed", teamfile], 0);
-if (get(r, "code", 1) != 0) {
-  lm_error("seed failed: " + trim(get(r, "stdout", "") + get(r, "stderr", "")));
+if (getnum(r, "code", 1) != 0) {
+  lm_error("seed failed: " + trim(getstr(r, "stdout") + getstr(r, "stderr")));
   lm_exit(70);
 }
 
