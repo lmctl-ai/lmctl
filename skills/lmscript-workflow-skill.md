@@ -12,16 +12,25 @@ A coding-tool skill is provider-specific, is one step per invocation, and a
 human triggers each step with a slash command. Spec-driven development
 produces a document — nothing runs, and the human still executes it end to
 end. An lmscript workflow is provider-agnostic, actually executes, and
-carries a job across many steps in a single unattended run.
+carries a job across many steps in a single unattended run. A skill doc and
+a spec are static; a workflow turns them into a living, executable process.
 
-That is not the same as "no human" or "fully autonomous" — don't read it
-that way. It's **human-gated at decisions, not human-driven at steps**: you
-set direction and the participants once, in the request form, and
-sanity-check the result; the workflow executes everything in between. The
-design gate stays deliberately human, by design, not as a gap — one real
-enhancement needed four design rounds because a human had put three
-requirements into the brief wrong in the first place, which is exactly the
-kind of mistake that gate exists to catch.
+That is not "no humans" or "fully autonomous," in the sense of a human just
+asking for an outcome and an agent doing everything. Defining a workflow's
+spec and process is real collaborative work between a human and a metalead,
+not a prompt — and that's where the human effort actually goes. A skill or
+a spec spends that effort on every step, every single run, forever. A
+workflow spends it **once**, up front, defining the spec and process — then
+amortises that cost across every run after. That's the real economic
+difference, and it's the one a reader with their own repo actually wants to
+know before investing time writing one.
+
+That definition phase is genuinely expensive, and worth it: one real
+enhancement went through four design-and-review rounds before any code was
+written, and three of the requirements corrected in those rounds had been
+put there wrongly by the human in the first place. That's not a failure of
+autonomy — it's the definition phase doing its job, at a cost of minutes per
+round instead of a day spent implementing the wrong design and reverting it.
 
 One real run makes the case for "provider-agnostic" concretely: an author on
 one vendor's model and a reviewer on another's, unattended, four turns
