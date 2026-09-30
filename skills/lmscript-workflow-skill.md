@@ -311,7 +311,7 @@ reviewer is allowed to commit and push once it's satisfied.
 | `lm_error` / `lm_exit` | `lm_error(msg)` writes to stderr and records the message for the final summary; normal completion then exits 1. `lm_exit(code)` takes precedence, even `0`, and stops execution before cleanup runs. |
 | variables & scope | First assignment creates a binding; a binding made inside a branch isn't visible after it ends. Declare a variable before an `if` if you need to update it from inside. `let` shadows within the current block; `var` is unsupported. |
 | strings | Concatenate with `+`. There's no string interpolation — no `${x}` inside a string literal. |
-| shell timeouts | Never wrap `lmctl` in a shell `timeout` — it SIGTERMs mid-turn. Use `--idle-timeout 0` instead. |
+| shell timeouts | Never wrap `lmctl` in a shell `timeout` — it SIGTERMs mid-turn, regardless of which `lmctl` subcommand it wraps. |
 | parsing lmctl's own data | Don't hand-roll a teamfile parser. `lm_members(teamfile)` returns `{alias, provider, model, sessionid}` directly, and hand-rolled parsers have shipped real defects. |
 | library files | A library may only declare functions — a top-level assignment in an imported file is rejected with "libraries must only declare functions". A shared constant has to be a nullary function instead. |
 | first session on some providers | A fresh session on some providers needs a first turn in permissive mode before it works reliably — check your provider's own notes before assuming a first call will behave like later ones. |
