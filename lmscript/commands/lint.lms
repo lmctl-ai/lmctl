@@ -10,12 +10,12 @@ if (len(args) < 1) { println("usage: lmctl script lint.lms <request.json>"); lm_
 if (!file_exists(args[0])) { lm_error("no request form at " + args[0]); lm_exit(2); }
 req = json_parse_safe(read_file(args[0]), null);
 if (req == null) { lm_error(args[0] + " is not valid JSON"); lm_exit(2); }
-teamfile = get(req, "teamfile", "");
+teamfile = getstr(req, "teamfile");
 if (teamfile == "") { lm_error("missing required field: teamfile"); lm_exit(2); }
 
 // run lmctl lint
 r = system(["lmctl", "lint", teamfile], 300000);
-out = get(r, "stdout", "") + get(r, "stderr", "");
+out = getstr(r, "stdout") + getstr(r, "stderr");
 
 // split its output into errors and warnings
 lines = split(out, "\n");
@@ -33,4 +33,4 @@ println("errors:   " + str(len(errors)));
 println("warnings: " + str(len(warnings)));
 for (i = 0; i < len(warnings); i = i + 1) { println(warnings[i]); }
 for (i = 0; i < len(errors); i = i + 1) { println(errors[i]); }
-if (get(r, "code", 1) != 0 || len(errors) > 0) { lm_exit(70); }
+if (getnum(r, "code", 1) != 0 || len(errors) > 0) { lm_exit(70); }

@@ -13,14 +13,15 @@ if (len(args) < 1) { println("usage: lmctl script prompt.lms <request.json>"); l
 if (!file_exists(args[0])) { lm_error("no request form at " + args[0]); lm_exit(2); }
 req = json_parse_safe(read_file(args[0]), null);
 if (req == null) { lm_error(args[0] + " is not valid JSON"); lm_exit(2); }
-teamfile = get(req, "teamfile", "");
+teamfile = getstr(req, "teamfile");
 if (teamfile == "") { lm_error("missing required field: teamfile"); lm_exit(2); }
-alias = get(req, "alias", "");
+alias = getstr(req, "alias");
 if (alias == "") { lm_error("missing required field: alias"); lm_exit(2); }
-task = get(req, "prompt", "");
+task = getstr(req, "prompt");
 if (task == "") { lm_error("missing required field: prompt"); lm_exit(2); }
-acceptance = get(req, "acceptance", []);
-out = get(req, "out", "/tmp/prompt");
+acceptance = getlist(req, "acceptance");
+out = getstr(req, "out");
+if (out == "") { out = "/tmp/prompt"; }
 
 // build the prompt: the task plus the acceptance criteria plus a state-line contract
 criteria = "";
@@ -37,11 +38,11 @@ println("prompting " + alias + " (" + teamfile + ")");
 r = lm_prompt(teamfile, alias, full_prompt, {});
 
 // persist the reply before judging it
-reply = get(r, "reply", "");
+reply = getstr(r, "reply");
 write_file(out + "-reply.md", reply);
 
 // reject a failed, empty, stateless, or blocked turn before trusting it
-if (get(r, "status", "?") != "ok") { lm_error(alias + " failed: " + get(r, "error", "")); lm_exit(70); }
+if (get(r, "status", "?") != "ok") { lm_error(alias + " failed: " + getstr(r, "error")); lm_exit(70); }
 if (len(trim(reply)) == 0) { lm_error(alias + " gave an empty reply with status=ok"); lm_exit(70); }
 state = last_line_as_status(reply);
 if (state == null) { lm_error(alias + " gave no state line -- outcome unknown"); lm_exit(70); }
