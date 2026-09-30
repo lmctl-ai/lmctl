@@ -43,9 +43,9 @@
 <p>Each script is VALIDATE / DISPATCH / VERIFY (or GUARDS), marked with <code>// ==== ... ====</code>. DISPATCH is the edit surface — replace it for the job in front of you. Don't move VALIDATE or the block after DISPATCH; that's what makes a bad form or a bad reply fail loud instead of silently.</p>
 
 <h2>Fetch</h2>
-<pre><code>curl -O https://lmctl.com/lmscript/commands/plan.lms
-lmctl script plan.lms request.json</code></pre>
-<p class="sub"><code>--save-script</code> does the fetch step for you once it ships; until then, <code>curl</code> the URL directly.</p>
+<pre><code>lmctl plan ./backend --pattern 3 --provider &lt;your-provider&gt; --save-script myplan.lms
+lmctl script myplan.lms request.json</code></pre>
+<p class="sub"><code>--save-script &lt;file&gt;</code> runs the command as normal, and on success fetches the matching script here and writes it to <code>&lt;file&gt;</code> — requires <code>@lmctl-ai/lmctl</code> 0.2.14 or later (<code>lmctl --version</code> to check; <code>npm install -g @lmctl-ai/lmctl@latest</code> to update). <code>--script &lt;name&gt;</code> overrides which script to fetch, for an alternative. Older versions: <code>curl</code> the URL directly instead.</p>
 
 <h2>Request forms use <code>&lt;your-provider&gt;</code>, never <code>${Provider1}</code></h2>
 <p>A request form has no substitution step. <code>${Provider1}</code> is for a <code>.lmctl</code> template <code>quickrun</code> expands — left in a request form, it reaches the provider registry literally and errors. Write <code>"provider": "&lt;your-provider&gt;"</code> and replace it before running.</p>
