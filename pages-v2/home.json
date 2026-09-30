@@ -1,0 +1,6 @@
+{
+  "kind": "landing",
+  "title": "lmctl — AI Control Plane",
+  "description": "A provider-agnostic control plane for teams of AI coding agents.",
+  "path": "/"
+}

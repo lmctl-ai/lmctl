@@ -1,0 +1,36 @@
+<h1>Teamfile format</h1>
+<p>If you just ran <code>lmctl plan</code> (or <code>lmctl quickrun</code>), you have a new <code>&lt;name&gt;.lmctl</code> file and a comment inside it pointed you here. This page covers the whole loop: <strong>generate → edit → lint → seed</strong>.</p>
+<h2>Generate: what <code>lmctl plan</code> gave you</h2>
+<p><code>lmctl plan</code> writes a starting point, not a finished team. It is a real, loadable teamfile, valid the moment it is generated, but built from the pattern or flags requested rather than the actual project. Add members, remove them, swap providers, or rename aliases.</p>
+<h2>Edit: what is in the file</h2>
+<p>A teamfile is plain text: no YAML, no JSON, and no special editor. Every line starting with <code>_MEMBER_</code> declares one team member. Everything else is free-form text for headers, blank lines, and reminders. It is a space-separated list of <code>key=value</code> pairs. Wrap a value in double quotes if it contains spaces, such as <code>model="claude opus 5"</code>; otherwise quotes are not needed.</p>
+<h3>The <code>_MEMBER_</code> line</h3>
+<p>A member line looks like this:</p>
+<pre><code>_MEMBER_ alias=Coder provider=claude model="claude-opus-5"</code></pre>
+<p>Valid <code>provider=</code> values include <code>claude</code>, <code>codex</code>, <code>gemini</code>, <code>copilot</code>, <code>opencode</code>, <code>qwen</code>, <code>agy</code>, <code>kimi</code>, <code>dsh</code>, <code>hermes</code>, <code>pi</code>, and <code>lmplayer</code>. For an alternative team lead, see <a href="./teams-connect">Cross-team calls</a>.</p>
+<div class="table-container"><table class="table is-striped is-fullwidth"><thead><tr><th>Field</th><th>Required?</th><th>What it means</th></tr></thead><tbody><tr><td><code>alias</code></td><td>yes</td><td>The name you call this member; it must be unique.</td></tr><tr><td><code>provider</code></td><td>yes</td><td>Which AI provider CLI runs this member.</td></tr><tr><td><code>model</code></td><td>no</td><td>A specific model, or the provider default when omitted.</td></tr><tr><td><code>effort</code></td><td>no</td><td>A reasoning-effort or tier variant where supported.</td></tr><tr><td><code>sessionid</code></td><td>no</td><td>Filled automatically by <code>lmctl seed</code>.</td></tr><tr><td><code>sessiondir</code></td><td>no</td><td>Runs this member from another directory.</td></tr><tr><td><code>teamfile</code></td><td>no</td><td>Points to another team lead instead of an AI provider.</td></tr></tbody></table></div>
+<h3>Adding, removing, or reassigning members</h3>
+<p>Copy an existing member line, give it a new alias, and choose a provider. Do not set <code>sessionid</code>; <code>lmctl seed</code> creates it. To remove a member, delete its line. To rename or reassign one, edit <code>alias</code> or <code>provider</code>; if the provider changes, delete the old <code>sessionid</code> first.</p>
+<pre><code># Backend team
+# Lead plans and delegates. Coder implements. Reviewer checks the Coder's work before anything ships.
+_MEMBER_ alias=Lead provider=claude
+_MEMBER_ alias=Coder provider=codex model="gpt-5.6-luna"
+_MEMBER_ alias=Reviewer provider=claude</code></pre>
+<h2>Lint: check before seeding</h2>
+<pre><code>lmctl lint ./team.lmctl</code></pre>
+<p><code>lint</code> checks syntax and, where possible, provider and model names. Warnings are advisory and still exit zero; errors mean the file is malformed and exit one. Fix what the error names and run <code>lint</code> again.</p>
+<pre><code>notice: checking teamfile and models ...
+warning: [Lead] model "not-a-real-model-xyz" is unknown to the lmprice catalog for provider "claude" (214 known) -- not necessarily wrong: may be a model too new for lmprice to have published yet, or a typo. A matching lmprice catalog/alias entry would resolve this; lint cannot otherwise confirm whether claude accepts it.
+notice: 0 errors, 1 warning
+ok</code></pre>
+<pre><code>notice: checking teamfile and models ...
+error: Lead: Invalid provider "cladue"
+notice: 1 error, 0 warnings</code></pre>
+<h2>Seed: create provider sessions</h2>
+<pre><code>lmctl seed ./team.lmctl</code></pre>
+<p>Seeding starts a real provider session for each member missing a <code>sessionid</code>, then writes the resulting session id and resolved directory back into the file. Existing sessions are left alone. If no model was specified, seed records the provider's observed model when it can determine one; it never overwrites a <code>model=</code> you already set, and if the provider's choice cannot be determined, it leaves <code>model=</code> unset and warns instead of guessing.</p>
+<p>Seeding is a real provider call and can take a few seconds per member; a “still launching” line every 5 seconds is normal, not a hang. A member with an existing <code>sessionid</code> is not touched.</p>
+<p>To replace one member without disturbing the rest, delete only that member's <code>sessionid</code> and seed again.</p>
+<h2>After seeding</h2>
+<pre><code>lmctl prompt ./team.lmctl Lead "hello"</code></pre>
+<p>See the <a href="./cli-reference">CLI reference</a> for the full command set, and <a href="./concepts-glossary">Concepts &amp; glossary</a> for the bigger picture of teamfiles, teams, and members.</p>

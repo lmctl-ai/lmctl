@@ -14,7 +14,9 @@
     "@docusaurus/preset-classic": "^3.10.1",
     "@easyops-cn/docusaurus-search-local": "^0.50.0",
     "@mdx-js/react": "^3.1.0",
+    "css-tree": "^2.3.1",
     "clsx": "^2.1.1",
+    "parse5": "^7.3.0",
     "prism-react-renderer": "^2.4.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
