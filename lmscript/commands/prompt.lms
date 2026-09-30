@@ -1,0 +1,59 @@
+// prompt.lms -- send one prompt to one seeded team member, with every guard that matters.
+//
+//   lmctl script prompt.lms <request.json>
+//
+// The bare command (`lmctl prompt <teamfile> <alias> "..."`) is already simple. What
+// it doesn't give you for free: acceptance criteria the reply must address, proof the
+// reply isn't hollow, and a verdict file a human can check quickly. This adds those.
+
+if (len(args) < 1) { println("usage: lmctl script prompt.lms <request.json>"); lm_exit(2); }
+if (!file_exists(args[0])) { lm_error("no request form at " + args[0]); lm_exit(2); }
+req = json_parse_safe(read_file(args[0]), null);
+if (req == null) { lm_error(args[0] + " is not valid JSON"); lm_exit(2); }
+
+bad = [];
+teamfile = str(get(req, "teamfile", ""));
+if (teamfile == "" || teamfile == "null") { push(bad, "missing: teamfile"); }
+else if (!file_exists(teamfile)) { push(bad, "no teamfile at " + teamfile); }
+alias = str(get(req, "alias", ""));
+if (alias == "" || alias == "null") { push(bad, "missing: alias"); }
+task = str(get(req, "prompt", ""));
+if (task == "" || task == "null") { push(bad, "missing: prompt"); }
+acceptance = get(req, "acceptance", null);
+if (acceptance == null) { push(bad, "missing: acceptance -- say what a good reply must contain"); }
+out = str(get(req, "out", "/tmp/prompt"));
+if (len(bad) > 0) {
+  lm_error("request form is not usable -- nothing was dispatched:");
+  for (i = 0; i < len(bad); i = i + 1) { lm_error("  - " + bad[i]); }
+  lm_exit(2);
+}
+
+criteria = "";
+for (i = 0; i < len(acceptance); i = i + 1) {
+  criteria = criteria + "  " + str(i + 1) + ". " + str(acceptance[i]) + "\n";
+}
+full_prompt = task
+  + "\n\nYour reply must satisfy ALL of these. Address each by number, and give evidence for "
+  + "each -- a command you ran, a file and line. Not an assurance.\n\n" + criteria
+  + "\nEnd your reply with exactly one of DONE / BLOCKED / OTHER on its own final line.";
+
+println("prompting " + alias + " (" + teamfile + ")");
+r = lm_prompt(teamfile, alias, full_prompt, {});
+
+// persist BEFORE judging: output not yet on disk did not happen
+raw = get(r, "reply", null);
+reply = str(raw);
+if (raw == null) { reply = ""; }
+write_file(out + "-reply.md", reply);
+
+if (str(get(r, "status", "?")) != "ok") { lm_error(alias + " failed: " + str(get(r, "error", ""))); lm_exit(70); }
+if (len(trim(reply)) == 0) { lm_error(alias + " gave an empty reply with status=ok -- failure, not consent"); lm_exit(70); }
+state = last_line_as_status(reply);
+if (state == null) { lm_error(alias + " gave no state line -- outcome unknown, so not proceeding"); lm_exit(70); }
+if (state == "BLOCKED") { lm_error(alias + " reported BLOCKED -- read " + out + "-reply.md"); lm_exit(75); }
+
+write_file(out + "-VERDICT.md",
+  "# " + task + "\n\nstate: " + state + "\n\n## Check each criterion yourself\n\n" + criteria
+  + "\nThe reply claims to satisfy these. Verify the EVIDENCE it gave, not the claim.\n\n"
+  + "## The reply\n\n" + reply + "\n");
+println("done (" + state + ") -- verdict: " + out + "-VERDICT.md");

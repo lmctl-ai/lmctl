@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>lmscript commands</title>
+<base href="/lmscript/commands/">
+<!-- Served at BOTH /lmscript/commands and /lmscript/commands/ (no redirect between them, mirrors
+     skills/index.html and templates/index.html). Without <base>, every relative href below resolves
+     against lmctl.com/ instead of lmctl.com/lmscript/commands/ from the no-trailing-slash form. -->
+<style>
+ body{font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      max-width:760px;margin:3rem auto;padding:0 1.2rem;color:#1a1a1a;background:#fff}
+ h1{font-size:1.6rem;margin:0 0 .3rem} .sub{color:#666;margin:0 0 2rem}
+ h2{font-size:1rem;text-transform:uppercase;letter-spacing:.05em;color:#888;margin:2rem 0 .6rem;font-weight:600}
+ ul{list-style:none;padding:0;margin:0} li{margin:.9rem 0}
+ a{color:#0b62d6;text-decoration:none;font-weight:600} a:hover{text-decoration:underline}
+ .d{color:#555;font-weight:400;display:block;margin-top:.15rem}
+ code{background:#f4f4f5;padding:.1em .35em;border-radius:4px;font-size:.9em}
+ pre{background:#f4f4f5;padding:.9rem 1rem;border-radius:6px;overflow-x:auto;font-size:.88em}
+ pre code{background:none;padding:0}
+ @media(prefers-color-scheme:dark){body{background:#141414;color:#e8e8e8}.d{color:#aaa}code{background:#262626}pre{background:#262626}a{color:#5aa2ff}h1{color:#fff}}
+</style></head><body>
+<h1>lmscript commands</h1>
+<p class="sub">One curated <code>.lms</code> script per lmctl command — fetched automatically when you run <code>lmctl &lt;command&gt; ... --save-script &lt;file&gt;</code>. lmctl only contributes the name and the download; these scripts are ours, authored and improvable without shipping a release.</p>
+
+<h2>Prerequisite</h2>
+<p>Every script here dispatches to a real provider CLI. Run <code>lmctl init</code> once to detect which providers you have, and <code>lmctl ratelimit</code> any time to see which ones are actually working right now. Without a configured provider, none of these have anything to run against.</p>
+
+<h2>Available scripts</h2>
+<ul>
+ <li><a href="plan.lms">plan.lms</a>
+  <span class="d">Generate a teamfile from a request form instead of wizard prompts or one-shot flags — a team composition becomes data you keep, diff, and re-run.</span></li>
+ <li><a href="lint.lms">lint.lms</a>
+  <span class="d">Validate a teamfile and get a structured pass/fail summary (error count, warning count, each message) instead of parsing lint's text output yourself.</span></li>
+ <li><a href="seed.lms">seed.lms</a>
+  <span class="d">Create real provider sessions for a teamfile, verified by reading the file back afterward — seed's exit code alone isn't proof a session exists.</span></li>
+ <li><a href="prompt.lms">prompt.lms</a>
+  <span class="d">Send one prompt to one seeded member with acceptance criteria attached — the reply has to address each one with evidence, not just claim success.</span></li>
+</ul>
+
+<h2>Alternatives</h2>
+<p>Only one script per command exists today — this is a starting set, not the whole shape of the idea. The plan is more scripts per command for cases the canonical one doesn't cover well (for example, a <code>plan</code> variant driven by an existing teamfile as a template, or a <code>prompt</code> variant that fans out to several workers and consolidates their replies). When a second script for a command ships, it'll be listed here next to the first with what distinguishes them — not silently added.</p>
+
+<h2>Try one</h2>
+<p class="sub">Fetch one directly and run it with a request form — this works today:</p>
+<pre><code>curl -O https://lmctl.com/lmscript/commands/plan.lms
+lmctl script plan.lms request.json</code></pre>
+<p class="sub"><code>lmctl &lt;command&gt; ... --save-script &lt;file&gt;</code> is the shorthand for the fetch step above, coming soon — it downloads the matching script here and writes it to the file you name, nothing more. Until then, fetch the URL directly.</p>
+
+<h2>Request forms — real provider, not a placeholder that resolves itself</h2>
+<p>Each script takes one argument: a path to a request-form JSON file. Unlike a <code>.lmctl</code> teamfile template fetched by <code>quickrun</code>, there's no substitution step for a request form — <code>lmctl script</code> hands whatever you write straight to the provider. So a request form never writes <code>${Provider1}</code>; it writes an unmistakable blank instead:</p>
+<pre><code>{ "dir": "/path/to/your/project",
+  "pattern": "2",
+  "provider": "&lt;your-provider&gt;" }</code></pre>
+<p>Replace <code>&lt;your-provider&gt;</code> with something <code>lmctl ratelimit</code> actually shows you have. A literal <code>${Provider1}</code> here would look like it resolves and then fail at runtime with a confusing registry error instead of an obvious blank to fill in — see <a href="/skills/lmscript-workflow-skill.md">the lmscript workflow skill</a> for the full reasoning and the language itself.</p>
+
+<p class="sub" style="margin-top:2.5rem">Looking for a full multi-step workflow instead of a single command? See <a href="/skills/lmscript-workflow-skill.md">the lmscript workflow skill</a>. Looking for a ready-made team instead of building one? See the <a href="/templates/">template library</a>.</p>
+</body></html>

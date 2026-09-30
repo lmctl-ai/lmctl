@@ -1,0 +1,83 @@
+// plan.lms -- generate a teamfile from a request form, no wizard.
+//
+//   lmctl script plan.lms <request.json>
+//
+// `lmctl plan --pattern ...` covers one shape at a time from flags. This drives the
+// same command from a request form, so a team composition is DATA you can keep, diff,
+// and re-run -- not a sequence of flags nobody recorded.
+
+if (len(args) < 1) { println("usage: lmctl script plan.lms <request.json>"); lm_exit(2); }
+if (!file_exists(args[0])) { lm_error("no request form at " + args[0]); lm_exit(2); }
+req = json_parse_safe(read_file(args[0]), null);
+if (req == null) { lm_error(args[0] + " is not valid JSON"); lm_exit(2); }
+
+bad = [];
+dir = str(get(req, "dir", ""));
+name = str(get(req, "name", ""));
+members = get(req, "members", null);
+pattern = str(get(req, "pattern", ""));
+provider = str(get(req, "provider", ""));
+model = str(get(req, "model", ""));
+force = get(req, "force", false);
+
+if (dir == "" || dir == "null") { push(bad, "missing required field: dir"); }
+else if (!file_exists(dir)) { push(bad, "dir does not exist: " + dir); }
+
+// EITHER an explicit member list OR a pattern+provider. Not both: two ways to say the
+// same thing is how a form starts meaning something different from what its author thought.
+has_members = (members != null && len(members) > 0);
+has_pattern = (pattern != "" && pattern != "null");
+if (has_members && has_pattern) {
+  push(bad, "give EITHER members OR pattern+provider, not both -- they describe the same thing");
+}
+if (!has_members && !has_pattern) {
+  push(bad, "need either members (a list of {alias, provider, model?}) or pattern (1|2|3) with provider");
+}
+if (has_pattern && (provider == "" || provider == "null")) {
+  push(bad, "pattern needs provider");
+}
+if (has_pattern && pattern != "1" && pattern != "2" && pattern != "3") {
+  push(bad, "pattern must be 1 (Lead), 2 (Lead+Reviewer) or 3 (Lead+Coder+Reviewer), got: " + pattern);
+}
+if (len(bad) > 0) {
+  lm_error("request form is not usable -- nothing was written:");
+  for (i = 0; i < len(bad); i = i + 1) { lm_error("  - " + bad[i]); }
+  lm_exit(2);
+}
+
+if (name == "" || name == "null") {
+  base = dir;
+  at = last_index_of(base, "/");
+  if (at >= 0) { base = substring(base, at + 1, len(base)); }
+  name = base + ".lmctl";
+}
+target = dir + "/" + name;
+
+argv = ["lmctl", "plan", dir, "--output", target, "--non-interactive", "--no-seed"];
+if (force) { push(argv, "--force"); }
+if (has_pattern) {
+  push(argv, "--pattern"); push(argv, pattern);
+  push(argv, "--provider"); push(argv, provider);
+  if (model != "" && model != "null") { push(argv, "--model"); push(argv, model); }
+} else {
+  for (i = 0; i < len(members); i = i + 1) {
+    m = members[i];
+    spec = str(get(m, "alias", "")) + ":" + str(get(m, "provider", ""));
+    mm = str(get(m, "model", ""));
+    if (mm != "" && mm != "null") { spec = spec + ":" + mm; }
+    push(argv, "--member"); push(argv, spec);
+  }
+}
+r = system(argv, 300000);
+if (get(r, "code", 1) != 0) {
+  lm_error("plan failed: " + trim(str(get(r, "stderr", "")) + str(get(r, "stdout", ""))));
+  lm_exit(70);
+}
+// Verify by reading the FILE, not by trusting the exit code: plan can report success
+// without producing the file if --output was misread.
+if (!file_exists(target)) {
+  lm_error("plan reported success but " + target + " does not exist");
+  lm_exit(70);
+}
+println("planned: " + target + " (" + str(len(split(read_file(target), "\n"))) + " lines)");
+println("Next: lint it before seeding -- lmctl lint " + target);
