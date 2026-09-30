@@ -21,10 +21,16 @@ is precious, and nothing downstream cares that you changed it.
 ## Edit: what's in the file
 
 A teamfile is a plain text file — no YAML, no JSON, no special editor needed.
-Every line that starts with `_MEMBER_` declares one team member. Everything
-else in the file (headers, blank lines, notes to yourself) is free-form text.
-It isn't parsed, so you can write yourself reminders or instructions to the
-Lead anywhere outside a `_MEMBER_` line.
+Every line that starts with `_MEMBER_` declares one team member. Ordinary
+text — headers, blank lines, notes to yourself — is free-form and isn't
+parsed, so you can write yourself reminders or instructions to the Lead
+anywhere outside a `_MEMBER_` line.
+
+Two exceptions aren't silently ignored: a line starting with `_SESSION_` is
+the retired legacy member prefix and is a hard parse error (rename it to
+`_MEMBER_`), and any `{{...}}`-style placeholder left in the file triggers a
+warning — it usually means a template file was used without filling it in
+first.
 
 ### The `_MEMBER_` line
 
@@ -41,12 +47,18 @@ aren't needed.
 | Field | Required? | What it means |
 | --- | --- | --- |
 | `alias` | yes | The name you'll call this member by — `Lead`, `Coder`, `Reviewer`, anything. Must be unique within the file. |
-| `provider` | yes (or `teamfile`, see below) | Which AI provider CLI runs this member. See the list below. |
+| `provider` | yes | Which AI provider CLI runs this member. See the list below. |
 | `model` | no | A specific model for that provider, e.g. `model="claude-opus-5"`. Leave it out to use the provider's default. |
 | `effort` | no | A reasoning-effort/tier variant, for providers that support one. |
 | `sessionid` | no | Filled in automatically by `lmctl seed`. Leave it blank when you add a member by hand — don't invent one. |
 | `sessiondir` | no | Run this member from a different directory than the teamfile's own directory. |
-| `teamfile` | no | An alternative to `provider=` — points this member at another team's Lead instead of an AI provider. Rare; see [Cross-team calls](./teams-connect) if you need it. |
+
+**`teamfile=` is deprecated — don't use it for new work.** It used to be a
+`provider=` alternative that wired a member up as a pointer to another
+team's Lead. That's no longer necessary: [cross-team calls](./teams-connect)
+now work automatically at runtime — any team's Lead can call any member of
+any other team directly, with no declaration in either teamfile. `lint`
+warns if it finds `teamfile=` still in use.
 
 **Valid `provider=` values**: `claude`, `codex`, `gemini`, `copilot`,
 `opencode`, `qwen`, `agy`, `kimi`, `dsh`, `hermes`, `pi`, `lmplayer`.
@@ -110,8 +122,8 @@ warnings**, no matter how many. A warning means "this might be wrong"
 (usually a model name lint doesn't recognize), not "this is broken" — the
 provider may accept it anyway, and lint's own catalog can be stale.
 
-**Errors are different — they mean the file itself is malformed**, and
-`lint` exits `1`:
+**Errors are different, and `lint` exits `1`.** Most mean the file itself is
+malformed:
 
 ```
 notice: checking teamfile and models ...
@@ -119,9 +131,25 @@ error: Lead: Invalid provider "cladue"
 notice: 1 error, 0 warnings
 ```
 
-An error means fix the file before doing anything else with it — a typo'd
-`provider=`, a duplicate `alias=`, a line lint couldn't parse at all. Fix
-what it names and run `lint` again.
+An error like this means fix the file before doing anything else with it —
+a typo'd `provider=`, a duplicate `alias=`, a line lint couldn't parse at
+all. Fix what it names and run `lint` again.
+
+There's a second, less obvious way to get an error: a syntactically valid
+file where the declared `model=` IS a real, recognized model — just not one
+the declared `provider=` offers:
+
+```
+notice: checking teamfile and models ...
+error: Lead: model "claude-opus-5" is not offered by provider "gemini" -- it is a recognized model, but only under: claude, agy. Declare provider="claude" (or another listed provider), or use a model "gemini" actually offers.
+notice: 1 error, 0 warnings
+```
+
+This is the confirmed case, not the ambiguous one: unlike the "unknown
+model" warning above, `lint` isn't guessing — the model's identity resolves
+cleanly against a different provider's own catalog, so it's certain this
+provider can't run it. That's why it fails the exit code the same as a
+malformed file, even though nothing is syntactically wrong.
 
 ## Seed: create the actual provider sessions
 

@@ -5,8 +5,8 @@ agents such as Coder and Reviewer. Your job is to administer the team, delegate
 work, route review, and keep project memory durable.
 
 Core rule: the provider session is a disposable cache; `durable-memory/` is the
-canonical state. Anything that must survive compaction, refresh, provider swap,
-or a new session belongs in `durable-memory/*.md`.
+canonical state. Anything that must survive compaction, a fresh session, provider
+swap, or a new session belongs in `durable-memory/*.md`.
 
 ## Essential commands
 
@@ -16,20 +16,22 @@ Delegate by actually running a command:
 lmctl prompt "<teamfile>.lmctl" Coder "Implement X. Commit when tests pass."
 ```
 
-`prompt` drives one member turn, blocks, and returns the member reply. By
-default, if the target is busy, `prompt` returns a busy error and creates no
-queued mail. The client owns retry, polling, or inspection. If the mailbox
-queue is explicitly enabled (`mailbox_queue_enabled=true` or
-`LMCTL_MAILBOX_QUEUE_ENABLED=true`) and lmctl can resolve your sender identity,
-`prompt` queues the message in your sender-to-receiver lane.
+`prompt` drives one member turn, blocks, and returns the member reply. lmctl
+is synchronous end to end: if the target is busy, `prompt` returns a busy
+error immediately rather than queuing anything — there is no mailbox or
+message queue in lmctl itself. The client owns retry, polling, or inspection.
 
 If your coding harness supports real background command execution, use it for
 `lmctl prompt` calls you don't want to block your own turn on.
 
 A raw backgrounded shell job (a plain `&`, not your harness's own tracked
 background mechanism) dies with your login session on a systemd host with
-`KillUserProcesses=yes` — launch it session-independently instead, e.g.
-`systemd-run --user --collect ... bash -lc 'lmctl prompt ...'`.
+`KillUserProcesses=yes` — launch it session-independently instead, for
+example:
+
+```sh
+systemd-run --user --collect bash -lc 'lmctl prompt "<teamfile>.lmctl" Coder "Implement X."'
+```
 
 `prompt` has its own built-in `--idle-timeout <duration>` (default 8 hours);
 don't lower it to "fail fast" on a member that's still actively working.
@@ -46,89 +48,37 @@ lmctl prompt "<teamfile>.lmctl" Coder --prompt-file task.md
 Write the prompt file with an editor or file-writing tool, not `echo` or a
 heredoc.
 
-For important sends, run `lmctl status` first to see receiver busy/idle state
-and existing lanes. With the default queue setting, a busy result means no
-queued row was created; inspect holder/liveness evidence and retry later when
-appropriate. If queueing is enabled and the send queues, use
-`lmctl mail sent --to "/abs/path/team.lmctl:Alias" --status queued --json` or
-`--status delivered --json` for the precise delivery state; keep
-`lmctl status --since 7d` as the broader team/activity view. Do not infer
-delivery from exit code `0`.
+Before an important send, run `lmctl status "<teamfile>.lmctl" <alias>` to see
+whether the receiver is busy or idle. A busy result means nothing was sent —
+there is no queued row to inspect or wait on, unlike an async mail system.
+Retry later, or route the work elsewhere. Do not infer delivery from exit
+code `0` alone; read the reply itself.
 
-Queued member mail, when enabled, is keyed by `(sender, receiver)`. Base queued
-delivery is the next
-`lmctl prompt` from that same sender to that same receiver once the receiver is
-free. A prompt from another sender to the same receiver does not flush it. When
-`lmctl serve start` runs with daemon loops enabled, its mailbox relay is an
-optional accelerator that can drain queued lanes after the receiver is idle; no
-triggering prompt is required. When queueing is off, there is nothing for the
-relay to drain. Terminal-held receivers are legitimately busy until the human
-exits `lmctl terminal`.
+Terminal-held receivers are legitimately busy until the human exits
+`lmctl terminal`.
 
 Inspect without disturbing a member:
 
 ```sh
 lmctl tail "<teamfile>.lmctl" Coder
-lmctl health "<teamfile>.lmctl" Coder
-lmctl health "<teamfile>.lmctl" --json
+lmctl status "<teamfile>.lmctl" Coder
+lmctl status "<teamfile>.lmctl" --details
 ```
 
-`tail` is read-only. `health` reports session/activity and, when the provider
-exposes it, size information. Use `health` to know configured model details;
-do not ask a model what model it is. `lmctl health "<teamfile>.lmctl" --json`
-returns a full per-member busy/liveness rollup for that teamfile, even
-cross-team; use it when you need to know whether another team's Lead is busy.
-
-Inspect mail evidence when status is not enough:
-
-```sh
-lmctl mail sent --to "/abs/path/team.lmctl:Alias" --status queued --json
-lmctl mail sent --to "/abs/path/team.lmctl:Alias" --status delivered --json
-lmctl mail history <message_id>
-lmctl mail read <message_id>
-lmctl mail seen <message_id>
-lmctl mail ack <message_id>
-lmctl mail tree --since 3d --json
-```
-
-When queueing is enabled, before assuming a delivery problem is a bug, check
-`lmctl mail sent --to "/abs/path/team.lmctl:Alias" --status queued --json`;
-most stuck mail is a genuinely busy or terminal-held receiver. With default
-synchronous behavior, busy sends do not create queued rows. Use `--status
-delivered --json` for delivered messages and `lmctl mail history <message_id>` for the
-event sequence behind one message when `lmctl status` is too coarse. Mail JSON
-is the stable contract, while human text is not. Mail identity filters are exact;
-use canonical absolute teamfile paths from `lmctl status` or `realpath`.
-
-After you have read or acted on a message, record that active receipt with
-`lmctl mail ack <message_id>`. `ack` appends an acknowledgement event; it is not
-a read-only diagnostic. `ack`, `seen`, and answered are separate facts:
-`seen` only answers whether this specific message id was observed in the
-historical provider transcript.
-
-If you are a terminal-held Lead, inbound mail addressed to you will not arrive
-as an injected turn while the human terminal is live. That is intentional: lmctl
-must not interrupt an interactive `lmctl terminal` session. Pull it explicitly:
-
-```sh
-lmctl status --json
-lmctl mail read <message_id>
-lmctl mail handle <message_id>
-lmctl mail ack <message_id>
-```
-
-Use `mailbox.inbound_pending[]` in `status --json` to find queued message ids.
-`mail read` is a pure query and bypasses busy/terminal-hold state because it is
-not a delivery attempt. If you will send causally related follow-up work from
-the terminal, run `mail handle` first so `mail tree` can attach those sends under
-the message you read; the causal pointer expires after one hour. `ack` is
-optional; use it only after you read or handle the message.
+`tail` is read-only. `status "<teamfile>.lmctl" <alias>` reports that
+member's liveness, token totals, and terminal-lock/in-flight holder info.
+`status "<teamfile>.lmctl" --details` additionally probes each member's live
+provider session for its observed model, message count, and context size —
+use this to know configured model details; do not ask a model what model it
+is. `status` with no teamfile at all, from a plain operator shell, gives a
+DB-wide team/activity summary — use it when you need to know whether
+another team's Lead is busy.
 
 ## Work loop
 
 1. Hand a concrete task to Coder.
 2. Wait for the blocking `prompt` reply.
-3. Send Coder's result to Reviewer1 for adversarial review.
+3. Send Coder's result to Reviewer for adversarial review.
 4. If review finds issues, route back to Coder, then re-review.
 5. You gate the final result, update durable memory, commit, and publish when
    appropriate.
@@ -140,20 +90,22 @@ right decision is not obvious, escalate to the operator.
 
 If a member drifts, grows sluggish, or loses the plot:
 
-1. Check `lmctl health "<teamfile>.lmctl" <alias>`.
+1. Check `lmctl status "<teamfile>.lmctl" <alias>`.
 2. Make sure `durable-memory/` captures current state.
-3. Refresh from outside that member:
-   `lmctl refresh "<teamfile>.lmctl":<alias>`.
+3. Give it a fresh session from outside that member: edit the teamfile to
+   delete that member's `sessionid=` line, then run
+   `lmctl seed "<teamfile>.lmctl"` — only members missing a `sessionid=` are
+   reseeded, so the rest of the roster is untouched.
 
-The refreshed member loses its accumulated session history and re-reads
-durable memory. A session cannot refresh itself while it is running; refresh
-the target from a different session, another member, or an operator shell.
+The reseeded member loses its accumulated session history and re-reads
+durable memory. A session cannot reseed itself while it is running; do this
+from a different session, another member, or an operator shell.
 
 ## Details
 
 - [Team Lead basic](lmctl-team-lead-basic-skill.md) expands the everyday
   delegation and review loop.
-- [Team Lead advanced](lmctl-team-lead-advanced-skill.md) covers refresh,
-  model swaps, health, and drift recovery.
+- [Team Lead advanced](lmctl-team-lead-advanced-skill.md) covers session
+  recovery, model swaps, status monitoring, and drift recovery.
 - [Team Lead workflow](team-lead-workflow.md) is the short operating checklist.
 - [Durable memory](durable-memory.md) explains what to persist and why.
