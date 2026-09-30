@@ -22,6 +22,9 @@
 <h1>lmscript commands</h1>
 <p class="sub">One canonical <code>.lms</code> script per lmctl command, fetched by <code>lmctl &lt;command&gt; ... --save-script &lt;file&gt;</code>. lmscript is the LLM's command line: a metalead downloads one of these, edits it for the job in front of it, and runs it — a human reads the result to see what happened, so each script stays simple enough to follow top to bottom.</p>
 
+<h2>Why this exists</h2>
+<p>Two tiers, both usable by a human or an LLM. <strong>The CLI</strong> — <code>lmctl plan</code>, <code>lmctl lint</code>, and so on — handles simple things directly, and restricts what either of you can do to exactly that: fine, right up until the job stops being simple. <strong>lmscript</strong> is what you switch to when it does: save the job to a file, edit it, run it. The restriction lifts there — an LLM can write a script about as fast as a person types a long command's worth of flags. <code>--save-script</code> is the bridge between the two: not a code generator, not a convenience, just the point where the CLI stopped being enough and you continue from where you were instead of starting over.</p>
+
 <h2>Prerequisite</h2>
 <p>Every script dispatches to a real provider CLI. Run <code>lmctl init</code> once to detect which providers you have, and <code>lmctl ratelimit</code> any time to see which ones are actually working right now.</p>
 
