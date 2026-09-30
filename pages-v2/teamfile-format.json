@@ -1,0 +1,6 @@
+{
+  "kind": "manual",
+  "title": "Teamfile Format",
+  "description": "The generate, edit, lint, and seed loop for lmctl teamfiles.",
+  "path": "/manuals/teamfile-format"
+}
