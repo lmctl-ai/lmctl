@@ -163,6 +163,11 @@ still a real, runnable workflow — one participant, one turn, every guard
 that matters. Read both files top to bottom in one sitting; that's the
 point of it. Everything larger is this plus more steps.
 
+Prerequisite: you need at least one AI provider CLI installed and
+configured — `lmctl init` sets one up, and `lmctl ratelimit` shows you
+which ones are currently working on your machine. Without that, this
+example (and any workflow) has nothing to dispatch to.
+
 `minimal.lms`:
 
 ```
@@ -226,7 +231,7 @@ println("done (" + state + ") -- verdict: " + out + "-VERDICT.md");
 ```json
 {
   "question": "In this repository, how many .lms files exist and which is the largest by line count?",
-  "worker": { "provider": "${Provider1}", "model": "${Model1}" },
+  "worker": { "provider": "<your-provider>", "model": "<a-model-it-offers>" },
   "acceptance": [
     "states an exact count of .lms files in this repository",
     "names the largest file and its line count",
@@ -235,6 +240,15 @@ println("done (" + state + ") -- verdict: " + out + "-VERDICT.md");
   "out": "/tmp/minimal-demo"
 }
 ```
+
+Replace `<your-provider>` and `<a-model-it-offers>` with a provider you have
+configured — run `lmctl ratelimit` to see which ones are working on your
+machine, and leave `model` out entirely to use that provider's default.
+There's no substitution step in a workflow request form (unlike a teamfile
+template, where `quickrun` expands `${Provider1}`-style placeholders before
+use) — `minimal.lms` reads this file and hands `worker` straight to the
+provider, so a placeholder here needs to already be a name the provider
+registry recognizes, or a real one you fill in by hand.
 
 Run it against your own checkout with `lmctl script minimal.lms minimal.json`.
 
@@ -273,14 +287,15 @@ form looks like this:
 { "title": "fix-flaky-test",
   "repo":  "/path/to/your/repo",
   "issue": "/path/to/issue.md",
-  "author":   { "provider": "${Provider1}", "model": "${Model1}" },
-  "reviewer": { "provider": "${Provider2}", "model": "${Model2}" },
+  "author":   { "provider": "<your-provider>", "model": "<a-model-it-offers>" },
+  "reviewer": { "provider": "<a-different-provider>", "model": "<a-model-it-offers>" },
   "land": false }
 ```
 
 `title`, `repo`, and either `issue` (a file path) or an inline `issue_text`
 describe the job. `author` and `reviewer` are participants in either shape
-above, and must resolve to different participants. `land` says whether the
+above, and must resolve to different participants — pick two providers you
+actually have configured, the same way as above.  `land` says whether the
 reviewer is allowed to commit and push once it's satisfied.
 
 ## Common gotchas
