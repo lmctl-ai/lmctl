@@ -4,7 +4,7 @@
 // Runs unedited. Safe to replace the DISPATCH/prompt-construction block; do not move
 // VALIDATE or the GUARDS after dispatch.
 
-// ==== VALIDATE -- do not move ====
+// ==== VALIDATE -- reads and checks the request form. Do not move. ====
 if (len(args) < 1) { println("usage: lmctl script prompt.lms <request.json>"); lm_exit(2); }
 if (!file_exists(args[0])) { lm_error("no request form at " + args[0]); lm_exit(2); }
 req = json_parse_safe(read_file(args[0]), null);
@@ -27,7 +27,7 @@ if (len(bad) > 0) {
   lm_exit(2);
 }
 
-// ==== DISPATCH -- edit surface: change how the prompt is built here ====
+// ==== DISPATCH -- wraps the task in the acceptance criteria + state-line contract, then sends it. Edit the prompt text/wrapper here. ====
 criteria = "";
 for (i = 0; i < len(acceptance); i = i + 1) {
   criteria = criteria + "  " + str(i + 1) + ". " + str(acceptance[i]) + "\n";
@@ -40,7 +40,7 @@ full_prompt = task
 println("prompting " + alias + " (" + teamfile + ")");
 r = lm_prompt(teamfile, alias, full_prompt, {});
 
-// ==== GUARDS -- do not move ====
+// ==== GUARDS -- persist the reply, then reject a failed/empty/stateless/blocked turn before it's trusted. Do not move. ====
 raw = get(r, "reply", null);
 reply = str(raw);
 if (raw == null) { reply = ""; }

@@ -3,7 +3,7 @@
 // Request form: { dir, name?, pattern?+provider?+model?, members?, force? }
 // Runs unedited. Safe to replace the DISPATCH block; do not move VALIDATE or VERIFY.
 
-// ==== VALIDATE -- do not move ====
+// ==== VALIDATE -- reads and checks the request form. Do not move. ====
 if (len(args) < 1) { println("usage: lmctl script plan.lms <request.json>"); lm_exit(2); }
 if (!file_exists(args[0])) { lm_error("no request form at " + args[0]); lm_exit(2); }
 req = json_parse_safe(read_file(args[0]), null);
@@ -21,6 +21,7 @@ force = get(req, "force", false);
 if (dir == "" || dir == "null") { push(bad, "missing required field: dir"); }
 else if (!file_exists(dir)) { push(bad, "dir does not exist: " + dir); }
 
+// members and pattern are two ways to say who's on the team; exactly one must be given.
 has_members = (members != null && len(members) > 0);
 has_pattern = (pattern != "" && pattern != "null");
 if (has_members && has_pattern) { push(bad, "give EITHER members OR pattern+provider, not both"); }
@@ -33,6 +34,7 @@ if (len(bad) > 0) {
   lm_exit(2);
 }
 
+// default the output filename to <last dir segment>.lmctl if the form didn't set one.
 if (name == "" || name == "null") {
   base = dir;
   at = last_index_of(base, "/");
@@ -41,7 +43,7 @@ if (name == "" || name == "null") {
 }
 target = dir + "/" + name;
 
-// ==== DISPATCH -- edit surface: add/change lmctl plan flags here ====
+// ==== DISPATCH -- builds and runs the real `lmctl plan` command. Edit the flags here for your shape. ====
 argv = ["lmctl", "plan", dir, "--output", target, "--non-interactive", "--no-seed"];
 if (force) { push(argv, "--force"); }
 if (has_pattern) {
@@ -63,7 +65,7 @@ if (get(r, "code", 1) != 0) {
   lm_exit(70);
 }
 
-// ==== VERIFY -- do not move ====
+// ==== VERIFY -- confirms the file really exists, not just that plan exited 0. Do not move. ====
 if (!file_exists(target)) {
   lm_error("plan reported success but " + target + " does not exist");
   lm_exit(70);

@@ -20,7 +20,10 @@
  @media(prefers-color-scheme:dark){body{background:#141414;color:#e8e8e8}.d{color:#aaa}code{background:#262626}pre{background:#262626}a{color:#5aa2ff}h1{color:#fff}}
 </style></head><body>
 <h1>lmscript commands</h1>
-<p class="sub">One canonical <code>.lms</code> script per lmctl command, fetched by <code>lmctl &lt;command&gt; ... --save-script &lt;file&gt;</code>. Scaffolding for a metalead to download, edit, and run — not a tutorial.</p>
+<p class="sub">One canonical <code>.lms</code> script per lmctl command, fetched by <code>lmctl &lt;command&gt; ... --save-script &lt;file&gt;</code>. lmscript is the LLM's command line: a metalead downloads one of these, edits it for the job in front of it, and runs it — a human reads the result to see what happened, so each script stays simple enough to follow top to bottom.</p>
+
+<h2>Prerequisite</h2>
+<p>Every script dispatches to a real provider CLI. Run <code>lmctl init</code> once to detect which providers you have, and <code>lmctl ratelimit</code> any time to see which ones are actually working right now.</p>
 
 <h2>Available</h2>
 <ul>

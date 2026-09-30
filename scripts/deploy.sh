@@ -242,6 +242,46 @@ for path in '/templates' '/templates/' '/templates/index.html'; do
   fi
 done
 
+# --- lmscript/commands: publish the curated per-command lmscript library to
+# lmctl.com/lmscript/commands/ (source of truth = this repo's lmscript/commands/). Mirrors the
+# templates/ pattern above. No --delete: never wipe files published out-of-band.
+aws s3 sync lmscript/commands/ "s3://${S3_BUCKET}/lmscript/commands/" \
+  --exclude '.*' \
+  --content-type 'text/plain; charset=utf-8' \
+  --exclude 'index.html' \
+  --cache-control 'no-cache, max-age=0, must-revalidate'
+for key in 'lmscript/commands/index.html' 'lmscript/commands/' 'lmscript/commands'; do
+  aws s3api put-object \
+    --bucket "${S3_BUCKET}" \
+    --key "${key}" \
+    --body lmscript/commands/index.html \
+    --content-type 'text/html; charset=utf-8' \
+    --cache-control 'no-cache, max-age=0, must-revalidate' > /dev/null
+done
+LMSCRIPT_COMMANDS_INVALIDATION_ID="$(
+  aws cloudfront create-invalidation \
+    --distribution-id "${CF_DISTRIBUTION_ID}" \
+    --paths '/lmscript/commands' '/lmscript/commands/' '/lmscript/commands/*' \
+    --query 'Invalidation.Id' \
+    --output text
+)"
+aws cloudfront wait invalidation-completed \
+  --distribution-id "${CF_DISTRIBUTION_ID}" \
+  --id "${LMSCRIPT_COMMANDS_INVALIDATION_ID}"
+
+for path in '/lmscript/commands' '/lmscript/commands/' '/lmscript/commands/index.html'; do
+  headers="$(curl -fsSI "${SITE_ORIGIN}${path}")"
+  if ! grep -qi '^content-type: text/html' <<<"${headers}"; then
+    echo "lmscript/commands smoke failed content-type for ${SITE_ORIGIN}${path}" >&2
+    exit 1
+  fi
+  body="$(curl -fsS "${SITE_ORIGIN}${path}")"
+  if ! grep -q '<title>lmscript commands</title>' <<<"${body}"; then
+    echo "lmscript/commands smoke failed for ${SITE_ORIGIN}${path}" >&2
+    exit 1
+  fi
+done
+
 for spec in \
   '/lmprobe/|text/html|lmprobe Manual' \
   '/skills/claudecode-lead-skill.md|text/markdown|# Claude Code lmctl Lead skill' \
@@ -259,7 +299,11 @@ for spec in \
   '/helloexample/agy.lmctl|text/plain|_MEMBER_ alias=Lead provider=agy' \
   '/helloexample/kimi.lmctl|text/plain|_MEMBER_ alias=Lead provider=kimi' \
   '/templates/solo.lmctl|text/plain|provider=${Provider1}' \
-  '/templates/trio.lmctl|text/plain|provider=${Provider3}'
+  '/templates/trio.lmctl|text/plain|provider=${Provider3}' \
+  '/lmscript/commands/plan.lms|text/plain|lmctl script plan.lms' \
+  '/lmscript/commands/lint.lms|text/plain|lmctl script lint.lms' \
+  '/lmscript/commands/seed.lms|text/plain|lmctl script seed.lms' \
+  '/lmscript/commands/prompt.lms|text/plain|lmctl script prompt.lms'
 do
   path="${spec%%|*}"
   rest="${spec#*|}"
