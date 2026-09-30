@@ -20,32 +20,35 @@
  @media(prefers-color-scheme:dark){body{background:#141414;color:#e8e8e8}.d{color:#aaa}code{background:#262626}pre{background:#262626}a{color:#5aa2ff}h1{color:#fff}}
 </style></head><body>
 <h1>lmscript commands</h1>
-<p class="sub">One canonical <code>.lms</code> script per lmctl command, fetched by <code>lmctl &lt;command&gt; ... --save-script &lt;file&gt;</code>. lmscript is the LLM's command line: a metalead downloads one of these, edits it for the job in front of it, and runs it — a human reads the result to see what happened, so each script stays simple enough to follow top to bottom.</p>
+<p class="sub">Not one script per lmctl command — one USEFUL artifact per command, fetched by <code>lmctl &lt;command&gt; ... --save-script &lt;file&gt;</code>. Sometimes that's a script; sometimes, like <code>plan</code>, it's a document; sometimes, like <code>lint</code>, there's nothing to add. A metalead downloads what's here, edits it for the job in front of it, and runs it — a human reads the result, so each artifact stays simple enough to follow top to bottom.</p>
 
 <h2>Why this exists</h2>
-<p>Two tiers, both usable by a human or an LLM. <strong>The CLI</strong> — <code>lmctl plan</code>, <code>lmctl lint</code>, and so on — handles simple things directly, and restricts what either of you can do to exactly that: fine, right up until the job stops being simple. <strong>lmscript</strong> is what you switch to when it does: save the job to a file, edit it, run it. The restriction lifts there — an LLM can write a script about as fast as a person types a long command's worth of flags. <code>--save-script</code> is the bridge between the two: not a code generator, not a convenience, just the point where the CLI stopped being enough and you continue from where you were instead of starting over.</p>
+<p>Two tiers, both usable by a human or an LLM. <strong>The CLI</strong> — <code>lmctl plan</code>, <code>lmctl lint</code>, and so on — handles simple things directly, and restricts what either of you can do to exactly that: fine, right up until the job stops being simple. <strong>lmscript</strong> is what you switch to when it does — but only where it actually buys something. A script that just re-types a CLI command as an argv array has gained nothing; <strong>lmscript does not wrap the CLI</strong>. The real value is calling lmctl's own internals directly, which expose fine control the command line deliberately doesn't — <code>lm_agent</code>'s first prompt, for example, is entirely yours to write, where <code>lmctl seed</code>/<code>lmctl hello</code> always send the same generic one. <code>--save-script</code> is the bridge to that, not a code generator: the point where the CLI stopped being enough and you continue from where you were.</p>
 
 <h2>Prerequisite</h2>
 <p>Every script dispatches to a real provider CLI. Run <code>lmctl init</code> once to detect which providers you have, and <code>lmctl ratelimit</code> any time to see which ones are actually working right now.</p>
 
 <h2>Available</h2>
 <ul>
- <li><a href="plan.lms">plan.lms</a> <span class="d">{ dir, name?, members } — writes a teamfile.</span></li>
- <li><a href="lint.lms">lint.lms</a> <span class="d">{ teamfile } — structured error/warning summary.</span></li>
- <li><a href="seed.lms">seed.lms</a> <span class="d">{ teamfile } — creates real provider sessions, verified against the file.</span></li>
- <li><a href="prompt.lms">prompt.lms</a> <span class="d">{ teamfile, alias, prompt, acceptance: [...], out? } — one dispatch, evidence-checked.</span></li>
+ <li><a href="plan.txt">plan.txt</a> <span class="d">A document, not a script — plan's job is to produce a teamfile, so the useful artifact is real examples of the common shapes (solo, lead+reviewer, lead+coder+reviewer, multi-provider) to copy and adapt, not a program that builds one.</span></li>
+ <li><strong>lint</strong> <span class="d">No script here on purpose. <code>lmctl lint &lt;file&gt;</code> is already the whole operation — there's nothing to compose around it.</span></li>
+ <li><a href="seed.lms">seed.lms</a> <span class="d">{ provider, model?, preamble, out? } — constructs a new agent from scratch and sends <code>preamble</code> as its real first prompt, the fine control the CLI doesn't expose.</span></li>
+ <li><a href="prompt.lms">prompt.lms</a> <span class="d">{ teamfile, alias, prompt, acceptance: [...], out? } — one dispatch to an existing seeded member, evidence-checked.</span></li>
 </ul>
 
+<h2>Gaps, stated rather than papered over</h2>
+<p>Some useful scripts can't be written well yet because lmctl hasn't exposed the needed internal as a registered lmscript function — <code>lm_plan</code>, for a teamfile-building script that's more than a document, is the clear example. Where that's true, this page says so rather than reaching for <code>system(["lmctl", ...])</code> to fake it; a wrapper that only re-types a command is worse than an honest gap, because it looks like a feature.</p>
+
 <h2>Alternatives</h2>
-<p>One script per command today. A second script for a command (a different shape of the same job) gets listed here next to the first, not silently swapped in.</p>
+<p>One artifact per command today. A second one for a command (a different shape of the same job) gets listed here next to the first, not silently swapped in.</p>
 
 <h2>Structure</h2>
 <p>Each script is a sample, not a service — short on purpose, with a one-line comment per step so reading just the comments tells you what it does. Everything is safe to edit; reshape it for the job in front of you.</p>
 
 <h2>Fetch</h2>
-<pre><code>lmctl plan ./backend --pattern 3 --provider &lt;your-provider&gt; --save-script myplan.lms
-lmctl script myplan.lms request.json</code></pre>
-<p class="sub"><code>--save-script &lt;file&gt;</code> runs the command as normal, and on success fetches the matching script here and writes it to <code>&lt;file&gt;</code> — requires <code>@lmctl-ai/lmctl</code> 0.2.14 or later (<code>lmctl --version</code> to check; <code>npm install -g @lmctl-ai/lmctl@latest</code> to update). <code>--script &lt;name&gt;</code> overrides which script to fetch, for an alternative. Older versions: <code>curl</code> the URL directly instead.</p>
+<pre><code>lmctl seed team.lmctl --save-script myseed.lms
+lmctl script myseed.lms request.json</code></pre>
+<p class="sub"><code>--save-script &lt;file&gt;</code> runs the command as normal, and on success fetches the matching artifact here and writes it to <code>&lt;file&gt;</code> — requires <code>@lmctl-ai/lmctl</code> 0.2.14 or later (<code>lmctl --version</code> to check; <code>npm install -g @lmctl-ai/lmctl@latest</code> to update). <code>--script &lt;name&gt;</code> overrides which one to fetch, for an alternative. Older versions: <code>curl</code> the URL directly instead.</p>
 
 <h2>Request forms use <code>&lt;your-provider&gt;</code>, never <code>${Provider1}</code></h2>
 <p>A request form has no substitution step. <code>${Provider1}</code> is for a <code>.lmctl</code> template <code>quickrun</code> expands — left in a request form, it reaches the provider registry literally and errors. Write <code>"provider": "&lt;your-provider&gt;"</code> and replace it before running.</p>

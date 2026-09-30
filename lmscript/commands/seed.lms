@@ -1,8 +1,13 @@
-// seed.lms -- create real provider sessions for a teamfile.
+// seed.lms -- construct a new agent from scratch, with a custom first prompt.
 //   lmctl script seed.lms request.json
 //
-// { "teamfile": "./backend.lmctl" }
+// { "provider": "<your-provider>",
+//   "model": "<a-model>",
+//   "preamble": "You are the Lead. Read durable-memory/*.md before doing anything else, then wait for a task.",
+//   "out": "lead-session.json" }
 //
+// The CLI (lmctl seed, lmctl hello) always sends the same generic first message. This is
+// the fine control it doesn't offer: you choose the agent's real first prompt.
 // Safe to edit: everything. This is a sample, not a service -- reshape it for the job.
 
 // read the request form
@@ -10,28 +15,27 @@ if (len(args) < 1) { println("usage: lmctl script seed.lms <request.json>"); lm_
 if (!file_exists(args[0])) { lm_error("no request form at " + args[0]); lm_exit(2); }
 req = json_parse_safe(read_file(args[0]), null);
 if (req == null) { lm_error(args[0] + " is not valid JSON"); lm_exit(2); }
-teamfile = getstr(req, "teamfile");
-if (teamfile == "") { lm_error("missing required field: teamfile"); lm_exit(2); }
+provider = require(getstr(req, "provider"), "missing required field: provider");
+preamble = require(getstr(req, "preamble"), "missing required field: preamble");
+model = getstr(req, "model");
 
-// count sessions already there, so we can tell how many are new
-before = split(read_file(teamfile), "\n");
-already = 0;
-for (i = 0; i < len(before); i = i + 1) {
-  if (starts_with(trim(before[i]), "_MEMBER_") && contains(before[i], "sessionid=")) { already = already + 1; }
-}
+// construct the agent and send the preamble as its first turn
+member = { "provider": provider };
+if (model != "") { member["model"] = model; }
+r = lm_agent(member, preamble, {});
 
-// run lmctl seed -- this calls each provider for real
-r = system(["lmctl", "seed", teamfile], 0);
-if (getnum(r, "code", 1) != 0) {
-  lm_error("seed failed: " + trim(getstr(r, "stdout") + getstr(r, "stderr")));
-  lm_exit(70);
-}
+// confirm the session actually came up and answered
+if (getstr(r, "status") != "ok") { lm_error("agent failed: " + getstr(r, "error")); lm_exit(70); }
+reply = getstr(r, "reply");
+if (trim(reply) == "") { lm_error("agent gave an empty reply with status=ok"); lm_exit(70); }
 
-// confirm by reading the file back, not just trusting the exit code
-after = split(read_file(teamfile), "\n");
-now = 0;
-for (i = 0; i < len(after); i = i + 1) {
-  if (starts_with(trim(after[i]), "_MEMBER_") && contains(after[i], "sessionid=")) { now = now + 1; }
+// report the new session -- member now carries a real sessionid
+println("session: " + getstr(member, "sessionid"));
+println("reply:\n" + reply);
+
+// saving is optional, not the point -- the member map is the reusable artifact
+out = getstr(req, "out");
+if (out != "") {
+  write_file(out, json_stringify(member));
+  println("saved: " + out);
 }
-if (now == 0) { lm_error("seed exited 0 but no member has a sessionid"); lm_exit(70); }
-println(str(now) + " member(s) carry a sessionid (" + str(now - already) + " newly seeded)");
