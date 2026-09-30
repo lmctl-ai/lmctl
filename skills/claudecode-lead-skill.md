@@ -9,21 +9,19 @@ another harness with the same two properties:
 If your harness lacks those primitives, use the provider-agnostic
 [`lmctl Lead`](lmctl-lead-skill.md) skill instead.
 
-## Dispatch every chat in the background
+## Dispatch every prompt in the background
 
-Delegate with `lmctl chat`, but dispatch it through Claude Code's real
+Delegate with `lmctl prompt`, but dispatch it through Claude Code's real
 background execution path: the Bash tool with `run_in_background: true`.
 
-Do not wrap `lmctl chat` in a shell `timeout`. Do not run a long delegation in
-the foreground just to wait synchronously. A slow reply, busy result, or
-queue-enabled send is not a failure state by itself, and killing `lmctl chat`
-mid-delivery can interrupt the receiving member's live turn instead of failing
-cleanly on your side.
+Don't wrap `lmctl prompt` in a shell `timeout` or wait on it synchronously in
+the foreground — a slow reply, busy result, or queued send isn't a failure by
+itself.
 
 Use prompt files for non-trivial work:
 
 ```sh
-lmctl chat "/abs/path/team.lmctl" Coder --prompt-file /tmp/task.md
+lmctl prompt "/abs/path/team.lmctl" Coder --prompt-file /tmp/task.md
 ```
 
 Write the prompt file with your file-writing tool. Do not use `echo` or heredoc
@@ -33,18 +31,16 @@ prompt construction for task text that contains quotes, backticks, `$VAR`,
 ## Wake up and decide the next task when the harness notifies you
 
 The background completion notification is a wake signal, not a retry signal.
-When Claude Code notifies you that a background `lmctl chat` finished, that
+When Claude Code notifies you that a background `lmctl prompt` finished, that
 notification's only job is to bring your turn back to life — it carries no
 instruction of its own. What runs next is for you to decide from the result
 you just got: dispatch the next unit of work, review, repair, or escalate.
 Don't read this as "resend the same task" — the point is never to repeat the
 prior dispatch, it's to act on where things actually stand now.
 
-Do not end a turn with "I dispatched work and am waiting for both to complete"
-unless you have also armed a harness wakeup. That pattern can leave the Lead
-session idle with no wake mechanism: the process is blocked, no lmctl
-activity happens, and the eventual database row can look like an ordinary
-`done` reply even though the Lead made no progress for hours.
+Don't end a turn saying you're waiting for work to complete unless you've also
+armed a harness wakeup — otherwise the session goes idle with no way to
+resume.
 
 Operational rule:
 
@@ -55,12 +51,13 @@ Operational rule:
 
 ## You do not need to poll for inbound mail by default
 
-Since `lmctl 0.1.241`, `mailbox_queue_enabled` defaults to `false`: a chat sent
-to you is either delivered synchronously — handled inline, in the same call the
-sender made — or the sender gets an immediate busy error. Neither case leaves
-anything queued for you to discover later. There is no "mail arrived while you
-were away" scenario to poll for under the default configuration, so do not arm
-a Monitor loop against `mail pending` as a standing pattern.
+Since `lmctl 0.1.241`, `mailbox_queue_enabled` defaults to `false`: a prompt
+sent to you is either delivered synchronously — handled inline, in the same
+call the sender made — or the sender gets an immediate busy error. Neither
+case leaves anything queued for you to discover later. There is no "mail
+arrived while you were away" scenario to poll for under the default
+configuration, so do not arm a Monitor loop against `mail pending` as a
+standing pattern.
 
 ### If your configuration explicitly enables queueing
 
@@ -97,7 +94,7 @@ lmctl mail ack <message_id> --json
 Use absolute teamfile paths for cross-repo work:
 
 ```sh
-lmctl chat "/home/mma/repos/other-team/other-team.lmctl" Lead --prompt-file /tmp/request.md
+lmctl prompt "/home/mma/repos/other-team/other-team.lmctl" Lead --prompt-file /tmp/request.md
 ```
 
 Do not rely on fuzzy basename lookup or a global registry search. Current lmctl
@@ -126,7 +123,7 @@ row is created. When the receiver's configuration enables
 `mailbox_queue_enabled` behavior, a busy send can create a queued row, and
 `mail sent --status queued` tells you the work has not delivered yet. When
 queueing is disabled, the equivalent signal is the immediate busy/held result
-from `lmctl chat`; inspect that result, then use `status --json` and
+from `lmctl prompt`; inspect that result, then use `status --json` and
 `health --json` for the holder PID and last-activity evidence instead of
 expecting a queued mail row to exist.
 

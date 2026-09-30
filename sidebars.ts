@@ -52,6 +52,7 @@ const sidebars: SidebarsConfig = {
           label: 'Concepts',
           items: [
             'manuals/concepts-glossary',
+            'manuals/teamfile-format',
             'manuals/teams-connect',
             'manuals/direct-chat-and-background-work',
             'manuals/verifying-delegated-work',

@@ -1,0 +1,14 @@
+# Solo — one member, no delegation
+#
+# The simplest possible team: a single Lead, no one to delegate to. Good for
+# a quick one-off task, or as the smallest possible starting point to grow
+# from later (just add more _MEMBER_ lines).
+#
+# This file uses ${Provider1}/${Model1} placeholders instead of naming a
+# specific provider -- `lmctl quickrun` fills them in with YOUR configured
+# providers/models (recorded by `lmctl init`), so this exact file works
+# whether you have one provider or several. See
+# https://lmctl.com/lmctl/docs/manuals/teamfile-format for what a _MEMBER_
+# line means and how to customize this after it's seeded.
+
+_MEMBER_ alias=Lead provider=${Provider1} model="${Model1}"

@@ -1,0 +1,16 @@
+# Pair — Lead + Reviewer
+#
+# A Lead does the work directly and a Reviewer checks it before anything
+# ships -- the smallest team that gets a second, independent opinion.
+# Reviewer runs on a different provider/model than Lead when you have more
+# than one configured, so it isn't reviewing itself.
+#
+# This file uses ${Provider1..2}/${Model1..2} placeholders instead of naming
+# a specific provider -- `lmctl quickrun` fills them in with YOUR configured
+# providers/models (recorded by `lmctl init`), so this exact file works
+# whether you have one provider or several. See
+# https://lmctl.com/lmctl/docs/manuals/teamfile-format for what a _MEMBER_
+# line means and how to customize this after it's seeded.
+
+_MEMBER_ alias=Lead     provider=${Provider1} model="${Model1}"
+_MEMBER_ alias=Reviewer provider=${Provider2} model="${Model2}"

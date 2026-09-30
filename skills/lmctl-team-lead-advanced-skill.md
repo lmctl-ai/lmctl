@@ -41,15 +41,15 @@ or acts):
 - Use it to decide *proactively* — refresh a member **before** it degrades, not after.
 
 ## Don't fight the busy-guard
-A member serves one turn-driving sender at a time. By default, `chat` to a busy
+A member serves one turn-driving sender at a time. By default, `prompt` to a busy
 target returns a busy error instead of interrupting it or creating queued mail.
 Pause and retry later, or inspect without waking it with `lmctl tail`.
 Queueing is opt-in: if `mailbox_queue_enabled=true` or
 `LMCTL_MAILBOX_QUEUE_ENABLED=true` is set and lmctl can resolve a sender,
-`chat` queues for a busy target in a `(sender, receiver)` lane.
+`prompt` queues for a busy target in a `(sender, receiver)` lane.
 
-Base queued delivery is the next `lmctl chat` from that same sender to that same
-receiver once the receiver is free; a chat from another sender to the same
+Base queued delivery is the next `lmctl prompt` from that same sender to that same
+receiver once the receiver is free; a prompt from another sender to the same
 receiver does not flush it. With `lmctl serve start` running in normal daemon
 mode, mailbox relay is an optional accelerator that can drain queued lanes
 proactively. If queueing is off, there is nothing for the relay to drain. If
@@ -59,13 +59,13 @@ can deadlock. A live `lmctl terminal` lock is a valid reason to stay busy.
 ## Cross-team calls
 A Lead can call a member of another team at runtime (cycle-protected automatically). The legacy
 static `_CONNECT_` directive is a **deprecated no-op** — ignore it; cross-team reach is just a
-normal runtime `lmctl chat` to the other team's member. With default settings,
+normal runtime `lmctl prompt` to the other team's member. With default settings,
 busy cross-team targets return a busy error. In queue-enabled setups, busy
 cross-team targets follow the same `(sender, receiver)` lane lifecycle when
 lmctl can resolve sender identity.
 
 ## Warm up the channel
-Right after seeding, ping each member once (`lmctl chat "<teamfile>" Coder "reply OK"`) before
+Right after seeding, ping each member once (`lmctl prompt "<teamfile>" Coder "reply OK"`) before
 assigning real work — it exercises the delegation path so the first real task lands cleanly.
 
 ---

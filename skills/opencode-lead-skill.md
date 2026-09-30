@@ -26,7 +26,7 @@ running, and the notification still arrives.
 A notification turn can act on what finished, but nothing drives your session
 forward once its process exits — the same as Claude Code or Codex. Once that
 turn also ends with no more work queued, something external — a human, a
-meta-Lead, a supervisor loop — has to resubmit `lmctl chat` to pick things
+meta-Lead, a supervisor loop — has to resubmit `lmctl prompt` to pick things
 back up.
 
 ## Background job tool surface

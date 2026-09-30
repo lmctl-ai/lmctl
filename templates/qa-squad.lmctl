@@ -1,0 +1,20 @@
+# QA squad — Lead + Coder + Reviewer + QA
+#
+# The Trio pattern plus a dedicated QA pass: the Lead plans, the Coder
+# implements, the Reviewer checks the change, and QA verifies the result
+# actually works end to end before it's considered done. Good for anything
+# where "it compiles and the reviewer liked it" isn't enough on its own.
+#
+# This file uses ${Provider1..3}/${Model1..3} placeholders instead of naming
+# a specific provider -- `lmctl quickrun` fills them in with YOUR configured
+# providers/models (recorded by `lmctl init`), so this exact file works
+# whether you have one provider or several. Four members share three
+# provider slots (QA reuses Provider1/Model1) -- that's fine, a slot can back
+# more than one member. See
+# https://lmctl.com/lmctl/docs/manuals/teamfile-format for what a _MEMBER_
+# line means and how to customize this after it's seeded.
+
+_MEMBER_ alias=Lead     provider=${Provider1} model="${Model1}"
+_MEMBER_ alias=Coder    provider=${Provider2} model="${Model2}"
+_MEMBER_ alias=Reviewer provider=${Provider3} model="${Model3}"
+_MEMBER_ alias=QA       provider=${Provider1} model="${Model1}"
