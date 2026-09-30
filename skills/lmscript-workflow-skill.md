@@ -156,7 +156,118 @@ minutes.
 Beyond the script itself: run your own tests before you push, and get a
 peer to review the workflow — author != reviewer applies to its author too.
 
-## A minimal request form
+## A complete example
+
+Words and a skeleton only teach shape. This is the smallest thing that is
+still a real, runnable workflow — one participant, one turn, every guard
+that matters. Read both files top to bottom in one sitting; that's the
+point of it. Everything larger is this plus more steps.
+
+`minimal.lms`:
+
+```
+if (len(args) < 1) { println("usage: lmctl script minimal.lms <request.json>"); lm_exit(2); }
+if (!file_exists(args[0])) { lm_error("no request form at " + args[0]); lm_exit(2); }
+req = json_parse_safe(read_file(args[0]), null);
+if (req == null) { lm_error(args[0] + " is not valid JSON"); lm_exit(2); }
+
+// validate the WHOLE form before spending a turn, and report every fault at once
+bad = [];
+question = str(get(req, "question", ""));
+if (question == "" || question == "null") { push(bad, "missing: question"); }
+worker = get(req, "worker", null);
+if (worker == null) { push(bad, "missing: worker"); }
+acceptance = get(req, "acceptance", null);
+if (acceptance == null) { push(bad, "missing: acceptance -- say what a good answer must contain"); }
+out = str(get(req, "out", "/tmp/minimal"));
+if (len(bad) > 0) {
+  lm_error("request form is not usable -- nothing was dispatched:");
+  for (i = 0; i < len(bad); i = i + 1) { lm_error("  - " + bad[i]); }
+  lm_exit(2);
+}
+
+// build the prompt: the question, the bar, and the contract
+criteria = "";
+for (i = 0; i < len(acceptance); i = i + 1) {
+  criteria = criteria + "  " + str(i + 1) + ". " + str(acceptance[i]) + "\n";
+}
+prompt = question
+  + "\n\nYour answer must satisfy ALL of these. Address each by number, and give evidence for "
+  + "each -- a command you ran, a file and line. Not an assurance.\n\n" + criteria
+  + "\nEnd your reply with exactly one of DONE / BLOCKED / OTHER on its own final line.";
+
+// one turn
+println("asking " + str(get(worker, "provider", "?")) + "/" + str(get(worker, "model", "default")));
+r = lm_agent(worker, prompt, {});
+
+// persist BEFORE judging: output not yet on disk did not happen
+raw = get(r, "reply", null);
+reply = str(raw);
+if (raw == null) { reply = ""; }
+write_file(out + "-answer.md", reply);
+
+// guards. each one closes a way a turn can look successful while being useless.
+if (str(get(r, "status", "?")) != "ok") { lm_error("turn failed: " + str(get(r, "error", ""))); lm_exit(70); }
+if (len(trim(reply)) == 0) { lm_error("empty reply with status=ok -- failure, not consent"); lm_exit(70); }
+state = last_line_as_status(reply);
+if (state == null) { lm_error("no state line -- outcome unknown, so not proceeding"); lm_exit(70); }
+if (state == "BLOCKED") { lm_error("worker reported BLOCKED -- read " + out + "-answer.md"); lm_exit(75); }
+
+// a verdict the human can check cheaply
+write_file(out + "-VERDICT.md",
+  "# " + question + "\n\nstate: " + state + "\n\n## Check each criterion yourself\n\n" + criteria
+  + "\nThe answer claims to satisfy these. Verify the EVIDENCE it gave, not the claim.\n\n"
+  + "## The answer\n\n" + reply + "\n");
+println("done (" + state + ") -- verdict: " + out + "-VERDICT.md");
+```
+
+`minimal.json`:
+
+```json
+{
+  "question": "In this repository, how many .lms files exist and which is the largest by line count?",
+  "worker": { "provider": "${Provider1}", "model": "${Model1}" },
+  "acceptance": [
+    "states an exact count of .lms files in this repository",
+    "names the largest file and its line count",
+    "shows the command used to determine both"
+  ],
+  "out": "/tmp/minimal-demo"
+}
+```
+
+Run it against your own checkout with `lmctl script minimal.lms minimal.json`.
+
+The failure path is as important as the success path, so here it is too —
+this is the real output from an empty `{}` as the request form: nothing is
+dispatched, and every problem is named at once rather than one at a time
+across three wasted turns.
+
+```
+error: request form is not usable -- nothing was dispatched:
+error:   - missing: question
+error:   - missing: worker
+error:   - missing: acceptance -- say what a good answer must contain
+```
+
+One real run of this example made the case for "evidence, not an
+assurance" better than any prose could, and it happened by accident. Asked
+how many `.lms` files a directory held, the worker answered with a count
+and the command it used to get it. A quick manual check disagreed — so the
+command got checked, and the worker turned out to be right: its command
+was recursive, the manual check wasn't. That disagreement resolved in
+seconds because the answer carried its command; a bare assertion of a
+number would have been recorded as wrong, and the record would have been
+wrong too.
+
+That's also why acceptance criteria are required — the workflow refuses to
+run without them. With no criteria, the only thing left to judge an answer
+against is its own account of itself.
+
+## A larger request form
+
+The shape above scales to more participants. A two-turn review workflow's
+form looks like this:
 
 ```json
 { "title": "fix-flaky-test",
