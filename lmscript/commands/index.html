@@ -30,7 +30,7 @@
 
 <h2>Available</h2>
 <ul>
- <li><a href="plan.lms">plan.lms</a> <span class="d">{ dir, name?, pattern?+provider?+model?, members?, force? } — writes a teamfile.</span></li>
+ <li><a href="plan.lms">plan.lms</a> <span class="d">{ dir, name?, members } — writes a teamfile.</span></li>
  <li><a href="lint.lms">lint.lms</a> <span class="d">{ teamfile } — structured error/warning summary.</span></li>
  <li><a href="seed.lms">seed.lms</a> <span class="d">{ teamfile } — creates real provider sessions, verified against the file.</span></li>
  <li><a href="prompt.lms">prompt.lms</a> <span class="d">{ teamfile, alias, prompt, acceptance: [...], out? } — one dispatch, evidence-checked.</span></li>
@@ -40,7 +40,7 @@
 <p>One script per command today. A second script for a command (a different shape of the same job) gets listed here next to the first, not silently swapped in.</p>
 
 <h2>Structure</h2>
-<p>Each script is VALIDATE / DISPATCH / VERIFY (or GUARDS), marked with <code>// ==== ... ====</code>. DISPATCH is the edit surface — replace it for the job in front of you. Don't move VALIDATE or the block after DISPATCH; that's what makes a bad form or a bad reply fail loud instead of silently.</p>
+<p>Each script is a sample, not a service — short on purpose, with a one-line comment per step so reading just the comments tells you what it does. Everything is safe to edit; reshape it for the job in front of you.</p>
 
 <h2>Fetch</h2>
 <pre><code>lmctl plan ./backend --pattern 3 --provider &lt;your-provider&gt; --save-script myplan.lms

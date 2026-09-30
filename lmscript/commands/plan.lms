@@ -1,74 +1,39 @@
-// plan.lms -- generate a teamfile from a request form.
-//   lmctl script plan.lms <request.json>
-// Request form: { dir, name?, pattern?+provider?+model?, members?, force? }
-// Runs unedited. Safe to replace the DISPATCH block; do not move VALIDATE or VERIFY.
+// plan.lms -- write a teamfile from a request form.
+//   lmctl script plan.lms request.json
+//
+// { "dir": "./backend",
+//   "name": "backend.lmctl",
+//   "members": [ { "alias": "Lead",     "provider": "<your-provider>", "model": "<a-model>" },
+//                { "alias": "Reviewer", "provider": "<your-provider>", "model": "<a-model>" } ] }
+//
+// Safe to edit: everything. This is a sample, not a service -- reshape it for the job.
 
-// ==== VALIDATE -- reads and checks the request form. Do not move. ====
+// read the request form
 if (len(args) < 1) { println("usage: lmctl script plan.lms <request.json>"); lm_exit(2); }
 if (!file_exists(args[0])) { lm_error("no request form at " + args[0]); lm_exit(2); }
 req = json_parse_safe(read_file(args[0]), null);
 if (req == null) { lm_error(args[0] + " is not valid JSON"); lm_exit(2); }
-
-bad = [];
-dir = str(get(req, "dir", ""));
-name = str(get(req, "name", ""));
-members = get(req, "members", null);
-pattern = str(get(req, "pattern", ""));
-provider = str(get(req, "provider", ""));
-model = str(get(req, "model", ""));
-force = get(req, "force", false);
-
-if (dir == "" || dir == "null") { push(bad, "missing required field: dir"); }
-else if (!file_exists(dir)) { push(bad, "dir does not exist: " + dir); }
-
-// members and pattern are two ways to say who's on the team; exactly one must be given.
-has_members = (members != null && len(members) > 0);
-has_pattern = (pattern != "" && pattern != "null");
-if (has_members && has_pattern) { push(bad, "give EITHER members OR pattern+provider, not both"); }
-if (!has_members && !has_pattern) { push(bad, "need either members (list of {alias, provider, model?}) or pattern (1|2|3) with provider"); }
-if (has_pattern && (provider == "" || provider == "null")) { push(bad, "pattern needs provider"); }
-if (has_pattern && pattern != "1" && pattern != "2" && pattern != "3") { push(bad, "pattern must be 1, 2, or 3, got: " + pattern); }
-if (len(bad) > 0) {
-  lm_error("request form is not usable -- nothing was written:");
-  for (i = 0; i < len(bad); i = i + 1) { lm_error("  - " + bad[i]); }
-  lm_exit(2);
-}
-
-// default the output filename to <last dir segment>.lmctl if the form didn't set one.
-if (name == "" || name == "null") {
-  base = dir;
-  at = last_index_of(base, "/");
-  if (at >= 0) { base = substring(base, at + 1, len(base)); }
-  name = base + ".lmctl";
-}
+dir = get(req, "dir", "");
+name = get(req, "name", "team.lmctl");
+members = get(req, "members", []);
 target = dir + "/" + name;
 
-// ==== DISPATCH -- builds and runs the real `lmctl plan` command. Edit the flags here for your shape. ====
+// build the lmctl plan command
 argv = ["lmctl", "plan", dir, "--output", target, "--non-interactive", "--no-seed"];
-if (force) { push(argv, "--force"); }
-if (has_pattern) {
-  push(argv, "--pattern"); push(argv, pattern);
-  push(argv, "--provider"); push(argv, provider);
-  if (model != "" && model != "null") { push(argv, "--model"); push(argv, model); }
-} else {
-  for (i = 0; i < len(members); i = i + 1) {
-    m = members[i];
-    spec = str(get(m, "alias", "")) + ":" + str(get(m, "provider", ""));
-    mm = str(get(m, "model", ""));
-    if (mm != "" && mm != "null") { spec = spec + ":" + mm; }
-    push(argv, "--member"); push(argv, spec);
-  }
+for (i = 0; i < len(members); i = i + 1) {
+  m = members[i];
+  spec = get(m, "alias", "") + ":" + get(m, "provider", "");
+  model = get(m, "model", "");
+  if (model != "") { spec = spec + ":" + model; }
+  push(argv, "--member"); push(argv, spec);
 }
+
+// run it
 r = system(argv, 300000);
 if (get(r, "code", 1) != 0) {
-  lm_error("plan failed: " + trim(str(get(r, "stderr", "")) + str(get(r, "stdout", ""))));
+  lm_error("plan failed: " + trim(get(r, "stderr", "") + get(r, "stdout", "")));
   lm_exit(70);
 }
 
-// ==== VERIFY -- confirms the file really exists, not just that plan exited 0. Do not move. ====
-if (!file_exists(target)) {
-  lm_error("plan reported success but " + target + " does not exist");
-  lm_exit(70);
-}
-println("planned: " + target + " (" + str(len(split(read_file(target), "\n"))) + " lines)");
-println("Next: lmctl lint " + target);
+// report where the teamfile landed
+println("planned: " + target);
