@@ -14,6 +14,7 @@ if (!file_exists(args[0])) { lm_error("no request form at " + args[0]); lm_exit(
 req = json_parse_safe(read_file(args[0]), null);
 if (req == null) { lm_error(args[0] + " is not valid JSON"); lm_exit(2); }
 dir = get(req, "dir", "");
+if (dir == "") { lm_error("missing required field: dir"); lm_exit(2); }
 name = get(req, "name", "team.lmctl");
 members = get(req, "members", []);
 target = dir + "/" + name;

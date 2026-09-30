@@ -14,8 +14,11 @@ if (!file_exists(args[0])) { lm_error("no request form at " + args[0]); lm_exit(
 req = json_parse_safe(read_file(args[0]), null);
 if (req == null) { lm_error(args[0] + " is not valid JSON"); lm_exit(2); }
 teamfile = get(req, "teamfile", "");
+if (teamfile == "") { lm_error("missing required field: teamfile"); lm_exit(2); }
 alias = get(req, "alias", "");
+if (alias == "") { lm_error("missing required field: alias"); lm_exit(2); }
 task = get(req, "prompt", "");
+if (task == "") { lm_error("missing required field: prompt"); lm_exit(2); }
 acceptance = get(req, "acceptance", []);
 out = get(req, "out", "/tmp/prompt");
 
