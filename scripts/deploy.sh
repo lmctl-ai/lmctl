@@ -103,9 +103,14 @@ aws s3 sync skills/ "s3://${S3_BUCKET}/skills/" \
 aws s3 cp skills/index.html "s3://${S3_BUCKET}/skills/index.html" \
   --content-type 'text/html; charset=utf-8' \
   --cache-control 'no-cache, max-age=0, must-revalidate'
-# Operator-facing short alias for the Lead skill. The canonical source file is
-# skills/lmctl-lead-skill.md; keep this copy in the deploy script so the raw
-# URL /skills/lmctl-lead.md stays usable without duplicating source content.
+# Operator-facing short aliases, kept in the deploy script so the raw URLs stay usable
+# without duplicating source content.
+#   /skills/lmctl-prompt.md  -> the one capability page, for any agent regardless of alias
+#   /skills/lmctl-lead.md    -> kept alive because teamfiles in the wild reference it;
+#                               it now serves the "Moved" pointer, not a role page
+aws s3 cp skills/lmctl-prompt-skill.md "s3://${S3_BUCKET}/skills/lmctl-prompt.md" \
+  --content-type 'text/markdown; charset=utf-8' \
+  --cache-control 'no-cache, max-age=0, must-revalidate'
 aws s3 cp skills/lmctl-lead-skill.md "s3://${S3_BUCKET}/skills/lmctl-lead.md" \
   --content-type 'text/markdown; charset=utf-8' \
   --cache-control 'no-cache, max-age=0, must-revalidate'

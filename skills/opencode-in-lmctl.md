@@ -1,8 +1,8 @@
 ---
-title: opencode lmctl Lead skill
+title: Using lmctl from opencode
 ---
 
-# opencode lmctl Lead skill
+# Using lmctl from opencode
 
 Use this when running an lmctl team Lead on opencode (the `lmctlhq/opencode`
 fork). For Claude Code, use

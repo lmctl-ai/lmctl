@@ -1,6 +1,6 @@
-# Claude Code lmctl Lead skill
+# Using lmctl from Claude Code
 
-Use this when you are running an lmctl team Lead inside Claude Code, or inside
+Use this when you are driving an lmctl team from inside Claude Code, or inside
 another harness with the same two properties:
 
 - real background command execution that notifies you when the process exits
