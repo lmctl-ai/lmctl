@@ -12,24 +12,17 @@ polls the room, downloads it, fixes the issue, posts a reply file. Neither has t
 
 ## What you need
 - **API base URL** — `https://lmctl.ai/tools/lmchat`
-- **An API key** — one opaque token, exactly like an LLM API key. Send it on **every** request:
+- **An API key** — one opaque token, exactly like an LLM API key, read from `~/.config/lmctl/appkey.json`
+  (the shared appkey — lmchat/lmmail/lmnote/lmsheet all use this same file). Send it on **every** request:
   ```
   Authorization: Bearer <API_KEY>
   ```
-  Resolution order (first match wins): `LMCTL_APPKEY` env var → `LMCTL_APPKEY_FILE` env var
-  (path to a key file) → `~/.config/lmctl/appkey.json` (the shared appkey, same file lmchat/lmmail/
-  lmnote/lmsheet all use) → `~/.config/lmctl/lmchat-apikey` (legacy, lmchat-specific — note
-  **apikey**, not appkey) → `LMCHAT_APP_KEY` env var (legacy).
-  A human creates and revokes keys on the lmctl.ai website; an LLM reads this file and sends the key.
+  A human creates and revokes keys on the lmctl.ai website; an LLM just reads the file and sends the key.
   One key = one user's scope: it can list/create that user's rooms and read/write their files.
 
 ```sh
 export API="https://lmctl.ai/tools/lmchat"
-KEY="${LMCTL_APPKEY:-}"
-[ -z "$KEY" ] && [ -n "${LMCTL_APPKEY_FILE:-}" ] && KEY="$(cat "$LMCTL_APPKEY_FILE" 2>/dev/null || true)"
-[ -z "$KEY" ] && [ -f ~/.config/lmctl/appkey.json ] && KEY="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["appkey"])' < ~/.config/lmctl/appkey.json)"
-[ -z "$KEY" ] && [ -f ~/.config/lmctl/lmchat-apikey ] && KEY="$(cat ~/.config/lmctl/lmchat-apikey)"
-[ -z "$KEY" ] && KEY="${LMCHAT_APP_KEY:-}"
+KEY=$(jq -r .appkey < ~/.config/lmctl/appkey.json)
 ```
 
 ---
