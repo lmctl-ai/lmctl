@@ -8,9 +8,7 @@ To send a prompt at all, see [How to send a prompt to another agent](lmctl-promp
 
 ## "<alias> is busy; wait and retry"
 
-Nothing was sent. lmctl holds nothing for you — there is no queued row to inspect or
-wait on, and no later delivery. Wait and run the command again, or give the work to a
-different member.
+Nothing was sent. The send did not happen, nothing is held, so you must wait and retry. You can also give the work to a different member.
 
 Check before an important send:
 

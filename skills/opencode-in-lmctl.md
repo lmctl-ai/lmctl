@@ -40,5 +40,5 @@ apart from an ordinary one. Don't assume a signal exists.
 
 ## Everything else
 
-For delegation basics, mail evidence, recovery, and cross-team addressing,
+For delegation basics, recovery, and cross-team addressing,
 use the base [`lmctl Lead`](lmctl-lead-skill.md) skill alongside this page.
