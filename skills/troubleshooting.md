@@ -4,7 +4,7 @@ Everything here was previously bundled into one long "Lead skill" page. It is ke
 because it is all still true; it is separated because most of it does not apply to
 most jobs. Read the part that matches your symptom.
 
-To send a prompt at all, see [How to send a prompt to another agent](lmctl-prompt.md).
+To send a prompt at all, see [How to send a prompt to another agent](lmctl-prompt-skill.md).
 
 ## "<alias> is busy; wait and retry"
 
@@ -94,7 +94,7 @@ You drive it. Prompt each member in turn — for example hand a task to one, sen
 result to a reviewer, route findings back, then gate the outcome yourself.
 
 Aliases carry no power, so no member does this on your behalf unless you first give it
-[How to send a prompt to another agent](lmctl-prompt.md).
+[How to send a prompt to another agent](lmctl-prompt-skill.md).
 
 For anything repeatable, prefer `lmctl script` (LMScript): it orchestrates
 deterministically and calls an agent only where judgement is actually needed. An agent

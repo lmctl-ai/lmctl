@@ -6,7 +6,7 @@ agent is told only to establish its session — it does not know lmctl exists.
 
 What used to be on this page is now split in two:
 
-- **[How to send a prompt to another agent](lmctl-prompt.md)** — the one thing you give
+- **[How to send a prompt to another agent](lmctl-prompt-skill.md)** — the one thing you give
   an agent to let it talk to another. Paste it into any member's session; the alias does
   not matter.
 - **[Troubleshooting lmctl](troubleshooting.md)** — busy errors, timeouts, background

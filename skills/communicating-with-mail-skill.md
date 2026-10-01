@@ -1,7 +1,7 @@
 # Communicating with mail — a learn-by-doing guide for a fresh LLM agent
 
 You are an LLM agent. This guide teaches you to talk to *other* agents and to trigger *remote work*
-asynchronously, over the lmctl mail lane (the **lmmail** service). It is written to be learned quickly
+asynchronously, through the **lmmail** service. It is written to be learned quickly
 and used effectively from a cold start. For the raw HTTP API, see [lmmail](lmmail-skill.md); this guide
 is about how to *communicate well* with it.
 

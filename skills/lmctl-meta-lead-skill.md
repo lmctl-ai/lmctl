@@ -5,18 +5,17 @@ their own `.lmctl` team. Your job is oversight and unblocking across teams — t
 administration discipline as a Team Lead, one level up. Read the Team Lead **basic** + **advanced**
 skills first; this page is the multi-team layer.
 
-Core stance: **lmctl is LLM-centered orchestration *and administration*.** You administer Leads the
-way a Lead administers members — seed, monitor, unblock, refresh — but never micromanage.
+Core stance: coordinate teams through concrete prompts, read-only status, and
+durable project knowledge. Aliases are teamfile labels; use the target alias
+that the team defines.
 
 ## Survey your fleet without disturbing it
 ```sh
-lmctl health "<teamA>.lmctl"        # per-team rollup, per each team you run
+lmctl status "<teamA>.lmctl" --details # per-team rollup
 lmctl tail "<teamA>.lmctl" Lead     # read a Lead's recent turns; does NOT wake it
 ```
-`health` + `tail` are read-only — use them to see who's progressing vs spinning **before** you send
-anything. In a git repo, `health` shows activity since the last commit: a Lead piling up messages
-and uncommitted files with **no new commit** is spinning — that's your signal to look, not to poke
-blindly.
+`status` + `tail` are read-only — use them to see who's progressing before you
+send anything.
 
 ## Delegate to a Lead
 A Lead's turn can run for minutes — coordinating its own Coder+Reviewer can
@@ -25,56 +24,30 @@ take hours. `lmctl prompt` is synchronous: it blocks and returns the Lead reply.
 lmctl prompt "<teamA>.lmctl" Lead "coordinate the X change with your Coder+Reviewer"
 ```
 If you remember older lmctl forms, read the old-command block in the basic
-Lead skill. Meta-Lead work now uses synchronous `prompt` by default; busy
-queueing is opt-in.
+Lead skill. A busy `prompt` returns immediately; no work is held for later.
 
 `prompt`'s built-in `--idle-timeout` defaults to 8 hours — don't override it
-to a short duration when dispatching to a Lead; inspect with `tail`/`health`
+to a short duration when dispatching to a Lead; inspect with `tail`/`status`
 first if one seems stuck.
 
-For peer Lead status notes, use `prompt`. If the target Lead is busy and lmctl
-uses default queue settings, it returns a busy error and creates no queued mail.
-If the opt-in mailbox queue is enabled and lmctl can resolve your sender
-identity, lmctl queues the message in your sender-to-receiver lane:
+For peer Lead status notes, use `prompt`:
 
 ```sh
 lmctl prompt "<teamA>.lmctl" Lead "status note"
 ```
 
-Delivery is at-least-once: a duplicate delivery after a crash is possible;
-losing queued work is worse.
-Queued member mail is keyed by `(sender, receiver)`. Base queued delivery is the next
-`lmctl prompt` from that same sender to that same receiver once the receiver is
-free. A prompt from another sender to the same receiver does not flush it. With
-`lmctl serve start` running in normal daemon mode, mailbox relay is an optional
-accelerator that can drain queued lanes proactively. When queueing is off,
-there is nothing for the relay to drain. A receiver held by `lmctl terminal` is
-correctly busy until the human exits the terminal.
-
-## Warm up a newly-seeded Lead
-When you seed a team and start talking to its Lead, open with a connectivity ping:
-> "use `lmctl prompt` to ping each of your members with 'reply OK' to confirm you can
-> reach them, then proceed."
-This makes the Lead actually exercise delegation from turn one — teams that skip it stall at the
-first hand-off.
+If the target is busy, nothing is sent or held for later. A newly seeded agent
+needs the communication skill pasted into its session before it can delegate.
 
 ## Inspect before messaging Leads
-A Lead mid-turn serves one turn-driving sender at a time. Busy behavior depends
-on the queue setting first: by default busy is refused and not allowed to abort
-the in-flight turn. If queueing is enabled and lmctl can resolve a sender, the
-prompt queues for that `(sender, receiver)` lane. Use `tail`/`health` to inspect
-without waking, then let the runtime/harness own wake and concurrency. Don't
-broadcast turn-driving prompts into a working fleet.
+A member serves one turn-driving sender at a time. A busy prompt is refused
+without interrupting the in-flight turn. Use `tail`/`status` to inspect without
+waking, then let the runtime or harness own background execution.
 
-## Refresh a drifting Lead
-A running session cannot refresh itself. Refresh the target Lead from a
-different session:
-```sh
-lmctl refresh "<teamA>.lmctl":Lead
-```
-First make sure that team's `durable-memory/` is current (the Lead re-reads it after refresh —
-that's how it keeps its bearings across the reset). Then refresh. A refreshed Lead loses its
-accumulated session history but recovers its state from durable-memory.
+## Reseed a drifting Lead
+Make sure that team's `durable-memory/` is current, remove the target member's
+`sessionid=` from the teamfile, and run `lmctl seed`. The fresh provider session
+will reread durable memory.
 
 ## Getting a Lead to actually execute (e.g. commit built work)
 If a Lead seems to "ignore" an instruction, it's almost never an lmctl bug — check these first:
@@ -99,7 +72,7 @@ If a Lead seems to "ignore" an instruction, it's almost never an lmctl bug — c
 ## What NOT to do
 - Don't send empty "continue" prompts on a timer — you'll interrupt working members and cause aborts.
 - Don't chase a metric lmctl can't give (e.g. a context number a provider doesn't expose shows
-  `n/a` — that's not a health signal, don't act on its absence).
+  `n/a` — that's not a status signal, don't act on its absence).
 - Don't try to force a member to do something — lmctl offers tools; if a Lead isn't delegating,
   re-onboard it with a delegation-first instruction, don't build enforcement.
 

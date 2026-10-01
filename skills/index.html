@@ -37,20 +37,20 @@
 
 <h2>lmctl — start here</h2>
 <ul>
- <li><a href="lmctl-prompt.md">How to send a prompt to another agent</a> <span class="d">— the one thing you give an agent so it can talk to another. Paste it into any member's session; the alias does not matter</span></li>
+ <li><a href="lmctl-prompt-skill.md">How to send a prompt to another agent</a> <span class="d">— the one thing you give an agent so it can talk to another. Paste it into any member's session; the alias does not matter</span></li>
  <li><a href="troubleshooting.md">Troubleshooting lmctl</a> <span class="d">— busy errors, timeout units, background execution, long prompts, inspecting an agent, reseeding a drifted one, durable memory</span></li>
 </ul>
 
-<p class="sub"><strong>Aliases are names, not capabilities.</strong> <code>Lead</code>, <code>Coder</code> and <code>Reviewer</code> are labels you choose in a teamfile — lmctl gives none of them any power the others lack. A freshly seeded agent is told only to establish its session: it does not know lmctl exists. The pages below describe ways to <em>use</em> a team, not abilities any member has by default.</p>
+<p class="sub"><strong>Aliases are teamfile labels.</strong> <code>Lead</code> is also a reserved routing and cross-team policy convention; no alias grants general administrator powers. A freshly seeded agent is told only to establish its session: it does not know lmctl exists. The pages below describe ways to <em>use</em> a team, not powers assigned by a title alone.</p>
 
 <h2>lmctl — using a team</h2>
 <ul>
- <li><a href="claudecode-lead-skill.md">Claude Code lmctl Lead</a> <span class="d">— Claude-Code-specific background dispatch, notification, Monitor, and stall-evidence discipline for lmctl Leads</span></li>
- <li><a href="opencode-lead-skill.md">opencode lmctl Lead</a> <span class="d">— opencode-specific background CLI run, notification, and resubmission guidance for lmctl Leads</span></li>
+ <li><a href="claude-in-lmctl.md">Using lmctl from Claude Code</a> <span class="d">— Claude-Code-specific background dispatch and notification guidance</span></li>
+ <li><a href="opencode-in-lmctl.md">Using lmctl from opencode</a> <span class="d">— opencode-specific background CLI run and notification guidance</span></li>
  <li><a href="lmctl-admin-skill.md">lmctl-admin</a> <span class="d">— read-only delivery, liveness, and orphan mailbox diagnostics for lmctl teams</span></li>
  <li><a href="lmctl-team-lead-basic-skill.md">Team Lead — basic</a> <span class="d">— everyday delegation and review loop details</span></li>
- <li><a href="lmctl-team-lead-advanced-skill.md">Team Lead — advanced</a> <span class="d">— refresh, model swaps, health, and drift recovery</span></li>
- <li><a href="lmctl-recover-skill.md">lmctl disaster recovery</a> <span class="d">— reconstruct a lost .lmctl teamfile and replay a session's file writes back onto disk after data loss</span></li>
+ <li><a href="lmctl-team-lead-advanced-skill.md">Team Lead — advanced</a> <span class="d">— session swaps, status, and drift recovery</span></li>
+ <li><a href="lmctl-recover-skill.md">lmctl recovery guidance</a> <span class="d">— compatibility pointer for current status, reseeding, and provider-native recovery</span></li>
  <li><a href="lmscript-workflow-skill.md">lmscript workflow authoring</a> <span class="d">— write a parameterised .lms workflow: request-form validation, turn persistence, author≠reviewer, common gotchas</span></li>
  <li><a href="lmctl-meta-lead-skill.md">Meta-Lead</a> <span class="d">— coordinate multiple teams</span></li>
  <li><a href="team-lead-workflow.md">Team Lead workflow</a> <span class="d">— delegation, review loops, arbitration, and escalation</span></li>

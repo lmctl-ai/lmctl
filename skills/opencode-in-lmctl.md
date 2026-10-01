@@ -1,12 +1,8 @@
----
-title: Using lmctl from opencode
----
-
 # Using lmctl from opencode
 
 Use this when running an lmctl team Lead on opencode (the `lmctlhq/opencode`
 fork). For Claude Code, use
-[`claudecode-lead-skill.md`](claudecode-lead-skill.md) instead.
+[`claude-in-lmctl.md`](claude-in-lmctl.md) instead.
 
 ## Background CLI run + notification
 

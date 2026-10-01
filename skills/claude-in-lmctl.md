@@ -15,8 +15,8 @@ Delegate with `lmctl prompt`, but dispatch it through Claude Code's real
 background execution path: the Bash tool with `run_in_background: true`.
 
 Don't wrap `lmctl prompt` in a shell `timeout` or wait on it synchronously in
-the foreground — a slow reply, busy result, or queued send isn't a failure by
-itself.
+the foreground. A slow provider turn is not evidence of failure; a busy result
+is immediate and means you should inspect or retry.
 
 Use prompt files for non-trivial work:
 
@@ -47,47 +47,7 @@ Operational rule:
 1. Dispatch work in the background.
 2. On notification, read the result.
 3. Dispatch the next task, review, repair, or escalation immediately.
-4. Stop only when there is no queued, running, or newly returned work to act on.
-
-## You do not need to poll for inbound mail by default
-
-Since `lmctl 0.1.241`, `mailbox_queue_enabled` defaults to `false`: a prompt
-sent to you is either delivered synchronously — handled inline, in the same
-call the sender made — or the sender gets an immediate busy error. Neither
-case leaves anything queued for you to discover later. There is no "mail
-arrived while you were away" scenario to poll for under the default
-configuration, so do not arm a Monitor loop against `mail pending` as a
-standing pattern.
-
-### If your configuration explicitly enables queueing
-
-Only relevant when `mailbox_queue_enabled = true` is explicitly set in
-`config.toml` or via `LMCTL_MAILBOX_QUEUE_ENABLED=true` — an opt-in, not the
-default. In that mode, a busy send can create a queued row instead of erroring,
-and you do need a way to learn it arrived. Arm Claude Code's Monitor tool on a
-small polling script rather than hand-polling or sleeping in your own turn; let
-the harness deliver one notification when the script exits:
-
-```sh
-receiver="/abs/path/team.lmctl:Lead"
-while :; do
-  if lmctl mail pending --receiver "$receiver" --json \
-    | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>process.exit((JSON.parse(s).messages||[]).length ? 0 : 1))'
-  then
-    exit 0
-  fi
-  sleep 10
-done
-```
-
-Use the notification as a wakeup, then read and handle the mail:
-
-```sh
-lmctl status --json
-lmctl mail read <message_id> --json
-lmctl mail handle <message_id> --json
-lmctl mail ack <message_id> --json
-```
+4. Stop only when there is no running or newly returned work to act on.
 
 ## Address teams by absolute path
 
@@ -111,23 +71,15 @@ Start with lmctl:
 
 ```sh
 lmctl status --json
-lmctl health "/abs/path/team.lmctl" Alias --json
-lmctl mail sent --to "/abs/path/team.lmctl:Alias" --status queued --json
-lmctl mail sent --to "/abs/path/team.lmctl:Alias" --status delivered --json
-lmctl mail history <message_id> --json
+lmctl status "/abs/path/team.lmctl" Alias --json
+lmctl tail "/abs/path/team.lmctl" Alias --json
 ```
 
-Treat the queued-mail check as queue-enabled evidence, not as the default stall
-contract. Since `lmctl 0.1.241`, default busy behavior is synchronous: no queued
-row is created. When the receiver's configuration enables
-`mailbox_queue_enabled` behavior, a busy send can create a queued row, and
-`mail sent --status queued` tells you the work has not delivered yet. When
-queueing is disabled, the equivalent signal is the immediate busy/held result
-from `lmctl prompt`; inspect that result, then use `status --json` and
-`health --json` for the holder PID and last-activity evidence instead of
-expecting a queued mail row to exist.
+The busy result from `lmctl prompt` is immediate. Use `status --json` for
+holder and last-activity evidence, and `tail --json` to inspect the member's
+recent provider messages without sending another prompt.
 
-If `health --json` or the error text reports a holder PID, verify whether that
+If `status --json` or the error text reports a holder PID, verify whether that
 process is actually alive and doing work:
 
 ```sh
@@ -136,8 +88,8 @@ ps -p <pid> -o pid,stat,wchan:32,pcpu,time,etime,cmd
 
 A live PID alone is not proof of progress. Near-zero accumulated CPU over a long
 elapsed time, especially with `WCHAN=do_epoll_wait`, is evidence of a stalled
-process. Combine that with the health/status evidence above and the mail
-evidence before deciding whether to wait, resend, refresh, or escalate.
+process. Combine that with the status evidence above and provider/harness
+evidence before deciding whether to retry, reseed, or escalate.
 
 If you have the sibling `lmctl-admin` tool available, use its read-only
 diagnostics for the same question:

@@ -1,8 +1,3 @@
----
-name: durable-memory
-description: How a team uses durable-memory as shared provider-agnostic project memory.
----
-
 # Skill: Durable memory
 
 `durable-memory/` is the team's portable, provider-agnostic brain.

@@ -48,7 +48,7 @@ Use this when timestamps or summary status are ambiguous. The JSON includes
 are `daemon-delivered`, `manually-acked`, `still-queued`, `legacy-orphan`, and
 `not-found`.
 
-Compare lmctl health/liveness with raw `agent_inflight` locks:
+Compare lmctl status/liveness with raw `agent_inflight` locks:
 
 ```sh
 ./bin/lmctl-admin check-liveness /path/to/team.lmctl --json

@@ -95,6 +95,12 @@ done
 
 # --- skills: publish the raw skill pages to lmctl.com/skills/ (source of truth = this repo's skills/).
 # No --delete: never wipe skills published out-of-band; this only adds/updates repo-tracked ones.
+while IFS= read -r skill_file; do
+  if ! git ls-files --error-unmatch -- "$skill_file" >/dev/null 2>&1; then
+    echo "skills deploy refused untracked publish candidate: ${skill_file}" >&2
+    exit 1
+  fi
+done < <(find skills -type f ! -name '.*' ! -name 'index.html' -print)
 aws s3 sync skills/ "s3://${S3_BUCKET}/skills/" \
   --exclude '.*' \
   --content-type 'text/markdown; charset=utf-8' \
@@ -114,6 +120,10 @@ aws s3 cp skills/lmctl-prompt-skill.md "s3://${S3_BUCKET}/skills/lmctl-prompt.md
 aws s3 cp skills/lmctl-lead-skill.md "s3://${S3_BUCKET}/skills/lmctl-lead.md" \
   --content-type 'text/markdown; charset=utf-8' \
   --cache-control 'no-cache, max-age=0, must-revalidate'
+# These files were renamed in the repository. The skills sync is intentionally
+# non-destructive, so remove the old public keys explicitly.
+aws s3 rm "s3://${S3_BUCKET}/skills/claudecode-lead-skill.md" \
+  "s3://${S3_BUCKET}/skills/opencode-lead-skill.md"
 aws s3api put-object \
   --bucket "${S3_BUCKET}" \
   --key 'skills/' \
@@ -305,8 +315,8 @@ done
 
 for spec in \
   '/lmprobe/|text/html|lmprobe Manual' \
-  '/skills/claudecode-lead-skill.md|text/markdown|# Claude Code lmctl Lead skill' \
-  '/skills/opencode-lead-skill.md|text/markdown|# opencode lmctl Lead skill' \
+  '/skills/claude-in-lmctl.md|text/markdown|# Using lmctl from Claude Code' \
+  '/skills/opencode-in-lmctl.md|text/markdown|# Using lmctl from opencode' \
   '/skills/lmctl-admin-skill.md|text/markdown|# lmctl-admin skill' \
   '/skills/lmprobe-skill.md|text/markdown|# lmprobe skill' \
   '/skills/lmmail-skill.md|text/markdown|# lmmail — simple asynchronous mail for LLM agents' \
