@@ -41,7 +41,9 @@
  <li><a href="troubleshooting.md">Troubleshooting lmctl</a> <span class="d">— busy errors, timeout units, background execution, long prompts, inspecting an agent, reseeding a drifted one, durable memory</span></li>
 </ul>
 
-<p class="sub"><strong>Aliases are teamfile labels.</strong> <code>Lead</code> is also a reserved routing and cross-team policy convention; no alias grants general administrator powers. A freshly seeded agent is told only to establish its session: it does not know lmctl exists. The pages below describe ways to <em>use</em> a team, not powers assigned by a title alone.</p>
+<p class="sub"><strong>Prompt-driven roles, not infrastructure-dictated roles.</strong> <code>Lead</code>, <code>Coder</code> and <code>Reviewer</code> are labels you choose in a teamfile. lmctl grants none of them any capability the others lack — you assign a role by handing over a prompt or a skill, and the pages below <em>are</em> those assignments. Paste one into any member and it takes on that role, whatever its alias; hand the same text to a different member and it can do the same.</p>
+
+<p class="sub">Seeding deliberately tells a member almost nothing, so it cannot act before you ask it to. A member aliased <code>Lead</code> is the one exception: it receives the teamfile and how to invoke <code>lmctl prompt</code>, and is told explicitly not to use it during the seed. Every other member is told nothing at all. That is a difference in <em>information</em>, never in capability. (<code>Lead</code> is also the alias lmctl assumes when a command omits one — a convenience, not an authority.)</p>
 
 <h2>lmctl — using a team</h2>
 <ul>
