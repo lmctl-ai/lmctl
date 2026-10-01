@@ -10,8 +10,9 @@ Use the CLI:
 - `lmctl prompt "<teamfile>" Coder "your task"`
 - `lmctl prompt "<teamfile>" Coder --prompt-file task.md` for non-trivial prompts
 
-Use `prompt` when you need to drive a member turn and get a reply. A busy target
-returns a busy error; no prompt is held for later delivery.
+Use `prompt` when you need to drive a member turn and get a reply. It blocks
+until the member replies. If it answers `Coder is busy; wait and retry`,
+nothing was sent. Nothing is held for later delivery; wait and retry.
 
 Prefer `--prompt-file` for prompts containing command examples, backticks,
 `$(...)`, `$VAR`, or quotes; positional prompts are assembled by your shell

@@ -14,10 +14,10 @@ the basics; there is a separate **advanced** skill for session swaps, status, an
 lmctl prompt "<teamfile>.lmctl" Coder "Implement X. Commit when tests pass."
 ```
 This sends the prompt to member `Coder`, blocks for one member turn, and returns
-the member reply. If the target is busy, `prompt` returns a busy error and
-holds nothing for later delivery. **Delegation is an ACTION, not a plan**: to hand work
-to a member you must actually run the command — narrating "I'll delegate to
-Coder" does nothing.
+the member reply. If it answers `Coder is busy; wait and retry`, nothing was sent
+and nothing is held for later delivery. Wait and retry.
+**Delegation is an ACTION, not a plan**: to hand work to a member you must
+actually run the command — narrating "I'll delegate to Coder" does nothing.
 
 For non-trivial prompts, write the prompt to a file and use:
 

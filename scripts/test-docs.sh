@@ -29,9 +29,12 @@ if grep -q -r -n -i "there is no queued row to inspect" skills/; then
 fi
 
 # These pages describe current lmctl coordination, not the separate lmmail service.
+# lmctl-admin-skill.md is deliberately NOT here. lmctl-admin is a SIBLING PROJECT whose
+# job is diagnosing LEGACY mailbox rows left by the removed queue -- "still-queued",
+# "legacy-orphan", "undelivered legacy mailbox rows". It has to name those things to
+# describe what it scans. The pattern below is right; its scope was wrong.
 coordination_pages=(
   skills/background-wakeup.md
-  skills/lmctl-admin-skill.md
   skills/lmctl-meta-lead-skill.md
   skills/lmctl-recover-skill.md
   skills/lmctl-team-lead-basic-skill.md
@@ -50,7 +53,7 @@ for page in "${coordination_pages[@]}"; do
 done
 
 for page in skills/lmctl-meta-lead-skill.md skills/lmctl-team-lead-basic-skill.md skills/team-lead-workflow.md skills/lmctl-lead-skill.md; do
-  if ! grep -qE 'lmctl prompt "<[^>]+>[^" ]*" (Coder|Lead|<alias>) ' "$page" ||
+  if ! grep -qE 'lmctl prompt ("[^"]+\.lmctl"|[^"[:space:]]+\.lmctl|"<[^>]+>"|<[^>]+>) ([[:alnum:]_][[:alnum:]_-]*|<alias>) ' "$page" ||
      ! grep -qi 'blocks' "$page" ||
      ! grep -q 'is busy; wait and retry' "$page" ||
      ! grep -qi 'nothing was sent' "$page" ||

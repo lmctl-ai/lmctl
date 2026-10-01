@@ -10,6 +10,11 @@ opencode supports running a CLI command in the background:
 `shell({command, background: true, ...})` returns immediately without waiting
 for the command to finish.
 
+For example, run `lmctl prompt ./my-team.lmctl Coder "Implement X."` through
+that background shell call. `lmctl prompt` blocks until Coder replies; if it
+answers `Coder is busy; wait and retry`, nothing was sent and nothing is held.
+Wait and retry after the target is free.
+
 When that job finishes, opencode starts a new turn on your session reporting
 the result, with your full normal toolset available — it can act on the
 result (commit, dispatch the next task, etc.), not just report it. You don't

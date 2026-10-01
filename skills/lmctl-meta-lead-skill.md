@@ -36,8 +36,9 @@ For peer Lead status notes, use `prompt`:
 lmctl prompt "<teamA>.lmctl" Lead "status note"
 ```
 
-If the target is busy, nothing is sent or held for later. A newly seeded agent
-needs the communication skill pasted into its session before it can delegate.
+If the reply says `Lead is busy; wait and retry`, nothing was sent.
+Nothing is held for later; wait and retry. A newly seeded agent needs the
+communication skill pasted into its session before it can delegate.
 
 ## Inspect before messaging Leads
 A member serves one turn-driving sender at a time. A busy prompt is refused
@@ -46,8 +47,8 @@ waking, then let the runtime or harness own background execution.
 
 ## Reseed a drifting Lead
 Make sure that team's `durable-memory/` is current, remove the target member's
-`sessionid=` from the teamfile, and run `lmctl seed`. The fresh provider session
-will reread durable memory.
+`sessionid=` from the teamfile, and run `lmctl seed`. Give the fresh provider
+session the relevant durable-memory context before assigning work.
 
 ## Getting a Lead to actually execute (e.g. commit built work)
 If a Lead seems to "ignore" an instruction, it's almost never an lmctl bug — check these first:
