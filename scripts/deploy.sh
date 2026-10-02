@@ -335,3 +335,7 @@ do
     exit 1
   fi
 done
+
+# The website owns quickrun samples; every full site deployment includes them.
+S3_BUCKET="$S3_BUCKET" CF_DISTRIBUTION_ID="$CF_DISTRIBUTION_ID" SITE_ORIGIN="$SITE_ORIGIN" \
+  bash scripts/deploy-quickrun.sh
