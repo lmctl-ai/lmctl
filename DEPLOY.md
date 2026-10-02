@@ -32,6 +32,7 @@ The static artifact is written to `build/` with Docusaurus `baseUrl` set to
 | Homepage (root) | `./scripts/deploy-homepage.sh` |
 | Workflow catalog (`/workflows/`) | `./scripts/deploy-workflows.sh` |
 | Example configs (`/examples/`) | `./scripts/deploy-examples.sh` |
+| Quickrun catalog (`/quickrun/`) | `./scripts/deploy-quickrun.sh` (also included in full deploy) |
 
 The production defaults target `s3://lmctl-website-prod/` and CloudFront
 distribution `E1GKUWTM93U7IV`. Operators can override either target with env
@@ -105,7 +106,7 @@ CloudFront decision:
 an initial `// description: ...` comment, then run `node scripts/build-quickrun.mjs`
 to regenerate both indexes. Publish with `bash scripts/deploy-quickrun.sh`.
 It uploads only `/quickrun` assets, sets correct HTML/plain-text content types,
-and invalidates that prefix. The CLI fetches `index.txt` and named scripts live;
+and waits for invalidation of that prefix before checking the public bytes. The CLI fetches `index.txt` and named scripts live;
 adding samples using existing LMScript APIs does not need a new lmctl release.
 Use the shipped `Provider1..3`, `Model1..3`, `Directory`, and `NonInteractive`
 globals. Keep remote samples self-contained; relative imports are for local scripts.
