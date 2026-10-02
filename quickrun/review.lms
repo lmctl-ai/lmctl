@@ -1,0 +1,16 @@
+// description: Create a Lead and Reviewer, seed both, and open the Lead's terminal.
+// Uses Provider1/Model1 for Lead and Provider2/Model2 for Reviewer.
+file = path_join(Directory, "review.lmctl");
+for (n = 2; file_exists(file); n = n + 1) { file = path_join(Directory, "review" + str(n) + ".lmctl"); }
+text = "# Lead and Reviewer\n\n_MEMBER_ alias=Lead provider=" + json_stringify(Provider1) + " model=" + json_stringify(Model1) + "\n";
+text = text + "_MEMBER_ alias=Reviewer provider=" + json_stringify(Provider2) + " model=" + json_stringify(Model2) + "\n";
+write_file_exclusive(file, text);
+println("Wrote " + file);
+r = lm_seed(file);
+require(r.status == "ok", "Could not seed " + file);
+println("Resume: lmctl terminal " + shell_quote(file) + " Lead");
+println("Prompt: lmctl prompt " + shell_quote(file) + " Lead \"your next prompt\"");
+if (!NonInteractive) {
+  r = lm_terminal(file, "Lead");
+  if (r.code != 0) { lm_exit(r.code); }
+}

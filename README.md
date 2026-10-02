@@ -95,3 +95,10 @@ To work on the docs locally and deploy the site, see [`DEPLOY.md`](./DEPLOY.md):
 npm ci
 npm run start
 ```
+
+## Quickrun samples
+
+The hosted [quickrun catalog](https://lmctl.com/quickrun/) is generated from
+`quickrun/*.lms`. `lmctl quickrun` displays `index.txt`; `lmctl quickrun solo`
+runs the current `solo.lms`. Add a description comment and deploy the catalog
+with `scripts/deploy-quickrun.sh` to add a task without releasing lmctl again.

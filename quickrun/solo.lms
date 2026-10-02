@@ -1,0 +1,15 @@
+// description: Create one Lead, seed it, and open its native terminal.
+// Quickrun supplies Provider1, Model1, Directory and NonInteractive from your init profile.
+file = path_join(Directory, "solo.lmctl");
+for (n = 2; file_exists(file); n = n + 1) { file = path_join(Directory, "solo" + str(n) + ".lmctl"); }
+text = "# Solo\n\n_MEMBER_ alias=Lead provider=" + json_stringify(Provider1) + " model=" + json_stringify(Model1) + "\n";
+write_file_exclusive(file, text);
+println("Wrote " + file);
+r = lm_seed(file);
+require(r.status == "ok", "Could not seed " + file);
+println("Resume: lmctl terminal " + shell_quote(file) + " Lead");
+println("Prompt: lmctl prompt " + shell_quote(file) + " Lead \"your next prompt\"");
+if (!NonInteractive) {
+  r = lm_terminal(file, "Lead");
+  if (r.code != 0) { lm_exit(r.code); }
+}
