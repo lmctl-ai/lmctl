@@ -98,3 +98,25 @@ CloudFront decision:
   `/lmctl/*` behavior to map both S3 403 and 404 responses to `/lmctl/404.html`
   and force the final response status to 404. Distribution-level custom error
   responses are distribution-wide and would affect the `/templates/` co-tenant.
+
+## Quickrun catalog
+
+`quickrun/*.lms` are website-owned, self-contained task scripts. Add a script with
+an initial `// description: ...` comment, then run `node scripts/build-quickrun.mjs`
+to regenerate both indexes. Publish with `bash scripts/deploy-quickrun.sh`.
+It uploads only `/quickrun` assets, sets correct HTML/plain-text content types,
+and invalidates that prefix. The CLI fetches `index.txt` and named scripts live;
+adding samples using existing LMScript APIs does not need a new lmctl release.
+Use the shipped `Provider1..3`, `Model1..3`, `Directory`, and `NonInteractive`
+globals. Keep remote samples self-contained; relative imports are for local scripts.
+
+Before deploying, use the candidate or current CLI to run the bundled sample
+regressions with mock providers (no AI calls):
+
+```sh
+LMCTL_BIN=/absolute/path/to/lmctl node scripts/test-quickrun.mjs
+```
+
+The test checks catalog/index consistency and exercises `solo` and `review` in
+isolated workspaces, including existing-file preservation. Add appropriate
+coverage when publishing a new sample with a different contract.

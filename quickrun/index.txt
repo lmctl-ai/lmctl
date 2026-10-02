@@ -1,0 +1,2 @@
+review	Create a Lead and Reviewer, seed both, and open the Lead's terminal.
+solo	Create one Lead, seed it, and open its native terminal.
