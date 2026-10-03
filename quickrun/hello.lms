@@ -1,0 +1,19 @@
+// description: Create and seed one Lead, ask for ACK in read-only mode, and print the reply without opening a terminal.
+// Quickrun supplies Provider1, Model1 and Directory from your init profile.
+file = path_join(Directory, "hello.lmctl");
+for (n = 2; file_exists(file); n = n + 1) { file = path_join(Directory, "hello" + str(n) + ".lmctl"); }
+text = "# Hello\n\n_MEMBER_ alias=Lead provider=" + json_stringify(Provider1) + " model=" + json_stringify(Model1) + "\n";
+write_file_exclusive(file, text);
+println("Wrote " + file);
+r = lm_seed(file);
+if (r.status != "ok") {
+  println("Error: Could not seed " + file);
+  lm_exit(1);
+}
+r = lm_prompt(file, "Lead", "Reply with the single word ACK and nothing else.", { permissionMode: "plan" });
+if (r.status != "ok") {
+  println("Error: " + str(r.error));
+  lm_exit(1);
+}
+println(r.reply);
+lm_exit(0);

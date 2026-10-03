@@ -1,2 +1,3 @@
+hello	Create and seed one Lead, ask for ACK in read-only mode, and print the reply without opening a terminal.
 review	Create a Lead and Reviewer, seed both, and open the Lead's terminal.
 solo	Create one Lead, seed it, and open its native terminal.
