@@ -22,10 +22,11 @@ body{font:16px/1.6 system-ui,sans-serif;max-width:800px;margin:3rem auto;padding
 <pre><code>lmctl init
 lmctl quickrun
 lmctl quickrun solo</code></pre>
-<p>Use lmctl 0.2.30 or newer. Quickrun fetches the current script each time, so new samples do not require another CLI release.</p>
+<p>Use a properties-capable lmctl build (PROPS and standalone lmscript). Quickrun fetches the current script each time, so new samples do not require another CLI release.</p>
 ${samples.map(s => `<article><h2>${escape(s.name)}</h2><p>${escape(s.description)}</p><p><code>lmctl quickrun ${escape(s.name)}</code> · <a href="${escape(s.file)}">Read the script</a></p></article>`).join('\n')}
 <h2>Your providers and models</h2>
-<p><code>Provider1</code> and <code>Model1</code> come from the first slot in <code>~/.lmctl/init.toml</code>. Slots 2 and 3 supply the matching variables. Scripts receive these names as variables containing your configured values.</p>
+<p><code>PROPS.Provider1.provider</code> and <code>PROPS.Provider1.model1</code> read the first slot in <code>~/.lmctl/init.toml</code>, lmctl’s properties file. Reviewer uses <code>PROPS.Provider2.model1</code>; the old bare Model2 meant slot 2’s first model, not slot 1’s second model. Lowercase managed fields match the file; canonical Provider/Model1 paths also work. Removed bare provider/model globals are not available.</p>
+<p><code>ARGV</code> is the script’s argument list, with index 0 as the first argument. Everything after the source, including <code>--</code>, remains data. Directory/NonInteractive are invocation facts; bare variables, PROPS and env() do not fall through to one another.</p>
 <p>The samples preserve existing teamfiles by choosing a numbered filename. They seed a tracked team before opening the terminal. With <code>lmctl --non-interactive quickrun solo</code>, they seed and print continuation commands without opening a TUI.</p>
 <h2>Adapt a sample</h2>
 <p>Download a script, edit it, then run <code>lmctl quickrun ./my-script.lms</code>. Explicit script URLs work too. Quickrun scripts execute locally with your permissions; read a script before running it.</p>

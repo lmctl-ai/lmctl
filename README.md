@@ -100,5 +100,9 @@ npm run start
 
 The hosted [quickrun catalog](https://lmctl.com/quickrun/) is generated from
 `quickrun/*.lms`. `lmctl quickrun` displays `index.txt`; `lmctl quickrun solo`
-runs the current `solo.lms`. Add a description comment and deploy the catalog
-with `scripts/deploy-quickrun.sh` to add a task without releasing lmctl again.
+runs the current `solo.lms`. The held automated ladder is folded into this catalog:
+`solo-auto`, `review-auto`, `build-review`, and `revise-three` save deliverables
+and transcripts. Samples require the property-capable standalone runner and use
+`PROPS.Provider1.provider/model1` (slot 2 uses `PROPS.Provider2.model1`).
+Regenerate indexes with `node scripts/build-quickrun.mjs`; deployment is a separate
+operator action. Script arguments use ARGV from index 0, including a literal tail `--`.

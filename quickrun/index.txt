@@ -1,2 +1,7 @@
+build-review	Turn a request into a Lead spec, a Coder implementation, and a Reviewer assessment.
+hello	Create and seed one Lead, ask for ACK with plan permission mode, and print the reply without opening a terminal.
+review-auto	Have a Lead draft a deliverable and a Reviewer assess it against criteria.
 review	Create a Lead and Reviewer, seed both, and open the Lead's terminal.
+revise-three	Let a Coder revise a deliverable from Reviewer feedback for at most three pairs.
+solo-auto	Ask the Lead one prompt and save its reply as a named deliverable.
 solo	Create one Lead, seed it, and open its native terminal.

@@ -8,11 +8,12 @@
 //
 // Safe to edit: everything. This is a sample, not a service -- reshape it for the job.
 
+// ARGV[0] is the first script argument; a leading -- after the source is ordinary data.
 // read the request form
-if (len(args) < 1) { println("usage: lmctl script prompt.lms <request.json>"); lm_exit(2); }
-if (!file_exists(args[0])) { lm_error("no request form at " + args[0]); lm_exit(2); }
-req = json_parse_safe(read_file(args[0]), null);
-if (req == null) { lm_error(args[0] + " is not valid JSON"); lm_exit(2); }
+if (len(ARGV) < 1) { println("usage: lmctl script prompt.lms <request.json>"); lm_exit(2); }
+if (!file_exists(ARGV[0])) { lm_error("no request form at " + ARGV[0]); lm_exit(2); }
+req = json_parse_safe(read_file(ARGV[0]), null);
+if (req == null) { lm_error(ARGV[0] + " is not valid JSON"); lm_exit(2); }
 teamfile = getstr(req, "teamfile");
 if (teamfile == "") { lm_error("missing required field: teamfile"); lm_exit(2); }
 alias = getstr(req, "alias");
