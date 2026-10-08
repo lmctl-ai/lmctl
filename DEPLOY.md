@@ -27,12 +27,17 @@ The static artifact is written to `build/` with Docusaurus `baseUrl` set to
 
 | Target | Script |
 | --- | --- |
-| Docs (`/lmctl/`) | `./scripts/deploy.sh` |
+| Full deployment (all surfaces below) | `./scripts/deploy.sh` |
+| Docs (`/lmctl/`) | Included in `deploy.sh` |
+| Homepage (root) | `./scripts/deploy-homepage.sh` (also in `deploy.sh`) |
 | lmprobe static manual (`/lmprobe/`) | `./scripts/deploy-lmprobe.sh` |
-| Homepage (root) | `./scripts/deploy-homepage.sh` |
-| Workflow catalog (`/workflows/`) | `./scripts/deploy-workflows.sh` |
-| Example configs (`/examples/`) | `./scripts/deploy-examples.sh` |
-| Quickrun catalog (`/quickrun/`) | `./scripts/deploy-quickrun.sh` (also included in full deploy) |
+| Raw skills (`/skills/`) | Included in `deploy.sh` |
+| Hello examples (`/helloexample/`) | Included in `deploy.sh` |
+| Templates (`/templates/`) | Included in `deploy.sh` |
+| LMScript commands (`/lmscript/commands/`) | Included in `deploy.sh` |
+| Example configs (`/examples/`) | `./scripts/deploy-examples.sh` (mirrored from lmctl-src) |
+| Quickrun catalog (`/quickrun/`) | `./scripts/deploy-quickrun.sh` (also in `deploy.sh`) |
+| Historical workflow catalog (`/workflows/`) | `./scripts/deploy-workflows.sh` (retired mirror target) |
 
 The production defaults target `s3://lmctl-website-prod/` and CloudFront
 distribution `E1GKUWTM93U7IV`. Operators can override either target with env
@@ -108,8 +113,10 @@ to regenerate both indexes. Publish with `bash scripts/deploy-quickrun.sh`.
 It uploads only `/quickrun` assets, sets correct HTML/plain-text content types,
 and waits for invalidation of that prefix before checking the public bytes. The CLI fetches `index.txt` and named scripts live;
 adding samples using existing LMScript APIs does not need a new lmctl release.
-Use the shipped `Provider1..3`, `Model1..3`, `Directory`, and `NonInteractive`
-globals. Keep remote samples self-contained; relative imports are for local scripts.
+Modern scripts access user properties via `PROPS.Provider1.provider` and
+`PROPS.Provider1.model1`, and format commands using `cmd_render` (legacy bare
+globals `Provider1..3`, `Model1..3`, and `shell_quote` are deprecated in modern lmctl).
+Keep remote samples self-contained; relative imports are for local scripts.
 
 Before deploying, use the candidate or current CLI to run the bundled sample
 regressions with mock providers (no AI calls):

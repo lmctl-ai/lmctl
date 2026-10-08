@@ -47,17 +47,16 @@ Content conventions (keep these consistent across pages):
 - The product/platform is **lmctl**; the command is **`lmctl`**.
 - Install is `npm install -g @lmctl-ai/lmctl`.
 - The `lmctl` CLI is a **direct, local** tool — it sets up *and* operates
-  everything; do not frame it as a network client. Default member chat is
-  synchronous: busy returns a busy error and creates no queued row. Queued
-  member mail is opt-in; when enabled, base delivery is the same sender's next
-  `lmctl chat` to the same receiver once it is free, and `lmctl serve start` in
-  normal daemon mode is an optional accelerator that can drain queued lanes
-  proactively. Different senders do not flush each other's `(sender, receiver)`
-  lanes.
+  everything; do not frame it as a network client. Member delegation is direct
+  and synchronous via `lmctl prompt "<teamfile>.lmctl" <alias> "..."`. Busy returns an
+  immediate error (`is busy; wait and retry`), establishing that nothing was sent
+  and nothing is held. The legacy queue delivery engine (`mailbox_queue_enabled`,
+  `mailbox_relay`, `lmctl mail deliver`) was removed in `0.1.264`. Legacy commands
+  `lmctl chat`, `health`, `hire`, `refresh`, and `restore` are retired; member
+  status and liveness inspection is performed via `lmctl status <teamfile> [<alias>] [--details]`.
 - The **lmctl.ai** web console is **optional** (free/premium subscription), not
   required.
-- Keep examples runnable. Redirect daemon logs in examples:
-  `setsid lmctl serve start > lmctl.log 2>&1 < /dev/null & disown`.
+- Keep examples runnable and self-contained; never wrap `lmctl` dispatches in a shell `timeout`.
 
 ## Local development
 
@@ -80,12 +79,18 @@ publishing. The artifact builds fully offline.
   set on sync: hashed `assets/*` are long-TTL `immutable`; `*.html` and
   `sitemap.xml` are `no-cache`.
 - A **CloudFront viewer-request function** (`infra/lmctl-www-redirect.js`) is
-  required because a REST/OAC S3 origin does not resolve directory indexes. For
-  the `/lmctl/*` branch it: rewrites `/lmctl/` → `/lmctl/index.html`, rewrites a
-  slashless extensionless path (the canonical) → `…/<name>.html`, and 301s a
-  trailing-slash path to the slashless canonical. Requests with a file extension
+  required because a REST/OAC S3 origin does not resolve directory indexes.
+  The function only handles clean-URL rewriting for `/lmctl/*` and `/lmprobe/*`:
+  rewriting `/lmctl/` → `/lmctl/index.html`, slashless extensionless paths to `…/<name>.html`,
+  and 301-redirecting trailing-slash paths to slashless canonicals. Requests with a file extension
   (`assets/*`, `.js/.css/.svg/.png/.xml`) pass through untouched. The function
-  also keeps the `www`→apex redirect; all non-`/lmctl/` paths pass through.
+  also keeps the `www`→apex redirect.
+- **S3 Triple-Key Index Pattern for other prefixes:** Because `infra/lmctl-www-redirect.js`
+  does not rewrite extensionless URIs for prefixes outside `/lmctl/*` and `/lmprobe/*`, all other
+  paths (`/skills`, `/quickrun`, `/templates`, `/helloexample`, `/lmscript/commands`) pass
+  through untouched to S3. To prevent 404 NoSuchKey errors when clients request these endpoints
+  with or without trailing slashes, `scripts/deploy.sh` uploads index documents to **three distinct S3 keys**:
+  `<prefix>` (e.g. `skills`), `<prefix>/` (e.g. `skills/`), and `<prefix>/index.html`.
 - Deploy constraint: the `/lmctl/*` CloudFront behavior must have an **empty
   Origin Path** — objects already live under the `lmctl/` key prefix, so setting
   Origin Path `/lmctl` would double-prefix and 404.
