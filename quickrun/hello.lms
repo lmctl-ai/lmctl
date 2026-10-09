@@ -1,18 +1,23 @@
-// description: Create and seed one Lead, ask for ACK in read-only mode, and print the reply without opening a terminal.
-// Quickrun supplies Provider1, Model1 and Directory from your init profile.
+// description: Create and seed one Lead, ask for ACK with plan permission mode, and print the reply without opening a terminal.
+// requires: properties-capable lmctl (PROPS; standalone lmscript)
+// Provider permission modes vary; plan mode is not a security boundary for every provider.
+// Provider/model properties come from init.toml; Directory is an invocation fact.
 file = path_join(Directory, "hello.lmctl");
-for (n = 2; file_exists(file); n = n + 1) { file = path_join(Directory, "hello" + str(n) + ".lmctl"); }
-text = "# Hello\n\n_MEMBER_ alias=Lead provider=" + json_stringify(Provider1) + " model=" + json_stringify(Model1) + "\n";
+for (n = 2; file_exists(file); n = n + 1) { file = path_join(Directory, f"hello{n}.lmctl"); }
+text = f"""# Hello
+
+_MEMBER_ alias=Lead provider={json_stringify(PROPS.Provider1.provider)} model={json_stringify(PROPS.Provider1.model1)}
+""";
 write_file_exclusive(file, text);
-println("Wrote " + file);
+println(f"Wrote {file}");
 r = lm_seed(file);
 if (r.status != "ok") {
-  println("Error: Could not seed " + file);
+  println(f"Error: Could not seed {file}");
   lm_exit(1);
 }
 r = lm_prompt(file, "Lead", "Reply with the single word ACK and nothing else.", { permissionMode: "plan" });
 if (r.status != "ok") {
-  println("Error: " + str(r.error));
+  println(f"Error: {str(r.error)}");
   lm_exit(1);
 }
 println(r.reply);

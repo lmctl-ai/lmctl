@@ -1,0 +1,35 @@
+// description: Turn a request into a Lead spec, a Coder implementation, and a Reviewer assessment.
+// requires: properties-capable lmctl (PROPS; standalone lmscript)
+// Coder prompts can request code and test evidence; provider permission modes vary and are not enforced uniformly.
+if (len(ARGV) == 0 || trim(str(ARGV[0])) == "") {
+  println("Usage: lmctl quickrun build-review \"your request\"");
+  lm_exit(1);
+}
+run_dir = path_join(Directory, f"build-review-{timestamp()}");
+for (n = 2; file_exists(run_dir); n = n + 1) { run_dir = path_join(Directory, f"build-review-{timestamp()}-{n}"); }
+mkdir(run_dir);
+team = path_join(run_dir, "team.lmctl");
+write_file_exclusive(team, f"""# Build review
+
+_MEMBER_ alias=Lead provider={json_stringify(PROPS.Provider1.provider)} model={json_stringify(PROPS.Provider1.model1)}
+_MEMBER_ alias=Reviewer provider={json_stringify(PROPS.Provider2.provider)} model={json_stringify(PROPS.Provider2.model1)}
+_MEMBER_ alias=Coder provider={json_stringify(PROPS.Provider3.provider)} model={json_stringify(PROPS.Provider3.model1)}
+""");
+require(lm_seed(team).status == "ok", f"Could not seed {team}");
+spec_file = path_join(run_dir, "spec.txt");
+spec_log = path_join(run_dir, "lead-transcript.txt");
+r = lm_prompt(team, "Lead", f"Write an implementation spec for: {ARGV[0]}\nName the deliverable spec.txt.");
+write_file_exclusive(spec_file, str(r.reply)); write_file_exclusive(spec_log, f"Lead:\n{r.reply}\n");
+require(r.status == "ok", f"Lead turn failed: {str(r.error)}");
+code_file = path_join(run_dir, "implementation.txt");
+code_log = path_join(run_dir, "coder-transcript.txt");
+r = lm_prompt(team, "Coder", f"Implement this spec and include the test evidence you ran. Save deliverable implementation.txt.\nSpec:\n{read_file(spec_file)}");
+write_file_exclusive(code_file, str(r.reply)); write_file_exclusive(code_log, f"Coder:\n{r.reply}\n");
+require(r.status == "ok", f"Coder turn failed: {str(r.error)}");
+review_file = path_join(run_dir, "review.txt");
+review_log = path_join(run_dir, "reviewer-transcript.txt");
+r = lm_prompt(team, "Reviewer", f"Check the implementation against the spec and assess its stated test evidence. Save deliverable review.txt.\nSpec:\n{read_file(spec_file)}\nImplementation and evidence:\n{read_file(code_file)}");
+write_file_exclusive(review_file, str(r.reply)); write_file_exclusive(review_log, f"Reviewer:\n{r.reply}\n");
+require(r.status == "ok", f"Reviewer turn failed: {str(r.error)}");
+println(f"Spec: {spec_file}"); println(f"Implementation: {code_file}"); println(f"Review: {review_file}");
+println(f"Transcripts: {spec_log}, {code_log}, {review_log}");

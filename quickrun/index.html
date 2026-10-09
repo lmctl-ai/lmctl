@@ -10,8 +10,12 @@ body{font:16px/1.6 system-ui,sans-serif;max-width:800px;margin:3rem auto;padding
 lmctl quickrun
 lmctl quickrun solo</code></pre>
 <p>Use lmctl 0.2.30 or newer. Quickrun fetches the current script each time, so new samples do not require another CLI release.</p>
-<article><h2>hello</h2><p>Create and seed one Lead, ask for ACK in read-only mode, and print the reply without opening a terminal.</p><p><code>lmctl quickrun hello</code> · <a href="hello.lms">Read the script</a></p></article>
+<article><h2>build-review</h2><p>Turn a request into a Lead spec, a Coder implementation, and a Reviewer assessment.</p><p><code>lmctl quickrun build-review</code> · <a href="build-review.lms">Read the script</a></p></article>
+<article><h2>hello</h2><p>Create and seed one Lead, ask for ACK with plan permission mode, and print the reply without opening a terminal.</p><p><code>lmctl quickrun hello</code> · <a href="hello.lms">Read the script</a></p></article>
+<article><h2>review-auto</h2><p>Have a Lead draft a deliverable and a Reviewer assess it against criteria.</p><p><code>lmctl quickrun review-auto</code> · <a href="review-auto.lms">Read the script</a></p></article>
 <article><h2>review</h2><p>Create a Lead and Reviewer, seed both, and open the Lead's terminal.</p><p><code>lmctl quickrun review</code> · <a href="review.lms">Read the script</a></p></article>
+<article><h2>revise-three</h2><p>Let a Coder revise a deliverable from Reviewer feedback for at most three pairs.</p><p><code>lmctl quickrun revise-three</code> · <a href="revise-three.lms">Read the script</a></p></article>
+<article><h2>solo-auto</h2><p>Ask the Lead one prompt and save its reply as a named deliverable.</p><p><code>lmctl quickrun solo-auto</code> · <a href="solo-auto.lms">Read the script</a></p></article>
 <article><h2>solo</h2><p>Create one Lead, seed it, and open its native terminal.</p><p><code>lmctl quickrun solo</code> · <a href="solo.lms">Read the script</a></p></article>
 <h2>Your providers and models</h2>
 <p><code>Provider1</code> and <code>Model1</code> come from the first slot in <code>~/.lmctl/init.toml</code>. Slots 2 and 3 supply the matching variables. Scripts receive these names as variables containing your configured values.</p>

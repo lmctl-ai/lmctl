@@ -52,6 +52,6 @@ try {
   const failed = spawnSync(process.env.LMCTL_BIN || 'lmctl', ['--non-interactive', 'quickrun', process.env.QUICKRUN_REMOTE === '1' ? 'hello' : join(catalog, 'hello.lms')], { cwd: failedCwd, env, encoding: 'utf8', timeout: 30000 });
   assert.ifError(failed.error);
   assert.equal(failed.status, 1, failed.stderr);
-  assert.match(failed.stdout, /Error: Deliberate hello failure/);
+  assert.match(failed.stdout, /Error: .*Deliberate hello failure/);
   console.log('PASS hello failure: error printed; exit 1');
 } finally { rmSync(root, { recursive: true, force: true }); }

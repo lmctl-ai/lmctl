@@ -1,0 +1,33 @@
+// description: Have a Lead draft a deliverable and a Reviewer assess it against criteria.
+// requires: properties-capable lmctl (PROPS; standalone lmscript)
+// Provider permission modes vary; these prompts are not a security boundary.
+if (len(ARGV) == 0 || trim(str(ARGV[0])) == "") {
+  println("Usage: lmctl quickrun review-auto \"your request\"");
+  lm_exit(1);
+}
+run_dir = path_join(Directory, f"review-auto-{timestamp()}");
+for (n = 2; file_exists(run_dir); n = n + 1) { run_dir = path_join(Directory, f"review-auto-{timestamp()}-{n}"); }
+mkdir(run_dir);
+team = path_join(run_dir, "team.lmctl");
+write_file_exclusive(team, f"""# Review auto
+
+_MEMBER_ alias=Lead provider={json_stringify(PROPS.Provider1.provider)} model={json_stringify(PROPS.Provider1.model1)}
+_MEMBER_ alias=Reviewer provider={json_stringify(PROPS.Provider2.provider)} model={json_stringify(PROPS.Provider2.model1)}
+""");
+require(lm_seed(team).status == "ok", f"Could not seed {team}");
+draft_file = path_join(run_dir, "draft.txt");
+draft_transcript = path_join(run_dir, "lead-transcript.txt");
+r = lm_prompt(team, "Lead", f"Produce the requested deliverable: {ARGV[0]}\nName the deliverable draft.txt.");
+write_file_exclusive(draft_file, str(r.reply));
+write_file_exclusive(draft_transcript, f"Request: {ARGV[0]}\n\nLead:\n{r.reply}\n");
+require(r.status == "ok", f"Lead turn failed: {str(r.error)}");
+review_file = path_join(run_dir, "review.txt");
+review_transcript = path_join(run_dir, "reviewer-transcript.txt");
+criteria = "Criteria: addresses the request, is clear, and states one concrete limitation.";
+r = lm_prompt(team, "Reviewer", f"Assess this draft against explicit criteria. {criteria}\nDraft:\n{read_file(draft_file)}\nSave assessment as review.txt.");
+write_file_exclusive(review_file, str(r.reply));
+write_file_exclusive(review_transcript, f"Criteria: {criteria}\n\nReviewer:\n{r.reply}\n");
+require(r.status == "ok", f"Reviewer turn failed: {str(r.error)}");
+println(f"Draft: {draft_file}");
+println(f"Review: {review_file}");
+println(f"Transcripts: {draft_transcript}, {review_transcript}");

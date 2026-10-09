@@ -1,0 +1,43 @@
+// description: Let a Coder revise a deliverable from Reviewer feedback for at most three pairs.
+// requires: properties-capable lmctl (PROPS; standalone lmscript)
+// Coder prompts may request changes; provider permission modes vary and are not enforced uniformly.
+if (len(ARGV) == 0 || trim(str(ARGV[0])) == "") {
+  println("Usage: lmctl quickrun revise-three \"your request\"");
+  lm_exit(1);
+}
+run_dir = path_join(Directory, f"revise-three-{timestamp()}");
+for (n = 2; file_exists(run_dir); n = n + 1) { run_dir = path_join(Directory, f"revise-three-{timestamp()}-{n}"); }
+mkdir(run_dir);
+team = path_join(run_dir, "team.lmctl");
+write_file_exclusive(team, f"""# Revise three
+
+_MEMBER_ alias=Reviewer provider={json_stringify(PROPS.Provider2.provider)} model={json_stringify(PROPS.Provider2.model1)}
+_MEMBER_ alias=Coder provider={json_stringify(PROPS.Provider3.provider)} model={json_stringify(PROPS.Provider3.model1)}
+""");
+require(lm_seed(team).status == "ok", f"Could not seed {team}");
+candidate = ARGV[0];
+feedback = "No previous review; create the requested deliverable.";
+accepted = false;
+transcript = path_join(run_dir, "transcript.txt");
+write_file_exclusive(transcript, f"Request: {ARGV[0]}\n");
+for (round = 1; round <= 3; round = round + 1) {
+  coder_file = path_join(run_dir, f"candidate-{round}.txt");
+  coder_log = path_join(run_dir, f"coder-{round}-transcript.txt");
+  r = lm_prompt(team, "Coder", f"Coder work round {round}: {ARGV[0]}\nReviewer feedback: {feedback}\nSave the concrete deliverable candidate-{round}.txt.");
+  write_file_exclusive(coder_file, str(r.reply)); write_file_exclusive(coder_log, f"Round {round} Coder:\n{r.reply}\n");
+  append_file(transcript, f"\nRound {round} Coder:\n{r.reply}\n");
+  require(r.status == "ok", f"Coder turn failed in round {round}: {str(r.error)}");
+  review_file = path_join(run_dir, f"review-{round}.txt");
+  review_log = path_join(run_dir, f"reviewer-{round}-transcript.txt");
+  r = lm_prompt(team, "Reviewer", f"Reviewer check round {round} candidate against the request. End with exactly ACCEPT or REVISE on its own final line. If REVISE, give actionable feedback.\nRequest: {ARGV[0]}\nCandidate:\n{read_file(coder_file)}");
+  write_file_exclusive(review_file, str(r.reply)); write_file_exclusive(review_log, f"Round {round} Reviewer:\n{r.reply}\n");
+  append_file(transcript, f"\nRound {round} Reviewer:\n{r.reply}\n");
+  require(r.status == "ok", f"Reviewer turn failed in round {round}: {str(r.error)}");
+  review_lines = split(trim(r.reply), "\n");
+  verdict = trim(review_lines[len(review_lines) - 1]);
+  require(verdict == "ACCEPT" || verdict == "REVISE", f"Reviewer must end with ACCEPT or REVISE in round {round}");
+  candidate = coder_file; feedback = read_file(review_file);
+  if (verdict == "ACCEPT") { accepted = true; break; }
+}
+println(f"Result: {candidate}"); println(f"Transcript: {transcript}");
+if (!accepted) { println("Stopped after three Coder/Reviewer pairs without ACCEPT."); }

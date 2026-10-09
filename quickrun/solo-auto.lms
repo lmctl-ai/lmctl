@@ -1,0 +1,24 @@
+// description: Ask the Lead one prompt and save its reply as a named deliverable.
+// requires: properties-capable lmctl (PROPS; standalone lmscript)
+// Provider permission modes vary; this prompt is not a security boundary.
+if (len(ARGV) == 0 || trim(str(ARGV[0])) == "") {
+  println("Usage: lmctl quickrun solo-auto \"your prompt\"");
+  lm_exit(1);
+}
+run_dir = path_join(Directory, f"solo-auto-{timestamp()}");
+for (n = 2; file_exists(run_dir); n = n + 1) { run_dir = path_join(Directory, f"solo-auto-{timestamp()}-{n}"); }
+mkdir(run_dir);
+team = path_join(run_dir, "team.lmctl");
+write_file_exclusive(team, f"""# Solo auto
+
+_MEMBER_ alias=Lead provider={json_stringify(PROPS.Provider1.provider)} model={json_stringify(PROPS.Provider1.model1)}
+""");
+require(lm_seed(team).status == "ok", f"Could not seed {team}");
+deliverable = path_join(run_dir, "answer.txt");
+transcript = path_join(run_dir, "transcript.txt");
+r = lm_prompt(team, "Lead", f"Answer this request: {ARGV[0]}\nSave the deliverable as answer.txt.");
+write_file_exclusive(deliverable, str(r.reply));
+write_file_exclusive(transcript, f"Request: {ARGV[0]}\n\nLead:\n{r.reply}\n");
+require(r.status == "ok", f"Lead turn failed: {str(r.error)}");
+println(f"Result: {deliverable}");
+println(f"Transcript: {transcript}");
