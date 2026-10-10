@@ -55,9 +55,11 @@ repo and sync it under the matching prefix.
 
 `scripts/deploy-lmprobe.sh` publishes the lmprobe static manual to
 `s3://$S3_BUCKET/lmprobe/` and invalidates `/lmprobe` plus `/lmprobe/*`. Its
-default source is the public lmprobe repo at `../lmprobe`, with
-`../lmprobe/LICENSE` and `../lmprobe/ATTRIBUTION.md` copied when present. Do not
-deploy from `../lmprobe-src/site`; that staging tree is stale. Override the
+default source is the `site/` directory of the public lmprobe repo
+(`../lmprobe/site`; the repo root also holds the Rust source and is never
+uploaded), with `../lmprobe/LICENSE` and `../lmprobe/ATTRIBUTION.md` copied
+when present. The script refuses a source directory that contains `Cargo.toml`
+or `crates/`. Override the
 bundle with `LMPROBE_SITE_DIR=/path/to/site` and the metadata root with
 `LMPROBE_REPO_DIR=/path/to/lmprobe`. Use `DRY_RUN=1` to preview the scoped S3
 sync without invalidating CloudFront. Hidden files such as `.git/` are stripped

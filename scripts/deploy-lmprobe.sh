@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 # Publish the lmprobe static manual to lmctl.com/lmprobe/.
 #
-# Source of truth is the public lmprobe repo by default, normally checked out
-# beside this repo as ../lmprobe. Do not deploy from ../lmprobe-src/site; it is
-# a stale staging tree. Override with LMPROBE_SITE_DIR only when testing a
-# prepared bundle. The sync is scoped to the lmprobe/ S3 prefix.
+# Source of truth is the site/ directory of the public lmprobe repo, normally
+# checked out beside this repo as ../lmprobe (the repo root also holds the Rust
+# source, which must never be uploaded). LICENSE and ATTRIBUTION.md come from the
+# repo root (the parent of site/). Override with LMPROBE_SITE_DIR only when testing
+# a prepared bundle. The sync is scoped to the lmprobe/ S3 prefix.
 set -euo pipefail
 
 S3_BUCKET="${S3_BUCKET:-lmctl-website-prod}"
 CF_DISTRIBUTION_ID="${CF_DISTRIBUTION_ID:-E1GKUWTM93U7IV}"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SRC="${LMPROBE_SITE_DIR:-$REPO_ROOT/../lmprobe}"
+SRC="${LMPROBE_SITE_DIR:-$REPO_ROOT/../lmprobe/site}"
 LMPROBE_REPO_DIR="${LMPROBE_REPO_DIR:-}"
 DEST="s3://${S3_BUCKET}/lmprobe/"
 DRY_RUN_ARGS=()
@@ -40,6 +41,13 @@ fi
 if [[ ! -f "${SRC}/index.html" ]]; then
   echo "lmprobe site bundle not found: ${SRC}" >&2
   echo "Set LMPROBE_SITE_DIR to a directory containing index.html." >&2
+  exit 1
+fi
+
+# Never sync a source tree: the bundle is the site directory, not the repo root.
+if [[ -e "${SRC}/Cargo.toml" || -d "${SRC}/crates" ]]; then
+  echo "refusing to deploy ${SRC}: it looks like the lmprobe source root, not its site/ directory" >&2
+  echo "Point LMPROBE_SITE_DIR at the site/ directory." >&2
   exit 1
 fi
 
