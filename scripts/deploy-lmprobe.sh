@@ -68,6 +68,7 @@ if [[ -f "${LMPROBE_REPO_DIR}/ATTRIBUTION.md" ]]; then
 fi
 
 aws s3 sync "${STAGE}/" "${DEST}" \
+  --no-follow-symlinks \
   --delete \
   --exclude 'index.html' \
   --exclude 'app.js' \
