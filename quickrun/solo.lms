@@ -15,5 +15,5 @@ println(f"Resume: {cmd_render(["lmctl", "terminal", file, "Lead"], "posix")}");
 println(f"Prompt: {cmd_render(["lmctl", "prompt", file, "Lead", "your next prompt"], "posix")}");
 if (!NonInteractive) {
   r = lm_terminal(file, "Lead");
-  if (r.code != 0) { lm_exit(r.code); }
+  if (r.exit_code != 0) { lm_exit(r.exit_code); }
 }
