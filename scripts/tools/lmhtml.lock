@@ -1,0 +1,8 @@
+# lmctl-ai/lmhtml v0.2.0; release workflow 39295964706, commit 5fcf3c4.
+# SHA256 computed from downloaded GitHub release assets (not local builds).
+version v0.2.0
+lmhtml-linux-arm64 7051fdb4009818c670667823086e59d6d40dd098f76d94c779efa5a021ab7adf
+lmhtml-linux-x64 c362e4474e6db1c8737c78f63718ef9a2380bd5f6acb54eb0076b336c83d1928
+lmhtml-macos-arm64 ebc133508d0ed8c0db78f4830de2f52d54417efebc7a8259588757182def5179
+lmhtml-macos-x64 26603862d3b1ef989e15000772074e2014ca0cff4a21077ccebd6bf9947fdb71
+lmhtml-windows-x64.exe fb46342e3d619d16bf9b04eb316ffcbe3d7716a05931b296ceb5bda44183480a

@@ -3,7 +3,7 @@
 #
 # Deliberately NOT part of scripts/deploy.sh: run it on its own after review.
 # The sync is scoped to the tools/ S3 prefix (never the bucket root). The
-# source must pass scripts/check-tools.mjs; tools/_template, README.md and
+# source must pass scripts/tools/run.sh check; tools/_template, README.md and
 # hidden files are never uploaded; any file type other than html, css, png,
 # svg or txt makes the script refuse. DRY_RUN=1 previews the S3 sync and
 # skips the CloudFront invalidation.
@@ -47,9 +47,9 @@ if [[ ! -f "${SRC}/index.html" || ! -f "${SRC}/style.css" ]]; then
 fi
 
 if [[ -z "${TOOLS_SITE_DIR:-}" ]]; then
-  node "${REPO_ROOT}/scripts/check-tools.mjs" >/dev/null || {
-    node "${REPO_ROOT}/scripts/check-tools.mjs" >&2 || true
-    echo "refusing to deploy: scripts/check-tools.mjs reports errors" >&2
+  bash "${REPO_ROOT}/scripts/tools/run.sh" check >/dev/null || {
+    bash "${REPO_ROOT}/scripts/tools/run.sh" check >&2 || true
+    echo "refusing to deploy: scripts/tools/run.sh check reports errors" >&2
     exit 1
   }
 fi

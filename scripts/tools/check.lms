@@ -108,6 +108,7 @@ fn check_page(page: Doc) -> void {
   let titles = page.select("head title");
   if (titles.len() != 1) { finding(file, "head", "missing or empty <title>"); }
   else { if (normalized(titles.at(0).text()) == "") { finding(file, "head title", "missing or empty <title>"); } }
+  if (!html.link_exists(page, "/tools/style.css")) { finding(file, "head link", "stylesheet not found: /tools/style.css"); }
   let stylesheet_count = page.select("link").len();
   if (stylesheet_count != 1) { finding(file, "head", "expected exactly one stylesheet <link>, found " + str(stylesheet_count)); }
   let h1_count = page.select("h1").len();
@@ -130,6 +131,7 @@ fn check_page(page: Doc) -> void {
   }
   if (str_ends_with(file, "tutorial.html")) {
     if (str_lower(last_heading) != "what you learned") { finding(file, "h2", "tutorial must end with an h2 \"What you learned\""); }
+    if (page.select("pre samp").len() == 0) { finding(file, "pre", "tutorial needs program output as <pre><samp>…</samp></pre>"); }
     if (page.select("pre > kbd").len() == 0) { finding(file, "pre", "tutorial needs commands as <pre><kbd>…</kbd></pre>"); }
   }
 }

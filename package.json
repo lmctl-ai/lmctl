@@ -8,8 +8,9 @@
     "clear": "docusaurus clear",
     "serve": "docusaurus serve",
     "start": "docusaurus start",
-    "check:tools": "node scripts/check-tools.mjs",
-    "check:tools:selftest": "node scripts/check-tools.mjs --selftest",
+    "check:tools": "bash scripts/tools/run.sh check",
+    "check:tools:selftest": "bash scripts/tools/selftest.sh",
+    "sync:tools": "bash scripts/tools/run.sh sync-nav",
     "test:redirect": "node tests/infra/lmctl-www-redirect.test.mjs"
   },
   "dependencies": {

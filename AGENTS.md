@@ -45,7 +45,7 @@ This repo itself: `github.com/lmctl-ai/lmctl` (note: org is `lmctl-ai` and repo 
 ## Commands that are not what you would assume
 
 - **`npm run build` only builds `/lmctl/`:** Compiles Docusaurus into `build/`. It does NOT compile or stage `homepage/`, `skills/`, `quickrun/`, or `lmprobe/`.
-- **`npm run check:tools` / `npm run check:tools:selftest`:** Validate static tool pages and test the checker. Run from the repository root when changing `tools/`.
+- **`npm run check:tools` / `npm run check:tools:selftest`:** Validate static tool pages and test the lmhtml-hosted DSL checker in `scripts/tools/`. Install the published compiler (`npm i -g @lmctl-ai/lmctl@0.2.347`); the runner downloads a checksum-pinned lmhtml release, or accepts `LMHTML=/path/to/lmhtml`. `npm run sync:tools -- --dry-run` previews nav/footer synchronization. Run from the repository root when changing `tools/`.
 - **`node scripts/build-quickrun.mjs`:** Regenerates `quickrun/index.txt` and `quickrun/index.html` from `quickrun/*.lms` script descriptions.
 - **`bash scripts/deploy.sh`:** Full manual deployment script (requires AWS access). Deploys `build/`, `skills/`, `homepage/`, and `quickrun/`, invalidates CloudFront, and runs smoke checks.
 - **`bash scripts/deploy-homepage.sh`:** Deploys root homepage files (`index.html`, `404.html`, `assets/`) to S3 apex without `--delete`.

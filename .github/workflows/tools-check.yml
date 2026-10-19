@@ -1,13 +1,13 @@
 name: tools-check
 
-# Validates the static /tools/ pages (scripts/check-tools.mjs). No secrets,
+# Validates the static /tools/ pages (scripts/tools/**). No secrets,
 # read-only token, no deploy.
 on:
   pull_request:
-    paths: ["tools/**", "scripts/check-tools.mjs", "tests/tools/**", ".github/workflows/tools-check.yml"]
+    paths: ["tools/**", "scripts/tools/**", "package.json", "homepage/index.html", "tests/tools/**", ".github/workflows/tools-check.yml"]
   push:
     branches: [main]
-    paths: ["tools/**", "scripts/check-tools.mjs", "tests/tools/**", ".github/workflows/tools-check.yml"]
+    paths: ["tools/**", "scripts/tools/**", "package.json", "homepage/index.html", "tests/tools/**", ".github/workflows/tools-check.yml"]
 
 permissions:
   contents: read
@@ -26,8 +26,9 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
-      # Zero-dependency script: no npm install needed.
+      - name: install published DSL compiler
+        run: npm i -g @lmctl-ai/lmctl@0.2.347
       - name: check tools pages
-        run: node scripts/check-tools.mjs
+        run: npm run check:tools
       - name: checker self-test
-        run: node scripts/check-tools.mjs --selftest
+        run: npm run check:tools:selftest
