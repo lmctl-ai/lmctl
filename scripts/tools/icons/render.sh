@@ -4,7 +4,7 @@
 #   scripts/tools/icons/render.sh            render and write the PNGs into tools/
 #   scripts/tools/icons/render.sh --check    render to a temp dir; fail unless the
 #                                            committed PNGs are byte-identical
-#   scripts/tools/icons/render.sh --preview DIR   also keep the 32 px renders in DIR
+#   scripts/tools/icons/render.sh --preview DIR   also keep the 32 and 16 px renders in DIR
 #
 # Env: LMCAD (lmcad binary, default `lmcad` on PATH), LMSCRIPT (compiler
 # command; default: the published compiler via npx, pinned below).
@@ -78,7 +78,7 @@ for script in "$HERE"/*.lms; do
   done
   if [[ -n "$PREVIEW" ]]; then
     mkdir -p "$PREVIEW"
-    for f in logo icon icon-32; do cp "$out/$f.png" "$PREVIEW/$name-$f.png"; done
+    for f in logo icon icon-32 icon-16; do cp "$out/$f.png" "$PREVIEW/$name-$f.png"; done
   fi
 done
 if [[ "$MODE" == check ]]; then

@@ -3,7 +3,7 @@
 out = ARGV.get(0, "build");
 p = _dsl_ schema="lmcad.dsl.json";
 # --- shared icon look: identical in every icon script (render.sh --check verifies) ---
-scene.background(0.12, 0.14, 0.20);
+scene.background(0.17, 0.20, 0.27);
 scene.directional_light(-0.5, -1.0, -0.6, 0.85);
 scene.fill_light(0.8, -0.2, 0.9, 0.40);
 scene.ambient(0.32);
@@ -14,20 +14,27 @@ let view_z = 0.85;
 # --- end shared icon look ---
 let bracket = material().color(1.00, 0.48, 0.26).roughness(0.5);
 let slash = material().color(0.92, 0.95, 1.00).roughness(0.6);
-# "<" (side -1) and ">" (side +1): two bars each, meeting at the outer point.
+# "<" (side -1) and ">" (side +1): each chevron is ONE closed polygon
+# (outer tip, arm ends, inner notch) extruded, so the tip is clean.
 for (k in range(0, 2)) {
   let side = float(k * 2 - 1);
-  for (j in range(0, 2)) {
-    let up = float(j * 2 - 1);
-    scene.box(1.15, 0.30, 0.4, bracket).rotate(0.0, 0.0, -side * up * 0.62).position(side * 1.35, up * 0.33, 0.0);
-  }
+  let sk = scene.sketch();
+  sk.point(side * 2.0, 0.0).point(side * 1.1, 1.0).point(side * 0.62, 1.0).point(side * 1.52, 0.0).point(side * 0.62, -1.0).point(side * 1.1, -1.0).close();
+  scene.extrude(sk, 0.4, bracket).position(0.0, 0.0, -0.2);
 }
 scene.box(0.28, 2.2, 0.4, slash).rotate(0.0, 0.0, -0.36).position(0.0, 0.0, 0.0);
-let dist = 9.0;
-let aim_y = 0.0;
-scene.camera(28.0, view_x * dist, aim_y + view_y * dist, view_z * dist, 0.0, aim_y, 0.0);
+let aim_x = 0.113;
+let dist = 10.06;
+let icon_zoom = 0.845;
+let aim_y = -0.026;
+# Logo: comfortable margins. Favicon sizes: the same view moved closer
+# (icon_zoom) so the symbol fills the 64/32/16 px tile.
+scene.camera(28.0, aim_x + view_x * dist, aim_y + view_y * dist, view_z * dist, aim_x, aim_y, 0.0);
 scene.render_png(${out} + "/logo.png", 256, 256);
+let near = dist * icon_zoom;
+scene.camera(28.0, aim_x + view_x * near, aim_y + view_y * near, view_z * near, aim_x, aim_y, 0.0);
 scene.render_png(${out} + "/icon.png", 64, 64);
 scene.render_png(${out} + "/icon-32.png", 32, 32);
+scene.render_png(${out} + "/icon-16.png", 16, 16);
 end _dsl_
 savedsl(p, ARGV.get(1, "icon.dslb"));

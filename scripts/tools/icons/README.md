@@ -42,8 +42,13 @@ an lmcad that includes the box-fillet tessellation fix (lmcad commit
    `# --- end shared icon look ---` byte-identical: background, lights,
    supersampling and camera direction make the family coherent.
    `render.sh` refuses a script whose block differs.
-3. Build one distinct, simple silhouette in a new accent colour; use
-   `dist`/`aim_y` to frame it. Avoid text.
-4. Run `render.sh --preview DIR` and look at the 256, 64 and 32 px renders:
-   the shape must be recognizable at 32 px on the dark tile.
+3. Build one distinct, simple silhouette in a new accent colour as single
+   solids (an extruded sketch or one boolean result, not overlapping loose
+   parts). Avoid text. Frame it with `aim_x`/`aim_y` (where the camera
+   looks), `dist` (logo: the symbol should span about 76% of the tile) and
+   `icon_zoom` (0.845: the favicon renders move closer so the symbol spans
+   about 90% at 64/32/16 px). Framing is resolution independent; measure the
+   symbol's bounding box rather than judging an upscaled 16 px preview.
+4. Run `render.sh --preview DIR` and look at the 256, 64, 32 and 16 px
+   renders: the shape must be recognizable at 32 px on the tile.
 5. Run `render.sh` and commit the script with its two PNGs.
