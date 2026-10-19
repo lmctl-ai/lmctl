@@ -13,10 +13,15 @@ identity; booleans and loops build them.
 | `lmhtml.lms` | `</>` from rotated boxes | `tools/lmhtml/img/` |
 | `cpp-dsl-sdk.lms` | two meshing gears | `tools/cpp-dsl-sdk/img/` |
 | `tools.lms` | 2x2 blocks in the tool colours (site icon) | `tools/img/` |
+| `site.lms` | the `lmCtl` wordmark as geometric block letters | `homepage/assets/` |
 
 Each tool gets `logo.png` (256x256) and `icon.png` (64x64); the site icon
-is `tools/img/tools.png` (256x256) and `tools/img/icon.png` (64x64). Every
-file must stay under 20 KB.
+is `tools/img/tools.png` (256x256) and `tools/img/icon.png` (64x64). The
+homepage icon (`site.lms`, the `lmCtl` wordmark) writes `logo.png` (256x256)
+and `icon.png` (64x64) into `homepage/assets/`; its parameters (text, colors,
+stroke, spacing, camera) are named constants at the top of the script.
+Regenerate it with `LMCAD=/path/to/lmcad scripts/tools/icons/render.sh`.
+Every file must stay under 20 KB.
 
 ## Regenerate
 

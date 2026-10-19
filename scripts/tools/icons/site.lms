@@ -1,0 +1,84 @@
+# Site icon for lmctl.com: the wordmark "lmCtl" (exact brand casing) as
+# geometric glyphs — l (ascender bar), m (three stems, flat top),
+# C (open capital), t (stem + crossbar) — built from extruded boxes.
+# (No helper functions: script fns cannot capture the constants below.)
+# Usage (see README.md): lmscript site.lms OUT_DIR OUT.dslb, then lmcad --dsl OUT.dslb
+out = ARGV.get(0, "build");
+p = _dsl_ schema="lmcad.dsl.json";
+# --- shared icon look: identical in every icon script (render.sh --check verifies) ---
+scene.background(0.17, 0.20, 0.27);
+scene.directional_light(-0.5, -1.0, -0.6, 0.85);
+scene.fill_light(0.8, -0.2, 0.9, 0.40);
+scene.ambient(0.32);
+scene.supersample(4);
+let view_x = 0.36;
+let view_y = 0.38;
+let view_z = 0.85;
+# --- end shared icon look ---
+
+# --- site icon parameters ---
+let TEXT = "lmCtl"; # brand casing, documented here; glyphs are drawn below
+let ACCENT_R = 0.98; # gold: distinct from the four tool colors, same family
+let ACCENT_G = 0.80;
+let ACCENT_B = 0.30;
+let STROKE = 0.16;   # glyph stroke width
+let GAP = 0.30;      # letter spacing
+let XH = 0.72;       # lowercase x-height
+let CAPH = 1.0;      # cap/ascender height
+let DEPTH = 0.3;     # extrusion depth
+let MSTEP = 0.16;    # gap between the m stems
+let DIST = 7.4;      # camera distance (logo framing)
+let ICON_ZOOM = 0.92; # favicon framing factor (closer than logo)
+# --- end site icon parameters ---
+
+let letters = material().color(ACCENT_R, ACCENT_G, ACCENT_B).roughness(0.5);
+
+# lowercase l: full-height bar
+scene.box(STROKE, CAPH, DEPTH, letters).position(STROKE / 2.0, CAPH / 2.0, -DEPTH / 2.0);
+let cursor = STROKE + GAP;
+
+# lowercase m: three x-height stems with a flat top
+for (i in range(0, 3)) {
+  scene.box(STROKE, XH, DEPTH, letters)
+    .position(cursor + float(i) * (STROKE + MSTEP) + STROKE / 2.0, XH / 2.0, -DEPTH / 2.0);
+}
+scene.box(2.0 * STROKE + MSTEP, STROKE, DEPTH, letters)
+  .position(cursor + STROKE - MSTEP / 2.0, XH - STROKE / 2.0, -DEPTH / 2.0);
+scene.box(2.0 * STROKE + MSTEP, STROKE, DEPTH, letters)
+  .position(cursor + 2.0 * STROKE + 1.5 * MSTEP, XH - STROKE / 2.0, -DEPTH / 2.0);
+cursor = cursor + 3.0 * STROKE + 2.0 * MSTEP + GAP;
+
+# capital C: open on the right, cap height (reads as uppercase next to x-height)
+scene.box(STROKE, CAPH, DEPTH, letters).position(cursor + STROKE / 2.0, CAPH / 2.0, -DEPTH / 2.0);
+scene.box(0.62, STROKE, DEPTH, letters).position(cursor + 0.31, CAPH - STROKE / 2.0, -DEPTH / 2.0);
+scene.box(0.62, STROKE, DEPTH, letters).position(cursor + 0.31, STROKE / 2.0, -DEPTH / 2.0);
+cursor = cursor + 0.62 + GAP;
+
+# lowercase t: tall stem with a crossbar at x-height
+scene.box(STROKE, CAPH * 0.92, DEPTH, letters)
+  .position(cursor + MSTEP + STROKE / 2.0, CAPH * 0.46, -DEPTH / 2.0);
+scene.box(STROKE + 2.0 * MSTEP, STROKE, DEPTH, letters)
+  .position(cursor + MSTEP + STROKE / 2.0, XH * 0.82 + STROKE / 2.0, -DEPTH / 2.0);
+cursor = cursor + STROKE + 2.0 * MSTEP;
+
+# trailing lowercase l (the brand ends ...t-l)
+cursor = cursor + GAP;
+scene.box(STROKE, CAPH, DEPTH, letters)
+  .position(cursor + STROKE / 2.0, CAPH / 2.0, -DEPTH / 2.0);
+cursor = cursor + STROKE;
+
+let text_w = cursor;
+let text_h = CAPH;
+let aim_x = text_w / 2.0 + text_w * 0.02; # view is from the right: center the projection, not the geometry
+let aim_y = text_h / 2.0;
+# Logo: comfortable margins. Favicon sizes: the same view moved closer
+# (ICON_ZOOM) so the wordmark fills the 64/32/16 px tile.
+scene.camera(28.0, aim_x + view_x * DIST, aim_y + view_y * DIST, view_z * DIST, aim_x, aim_y, 0.0);
+scene.render_png(${out} + "/logo.png", 256, 256);
+let near = DIST * ICON_ZOOM;
+scene.camera(28.0, aim_x + view_x * near, aim_y + view_y * near, view_z * near, aim_x, aim_y, 0.0);
+scene.render_png(${out} + "/icon.png", 64, 64);
+scene.render_png(${out} + "/icon-32.png", 32, 32);
+scene.render_png(${out} + "/icon-16.png", 16, 16);
+end _dsl_
+savedsl(p, ARGV.get(1, "icon.dslb"));

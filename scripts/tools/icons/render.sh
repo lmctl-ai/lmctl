@@ -60,6 +60,8 @@ for script in "$HERE"/*.lms; do
   fi
   if [[ "$name" == tools ]]; then
     dest="$ROOT/tools/img"; logo="tools.png"
+  elif [[ "$name" == site ]]; then
+    dest="$ROOT/homepage/assets"; logo="logo.png"
   else
     dest="$ROOT/tools/$name/img"; logo="logo.png"
   fi
