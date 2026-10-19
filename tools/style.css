@@ -93,6 +93,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
 
 img { max-width: 100%; height: auto; }
 figure img { display: block; border: 1px solid var(--rule); border-radius: 6px; }
+li img { vertical-align: middle; margin-right: 0.6rem; border-radius: 6px; }
 figcaption { color: var(--muted); font-size: 0.9em; }
 
 footer { margin-top: 3rem; padding-top: 0.75rem; border-top: 1px solid var(--rule); color: var(--muted); font-size: 0.9em; }
