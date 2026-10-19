@@ -17,6 +17,16 @@ done
 echo "ok - $count bad durable-memory fixtures rejected"
 run check tests/memory/good >/dev/null
 echo "ok - good fixture passes"
+# The sole legacy Markdown compatibility file is an exact one-line index pointer.
+rm -rf build/memory-stub-check
+cp -R tests/memory/good build/memory-stub-check
+printf '%s\n' 'Read [index.html](index.html) first.' > build/memory-stub-check/index.md
+run check build/memory-stub-check >/dev/null
+printf '%s\n' 'Read the old notes.' > build/memory-stub-check/index.md
+output=$(run check build/memory-stub-check 2>&1)
+[[ $output == *'not an HTML note'* ]] || { echo 'FAIL: noncanonical index.md stub was not warned about' >&2; exit 1; }
+rm -rf build/memory-stub-check
+echo 'ok - exact Markdown index pointer is allowed; other Markdown remains warned'
 # Index lifecycle and web view in an isolated copy under build/.
 work=build/memory-selftest
 rm -rf "$work"; mkdir -p "$work"

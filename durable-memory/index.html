@@ -7,8 +7,8 @@
 <body>
 <h1>lmctl-website</h1>
 <p>The public documentation site for <strong>lmctl</strong>, published to <strong><code>lmctl.com/lmctl/</code></strong> (a path prefix, not a subdomain) — Docusaurus static site on S3, fronted by CloudFront.</p>
-<p>For the full design — stack, information architecture, authoring conventions, rendering, and the publishing pipeline — see <strong><a href="site-design.html"><code>site-design.md</code></a></strong>.</p>
-<p>For the static <code>/tools/</code> section — how an LLM creates or improves a tool's skill, tutorial and guide pages, decoration, checks, icons, visual review and publishing — see <strong><a href="tools-docs.html"><code>tools-docs.md</code></a></strong>.</p>
+<p>For the full design — stack, information architecture, authoring conventions, rendering, and the publishing pipeline — see <strong><a href="site-design.html"><code>site-design.html</code></a></strong>.</p>
+<p>For the static <code>/tools/</code> section — how an LLM creates or improves a tool's skill, tutorial and guide pages, decoration, checks, icons, visual review and publishing — see <strong><a href="tools-docs.html"><code>tools-docs.html</code></a></strong>.</p>
 <h2 id="quick-start">Quick start</h2>
 <pre><code>npm ci          # install (lockfile committed)
 npm start       # dev server with hot reload at /lmctl/
@@ -16,7 +16,7 @@ npm run build   # static build into build/ (fails on broken links)
 npm run serve   # preview the built artifact</code></pre>
 <h2 id="publishing">Publishing</h2>
 <p>Current publishing is local/manual: build with <code>npm run build</code>, then deploy with <code>scripts/deploy.sh</code> from an operator environment that has AWS access. The GitHub Actions deploy workflow is still present for manual <code>workflow_dispatch</code>, but its push trigger is disabled because the OIDC role is prefix-scoped and cannot write the root homepage object that <code>scripts/deploy.sh</code> publishes.</p>
-<p>Treat <code>main</code> as publish-ready, not as a draft branch. For review-gated docs, work on a branch and merge/push to <code>main</code> only after the required review clears, then run the local build/deploy. See <a href="site-design.html"><code>site-design.md</code></a> for details.</p>
+<p>Treat <code>main</code> as publish-ready, not as a draft branch. For review-gated docs, work on a branch and merge/push to <code>main</code> only after the required review clears, then run the local build/deploy. See <a href="site-design.html"><code>site-design.html</code></a> for details.</p>
 <h2 id="recent-docs-updates">Recent docs updates</h2>
 <ul>
 <li>2026-09-05: Prepared the new public <code>lmfeedback-skill.md</code> from <code>/home/mma/repos/tools/lmfeedback/docs/lmfeedback-skill.md</code>. Before publication, corrected the canonical source at <code>d5e4d98</code>: removed stale pre-deployment statements, kept API examples deployment-neutral, removed account-specific endpoint/bucket identifiers, and documented the integration suite's scoped cleanup plus no-sequence full-mailbox fallback. The website copy must remain byte-identical to that canonical file. Reviewer1 passed the source and website integration; live <code>GET /feedback.js</code> returned 200 with JavaScript and CORS, CLI packaging tests passed 8/8, and cloud unit tests passed 97/97.</li>
@@ -59,6 +59,8 @@ npm run serve   # preview the built artifact</code></pre>
 <ul>
 <li><a href="memory-format.html">Durable memory format: content-only HTML notes</a>: Durable-memory notes are small HTML files that carry content only: no CSS, no class names, no emoji.</li>
 <li><a href="site-design.html">lmctl docs site — design &amp; authoring</a>: The public documentation site for lmctl, served at lmctl.com/lmctl/ (a path prefix, not a subdomain).</li>
+<li><a href="skills-audit.html">Skills audit — 2026-10-19</a>: This section supersedes the historical dual-format migration notes below; their audit results and comparison evidence are retained, not current build…</li>
+<li><a href="skills-docs.html">Legacy /skills/: HTML only</a>: Skills have one format: HTML. Author skills/&lt;stem&gt;.html using the plain HTML contract in tools/README.md; keep authored material in &lt;main&gt;.</li>
 <li><a href="tools-docs.html">/tools/ documentation: how to create and improve a tool's pages</a>: A guide for an LLM (or a person) adding or improving a tool's documentation in the static /tools/ section.</li>
 </ul>
 <!-- end note list -->

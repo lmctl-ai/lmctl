@@ -20,6 +20,7 @@
 <ul>
 <li>Every note is <code>DIR/name.html</code> with a lowercase name of letters, digits and single hyphens. Dated notes put the date in the name: <code>release-check-2026-10-19.html</code>.</li>
 <li><code>DIR/index.html</code> must exist and link every other note. Its note list is generated (see <a href="#commands">commands</a>).</li>
+<li>If a project seed still instructs readers to open <code>index.md</code>, it may keep exactly the one-line file <code>Read [index.html](index.html) first.</code> as a compatibility pointer. The checker allows this exact stub; all other non-HTML text files remain warnings.</li>
 <li>One subdirectory is allowed: <code>DIR/archive/</code> for retired notes. No other subdirectories.</li>
 <li>Other files are reported as warnings (convert them or move them out); images referenced by notes may sit next to them.</li>
 </ul>

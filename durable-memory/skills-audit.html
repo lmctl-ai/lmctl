@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Skills audit — 2026-10-19</title>
+</head>
+<body>
+<h1>Skills audit — 2026-10-19</h1>
+<h2>Operator correction: HTML is the only skill format</h2>
+<p>This section supersedes the historical dual-format migration notes below; their
+audit results and comparison evidence are retained, not current build instructions.
+All 23 generated <code>skills/*.md</code> copies were deleted. Skills are authored and served
+only as HTML; build/check no longer call a Markdown exporter or compare formats.
+The grouped HTML index and audited content/invariants remain. The command checker
+uses the checked-in 21-subcommand vocabulary refreshed from <code>lmctl --help</code> by
+<code>python3 scripts/tools/update-lmctl-subcommands.py</code>.</p>
+<p><code>skills-moved/</code> contains 24 literal, hand-written one-paragraph notices (23 old URLs
+plus the Lead alias), served as text/plain for one release cycle. They say only
+“Moved to https://lmctl.com/skills/&lt;name&gt;.html. This stub will be removed.” They are
+not generated from HTML and contain no skill content. <code>/skills/lmctl-lead.html</code>
+is deployed as a text/html copy of <code>lmctl-lead-skill.html</code>. No deploy was run.</p>
+<h3>Mono consumer review (source at 40660363)</h3>
+<p>Tracked sources, scripts, tests, docs and example teamfiles were searched for
+<code>lmctl.com/skills</code>, <code>.md</code> skill URLs, <code>skillUrl</code>/<code>skill_url</code> and catalog resolution.
+<strong>No runtime code or test was found fetching a <code>/skills/*.md</code> website URL.</strong>
+The following potentially confusing references remain unchanged for Lead review:</p>
+<table>
+<thead>
+<tr>
+<th>File:line</th>
+<th>Finding and disposition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>lmctl-src/tests/cli/teamfile-compat.test.ts:901</code></td>
+<td>Example <code>.md</code> URL; lines 902–903 add a local path and another example URL. Test asserts legacy <code>_SKILL_</code> directives are ignored, not downloaded.</td>
+</tr>
+<tr>
+<td><code>lmctl-src/tests/cli/teamfile-compat.test.ts:920</code></td>
+<td>Mock <code>.md</code> URL; line 930 explicitly asserts fetch was not called. Kept unchanged.</td>
+</tr>
+<tr>
+<td><code>lmctl-src/tests/providers/passive-session-reader.test.ts:1345</code></td>
+<td>Recorded webfetch fixture uses <code>/skills/x?q=1</code>, with no <code>.md</code>; line 1358 checks normalized metadata. It does not fetch the website.</td>
+</tr>
+<tr>
+<td><code>lmctl-src/src/uri/lmctl_uri.ts:116</code></td>
+<td>Runtime resolves local <code>templates/skills/&lt;name&gt;/SKILL.md</code>; line 128 uses the same cache filename, line 136 describes freeform Markdown. Separate template subsystem; unchanged.</td>
+</tr>
+<tr>
+<td><code>lmctl-src/src/uri/lmctl_uri.ts:164</code></td>
+<td>Runtime constructs extensionless <code>/templates/skill/&lt;name&gt;</code> and fetches at line 167, not <code>/skills/*.md</code>. No runtime change made.</td>
+</tr>
+</tbody>
+</table>
+<p>Mono documentation URLs updated in commit <code>40660363</code>: <code>lmctl-src/README.md:5</code>,
+<code>lmscript/README.md:196</code>, <code>lmbee/durable-memory/sample-teams.md:25</code>, the documentation
+comment in <code>lmbee/examples/template.lmctl:2</code>, and the index/review-log files under
+<code>lmmail</code>, <code>lmnote</code>, <code>lmsheet</code> durable-memory. Historical publication entries now
+distinguish their old smoke checks from the new HTML links. No runtime or test file
+was edited. Website <code>docs/manuals/lmprobe.md:27</code> now links to HTML. No active website
+HTML links target the transitional notices; original URLs remain only in historical
+audit evidence, compatibility documentation, stubs and deliberate negative fixtures.</p>
+<h3>Correction validation</h3>
+<p>Skills: 28 self-tests, including unknown command/second-line command, HTML-only
+links, stale/missing HTML indexes, idempotence and rejection of <code>.md</code> skill files.
+The existing HTML/audit/coordination checks remain. Tools checks and their 43 named
+fixtures plus lifecycle suite are rerun. Live-service verification limits from
+the audit remain unchanged. Tool-page guidance is in <code>tools-docs.html</code>.</p>
+<h2>Historical audit and initial migration</h2>
+<p>Step 0 completed before HTML migration. The checkout contains <strong>23 Markdown skill files</strong>, not 24; <code>skills/index.html</code> is the 24th page. No skill was silently omitted. Original files were inventoried before correction. Existing URLs remain, including retired pointer pages.</p>
+<p>The installed lmctl/lmscript release was 0.2.347. We ran lmctl top-level help and all 21 listed subcommand helps; no provider turns, mail sends, service writes or deploys were run. The standalone LMScript minimal workflow passes <code>lmctl script --check</code>; <code>last_line_as_status</code> IS a built-in (an initial suspicion was disproved). Executed ternary/f-string examples printed <code>yes</code> and <code>value 1</code>. Published lmprobe 0.42.2 and lmfin 0.1.0 were installed under temporary prefixes for read-only help checks.</p>
+<p>Sources were read in the local mono checkout, a shallow clone of public <code>lmctl-ai/lmprobe</code>, and authorized source checkouts for lmsound/lmfin/lmbio/lmfeedback. Initial searches in local mono/poc/utility roots and the public organization did not find those four; authorized source discovery succeeded. Public-safe evidence below names files without exposing credentials, account identifiers or private deployment URLs. Hosted endpoint reachability/permissions and billing behavior are <strong>unverifiable from this source audit</strong> and explicitly marked in the affected skills. Example paths, ids, payloads and API Gateway URLs are placeholders, not promises that those resources exist.</p>
+<h2>Per-file verdict and correction</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Verdict</th>
+<th>Evidence: command run or source file</th>
+<th>Fix applied</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>background-wakeup.md</code></td>
+<td>stale</td>
+<td><code>lmctl --help</code>; mono <code>lmctl-src/src/cli/index.ts</code>; no corresponding current command surface</td>
+<td>Retired removed workflow; preserve URL as short pointer and exclude from active index.</td>
+</tr>
+<tr>
+<td><code>claudecode-lead-skill.md</code></td>
+<td>stale</td>
+<td><code>lmctl --help</code>; <code>lmctl prompt/status/tail/seed/lint --help</code>; mono <code>lmctl-src/src/cli/chat-exec.ts</code>, <code>chat.ts</code>, <code>seed.ts</code></td>
+<td>Rewrote around blocking prompt, busy retry, read-only inspection and explicit onboarding. Removed obsolete commands, transport concepts, unverified harness guarantees and timeout flags.</td>
+</tr>
+<tr>
+<td><code>communicating-with-mail-skill.md</code></td>
+<td>stale</td>
+<td><code>lmctl --help</code>; mono <code>lmctl-src/src/cli/index.ts</code>; no corresponding current command surface</td>
+<td>Retired removed workflow; preserve URL as short pointer and exclude from active index.</td>
+</tr>
+<tr>
+<td><code>durable-memory.md</code></td>
+<td>partly</td>
+<td>mono <code>lmctl-src/src/cli/seed.ts</code>; current seed help</td>
+<td>Kept committed knowledge guidance; removed automatic reading, universal ignore rules and obsolete communications linkage.</td>
+</tr>
+<tr>
+<td><code>lmbio-skill.md</code></td>
+<td>current</td>
+<td>available lmbio <code>src/main.rs</code>, <code>src/commands/</code>, <code>golden/</code>, <code>skills/lmbio-skill.md</code></td>
+<td>Existing commands/flags retained; upstream differences are additive. Verified against Rust clap declarations and fixture paths, not a costly source build or biomedical network requests.</td>
+</tr>
+<tr>
+<td><code>lmchat-skill.md</code></td>
+<td>partly</td>
+<td>mono <code>lmchat/README.md</code>, <code>cloud/src/cli/lmchat.ts</code>, <code>cloud/src/handlers/{room-api,file-api}.ts</code>; <code>appkey</code> source</td>
+<td>Retained HTTP examples and backlog convention. Clarified deployment availability and authorization are not verified.</td>
+</tr>
+<tr>
+<td><code>lmctl-admin-skill.md</code></td>
+<td>stale</td>
+<td><code>lmctl --help</code>; mono <code>lmctl-src/src/cli/index.ts</code>; no corresponding current command surface</td>
+<td>Retired removed workflow; preserve URL as short pointer and exclude from active index.</td>
+</tr>
+<tr>
+<td><code>lmctl-lead-skill.md</code></td>
+<td>stale</td>
+<td><code>lmctl --help</code>; <code>lmctl prompt/status/tail/seed/lint --help</code>; mono <code>lmctl-src/src/cli/chat-exec.ts</code>, <code>chat.ts</code>, <code>seed.ts</code></td>
+<td>Rewrote around blocking prompt, busy retry, read-only inspection and explicit onboarding. Removed obsolete commands, transport concepts, unverified harness guarantees and timeout flags.</td>
+</tr>
+<tr>
+<td><code>lmctl-meta-lead-skill.md</code></td>
+<td>stale</td>
+<td><code>lmctl --help</code>; <code>lmctl prompt/status/tail/seed/lint --help</code>; mono <code>lmctl-src/src/cli/chat-exec.ts</code>, <code>chat.ts</code>, <code>seed.ts</code></td>
+<td>Rewrote around blocking prompt, busy retry, read-only inspection and explicit onboarding. Removed obsolete commands, transport concepts, unverified harness guarantees and timeout flags.</td>
+</tr>
+<tr>
+<td><code>lmctl-recover-skill.md</code></td>
+<td>stale</td>
+<td><code>lmctl --help</code>; mono <code>lmctl-src/src/cli/index.ts</code>; no corresponding current command surface</td>
+<td>Retired removed workflow; preserve URL as short pointer and exclude from active index.</td>
+</tr>
+<tr>
+<td><code>lmctl-team-lead-advanced-skill.md</code></td>
+<td>stale</td>
+<td><code>lmctl --help</code>; <code>lmctl prompt/status/tail/seed/lint --help</code>; mono <code>lmctl-src/src/cli/chat-exec.ts</code>, <code>chat.ts</code>, <code>seed.ts</code></td>
+<td>Rewrote around blocking prompt, busy retry, read-only inspection and explicit onboarding. Removed obsolete commands, transport concepts, unverified harness guarantees and timeout flags.</td>
+</tr>
+<tr>
+<td><code>lmctl-team-lead-basic-skill.md</code></td>
+<td>stale</td>
+<td><code>lmctl --help</code>; <code>lmctl prompt/status/tail/seed/lint --help</code>; mono <code>lmctl-src/src/cli/chat-exec.ts</code>, <code>chat.ts</code>, <code>seed.ts</code></td>
+<td>Rewrote around blocking prompt, busy retry, read-only inspection and explicit onboarding. Removed obsolete commands, transport concepts, unverified harness guarantees and timeout flags.</td>
+</tr>
+<tr>
+<td><code>lmfeedback-skill.md</code></td>
+<td>partly</td>
+<td>available lmfeedback README, <code>cloud/src/cli/lmfeedback.ts</code>, handlers, source skill byte comparison</td>
+<td>Retained matching API and CLI contract; live availability unverified. Generated Markdown supersedes old upstream byte-parity invariant.</td>
+</tr>
+<tr>
+<td><code>lmfin-skill.md</code></td>
+<td>stale</td>
+<td>available lmfin <code>src/main.rs</code>, <code>src/compute/</code>, <code>schemas/</code>; npm registry and published 0.1.0 CLI --version/--help plus 16 subcommand helps and 10 offline calculator examples</td>
+<td>Replaced false private-only installation claim with published npm package; selected --source sec/fred explicitly for examples promising those sources. Corrected the negative scalar option spelling to --pmt=-100 after a real CLI refusal.</td>
+</tr>
+<tr>
+<td><code>lmmail-skill.md</code></td>
+<td>stale</td>
+<td>mono <code>lmmail/README.md</code>, <code>cloud/src/cli/lmmail.ts</code>, <code>cloud/src/handlers/{mailbox-api,message-api}.ts</code></td>
+<td>Removed unsupported delete-mailbox/DELETE mailbox and wait_s; corrected integration-test setup to source contract.</td>
+</tr>
+<tr>
+<td><code>lmnote-skill.md</code></td>
+<td>partly</td>
+<td>mono <code>lmnote/README.md</code>, <code>cloud/src/cli/lmnote.ts</code>, handlers and validation</td>
+<td>Replaced machine-specific deployment URL with placeholder; retained API/CLI examples; marked live access unverified.</td>
+</tr>
+<tr>
+<td><code>lmprobe-skill.md</code></td>
+<td>partly</td>
+<td>public lmprobe README and <code>durable-memory/commands/</code>; published <code>lmprobe 0.42.2 --help</code>, grep/query/search help; 15 local recipes executed</td>
+<td>Source is public; corrected CLI exit_status wording. Recipes retain legacy --format json surface; published search rejects --body, so the outline example uses --outline.</td>
+</tr>
+<tr>
+<td><code>lmscript-workflow-skill.md</code></td>
+<td>partly</td>
+<td><code>lmctl script --check /tmp/skills-audit-minimal.lms</code> (pass); <code>lmscript --help</code>; executed ternary and f-string; mono <code>lmscript/durable-memory/lmscript_language_reference.md</code></td>
+<td>Kept runnable example and helper (built-in); corrected ternaries, f-strings, source imports and init description; removed unverifiable incident anecdotes.</td>
+</tr>
+<tr>
+<td><code>lmsheet-skill.md</code></td>
+<td>partly</td>
+<td>mono <code>lmsheet/README.md</code>, <code>cloud/src/cli/lmsheet.ts</code>, handlers and validation</td>
+<td>Replaced deployment URL with placeholder; retained A1/API/CLI contract; marked live access unverified.</td>
+</tr>
+<tr>
+<td><code>lmsound-skill.md</code></td>
+<td>partly</td>
+<td>available lmsound source: <code>cloud/src/handlers/index.ts</code>, <code>infra/terraform/s3.tf</code>, <code>docs/lmsound-skill.md</code></td>
+<td>Fixed TTL contradiction (300 default, configurable to 3600); removed unconditional access/billing guarantees; hosted service untested.</td>
+</tr>
+<tr>
+<td><code>lmtext-skill.md</code></td>
+<td>partly</td>
+<td>mono <code>lmtext/README.md</code>, <code>cloud/src/cli/lmtext.ts</code>, <code>cloud/src/handlers/{transcription-api,validation}.ts</code></td>
+<td>Retained source-backed upload/finalize/poll/delete behavior; removed completion-time promise and blanket authorization claim.</td>
+</tr>
+<tr>
+<td><code>opencode-lead-skill.md</code></td>
+<td>stale</td>
+<td><code>lmctl --help</code>; <code>lmctl prompt/status/tail/seed/lint --help</code>; mono <code>lmctl-src/src/cli/chat-exec.ts</code>, <code>chat.ts</code>, <code>seed.ts</code></td>
+<td>Rewrote around blocking prompt, busy retry, read-only inspection and explicit onboarding. Removed obsolete commands, transport concepts, unverified harness guarantees and timeout flags.</td>
+</tr>
+<tr>
+<td><code>team-lead-workflow.md</code></td>
+<td>stale</td>
+<td><code>lmctl --help</code>; <code>lmctl prompt/status/tail/seed/lint --help</code>; mono <code>lmctl-src/src/cli/chat-exec.ts</code>, <code>chat.ts</code>, <code>seed.ts</code></td>
+<td>Rewrote around blocking prompt, busy retry, read-only inspection and explicit onboarding. Removed obsolete commands, transport concepts, unverified harness guarantees and timeout flags.</td>
+</tr>
+</tbody>
+</table>
+<h2>Claim inventory and disposition</h2>
+<p><code>skills-audit-inventory.json</code> records every original nonblank line containing command/flag, code span, path, URL or version material, with original line numbers and the per-file evidence/disposition above. Code fences and examples are included; placeholder arguments are not executed. Claims were checked against CLI help, source argument parsers, handler routes/validation, fixture paths and source manuals. Non-command prose was reviewed for behavior promises (notably automatic onboarding, billing ceilings, refresh, timing and provider-specific notification behavior). Source verification establishes a contract, not live service availability.</p>
+<p>No live API credentials were used. lmbio was source-checked because compiling the Rust analytics dependencies was unnecessary for the CLI declaration/fixture audit. Claude Code/opencode notification semantics for particular harness versions could not be verified; those promises were removed in favor of conditional harness guidance. Historical recovery/admin/integration commands were removed rather than guessed at. Old snapshots remain in Git history.</p>
+<h2>Non-trivial old → corrected differences</h2>
+<ul>
+<li>Seven coordination skills now use synchronous prompt/status/tail and explicit durable-memory reading. Unsupported commands/configuration and repeated obsolete delivery descriptions are removed, not translated mechanically.</li>
+<li>Four removed-workflow pages become compatibility pointers and leave the active index.</li>
+<li>Durable memory no longer promises automatic reading or universal teamfile ignore rules.</li>
+<li>Workflow code blocks remain intact and static-check successfully; outdated language statements and unverifiable incident anecdotes are corrected/removed.</li>
+<li>lmmail no longer advertises unsupported mailbox deletion or wait_s. Its remaining raw HTTP/CLI examples match the available implementation.</li>
+<li>lmfin installation and explicitly selected data sources are corrected; lmprobe source visibility and JSON field naming are corrected.</li>
+<li>Deployment URLs become placeholders where not verifiable; utility authentication, timing, TTL and billing promises are narrowed to source-backed behavior.</li>
+<li>HTML migration must preserve every corrected code block, table and link. Markdown spelling/whitespace changes are harmless only after structural comparison; migration results are recorded below when completed.</li>
+</ul>
+<p>Final source checks also corrected explicit-exit cleanup (language reference resource ownership section), lmtext CLI installation (<code>cloud/package.json</code> bin mapping), and replaced an unexecutable audio-download pseudo-command with an explicit response-variable example. Provider first-turn permissive-mode folklore was removed as unverifiable.</p>
+<h2>Migration comparison and executable evidence</h2>
+<p>All <strong>23 corrected skills</strong> round-trip through HTML and generated Markdown with
+matching parsed content trees. The comparison used the one-time <code>marked</code> 15
+bootstrap on corrected input and regenerated output, checking element structure,
+text, inline emphasis/code, tables, lists and link targets. It normalized whitespace,
+syntax-highlighting classes, heading IDs and the documented <code>.html</code>/<code>.md</code> mapping.
+Code contents match after normalizing the single fence-ending newline. Three files
+(lmchat, lmsound, lmtext) change tight list paragraphs to loose Markdown paragraphs;
+that spacing difference is intentional. Escaping literal punctuation, longer fences,
+blank-line spelling, table alignment presentation and removal of fence language
+classes do not change command text or table contents. No corrected code block,
+table or link was dropped. The original index's group names/order are preserved;
+entry titles/summaries now come from the corrected pages, so obsolete descriptions
+are not copied forward. Four retired entries remain reachable at both old raw URLs
+and new HTML URLs but are excluded from the active catalog.</p>
+<p>The one-time Markdown bootstrap used a temporary installation of <code>marked</code>, not a
+repository dependency or build-time Node converter. Runtime generation and checking
+are LMScript DSL programs executed by lmhtml. HTML is authoritative. Generated
+Markdown changes link attributes from <code>/skills/&lt;stem&gt;.html</code> to <code>.md</code> (retaining
+fragments), never code text. Old raw paths and the deployment-only Lead alias remain.</p>
+<p>Additional execution checks ran 15 lmprobe recipes on a tiny local TypeScript tree
+(including both GraphQL examples), and 10 lmfin offline calculators. No-match exit 1
+is expected for absent fixture patterns. Two actual parser refusals were fixed:
+<code>search --body</code> → <code>search --outline</code>, and <code>--pmt -100</code> → <code>--pmt=-100</code>. All corrected
+examples then returned expected statuses. The inventory includes their commands and
+exit codes. All 12 literal lmbio golden fixture paths were checked on disk. No paid
+API calls, provider turns, network finance data queries or deployment were performed.</p>
+<p>The lmprobe skill links to its full manual; the manual's source now links back to
+the HTML skill. New <code>/tools/</code> skills remain separate; the two catalogs link to each
+other. Hosted-service reachability, account permissions and particular provider
+harness notification behavior remain unverified; corresponding promises were removed
+or explicitly qualified. No source was missing for the four requested legacy tools.</p>
+<h2>Source revisions</h2>
+<table>
+<thead>
+<tr>
+<th>Source checkout</th>
+<th>Commit inspected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>lmctl mono</td>
+<td><code>b2c79880330c30f62305b40ffd1840e2a8a6b854</code></td>
+</tr>
+<tr>
+<td>lmprobe audit source</td>
+<td><code>8a01c4eaa8c18d3094b10adb583f4780fc5d328e</code></td>
+</tr>
+<tr>
+<td>lmsound source</td>
+<td><code>388997d6b0fd87b485a20fb082de48d89c004ca9</code></td>
+</tr>
+<tr>
+<td>lmfin source</td>
+<td><code>9a2dd497abcc36b8db84231ddf6e5b09d4e8ee72</code></td>
+</tr>
+<tr>
+<td>lmbio source</td>
+<td><code>fa3e64d7677d2816c97040fa30cfc9672e82cbcc</code></td>
+</tr>
+<tr>
+<td>lmfeedback source</td>
+<td><code>c410bae58e1b381d4b8f65b53c11178e772232d8</code></td>
+</tr>
+</tbody>
+</table>
+<p>The lmprobe source revision includes the reciprocal manual link; command implementation was unchanged by that docs-only commit.</p>
+<h2>Validation and publication boundary</h2>
+<p>The skills self-test passes 24 checks; tools pass their 43 named bad fixtures plus
+authoring/index lifecycle tests. All current pages pass their check commands, and
+a second skills build changes zero bytes. Local HTTP reads of <code>/skills/</code>, the Lead,
+lmprobe and lmbio pages confirm one h1/main/nav/footer, no inline style/base/script,
+and absolute links. The Lead's visual review is still required; no deploy was run.
+The parallel <code>tools-docs.html</code> guide was absent, so legacy integration guidance is in
+<code>tools/README.md</code> and <code>durable-memory/skills-docs.html</code>, ready to link after it lands.</p>
+<h2>Machine-readable inventory</h2>
+<p><a href="skills-audit-inventory.json">skills-audit-inventory.json</a> remains JSON because it is structured audit data for tooling, not a prose memory note.</p>
+</body>
+</html>

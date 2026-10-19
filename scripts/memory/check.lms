@@ -65,7 +65,7 @@ for (path in all_files) {
     } else if (len(parts) <= 2) {
       notes = notes + rel + "|";
     }
-  } else if (!regex_test(name, "\\.(png|jpg|jpeg|gif|svg|webp)$")) {
+  } else if (!(rel == "index.md" && read_file(path) == "Read [index.html](index.html) first.\n") && !regex_test(name, "\\.(png|jpg|jpeg|gif|svg|webp)$")) {
     findings = findings + add_finding(path, 0, "warning: not an HTML note (convert it, or move it out of the memory directory)");
   }
   if (regex_test(name, "\\.(html|md|txt|json)$")) {

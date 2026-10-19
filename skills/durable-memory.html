@@ -18,14 +18,17 @@
 </nav>
 <main>
 <h1>Skill: Durable memory</h1>
-<p>Keep portable project decisions and operating context in committed <code>durable-memory/</code> files.</p>
-<h2 id="what-to-record">What to record</h2>
-<p>Record constraints, decisions, evidence, current status, and the next useful step. Keep <code>durable-memory/index.md</code> current and use focused files rather than duplicating a transcript.</p>
-<h2 id="onboarding">Onboarding</h2>
-<p>Explicitly ask a newly seeded or replacement member to read the relevant files. Automatic durable-memory onboarding is not guaranteed. A provider session and its history are distinct from committed project knowledge; do not assume session identifiers work on another machine or provider.</p>
-<h2 id="version-control">Version control</h2>
-<p>Commit durable knowledge. Keep secrets and machine-local session state out of public repositories; choose ignore rules for the actual project rather than assuming every teamfile must be ignored. Preserve sanitized templates where useful.</p>
-<p>See the <a href="/skills/lmctl-lead-skill.html">Lead skill</a> for delegation and review.</p>
+<p>Durable memory is a small, committed index of project knowledge that a new session can load quickly and expand only when needed. Start with the index, then read the chapters relevant to the task.</p>
+<h2 id="how-it-works">How it works</h2>
+<p>Keep <code>durable-memory/index.html</code> current with concise links and summaries. A reader opens that index first, selects the relevant chapter, and loads more chapters only when the task calls for them. Record decisions, constraints, evidence, current status and useful next steps; avoid copying a full conversation transcript.</p>
+<p>Commit durable knowledge with the project. Keep secrets and machine-local session state out of public repositories. Ask a newly started or replacement session to read the relevant files; automatic onboarding is not guaranteed.</p>
+<h2 id="recommended-note-format">Recommended format for new notes</h2>
+<p>For new notes, use the content-only HTML profile: one <code>.html</code> file per topic, one h1, a first paragraph that summarizes the note, and h2 sections. Use semantic headings, paragraphs, lists, tables, links, and preformatted code or command/output blocks. Keep CSS, classes, scripts, presentation attributes and emoji out of the source; the web view adds presentation to a separate copy.</p>
+<p>The profile and sample are in <a href="https://github.com/lmctl-ai/lmctl/blob/main/durable-memory/memory-format.html">memory-format.html</a>. In a project using the lmctl scripts, run <code>npm run check:memory</code> to validate notes and the generated index, <code>npm run check:memory:selftest</code> to exercise the checker, and <code>npm run build:memory-web</code> to build the decorated web copy. The standalone checker uses the lmhtml parser; a project can copy <code>scripts/memory/</code> and its lmhtml version lock to use the same workflow.</p>
+<h2 id="existing-markdown">Existing Markdown remains valid</h2>
+<p>Existing <code>.md</code> notes remain usable project documentation. Migration is optional: convert a note when it is useful, not just to change its extension. If a project's seed instruction still asks readers to open <code>durable-memory/index.md</code>, keep that single-line compatibility pointer linking to <code>index.html</code> until the seed accepts both formats.</p>
+<h2 id="worked-example">Worked example</h2>
+<p>The <a href="https://github.com/lmctl-ai/lmctl/tree/main/durable-memory">lmctl repository's durable-memory directory</a> is a working example of an HTML index, focused content-only chapters, validation, and a generated web view.</p>
 </main>
 <footer>
 <p>Plain HTML skills for humans and agents. Source: <a href="https://github.com/lmctl-ai/lmctl/tree/main/skills">github.com/lmctl-ai/lmctl/skills</a>.</p>
