@@ -1,0 +1,191 @@
+# run.sh copies this next to the schema emitted by the selected lmhtml binary.
+# ARGV: bytecode output, report output, optional single fixture (empty = tree).
+# Directory enumeration happens at compile time; all policy stays in the DSL.
+tool_directories = "";
+for (directory in glob("tools/*/")) {
+  tool_directories = tool_directories + directory + "|";
+}
+p = _dsl_ schema="lmhtml.dsl.json";
+fn finding(file: string, selector: string, message: string) -> void {
+  report.add("contract", file, 0, selector + ": " + message);
+}
+fn normalized(value: string) -> string {
+  let result = "";
+  let space = false;
+  for (i in range(0, str_len(value))) {
+    let ch = str_substr(value, i, 1);
+    if (ch == " " || ch == "\n" || ch == "\r" || ch == "\t") { space = str_len(result) > 0; }
+    else {
+      if (space) { result = result + " "; }
+      result = result + ch;
+      space = false;
+    }
+  }
+  return result;
+}
+fn check_page(page: Doc) -> void {
+  let file = page.path();
+  if (page.byte_size() > 153600) { finding(file, "document", "page is " + str(page.byte_size()) + " bytes (limit 153600)"); }
+  if (page.doctype() != "html") { finding(file, "document", "page must start with <!doctype html>"); }
+  for (problem in page.markup_errors()) { finding(file, "document", problem); }
+  let allowed = "|html|head|meta|title|link|body|header|nav|main|section|footer|h1|h2|h3|h4|p|ul|ol|li|dl|dt|dd|pre|code|kbd|samp|em|strong|a|table|thead|tbody|tr|th|td|blockquote|hr|figure|figcaption|img|";
+  for (node in page.select("*")) {
+    let tag = node.tag();
+    let path = node.path();
+    if (!str_contains(allowed, "|" + tag + "|")) { finding(file, path, "forbidden element <" + tag + ">"); }
+    let attrs = "|";
+    if (tag == "html") { attrs = "|lang|"; }
+    if (tag == "meta") { attrs = "|charset|name|content|"; }
+    if (tag == "link") { attrs = "|rel|href|"; }
+    if (tag == "a") { attrs = "|href|"; }
+    if (tag == "img") { attrs = "|src|alt|width|height|"; }
+    if (tag == "h2" || tag == "h3") { attrs = "|id|"; }
+    if (tag == "ol") { attrs = "|start|"; }
+    if (tag == "th") { attrs = "|scope|colspan|rowspan|"; }
+    if (tag == "td") { attrs = "|colspan|rowspan|"; }
+    for (attribute in node.attributes()) {
+      if (!str_contains(attrs, "|" + attribute + "|")) {
+        if (attribute == "id") { finding(file, path, "id is only allowed on h2/h3, not <" + tag + ">"); }
+        else { finding(file, path, "forbidden attribute " + attribute + " on <" + tag + ">"); }
+      }
+    }
+    if (tag == "html" && node.attr("lang") != "en") { finding(file, path, "<html> needs lang=\"en\""); }
+    if (tag == "link" && (node.attr("rel") != "stylesheet" || node.attr("href") != "/tools/style.css")) {
+      finding(file, path, "the only <link> allowed is rel=\"stylesheet\" href=\"/tools/style.css\"");
+    }
+    if (tag == "img") {
+      let src = node.attr("src");
+      if (normalized(node.attr("alt")) == "") { finding(file, path, "<img> needs a non-empty alt"); }
+      if (node.parent().tag() != "figure") { finding(file, path, "<img> must be inside <figure>"); }
+      else { if (node.parent().select("figcaption").len() != 1) { finding(file, path, "<figure> needs one <figcaption>"); } }
+      let image_path_ok = str_starts_with(src, "/tools/");
+      let component = "";
+      let component_index = 0;
+      for (i in range(7, str_len(src))) {
+        let ch = str_substr(src, i, 1);
+        if (ch == "/") {
+          if (component_index == 0 && component == "") { image_path_ok = false; }
+          if (component_index == 1 && component != "img") { image_path_ok = false; }
+          component_index = component_index + 1;
+          component = "";
+        } else {
+          if (component_index == 0 && !str_contains("abcdefghijklmnopqrstuvwxyz0123456789-", ch)) { image_path_ok = false; }
+          component = component + ch;
+        }
+      }
+      if (!image_path_ok || component_index != 2 || component == "" || str_contains(src, "..") || str_contains(src, "?") || str_contains(src, "#") || str_contains(src, "%") || str_contains(src, "\\")) {
+        finding(file, path, "image must be local under /tools/<tool>/img/: " + src);
+      } else { if (!html.link_exists(page, src)) { finding(file, path, "image not found: " + src); } }
+    }
+    if (tag == "a") {
+      let url = node.attr("href");
+      let kind = html.link_kind(page, url);
+      if (url == "") { finding(file, path, "<a> without href"); }
+      else {
+        if (kind != "external" && !str_starts_with(str_lower(url), "mailto:")) {
+          if (kind == "special" || kind == "outside-root") { finding(file, path, "unsupported link scheme or outside root: " + url); }
+          else {
+            if (!str_starts_with(url, "/") && !str_starts_with(url, "#")) { finding(file, path, "internal links must be site-rooted: " + url); }
+            if (!html.link_exists(page, url) && !(url == "/" && html.link_exists(page, "/homepage/index.html"))) {
+              if (str_starts_with(url, "#")) { finding(file, path, "no id \"" + str_substr(url, 1, str_len(url)) + "\" on this page"); }
+              else { finding(file, path, "broken link " + url + " (" + html.resolve(page, url) + ")"); }
+            }
+          }
+        }
+      }
+    }
+  }
+  let id_nodes = page.select("[id]");
+  for (i in range(0, id_nodes.len())) {
+    let node = id_nodes.at(i);
+    for (j in range(0, i)) { if (node.attr("id") == id_nodes.at(j).attr("id")) { finding(file, node.path(), "duplicate id \"" + node.attr("id") + "\""); } }
+  }
+  if (page.select("head meta[charset='utf-8' i]").len() != 1) { finding(file, "head", "missing <meta charset=\"utf-8\">"); }
+  if (page.select("head meta[name='viewport']").len() != 1) { finding(file, "head", "missing <meta name=\"viewport\">"); }
+  let descriptions = page.select("head meta[name='description']");
+  if (descriptions.len() != 1) { finding(file, "head", "missing <meta name=\"description\">"); }
+  else { if (normalized(descriptions.at(0).attr("content")) == "") { finding(file, "head", "empty meta description"); } }
+  let titles = page.select("head title");
+  if (titles.len() != 1) { finding(file, "head", "missing or empty <title>"); }
+  else { if (normalized(titles.at(0).text()) == "") { finding(file, "head title", "missing or empty <title>"); } }
+  let stylesheet_count = page.select("link").len();
+  if (stylesheet_count != 1) { finding(file, "head", "expected exactly one stylesheet <link>, found " + str(stylesheet_count)); }
+  let h1_count = page.select("h1").len();
+  if (h1_count != 1) { finding(file, "main", "expected exactly one <h1>, found " + str(h1_count)); }
+  if (page.select("main h1").len() != h1_count) { finding(file, "h1", "<h1> must be inside <main>"); }
+  let layout = "";
+  for (child in page.select("body > *")) { if (child.tag() != "header") { layout = layout + child.tag() + ","; } }
+  if (layout != "nav,main,footer,") { finding(file, "body", "<body> must contain <nav>, <main>, <footer> in that order"); }
+  if (page.select("nav").len() != 1 || page.select("nav > *").len() != 1 || page.select("nav > ul").len() != 1) { finding(file, "nav", "<nav> must hold exactly one <ul>"); }
+  if (page.select("nav a[href='/tools/']").len() == 0) { finding(file, "nav", "<nav> must link to /tools/"); }
+  if (page.select("kbd, samp").len() != page.select("pre kbd, pre samp").len()) { finding(file, "kbd, samp", "kbd and samp must be inside pre"); }
+  let headings = "";
+  let last_heading = "";
+  for (heading in page.select("h2")) { last_heading = normalized(heading.text()); headings = headings + last_heading + "|"; }
+  if (str_ends_with(file, "skill.html") && headings != "Purpose|When to use it|Install|Commands|Inputs and outputs|Safety rules|Worked examples|Errors and exit codes|How to verify|") {
+    finding(file, "h2", "skill.html h2 headings must be exactly: Purpose, When to use it, Install, Commands, Inputs and outputs, Safety rules, Worked examples, Errors and exit codes, How to verify");
+  }
+  if (str_ends_with(file, "user-guide.html") && headings != "Overview|Install|Concepts|Reference|Tasks|Limits|Troubleshooting|") {
+    finding(file, "h2", "user-guide.html h2 headings must be exactly: Overview, Install, Concepts, Reference, Tasks, Limits, Troubleshooting");
+  }
+  if (str_ends_with(file, "tutorial.html")) {
+    if (str_lower(last_heading) != "what you learned") { finding(file, "h2", "tutorial must end with an h2 \"What you learned\""); }
+    if (page.select("pre > kbd").len() == 0) { finding(file, "pre", "tutorial needs commands as <pre><kbd>…</kbd></pre>"); }
+  }
+}
+let fixture = ${ARGV[2]};
+if (fixture != "") { check_page(html.load(fixture)); }
+else {
+  # Loading from the repository root makes /tools/... resolve from that root.
+  let pages = html.load_dir(".", "tools/**/*.html", "");
+  let listing = html.load("tools/index.html");
+  # This also catches empty/unlisted directories, which load_dir cannot return.
+  let directories = ${tool_directories};
+  let directory = "";
+  for (i in range(0, str_len(directories))) {
+    let ch = str_substr(directories, i, 1);
+    if (ch != "|") { directory = directory + ch; }
+    else {
+      let base = "/" + directory + "/";
+      for (j in range(0, 4)) {
+        let filename = "index.html";
+        if (j == 1) { filename = "tutorial.html"; }
+        if (j == 2) { filename = "user-guide.html"; }
+        if (j == 3) { filename = "skill.html"; }
+        if (!html.link_exists(listing, base + filename)) { finding(directory, "document", "missing tool page " + base + filename); }
+      }
+      let listed = false;
+      for (link in listing.select("a")) { if (link.attr("href") == base || link.attr("href") == base + "index.html") { listed = true; } }
+      if (!listed) { finding(directory, "document", "tool is not listed in tools/index.html: " + base); }
+      directory = "";
+    }
+  }
+  for (page in pages) {
+    check_page(page);
+    let file = page.path();
+    let relative = file;
+    if (str_starts_with(relative, "./")) { relative = str_substr(relative, 2, str_len(relative)); }
+    if (relative != "tools/index.html") {
+      let slash = 0;
+      for (i in range(0, str_len(relative))) { if (str_substr(relative, i, 1) == "/") { slash = i; } }
+      let dir = str_substr(relative, 0, slash + 1);
+      let url = "/" + dir;
+      if (!html.link_exists(page, url + "index.html")) { finding(file, "document", "missing tool page " + url + "index.html"); }
+      else {
+        let home = html.load(dir + "index.html");
+        if (page.select("nav").len() == 1 && home.select("nav").len() == 1 && page.select("nav").at(0).hash() != home.select("nav").at(0).hash()) { finding(file, "nav", "nav differs from " + dir + "index.html; run npm run sync:tools"); }
+        if (page.select("footer").len() == 1 && home.select("footer").len() == 1 && page.select("footer").at(0).hash() != home.select("footer").at(0).hash()) { finding(file, "footer", "footer differs from " + dir + "index.html; run npm run sync:tools"); }
+      }
+      if (!html.link_exists(page, url + "tutorial.html")) { finding(file, "document", "missing tool page " + url + "tutorial.html"); }
+      if (!html.link_exists(page, url + "user-guide.html")) { finding(file, "document", "missing tool page " + url + "user-guide.html"); }
+      if (!html.link_exists(page, url + "skill.html")) { finding(file, "document", "missing tool page " + url + "skill.html"); }
+      let listed = false;
+      for (link in listing.select("a")) { if (link.attr("href") == url || link.attr("href") == url + "index.html") { listed = true; } }
+      if (!listed) { finding(file, "document", "tool is not listed in tools/index.html: " + url); }
+    }
+  }
+}
+report.write_text(${ARGV[1]});
+report.fail_if_any();
+end _dsl_
+savedsl(p, ARGV[0]);

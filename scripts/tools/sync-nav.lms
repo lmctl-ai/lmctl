@@ -1,0 +1,32 @@
+# The host's --dry-run controls writes; report only actual differences.
+p = _dsl_ schema="lmhtml.dsl.json";
+let errors = false;
+for (page in html.load_dir(".", "tools/**/*.html", "")) {
+  let file = page.path();
+  if (file == "tools/index.html" || file == "./tools/index.html" || str_ends_with(file, "/index.html")) { continue; }
+  let slash = 0;
+  for (i in range(0, str_len(file))) { if (str_substr(file, i, 1) == "/") { slash = i; } }
+  let home = html.load(str_substr(file, 0, slash + 1) + "index.html");
+  let changed = false;
+  for (i in range(0, 2)) {
+    let tag = "nav";
+    if (i == 1) { tag = "footer"; }
+    let source = home.select("body > " + tag);
+    let target = page.select("body > " + tag);
+    if (source.len() != 1 || target.len() != 1) {
+      errors = true;
+      report.add("error", file, 0, tag + ": expected exactly one in source and destination");
+    } else {
+      if (source.at(0).hash() != target.at(0).hash()) {
+        target.at(0).replace_with(source.at(0).outer_html());
+        changed = true;
+        report.add("sync", file, 0, tag + ": copy from " + home.path());
+      }
+    }
+  }
+  if (changed && !errors) { html.save(page, file); }
+}
+report.write_text(${ARGV[1]});
+if (errors) { report.fail_if_any(); }
+end _dsl_
+savedsl(p, ARGV[0]);

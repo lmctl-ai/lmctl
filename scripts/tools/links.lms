@@ -1,0 +1,20 @@
+# Internal links only; HTTP(S), protocol-relative and non-web schemes are
+# intentionally unchecked. Pass a built site's root, not its source tree.
+p = _dsl_ schema="lmhtml.dsl.json";
+let root = ${ARGV[2]};
+if (root == "") { root = "."; }
+for (page in html.load_dir(root)) {
+  for (node in page.select("a[href], link[href], img[src], script[src]")) {
+    let url = node.attr("href");
+    if (node.has_attr("src")) { url = node.attr("src"); }
+    let kind = html.link_kind(page, url);
+    if (kind == "external" || kind == "special") { continue; }
+    if (kind == "outside-root" || !html.link_exists(page, url)) {
+      report.add("broken-link", page.path(), 0, node.path() + ": " + url + " -> " + html.resolve(page, url));
+    }
+  }
+}
+report.write_text(${ARGV[1]});
+report.fail_if_any();
+end _dsl_
+savedsl(p, ARGV[0]);
