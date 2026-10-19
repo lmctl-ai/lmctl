@@ -148,4 +148,54 @@ cp "$work/original.fragment" "$work/tools/zeta/skill.html"
 run decorate
 run check
 echo 'ok - new/deleted tools, missing indexes, changed titles, role errors and preserved invalid content'
+# Visual QA regressions: complete summaries, unambiguous labels and pre layout.
+cp tests/tools/authoring/visual.fragment "$work/tools/zeta/guide-alpha.html"
+cp tests/tools/authoring/visual.fragment "$work/visual.original"
+expect_failure 'command: demo one' contract tools/zeta/guide-alpha.html
+cat > "$work/visual-setup.lms" <<'LMS'
+p = _dsl_ schema="lmhtml.dsl.json";
+let source = html.load("visual.original").source();
+html.save(str_replace(source, "Visual regression examples.", "Another topic with the same heading."), "tools/zeta/guide-beta.html");
+let words = "Éclair tooling preserves whole words while describing repeatable operations for teams using plain HTML documents and predictable command line programs with detailed documentation for everyone";
+html.save("<h1>Fallback</h1><p>" + words + "</p><h2>Overview</h2><p>Distinct guide.</p><pre><code>\r\n  crlf preserved\r\n</code></pre>", "tools/zeta/guide-gamma.html");
+end _dsl_
+savedsl(p, ARGV[0]);
+LMS
+"$compiler" "$work/visual-setup.lms" "$work/visual-setup.dslb"
+(cd "$work" && "$host" --dsl "$work/visual-setup.dslb") >/dev/null
+expect_failure 'run npm run decorate:tools' decorate --check
+run decorate
+run check
+cat > "$work/visual-assert.lms" <<'LMS'
+p = _dsl_ schema="lmhtml.dsl.json";
+let page = html.load("tools/zeta/guide-alpha.html");
+let index = html.load("tools/zeta/index.html");
+if (index.select("main p").at(0).text() != "A complete first sentence.") { report.add("test", "summary", 0, "not a complete sentence"); }
+if (!str_contains(html.load("tools/index.html").select("main li").at(0).text(), "A complete first sentence.")) { report.add("test", "catalog", 0, "wrong summary"); }
+if (page.select("meta[name='description']").at(0).attr("content") != "A complete first sentence.") { report.add("test", "meta", 0, "not a complete sentence"); }
+let fallback = html.load("tools/zeta/guide-gamma.html");
+if (fallback.select("meta[name='description']").at(0).attr("content") != "Éclair tooling preserves whole words while describing repeatable operations for teams using plain HTML documents and predictable command line programs with…") { report.add("test", "words", 0, "not a whole-word UTF-8 excerpt"); }
+let labels = "";
+for (link in page.select("nav a")) { labels = labels + link.text() + "|"; }
+if (labels != "Tools|Overview|Skill|Guide: lmcad|Guide: lmcad (guide-beta)|Guide: Fallback|") { report.add("test", "nav", 0, labels); }
+let original = html.load("visual.original").source();
+let expected = original;
+# Only the actual pre changes, not the identical snippet in the comment.
+expected = str_replace(expected, "-->\n<pre><kbd>demo one</kbd> <samp>one</samp><kbd>demo two</kbd><samp>two</samp></pre>", "-->\n<pre><kbd>demo one</kbd> \n<samp>one</samp>\n<kbd>demo two</kbd>\n<samp>two</samp></pre>");
+expected = str_replace(expected, "<code>\n  example &lt;input&gt;\n    preserve indentation\n</code>", "<code>  example &lt;input&gt;\n    preserve indentation</code>");
+expected = str_replace(expected, "newline --><samp>output</samp>", "newline -->\n<samp>output</samp>");
+if (page.source_inner("main") != expected) { report.add("test", "pre", 0, "changed unrelated authored bytes or missed formatting"); }
+if (fallback.source_elements("code").at(0) != "<code>  crlf preserved</code>") { report.add("test", "crlf", 0, "blank boundary lines remain"); }
+report.write_text("visual-assert.txt");
+report.fail_if_any();
+end _dsl_
+savedsl(p, ARGV[0]);
+LMS
+"$compiler" "$work/visual-assert.lms" "$work/visual-assert.dslb"
+(cd "$work" && "$host" --dsl "$work/visual-assert.dslb") || { cat "$work/visual-assert.txt"; exit 1; }
+cp -R "$work/tools" "$work/visual-unchanged"
+run decorate
+for file in "$work"/tools/*.html "$work"/tools/*/*.html; do cmp "$file" "$work/visual-unchanged/${file#"$work/tools/"}"; done
+run decorate --check
+echo 'ok - sentence/word summaries, unique topic labels, pre newlines, comments, CRLF and idempotence'
 printf 'PASS: %s named fixtures, current tree and authoring/index lifecycle tests\n' "$count"

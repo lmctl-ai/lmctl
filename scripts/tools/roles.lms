@@ -1,3 +1,3 @@
 # The shared role vocabulary and nav order. Add a name=label pair here, then
-# its content rule in check.lms's ROLE RULES section. Topic pages use their h1.
-role_table = "skill=Skill|tutorial=Tutorial|guide=User guide|recipes=Recipes|reference=Reference|faq=FAQ|changelog=Changelog|";
+# its content rule in check.lms's ROLE RULES section. Topic pages use Role: h1.
+role_table = "skill=Skill|tutorial=Tutorial|guide=Guide|recipes=Recipes|reference=Reference|faq=FAQ|changelog=Changelog|";

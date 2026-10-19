@@ -1,0 +1,15 @@
+<h1>lmcad</h1>
+<p>A complete first sentence. This intentionally lengthy second sentence explains enough details to exceed the description target without allowing the generated summary to stop midway through a word.</p>
+<h2>Overview</h2>
+<p>Visual regression examples.</p>
+<!-- <pre><kbd>demo one</kbd> <samp>one</samp><kbd>demo two</kbd><samp>two</samp></pre> -->
+<pre><kbd>demo one</kbd> <samp>one</samp><kbd>demo two</kbd><samp>two</samp></pre>
+<pre><code>
+  example &lt;input&gt;
+    preserve indentation
+</code></pre>
+<pre><kbd>already separated</kbd>
+<samp>unchanged</samp></pre>
+
+<pre><kbd>comment gap</kbd><!-- invisible
+newline --><samp>output</samp></pre>

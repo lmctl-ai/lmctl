@@ -8,6 +8,73 @@ for (directory in glob("tools/*/")) {
 }
 case_paths = join(sort(glob("tools/*/*.[hH][tT][mM][lL]")), "|") + "|";
 p = _dsl_ schema="lmhtml.dsl.json";
+# Source-preserving pre formatting (kept identical in check/decorate).
+# Locate the nth real element with the host tokenizer, not a text match alone:
+# a comment or script may contain an identical-looking HTML snippet.
+fn element_offset(source: string, tag: string, raw: string, ordinal: int) -> int {
+  let start = 0;
+  let found = -1;
+  while (start < str_len(source) && found < 0) {
+    let relative = str_find(str_substr(source, start, str_len(source)), raw);
+    if (relative < 0) { break; }
+    let candidate = start + relative;
+    let prefix = str_substr(source, 0, candidate + str_len(raw));
+    if (html.parse(prefix).source_elements(tag).len() == ordinal + 1) { found = candidate; }
+    start = candidate + str_len(raw);
+  }
+  return found;
+}
+fn missing_separator(gap: string) -> bool {
+  # Comments are invisible, including newlines inside a comment.
+  let parsed = html.parse("<pre>x" + gap + "y</pre>");
+  let text = parsed.select("pre").at(0).text();
+  let visible = str_substr(text, 1, str_len(text) - 2);
+  return parsed.select("*").len() == 4 && str_trim(visible) == "" && !str_contains(visible, "\n") && !str_contains(visible, "\r");
+}
+fn separate_commands(source: string, first: string, second: string) -> string {
+  let result = source;
+  let firsts = html.parse(source).source_elements(first);
+  let seconds = html.parse(source).source_elements(second);
+  for (i in range(0, firsts.len())) {
+    for (j in range(0, seconds.len())) {
+      let end = element_offset(result, first, firsts.at(i), i) + str_len(firsts.at(i));
+      let start = element_offset(result, second, seconds.at(j), j);
+      if (start >= end) {
+        let gap = str_substr(result, end, start - end);
+        if (missing_separator(gap)) {
+          result = str_substr(result, 0, start) + "\n" + str_substr(result, start, str_len(result));
+        }
+      }
+    }
+  }
+  return result;
+}
+fn format_pre(source: string) -> string {
+  let result = separate_commands(source, "kbd", "samp");
+  result = separate_commands(result, "samp", "kbd");
+  let codes = html.parse(result).source_elements("code");
+  for (i in range(0, codes.len())) {
+    let raw = codes.at(i);
+    let inner = html.parse(raw).source_inner("code");
+    let trimmed = inner;
+    while (str_starts_with(trimmed, "\n") || str_starts_with(trimmed, "\r\n")) {
+      let n = 1;
+      if (str_starts_with(trimmed, "\r\n")) { n = 2; }
+      trimmed = str_substr(trimmed, n, str_len(trimmed));
+    }
+    while (str_ends_with(trimmed, "\n")) {
+      let n = 1;
+      if (str_ends_with(trimmed, "\r\n")) { n = 2; }
+      trimmed = str_substr(trimmed, 0, str_len(trimmed) - n);
+    }
+    if (trimmed != inner) {
+      let replacement = str_replace(raw, ">" + inner + "</", ">" + trimmed + "</");
+      let start = element_offset(result, "code", raw, i);
+      result = str_substr(result, 0, start) + replacement + str_substr(result, start + str_len(raw), str_len(result));
+    }
+  }
+  return result;
+}
 fn finding(file: string, selector: string, message: string) -> void {
   report.add("contract", file, 0, selector + ": " + message);
 }
@@ -53,6 +120,33 @@ fn check_page(page: Doc) -> void {
   if (page.byte_size() > 153600) { finding(file, "document", "page is " + str(page.byte_size()) + " bytes (limit 153600)"); }
   if (page.doctype() != "html") { finding(file, "document", "page must start with <!doctype html>"); }
   for (problem in page.markup_errors()) { finding(file, "document", problem); }
+  let pres = page.source_elements("pre");
+  for (i in range(0, pres.len())) {
+    let raw = pres.at(i);
+    if (format_pre(raw) != raw) {
+      let commands = html.parse(raw).source_elements("kbd");
+      let outputs = html.parse(raw).source_elements("samp");
+      let found_command = false;
+      for (k in range(0, commands.len())) {
+        let command_start = element_offset(raw, "kbd", commands.at(k), k);
+        let command_end = command_start + str_len(commands.at(k));
+        let broken = false;
+        for (j in range(0, outputs.len())) {
+          let output_start = element_offset(raw, "samp", outputs.at(j), j);
+          let output_end = output_start + str_len(outputs.at(j));
+          let gap = "not adjacent";
+          if (output_start >= command_end) { gap = str_substr(raw, command_end, output_start - command_end); }
+          if (command_start >= output_end) { gap = str_substr(raw, output_end, command_start - output_end); }
+          if (missing_separator(gap)) { broken = true; }
+        }
+        if (broken) {
+          finding(file, page.select("pre").at(i).path(), "pre formatting: separate kbd/samp with a newline; command: " + html.parse(commands.at(k)).select("kbd").at(0).text());
+          found_command = true;
+        }
+      }
+      if (!found_command) { finding(file, page.select("pre").at(i).path(), "pre formatting: remove empty code boundary lines"); }
+    }
+  }
   let allowed = "|html|head|meta|title|link|body|header|nav|main|section|footer|h1|h2|h3|h4|p|ul|ol|li|dl|dt|dd|pre|code|kbd|samp|em|strong|a|table|thead|tbody|tr|th|td|blockquote|hr|figure|figcaption|img|";
   for (node in page.select("*")) {
     let tag = node.tag();

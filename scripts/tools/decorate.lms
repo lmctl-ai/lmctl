@@ -1,6 +1,73 @@
 import "roles.lms";
 directories = join(sort(glob("tools/*/")), "|") + "|";
 p = _dsl_ schema="lmhtml.dsl.json";
+# Source-preserving pre formatting (kept identical in check/decorate).
+# Locate the nth real element with the host tokenizer, not a text match alone:
+# a comment or script may contain an identical-looking HTML snippet.
+fn element_offset(source: string, tag: string, raw: string, ordinal: int) -> int {
+  let start = 0;
+  let found = -1;
+  while (start < str_len(source) && found < 0) {
+    let relative = str_find(str_substr(source, start, str_len(source)), raw);
+    if (relative < 0) { break; }
+    let candidate = start + relative;
+    let prefix = str_substr(source, 0, candidate + str_len(raw));
+    if (html.parse(prefix).source_elements(tag).len() == ordinal + 1) { found = candidate; }
+    start = candidate + str_len(raw);
+  }
+  return found;
+}
+fn missing_separator(gap: string) -> bool {
+  # Comments are invisible, including newlines inside a comment.
+  let parsed = html.parse("<pre>x" + gap + "y</pre>");
+  let text = parsed.select("pre").at(0).text();
+  let visible = str_substr(text, 1, str_len(text) - 2);
+  return parsed.select("*").len() == 4 && str_trim(visible) == "" && !str_contains(visible, "\n") && !str_contains(visible, "\r");
+}
+fn separate_commands(source: string, first: string, second: string) -> string {
+  let result = source;
+  let firsts = html.parse(source).source_elements(first);
+  let seconds = html.parse(source).source_elements(second);
+  for (i in range(0, firsts.len())) {
+    for (j in range(0, seconds.len())) {
+      let end = element_offset(result, first, firsts.at(i), i) + str_len(firsts.at(i));
+      let start = element_offset(result, second, seconds.at(j), j);
+      if (start >= end) {
+        let gap = str_substr(result, end, start - end);
+        if (missing_separator(gap)) {
+          result = str_substr(result, 0, start) + "\n" + str_substr(result, start, str_len(result));
+        }
+      }
+    }
+  }
+  return result;
+}
+fn format_pre(source: string) -> string {
+  let result = separate_commands(source, "kbd", "samp");
+  result = separate_commands(result, "samp", "kbd");
+  let codes = html.parse(result).source_elements("code");
+  for (i in range(0, codes.len())) {
+    let raw = codes.at(i);
+    let inner = html.parse(raw).source_inner("code");
+    let trimmed = inner;
+    while (str_starts_with(trimmed, "\n") || str_starts_with(trimmed, "\r\n")) {
+      let n = 1;
+      if (str_starts_with(trimmed, "\r\n")) { n = 2; }
+      trimmed = str_substr(trimmed, n, str_len(trimmed));
+    }
+    while (str_ends_with(trimmed, "\n")) {
+      let n = 1;
+      if (str_ends_with(trimmed, "\r\n")) { n = 2; }
+      trimmed = str_substr(trimmed, 0, str_len(trimmed) - n);
+    }
+    if (trimmed != inner) {
+      let replacement = str_replace(raw, ">" + inner + "</", ">" + trimmed + "</");
+      let start = element_offset(result, "code", raw, i);
+      result = str_substr(result, 0, start) + replacement + str_substr(result, start + str_len(raw), str_len(result));
+    }
+  }
+  return result;
+}
 fn norm(value: string) -> string {
   let result = "";
   let space = false;
@@ -8,6 +75,33 @@ fn norm(value: string) -> string {
     let ch = str_substr(value, i, 1);
     if (ch == " " || ch == "\n" || ch == "\r" || ch == "\t") { space = str_len(result) > 0; }
     else { if (space) { result = result + " "; } result = result + ch; space = false; }
+  }
+  return result;
+}
+# Prefer a complete sentence within the target; otherwise retain whole words.
+# A single oversized word is kept intact rather than silently mutilated.
+fn excerpt(value: string, limit: int, sentences: bool) -> string {
+  let result = norm(value);
+  let prefix = str_text_prefix(result, limit);
+  if (prefix != result) {
+    let sentence = 0;
+    let word = 0;
+    for (i in range(0, str_len(prefix))) {
+      let ch = str_substr(result, i, 1);
+      let next = str_substr(result, i + 1, 1);
+      if (ch == " ") { word = i; }
+      if ((ch == "." || ch == "!" || ch == "?") && next == " ") { sentence = i + 1; }
+    }
+    if (sentences && sentence > 0) { result = str_substr(result, 0, sentence); }
+    else {
+      # Leave room for the ellipsis, including at an exact word boundary.
+      prefix = str_text_prefix(result, limit - 1);
+      word = 0;
+      for (i in range(0, str_len(prefix))) { if (str_substr(prefix, i, 1) == " ") { word = i; } }
+      if (str_substr(result, str_len(prefix), 1) == " ") { word = str_len(prefix); }
+      if (word == 0) { word = str_find(result, " "); }
+      if (word > 0) { result = str_substr(result, 0, word) + "…"; }
+    }
   }
   return result;
 }
@@ -51,7 +145,7 @@ fn page_title(title: string, tool: string) -> string {
 fn summary(page: Doc) -> string {
   let paragraphs = html.parse(content(page)).select("main p");
   let result = "";
-  if (paragraphs.len() > 0) { result = str_trim(str_text_prefix(norm(paragraphs.at(0).text()), 160)); }
+  if (paragraphs.len() > 0) { result = excerpt(paragraphs.at(0).text(), 160, true); }
   return result;
 }
 fn content(page: Doc) -> string {
@@ -63,6 +157,27 @@ fn content(page: Doc) -> string {
   let result = page.source_inner(root, "!doctype head nav footer");
   if (page.select("main").len() == 0) { result = "<main>" + result + "</main>"; }
   else { result = str_trim(result); }
+  let pres = html.parse(result).source_elements("pre");
+  for (i in range(0, pres.len())) {
+    let raw = pres.at(i);
+    let replacement = format_pre(raw);
+    if (replacement != raw) {
+      let start = element_offset(result, "pre", raw, i);
+      result = str_substr(result, 0, start) + replacement + str_substr(result, start + str_len(raw), str_len(result));
+    }
+  }
+  return result;
+}
+fn page_description(page: Doc) -> string {
+  let result = summary(page);
+  let meta = page.select("head meta[name='description']");
+  if (meta.len() > 0 && norm(meta.at(0).attr("content")) != "") {
+    let previous = norm(meta.at(0).attr("content"));
+    let paragraphs = html.parse(content(page)).select("main p");
+    let old_generated = "";
+    if (paragraphs.len() > 0) { old_generated = str_trim(str_text_prefix(norm(paragraphs.at(0).text()), 160)); }
+    if (previous != old_generated) { result = excerpt(previous, 160, true); }
+  }
   return result;
 }
 fn render(layout: string, nav: string, footer: string, body: string, title: string, description: string) -> string {
@@ -129,6 +244,7 @@ while (str_find(tool_dirs, "|") >= 0) {
   let footer = str_replace(region(template_source, "tool-footer"), "{{REPO}}", escape(repo));
   footer = str_replace(footer, "{{REPO_LABEL}}", escape(str_replace(repo, "https://", "")));
   let links = "";
+  let used_labels = "\nTools\nOverview\n";
   let roles = role_data;
   while (str_find(roles, "|") >= 0) {
     let end = str_find(roles, "|");
@@ -141,7 +257,11 @@ while (str_find(tool_dirs, "|") >= 0) {
       let filename = basename(page.path());
       if (filename == "index.html" || role(filename) != name) { continue; }
       let text = label;
-      if (filename != name + ".html") { text = str_trim(str_text_prefix(heading(page), 80)); }
+      if (filename != name + ".html") { text = label + ": " + excerpt(heading(page), 80, false); }
+      while (str_contains(used_labels, "\n" + text + "\n")) {
+        text = text + " (" + str_substr(filename, 0, str_len(filename) - 5) + ")";
+      }
+      used_labels = used_labels + text + "\n";
       links = links + "<li><a href=\"/tools/" + escape(tool) + "/" + escape(filename) + "\">" + escape(text) + "</a></li>\n";
     }
   }
@@ -153,10 +273,7 @@ while (str_find(tool_dirs, "|") >= 0) {
   for (page in pages) {
     if (basename(page.path()) == "index.html") { continue; }
     if (tool_title == "") { tool_title = heading(page); tool_summary = summary(page); }
-    let description = summary(page);
-    let meta = page.select("head meta[name='description']");
-    if (meta.len() > 0 && norm(meta.at(0).attr("content")) != "") { description = meta.at(0).attr("content"); }
-    let result = render(layout, nav, footer, content(page), page_title(heading(page), tool), description);
+    let result = render(layout, nav, footer, content(page), page_title(heading(page), tool), page_description(page));
     store(page.path(), result, page.source(), check, differences(page, result));
   }
   let index_content = str_replace(region(template_source, "tool-index"), "{{TOOL_TITLE}}", escape(tool_title));
@@ -171,10 +288,7 @@ while (str_find(tool_dirs, "|") >= 0) {
 }
 for (page in html.load_dir("tools", "*.html", "*/*.html")) {
   if (basename(page.path()) == "index.html") { continue; }
-  let description = summary(page);
-  let meta = page.select("head meta[name='description']");
-  if (meta.len() > 0 && norm(meta.at(0).attr("content")) != "") { description = meta.at(0).attr("content"); }
-  store(page.path(), render(layout, region(template_source, "site-nav"), region(template_source, "site-footer"), content(page), heading(page) + " — lmctl.com tools", description), page.source(), check, "missing or outdated site document shell");
+  store(page.path(), render(layout, region(template_source, "site-nav"), region(template_source, "site-footer"), content(page), heading(page) + " — lmctl.com tools", page_description(page)), page.source(), check, "missing or outdated site document shell");
 }
 let site_content = str_replace(region(template_source, "site-index"), "{{TOOL_LINKS}}", tool_links);
 let old_index = "";

@@ -39,9 +39,11 @@ There is no fixed page set. `skill.html` is the sole required content page.
 `roles.lms` contains the shared role order and labels. The clearly marked
 **ROLE RULES** section of `check.lms` contains the content checks. To add a role,
 add one `name=Label` pair to the table and its rule in that section; decoration
-picks up its order and label automatically. Topic pages use their h1 as the nav
-label (up to 80 characters). Nav links are ordered by role, then filename, and
-only include pages that exist. There are no active-page classes.
+picks up its order and label automatically. The index is labelled Overview;
+base pages use the role label. Topic pages use
+`Role: h1`, with the heading shortened at a word boundary near 80 characters.
+Repeated labels gain the filename stem in parentheses. Nav links are ordered
+by role, then filename, and only include pages that exist. There are no active-page classes.
 
 ## Decoration and generated indexes
 
@@ -61,11 +63,16 @@ because there is no public `lmctl-ai/lmscript` repository. This is tool-level,
 not per-page configuration.
 
 Titles come from h1 plus the tool/site suffix. An existing nonempty description
-is preserved; otherwise the first content paragraph supplies a normalized,
-at-most-160-character UTF-8 description. Include an introductory paragraph.
-Authored content is retained as source bytes, including comments, quotes,
-entities and preformatted spacing. Loose fragments are wrapped in main. Invalid
-content such as a div or class attribute is **not repaired**: the contract checker
+is retained; otherwise it comes from the first content paragraph, as do generated
+summaries. Both use the same shortening rule: prefer the last sentence ending
+within 160 characters, or end at a whole word with an ellipsis. A single oversized word stays intact.
+Include an introductory paragraph. Old automatically truncated descriptions
+are regenerated from that paragraph.
+Authored content is retained as source bytes, including comments, quotes and
+entities, with two formatting exceptions: adjacent kbd/samp commands and output
+inside pre gain a separating newline, and empty leading/trailing newline lines
+inside pre/code are removed. Other preformatted spacing stays intact. Loose
+fragments are wrapped in main. Invalid content such as a div or class attribute is **not repaired**: the contract checker
 reports it. Explicit main content is retained as well.
 
 Each tool index is generated from the first content page in alphabetical
@@ -84,7 +91,8 @@ migration; old `user-guide.html` pages are now `guide.html`.
   table thead tbody tr th td blockquote hr figure figcaption img.
 - No class/style attributes, scripts, div/span, iframes, on* handlers, external
   resources or unlisted attributes. IDs only on h2/h3; no duplicate IDs.
-- Commands use kbd, output uses samp, both inside pre. Paste real output.
+- Commands use kbd, output uses samp, both inside pre, separated by newlines.
+  Paste real output.
 - Images are local `/tools/<tool>/img/<file>`, with nonempty alt, inside a figure
   with a figcaption. Each page is at most 153600 bytes.
 - Internal links are site-rooted or same-page anchors and must resolve. External
