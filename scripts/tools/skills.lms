@@ -406,6 +406,18 @@ fn render_skills(body: string, title: string, description: string) -> string {
   result = str_replace(result, "{{CONTENT}}", body);
   return result + "\n";
 }
+# The skills index carries its full title (no per-skill suffix).
+fn render_skills_index(body: string, full_title: string, description: string) -> string {
+  let template = html.load("scripts/tools/template.html").source();
+  let result = region(template, "layout");
+  result = str_replace(result, "{{TITLE}}", escape(full_title));
+  result = str_replace(result, "{{DESCRIPTION}}", escape(description));
+  result = str_replace(result, "{{ICON}}", "<link rel=\"icon\" type=\"image/png\" href=\"/tools/img/icon.png\">");
+  result = str_replace(result, "{{NAV}}", region(template, "skills-nav"));
+  result = str_replace(result, "{{FOOTER}}", region(template, "skills-footer"));
+  result = str_replace(result, "{{CONTENT}}", body);
+  return result + "\n";
+}
 fn store(path: string, result: string, check: bool) -> void {
   let old = "";
   if (html.link_exists(html.parse(""), "/" + path)) { old = html.load(path).source(); }
@@ -464,7 +476,7 @@ if (mode != "" && !check) {
   let body = "<main>\n<h1>lmctl skills</h1>\n<p>" + intro + "</p>\n";
   body = body + index_group(${utilities}, "Utilities (LLM-facing)") + index_group(${coordination}, "lmctl orchestration");
   body = body + "<p>New tool skills live in the <a href=\"/tools/\">tools catalog</a>. Hosted utilities require an authorized account; deployment availability and permissions must be checked with the operator.</p>\n</main>";
-  store("skills/index.html", render_skills(body, "lmctl skills", excerpt(intro, 160, true)), check);
+  store("skills/index.html", render_skills_index(body, "Skills — lmctl.com", excerpt(intro, 160, true)), check);
   if (check && html.link_exists(html.parse(""), "/skills/index.html")) { check_page(html.load("skills/index.html")); }
 }
 report.write_text(${ARGV[1]});

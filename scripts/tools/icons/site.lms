@@ -21,14 +21,14 @@ let TEXT = "lmCtl"; # brand casing, documented here; glyphs are drawn below
 let ACCENT_R = 0.98; # gold: distinct from the four tool colors, same family
 let ACCENT_G = 0.80;
 let ACCENT_B = 0.30;
-let STROKE = 0.16;   # glyph stroke width
-let GAP = 0.30;      # letter spacing
+let STROKE = 0.15;   # glyph stroke width
+let GAP = 0.32;      # letter spacing
 let XH = 0.72;       # lowercase x-height
 let CAPH = 1.0;      # cap/ascender height
-let DEPTH = 0.3;     # extrusion depth
-let MSTEP = 0.16;    # gap between the m stems
-let DIST = 7.4;      # camera distance (logo framing)
-let ICON_ZOOM = 0.92; # favicon framing factor (closer than logo)
+let DEPTH = 0.16;     # extrusion depth
+let MSTEP = 0.20;    # gap between the m stems
+let DIST = 8.1;      # camera distance (logo framing)
+let ICON_ZOOM = 1.0; # favicon framing factor (closer than logo)
 # --- end site icon parameters ---
 
 let letters = material().color(ACCENT_R, ACCENT_G, ACCENT_B).roughness(0.5);
@@ -43,7 +43,7 @@ for (i in range(0, 3)) {
     .position(cursor + float(i) * (STROKE + MSTEP) + STROKE / 2.0, XH / 2.0, -DEPTH / 2.0);
 }
 scene.box(2.0 * STROKE + MSTEP, STROKE, DEPTH, letters)
-  .position(cursor + STROKE - MSTEP / 2.0, XH - STROKE / 2.0, -DEPTH / 2.0);
+  .position(cursor + STROKE + MSTEP / 2.0, XH - STROKE / 2.0, -DEPTH / 2.0);
 scene.box(2.0 * STROKE + MSTEP, STROKE, DEPTH, letters)
   .position(cursor + 2.0 * STROKE + 1.5 * MSTEP, XH - STROKE / 2.0, -DEPTH / 2.0);
 cursor = cursor + 3.0 * STROKE + 2.0 * MSTEP + GAP;
@@ -69,7 +69,7 @@ cursor = cursor + STROKE;
 
 let text_w = cursor;
 let text_h = CAPH;
-let aim_x = text_w / 2.0 + text_w * 0.02; # view is from the right: center the projection, not the geometry
+let aim_x = text_w / 2.0 + text_w * 0.055; # view is from the right: center the projection, not the geometry
 let aim_y = text_h / 2.0;
 # Logo: comfortable margins. Favicon sizes: the same view moved closer
 # (ICON_ZOOM) so the wordmark fills the 64/32/16 px tile.
