@@ -95,6 +95,10 @@ npm ci
 npm run start
 ```
 
+## Tools
+
+Static tool guides are published at [lmctl.com/tools](https://lmctl.com/tools/); authoring and validation details are in [`tools/README.md`](./tools/README.md).
+
 ## Quickrun samples
 
 The hosted [quickrun catalog](https://lmctl.com/quickrun/) is generated from
