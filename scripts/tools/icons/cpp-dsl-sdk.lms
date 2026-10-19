@@ -1,0 +1,52 @@
+# cpp-dsl-sdk icon: two meshing gears (a runtime turning bytecode), teeth placed in loops.
+# Usage (see README.md): lmscript cpp-dsl-sdk.lms OUT_DIR OUT.dslb, then lmcad --dsl OUT.dslb
+out = ARGV.get(0, "build");
+p = _dsl_ schema="lmcad.dsl.json";
+# --- shared icon look: identical in every icon script (render.sh --check verifies) ---
+scene.background(0.12, 0.14, 0.20);
+scene.directional_light(-0.5, -1.0, -0.6, 0.85);
+scene.fill_light(0.8, -0.2, 0.9, 0.40);
+scene.ambient(0.32);
+scene.supersample(4);
+let view_x = 0.36;
+let view_y = 0.38;
+let view_z = 0.85;
+# --- end shared icon look ---
+let big = material().color(0.74, 0.62, 1.00).roughness(0.45);
+let small = material().color(1.00, 0.70, 0.18).roughness(0.45);
+# Gear g: disc + teeth around it, then a hole through the middle. Axis = Z.
+for (g in range(0, 2)) {
+  let r = 1.05;
+  let teeth = 10;
+  let cx = -0.55;
+  let cy = 0.35;
+  let m = big;
+  let phase = 0.0;
+  if (g == 1) {
+    r = 0.62;
+    teeth = 7;
+    cx = 1.20;
+    cy = -0.92;
+    m = small;
+    phase = 0.22;
+  }
+  let gear = scene.cylinder(r, 0.45, m).rotate(1.5708, 0.0, 0.0);
+  for (t in range(0, teeth)) {
+    let a = phase + float(t) * 6.2831853 / float(teeth);
+    let tooth = scene.box(0.36, 0.34, 0.45, m).rotate(0.0, 0.0, a).position(cos(a) * (r + 0.12), sin(a) * (r + 0.12), 0.0);
+    gear.union(tooth);
+    tooth.visible(false);
+  }
+  let hole = scene.cylinder(r * 0.36, 1.0, m).rotate(1.5708, 0.0, 0.0);
+  gear.cut(hole);
+  hole.visible(false);
+  gear.position(cx, cy, 0.0);
+}
+let dist = 9.6;
+let aim_y = -0.2;
+scene.camera(28.0, view_x * dist, aim_y + view_y * dist, view_z * dist, 0.0, aim_y, 0.0);
+scene.render_png(${out} + "/logo.png", 256, 256);
+scene.render_png(${out} + "/icon.png", 64, 64);
+scene.render_png(${out} + "/icon-32.png", 32, 32);
+end _dsl_
+savedsl(p, ARGV.get(1, "icon.dslb"));

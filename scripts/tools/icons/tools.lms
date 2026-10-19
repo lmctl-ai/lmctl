@@ -1,0 +1,42 @@
+# Site icon for /tools/: a 2x2 grid of rounded blocks in the four tool colors.
+# Usage (see README.md): lmscript tools.lms OUT_DIR OUT.dslb, then lmcad --dsl OUT.dslb
+out = ARGV.get(0, "build");
+p = _dsl_ schema="lmcad.dsl.json";
+# --- shared icon look: identical in every icon script (render.sh --check verifies) ---
+scene.background(0.12, 0.14, 0.20);
+scene.directional_light(-0.5, -1.0, -0.6, 0.85);
+scene.fill_light(0.8, -0.2, 0.9, 0.40);
+scene.ambient(0.32);
+scene.supersample(4);
+let view_x = 0.36;
+let view_y = 0.38;
+let view_z = 0.85;
+# --- end shared icon look ---
+# Tool colors in grid order: lmcad, lmscript, lmhtml, cpp-dsl-sdk.
+for (i in range(0, 4)) {
+  let m = material().color(0.30, 0.62, 1.00).roughness(0.5);
+  if (i == 1) {
+    m = material().color(0.20, 0.82, 0.70).roughness(0.5);
+  } else if (i == 2) {
+    m = material().color(1.00, 0.48, 0.26).roughness(0.5);
+  } else if (i == 3) {
+    m = material().color(0.74, 0.62, 1.00).roughness(0.5);
+  }
+  let x = float(i % 2) * 1.5 - 0.75;
+  let z = float(i / 2) * 1.5 - 0.75;
+  # Back row taller than the front row so all four blocks stay visible.
+  let h = 0.6;
+  if (i < 2) {
+    h = 1.3;
+  }
+  let block = scene.box(1.1, h, 1.1, m).position(x, h / 2.0, z);
+  block.fillet(0.12);
+}
+let dist = 8.6;
+let aim_y = 0.5;
+scene.camera(28.0, view_x * dist, aim_y + view_y * dist, view_z * dist, 0.0, aim_y, 0.0);
+scene.render_png(${out} + "/logo.png", 256, 256);
+scene.render_png(${out} + "/icon.png", 64, 64);
+scene.render_png(${out} + "/icon-32.png", 32, 32);
+end _dsl_
+savedsl(p, ARGV.get(1, "icon.dslb"));

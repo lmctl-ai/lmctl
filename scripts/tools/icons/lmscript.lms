@@ -1,0 +1,58 @@
+# lmscript icon: curly braces built from boxes around three lines of code.
+# Usage (see README.md): lmscript lmscript.lms OUT_DIR OUT.dslb, then lmcad --dsl OUT.dslb
+out = ARGV.get(0, "build");
+p = _dsl_ schema="lmcad.dsl.json";
+# --- shared icon look: identical in every icon script (render.sh --check verifies) ---
+scene.background(0.12, 0.14, 0.20);
+scene.directional_light(-0.5, -1.0, -0.6, 0.85);
+scene.fill_light(0.8, -0.2, 0.9, 0.40);
+scene.ambient(0.32);
+scene.supersample(4);
+let view_x = 0.36;
+let view_y = 0.38;
+let view_z = 0.85;
+# --- end shared icon look ---
+let brace = material().color(0.20, 0.82, 0.70).roughness(0.5);
+let line = material().color(0.92, 0.95, 1.00).roughness(0.6);
+# Two braces: side -1 is "{", side +1 is "}". Each brace is five boxes
+# (two bars, two serifs, the middle nub) unioned into one solid.
+for (k in range(0, 2)) {
+  let side = float(k * 2 - 1);
+  let x = side * 1.45;
+  let b = scene.box(0.32, 1.15, 0.4, brace).position(x, 0.70, 0.0);
+  for (part in range(0, 4)) {
+    let w = 0.5;
+    let px = x - side * 0.22;
+    let py = 1.30;
+    let h = 0.32;
+    if (part == 0) {
+      w = 0.32;
+      px = x;
+      py = -0.70;
+      h = 1.15;
+    } else if (part == 2) {
+      py = -1.30;
+    } else if (part == 3) {
+      w = 0.42;
+      px = x + side * 0.24;
+      py = 0.0;
+    }
+    let piece = scene.box(w, h, 0.4, brace).position(px, py, 0.0);
+    b.union(piece);
+    piece.visible(false);
+  }
+}
+# Three code lines of different lengths, indented like a block body.
+for (i in range(0, 3)) {
+  let len = 1.5 - float(i % 2) * 0.6;
+  let y = 0.62 - float(i) * 0.62;
+  scene.box(len, 0.30, 0.3, line).position(-0.55 + len / 2.0, y, 0.0);
+}
+let dist = 9.4;
+let aim_y = 0.0;
+scene.camera(28.0, view_x * dist, aim_y + view_y * dist, view_z * dist, 0.0, aim_y, 0.0);
+scene.render_png(${out} + "/logo.png", 256, 256);
+scene.render_png(${out} + "/icon.png", 64, 64);
+scene.render_png(${out} + "/icon-32.png", 32, 32);
+end _dsl_
+savedsl(p, ARGV.get(1, "icon.dslb"));
