@@ -7,7 +7,9 @@
     "build": "docusaurus build",
     "clear": "docusaurus clear",
     "serve": "docusaurus serve",
-    "start": "docusaurus start"
+    "start": "docusaurus start",
+    "check:tools": "node scripts/check-tools.mjs",
+    "check:tools:selftest": "node scripts/check-tools.mjs --selftest"
   },
   "dependencies": {
     "@docusaurus/core": "^3.10.1",
