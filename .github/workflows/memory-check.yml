@@ -1,0 +1,36 @@
+name: memory-check
+
+# Validates durable-memory/ against the content-only HTML profile
+# (scripts/memory/**). No secrets, read-only token, no deploy.
+on:
+  pull_request:
+    paths: ["durable-memory/**", "scripts/memory/**", "tests/memory/**", "scripts/tools/lmhtml.lock", ".github/workflows/memory-check.yml"]
+  push:
+    branches: [main]
+    paths: ["durable-memory/**", "scripts/memory/**", "tests/memory/**", "scripts/tools/lmhtml.lock", ".github/workflows/memory-check.yml"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: memory-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: install published DSL compiler
+        run: npm i -g @lmctl-ai/lmctl@0.2.347
+      - name: check durable-memory notes and index
+        run: npm run check:memory
+      - name: memory profile self-test
+        run: npm run check:memory:selftest
+      - name: build the web view
+        run: npm run build:memory-web

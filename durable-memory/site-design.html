@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>lmctl docs site — design &amp; authoring</title>
+</head>
+<body>
+<h1>lmctl docs site — design &amp; authoring</h1>
+<p>The public documentation site for <strong>lmctl</strong>, served at <strong><code>lmctl.com/lmctl/</code></strong> (a path prefix, not a subdomain). This page covers how the site is built, authored, rendered, and published. It is itself public — keep it free of internal paths, infrastructure secrets, or unreleased features.</p>
+<h2 id="stack">Stack</h2>
+<ul>
+<li><strong>Docusaurus 3.x</strong> static-site generator, Node 22.</li>
+<li><strong>Local search</strong> via <code>@easyops-cn/docusaurus-search-local</code> — indexed at build time, no external search service.</li>
+<li><code>docusaurus.config.ts</code>: <code>baseUrl: '/lmctl/'</code>, <code>trailingSlash: false</code>, <code>url: process.env.SITE_URL ?? 'https://lmctl.com'</code> (override <code>SITE_URL</code> to produce correct canonical/sitemap URLs for a staging domain).</li>
+</ul>
+<h2 id="information-architecture">Information architecture</h2>
+<p>Two top-level sections plus a landing page, Glossary, and Troubleshooting. The nav tree lives in <code>sidebars.ts</code>; the landing page is <code>src/pages/index.tsx</code>.</p>
+<ul>
+<li><strong>Tutorials</strong> (<code>docs/tutorials/</code>, sequential, learn-by-doing): install &amp; first run → your first workflow job (image-qa) → QA suite &amp; ai-test chapters → operating workflows from the CLI.</li>
+<li><strong>Manuals / Reference</strong> (<code>docs/manuals/</code>, topic-oriented): Concepts, Workflows &amp; archetypes, Template catalog, Architecture overview, CLI reference, Operations runbook, Configuration &amp; environment, ai-test chapter format. Plus top-level Glossary and Troubleshooting.</li>
+</ul>
+<h2 id="authoring">Authoring</h2>
+<p>Docs are Markdown/MDX files under <code>docs/</code> with frontmatter:</p>
+<pre><code>---
+title: Page Title
+sidebar_position: 3
+---</code></pre>
+<p>To add a page: create <code>docs/&lt;section&gt;/&lt;slug&gt;.md</code>, then register its id (the path without <code>.md</code>, e.g. <code>manuals/&lt;slug&gt;</code>) in <code>sidebars.ts</code>. Cross-link other pages with relative paths (<code>./other-page.md</code>) so the build can validate them.</p>
+<p>Content conventions (keep these consistent across pages):</p>
+<ul>
+<li>The product/platform is <strong>lmctl</strong>; the command is <strong><code>lmctl</code></strong>.</li>
+<li>Install is <code>npm install -g @lmctl-ai/lmctl</code>.</li>
+<li>The <code>lmctl</code> CLI is a <strong>direct, local</strong> tool — it sets up <em>and</em> operates everything; do not frame it as a network client. Member delegation is direct and synchronous via <code>lmctl prompt "&lt;teamfile&gt;.lmctl" &lt;alias&gt; "..."</code>. Busy returns an immediate error (<code>is busy; wait and retry</code>), establishing that nothing was sent and nothing is held. The legacy queue delivery engine (<code>mailbox_queue_enabled</code>, <code>mailbox_relay</code>, <code>lmctl mail deliver</code>) was removed in <code>0.1.264</code>. Legacy commands <code>lmctl chat</code>, <code>health</code>, <code>hire</code>, <code>refresh</code>, and <code>restore</code> are retired; member status and liveness inspection is performed via <code>lmctl status &lt;teamfile&gt; [&lt;alias&gt;] [--details]</code>.</li>
+<li>The <strong>lmctl.ai</strong> web console is <strong>optional</strong> (free/premium subscription), not required.</li>
+<li>Keep examples runnable and self-contained; never wrap <code>lmctl</code> dispatches in a shell <code>timeout</code>.</li>
+</ul>
+<h2 id="local-development">Local development</h2>
+<pre><code>npm ci          # reproducible install (lockfile is committed)
+npm start       # dev server with hot reload at /lmctl/
+npm run build   # static build into build/
+npm run serve   # preview the built artifact locally</code></pre>
+<p><code>npm run build</code> <strong>fails on broken links and broken anchors</strong> — fix them before publishing. The artifact builds fully offline.</p>
+<h2 id="rendering-amp-hosting">Rendering &amp; hosting</h2>
+<ul>
+<li><code>npm run build</code> emits static <code>build/</code> under the <code>/lmctl/</code> base path. With <code>trailingSlash: false</code>, pages render as <code>docs/glossary.html</code>, <code>search.html</code>, etc.; <code>404.html</code> is included.</li>
+<li>Objects are published under the S3 key prefix <code>lmctl/</code>. <strong>Cache headers</strong> are set on sync: hashed <code>assets/*</code> are long-TTL <code>immutable</code>; <code>*.html</code> and <code>sitemap.xml</code> are <code>no-cache</code>.</li>
+<li>A <strong>CloudFront viewer-request function</strong> (<code>infra/lmctl-www-redirect.js</code>) is required because a REST/OAC S3 origin does not resolve directory indexes. The function only handles clean-URL rewriting for <code>/lmctl/*</code> and <code>/lmprobe/*</code>: rewriting <code>/lmctl/</code> → <code>/lmctl/index.html</code>, slashless extensionless paths to <code>…/&lt;name&gt;.html</code>, and 301-redirecting trailing-slash paths to slashless canonicals. Requests with a file extension (<code>assets/*</code>, <code>.js/.css/.svg/.png/.xml</code>) pass through untouched. The function also keeps the <code>www</code>→apex redirect.</li>
+<li><strong>S3 Triple-Key Index Pattern for other prefixes:</strong> Because <code>infra/lmctl-www-redirect.js</code> does not rewrite extensionless URIs for prefixes outside <code>/lmctl/*</code> and <code>/lmprobe/*</code>, all other paths (<code>/skills</code>, <code>/quickrun</code>, <code>/templates</code>, <code>/helloexample</code>, <code>/lmscript/commands</code>) pass through untouched to S3. To prevent 404 NoSuchKey errors when clients request these endpoints with or without trailing slashes, <code>scripts/deploy.sh</code> uploads index documents to <strong>three distinct S3 keys</strong>: <code>&lt;prefix&gt;</code> (e.g. <code>skills</code>), <code>&lt;prefix&gt;/</code> (e.g. <code>skills/</code>), and <code>&lt;prefix&gt;/index.html</code>.</li>
+<li>Deploy constraint: the <code>/lmctl/*</code> CloudFront behavior must have an <strong>empty Origin Path</strong> — objects already live under the <code>lmctl/</code> key prefix, so setting Origin Path <code>/lmctl</code> would double-prefix and 404.</li>
+</ul>
+<h2 id="publishing">Publishing</h2>
+<p>Current publishing is <strong>local/manual</strong>. Use an operator environment with AWS access:</p>
+<pre><code>npm run build
+S3_BUCKET=lmctl-website-prod CF_DISTRIBUTION_ID=E1GKUWTM93U7IV bash scripts/deploy.sh</code></pre>
+<p><code>scripts/deploy.sh</code> publishes the Docusaurus build under <code>s3://lmctl-website-prod/lmctl/</code>, publishes the root homepage objects, syncs raw root-prefix artifacts such as <code>/skills/</code>, and issues CloudFront invalidations plus live smoke checks.</p>
+<p>The GitHub Actions deploy workflow still exists for <code>workflow_dispatch</code>, but the push trigger is disabled as of 2026-08-05. Root cause: the OIDC role <code>lmctl-website-deploy</code> is scoped to <code>s3://lmctl-website-prod/lmctl/*</code>, while <code>scripts/deploy.sh</code> also writes the root homepage object <code>s3://lmctl-website-prod/index.html</code>; automatic runs failed with <code>AccessDenied</code> on that write. Re-enable automation only after widening the role scope or splitting the homepage publish path.</p>
+<p>For review-gated docs, work on a branch and merge/push to <code>main</code> only after the review clears. Treat <code>main</code> as publish-ready, then deploy locally.</p>
+<h2 id="static-tool-pages-tools">Static tool pages (<code>/tools/</code>)</h2>
+<p>A separate surface from the Docusaurus site: plain HTML pages for each tool (skill page for LLM agents, optional tutorial/guide/recipes/reference/FAQ/ changelog) in <code>tools/</code>, one shared stylesheet, no framework and no build step. Authors write content only; <code>npm run decorate:tools</code> derives head, nav, footer, indexes and icons from <code>scripts/tools/template.html</code>, and <code>npm run check:tools</code> enforces the contract (also in CI). It is published only by <code>scripts/deploy-tools.sh</code>, never by <code>scripts/deploy.sh</code>. See <a href="tools-docs.html"><code>tools-docs.md</code></a> for the full guide.</p>
+</body>
+</html>

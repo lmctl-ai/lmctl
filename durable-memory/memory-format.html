@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Durable memory format: content-only HTML notes</title>
+</head>
+<body>
+<h1>Durable memory format: content-only HTML notes</h1>
+<p>Durable-memory notes are small HTML files that carry content only: no CSS, no class names, no emoji. A script checks them, generates the index, and builds a separate decorated copy when they are shown on a web page. Any repository can use the same format and scripts for its own durable-memory directory.</p>
+
+<h2 id="why">Why this format</h2>
+<ul>
+<li><strong>Content only.</strong> Notes are read by people and by language models. Presentation (stylesheets, classes, layout) is noise for both and goes stale; the web view adds it to copies, so the sources never carry it.</li>
+<li><strong>HTML, not Markdown.</strong> HTML has one unambiguous structure that a host program can parse and check: headings, lists, tables, code and links survive any tool, and links between notes are verified.</li>
+<li><strong>No emoji.</strong> Pictographs carry no precise meaning, render differently everywhere and confuse text tools. Write the word: done, open, warning.</li>
+</ul>
+
+<h2 id="the-profile">The profile</h2>
+<h3 id="files">Files and names</h3>
+<ul>
+<li>Every note is <code>DIR/name.html</code> with a lowercase name of letters, digits and single hyphens. Dated notes put the date in the name: <code>release-check-2026-10-19.html</code>.</li>
+<li><code>DIR/index.html</code> must exist and link every other note. Its note list is generated (see <a href="#commands">commands</a>).</li>
+<li>One subdirectory is allowed: <code>DIR/archive/</code> for retired notes. No other subdirectories.</li>
+<li>Other files are reported as warnings (convert them or move them out); images referenced by notes may sit next to them.</li>
+</ul>
+<h3 id="document">The document</h3>
+<pre><code>&lt;!doctype html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+&lt;meta charset="utf-8"&gt;
+&lt;title&gt;Release checklist&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;h1&gt;Release checklist&lt;/h1&gt;
+&lt;p&gt;One paragraph that says what this note is for; the index uses it as the summary.&lt;/p&gt;
+&lt;h2 id="steps"&gt;Steps&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;Run &lt;code&gt;npm run check:memory&lt;/code&gt;.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+<ul>
+<li>Required: <code>&lt;!doctype html&gt;</code>, <code>&lt;html lang&gt;</code>, exactly one <code>&lt;meta charset="utf-8"&gt;</code>, a nonempty <code>&lt;title&gt;</code>, explicit <code>&lt;head&gt;</code>, <code>&lt;/head&gt;</code>, <code>&lt;body&gt;</code>, <code>&lt;/body&gt;</code> and <code>&lt;/html&gt;</code> tags, and exactly one <code>&lt;h1&gt;</code>. The first paragraph after the h1 should summarize the note.</li>
+<li>Head: only <code>&lt;meta charset&gt;</code>, an optional <code>&lt;meta name="description" content="..."&gt;</code> and <code>&lt;title&gt;</code>.</li>
+<li>Allowed body elements: h1 h2 h3 h4 p ul ol li dl dt dd pre code kbd samp em strong a table thead tbody tr th td blockquote hr img.</li>
+<li>Allowed attributes: <code>lang</code> on html; <code>href</code> on a; <code>src</code>, <code>alt</code>, <code>width</code>, <code>height</code> on img; <code>id</code> on h2 and h3 only (anchor targets, unique); <code>start</code> on ol; <code>colspan</code>, <code>rowspan</code> (and <code>scope</code> on th) on table cells.</li>
+<li>Forbidden: class, style, any id outside h2/h3, script, link (no stylesheet), viewport meta, div, span, iframe and every other element, inline handlers (<code>onclick</code> and the like).</li>
+<li>Images: local files only, with nonempty alt text. External resources are not allowed; links to external pages are.</li>
+<li>Links between notes are relative (<code>other-note.html</code>, <code>other-note.html#steps</code>, <code>#steps</code>, <code>../index.html</code> from archive/) and must resolve. Site-rooted links (<code>/x</code>) are reported: they break when the notes move. Links to repository files outside the directory resolve on disk but are not part of the web view.</li>
+<li>Commands the reader types are <code>kbd</code>, program output is <code>samp</code>, both inside <code>pre</code>; source code is <code>pre</code> with <code>code</code>.</li>
+</ul>
+<h3 id="emoji-rule">The emoji rule</h3>
+<p>The checker reads every note (and any other text file in the directory) code point by code point and reports the file, line and code point of these characters:</p>
+<table>
+<thead><tr><th>Code points</th><th>What they are</th></tr></thead>
+<tbody>
+<tr><td>U+1F000 to U+1FAFF</td><td>Emoji and pictograph blocks, regional indicator flags, skin tones</td></tr>
+<tr><td>U+2600 to U+27BF</td><td>Miscellaneous symbols and dingbats: stars, check marks, crosses, hearts, weather</td></tr>
+<tr><td>U+2B1B, U+2B1C, U+2B50, U+2B55</td><td>Large squares, star, heavy circle</td></tr>
+<tr><td>U+231A, U+231B, U+23E9 to U+23F3, U+23F8 to U+23FA</td><td>Watch, hourglass, media and clock symbols</td></tr>
+<tr><td>U+FE0F, U+20E3</td><td>Emoji presentation selector, combining keycap</td></tr>
+<tr><td>U+E0020 to U+E007F</td><td>Tag characters (subdivision flags)</td></tr>
+</tbody>
+</table>
+<p>Everything else is allowed, in particular punctuation (U+2000 to U+206F: dashes, quotes, ellipsis), arrows (U+2190 to U+21FF), mathematical operators, box drawing (U+2500 to U+257F) and geometric shapes (U+25A0 to U+25FF) used in diagrams.</p>
+
+<h2 id="commands">Commands</h2>
+<p>All commands run from the repository root. They need the published lmscript compiler (<code>npm i -g @lmctl-ai/lmctl</code>, version 0.2.347 or newer); the runner downloads the lmhtml host pinned by SHA256 in <code>scripts/tools/lmhtml.lock</code> (or an <code>lmhtml.lock</code> next to <code>run.sh</code>).</p>
+<table>
+<thead><tr><th>Command</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>npm run check:memory</code></td><td>Fails if the index note list is stale, then checks every note against the profile. CI runs it.</td></tr>
+<tr><td><code>scripts/memory/run.sh index durable-memory</code></td><td>Writes the generated note list into <code>index.html</code> (title and first-paragraph summary of every note, archive/ last). Add <code>--check</code> to only report. Running it twice changes nothing.</td></tr>
+<tr><td><code>npm run build:memory-web</code></td><td>Writes the web view to <code>build/memory-web/</code>.</td></tr>
+<tr><td><code>npm run check:memory:selftest</code></td><td>Proves the checker rejects each forbidden thing (fixtures in <code>tests/memory/</code>) and that index and web view are idempotent.</td></tr>
+</tbody>
+</table>
+<p>The general form is <code>scripts/memory/run.sh check DIR</code>, <code>scripts/memory/run.sh index DIR [--check]</code> and <code>scripts/memory/run.sh web DIR OUT [--css PATH]</code>, for any directory.</p>
+
+<h2 id="add-a-note">Add or change a note</h2>
+<ol>
+<li>Write <code>durable-memory/topic-name.html</code> from the document above: one h1, a first paragraph that summarizes it, then h2 sections.</li>
+<li>Run <code>scripts/memory/run.sh index durable-memory</code> to list it in the index. Edit the notes, not the generated list; text outside the list markers in <code>index.html</code> is yours.</li>
+<li>Run <code>npm run check:memory</code> until it prints <code>check: OK</code>, and commit the note together with <code>index.html</code>.</li>
+<li>Retire a note by moving it to <code>archive/</code> and fixing links to it (the checker finds them).</li>
+</ol>
+
+<h2 id="web-view">The web view</h2>
+<p><code>scripts/memory/run.sh web DIR OUT</code> writes a decorated copy of every note to OUT and never writes the sources (OUT inside DIR is refused). Each copy gains a viewport meta, one stylesheet link (default <code>/tools/style.css</code>, change it with <code>--css</code>), a nav with Index and Previous/Next links in index order, a main element around the note body, and a footer naming the source file. Images are copied as they are. Rebuilding produces identical files.</p>
+<pre><kbd>npm run build:memory-web</kbd>
+<kbd>python3 -m http.server 8765 --directory .</kbd></pre>
+<p>Then open <code>http://127.0.0.1:8765/build/memory-web/index.html</code>; serving the repository root makes <code>/tools/style.css</code> resolve.</p>
+
+<h2 id="other-repositories">Use it in another repository</h2>
+<ol>
+<li>Copy the folder <code>scripts/memory/</code> of <a href="https://github.com/lmctl-ai/lmctl/tree/main/scripts/memory">github.com/lmctl-ai/lmctl</a> into the repository, and copy <code>scripts/tools/lmhtml.lock</code> into it as <code>scripts/memory/lmhtml.lock</code>. The raw files are also at <code>https://raw.githubusercontent.com/lmctl-ai/lmctl/main/scripts/memory/&lt;file&gt;</code>.</li>
+<li>Install the compiler once: <code>npm i -g @lmctl-ai/lmctl</code>.</li>
+<li>Write new notes in this format, run <code>scripts/memory/run.sh index durable-memory</code> and <code>scripts/memory/run.sh check durable-memory</code>, and add the check to CI.</li>
+<li>Existing Markdown notes can stay until someone converts them; they are reported as warnings, not errors.</li>
+</ol>
+
+<h2 id="limits">Limits</h2>
+<ul>
+<li>The checker parses with lexbor through lmhtml; malformed markup is reported, not repaired.</li>
+<li>Generated summaries are cut at a sentence end within 160 characters, else at a word with an ellipsis.</li>
+<li>The emoji rule is a fixed list of ranges, not the full Unicode emoji property; extend <code>is_pictographic</code> in <code>scripts/memory/check.lms</code> with a fixture when something slips through.</li>
+<li>The web view needs the explicit <code>&lt;/head&gt;</code>, <code>&lt;body&gt;</code> and <code>&lt;/body&gt;</code> tags the profile requires.</li>
+</ul>
+</body>
+</html>

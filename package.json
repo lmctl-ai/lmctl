@@ -14,7 +14,10 @@
     "test:redirect": "node tests/infra/lmctl-www-redirect.test.mjs",
     "build:skills": "bash scripts/tools/run.sh skills",
     "check:skills": "bash scripts/tools/run.sh skills --check",
-    "check:skills:selftest": "bash scripts/tools/skills-selftest.sh"
+    "check:skills:selftest": "bash scripts/tools/skills-selftest.sh",
+    "check:memory": "bash scripts/memory/run.sh index durable-memory --check && bash scripts/memory/run.sh check durable-memory",
+    "check:memory:selftest": "bash scripts/memory/selftest.sh",
+    "build:memory-web": "bash scripts/memory/run.sh web durable-memory build/memory-web"
   },
   "dependencies": {
     "@docusaurus/core": "^3.10.1",

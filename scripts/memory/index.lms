@@ -34,7 +34,30 @@ fn summary(page: Doc) -> string {
   let paragraphs = page.select("body > p");
   let text = "";
   if (paragraphs.len() > 0) { text = one_line(paragraphs.at(0).text()); }
-  return str_text_prefix(text, 160);
+  # Prefer the last sentence end within 160 characters, else a word boundary
+  # plus an ellipsis; a single oversized word stays intact.
+  let out = text;
+  if (str_len(text) > 160) {
+    let head = str_substr(text, 0, 160);
+    let cut = -1;
+    let at = 0;
+    while (str_find(str_substr(head, at, str_len(head)), ". ") >= 0) {
+      at = at + str_find(str_substr(head, at, str_len(head)), ". ") + 1;
+      cut = at;
+    }
+    if (cut > 40) {
+      out = str_substr(text, 0, cut);
+    } else {
+      let space = -1;
+      at = 0;
+      while (str_find(str_substr(head, at, str_len(head)), " ") >= 0) {
+        at = at + str_find(str_substr(head, at, str_len(head)), " ") + 1;
+        space = at - 1;
+      }
+      if (space > 0) { out = str_substr(text, 0, space) + "…"; }
+    }
+  }
+  return out;
 }
 
 let base = ${dir};
