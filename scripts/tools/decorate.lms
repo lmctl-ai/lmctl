@@ -180,6 +180,20 @@ fn page_description(page: Doc) -> string {
   }
   return result;
 }
+# Optional artwork is derived solely from conventional paths.
+fn asset_exists(path: string) -> bool {
+  return html.link_exists(html.parse(""), path);
+}
+fn favicon(path: string) -> string {
+  let result = "";
+  if (asset_exists(path)) { result = "<link rel=\"icon\" type=\"image/png\" href=\"" + escape(path) + "\">"; }
+  return result;
+}
+fn logo(path: string, alt: string) -> string {
+  let result = "";
+  if (asset_exists(path)) { result = "<figure><img src=\"" + escape(path) + "\" alt=\"" + escape(alt) + "\" width=\"128\" height=\"128\"></figure>"; }
+  return result;
+}
 fn render(layout: string, nav: string, footer: string, body: string, title: string, description: string) -> string {
   # Replace CONTENT last: author text containing template markers is literal.
   let result = str_replace(layout, "{{TITLE}}", escape(title));
@@ -217,6 +231,7 @@ while (str_find(required_regions, "|") >= 0) {
   required_regions = str_substr(required_regions, end + 1, str_len(required_regions));
 }
 let layout = region(template_source, "layout");
+let site_layout = str_replace(layout, "{{ICON}}", favicon("/tools/img/icon.png"));
 # Refuse malformed authored source before changing any file; common shells are
 # replaceable, but token repair must never silently rewrite authored content.
 for (page in html.load_dir(".", "tools/**/*.html", "")) {
@@ -239,6 +254,8 @@ while (str_find(tool_dirs, "|") >= 0) {
   for (page in pages) { if (basename(page.path()) != "index.html") { count = count + 1; } }
   if (count == 0) { continue; }
   let tool = basename(directory);
+  let icon_path = "/tools/" + tool + "/img/icon.png";
+  let tool_layout = str_replace(layout, "{{ICON}}", favicon(icon_path));
   let repo = "https://github.com/lmctl-ai/" + tool;
   if (html.link_exists(root_probe, "/" + directory + "/repo.txt")) { repo = str_trim(html.load(directory + "/repo.txt").source()); }
   let footer = str_replace(region(template_source, "tool-footer"), "{{REPO}}", escape(repo));
@@ -273,28 +290,32 @@ while (str_find(tool_dirs, "|") >= 0) {
   for (page in pages) {
     if (basename(page.path()) == "index.html") { continue; }
     if (tool_title == "") { tool_title = heading(page); tool_summary = summary(page); }
-    let result = render(layout, nav, footer, content(page), page_title(heading(page), tool), page_description(page));
+    let result = render(tool_layout, nav, footer, content(page), page_title(heading(page), tool), page_description(page));
     store(page.path(), result, page.source(), check, differences(page, result));
   }
   let index_content = str_replace(region(template_source, "tool-index"), "{{TOOL_TITLE}}", escape(tool_title));
+  index_content = str_replace(index_content, "{{LOGO}}", logo("/tools/" + tool + "/img/logo.png", tool + " logo"));
   index_content = str_replace(index_content, "{{SUMMARY}}", escape(tool_summary));
   index_content = str_replace(index_content, "{{REPO}}", escape(repo));
   index_content = str_replace(index_content, "{{PAGE_LINKS}}", links);
   let index_path = directory + "/index.html";
   let before = "";
   for (page in pages) { if (basename(page.path()) == "index.html") { before = page.source(); } }
-  store(index_path, render(layout, nav, footer, index_content, page_title(tool_title, tool), tool_summary), before, check, "missing or stale generated tool index");
-  tool_links = tool_links + "<li><a href=\"/tools/" + escape(tool) + "/\">" + escape(tool_title) + "</a> — " + escape(tool_summary) + "</li>\n";
+  store(index_path, render(tool_layout, nav, footer, index_content, page_title(tool_title, tool), tool_summary), before, check, "missing or stale generated tool index");
+  let icon = "";
+  if (asset_exists(icon_path)) { icon = "<img src=\"" + escape(icon_path) + "\" alt=\"\" width=\"32\" height=\"32\">"; }
+  tool_links = tool_links + "<li>" + icon + "<a href=\"/tools/" + escape(tool) + "/\">" + escape(tool_title) + "</a> — " + escape(tool_summary) + "</li>\n";
 }
 for (page in html.load_dir("tools", "*.html", "*/*.html")) {
   if (basename(page.path()) == "index.html") { continue; }
-  store(page.path(), render(layout, region(template_source, "site-nav"), region(template_source, "site-footer"), content(page), heading(page) + " — lmctl.com tools", page_description(page)), page.source(), check, "missing or outdated site document shell");
+  store(page.path(), render(site_layout, region(template_source, "site-nav"), region(template_source, "site-footer"), content(page), heading(page) + " — lmctl.com tools", page_description(page)), page.source(), check, "missing or outdated site document shell");
 }
 let site_content = str_replace(region(template_source, "site-index"), "{{TOOL_LINKS}}", tool_links);
+site_content = str_replace(site_content, "{{LOGO}}", logo("/tools/img/tools.png", "lmctl tools"));
 let old_index = "";
 let probe = html.parse("");
 if (html.link_exists(probe, "/tools/index.html")) { old_index = html.load("tools/index.html").source(); }
-store("tools/index.html", render(layout, region(template_source, "site-nav"), region(template_source, "site-footer"), site_content, "Tools — lmctl.com", "Small command-line tools from lmctl, with skill pages for LLM agents and task-specific documentation."), old_index, check, "missing or stale generated tools index");
+store("tools/index.html", render(site_layout, region(template_source, "site-nav"), region(template_source, "site-footer"), site_content, "Tools — lmctl.com", "Small command-line tools from lmctl, with skill pages for LLM agents and task-specific documentation."), old_index, check, "missing or stale generated tools index");
 report.write_text(${ARGV[1]});
 if (check) { report.fail_if_any(); }
 end _dsl_

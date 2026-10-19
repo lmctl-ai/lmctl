@@ -7,6 +7,7 @@ for (directory in glob("tools/*/")) {
   tool_directories = tool_directories + directory + "|";
 }
 case_paths = join(sort(glob("tools/*/*.[hH][tT][mM][lL]")), "|") + "|";
+png_paths = join(sort(glob("tools/**/*.png")), "|") + "|";
 p = _dsl_ schema="lmhtml.dsl.json";
 # Source-preserving pre formatting (kept identical in check/decorate).
 # Locate the nth real element with the host tokenizer, not a text match alone:
@@ -155,7 +156,7 @@ fn check_page(page: Doc) -> void {
     let attrs = "|";
     if (tag == "html") { attrs = "|lang|"; }
     if (tag == "meta") { attrs = "|charset|name|content|"; }
-    if (tag == "link") { attrs = "|rel|href|"; }
+    if (tag == "link") { attrs = "|rel|href|type|"; }
     if (tag == "a") { attrs = "|href|"; }
     if (tag == "img") { attrs = "|src|alt|width|height|"; }
     if (tag == "h2" || tag == "h3") { attrs = "|id|"; }
@@ -169,14 +170,43 @@ fn check_page(page: Doc) -> void {
       }
     }
     if (tag == "html" && node.attr("lang") != "en") { finding(file, path, "<html> needs lang=\"en\""); }
-    if (tag == "link" && (node.attr("rel") != "stylesheet" || node.attr("href") != "/tools/style.css")) {
-      finding(file, path, "the only <link> allowed is rel=\"stylesheet\" href=\"/tools/style.css\"");
+    if (tag == "link") {
+      let href = node.attr("href");
+      if (node.attr("rel") == "icon") {
+        if (node.parent().tag() != "head" || node.attr("type") != "image/png" || !str_starts_with(href, "/tools/") || str_contains(href, "..") || str_contains(href, "%") || str_contains(href, "\\") || !str_ends_with(href, ".png")) {
+          finding(file, path, "favicon must be a local PNG link in head with type=image/png");
+        } else { if (!html.link_exists(page, href)) { finding(file, path, "favicon not found: " + href); } }
+      } else {
+        if (node.attr("rel") != "stylesheet" || href != "/tools/style.css") { finding(file, path, "the only <link> allowed is rel=\"stylesheet\" href=\"/tools/style.css\" or a local PNG icon"); }
+        if (node.has_attr("type")) { finding(file, path, "type is only allowed on the favicon link"); }
+      }
     }
     if (tag == "img") {
       let src = node.attr("src");
-      if (normalized(node.attr("alt")) == "") { finding(file, path, "<img> needs a non-empty alt"); }
-      if (node.parent().tag() != "figure") { finding(file, path, "<img> must be inside <figure>"); }
-      else { if (node.parent().select("figcaption").len() != 1) { finding(file, path, "<figure> needs one <figcaption>"); } }
+      let page_path = file;
+      if (str_starts_with(page_path, "./")) { page_path = str_substr(page_path, 2, str_len(page_path)); }
+      let decorative = false;
+      if (page_path == "tools/index.html" && node.parent().tag() == "li" && node.attr("width") == "32" && node.attr("height") == "32" && str_ends_with(src, "/img/icon.png")) {
+        let links = node.parent().select("a");
+        if (links.len() == 1 && normalized(links.at(0).text()) != "" && links.at(0).attr("href") == str_substr(src, 0, str_len(src) - 12)) {
+          for (candidate in page.select("main > ul > li > img")) { if (candidate.path() == path) { decorative = true; } }
+        }
+      }
+      let landing_logo = false;
+      if (filename(page_path) == "index.html" && node.attr("width") == "128" && node.attr("height") == "128") {
+        let base = str_substr(page_path, 0, str_len(page_path) - 10);
+        let expected_src = "/" + base + "img/logo.png";
+        let expected_alt = str_substr(base, 6, str_len(base) - 7) + " logo";
+        if (page_path == "tools/index.html") { expected_src = "/tools/img/tools.png"; expected_alt = "lmctl tools"; }
+        if (src == expected_src && node.attr("alt") == expected_alt) {
+          for (candidate in page.select("main > h1 + figure > img")) { if (candidate.path() == path) { landing_logo = true; } }
+        }
+      }
+      if (!node.has_attr("alt") || (!decorative && normalized(node.attr("alt")) == "")) { finding(file, path, "<img> needs a non-empty alt (only catalog 32x32 icons may have empty alt)"); }
+      if (!decorative) {
+        if (node.parent().tag() != "figure") { finding(file, path, "<img> must be inside <figure>"); }
+        else { if (!landing_logo && node.parent().select("figcaption").len() != 1) { finding(file, path, "<figure> needs one <figcaption>"); } }
+      }
       let image_path_ok = str_starts_with(src, "/tools/");
       let component = "";
       let component_index = 0;
@@ -192,7 +222,8 @@ fn check_page(page: Doc) -> void {
           component = component + ch;
         }
       }
-      if (!image_path_ok || component_index != 2 || component == "" || str_contains(src, "..") || str_contains(src, "?") || str_contains(src, "#") || str_contains(src, "%") || str_contains(src, "\\")) {
+      let site_image = str_starts_with(src, "/tools/img/") && component_index == 1;
+      if ((!image_path_ok && !site_image) || (component_index != 2 && !site_image) || component == "" || str_contains(src, "..") || str_contains(src, "?") || str_contains(src, "#") || str_contains(src, "%") || str_contains(src, "\\")) {
         finding(file, path, "image must be local under /tools/<tool>/img/: " + src);
       } else { if (!html.link_exists(page, src)) { finding(file, path, "image not found: " + src); } }
     }
@@ -228,7 +259,8 @@ fn check_page(page: Doc) -> void {
   if (titles.len() != 1) { finding(file, "head", "missing or empty <title>"); }
   else { if (normalized(titles.at(0).text()) == "") { finding(file, "head title", "missing or empty <title>"); } }
   if (!html.link_exists(page, "/tools/style.css")) { finding(file, "head link", "stylesheet not found: /tools/style.css"); }
-  let stylesheet_count = page.select("link").len();
+  if (page.select("link[rel=icon]").len() > 1) { finding(file, "head", "expected at most one favicon link"); }
+  let stylesheet_count = page.select("link[rel=stylesheet]").len();
   if (stylesheet_count != 1) { finding(file, "head", "expected exactly one stylesheet <link>, found " + str(stylesheet_count)); }
   let h1_count = page.select("h1").len();
   if (h1_count != 1) { finding(file, "main", "expected exactly one <h1>, found " + str(h1_count)); }
@@ -340,7 +372,26 @@ else {
     }
   }
 }
+let images = ${png_paths};
+let warnings = "";
+while (str_find(images, "|") >= 0) {
+  let end = str_find(images, "|");
+  let image_path = str_substr(images, 0, end);
+  images = str_substr(images, end + 1, str_len(images));
+  if (image_path == "") { continue; }
+  let size = html.load(image_path).byte_size();
+  if (size >= 30000) { finding(image_path, "file", "PNG must be under 30 KB (30000 bytes), found " + str(size)); }
+  else { if (size > 20000) { warnings = warnings + image_path + "|"; } }
+}
 report.write_text(${ARGV[1]});
 report.fail_if_any();
+# Warnings are appended only after the failure decision; they are non-fatal.
+while (str_find(warnings, "|") >= 0) {
+  let end = str_find(warnings, "|");
+  let image_path = str_substr(warnings, 0, end);
+  warnings = str_substr(warnings, end + 1, str_len(warnings));
+  report.add("warning", image_path, 0, "PNG exceeds 20 KB; consider lossless compression");
+}
+report.write_text(${ARGV[1]});
 end _dsl_
 savedsl(p, ARGV[0]);

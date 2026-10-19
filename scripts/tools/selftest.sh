@@ -198,4 +198,65 @@ run decorate
 for file in "$work"/tools/*.html "$work"/tools/*/*.html; do cmp "$file" "$work/visual-unchanged/${file#"$work/tools/"}"; done
 run decorate --check
 echo 'ok - sentence/word summaries, unique topic labels, pre newlines, comments, CRLF and idempotence'
+# Optional icons/logos require no author markup or per-tool configuration.
+mkdir -p "$work/tools/zeta/img" "$work/tools/img"
+cp tools/lmhtml/img/icon.png "$work/tools/zeta/img/icon.png"
+cp tools/lmhtml/img/logo.png "$work/tools/zeta/img/logo.png"
+cp tools/img/icon.png "$work/tools/img/icon.png"
+cp tools/img/tools.png "$work/tools/img/tools.png"
+expect_failure 'run npm run decorate:tools' decorate --check
+run decorate
+run check
+cat > "$work/icons-assert.lms" <<'LMS'
+p = _dsl_ schema="lmhtml.dsl.json";
+let root = html.load("tools/index.html");
+let index = html.load("tools/zeta/index.html");
+let skill = html.load("tools/zeta/skill.html");
+if (skill.select("head link[rel=icon][type='image/png'][href='/tools/zeta/img/icon.png']").len() != 1 || skill.select("head link[rel=stylesheet]").len() != 1) { report.add("test", "head", 0, "favicon or stylesheet count"); }
+if (root.select("head link[rel=icon][href='/tools/img/icon.png']").len() != 1) { report.add("test", "head", 0, "site favicon missing"); }
+if (root.select("main > ul > li > img[src='/tools/zeta/img/icon.png'][alt=''][width='32'][height='32']").len() != 1) { report.add("test", "catalog", 0, "decorative icon missing"); }
+if (index.select("main > h1 + figure > img[src='/tools/zeta/img/logo.png'][alt='zeta logo'][width='128'][height='128']").len() != 1 || index.select("figure").len() != 1) { report.add("test", "logo", 0, "tool logo missing or duplicated"); }
+if (root.select("main > h1 + figure > img[src='/tools/img/tools.png'][alt='lmctl tools'][width='128'][height='128']").len() != 1) { report.add("test", "logo", 0, "site logo missing"); }
+report.write_text("icons-assert.txt");
+report.fail_if_any();
+end _dsl_
+savedsl(p, ARGV[0]);
+LMS
+"$compiler" "$work/icons-assert.lms" "$work/icons-assert.dslb"
+(cd "$work" && "$host" --dsl "$work/icons-assert.dslb") || { cat "$work/icons-assert.txt"; exit 1; }
+cp -R "$work/tools" "$work/icons-unchanged"
+run decorate
+for file in "$work"/tools/*.html "$work"/tools/*/*.html; do cmp "$file" "$work/icons-unchanged/${file#"$work/tools/"}"; done
+run decorate --check
+cat > "$work/break-icons.lms" <<'LMS'
+p = _dsl_ schema="lmhtml.dsl.json";
+let root = html.load("tools/index.html").source();
+html.save(str_replace(root, "/tools/zeta/img/icon.png", "/tools/zeta/img/missing.png"), "tools/index.html");
+let skill = html.load("tools/zeta/skill.html").source();
+html.save(str_replace(skill, "/tools/zeta/img/icon.png", "/tools/zeta/img/missing.png"), "tools/zeta/skill.html");
+end _dsl_
+savedsl(p, ARGV[0]);
+LMS
+"$compiler" "$work/break-icons.lms" "$work/break-icons.dslb"
+(cd "$work" && "$host" --dsl "$work/break-icons.dslb") >/dev/null
+expect_failure 'image not found: /tools/zeta/img/missing.png' contract
+expect_failure 'favicon not found: /tools/zeta/img/missing.png' contract
+run decorate
+# Existing sources are PNGs; padding changes only the byte-budget test input.
+cp "$work/tools/zeta/img/icon.png" "$work/tools/zeta/img/budget.png"
+truncate -s 30000 "$work/tools/zeta/img/budget.png"
+expect_failure 'PNG must be under 30 KB' contract
+truncate -s 20001 "$work/tools/zeta/img/budget.png"
+output=$(run contract)
+[[ $output == *'warning tools/zeta/img/budget.png'* ]] || { echo 'FAIL: PNG warning missing'; exit 1; }
+rm "$work/tools/zeta/img/budget.png"
+rm "$work/tools/zeta/img/icon.png" "$work/tools/zeta/img/logo.png" "$work/tools/img/icon.png" "$work/tools/img/tools.png"
+expect_failure 'favicon not found' contract
+expect_failure 'image not found' contract
+run decorate
+run check
+# Returning to the icon-free tree must restore precisely the previous HTML.
+for file in "$work"/tools/*.html "$work"/tools/*/*.html; do cmp "$file" "$work/visual-unchanged/${file#"$work/tools/"}"; done
+run decorate --check
+echo 'ok - optional icons/logos, missing files, PNG limits and nonfatal warnings, icon idempotence'
 printf 'PASS: %s named fixtures, current tree and authoring/index lifecycle tests\n' "$count"

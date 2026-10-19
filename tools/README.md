@@ -84,6 +84,18 @@ appear automatically; deleted tools disappear. Missing indexes are recreated.
 The old authored overview pages were preserved as `guide-overview.html` during
 migration; old `user-guide.html` pages are now `guide.html`.
 
+## Derived artwork
+
+Authors do not add icon markup. When `tools/<tool>/img/icon.png` exists,
+decoration adds the PNG favicon to every tool page and a decorative 32×32 icon
+to its catalog entry. `tools/<tool>/img/logo.png` supplies the 128×128 logo
+immediately after the tool index's h1. Site pages use `tools/img/icon.png` as
+the favicon; `tools/img/tools.png` supplies the catalog's 128×128 logo.
+Missing optional assets produce no markup; deleting an asset and rerunning
+decoration removes its generated references. Other head link resources remain
+forbidden. Indexes, including existing index files, are regenerated as described
+above, so repeated decoration never duplicates logos.
+
 ## Content contract
 
 - One h1; allowed elements: html head meta title link body header nav main
@@ -93,15 +105,22 @@ migration; old `user-guide.html` pages are now `guide.html`.
   resources or unlisted attributes. IDs only on h2/h3; no duplicate IDs.
 - Commands use kbd, output uses samp, both inside pre, separated by newlines.
   Paste real output.
-- Images are local `/tools/<tool>/img/<file>`, with nonempty alt, inside a figure
-  with a figcaption. Each page is at most 153600 bytes.
+- Images are local `/tools/<tool>/img/<file>` or `/tools/img/<file>` and must
+  exist. They require an alt attribute, with nonempty text except the generated
+  32×32 catalog icons beside their tool links. Width/height attributes are allowed.
+  Content images stay inside a figure with a figcaption; generated landing logos
+  need no caption. Each page is at most 153600 bytes.
+- PNG files anywhere under tools must be smaller than 30 KB (30000 bytes).
+  Above 20 KB (20000 bytes), the checker prints a nonfatal warning. Lossless
+  recompression can reduce file size without changing pixels.
 - Internal links are site-rooted or same-page anchors and must resolve. External
   HTTP(S), protocol-relative and mail links are allowed and are not fetched.
 - Source markup must use explicit closing tags. Decoration does not silently
   repair malformed or ambiguous content.
 
 The generated shell has HTML doctype, lang=en, charset, viewport, title,
-description and exactly one stylesheet `/tools/style.css`, followed by nav,
+description and exactly one stylesheet `/tools/style.css`, plus an optional
+local PNG favicon link, followed by nav,
 main and footer. Change the stylesheet for everyone, not for one page.
 
 Site-rooted links resolve from the repository root; `/` maps to the deployed
