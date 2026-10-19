@@ -1,0 +1,104 @@
+/* lmctl.com /tools/ — the only stylesheet. Element selectors only: pages
+   carry no class, id (except h2/h3 anchors) or style attributes, and must
+   read well with this file switched off. No generated content, so copying
+   a <kbd> command yields exactly the command. */
+
+html {
+  font-size: 100%;
+  color-scheme: light dark;
+  --fg: #1b1f24;
+  --bg: #ffffff;
+  --muted: #57606a;
+  --link: #0b5cad;
+  --code-bg: #f3f5f7;
+  --rule: #d0d7de;
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    --fg: #e6edf3;
+    --bg: #0d1117;
+    --muted: #9da7b3;
+    --link: #6cb6ff;
+    --code-bg: #161b22;
+    --rule: #30363d;
+  }
+}
+
+body {
+  margin: 0 auto;
+  padding: 1rem 1.25rem 3rem;
+  max-width: 72ch;
+  color: var(--fg);
+  background: var(--bg);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.6;
+}
+
+nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin: 0 0 1.5rem;
+  padding: 0 0 0.75rem;
+  list-style: none;
+  border-bottom: 1px solid var(--rule);
+}
+
+nav li { margin: 0; }
+
+h1, h2, h3, h4 { line-height: 1.25; margin: 1.75em 0 0.5em; }
+h1 { font-size: 2rem; margin-top: 0.5em; }
+h2 { font-size: 1.45rem; border-bottom: 1px solid var(--rule); padding-bottom: 0.2em; }
+h3 { font-size: 1.15rem; }
+h4 { font-size: 1rem; }
+
+a { color: var(--link); }
+a:hover, a:focus { text-decoration-thickness: 2px; }
+
+p, ul, ol, dl, table, pre, blockquote, figure { margin: 0 0 1rem; }
+li { margin: 0.2rem 0; }
+dt { font-weight: 600; margin-top: 0.6rem; }
+dd { margin: 0 0 0.4rem 1.5rem; }
+
+code, kbd, samp, pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.92em;
+}
+
+code { background: var(--code-bg); padding: 0.1em 0.3em; border-radius: 4px; }
+
+pre {
+  background: var(--code-bg);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  line-height: 1.45;
+}
+
+pre code, pre kbd, pre samp { background: none; padding: 0; border: 0; font-size: 1em; }
+pre kbd { font-weight: 600; }
+pre samp { color: var(--muted); }
+
+kbd { border: 1px solid var(--rule); border-radius: 4px; padding: 0.05em 0.3em; }
+
+table { border-collapse: collapse; width: 100%; display: block; overflow-x: auto; }
+th, td { border: 1px solid var(--rule); padding: 0.35rem 0.6rem; text-align: left; vertical-align: top; }
+thead th { background: var(--code-bg); }
+
+blockquote { margin-left: 0; padding-left: 1rem; border-left: 4px solid var(--rule); color: var(--muted); }
+
+hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
+
+img { max-width: 100%; height: auto; }
+figcaption { color: var(--muted); font-size: 0.9em; }
+
+footer { margin-top: 3rem; padding-top: 0.75rem; border-top: 1px solid var(--rule); color: var(--muted); font-size: 0.9em; }
+
+@media print {
+  html { --fg: #000; --bg: #fff; --link: #000; --code-bg: #fff; }
+  nav, footer { display: none; }
+  body { max-width: none; padding: 0; }
+  pre { white-space: pre-wrap; border: 1px solid #999; }
+  a { text-decoration: underline; }
+}
