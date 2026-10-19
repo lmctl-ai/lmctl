@@ -1,3 +1,4 @@
+import "roles.lms";
 # run.sh copies this next to the schema emitted by the selected lmhtml binary.
 # ARGV: bytecode output, report output, optional single fixture (empty = tree).
 # Directory enumeration happens at compile time; all policy stays in the DSL.
@@ -5,6 +6,7 @@ tool_directories = "";
 for (directory in glob("tools/*/")) {
   tool_directories = tool_directories + directory + "|";
 }
+case_paths = join(sort(glob("tools/*/*.[hH][tT][mM][lL]")), "|") + "|";
 p = _dsl_ schema="lmhtml.dsl.json";
 fn finding(file: string, selector: string, message: string) -> void {
   report.add("contract", file, 0, selector + ": " + message);
@@ -22,6 +24,29 @@ fn normalized(value: string) -> string {
     }
   }
   return result;
+}
+fn filename(path: string) -> string {
+  let start = 0;
+  for (i in range(0, str_len(path))) { if (str_substr(path, i, 1) == "/") { start = i + 1; } }
+  return str_substr(path, start, str_len(path));
+}
+fn page_role(file: string) -> string {
+  let name = filename(file);
+  let stem = str_substr(name, 0, str_len(name) - 5);
+  let dash = str_find(stem, "-");
+  if (dash >= 0) { stem = str_substr(stem, 0, dash); }
+  # Existing named bad fixtures use x.role.html to select role checks.
+  if (${ARGV[2]} != "") {
+    if (str_ends_with(file, ".skill.html")) { stem = "skill"; }
+    if (str_ends_with(file, ".tutorial.html")) { stem = "tutorial"; }
+    if (str_ends_with(file, ".guide.html")) { stem = "guide"; }
+  }
+  return stem;
+}
+fn prose(page: Doc) -> string {
+  let text = "";
+  for (node in page.select("main p, main pre, main table, main dl, main ul, main ol")) { text = text + normalized(node.text()) + "|"; }
+  return text;
 }
 fn check_page(page: Doc) -> void {
   let file = page.path();
@@ -123,16 +148,68 @@ fn check_page(page: Doc) -> void {
   let headings = "";
   let last_heading = "";
   for (heading in page.select("h2")) { last_heading = normalized(heading.text()); headings = headings + last_heading + "|"; }
-  if (str_ends_with(file, "skill.html") && headings != "Purpose|When to use it|Install|Commands|Inputs and outputs|Safety rules|Worked examples|Errors and exit codes|How to verify|") {
-    finding(file, "h2", "skill.html h2 headings must be exactly: Purpose, When to use it, Install, Commands, Inputs and outputs, Safety rules, Worked examples, Errors and exit codes, How to verify");
-  }
-  if (str_ends_with(file, "user-guide.html") && headings != "Overview|Install|Concepts|Reference|Tasks|Limits|Troubleshooting|") {
-    finding(file, "h2", "user-guide.html h2 headings must be exactly: Overview, Install, Concepts, Reference, Tasks, Limits, Troubleshooting");
-  }
-  if (str_ends_with(file, "tutorial.html")) {
-    if (str_lower(last_heading) != "what you learned") { finding(file, "h2", "tutorial must end with an h2 \"What you learned\""); }
-    if (page.select("pre samp").len() == 0) { finding(file, "pre", "tutorial needs program output as <pre><samp>…</samp></pre>"); }
-    if (page.select("pre > kbd").len() == 0) { finding(file, "pre", "tutorial needs commands as <pre><kbd>…</kbd></pre>"); }
+  # ROLE RULES: vocabulary/order/labels live in roles.lms; this is the one
+  # section for role-specific content policy. Optional roles need not exist.
+  let name = filename(file);
+  if (name != "index.html" && !(file == "tools/" + name || file == "./tools/" + name)) {
+    let stem = str_substr(name, 0, str_len(name) - 5);
+    let valid_name = str_ends_with(name, ".html") && str_len(stem) > 0;
+    for (i in range(0, str_len(stem))) {
+      if (!str_contains("abcdefghijklmnopqrstuvwxyz0123456789-", str_substr(stem, i, 1))) { valid_name = false; }
+    }
+    if (str_starts_with(stem, "-") || str_ends_with(stem, "-") || str_contains(stem, "--")) { valid_name = false; }
+    if (!valid_name) { finding(file, "document", "bad page name: use <role>.html or <role>-<topic>.html (lowercase letters, digits, hyphens)"); }
+    let role_name = page_role(file);
+    let table = ${role_table};
+    let known = false;
+    let valid_roles = "";
+    while (str_find(table, "|") >= 0) {
+      let end = str_find(table, "|");
+      let entry = str_substr(table, 0, end);
+      table = str_substr(table, end + 1, str_len(table));
+      let key = str_substr(entry, 0, str_find(entry, "="));
+      if (valid_roles != "") { valid_roles = valid_roles + ", "; }
+      valid_roles = valid_roles + key;
+      if (key == role_name) { known = true; }
+    }
+    if (!known) { finding(file, "document", "unknown role " + role_name + "; valid roles: " + valid_roles); }
+    if (role_name == "skill" && headings != "Purpose|When to use it|Install|Commands|Inputs and outputs|Safety rules|Worked examples|Errors and exit codes|How to verify|") {
+      finding(file, "h2", "skill.html h2 headings must be exactly: Purpose, When to use it, Install, Commands, Inputs and outputs, Safety rules, Worked examples, Errors and exit codes, How to verify");
+    }
+    if (role_name == "guide") {
+      let h2s = page.select("h2");
+      let first = "";
+      if (h2s.len() > 0) { first = str_lower(normalized(h2s.at(0).text())); }
+      if (!str_starts_with(first, "overview") && !str_starts_with(first, "introduction") && !str_starts_with(first, "getting started")) { finding(file, "h2", "guide must start with an Overview-like h2"); }
+    }
+    if (role_name == "tutorial") {
+      if (str_lower(last_heading) != "what you learned") { finding(file, "h2", "tutorial must end with an h2 \"What you learned\""); }
+      if (page.select("pre samp").len() == 0) { finding(file, "pre", "tutorial needs program output as <pre><samp>…</samp></pre>"); }
+      if (page.select("pre > kbd").len() == 0) { finding(file, "pre", "tutorial needs commands as <pre><kbd>…</kbd></pre>"); }
+      let h2s = page.select("h2");
+      if (h2s.len() < 2) { finding(file, "h2", "tutorial needs numbered h2 steps"); }
+      for (i in range(0, h2s.len() - 1)) {
+        let text = str_lower(normalized(h2s.at(i).text()));
+        if (str_starts_with(text, "step ")) { text = str_substr(text, 5, str_len(text)); }
+        if (text == "" || !str_contains("0123456789", str_substr(text, 0, 1))) { finding(file, h2s.at(i).path(), "tutorial needs numbered h2 steps"); }
+      }
+    }
+    if (role_name == "recipes") {
+      let task = "";
+      let example = false;
+      for (node in page.select("main h2, main pre")) {
+        if (node.tag() == "h2") {
+          if (task != "" && !example) { finding(file, "h2", "recipe needs an example: " + task); }
+          task = normalized(node.text()); example = false;
+        } else { example = true; }
+      }
+      if (task == "" || !example) { finding(file, "h2", "recipes need h2 tasks with pre examples"); }
+    }
+    if (role_name == "reference" && page.select("main table, main dl").len() == 0) { finding(file, "main", "reference needs a table or definition list"); }
+    if (role_name == "faq") {
+      if (page.select("main h2, main h3").len() == 0) { finding(file, "main", "faq needs h2/h3 questions"); }
+      for (question in page.select("main h2, main h3")) { if (!str_ends_with(normalized(question.text()), "?")) { finding(file, question.path(), "faq heading must be a question ending in ?"); } }
+    }
   }
 }
 let fixture = ${ARGV[2]};
@@ -141,49 +218,31 @@ else {
   # Loading from the repository root makes /tools/... resolve from that root.
   let pages = html.load_dir(".", "tools/**/*.html", "");
   let listing = html.load("tools/index.html");
-  # This also catches empty/unlisted directories, which load_dir cannot return.
+  let named_paths = ${case_paths};
+  while (str_find(named_paths, "|") >= 0) {
+    let end = str_find(named_paths, "|");
+    let path = str_substr(named_paths, 0, end);
+    named_paths = str_substr(named_paths, end + 1, str_len(named_paths));
+    if (path != "" && !str_ends_with(path, ".html")) { finding(path, "document", "bad page name: extension must be lowercase .html"); }
+  }
   let directories = ${tool_directories};
-  let directory = "";
-  for (i in range(0, str_len(directories))) {
-    let ch = str_substr(directories, i, 1);
-    if (ch != "|") { directory = directory + ch; }
-    else {
-      let base = "/" + directory + "/";
-      for (j in range(0, 4)) {
-        let filename = "index.html";
-        if (j == 1) { filename = "tutorial.html"; }
-        if (j == 2) { filename = "user-guide.html"; }
-        if (j == 3) { filename = "skill.html"; }
-        if (!html.link_exists(listing, base + filename)) { finding(directory, "document", "missing tool page " + base + filename); }
-      }
-      let listed = false;
-      for (link in listing.select("a")) { if (link.attr("href") == base || link.attr("href") == base + "index.html") { listed = true; } }
-      if (!listed) { finding(directory, "document", "tool is not listed in tools/index.html: " + base); }
-      directory = "";
-    }
+  while (str_find(directories, "|") >= 0) {
+    let end = str_find(directories, "|");
+    let dir = str_substr(directories, 0, end);
+    directories = str_substr(directories, end + 1, str_len(directories));
+    if (html.load_dir(dir).len() == 0) { continue; }
+    if (!html.link_exists(listing, "/" + dir + "/skill.html")) { finding(dir, "document", "tool requires skill.html; optional roles may be omitted"); }
   }
   for (page in pages) {
     check_page(page);
-    let file = page.path();
-    let relative = file;
-    if (str_starts_with(relative, "./")) { relative = str_substr(relative, 2, str_len(relative)); }
-    if (relative != "tools/index.html") {
-      let slash = 0;
-      for (i in range(0, str_len(relative))) { if (str_substr(relative, i, 1) == "/") { slash = i; } }
-      let dir = str_substr(relative, 0, slash + 1);
-      let url = "/" + dir;
-      if (!html.link_exists(page, url + "index.html")) { finding(file, "document", "missing tool page " + url + "index.html"); }
-      else {
-        let home = html.load(dir + "index.html");
-        if (page.select("nav").len() == 1 && home.select("nav").len() == 1 && page.select("nav").at(0).hash() != home.select("nav").at(0).hash()) { finding(file, "nav", "nav differs from " + dir + "index.html; run npm run sync:tools"); }
-        if (page.select("footer").len() == 1 && home.select("footer").len() == 1 && page.select("footer").at(0).hash() != home.select("footer").at(0).hash()) { finding(file, "footer", "footer differs from " + dir + "index.html; run npm run sync:tools"); }
+    if (page_role(page.path()) == "guide" && page.select("main").len() == 1) {
+      let path = page.path();
+      let base = str_substr(path, 0, str_len(path) - str_len(filename(path)));
+      if (str_starts_with(base, "./")) { base = str_substr(base, 2, str_len(base)); }
+      if (html.link_exists(listing, "/" + base + "skill.html")) {
+        let skill_page = html.load(base + "skill.html");
+        if (skill_page.select("main").len() == 1 && (page.select("main").at(0).hash() == skill_page.select("main").at(0).hash() || (prose(page) != "" && prose(page) == prose(skill_page)))) { finding(path, "main", "guide must not duplicate skill"); }
       }
-      if (!html.link_exists(page, url + "tutorial.html")) { finding(file, "document", "missing tool page " + url + "tutorial.html"); }
-      if (!html.link_exists(page, url + "user-guide.html")) { finding(file, "document", "missing tool page " + url + "user-guide.html"); }
-      if (!html.link_exists(page, url + "skill.html")) { finding(file, "document", "missing tool page " + url + "skill.html"); }
-      let listed = false;
-      for (link in listing.select("a")) { if (link.attr("href") == url || link.attr("href") == url + "index.html") { listed = true; } }
-      if (!listed) { finding(file, "document", "tool is not listed in tools/index.html: " + url); }
     }
   }
 }

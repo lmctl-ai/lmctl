@@ -1,83 +1,108 @@
-# /tools/ — static pages for lmctl tools
+# /tools/ — content first, decoration generated
 
-Source of <https://lmctl.com/tools/>: one plain-HTML section per tool, no
-framework, no JavaScript, no build step. Published only by
-`scripts/deploy-tools.sh` (not by `scripts/deploy.sh`).
+Write plain HTML content. lmhtml supplies the document shell, navigation,
+footers and indexes from `scripts/tools/template.html`; there are no CSS names,
+framework components, per-page configuration files or required optional pages.
 
-## Add or improve a tool
+## Add a tool
 
-1. Copy a finished tool directory as your starting point, for example
-   `cp -R tools/lmscript tools/<tool>` (`<tool>` is the lowercase repo name,
-   e.g. `lmhtml`).
-2. In the four copied files replace the tool name, its GitHub repo and every
-   `/tools/lmscript/` link with `/tools/<tool>/`, then write the content.
-   Keep the nav and footer identical on all four pages.
-3. Add one line for the tool to `tools/index.html`.
-4. Run `npm run check:tools` until it prints no errors.
-5. Open a pull request. CI runs the same check.
+1. Create `tools/<tool>/skill.html` with an h1, an introductory paragraph and the
+   skill headings below. Write only the content: h2/h3, p, ul/ol, pre/kbd/samp/code,
+   tables and figures. A bare fragment is fine. A simple tool needs only this page.
+2. Optionally add `tutorial.html`, `tutorial-animation.html`, `guide.html`,
+   `guide-schema.html`, `recipes.html`, `reference.html`, `faq.html` or
+   `changelog.html`. Choose pages that help this tool's readers.
+3. Run `npm run decorate:tools`, then `npm run check:tools`, and commit the content
+   and generated HTML together. Do not author or edit an `index.html`.
 
-## Pages
+Install Node supported by the published compiler and
+`npm i -g @lmctl-ai/lmctl@0.2.347` (or newer) once. The runner downloads the
+SHA256-pinned lmhtml release from `scripts/tools/lmhtml.lock`. `LMHTML=/path/to/lmhtml`
+and `LMSCRIPT_BIN=/path/to/lmscript` select local executables.
 
-| File | Content |
+## Names and roles
+
+Names are `<role>.html` or `<role>-<topic>.html`, using lowercase letters, digits
+and single hyphens. Unknown roles and uppercase/space/underscore names are errors.
+There is no fixed page set. `skill.html` is the sole required content page.
+
+| Role | Content rule |
 | --- | --- |
-| `index.html` | What it is, install, links (repo, releases, issues, license), the three docs |
-| `tutorial.html` | Numbered steps with real commands and real output, ending with "What you learned" |
-| `user-guide.html` | h2 sections: Overview, Install, Concepts, Reference, Tasks, Limits, Troubleshooting |
-| `skill.html` | For an LLM agent. h2 sections in this order: Purpose, When to use it, Install, Commands, Inputs and outputs, Safety rules, Worked examples, Errors and exit codes, How to verify |
+| `skill` | h2 headings in exactly this order: Purpose, When to use it, Install, Commands, Inputs and outputs, Safety rules, Worked examples, Errors and exit codes, How to verify |
+| `tutorial` | Numbered h2 steps, commands in pre/kbd, output in pre/samp; final h2 is What you learned |
+| `guide` | Free headings, starting with Overview, Introduction or Getting started; must not duplicate the skill |
+| `recipes` | Each h2 introduces a task with a preformatted example |
+| `reference` | At least one table or definition list |
+| `faq` | h2/h3 question headings ending in a question mark |
+| `changelog` | Optional, free content |
 
-## Rules (enforced by `scripts/tools/check.lms` via lmhtml)
+`roles.lms` contains the shared role order and labels. The clearly marked
+**ROLE RULES** section of `check.lms` contains the content checks. To add a role,
+add one `name=Label` pair to the table and its rule in that section; decoration
+picks up its order and label automatically. Topic pages use their h1 as the nav
+label (up to 80 characters). Nav links are ordered by role, then filename, and
+only include pages that exist. There are no active-page classes.
 
-- Head: `<!doctype html>`, `<html lang="en">`, `<meta charset="utf-8">`,
-  viewport meta, `<title>`, `<meta name="description">`, and exactly one
-  stylesheet: `<link rel="stylesheet" href="/tools/style.css">`.
-- Body: `<nav><ul>…</ul></nav>` (same on every page of a tool, with a link to
-  `/tools/`), `<main>` with exactly one `<h1>`, then `<footer>`.
-- Allowed elements only: html head meta title link body header nav main
-  section footer h1 h2 h3 h4 p ul ol li dl dt dd pre code kbd samp em strong
-  a table thead tbody tr th td blockquote hr figure figcaption img.
-- No `class`, `style`, `script`, `div`, `span`, iframes, `on*` handlers, or
-  external images/fonts/CSS. `id` only on `h2`/`h3` (anchor targets).
-- Internal links are site-rooted (`/tools/<tool>/tutorial.html`) and must
-  resolve to a file and, for `#anchor`, to an id on that page. External
-  links (GitHub, npm) are fine.
-- Commands the reader types: `<kbd>`; program output: `<samp>`; both inside
-  `<pre>`. Paste real output from a real run.
-- Images: local only, under `tools/<tool>/img/`, as
-  `<figure><img src="/tools/<tool>/img/x.png" alt="…"><figcaption>…</figcaption></figure>`.
-- Each page under 150 KB. `tools/style.css` is the only stylesheet; change it
-  only for everyone.
+## Decoration and generated indexes
 
-`npm run check:tools:selftest` proves the checker still rejects the bad
-examples in `tests/tools/`.
+`npm run decorate:tools -- --check` previews missing/outdated generated parts,
+writes nothing and exits nonzero on a difference. Apply with
+`npm run decorate:tools`. A second apply leaves bytes and file timestamps alone.
+`npm run check:tools` first performs that preview, then runs the contract checker.
+CI uses the same command; undecorated pages say `run npm run decorate:tools`.
 
-## Checker and navigation tooling
+The template, outside the deployed tree, has named regions for the common
+layout, tool/site nav and footer variants, and tool/site indexes. Edit it once
+and apply decoration to propagate changes. Placeholders for tool name, title,
+description and repository are visible in that file. The repository is derived
+as `https://github.com/lmctl-ai/<tool>`. A rare repository-name exception can
+provide one URL in `tools/<tool>/repo.txt`; lmscript uses the website repository
+because there is no public `lmctl-ai/lmscript` repository. This is tool-level,
+not per-page configuration.
 
-Install Node >= 22 and the published compiler once:
-`npm i -g @lmctl-ai/lmctl@0.2.347` (newer versions also work).
-`npm run check:tools` compiles `scripts/tools/check.lms` against the JSON schema
-emitted by lmhtml, then runs the bytecode in that host. HTML parsing, selector
-queries, markup checks, attribute enumeration, link resolution and page-size
-checks use lmhtml; there is no Node HTML checker. The shell runner downloads
-the platform release pinned by SHA256 in `scripts/tools/lmhtml.lock` into
-`${XDG_CACHE_HOME:-$HOME/.cache}/lmctl-tools/`. Set `LMHTML` to use a local binary,
-or `LMSCRIPT_BIN` to select an installed published compiler explicitly.
+Titles come from h1 plus the tool/site suffix. An existing nonempty description
+is preserved; otherwise the first content paragraph supplies a normalized,
+at-most-160-character UTF-8 description. Include an introductory paragraph.
+Authored content is retained as source bytes, including comments, quotes,
+entities and preformatted spacing. Loose fragments are wrapped in main. Invalid
+content such as a div or class attribute is **not repaired**: the contract checker
+reports it. Explicit main content is retained as well.
 
-Edit a tool's `index.html` nav/footer, then run `npm run sync:tools -- --dry-run`
-to preview changes and `npm run sync:tools` to apply them to its other pages.
-Synchronization uses normalized DOM hashes (attribute ordering and insignificant
-whitespace do not count as differences), replaces whole nav/footer nodes, and is
-idempotent. Dry-run never saves pages. The report names each file and selector;
-any checker finding causes a nonzero exit. Source markup checks require explicit
-closing tags, even when HTML itself permits their omission.
+Each tool index is generated from the first content page in alphabetical
+filename order: its h1 and first paragraph, links to the pages that exist, and
+the derived repository link. The catalog has exactly one entry per tool with
+content pages, in alphabetical directory order. Titles/summaries come from the
+same source as the generated tool index, never a second configuration. New tools
+appear automatically; deleted tools disappear. Missing indexes are recreated.
+The old authored overview pages were preserved as `guide-overview.html` during
+migration; old `user-guide.html` pages are now `guide.html`.
 
-Site-rooted links resolve from the repository root. The one deployment mapping
-is `/` to `homepage/index.html`, the checked-in root homepage. External HTTP(S),
-protocol-relative and mail links are not fetched. For an independent report on a
-**built** site's internal links, use `scripts/tools/run.sh links /path/to/site`;
-this command intentionally ignores external and non-web schemes. Cross-page
-anchors must exist in the linked HTML. The tools checker also requires all four
-pages, an index listing for each tool, and identical nav **and footer** nodes.
+## Content contract
 
-`npm run check:tools:selftest` checks every named bad fixture and the current tree,
-then uses a temporary copy to test nav/footer mismatches, dry-run, synchronization,
-byte-idempotence, empty/missing tool pages, and internal-link/anchor failures.
+- One h1; allowed elements: html head meta title link body header nav main
+  section footer h1 h2 h3 h4 p ul ol li dl dt dd pre code kbd samp em strong a
+  table thead tbody tr th td blockquote hr figure figcaption img.
+- No class/style attributes, scripts, div/span, iframes, on* handlers, external
+  resources or unlisted attributes. IDs only on h2/h3; no duplicate IDs.
+- Commands use kbd, output uses samp, both inside pre. Paste real output.
+- Images are local `/tools/<tool>/img/<file>`, with nonempty alt, inside a figure
+  with a figcaption. Each page is at most 153600 bytes.
+- Internal links are site-rooted or same-page anchors and must resolve. External
+  HTTP(S), protocol-relative and mail links are allowed and are not fetched.
+- Source markup must use explicit closing tags. Decoration does not silently
+  repair malformed or ambiguous content.
+
+The generated shell has HTML doctype, lang=en, charset, viewport, title,
+description and exactly one stylesheet `/tools/style.css`, followed by nav,
+main and footer. Change the stylesheet for everyone, not for one page.
+
+Site-rooted links resolve from the repository root; `/` maps to the deployed
+`homepage/index.html`. `scripts/tools/run.sh links /path/to/built/site` reports
+broken internal links independently, ignoring external/non-web schemes.
+`npm run check:tools:selftest` tests named bad fixtures and the current tree,
+then uses an isolated copy to test fragments, roles, template propagation,
+indexes, dry-run, source preservation and idempotence.
+
+Only `scripts/deploy-tools.sh` deploys this section. The template and scripts are
+outside `tools/` and are never uploaded. No Node HTML checker remains; lmscript
+compiles the DSL and lmhtml runs it.

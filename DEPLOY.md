@@ -68,7 +68,7 @@ from the staging tree before upload.
 
 `scripts/deploy-tools.sh` publishes the static tool pages in `tools/` to
 `s3://$S3_BUCKET/tools/` (scoped prefix; `--delete` never touches the bucket
-root) and invalidates `/tools*`. It first runs `scripts/tools/run.sh check`,
+root) and invalidates `/tools*`. It first runs `scripts/tools/run.sh check` (decoration preview, then contract validation),
 never uploads `tools/_template`, `tools/README.md` or hidden files, refuses
 any file type other than html/css/png/svg/txt, sets `no-cache` on HTML and a
 one-day cache on CSS and images, and also stores each `index.html` under the

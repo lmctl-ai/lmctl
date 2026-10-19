@@ -1,0 +1,15 @@
+<h1>Example &amp; helpers {{CONTENT}}</h1>
+<p>Éclair tooling for repeatable work. This paragraph supplies the description and the catalog summary without a second configuration file.</p>
+<h2>Purpose</h2><p>Use it for examples.</p>
+<h2>When to use it</h2><p>When testing.</p>
+<h2>Install</h2><pre><kbd>tool install</kbd></pre>
+<h2>Commands</h2><pre><code>  tool 'quoted' &lt;input&gt;
+    unchanged spaces
+</code></pre>
+<h2>Inputs and outputs</h2><p>HTML in, HTML out.</p>
+<h2>Safety rules</h2><p>Check the result.</p>
+<h2>Worked examples</h2><p>Run the command.</p>
+<h2>Errors and exit codes</h2><p>Nonzero means failure.</p>
+<h2>How to verify</h2><p>Compare bytes.</p>
+<!-- Preserve this comment and the original quotes/entities. -->
+<!-- <nav><ul><li><a href="/tools/">Stale</a></li></ul></nav> -->

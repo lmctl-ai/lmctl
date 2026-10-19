@@ -6,7 +6,7 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 cd "$ROOT"
 command_name=${1:-check}
 if (($#)); then shift; fi
-case "$command_name" in check|sync-nav|links|host-path) ;; *) echo 'usage: run.sh check [file] | sync-nav [--dry-run] | links [site-root]' >&2; exit 2;; esac
+case "$command_name" in check|contract|decorate|links|host-path) ;; *) echo 'usage: run.sh check [file] | decorate [--check] | links [site-root]' >&2; exit 2;; esac
 sha256_file() {
   if command -v sha256sum >/dev/null; then sha256sum "$1"; else shasum -a 256 "$1"; fi
 }
@@ -54,13 +54,17 @@ IFS=. read -r major minor patch <<< "$version"
 work=$(mktemp -d "${TMPDIR:-/tmp}/lmctl-tools.XXXXXX")
 trap 'rm -rf "$work"' EXIT
 "$host" --schema --json > "$work/lmhtml.dsl.json"
-cp "$HERE/$command_name.lms" "$work/$command_name.lms"
+if [[ $command_name == check && $# == 0 ]]; then
+  "$HERE/run.sh" decorate --check
+fi
+script_name=$command_name
+[[ $command_name != check && $command_name != contract ]] || script_name=check
+cp "$HERE/$script_name.lms" "$work/$script_name.lms"
+cp "$HERE/roles.lms" "$work/roles.lms"
 host_args=()
 argument=${1:-}
-if [[ $command_name == sync-nav ]]; then
-  [[ -z $argument || $argument == --dry-run ]] || { echo 'sync-nav accepts only --dry-run' >&2; exit 2; }
-  [[ -z $argument ]] || host_args+=(--dry-run)
-  argument=
+if [[ $command_name == decorate ]]; then
+  [[ -z $argument || $argument == --check ]] || { echo 'decorate accepts only --check' >&2; exit 2; }
 fi
 if [[ $command_name == links ]]; then
   # Keep the host's document paths relative to its site root, even when the
@@ -69,7 +73,7 @@ if [[ $command_name == links ]]; then
   argument=.
 fi
 (($# <= 1)) || { echo 'too many arguments' >&2; exit 2; }
-"$compiler" "$work/$command_name.lms" "$work/program.dslb" "$work/report.txt" "$argument"
+"$compiler" "$work/$script_name.lms" "$work/program.dslb" "$work/report.txt" "$argument"
 status=0
 "$host" ${host_args:+"${host_args[@]}"} --dsl "$work/program.dslb" > "$work/result.json" || status=$?
 [[ ! -f $work/report.txt ]] || cat "$work/report.txt"

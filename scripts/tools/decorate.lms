@@ -1,0 +1,187 @@
+import "roles.lms";
+directories = join(sort(glob("tools/*/")), "|") + "|";
+p = _dsl_ schema="lmhtml.dsl.json";
+fn norm(value: string) -> string {
+  let result = "";
+  let space = false;
+  for (i in range(0, str_len(value))) {
+    let ch = str_substr(value, i, 1);
+    if (ch == " " || ch == "\n" || ch == "\r" || ch == "\t") { space = str_len(result) > 0; }
+    else { if (space) { result = result + " "; } result = result + ch; space = false; }
+  }
+  return result;
+}
+fn escape(value: string) -> string {
+  return str_replace(str_replace(str_replace(str_replace(str_replace(value, "&", "&amp;"), "<", "&lt;"), ">", "&gt;"), "\"", "&quot;"), "{{", "&#123;&#123;");
+}
+fn region(source: string, name: string) -> string {
+  let begin_marker = "<!-- " + name + " -->";
+  let end_marker = "<!-- /" + name + " -->";
+  let offset = str_find(source, begin_marker);
+  let start = offset + str_len(begin_marker);
+  let end = str_find(source, end_marker);
+  if (offset < 0 || end < start) {
+    report.add("template", "scripts/tools/template.html", 0, "missing or invalid region: " + name);
+    report.write_text(${ARGV[1]});
+    report.fail_if_any();
+  }
+  return str_trim(str_substr(source, start, end - start));
+}
+fn basename(path: string) -> string {
+  let slash = 0;
+  for (i in range(0, str_len(path))) { if (str_substr(path, i, 1) == "/") { slash = i + 1; } }
+  return str_substr(path, slash, str_len(path));
+}
+fn role(filename: string) -> string {
+  let stem = str_substr(filename, 0, str_len(filename) - 5);
+  let dash = str_find(stem, "-");
+  if (dash >= 0) { stem = str_substr(stem, 0, dash); }
+  return stem;
+}
+fn heading(page: Doc) -> string {
+  let result = "";
+  if (page.select("h1").len() > 0) { result = norm(page.select("h1").at(0).text()); }
+  return result;
+}
+fn page_title(title: string, tool: string) -> string {
+  let result = title;
+  if (title != tool) { result = result + " — " + tool; }
+  return result + " — lmctl.com tools";
+}
+fn summary(page: Doc) -> string {
+  let paragraphs = html.parse(content(page)).select("main p");
+  let result = "";
+  if (paragraphs.len() > 0) { result = str_trim(str_text_prefix(norm(paragraphs.at(0).text()), 160)); }
+  return result;
+}
+fn content(page: Doc) -> string {
+  # Retain original source, not serialized DOM. Quotes, entities, comments,
+  # spacing and even invalid author attributes stay byte-for-byte intact.
+  let root = "";
+  if (page.source_outer("html") != "") { root = "html"; }
+  if (page.source_outer("body") != "") { root = "body"; }
+  let result = page.source_inner(root, "!doctype head nav footer");
+  if (page.select("main").len() == 0) { result = "<main>" + result + "</main>"; }
+  else { result = str_trim(result); }
+  return result;
+}
+fn render(layout: string, nav: string, footer: string, body: string, title: string, description: string) -> string {
+  # Replace CONTENT last: author text containing template markers is literal.
+  let result = str_replace(layout, "{{TITLE}}", escape(title));
+  result = str_replace(result, "{{DESCRIPTION}}", escape(description));
+  result = str_replace(result, "{{NAV}}", nav);
+  result = str_replace(result, "{{FOOTER}}", footer);
+  return str_replace(result, "{{CONTENT}}", body) + "\n";
+}
+fn differences(page: Doc, result: string) -> string {
+  let wanted = html.parse(result);
+  let changed = "";
+  if (page.doctype() != "html") { changed = changed + "doctype "; }
+  if (page.select("html").at(0).attr("lang") != "en") { changed = changed + "lang "; }
+  if (page.select("main").len() != 1) { changed = changed + "main wrapper "; }
+  if (page.select("head").at(0).hash() != wanted.select("head").at(0).hash()) { changed = changed + "head/title/description "; }
+  if (page.select("nav").len() != 1) { changed = changed + "nav "; }
+  else { if (page.select("nav").at(0).hash() != wanted.select("nav").at(0).hash()) { changed = changed + "nav "; } }
+  if (page.select("footer").len() != 1) { changed = changed + "footer "; }
+  else { if (page.select("footer").at(0).hash() != wanted.select("footer").at(0).hash()) { changed = changed + "footer "; } }
+  if (changed == "") { changed = "shell formatting"; }
+  return "missing or outdated: " + str_trim(changed);
+}
+fn store(path: string, result: string, before: string, check: bool, what: string) -> void {
+  if (result != before) {
+    report.add("decorate", path, 0, what + "; run npm run decorate:tools");
+    if (!check) { html.save(result, path); }
+  }
+}
+let check = ${ARGV[2]} == "--check";
+let template_source = html.load("scripts/tools/template.html").source();
+let required_regions = "layout|tool-nav|tool-footer|site-nav|site-footer|tool-index|site-index|";
+while (str_find(required_regions, "|") >= 0) {
+  let end = str_find(required_regions, "|");
+  region(template_source, str_substr(required_regions, 0, end));
+  required_regions = str_substr(required_regions, end + 1, str_len(required_regions));
+}
+let layout = region(template_source, "layout");
+# Refuse malformed authored source before changing any file; common shells are
+# replaceable, but token repair must never silently rewrite authored content.
+for (page in html.load_dir(".", "tools/**/*.html", "")) {
+  if (basename(page.path()) == "index.html") { continue; }
+  for (problem in page.markup_errors()) { report.add("markup", page.path(), 0, problem); }
+}
+report.write_text(${ARGV[1]});
+report.fail_if_any();
+let role_data = ${role_table};
+let tool_dirs = ${directories};
+let tool_links = "";
+let root_probe = html.parse("");
+while (str_find(tool_dirs, "|") >= 0) {
+  let separator = str_find(tool_dirs, "|");
+  let directory = str_substr(tool_dirs, 0, separator);
+  tool_dirs = str_substr(tool_dirs, separator + 1, str_len(tool_dirs));
+  if (directory == "") { continue; }
+  let pages = html.load_dir(directory, "*.html", "");
+  let count = 0;
+  for (page in pages) { if (basename(page.path()) != "index.html") { count = count + 1; } }
+  if (count == 0) { continue; }
+  let tool = basename(directory);
+  let repo = "https://github.com/lmctl-ai/" + tool;
+  if (html.link_exists(root_probe, "/" + directory + "/repo.txt")) { repo = str_trim(html.load(directory + "/repo.txt").source()); }
+  let footer = str_replace(region(template_source, "tool-footer"), "{{REPO}}", escape(repo));
+  footer = str_replace(footer, "{{REPO_LABEL}}", escape(str_replace(repo, "https://", "")));
+  let links = "";
+  let roles = role_data;
+  while (str_find(roles, "|") >= 0) {
+    let end = str_find(roles, "|");
+    let entry = str_substr(roles, 0, end);
+    roles = str_substr(roles, end + 1, str_len(roles));
+    let equal = str_find(entry, "=");
+    let name = str_substr(entry, 0, equal);
+    let label = str_substr(entry, equal + 1, str_len(entry));
+    for (page in pages) {
+      let filename = basename(page.path());
+      if (filename == "index.html" || role(filename) != name) { continue; }
+      let text = label;
+      if (filename != name + ".html") { text = str_trim(str_text_prefix(heading(page), 80)); }
+      links = links + "<li><a href=\"/tools/" + escape(tool) + "/" + escape(filename) + "\">" + escape(text) + "</a></li>\n";
+    }
+  }
+  let nav = str_replace(region(template_source, "tool-nav"), "{{TOOL}}", escape(tool));
+  nav = str_replace(nav, "{{PAGE_LINKS}}", links);
+  # Stable alphabetical source page; generated index is never its own input.
+  let tool_title = "";
+  let tool_summary = "";
+  for (page in pages) {
+    if (basename(page.path()) == "index.html") { continue; }
+    if (tool_title == "") { tool_title = heading(page); tool_summary = summary(page); }
+    let description = summary(page);
+    let meta = page.select("head meta[name='description']");
+    if (meta.len() > 0 && norm(meta.at(0).attr("content")) != "") { description = meta.at(0).attr("content"); }
+    let result = render(layout, nav, footer, content(page), page_title(heading(page), tool), description);
+    store(page.path(), result, page.source(), check, differences(page, result));
+  }
+  let index_content = str_replace(region(template_source, "tool-index"), "{{TOOL_TITLE}}", escape(tool_title));
+  index_content = str_replace(index_content, "{{SUMMARY}}", escape(tool_summary));
+  index_content = str_replace(index_content, "{{REPO}}", escape(repo));
+  index_content = str_replace(index_content, "{{PAGE_LINKS}}", links);
+  let index_path = directory + "/index.html";
+  let before = "";
+  for (page in pages) { if (basename(page.path()) == "index.html") { before = page.source(); } }
+  store(index_path, render(layout, nav, footer, index_content, page_title(tool_title, tool), tool_summary), before, check, "missing or stale generated tool index");
+  tool_links = tool_links + "<li><a href=\"/tools/" + escape(tool) + "/\">" + escape(tool_title) + "</a> — " + escape(tool_summary) + "</li>\n";
+}
+for (page in html.load_dir("tools", "*.html", "*/*.html")) {
+  if (basename(page.path()) == "index.html") { continue; }
+  let description = summary(page);
+  let meta = page.select("head meta[name='description']");
+  if (meta.len() > 0 && norm(meta.at(0).attr("content")) != "") { description = meta.at(0).attr("content"); }
+  store(page.path(), render(layout, region(template_source, "site-nav"), region(template_source, "site-footer"), content(page), heading(page) + " — lmctl.com tools", description), page.source(), check, "missing or outdated site document shell");
+}
+let site_content = str_replace(region(template_source, "site-index"), "{{TOOL_LINKS}}", tool_links);
+let old_index = "";
+let probe = html.parse("");
+if (html.link_exists(probe, "/tools/index.html")) { old_index = html.load("tools/index.html").source(); }
+store("tools/index.html", render(layout, region(template_source, "site-nav"), region(template_source, "site-footer"), site_content, "Tools — lmctl.com", "Small command-line tools from lmctl, with skill pages for LLM agents and task-specific documentation."), old_index, check, "missing or stale generated tools index");
+report.write_text(${ARGV[1]});
+if (check) { report.fail_if_any(); }
+end _dsl_
+savedsl(p, ARGV[0]);
