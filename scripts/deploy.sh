@@ -93,11 +93,14 @@ do
   fi
 done
 
-# --- skills: publish canonical HTML and generated raw skill pages to lmctl.com/skills/ (source of truth = this repo's skills/).
-# No --delete: never wipe skills published out-of-band; this only adds/updates repo-tracked ones.
-aws s3 sync skills/ "s3://${S3_BUCKET}/skills/" \
-  --exclude '*' --include '*.md' --exclude '.*' \
-  --content-type 'text/markdown; charset=utf-8' \
+# --- Skills are HTML ONLY. skills-moved/ contains checked-in, hand-written
+# one-paragraph transitional notices, NOT skill content or converter output.
+# Publish them as text/plain at the old .md keys for one release cycle;
+# the operator will remove these stubs later. Never regenerate them from HTML.
+# No --delete: never wipe skills published out-of-band.
+aws s3 sync skills-moved/ "s3://${S3_BUCKET}/skills/" \
+  --exclude '*' --include '*.md' \
+  --content-type 'text/plain; charset=utf-8' \
   --cache-control 'no-cache, max-age=0, must-revalidate'
 aws s3 sync skills/ "s3://${S3_BUCKET}/skills/" \
   --exclude '*' --include '*.html' --exclude '.*' \
@@ -106,11 +109,9 @@ aws s3 sync skills/ "s3://${S3_BUCKET}/skills/" \
 aws s3 cp skills/index.html "s3://${S3_BUCKET}/skills/index.html" \
   --content-type 'text/html; charset=utf-8' \
   --cache-control 'no-cache, max-age=0, must-revalidate'
-# Operator-facing short alias for the Lead skill. The canonical source file is
-# skills/lmctl-lead-skill.html (Markdown generated); keep this copy in the deploy script so the raw
-# URL /skills/lmctl-lead.md stays usable without duplicating source content.
-aws s3 cp skills/lmctl-lead-skill.md "s3://${S3_BUCKET}/skills/lmctl-lead.md" \
-  --content-type 'text/markdown; charset=utf-8' \
+# HTML alias for the Lead skill; its old .md alias is a notice in skills-moved/.
+aws s3 cp skills/lmctl-lead-skill.html "s3://${S3_BUCKET}/skills/lmctl-lead.html" \
+  --content-type 'text/html; charset=utf-8' \
   --cache-control 'no-cache, max-age=0, must-revalidate'
 aws s3api put-object \
   --bucket "${S3_BUCKET}" \

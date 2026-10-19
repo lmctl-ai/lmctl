@@ -1,10 +1,11 @@
-# Canonical legacy skills: HTML authored; Markdown and index generated.
+# Legacy skills are HTML only; decorate the authored pages and generate the index.
+import "lmctl-subcommands.lms";
 # Ordered catalog preserves the two historical group names. Retired pages keep
 # URLs but are intentionally absent from the active index. Add new entries here.
 utilities = "lmchat-skill|lmsound-skill|lmprobe-skill|lmmail-skill|lmfeedback-skill|lmnote-skill|lmsheet-skill|lmtext-skill|lmfin-skill|lmbio-skill|";
 coordination = "lmctl-lead-skill|claudecode-lead-skill|opencode-lead-skill|lmctl-team-lead-basic-skill|lmctl-team-lead-advanced-skill|lmscript-workflow-skill|lmctl-meta-lead-skill|team-lead-workflow|durable-memory|";
 retired = "background-wakeup|communicating-with-mail-skill|lmctl-admin-skill|lmctl-recover-skill|";
-all_md = join(sort(glob("skills/*.md")), "|") + "|";
+non_html_skills = join(sort(glob("skills/*.md")), "|");
 all_html = join(sort(glob("skills/*.html")), "|") + "|";
 p = _dsl_ schema="lmhtml.dsl.json";
 fn element_offset(source: string, tag: string, raw: string, ordinal: int) -> int {
@@ -329,6 +330,26 @@ fn invariants(page: Doc) -> void {
   let file = page.path();
   let text = normalized(page.select("main").at(0).text());
   let lower = str_lower(text);
+  for (node in page.select("kbd, pre code")) {
+    let lines = str_replace(node.text(), "\r", "") + "\n";
+    while (str_find(lines, "\n") >= 0) {
+      let end = str_find(lines, "\n");
+      let command = normalized(str_substr(lines, 0, end));
+      lines = str_substr(lines, end + 1, str_len(lines));
+      if (str_starts_with(command, "lmctl ")) {
+        let rest = str_substr(command, 6, str_len(command));
+        let split = str_find(rest + " ", " ");
+        let verb = str_substr(rest, 0, split);
+        if (verb != "--help" && verb != "--version" && !str_contains(${lmctl_subcommands}, "|" + verb + "|")) {
+          finding(file, node.path(), "unknown lmctl subcommand: " + verb + "; refresh scripts/tools/lmctl-subcommands.lms from lmctl --help");
+        }
+      }
+    }
+  }
+  for (node in page.select("a")) {
+    let url = node.attr("href");
+    if ((str_starts_with(url, "/skills/") || str_starts_with(url, "https://lmctl.com/skills/")) && (str_ends_with(url, ".md") || str_contains(url, ".md#") || str_contains(url, ".md?"))) { finding(file, node.path(), "skill links must point to .html, not transitional stubs"); }
+  }
   let forbidden = "lmctl mail|mailbox_queue_enabled|lmctl health|lmctl hire|lmctl refresh|lmctl restore|lmctl chat|lmctl connect|lmctl serve|lmctl wake|lmctl can |lmctl sees|--idle-timeout|";
   while (str_find(forbidden, "|") >= 0) {
     let end = str_find(forbidden, "|");
@@ -365,7 +386,7 @@ fn summary(page: Doc) -> string {
   if (paragraphs.len() > 0) { result = excerpt(paragraphs.at(0).text(), 160, true); }
   return result;
 }
-fn render_skills(body: string, title: string, description: string, raw_path: string) -> string {
+fn render_skills(body: string, title: string, description: string) -> string {
   let template = html.load("scripts/tools/template.html").source();
   let result = region(template, "layout");
   result = str_replace(result, "{{TITLE}}", escape(title + " — lmctl skills"));
@@ -373,9 +394,6 @@ fn render_skills(body: string, title: string, description: string, raw_path: str
   result = str_replace(result, "{{ICON}}", "");
   result = str_replace(result, "{{NAV}}", region(template, "skills-nav"));
   result = str_replace(result, "{{FOOTER}}", region(template, "skills-footer"));
-  let raw_link = "";
-  if (raw_path != "") { raw_link = "<p><a href=\"" + raw_path + "\">Raw Markdown for agents</a></p>"; }
-  result = str_replace(result, "{{RAW_LINK}}", raw_link);
   result = str_replace(result, "{{CONTENT}}", body);
   return result + "\n";
 }
@@ -419,36 +437,25 @@ if (mode != "" && !check) {
     if (main.len() != 1 || heading.len() != 1) { finding(path, "main", "expected one main and one h1"); }
     else {
       let content = page.source_outer("main");
-      let result = render_skills(content, normalized(heading.at(0).text()), summary(page), "/skills/" + name + ".md");
+      let result = render_skills(content, normalized(heading.at(0).text()), summary(page));
       store(path, result, check);
-      # Rewrite actual link attributes only: code examples remain untouched.
-      let markdown_doc = html.parse(content);
-      for (node in markdown_doc.select("a")) {
-        let url = node.attr("href");
-        if (str_starts_with(url, "/skills/")) {
-          let hash = str_find(url, "#"); let suffix = "";
-          if (hash >= 0) { suffix = str_substr(url, hash, str_len(url)); url = str_substr(url, 0, hash); }
-          if (str_ends_with(url, ".html")) { node.set_attr("href", str_substr(url, 0, str_len(url) - 5) + ".md" + suffix); }
-        }
-      }
-      store("skills/" + name + ".md", markdown_doc.markdown("main"), check);
       if (check) { check_page(page); invariants(page); }
     }
   }
-  let paths = ${all_html} + ${all_md};
+  if (${non_html_skills} != "") { finding("skills/", "document", "skills must be HTML only; remove .md files"); }
+  let paths = ${all_html};
   while (str_find(paths, "|") >= 0) {
     let end = str_find(paths, "|"); let path = str_substr(paths, 0, end);
     paths = str_substr(paths, end + 1, str_len(paths));
     let file = filename(path);
     let extension_size = 5;
-    if (str_ends_with(file, ".md")) { extension_size = 3; }
     if (file != "index.html" && !str_contains("|" + names, "|" + str_substr(file, 0, str_len(file) - extension_size) + "|")) { finding(path, "document", "skill not in ordered catalog"); }
   }
-  let intro = "Provider-agnostic guides an LLM can read to use a tool. Read the HTML pages or fetch their generated Markdown counterparts.";
+  let intro = "Provider-agnostic guides an LLM can read to use a tool. Skills are plain HTML for humans and agents.";
   let body = "<main>\n<h1>lmctl skills</h1>\n<p>" + intro + "</p>\n";
   body = body + index_group(${utilities}, "Utilities (LLM-facing)") + index_group(${coordination}, "lmctl orchestration");
   body = body + "<p>New tool skills live in the <a href=\"/tools/\">tools catalog</a>. Hosted utilities require an authorized account; deployment availability and permissions must be checked with the operator.</p>\n</main>";
-  store("skills/index.html", render_skills(body, "lmctl skills", excerpt(intro, 160, true), ""), check);
+  store("skills/index.html", render_skills(body, "lmctl skills", excerpt(intro, 160, true)), check);
   if (check && html.link_exists(html.parse(""), "/skills/index.html")) { check_page(html.load("skills/index.html")); }
 }
 report.write_text(${ARGV[1]});

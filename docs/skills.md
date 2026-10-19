@@ -6,9 +6,10 @@ sidebar_position: 96
 # Skills
 
 Skills are agent-facing instructions. The [skills catalog](https://lmctl.com/skills/)
-groups utility guides and lmctl orchestration guidance. HTML is the authored source;
-each page also has a generated `.md` URL for agents. Existing raw URLs, including
-`/skills/lmctl-lead.md`, remain available.
+groups utility guides and lmctl orchestration guidance. HTML is the only skill format.
+Use `/skills/<name>.html`, or the Lead alias `/skills/lmctl-lead.html`.
+Former `.md` URLs temporarily serve a one-paragraph text notice pointing to HTML;
+the operator will remove these notices after the transition.
 
 Start with the [Lead skill](https://lmctl.com/skills/lmctl-lead-skill.html) or
 [Team Lead — basic](https://lmctl.com/skills/lmctl-team-lead-basic-skill.html).
@@ -34,12 +35,14 @@ skills coexist; neither needs to duplicate the other's content.
 ## Editing and generation
 
 Edit `skills/<name>.html` using plain content tags inside `<main>`. Run
-`npm run build:skills` to decorate the pages and regenerate Markdown and the grouped
+`npm run build:skills` to decorate the HTML pages and regenerate the grouped HTML
 index. Run `npm run check:skills` and `npm run check:skills:selftest` before committing.
 The lmhtml-hosted script checks the HTML contract, coordination invariants and
-byte-for-byte generated-file drift. CI uses the same commands.
+stale HTML decoration and index changes. CI uses the same commands.
 
-Local cross-skill HTML links use `/skills/<name>.html`; Markdown generation maps
-those link attributes to `/skills/<name>.md`, preserving fragments. Code examples
-are never rewritten. Absolute index links work at both `/skills` and `/skills/`.
+Cross-skill links use `/skills/<name>.html`, preserving fragments. Absolute index
+links work at both `/skills` and `/skills/`. There is no format converter or
+Markdown drift check. The checker also validates `lmctl` commands against a
+checked-in subcommand list; refresh it with
+`python3 scripts/tools/update-lmctl-subcommands.py`, which parses `lmctl --help`.
 See `durable-memory/skills-audit.md` for source evidence and intentional corrections.

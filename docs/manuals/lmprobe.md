@@ -24,7 +24,7 @@ npx @lmctl-ai/lmprobe --help
 
 The detailed public manual lives at [lmctl.com/lmprobe](https://lmctl.com/lmprobe).
 The LLM-facing quick skill is hosted at
-[lmctl.com/skills/lmprobe-skill.md](https://lmctl.com/skills/lmprobe-skill.md).
+[lmctl.com/skills/lmprobe-skill.html](https://lmctl.com/skills/lmprobe-skill.html).
 
 ## Why agents use it
 

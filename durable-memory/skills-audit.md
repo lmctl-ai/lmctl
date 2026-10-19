@@ -1,5 +1,55 @@
 # Skills audit — 2026-10-19
 
+## Operator correction: HTML is the only skill format
+
+This section supersedes the historical dual-format migration notes below; their
+audit results and comparison evidence are retained, not current build instructions.
+All 23 generated `skills/*.md` copies were deleted. Skills are authored and served
+only as HTML; build/check no longer call a Markdown exporter or compare formats.
+The grouped HTML index and audited content/invariants remain. The command checker
+uses the checked-in 21-subcommand vocabulary refreshed from `lmctl --help` by
+`python3 scripts/tools/update-lmctl-subcommands.py`.
+
+`skills-moved/` contains 24 literal, hand-written one-paragraph notices (23 old URLs
+plus the Lead alias), served as text/plain for one release cycle. They say only
+“Moved to https://lmctl.com/skills/<name>.html. This stub will be removed.” They are
+not generated from HTML and contain no skill content. `/skills/lmctl-lead.html`
+is deployed as a text/html copy of `lmctl-lead-skill.html`. No deploy was run.
+
+### Mono consumer review (source at 40660363)
+
+Tracked sources, scripts, tests, docs and example teamfiles were searched for
+`lmctl.com/skills`, `.md` skill URLs, `skillUrl`/`skill_url` and catalog resolution.
+**No runtime code or test was found fetching a `/skills/*.md` website URL.**
+The following potentially confusing references remain unchanged for Lead review:
+
+| File:line | Finding and disposition |
+| --- | --- |
+| `lmctl-src/tests/cli/teamfile-compat.test.ts:901` | Example `.md` URL; lines 902–903 add a local path and another example URL. Test asserts legacy `_SKILL_` directives are ignored, not downloaded. |
+| `lmctl-src/tests/cli/teamfile-compat.test.ts:920` | Mock `.md` URL; line 930 explicitly asserts fetch was not called. Kept unchanged. |
+| `lmctl-src/tests/providers/passive-session-reader.test.ts:1345` | Recorded webfetch fixture uses `/skills/x?q=1`, with no `.md`; line 1358 checks normalized metadata. It does not fetch the website. |
+| `lmctl-src/src/uri/lmctl_uri.ts:116` | Runtime resolves local `templates/skills/<name>/SKILL.md`; line 128 uses the same cache filename, line 136 describes freeform Markdown. Separate template subsystem; unchanged. |
+| `lmctl-src/src/uri/lmctl_uri.ts:164` | Runtime constructs extensionless `/templates/skill/<name>` and fetches at line 167, not `/skills/*.md`. No runtime change made. |
+
+Mono documentation URLs updated in commit `40660363`: `lmctl-src/README.md:5`,
+`lmscript/README.md:196`, `lmbee/durable-memory/sample-teams.md:25`, the documentation
+comment in `lmbee/examples/template.lmctl:2`, and the index/review-log files under
+`lmmail`, `lmnote`, `lmsheet` durable-memory. Historical publication entries now
+distinguish their old smoke checks from the new HTML links. No runtime or test file
+was edited. Website `docs/manuals/lmprobe.md:27` now links to HTML. No active website
+HTML links target the transitional notices; original URLs remain only in historical
+audit evidence, compatibility documentation, stubs and deliberate negative fixtures.
+
+### Correction validation
+
+Skills: 28 self-tests, including unknown command/second-line command, HTML-only
+links, stale/missing HTML indexes, idempotence and rejection of `.md` skill files.
+The existing HTML/audit/coordination checks remain. Tools checks and their 43 named
+fixtures plus lifecycle suite are rerun. Live-service verification limits from
+the audit remain unchanged. The parallel tools-docs guide is still absent.
+
+## Historical audit and initial migration
+
 Step 0 completed before HTML migration. The checkout contains **23 Markdown skill files**, not 24; `skills/index.html` is the 24th page. No skill was silently omitted. Original files were inventoried before correction. Existing URLs remain, including retired pointer pages.
 
 The installed lmctl/lmscript release was 0.2.347. We ran lmctl top-level help and all 21 listed subcommand helps; no provider turns, mail sends, service writes or deploys were run. The standalone LMScript minimal workflow passes `lmctl script --check`; `last_line_as_status` IS a built-in (an initial suspicion was disproved). Executed ternary/f-string examples printed `yes` and `value 1`. Published lmprobe 0.42.2 and lmfin 0.1.0 were installed under temporary prefixes for read-only help checks.

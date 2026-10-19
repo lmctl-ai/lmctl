@@ -4,10 +4,10 @@ name: tools-check
 # read-only token, no deploy.
 on:
   pull_request:
-    paths: ["skills/**", "tests/skills/**", "tools/**", "scripts/tools/**", "package.json", "homepage/index.html", "tests/tools/**", ".github/workflows/tools-check.yml"]
+    paths: ["skills/**", "skills-moved/**", "tests/skills/**", "tools/**", "scripts/tools/**", "package.json", "homepage/index.html", "tests/tools/**", ".github/workflows/tools-check.yml"]
   push:
     branches: [main]
-    paths: ["skills/**", "tests/skills/**", "tools/**", "scripts/tools/**", "package.json", "homepage/index.html", "tests/tools/**", ".github/workflows/tools-check.yml"]
+    paths: ["skills/**", "skills-moved/**", "tests/skills/**", "tools/**", "scripts/tools/**", "package.json", "homepage/index.html", "tests/tools/**", ".github/workflows/tools-check.yml"]
 
 permissions:
   contents: read
@@ -32,7 +32,7 @@ jobs:
         run: npm run check:tools
       - name: checker self-test
         run: npm run check:tools:selftest
-      - name: check generated skills and invariants
+      - name: check HTML skills, index and invariants
         run: npm run check:skills
       - name: skills self-test
         run: npm run check:skills:selftest

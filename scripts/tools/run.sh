@@ -61,6 +61,7 @@ script_name=$command_name
 [[ $command_name != check && $command_name != contract ]] || script_name=check
 cp "$HERE/$script_name.lms" "$work/$script_name.lms"
 cp "$HERE/roles.lms" "$work/roles.lms"
+cp "$HERE/lmctl-subcommands.lms" "$work/lmctl-subcommands.lms"
 host_args=()
 argument=${1:-}
 if [[ $command_name == decorate ]]; then

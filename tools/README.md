@@ -141,14 +141,15 @@ compiles the DSL and lmhtml runs it.
 
 ## Legacy /skills/
 
-Legacy utility and coordination skills coexist at `/skills/`. Their authored sources
-are `skills/*.html`; `npm run build:skills` decorates them and generates the Markdown
-compatibility URLs plus the grouped index. `npm run check:skills` rejects drift and
-stale coordination instructions; `npm run check:skills:selftest` tests the checker.
-The ordered catalog and legacy policy live in `scripts/tools/skills.lms`, using the
-same `template.html` and pinned lmhtml host as tools. Edit only `<main>` content.
-Cross-skill links are absolute `/skills/<stem>.html`; the exporter maps link attributes
-to `.md` for raw readers without rewriting code. Retired workflows retain pointer
-pages but leave the active index. New LMScript/lmcad/lmhtml/SDK skills remain in
-`/tools/<tool>/skill.html`; do not create duplicate legacy pages. Preview from the
-repo-root HTTP server at `/skills/`. Audit evidence: `durable-memory/skills-audit.md`.
+Legacy utility and coordination skills coexist at `/skills/`. Skills are HTML only:
+edit `skills/*.html`; `npm run build:skills` decorates them and generates only the
+HTML index. `npm run check:skills` validates content, decoration, the index and
+coordination invariants; `npm run check:skills:selftest` tests those rules.
+The ordered catalog and policy live in `scripts/tools/skills.lms`, sharing
+`template.html` and the pinned lmhtml host. Cross-skill links always use
+`/skills/<stem>.html`. The command vocabulary is refreshed with
+`python3 scripts/tools/update-lmctl-subcommands.py` from installed `lmctl --help`.
+Old `.md` URLs receive only transitional text/plain notices from `skills-moved/`.
+They are not generated skill content and will be removed by the operator.
+New LMScript/lmcad/lmhtml/SDK skills remain in `/tools/<tool>/skill.html`.
+Preview the repo-root server at `/skills/`; see `durable-memory/skills-docs.md`.

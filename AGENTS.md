@@ -17,17 +17,17 @@ its `site/` supplies the separately deployed manual. Do not assume historical
 machine-specific clone paths or hosted-service availability. The per-skill evidence
 and unverifiable claims are recorded in `durable-memory/skills-audit.md`.
 
-`skills/*.html` is canonical. Markdown is generated locally, not copied verbatim
-from upstream manuals; preserve verified semantics when bringing in upstream fixes.
-The lmhtml exporter is maintained at `github.com/lmctl-ai/lmhtml` and pinned in
-`scripts/tools/lmhtml.lock`.
+Skills are HTML only (`skills/*.html`). There are no Markdown skill copies,
+HTML-to-Markdown conversion or cross-format drift checks. `build:skills` only
+decorates HTML and generates the HTML index. The pinned lmhtml host is maintained
+at `github.com/lmctl-ai/lmhtml`; its generic exporter is not used by skills.
 
 ## Invariants that look optional
 
 - **Multiple distinct hosted surfaces:** This repo does not just publish Docusaurus docs (`/lmctl/`). The S3 bucket `lmctl-website-prod` co-tenants 11 distinct surfaces:
   1. Apex homepage (`homepage/` -> `https://lmctl.com/`)
   2. Docusaurus documentation (`src/` + `docs/` -> `https://lmctl.com/lmctl/`)
-  3. HTML skills and generated raw Markdown (`skills/` -> `https://lmctl.com/skills/`, plus the short alias `/skills/lmctl-lead.md`)
+  3. HTML-only skills (`skills/` -> `https://lmctl.com/skills/`, plus the HTML alias `/skills/lmctl-lead.html`)
   4. lmprobe manual (`/lmprobe/`, deployed via `scripts/deploy-lmprobe.sh`)
   5. Sample configs (`examples/` -> `/examples/`, deployed via `scripts/deploy-examples.sh`)
   6. Dynamic quickrun LMScript catalog (`quickrun/` -> `/quickrun/`, deployed via `scripts/deploy-quickrun.sh`)
@@ -58,8 +58,9 @@ The lmhtml exporter is maintained at `github.com/lmctl-ai/lmhtml` and pinned in
 
 - **Editing `homepage/index.html` thinking it is Docusaurus:** The root homepage `https://lmctl.com/` is plain HTML/CSS in `homepage/`. Docusaurus only renders the subpath `https://lmctl.com/lmctl/`.
 - **Publishing is local/manual, not GitHub Actions:** GitHub Actions push trigger is disabled because its OIDC role cannot write root `index.html`. Deployments are executed manually via `scripts/deploy.sh` with `S3_BUCKET=lmctl-website-prod` and `CF_DISTRIBUTION_ID=E1GKUWTM93U7IV`.
-- **39 fleet teamfiles cite `/skills/lmctl-lead.md`:** The canonical file is `skills/lmctl-lead-skill.html`; Markdown is generated. `scripts/deploy.sh` copies it to `/skills/lmctl-lead.md` during deployment.
-- **Generated skills byte-parity:** Every checked-in `skills/*.md` must equal the lmhtml export of its HTML content; the index is generated from the ordered catalog in `scripts/tools/skills.lms`. Retired URLs remain pointer pages.
+- **Skill URLs:** `/skills/lmctl-lead.html` aliases `lmctl-lead-skill.html`. All old `.md` URLs receive only the hand-written text/plain notices in `skills-moved/` for one release cycle. They are not skill content; the operator will remove them later.
+- **HTML-only skills:** Never add `skills/*.md`. The grouped HTML index is generated from the ordered catalog in `scripts/tools/skills.lms`. Retired workflows remain HTML pointer pages.
+- **Current command list:** The checker validates `lmctl` commands in `<kbd>` and command code blocks against `scripts/tools/lmctl-subcommands.lms`. Refresh it with `python3 scripts/tools/update-lmctl-subcommands.py` (parses installed `lmctl --help`); review the list before committing.
 - **Skills coordination invariants:** `scripts/tools/skills.lms` rejects removed commands (`lmctl mail`, `health`, `hire`, `refresh`, `restore`, `chat`, `connect`, `serve`, `wake`, `can`, `sees`), `mailbox_queue_enabled`, and queue/mailbox/lane concepts in active Lead guidance. Lead pages must include inline `lmctl prompt` delegation, state that it `blocks`, and include `is busy; wait and retry`, `Author must not equal reviewer`, `Never wrap lmctl in a shell timeout`, explicit reading instructions, and `automatic durable-memory onboarding is not guaranteed`. Fixtures exercise these rules. Utilities such as lmmail retain their own genuine mailbox APIs.
 - **Treat `main` as publish-ready:** Do not draft unreviewed changes directly on `main`. Work on feature branches and merge only after review clears.
 - **Author is never reviewer:** On `.lmctl` teams, work must be reviewed and signed off by another live seat before deployment.
