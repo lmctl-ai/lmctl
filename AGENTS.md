@@ -22,7 +22,7 @@ This repo itself: `github.com/lmctl-ai/lmctl` (note: org is `lmctl-ai` and repo 
 
 ## Invariants that look optional
 
-- **Multiple distinct hosted surfaces:** This repo does not just publish Docusaurus docs (`/lmctl/`). The S3 bucket `lmctl-website-prod` co-tenants 10 distinct surfaces:
+- **Multiple distinct hosted surfaces:** This repo does not just publish Docusaurus docs (`/lmctl/`). The S3 bucket `lmctl-website-prod` co-tenants 11 distinct surfaces:
   1. Apex homepage (`homepage/` -> `https://lmctl.com/`)
   2. Docusaurus documentation (`src/` + `docs/` -> `https://lmctl.com/lmctl/`)
   3. Raw agent skill files (`skills/` -> `https://lmctl.com/skills/`, plus short aliases `/skills/lmctl-lead.md`, `/skills/lmctl-prompt.md`)
@@ -33,8 +33,9 @@ This repo itself: `github.com/lmctl-ai/lmctl` (note: org is `lmctl-ai` and repo 
   8. Template catalog (`templates/` -> `/templates/`)
   9. Curated LMScript command library (`lmscript/commands/` -> `/lmscript/commands/`)
   10. Historical workflow catalog (`workflows/` -> `/workflows/`, deployed via `scripts/deploy-workflows.sh`)
+  11. Static tool pages (`tools/` -> `/tools/`, new; deployed ONLY by `scripts/deploy-tools.sh`, never by `deploy.sh`). Plain HTML, one stylesheet, rules in `tools/README.md`, validated by `npm run check:tools` (CI: `.github/workflows/tools-check.yml`).
 - **NEVER run `aws s3 sync --delete` on the S3 bucket root:** The S3 bucket `lmctl-website-prod` holds all prefixes co-tenanted. A root `--delete` wipes the other prefixes. Use scoped sync scripts (`deploy.sh`, `deploy-homepage.sh`, `deploy-quickrun.sh`, `deploy-lmprobe.sh`).
-- **CloudFront Function vs S3 Triple-Key Index Hack:** `infra/lmctl-www-redirect.js` only rewrites clean URLs for `/lmctl/*` and `/lmprobe/*`. All other paths (`/skills`, `/quickrun`, `/templates`, `/helloexample`, `/lmscript/commands`) pass through untouched. To prevent S3 404 NoSuchKey errors when accessed without `.html`, `scripts/deploy.sh` uploads triple keys: `<prefix>`, `<prefix>/`, and `<prefix>/index.html` (see `durable-memory/site-design.md`).
+- **CloudFront Function vs S3 Triple-Key Index Hack:** `infra/lmctl-www-redirect.js` rewrites clean URLs for `/lmctl/*` and `/lmprobe/*` (deployed) and, in source but not yet deployed, `/tools/*` (`node tests/infra/lmctl-www-redirect.test.mjs`). All other paths (`/skills`, `/quickrun`, `/templates`, `/helloexample`, `/lmscript/commands`) pass through untouched. To prevent S3 404 NoSuchKey errors when accessed without `.html`, `scripts/deploy.sh` uploads triple keys: `<prefix>`, `<prefix>/`, and `<prefix>/index.html` (see `durable-memory/site-design.md`).
 - **Two-speed documentation reality:** `skills/` is strictly modern (`lmctl prompt`, `lmctl status`, no queue/mailbox concepts) and enforced by `scripts/test-docs.sh`. `docs/` (Docusaurus manuals) still contains legacy references to `lmctl chat` and `mailbox_queue_enabled` because `test-docs.sh` does not scan `docs/`. When authoring or reviewing, do not let legacy terminology leak into skills or new docs.
 - **`scripts/test-docs.sh` guards are strict regression gates:**
   - `lmctl mail`, `mailbox_queue_enabled`, and queue/mailbox/lane concepts are forbidden in coordination skills. The queue delivery engine was deleted from `lmctl` in `0.1.264`.

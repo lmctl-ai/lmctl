@@ -9,7 +9,8 @@
     "serve": "docusaurus serve",
     "start": "docusaurus start",
     "check:tools": "node scripts/check-tools.mjs",
-    "check:tools:selftest": "node scripts/check-tools.mjs --selftest"
+    "check:tools:selftest": "node scripts/check-tools.mjs --selftest",
+    "test:redirect": "node tests/infra/lmctl-www-redirect.test.mjs"
   },
   "dependencies": {
     "@docusaurus/core": "^3.10.1",

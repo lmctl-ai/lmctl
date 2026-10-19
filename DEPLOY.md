@@ -38,6 +38,7 @@ The static artifact is written to `build/` with Docusaurus `baseUrl` set to
 | Example configs (`/examples/`) | `./scripts/deploy-examples.sh` (mirrored from lmctl-src) |
 | Quickrun catalog (`/quickrun/`) | `./scripts/deploy-quickrun.sh` (also in `deploy.sh`) |
 | Historical workflow catalog (`/workflows/`) | `./scripts/deploy-workflows.sh` (retired mirror target) |
+| Tool pages (`/tools/`, new) | `./scripts/deploy-tools.sh` only — **not** part of `deploy.sh` |
 
 The production defaults target `s3://lmctl-website-prod/` and CloudFront
 distribution `E1GKUWTM93U7IV`. Operators can override either target with env
@@ -65,6 +66,18 @@ bundle with `LMPROBE_SITE_DIR=/path/to/site` and the metadata root with
 sync without invalidating CloudFront. Hidden files such as `.git/` are stripped
 from the staging tree before upload.
 
+`scripts/deploy-tools.sh` publishes the static tool pages in `tools/` to
+`s3://$S3_BUCKET/tools/` (scoped prefix; `--delete` never touches the bucket
+root) and invalidates `/tools*`. It first runs `scripts/check-tools.mjs`,
+never uploads `tools/_template`, `tools/README.md` or hidden files, refuses
+any file type other than html/css/png/svg/txt, sets `no-cache` on HTML and a
+one-day cache on CSS and images, and also stores each `index.html` under the
+slashless and trailing-slash keys so `/tools/` and `/tools/<tool>` work even
+before the CloudFront function below is deployed. `DRY_RUN=1` previews the
+sync and skips the invalidation. It is deliberately not called by
+`deploy.sh`; run it on its own after the pages are reviewed. Authoring rules:
+`tools/README.md`; check with `npm run check:tools`.
+
 ## CloudFront constraints for prefix behaviors
 
 - Origin Path must be empty. Objects already live under the `lmctl/` key prefix;
@@ -74,7 +87,11 @@ from the staging tree before upload.
   with source in `infra/lmctl-www-redirect.js`. It keeps the existing
   `www.lmctl.com` → apex redirect, adds `/lmctl/*` and `/lmprobe/*` clean-URL
   resolution, and rewrites bare `/internal/lmctl` to
-  `/internal/lmctl/index.html`. lmprobe assets are written with `/lmprobe/...`
+  `/internal/lmctl/index.html`. The source now also routes `/tools/*`
+  (`/tools` → `/tools/index.html`, `/tools/<tool>` → `/tools/<tool>/index.html`,
+  deeper extensionless pages → `.html`, trailing slash → 301 slashless); that
+  change is **not deployed yet** — publish the function before relying on
+  clean `/tools/` URLs. Test: `node tests/infra/lmctl-www-redirect.test.mjs`. lmprobe assets are written with `/lmprobe/...`
   absolute URLs, so no Origin Path is needed. The function does not implement
   404 handling.
 
