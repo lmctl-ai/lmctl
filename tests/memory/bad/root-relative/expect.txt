@@ -1,0 +1,1 @@
+use relative links between notes

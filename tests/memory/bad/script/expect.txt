@@ -1,0 +1,1 @@
+element <script> is not allowed

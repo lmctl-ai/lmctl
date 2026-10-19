@@ -1,0 +1,251 @@
+# Check a durable-memory directory against the content-only HTML profile
+# (see durable-memory/memory-format.html). run.sh copies this script next to
+# the schema printed by the pinned lmhtml host and runs it.
+# ARGV: bytecode output, report output, the directory to check.
+#
+# Compile time (lmscript): list the files, check names and scan every text
+# file for emoji code points. Run time (DSL in lmhtml): check each HTML note.
+dir = ARGV[2];
+require(dir != "" && file_exists(dir), "usage: check.lms OUT.dslb REPORT DIR (DIR must exist)");
+
+# --- Emoji rule: forbidden code points (documented in memory-format.html) ---
+fn code_point(ch) {
+  let hi = char_code(ch, 0);
+  if (hi >= 55296 && hi <= 56319 && len(ch) > 1) {
+    return (hi - 55296) * 1024 + (char_code(ch, 1) - 56320) + 65536;
+  }
+  return hi;
+}
+fn is_pictographic(c) {
+  if (c >= 126976 && c <= 129791) { return true; }   # U+1F000-1FAFF emoji, pictographs, flags, skin tones
+  if (c >= 9728 && c <= 10175) { return true; }      # U+2600-27BF misc symbols, dingbats (stars, check marks, crosses, hearts)
+  if (c == 11088 || c == 11093 || c == 11035 || c == 11036) { return true; }  # U+2B50 star, U+2B55 circle, U+2B1B/2B1C squares
+  if (c == 8986 || c == 8987) { return true; }       # U+231A-231B watch, hourglass
+  if (c >= 9193 && c <= 9203) { return true; }       # U+23E9-23F3 media and clock symbols
+  if (c >= 9208 && c <= 9210) { return true; }       # U+23F8-23FA media symbols
+  if (c == 65039 || c == 8419) { return true; }      # U+FE0F emoji presentation selector, U+20E3 keycap
+  if (c >= 917536 && c <= 917631) { return true; }   # U+E0020-E007F tag characters (flag sequences)
+  return false;
+}
+fn hex4(n) {
+  digits = "0123456789ABCDEF";
+  out = "";
+  while (n > 0 || len(out) < 4) {
+    out = char_at(digits, n % 16) + out;
+    n = floor(n / 16);
+  }
+  return out;
+}
+
+findings = "";   # file \t line \t message \n, reported by the DSL below
+notes = "";      # HTML note paths relative to dir, "|"-separated
+fn add_finding(file, line, message) {
+  return file + "\t" + str(line) + "\t" + message + "\n";
+}
+root_len = len(dir) + 1;
+all_files = sort(glob(dir + "/**/*"));
+fn is_directory(path, listing) {
+  found = false;
+  for (other in listing) {
+    if (starts_with(other, path + "/")) { found = true; }
+  }
+  return found;
+}
+for (path in all_files) {
+  if (is_directory(path, all_files)) { continue; }
+  rel = substring(path, root_len);
+  parts = split(rel, "/");
+  name = last(parts);
+  if (len(parts) > 2 || (len(parts) == 2 && parts[0] != "archive")) {
+    findings = findings + add_finding(path, 0, "only one subdirectory, archive/, is allowed");
+  }
+  if (ends_with(name, ".html")) {
+    if (!regex_test(name, "^[a-z0-9]+(-[a-z0-9]+)*\\.html$")) {
+      findings = findings + add_finding(path, 0, "file name must be lowercase letters, digits and single hyphens, ending in .html");
+    } else if (len(parts) <= 2) {
+      notes = notes + rel + "|";
+    }
+  } else if (!regex_test(name, "\\.(png|jpg|jpeg|gif|svg|webp)$")) {
+    findings = findings + add_finding(path, 0, "warning: not an HTML note (convert it, or move it out of the memory directory)");
+  }
+  if (regex_test(name, "\\.(html|md|txt|json)$")) {
+    line_no = 0;
+    for (text_line in lines(read_file(path))) {
+      line_no = line_no + 1;
+      for (ch in text_line) {
+        c = code_point(ch);
+        if (c >= 8419 && is_pictographic(c)) {
+          findings = findings + add_finding(path, line_no, "emoji or pictographic symbol U+" + hex4(c) + " (" + ch + "): write words instead");
+        }
+      }
+    }
+  }
+}
+
+p = _dsl_ schema="lmhtml.dsl.json";
+fn finding(file: string, where: string, message: string) -> int {
+  report.add("memory", file, 0, where + ": " + message);
+  return 1;
+}
+
+fn allowed_element(tag: string) -> bool {
+  let allowed = "|html|head|meta|title|body|h1|h2|h3|h4|p|ul|ol|li|dl|dt|dd|pre|code|kbd|samp|em|strong|a|table|thead|tbody|tr|th|td|blockquote|hr|img|";
+  return str_contains(allowed, "|" + tag + "|");
+}
+
+fn allowed_attribute(tag: string, name: string) -> bool {
+  let ok = false;
+  if (tag == "html") { ok = name == "lang"; }
+  if (tag == "meta") { ok = name == "charset" || name == "name" || name == "content"; }
+  if (tag == "a") { ok = name == "href"; }
+  if (tag == "img") { ok = name == "src" || name == "alt" || name == "width" || name == "height"; }
+  if (tag == "h2" || tag == "h3") { ok = name == "id"; }
+  if (tag == "ol") { ok = name == "start"; }
+  if (tag == "th") { ok = name == "scope" || name == "colspan" || name == "rowspan"; }
+  if (tag == "td") { ok = name == "colspan" || name == "rowspan"; }
+  return ok;
+}
+
+fn check_note(file: string) -> int {
+  let page = html.load(file);
+  let source = page.source();
+  let count = 0;
+  if (page.doctype() != "html") { count = count + finding(file, "document", "must start with <!doctype html>"); }
+  for (problem in page.markup_errors()) { count = count + finding(file, "document", problem); }
+  let tags = "<head>|</head>|<body>|</body>|</html>|";
+  while (str_find(tags, "|") >= 0) {
+    let tag = str_substr(tags, 0, str_find(tags, "|"));
+    tags = str_substr(tags, str_find(tags, "|") + 1, str_len(tags));
+    if (str_find(source, tag) < 0) { count = count + finding(file, "document", "write the tag " + tag + " explicitly"); }
+  }
+  let root = page.select("html").at(0);
+  if (str_trim(root.attr("lang")) == "") { count = count + finding(file, "html", "needs a lang attribute"); }
+  let charset = page.select("head > meta[charset]");
+  if (charset.len() != 1 || str_lower(charset.at(0).attr("charset")) != "utf-8") {
+    count = count + finding(file, "head", "needs exactly one <meta charset=\"utf-8\">");
+  }
+  let titles = page.select("head > title");
+  if (titles.len() != 1 || str_trim(titles.at(0).text()) == "") { count = count + finding(file, "head", "needs one nonempty <title>"); }
+  let head_items = page.select("head > *");
+  for (i in range(0, head_items.len())) {
+    let item = head_items.at(i);
+    if (item.tag() == "meta" && !item.has_attr("charset") && item.attr("name") != "description") {
+      count = count + finding(file, "head", "only <meta charset> and <meta name=\"description\"> are allowed; viewport and styling are added by the web view");
+    }
+  }
+  let h1 = page.select("h1");
+  if (h1.len() != 1) { count = count + finding(file, "body", "needs exactly one <h1>, found " + str(h1.len())); }
+  let seen_ids = "|";
+  let nodes = page.select("*");
+  for (i in range(0, nodes.len())) {
+    let node = nodes.at(i);
+    let tag = node.tag();
+    let where = node.path();
+    if (!allowed_element(tag)) {
+      count = count + finding(file, where, "element <" + tag + "> is not allowed in a content-only note");
+    }
+    for (name in node.attributes()) {
+      if (!allowed_attribute(tag, name)) {
+        if (name == "class" || name == "style") {
+          count = count + finding(file, where, name + " is presentation; notes carry content only");
+        } else if (str_starts_with(name, "on")) {
+          count = count + finding(file, where, "inline handler " + name + " is not allowed");
+        } else if (name == "id") {
+          count = count + finding(file, where, "id is only allowed on h2/h3");
+        } else {
+          count = count + finding(file, where, "attribute " + name + " is not allowed on <" + tag + ">");
+        }
+      }
+    }
+    if ((tag == "h2" || tag == "h3") && node.has_attr("id")) {
+      let id = node.attr("id");
+      if (str_contains(seen_ids, "|" + id + "|")) { count = count + finding(file, where, "duplicate id " + id); }
+      seen_ids = seen_ids + id + "|";
+    }
+    if (tag == "img") {
+      let src = node.attr("src");
+      if (str_trim(node.attr("alt")) == "") { count = count + finding(file, where, "<img> needs nonempty alt text"); }
+      let kind = html.link_kind(page, src);
+      if (kind == "external" || kind == "special" || kind == "outside-root") {
+        count = count + finding(file, where, "image must be a local file: " + src);
+      } else {
+        if (!html.link_exists(page, src)) { count = count + finding(file, where, "image not found: " + src); }
+      }
+    }
+    if (tag == "a") {
+      let href = node.attr("href");
+      let kind = html.link_kind(page, href);
+      if (kind != "external" && kind != "special") {
+        if (str_starts_with(href, "/")) {
+          count = count + finding(file, where, "use relative links between notes: " + href);
+        } else {
+          if (!html.link_exists(page, href)) { count = count + finding(file, where, "broken link: " + href); }
+        }
+      }
+    }
+  }
+  return count;
+}
+
+let base = ${dir};
+let note_paths = ${notes};
+let early = ${findings};
+let warnings = "";
+let failures = 0;
+
+# Findings from the compile-time scan (names, layout, emoji).
+while (str_find(early, "\n") >= 0) {
+  let line = str_substr(early, 0, str_find(early, "\n"));
+  early = str_substr(early, str_find(early, "\n") + 1, str_len(early));
+  let file = str_substr(line, 0, str_find(line, "\t"));
+  let rest = str_substr(line, str_find(line, "\t") + 1, str_len(line));
+  let number = str_substr(rest, 0, str_find(rest, "\t"));
+  let message = str_substr(rest, str_find(rest, "\t") + 1, str_len(rest));
+  if (str_starts_with(message, "warning: ")) {
+    warnings = warnings + file + "\t" + str_substr(message, 9, str_len(message)) + "\n";
+  } else {
+    report.add("memory", file, 0, "line " + number + ": " + message);
+    failures = failures + 1;
+  }
+}
+
+# Every note is valid; index.html exists and links every other note.
+let has_index = false;
+let rest_paths = note_paths;
+while (str_find(rest_paths, "|") >= 0) {
+  let rel = str_substr(rest_paths, 0, str_find(rest_paths, "|"));
+  rest_paths = str_substr(rest_paths, str_find(rest_paths, "|") + 1, str_len(rest_paths));
+  failures = failures + check_note(base + "/" + rel);
+  if (rel == "index.html") { has_index = true; }
+}
+if (!has_index) {
+  failures = failures + finding(base + "/index.html", "document", "missing; run scripts/memory/run.sh index " + base);
+} else {
+  let index = html.load(base + "/index.html");
+  let linked = str_list();
+  let links = index.select("a[href]");
+  let pending = note_paths;
+  while (str_find(pending, "|") >= 0) {
+    let rel = str_substr(pending, 0, str_find(pending, "|"));
+    pending = str_substr(pending, str_find(pending, "|") + 1, str_len(pending));
+    if (rel != "index.html") {
+      let found = false;
+      for (i in range(0, links.len())) {
+        let href = links.at(i).attr("href");
+        if (href == rel || str_starts_with(href, rel + "#")) { found = true; }
+      }
+      if (!found) { failures = failures + finding(base + "/index.html", "index", "does not link " + rel + "; run scripts/memory/run.sh index " + base); }
+    }
+  }
+}
+report.write_text(${ARGV[1]});
+report.fail_if_any();
+# Warnings are added only after the failure decision; they are not fatal.
+while (str_find(warnings, "\n") >= 0) {
+  let line = str_substr(warnings, 0, str_find(warnings, "\n"));
+  warnings = str_substr(warnings, str_find(warnings, "\n") + 1, str_len(warnings));
+  report.add("warning", str_substr(line, 0, str_find(line, "\t")), 0, str_substr(line, str_find(line, "\t") + 1, str_len(line)));
+}
+report.write_text(${ARGV[1]});
+end _dsl_
+savedsl(p, ARGV[0]);

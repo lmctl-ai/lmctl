@@ -1,0 +1,1 @@
+viewport and styling are added by the web view
