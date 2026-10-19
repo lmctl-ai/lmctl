@@ -6,14 +6,14 @@
 <title>lmctl skills — lmctl skills</title>
 <meta name="description" content="Provider-agnostic guides an LLM can read to use a tool. Skills are plain HTML for humans and agents.">
 <link rel="stylesheet" href="/tools/style.css">
-
+<link rel="icon" type="image/png" href="/tools/img/icon.png">
 </head>
 <body>
 <nav>
 <ul>
 <li><a href="/">lmctl.com</a></li>
-<li><a href="/skills/">Skills</a></li>
 <li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
 </ul>
 </nav>
 <main>
@@ -21,15 +21,15 @@
 <p>Provider-agnostic guides an LLM can read to use a tool. Skills are plain HTML for humans and agents.</p>
 <h2>Utilities (LLM-facing)</h2>
 <ul>
-<li><a href="/skills/lmchat-skill.html">lmchat — a shared file room for LLM agents</a> — What this is. lmchat is an append-only shared room where a message is just a file.</li>
-<li><a href="/skills/lmsound-skill.html">lmsound — text → speech for LLM agents</a> — What this is. lmsound turns text into an audio file using AWS Polly.</li>
-<li><a href="/skills/lmprobe-skill.html">lmprobe skill</a> — Use this skill when you need codebase evidence: finding files, grepping text, locating definitions/references, mapping imports/callers/callees, or collecting…</li>
-<li><a href="/skills/lmmail-skill.html">lmmail — simple asynchronous mail for LLM agents</a> — Use lmmail when an agent or human needs a durable, connection-free handoff. The address is a globally unique mailbox name. One mail contains:</li>
+<li><a href="/skills/lmchat-skill.html">lmchat — a shared file room for LLM agents</a> — lmchat is an append-only shared room where each message is stored as a file.</li>
+<li><a href="/skills/lmsound-skill.html">lmsound — text → speech for LLM agents</a> — lmsound converts text to audio files using AWS Polly.</li>
+<li><a href="/skills/lmprobe-skill.html">lmprobe skill</a> — lmprobe searches codebases and reports files, text matches, definitions, references, imports and call relationships as structured results.</li>
+<li><a href="/skills/lmmail-skill.html">lmmail — simple asynchronous mail for LLM agents</a> — lmmail sends durable messages and attachments between globally named mailboxes, with commands for creating, sending, listing and reading mail.</li>
 <li><a href="/skills/lmfeedback-skill.html">lmfeedback — embeddable website feedback, delivered as lmmail mail</a> — Use lmfeedback when a website should collect feedback from its visitors and deliver it to the site's AI owner.</li>
 <li><a href="/skills/lmnote-skill.html">lmnote skill</a> — Use lmnote to keep durable named files in the authenticated lmctl user's private notebook.</li>
 <li><a href="/skills/lmsheet-skill.html">lmsheet skill</a> — Use lmsheet for small, durable spreadsheets in the authenticated lmctl user's private namespace. Data is stored as strings in DynamoDB.</li>
-<li><a href="/skills/lmtext-skill.html">lmtext — speech → text for LLM agents</a> — What this is. lmtext turns an audio file into a transcript using AWS Transcribe — the reverse of lmsound.</li>
-<li><a href="/skills/lmfin-skill.html">lmfin — a lightweight local finance CLI for LLM agents</a> — What this is.</li>
+<li><a href="/skills/lmtext-skill.html">lmtext — speech → text for LLM agents</a> — lmtext transcribes audio files with AWS Transcribe, complementing the text-to-speech tool lmsound.</li>
+<li><a href="/skills/lmfin-skill.html">lmfin — a lightweight local finance CLI for LLM agents</a> — lmfin is a local command-line tool for financial data, analysis and valuation using public market sources.</li>
 <li><a href="/skills/lmbio-skill.html">lmbio skill</a> — Use lmbio when an agent needs deterministic local computational-biology results with machine-readable JSON.</li>
 </ul>
 <h2>lmctl orchestration</h2>
@@ -39,7 +39,7 @@
 <li><a href="/skills/opencode-lead-skill.html">opencode lmctl Lead skill</a> — Run an lmctl team from opencode using the provider-independent command contract.</li>
 <li><a href="/skills/lmctl-team-lead-basic-skill.html">lmctl — Team Lead skill (basic)</a> — Use the everyday Coder → Reviewer → Lead loop with a seeded .lmctl teamfile.</li>
 <li><a href="/skills/lmctl-team-lead-advanced-skill.html">lmctl — Team Lead skill (advanced)</a> — Inspect session state, preserve knowledge, and replace sessions deliberately when recovery is necessary.</li>
-<li><a href="/skills/lmscript-workflow-skill.html">lmscript workflow skill</a> — Use this skill when you need to author a published lmctl workflow — a parameterised .lms (lmscript) file a developer downloads, fills in a request form for,…</li>
+<li><a href="/skills/lmscript-workflow-skill.html">lmscript workflow skill</a> — This guide explains how to author parameterized lmscript workflows that users can download, configure and run with lmctl.</li>
 <li><a href="/skills/lmctl-meta-lead-skill.html">lmctl — Meta-Lead skill</a> — Coordinate several team Leads by inspecting progress and sending concrete, self-contained tasks.</li>
 <li><a href="/skills/team-lead-workflow.html">Skill: Team Lead workflow</a> — Delegate, review, arbitrate disagreements, and escalate unresolved decisions.</li>
 <li><a href="/skills/durable-memory.html">Skill: Durable memory</a> — Keep portable project decisions and operating context in committed durable-memory/ files.</li>
