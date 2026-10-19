@@ -33,6 +33,7 @@ body {
   background: var(--bg);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   line-height: 1.6;
+  overflow-wrap: break-word;
 }
 
 nav ul {
@@ -78,11 +79,11 @@ pre {
 
 pre code, pre kbd, pre samp { background: none; padding: 0; border: 0; font-size: 1em; }
 pre kbd { font-weight: 600; }
-pre samp { color: var(--muted); }
+pre samp { color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
 
-kbd { border: 1px solid var(--rule); border-radius: 4px; padding: 0.05em 0.3em; }
+kbd { background: var(--code-bg); border: 1px solid var(--rule); border-radius: 4px; padding: 0.05em 0.3em; }
 
-table { border-collapse: collapse; width: 100%; display: block; overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; }
 th, td { border: 1px solid var(--rule); padding: 0.35rem 0.6rem; text-align: left; vertical-align: top; }
 thead th { background: var(--code-bg); }
 
@@ -91,9 +92,14 @@ blockquote { margin-left: 0; padding-left: 1rem; border-left: 4px solid var(--ru
 hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
 
 img { max-width: 100%; height: auto; }
+figure img { display: block; border: 1px solid var(--rule); border-radius: 6px; }
 figcaption { color: var(--muted); font-size: 0.9em; }
 
 footer { margin-top: 3rem; padding-top: 0.75rem; border-top: 1px solid var(--rule); color: var(--muted); font-size: 0.9em; }
+
+@media (max-width: 48rem) {
+  table { display: block; overflow-x: auto; }
+}
 
 @media print {
   html { --fg: #000; --bg: #fff; --link: #000; --code-bg: #fff; }
