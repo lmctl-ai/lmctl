@@ -273,7 +273,7 @@ r = system(argv, 10000);            # computed argv, 10 s timeout</code></pre>
 </dl>
 
 <h3 id="dsl">Experimental: <code>_dsl_</code> blocks for native hosts</h3>
-<p><strong>Experimental.</strong> The syntax and the bytecode format may change without compatibility. A <code>_dsl_</code> block is not lmscript: its body is code in a small, statically typed language, compiled at check time against a <em>schema</em> that a native host program publishes. lmscript only compiles and saves the program; the host loads and runs it. Hosts include <a href="https://github.com/lmctl-ai/lmhtml">lmhtml</a> (HTML checking) and <a href="/tools/lmcad/index.html">lmcad</a> (3D shapes and images); hosts are built with the C++ runtime <a href="/tools/cpp-dsl-sdk/index.html">cpp-dsl-sdk</a>.</p>
+<p><strong>Experimental.</strong> The syntax and the bytecode format may change without compatibility. A <code>_dsl_</code> block is not lmscript: its body is code in a small, statically typed language, compiled at check time against a <em>schema</em> that a native host program publishes. lmscript only compiles and saves the program; the host loads and runs it. Hosts include <a href="/tools/lmhtml/skill.html">lmhtml</a> (HTML checking) and <a href="/tools/lmcad/index.html">lmcad</a> (3D shapes and images); hosts are built with the C++ runtime <a href="/tools/cpp-dsl-sdk/index.html">cpp-dsl-sdk</a>.</p>
 <p>The workflow, verified with lmscript 0.2.348 and lmhtml v0.1.0:</p>
 <ol>
 <li>Get the host's schema: <code>lmhtml --schema --json &gt; lmhtml.dsl.json</code> (<code>lmhtml --schema</code> prints a short summary).</li>

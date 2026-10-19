@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmhtml skill</title>
+<meta name="description" content="Instructions for authoring, compiling and verifying lmhtml scripts.">
+<link rel="stylesheet" href="/tools/style.css">
+</head>
+<body>
+<nav><ul><li><a href="/tools/">Tools</a></li><li><a href="/tools/lmhtml/">Overview</a></li><li><a href="/tools/lmhtml/tutorial.html">Tutorial</a></li><li><a href="/tools/lmhtml/guide.html">Guide</a></li><li><a href="/tools/lmhtml/recipes.html">Recipes</a></li><li><a href="/tools/lmhtml/skill.html">Skill</a></li></ul></nav>
+<main>
+<h1>lmhtml script authoring skill</h1>
+<h2>Purpose</h2>
+<p>Write, compile and verify lmscript programs that inspect or transform HTML documents through the lmhtml host API.</p>
+<h2>When to use it</h2>
+<p>Use lmhtml for checking internal links, auditing CSS classes and IDs, comparing page structure, finding shared markup, or applying consistent edits across pages.</p>
+<h2>Install</h2>
+<p>Download the latest lmhtml binary from <a href="https://github.com/lmctl-ai/lmhtml/releases">Releases</a>. Install Node.js 24.15 or newer, then use the published compiler package with <code>npx --yes --package=@lmctl-ai/lmctl -- lmscript</code>. Source builds need C++17, CMake, Ninja and the project setup described in the <a href="https://github.com/lmctl-ai/lmhtml#build">README</a>.</p>
+<h2>Commands</h2>
+<pre><code>lmhtml --schema
+lmhtml --schema --json
+lmhtml --dsl-signatures
+npx --yes --package=@lmctl-ai/lmctl -- lmscript check.lms build/check.dslb
+lmhtml --dsl build/check.dslb</code></pre>
+<h2>Inputs and outputs</h2>
+<ul><li>Compile `_dsl_` blocks against the schema printed by <code>lmhtml --schema --json</code>.</li><li>Use <code>html.load(path)</code> for one document and <code>html.load_dir(path)</code> for a host collection of documents.</li><li>Methods return host objects such as <code>Doc</code>, <code>Node</code>, <code>DocList</code> and <code>StrList</code>; collections support <code>len()</code>, <code>at(i)</code> and foreach.</li><li>The host writes reports, transformed HTML, or JSON as directed by script calls. A successful run prints <code>{"ok": true, "result": null}</code>.</li></ul>
+<h2>Safety rules</h2>
+<ul><li>Only process synthetic or authorized site content. Use a scratch copy when demonstrating edits.</li><li>External links are classified but not fetched. Decide explicitly how to handle <code>external</code>, <code>special</code> and <code>outside-root</code> link kinds.</li><li>Use <code>--dry-run</code> for scripts that save HTML; it reports intended writes without changing files.</li><li>Saving is constrained to the working directory and performed atomically. Keep input and output directories separate for reviewable changes.</li><li>The bytecode VM has no execution budget or allocation cap. Run only trusted bytecode.</li><li>There are no DSL list values; use schema collection objects and <code>for (item in collection)</code>.</li></ul>
+<h2>Worked examples</h2>
+<ol><li>Link audit: loop over <code>html.load_dir("site")</code>, then each document's <code>links()</code>; skip policy-approved kinds with <code>html.link_kind(doc, url)</code>, and report missing internal destinations with <code>html.link_exists(doc, url)</code>.</li><li>Class audit: compare <code>pages.classes_used()</code> with <code>pages.css_classes()</code> using <code>str_difference</code>; call <code>suggest(name, candidates)</code> for near matches.</li><li>Structural comparison: <code>html.diff(before, after)</code> ignores normalized whitespace, comments, attribute order and <code>data-*</code> noise.</li><li>Template extraction: <code>html.write_template(pages, minimum_count, output_path)</code> emits shared subtrees and slot markers.</li><li>Shared edit: select a node, call <code>replace_with</code> or <code>set_attr</code>, and save a copy with <code>html.save(doc, output_path)</code>.</li></ol>
+<h2>Errors and exit codes</h2>
+<p>Exit 0 means success. Exit 2 reports usage or bytecode compilation problems; exit 3 reports bytecode load or host runtime errors; exit 4 reports an application failure such as a report explicitly marked as failed. A missing file, invalid selector, or out-of-range collection access is a runtime failure. Compile errors point to a source location.</p>
+<h2>How to verify</h2>
+<ol><li>Compile using the embedded schema bytes from <code>lmhtml --schema --json</code>.</li><li>Compare <code>lmscript --dsl-signatures schema.json</code> with <code>lmhtml --dsl-signatures</code> when validating a host adapter.</li><li>Run the bytecode against a synthetic site first and inspect both the JSON result line and report file.</li><li>For edits, use <code>--dry-run</code>, review the destination files, then run normally and re-diff.</li><li>Repeat the run and compare outputs when deterministic reports matter.</li></ol>
+</main>
+<footer><p>Source and releases: <a href="https://github.com/lmctl-ai/lmhtml">github.com/lmctl-ai/lmhtml</a>.</p></footer>
+</body>
+</html>

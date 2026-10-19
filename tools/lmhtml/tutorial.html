@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmhtml tutorial</title>
+<meta name="description" content="Compile and run lmhtml checks against a small synthetic website.">
+<link rel="stylesheet" href="/tools/style.css">
+</head>
+<body>
+<nav><ul><li><a href="/tools/">Tools</a></li><li><a href="/tools/lmhtml/">Overview</a></li><li><a href="/tools/lmhtml/tutorial.html">Tutorial</a></li><li><a href="/tools/lmhtml/guide.html">Guide</a></li><li><a href="/tools/lmhtml/recipes.html">Recipes</a></li><li><a href="/tools/lmhtml/skill.html">Skill</a></li></ul></nav>
+<main>
+<h1>Check a small site with lmhtml</h1>
+<p>These commands were run with lmhtml v0.2.0 and lmscript 0.2.348 against a synthetic site. The sample has one missing internal link, an external link, and a generated link ignored by policy.</p>
+<h2>1. Compile the link check</h2>
+<p>Compile the `_dsl_` script against the lmhtml schema. In this example, <code>build/check-links.lms</code> uses <code>html.load_dir</code>, foreach loops and <code>link_kind</code> to apply an explicit skip policy.</p>
+<pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript build/check-links.lms</kbd><samp>(no output; exit 0)</samp></pre>
+<h2>2. Run it and inspect the finding</h2>
+<p>The bytecode runs in lmhtml; the report lists only the broken internal destination.</p>
+<pre><kbd>lmhtml --dsl build/check-links.dslb</kbd><samp>{"ok": true, "result": null}</samp><kbd>cat build/links.txt</kbd><samp>broken-link site/index.html:0: missing.html not found</samp></pre>
+<h2>3. Find a class typo with a loop</h2>
+<p>The class audit compares classes used by the pages with selectors in the local stylesheet. A typo gets a suggestion.</p>
+<pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript build/check-classes.lms</kbd><samp>(no output; exit 0)</samp><kbd>lmhtml --dsl build/check-classes.dslb</kbd><samp>{"ok": true, "result": null}</samp><kbd>cat build/classes.txt</kbd><samp>class-undefined site:0: heding (did you mean heading?)
+id-unused site:0: teem (did you mean team?)</samp></pre>
+<h2>4. Compare two page versions</h2>
+<p>Structural diff reports meaningful changes while normalizing incidental markup noise.</p>
+<pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript build/diff.lms</kbd><samp>(no output; exit 0)</samp><kbd>lmhtml --dsl build/diff.dslb</kbd><samp>{"ok": true, "result": null}</samp><kbd>cat build/diff.txt</kbd><samp>diff-changed compare/before/page.html:0: html &gt; body:nth-child(2) &gt; p.intro:nth-child(2): text differs
+diff-added compare/after/page.html:0: html &gt; body:nth-child(2) &gt; p:nth-child(3)
+summary page:0: 2 differences</samp></pre>
+<h2>What you learned</h2>
+<p>Compile against the host's embedded JSON schema, let the host inspect a synthetic site, and read its report before applying any changes. Host collections work with foreach, while link policy stays explicit in the script.</p>
+</main>
+<footer><p>Source and releases: <a href="https://github.com/lmctl-ai/lmhtml">github.com/lmctl-ai/lmhtml</a>.</p></footer>
+</body>
+</html>

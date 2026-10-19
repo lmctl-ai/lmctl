@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmhtml guide</title>
+<meta name="description" content="CLI usage, embedded schema and host API reference for lmhtml.">
+<link rel="stylesheet" href="/tools/style.css">
+</head>
+<body>
+<nav><ul><li><a href="/tools/">Tools</a></li><li><a href="/tools/lmhtml/">Overview</a></li><li><a href="/tools/lmhtml/tutorial.html">Tutorial</a></li><li><a href="/tools/lmhtml/guide.html">Guide</a></li><li><a href="/tools/lmhtml/recipes.html">Recipes</a></li><li><a href="/tools/lmhtml/skill.html">Skill</a></li></ul></nav>
+<main>
+<h1>lmhtml guide</h1>
+<h2>Overview</h2>
+<p>lmhtml is a headless host for scripted HTML inspection and rewriting. Scripts are compiled by lmscript to bytecode and run against the schema embedded in the binary. Typical jobs include link audits, class and ID checks, structural comparisons and shared-template work.</p>
+<h2>Install and run</h2>
+<p>Use the latest binary from <a href="https://github.com/lmctl-ai/lmhtml/releases">Releases</a>. For source builds, follow the setup and build steps in the <a href="https://github.com/lmctl-ai/lmhtml#build">README</a>. Install Node.js 24.15 or newer for the published compiler.</p>
+<pre><code>lmhtml --schema
+lmhtml --schema --json &gt; lmhtml.dsl.json
+lmhtml --dsl-signatures
+npx --yes --package=@lmctl-ai/lmctl -- lmscript audit.lms build/audit.dslb
+lmhtml --dsl build/audit.dslb [more.dslb ...]</code></pre>
+<p><code>--schema</code> prints a compact human-readable summary; <code>--schema --json</code> prints the embedded compiler input byte-for-byte. <code>--dsl-signatures</code> prints the bound host signatures. Multiple bytecode files run in order against the same embedded schema; all files are loaded and verified before execution. Use <code>--dry-run</code> to report saves without writing.</p>
+<h2>Reference</h2>
+<p>The following members are copied from the output of <code>lmhtml --schema</code> (lmhtml v0.2.0). Contexts are followed by functions and then each host type with its methods.</p>
+<h3>Contexts and functions</h3>
+<pre><code>
+context html: Html
+context report: Report
+fn str_contains(string, string) -&gt; bool
+fn str_difference(StrList, StrList) -&gt; StrList
+fn str_ends_with(string, string) -&gt; bool
+fn str_find(string, string) -&gt; int
+fn str_len(string) -&gt; int
+fn str_list() -&gt; StrList
+fn str_lower(string) -&gt; string
+fn str_match(string, string) -&gt; bool
+fn str_replace(string, string, string) -&gt; string
+fn str_starts_with(string, string) -&gt; bool
+fn str_substr(string, int, int) -&gt; string
+fn str_trim(string) -&gt; string
+fn str_union(StrList, StrList) -&gt; StrList
+fn suggest(string, StrList) -&gt; StrList
+</code></pre>
+<h3>Doc</h3>
+<pre><code>
+Doc.byte_size() -&gt; int
+Doc.classes_used() -&gt; StrList
+Doc.css_classes() -&gt; StrList
+Doc.css_ids() -&gt; StrList
+Doc.doctype() -&gt; string
+Doc.ids() -&gt; StrList
+Doc.links() -&gt; StrList
+Doc.markup_errors() -&gt; StrList
+Doc.path() -&gt; string
+Doc.select(string) -&gt; NodeList
+Doc.source() -&gt; string
+Doc.source_inner(string) -&gt; string
+Doc.source_outer(string) -&gt; string
+</code></pre>
+<h3>DocList</h3>
+<pre><code>
+DocList.at(int) -&gt; Doc
+DocList.classes_used() -&gt; StrList
+DocList.css_classes() -&gt; StrList
+DocList.css_ids() -&gt; StrList
+DocList.ids() -&gt; StrList
+DocList.len() -&gt; int
+</code></pre>
+<h3>Html</h3>
+<pre><code>
+Html.diff(Doc, Doc) -&gt; int
+Html.link_exists(Doc, string) -&gt; bool
+Html.link_kind(Doc, string) -&gt; string
+Html.load(string) -&gt; Doc
+Html.load_dir(string) -&gt; DocList
+Html.load_dir(string, string, string) -&gt; DocList
+Html.parse(string) -&gt; Doc
+Html.resolve(Doc, string) -&gt; string
+Html.save(Doc, string) -&gt; void
+Html.save(string, string) -&gt; void
+Html.write_template(DocList, int, string) -&gt; int
+</code></pre>
+<h3>Node</h3>
+<pre><code>
+Node.attr(string) -&gt; string
+Node.attributes() -&gt; StrList
+Node.has_attr(string) -&gt; bool
+Node.hash() -&gt; int
+Node.insert_after(string) -&gt; Node
+Node.insert_before(string) -&gt; Node
+Node.outer_html() -&gt; string
+Node.parent() -&gt; Node
+Node.path() -&gt; string
+Node.remove() -&gt; void
+Node.replace_with(string) -&gt; Node
+Node.select(string) -&gt; NodeList
+Node.set_attr(string, string) -&gt; Node
+Node.tag() -&gt; string
+Node.text() -&gt; string
+</code></pre>
+<h3>NodeList</h3>
+<pre><code>
+NodeList.at(int) -&gt; Node
+NodeList.len() -&gt; int
+</code></pre>
+<h3>Report</h3>
+<pre><code>
+Report.add(string, string, int, string) -&gt; void
+Report.fail_if_any() -&gt; void
+Report.write_json(string) -&gt; void
+Report.write_text(string) -&gt; void
+</code></pre>
+<h3>StrList</h3>
+<pre><code>
+StrList.at(int) -&gt; string
+StrList.len() -&gt; int
+</code></pre>
+<h2>Output and exit codes</h2>
+<p>Successful execution prints one JSON line: <code>{"ok": true, "result": null}</code>. Exit 0 is success, 2 is usage or compilation failure, 3 is bytecode load or host runtime failure, and 4 is an application-level report failure. Reports are informational unless the script calls <code>report.fail_if_any()</code>.</p>
+<h2>Host behavior</h2>
+<ul><li><code>html.load_dir(dir, include, exclude)</code> filters relative paths; hidden files are included, directory symlinks are not followed, and returned paths are sorted.</li><li><code>link_kind</code> classifies internal pages/assets, anchors, external URLs, special schemes and paths outside the root. External URLs are not fetched.</li><li><code>html.diff</code> normalizes whitespace, comments, attribute order and <code>data-*</code> attributes.</li><li><code>html.write_template</code> reports common subtrees and inserts slot markers in a sample template.</li><li><code>html.save</code> writes atomically within the working directory; use <code>--dry-run</code> before a real rewrite.</li></ul>
+<h2>Limits and troubleshooting</h2>
+<p>The CLI accepts bytecode v5 and schema v2. Only the current bytecode version is read. The VM has no execution budget or allocation caps, so run trusted bytecode. HTML saving expects valid UTF-8; unsupported legacy encodings are refused. Serialization may normalize wrappers, tag casing, quoting and optional elements. If compilation reports an unknown member, retrieve the schema JSON from the same host version and compile against it. If a save fails, check that the destination is under the working directory and inspect the host error.</p>
+</main>
+<footer><p>Source and releases: <a href="https://github.com/lmctl-ai/lmhtml">github.com/lmctl-ai/lmhtml</a>.</p></footer>
+</body>
+</html>

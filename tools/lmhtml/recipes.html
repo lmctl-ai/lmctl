@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmhtml recipes</title>
+<meta name="description" content="Runnable lmhtml patterns for common synthetic-site maintenance tasks.">
+<link rel="stylesheet" href="/tools/style.css">
+</head>
+<body>
+<nav><ul><li><a href="/tools/">Tools</a></li><li><a href="/tools/lmhtml/">Overview</a></li><li><a href="/tools/lmhtml/tutorial.html">Tutorial</a></li><li><a href="/tools/lmhtml/guide.html">Guide</a></li><li><a href="/tools/lmhtml/recipes.html">Recipes</a></li><li><a href="/tools/lmhtml/skill.html">Skill</a></li></ul></nav>
+<main>
+<h1>lmhtml recipes</h1>
+<p>Each recipe uses the synthetic pages under the tutorial scratch directory. Compile from the directory containing <code>schema-lmhtml.json</code>; the snippets save reports and outputs below <code>build/</code> or <code>output/</code>.</p>
+<h2>Check broken links on a site</h2>
+<p>Walk each page and each link. Skip external, special and outside-root targets by policy, and ignore a generated noise pattern.</p>
+<pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript build/check-links.lms</kbd><samp>(no output; exit 0)</samp><kbd>lmhtml --dsl build/check-links.dslb</kbd><samp>{"ok": true, "result": null}</samp><kbd>cat build/links.txt</kbd><samp>broken-link site/index.html:0: missing.html not found</samp></pre>
+<h2>Find class and ID typos</h2>
+<p>Compare classes used in markup to CSS selectors and flag selectors that do not match a used ID. Suggestions help locate one-character spelling mistakes.</p>
+<pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript build/check-classes.lms</kbd><samp>(no output; exit 0)</samp><kbd>lmhtml --dsl build/check-classes.dslb</kbd><samp>{"ok": true, "result": null}</samp><kbd>cat build/classes.txt</kbd><samp>class-undefined site:0: heding (did you mean heading?)
+id-unused site:0: teem (did you mean team?)</samp></pre>
+<h2>Diff two pages</h2>
+<p>Compare before and after snapshots. The host reports a changed paragraph and a newly added paragraph, ignoring incidental markup noise.</p>
+<pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript build/diff.lms</kbd><samp>(no output; exit 0)</samp><kbd>lmhtml --dsl build/diff.dslb</kbd><samp>{"ok": true, "result": null}</samp><kbd>cat build/diff.txt</kbd><samp>diff-changed compare/before/page.html:0: html &gt; body:nth-child(2) &gt; p.intro:nth-child(2): text differs
+diff-added compare/after/page.html:0: html &gt; body:nth-child(2) &gt; p:nth-child(3)
+summary page:0: 2 differences</samp></pre>
+<h2>Extract common parts into a template</h2>
+<p>Find repeated subtrees in four sample pages and write a template with slot markers for page-specific content.</p>
+<pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript build/template.lms</kbd><samp>(no output; exit 0)</samp><kbd>lmhtml --dsl build/template.dslb</kbd><samp>{"ok": true, "result": null}</samp><kbd>cat build/template.txt</kbd><samp>summary template:0: 2 slots for 4 pages</samp></pre>
+<h2>Change a shared header or footer across pages</h2>
+<p>Apply one navigation and footer fragment to copies of all four pages. The source files remain untouched.</p>
+<pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript build/rewrite.lms</kbd><samp>(no output; exit 0)</samp><kbd>lmhtml --dsl build/rewrite.dslb</kbd><samp>{"ok": true, "result": null}</samp><kbd>ls output/page*</kbd><samp>output/page0.html
+output/page1.html
+output/page2.html
+output/page3.html</samp></pre>
+<h2>Ignore generated noise with link_kind and str_match</h2>
+<p>Link checks should state what is deliberately outside scope. This version ignores external/special/outside-root targets and a synthetic <code>noise-*.html</code> pattern, while still reporting a missing local page.</p>
+<pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript build/check-links.lms</kbd><samp>(no output; exit 0)</samp><kbd>lmhtml --dsl build/check-links.dslb</kbd><samp>{"ok": true, "result": null}</samp><kbd>cat build/links.txt</kbd><samp>broken-link site/index.html:0: missing.html not found</samp></pre>
+</main>
+<footer><p>Source and releases: <a href="https://github.com/lmctl-ai/lmhtml">github.com/lmctl-ai/lmhtml</a>.</p></footer>
+</body>
+</html>
