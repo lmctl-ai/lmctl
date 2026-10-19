@@ -119,3 +119,14 @@ splitting the homepage publish path.
 
 For review-gated docs, work on a branch and merge/push to `main` only after the
 review clears. Treat `main` as publish-ready, then deploy locally.
+
+## Static tool pages (`/tools/`)
+
+A separate surface from the Docusaurus site: plain HTML pages for each tool
+(skill page for LLM agents, optional tutorial/guide/recipes/reference/FAQ/
+changelog) in `tools/`, one shared stylesheet, no framework and no build step.
+Authors write content only; `npm run decorate:tools` derives head, nav, footer,
+indexes and icons from `scripts/tools/template.html`, and `npm run check:tools`
+enforces the contract (also in CI). It is published only by
+`scripts/deploy-tools.sh`, never by `scripts/deploy.sh`. See
+[`tools-docs.md`](tools-docs.md) for the full guide.

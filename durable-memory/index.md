@@ -7,6 +7,10 @@ CloudFront.
 For the full design — stack, information architecture, authoring conventions,
 rendering, and the publishing pipeline — see **[`site-design.md`](site-design.md)**.
 
+For the static `/tools/` section — how an LLM creates or improves a tool's
+skill, tutorial and guide pages, decoration, checks, icons, visual review and
+publishing — see **[`tools-docs.md`](tools-docs.md)**.
+
 ## Quick start
 
 ```bash

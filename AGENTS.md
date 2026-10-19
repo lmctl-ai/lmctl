@@ -22,6 +22,15 @@ HTML-to-Markdown conversion or cross-format drift checks. `build:skills` only
 decorates HTML and generates the HTML index. The pinned lmhtml host is maintained
 at `github.com/lmctl-ai/lmhtml`; its generic exporter is not used by skills.
 
+## Tools docs
+
+The static `/tools/` section (one plain-HTML section per tool, skill page for
+LLM agents plus optional tutorial/guide pages) has its own guide:
+`durable-memory/tools-docs.md`. The three commands: `npm run decorate:tools`
+(generate head, nav, footer, indexes, icons), `npm run check:tools` (contract +
+stale decoration), `npm run check:tools:selftest` (checker fixtures). Publish
+only with `scripts/deploy-tools.sh`.
+
 ## Invariants that look optional
 
 - **Multiple distinct hosted surfaces:** This repo does not just publish Docusaurus docs (`/lmctl/`). The S3 bucket `lmctl-website-prod` co-tenants 11 distinct surfaces:
