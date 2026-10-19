@@ -22,7 +22,7 @@ for (k in range(0, 2)) {
   sk.point(side * 2.0, 0.0).point(side * 1.1, 1.0).point(side * 0.62, 1.0).point(side * 1.52, 0.0).point(side * 0.62, -1.0).point(side * 1.1, -1.0).close();
   scene.extrude(sk, 0.4, bracket).position(0.0, 0.0, -0.2);
 }
-scene.box(0.28, 2.2, 0.4, slash).rotate(0.0, 0.0, -0.36).position(0.0, 0.0, 0.0);
+scene.box(0.28, 2.2, 0.4, slash).rotate(0.0, 0.0, -0.36).position(0.20, 0.0, 0.0);
 let aim_x = 0.113;
 let dist = 10.06;
 let icon_zoom = 0.845;
