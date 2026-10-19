@@ -3,12 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>lmhtml skill</title>
+<title>lmhtml script authoring skill — lmhtml — lmctl.com tools</title>
 <meta name="description" content="Instructions for authoring, compiling and verifying lmhtml scripts.">
 <link rel="stylesheet" href="/tools/style.css">
 </head>
 <body>
-<nav><ul><li><a href="/tools/">Tools</a></li><li><a href="/tools/lmhtml/">Overview</a></li><li><a href="/tools/lmhtml/tutorial.html">Tutorial</a></li><li><a href="/tools/lmhtml/guide.html">Guide</a></li><li><a href="/tools/lmhtml/recipes.html">Recipes</a></li><li><a href="/tools/lmhtml/skill.html">Skill</a></li></ul></nav>
+<nav>
+<ul>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/tools/lmhtml/">lmhtml</a></li>
+<li><a href="/tools/lmhtml/skill.html">Skill</a></li>
+<li><a href="/tools/lmhtml/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmhtml/guide.html">User guide</a></li>
+<li><a href="/tools/lmhtml/recipes.html">Recipes</a></li>
+</ul>
+</nav>
 <main>
 <h1>lmhtml script authoring skill</h1>
 <h2>Purpose</h2>
@@ -34,6 +43,8 @@ lmhtml --dsl build/check.dslb</code></pre>
 <h2>How to verify</h2>
 <ol><li>Compile using the embedded schema bytes from <code>lmhtml --schema --json</code>.</li><li>Compare <code>lmscript --dsl-signatures schema.json</code> with <code>lmhtml --dsl-signatures</code> when validating a host adapter.</li><li>Run the bytecode against a synthetic site first and inspect both the JSON result line and report file.</li><li>For edits, use <code>--dry-run</code>, review the destination files, then run normally and re-diff.</li><li>Repeat the run and compare outputs when deterministic reports matter.</li></ol>
 </main>
-<footer><p>Source and releases: <a href="https://github.com/lmctl-ai/lmhtml">github.com/lmctl-ai/lmhtml</a>.</p></footer>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmhtml">github.com/lmctl-ai/lmhtml</a>.</p>
+</footer>
 </body>
 </html>

@@ -3,12 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>lmhtml guide</title>
+<title>lmhtml guide — lmhtml — lmctl.com tools</title>
 <meta name="description" content="CLI usage, embedded schema and host API reference for lmhtml.">
 <link rel="stylesheet" href="/tools/style.css">
 </head>
 <body>
-<nav><ul><li><a href="/tools/">Tools</a></li><li><a href="/tools/lmhtml/">Overview</a></li><li><a href="/tools/lmhtml/tutorial.html">Tutorial</a></li><li><a href="/tools/lmhtml/guide.html">Guide</a></li><li><a href="/tools/lmhtml/recipes.html">Recipes</a></li><li><a href="/tools/lmhtml/skill.html">Skill</a></li></ul></nav>
+<nav>
+<ul>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/tools/lmhtml/">lmhtml</a></li>
+<li><a href="/tools/lmhtml/skill.html">Skill</a></li>
+<li><a href="/tools/lmhtml/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmhtml/guide.html">User guide</a></li>
+<li><a href="/tools/lmhtml/recipes.html">Recipes</a></li>
+</ul>
+</nav>
 <main>
 <h1>lmhtml guide</h1>
 <h2>Overview</h2>
@@ -24,8 +33,7 @@ lmhtml --dsl build/audit.dslb [more.dslb ...]</code></pre>
 <h2>Reference</h2>
 <p>The following members are copied from the output of <code>lmhtml --schema</code> (lmhtml v0.2.0). Contexts are followed by functions and then each host type with its methods.</p>
 <h3>Contexts and functions</h3>
-<pre><code>
-context html: Html
+<pre><code>context html: Html
 context report: Report
 fn str_contains(string, string) -&gt; bool
 fn str_difference(StrList, StrList) -&gt; StrList
@@ -40,11 +48,9 @@ fn str_starts_with(string, string) -&gt; bool
 fn str_substr(string, int, int) -&gt; string
 fn str_trim(string) -&gt; string
 fn str_union(StrList, StrList) -&gt; StrList
-fn suggest(string, StrList) -&gt; StrList
-</code></pre>
+fn suggest(string, StrList) -&gt; StrList</code></pre>
 <h3>Doc</h3>
-<pre><code>
-Doc.byte_size() -&gt; int
+<pre><code>Doc.byte_size() -&gt; int
 Doc.classes_used() -&gt; StrList
 Doc.css_classes() -&gt; StrList
 Doc.css_ids() -&gt; StrList
@@ -56,20 +62,16 @@ Doc.path() -&gt; string
 Doc.select(string) -&gt; NodeList
 Doc.source() -&gt; string
 Doc.source_inner(string) -&gt; string
-Doc.source_outer(string) -&gt; string
-</code></pre>
+Doc.source_outer(string) -&gt; string</code></pre>
 <h3>DocList</h3>
-<pre><code>
-DocList.at(int) -&gt; Doc
+<pre><code>DocList.at(int) -&gt; Doc
 DocList.classes_used() -&gt; StrList
 DocList.css_classes() -&gt; StrList
 DocList.css_ids() -&gt; StrList
 DocList.ids() -&gt; StrList
-DocList.len() -&gt; int
-</code></pre>
+DocList.len() -&gt; int</code></pre>
 <h3>Html</h3>
-<pre><code>
-Html.diff(Doc, Doc) -&gt; int
+<pre><code>Html.diff(Doc, Doc) -&gt; int
 Html.link_exists(Doc, string) -&gt; bool
 Html.link_kind(Doc, string) -&gt; string
 Html.load(string) -&gt; Doc
@@ -79,11 +81,9 @@ Html.parse(string) -&gt; Doc
 Html.resolve(Doc, string) -&gt; string
 Html.save(Doc, string) -&gt; void
 Html.save(string, string) -&gt; void
-Html.write_template(DocList, int, string) -&gt; int
-</code></pre>
+Html.write_template(DocList, int, string) -&gt; int</code></pre>
 <h3>Node</h3>
-<pre><code>
-Node.attr(string) -&gt; string
+<pre><code>Node.attr(string) -&gt; string
 Node.attributes() -&gt; StrList
 Node.has_attr(string) -&gt; bool
 Node.hash() -&gt; int
@@ -97,25 +97,18 @@ Node.replace_with(string) -&gt; Node
 Node.select(string) -&gt; NodeList
 Node.set_attr(string, string) -&gt; Node
 Node.tag() -&gt; string
-Node.text() -&gt; string
-</code></pre>
+Node.text() -&gt; string</code></pre>
 <h3>NodeList</h3>
-<pre><code>
-NodeList.at(int) -&gt; Node
-NodeList.len() -&gt; int
-</code></pre>
+<pre><code>NodeList.at(int) -&gt; Node
+NodeList.len() -&gt; int</code></pre>
 <h3>Report</h3>
-<pre><code>
-Report.add(string, string, int, string) -&gt; void
+<pre><code>Report.add(string, string, int, string) -&gt; void
 Report.fail_if_any() -&gt; void
 Report.write_json(string) -&gt; void
-Report.write_text(string) -&gt; void
-</code></pre>
+Report.write_text(string) -&gt; void</code></pre>
 <h3>StrList</h3>
-<pre><code>
-StrList.at(int) -&gt; string
-StrList.len() -&gt; int
-</code></pre>
+<pre><code>StrList.at(int) -&gt; string
+StrList.len() -&gt; int</code></pre>
 <h2>Output and exit codes</h2>
 <p>Successful execution prints one JSON line: <code>{"ok": true, "result": null}</code>. Exit 0 is success, 2 is usage or compilation failure, 3 is bytecode load or host runtime failure, and 4 is an application-level report failure. Reports are informational unless the script calls <code>report.fail_if_any()</code>.</p>
 <h2>Host behavior</h2>
@@ -123,6 +116,8 @@ StrList.len() -&gt; int
 <h2>Limits and troubleshooting</h2>
 <p>The CLI accepts bytecode v5 and schema v2. Only the current bytecode version is read. The VM has no execution budget or allocation caps, so run trusted bytecode. HTML saving expects valid UTF-8; unsupported legacy encodings are refused. Serialization may normalize wrappers, tag casing, quoting and optional elements. If compilation reports an unknown member, retrieve the schema JSON from the same host version and compile against it. If a save fails, check that the destination is under the working directory and inspect the host error.</p>
 </main>
-<footer><p>Source and releases: <a href="https://github.com/lmctl-ai/lmhtml">github.com/lmctl-ai/lmhtml</a>.</p></footer>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmhtml">github.com/lmctl-ai/lmhtml</a>.</p>
+</footer>
 </body>
 </html>

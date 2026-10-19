@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>lmcad tutorial</title>
+<title>lmcad tutorial — lmcad — lmctl.com tools</title>
 <meta name="description" content="A command-driven introduction to compiling and running lmcad scripts, range loops and APNG animation.">
 <link rel="stylesheet" href="/tools/style.css">
 </head>
@@ -11,10 +11,11 @@
 <nav>
 <ul>
 <li><a href="/tools/">Tools</a></li>
-<li><a href="/tools/lmcad/">Overview</a></li>
-<li><a href="/tools/lmcad/tutorial.html">Tutorial</a></li>
-<li><a href="/tools/lmcad/user-guide.html">User guide</a></li>
+<li><a href="/tools/lmcad/">lmcad</a></li>
 <li><a href="/tools/lmcad/skill.html">Skill</a></li>
+<li><a href="/tools/lmcad/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmcad/guide-overview.html">lmcad</a></li>
+<li><a href="/tools/lmcad/guide.html">User guide</a></li>
 </ul>
 </nav>
 <main>
@@ -34,12 +35,18 @@ scene.render_png("build/hello.png", 480, 320);
 end _dsl_
 savedsl(p, "build/hello.dslb");</code></pre>
 <p>Compile the file with the published compiler and run the bytecode. The compiler emits a bytecode file; the host prints one JSON result line.</p>
-<pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript hello.lms build/hello.dslb</kbd>
-<samp>exit status: 0</samp></pre>
-<pre><kbd>build/lmcad --dsl build/hello.dslb</kbd>
-<samp>{"ok": true, "result": null}</samp></pre>
-<pre><kbd>file build/hello.png</kbd>
-<samp>build/hello.png: PNG image data, 480 x 320, 8-bit/color RGB, non-interlaced</samp></pre>
+<pre>
+<kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript hello.lms build/hello.dslb</kbd>
+<samp>exit status: 0</samp>
+</pre>
+<pre>
+<kbd>build/lmcad --dsl build/hello.dslb</kbd>
+<samp>{"ok": true, "result": null}</samp>
+</pre>
+<pre>
+<kbd>file build/hello.png</kbd>
+<samp>build/hello.png: PNG image data, 480 x 320, 8-bit/color RGB, non-interlaced</samp>
+</pre>
 <p>Open <code>build/hello.png</code> in an image viewer to inspect the fitted camera, silhouette and lighting.</p>
 <h2>2. Render a range loop</h2>
 <p>Range loops use an integer counter and an exclusive upper bound. This example places seven boxes along the x-axis:</p>
@@ -48,23 +55,37 @@ savedsl(p, "build/hello.dslb");</code></pre>
   scene.box(0.7, 0.7, 0.7, mat).position(x, 0.0, 0.0);
 }</code></pre>
 <p>Compile and run the complete loop example:</p>
-<pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript examples/loop-row.lms build/loop-row.dslb</kbd>
-<samp>exit status: 0</samp></pre>
-<pre><kbd>build/lmcad --dsl build/loop-row.dslb</kbd>
-<samp>{"ok": true, "result": null}</samp></pre>
-<pre><kbd>file build/loop-row.png</kbd>
-<samp>build/loop-row.png: PNG image data, 480 x 270, 8-bit/color RGB, non-interlaced</samp></pre>
+<pre>
+<kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript examples/loop-row.lms build/loop-row.dslb</kbd>
+<samp>exit status: 0</samp>
+</pre>
+<pre>
+<kbd>build/lmcad --dsl build/loop-row.dslb</kbd>
+<samp>{"ok": true, "result": null}</samp>
+</pre>
+<pre>
+<kbd>file build/loop-row.png</kbd>
+<samp>build/loop-row.png: PNG image data, 480 x 270, 8-bit/color RGB, non-interlaced</samp>
+</pre>
 <h2>3. Create a tween animation</h2>
 <p>The tween example reads keyframes from CSV, interpolates position and color in DSL loops, writes numbered PNGs and assembles a 30-frame APNG.</p>
-<pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript examples/tween.lms build/tween.dslb</kbd>
-<samp>exit status: 0</samp></pre>
-<pre><kbd>build/lmcad --dsl build/tween.dslb</kbd>
-<samp>{"ok": true, "result": null}</samp></pre>
-<pre><kbd>ls -lh build/tween.apng build/tween-15.png</kbd>
+<pre>
+<kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript examples/tween.lms build/tween.dslb</kbd>
+<samp>exit status: 0</samp>
+</pre>
+<pre>
+<kbd>build/lmcad --dsl build/tween.dslb</kbd>
+<samp>{"ok": true, "result": null}</samp>
+</pre>
+<pre>
+<kbd>ls -lh build/tween.apng build/tween-15.png</kbd>
 <samp>build/tween.apng  67K
-build/tween-15.png  2.3K</samp></pre>
-<pre><kbd>file build/tween-15.png</kbd>
-<samp>build/tween-15.png: PNG image data, 160 x 120, 8-bit/color RGB, non-interlaced</samp></pre>
+build/tween-15.png  2.3K</samp>
+</pre>
+<pre>
+<kbd>file build/tween-15.png</kbd>
+<samp>build/tween-15.png: PNG image data, 160 x 120, 8-bit/color RGB, non-interlaced</samp>
+</pre>
 <h2>What you learned</h2>
 <p>A script binds to a schema, compiles to portable bytecode and runs inside the native host. The same typed API supports solid modeling, range loops, CSV-backed keyframes, PNG output and APNG animation.</p>
 </main>
