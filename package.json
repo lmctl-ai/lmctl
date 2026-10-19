@@ -11,7 +11,10 @@
     "check:tools": "bash scripts/tools/run.sh check",
     "check:tools:selftest": "bash scripts/tools/selftest.sh",
     "decorate:tools": "bash scripts/tools/run.sh decorate",
-    "test:redirect": "node tests/infra/lmctl-www-redirect.test.mjs"
+    "test:redirect": "node tests/infra/lmctl-www-redirect.test.mjs",
+    "build:skills": "bash scripts/tools/run.sh skills",
+    "check:skills": "bash scripts/tools/run.sh skills --check",
+    "check:skills:selftest": "bash scripts/tools/skills-selftest.sh"
   },
   "dependencies": {
     "@docusaurus/core": "^3.10.1",

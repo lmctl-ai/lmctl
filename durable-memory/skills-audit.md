@@ -102,3 +102,13 @@ or explicitly qualified. No source was missing for the four requested legacy too
 | lmfeedback source | `c410bae58e1b381d4b8f65b53c11178e772232d8` |
 
 The lmprobe source revision includes the reciprocal manual link; command implementation was unchanged by that docs-only commit.
+
+## Validation and publication boundary
+
+The skills self-test passes 24 checks; tools pass their 43 named bad fixtures plus
+authoring/index lifecycle tests. All current pages pass their check commands, and
+a second skills build changes zero bytes. Local HTTP reads of `/skills/`, the Lead,
+lmprobe and lmbio pages confirm one h1/main/nav/footer, no inline style/base/script,
+and absolute links. The Lead's visual review is still required; no deploy was run.
+The parallel `tools-docs.md` guide was absent, so legacy integration guidance is in
+`tools/README.md` and `durable-memory/skills-docs.md`, ready to link after it lands.

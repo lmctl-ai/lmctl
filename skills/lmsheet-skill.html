@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmsheet skill — lmctl skills</title>
+<meta name="description" content="Use lmsheet for small, durable spreadsheets in the authenticated lmctl user's private namespace. Data is stored as strings in DynamoDB.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/">Tools</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmsheet skill</h1>
+<p>Use lmsheet for small, durable spreadsheets in the authenticated lmctl user&#39;s
+private namespace. Data is stored as strings in DynamoDB.</p>
+<h2 id="setup">Setup</h2>
+<p>Always set the deployed API Gateway stage URL explicitly:</p>
+<pre><code>export LMSHEET_API_URL=&#39;https://example.execute-api.us-east-1.amazonaws.com/prod&#39;</code></pre>
+<p>Use the shared lmctl appkey. The CLI resolves it from:</p>
+<ol>
+<li><code>LMCTL_APPKEY</code></li>
+<li><code>LMCTL_APPKEY_FILE</code></li>
+<li><code>~/.config/lmctl/appkey.json</code></li>
+</ol>
+<p><code>lmsheet login</code> configures the shared default file. <code>lmsheet whoami</code> reports
+the target and credential source without revealing the key. Never send an
+owner ID: the API derives ownership from the verified appkey.</p>
+<h2 id="addressing-and-semantics">Addressing and semantics</h2>
+<ul>
+<li>Sheet names are flat ASCII-safe names.</li>
+<li>Columns are ordered and addressed <code>A</code>-<code>Z</code>, <code>AA</code>, <code>AB</code>, and onward.</li>
+<li>Row 1 is the first data row; headers are metadata, not row 1.</li>
+<li>Cells use A1 notation, such as <code>B3</code>.</li>
+<li>Every value is a string of at most 100 characters. Empty string is an empty
+cell value.</li>
+<li>Row update merges supplied cells; it does not replace unspecified cells.</li>
+<li>Clear-cell removes the named cell from the row.</li>
+<li>Deleted row numbers are not automatically reused.</li>
+</ul>
+<h2 id="cli">CLI</h2>
+<pre><code>lmsheet create contacts --cols &quot;Name,Email,Age&quot;
+lmsheet sheets
+lmsheet add-column contacts Country
+
+lmsheet add-row contacts \
+  --set A=Ada \
+  --set B=ada@example.com \
+  --set C=30
+
+lmsheet add-row contacts --row 10 --set A=Grace
+lmsheet read contacts
+lmsheet read contacts --after 10 --limit 100
+
+lmsheet update-row contacts 1 --set B=new@example.com --set C=31
+lmsheet set-cell contacts C1 32
+lmsheet clear-cell contacts B1
+lmsheet delete-row contacts 1
+lmsheet delete-sheet contacts</code></pre>
+<p>Quote shell arguments containing spaces. Each <code>--set</code> is <code>LETTER=value</code>; the
+value may contain additional <code>=</code> characters.</p>
+<p><code>read</code> prints a column-definition line, then tab-separated rows whose final
+field is a JSON cell map. It ends with
+<code>next_after=&lt;row&gt;\thas_more=&lt;true|false&gt;</code>. Pass <code>next_after</code> as <code>--after</code> to
+continue.</p>
+<p>All commands accept <code>--api URL</code>. Otherwise <code>LMSHEET_API_URL</code> is required.</p>
+<h2 id="raw-http">Raw HTTP</h2>
+<pre><code>export LMCTL_APPKEY=&#39;replace-me&#39;
+auth=(-H &quot;Authorization: Bearer $LMCTL_APPKEY&quot;)
+json=(-H &#39;Content-Type: application/json&#39;)</code></pre>
+<p>Create:</p>
+<pre><code>curl -fsS -X POST &quot;$LMSHEET_API_URL/sheets&quot; \
+  &quot;${auth[@]}&quot; &quot;${json[@]}&quot; \
+  --data &#39;{&quot;name&quot;:&quot;contacts&quot;,&quot;columns&quot;:[&quot;Name&quot;,&quot;Email&quot;]}&#39;</code></pre>
+<p>List sheets:</p>
+<pre><code>curl -fsS &quot;$LMSHEET_API_URL/sheets&quot; &quot;${auth[@]}&quot;</code></pre>
+<p>Add a column:</p>
+<pre><code>curl -fsS -X POST &quot;$LMSHEET_API_URL/sheets/contacts/columns&quot; \
+  &quot;${auth[@]}&quot; &quot;${json[@]}&quot; --data &#39;{&quot;label&quot;:&quot;Age&quot;}&#39;</code></pre>
+<p>Append a row:</p>
+<pre><code>curl -fsS -X POST &quot;$LMSHEET_API_URL/sheets/contacts/rows&quot; \
+  &quot;${auth[@]}&quot; &quot;${json[@]}&quot; \
+  --data &#39;{&quot;cells&quot;:{&quot;A&quot;:&quot;Ada&quot;,&quot;B&quot;:&quot;ada@example.com&quot;,&quot;C&quot;:&quot;30&quot;}}&#39;</code></pre>
+<p>Use <code>&quot;row_num&quot;:10</code> in that body for explicit placement. An occupied row
+returns <code>409 row_exists</code>.</p>
+<p>Read:</p>
+<pre><code>curl -fsS &quot;$LMSHEET_API_URL/sheets/contacts/rows?after=0&amp;limit=100&quot; &quot;${auth[@]}&quot;</code></pre>
+<p>The response includes sheet metadata, <code>rows</code>, <code>next_after</code>, and <code>has_more</code>.
+Raw-HTTP clients must continue with <code>after=next_after</code> while <code>has_more</code> is true
+and tolerate an empty final page, because DynamoDB can return a
+<code>LastEvaluatedKey</code> for a full page even when no later rows exist. The cursor is
+a DynamoDB scan high-water mark.</p>
+<p>Update row cells:</p>
+<pre><code>curl -fsS -X PUT &quot;$LMSHEET_API_URL/sheets/contacts/rows/1&quot; \
+  &quot;${auth[@]}&quot; &quot;${json[@]}&quot; \
+  --data &#39;{&quot;cells&quot;:{&quot;B&quot;:&quot;new@example.com&quot;,&quot;C&quot;:&quot;31&quot;}}&#39;</code></pre>
+<p>Set or clear one cell:</p>
+<pre><code>curl -fsS -X PUT &quot;$LMSHEET_API_URL/sheets/contacts/cells/B1&quot; \
+  &quot;${auth[@]}&quot; &quot;${json[@]}&quot; --data &#39;{&quot;value&quot;:&quot;new@example.com&quot;}&#39;
+
+curl -fsS -X DELETE &quot;$LMSHEET_API_URL/sheets/contacts/cells/B1&quot; &quot;${auth[@]}&quot;</code></pre>
+<p>Delete a row or the entire sheet:</p>
+<pre><code>curl -fsS -X DELETE &quot;$LMSHEET_API_URL/sheets/contacts/rows/1&quot; &quot;${auth[@]}&quot;
+curl -fsS -X DELETE &quot;$LMSHEET_API_URL/sheets/contacts&quot; &quot;${auth[@]}&quot;</code></pre>
+<p>Large sheet deletion is resumable. A response with <code>&quot;deleted&quot;:false</code> means the
+server completed its bounded batch and the same DELETE should be repeated.
+The CLI performs these retries automatically.</p>
+<h2 id="errors">Errors</h2>
+<ul>
+<li><code>400</code>: invalid name, columns, row number, cell address, cell value, or page.</li>
+<li><code>400 value_too_long</code>: at least one supplied cell exceeds 100 characters; no
+cells from that request were written.</li>
+<li><code>401</code>: missing or invalid shared appkey.</li>
+<li><code>404 sheet_not_found</code>: sheet is missing or deletion is in progress.</li>
+<li><code>404 row_not_found</code>: the addressed row does not exist.</li>
+<li><code>409 sheet_exists</code>: duplicate sheet creation.</li>
+<li><code>409 row_exists</code>: explicit row number is occupied.</li>
+<li><code>409 concurrent_update</code>: repeated concurrent mutation prevented completion.</li>
+</ul>
+<p>Do not retry validation or authorization errors unchanged. Re-read before
+recovering from a concurrent update.</p>
+<h2 id="verification-scope">Verification scope</h2>
+<p>The API and CLI syntax above was checked against the tool source on 2026-10-19. Live hosted availability, account permissions, deployment-specific limits and credentials were not tested. Confirm the endpoint with your operator; example API Gateway addresses are placeholders. Do not assume that access to one deployment grants access to another.</p>
+</main>
+<footer>
+<p><a href="/skills/lmsheet-skill.md">Raw Markdown for agents</a></p>
+<p>Plain HTML skills, with generated Markdown for agents. Source: <a href="https://github.com/lmctl-ai/lmctl/tree/main/skills">github.com/lmctl-ai/lmctl/skills</a>.</p>
+</footer>
+</body>
+</html>

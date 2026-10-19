@@ -15,10 +15,11 @@ echo "ok - $count named bad contract fixtures"
 "$HERE/run.sh" check
 work=$(mktemp -d "${TMPDIR:-/tmp}/lmctl-decorate-test.XXXXXX")
 trap 'rm -rf "$work"' EXIT
-mkdir -p "$work/scripts" "$work/tools/zeta" "$work/homepage"
+mkdir -p "$work/scripts" "$work/tools/zeta" "$work/homepage" "$work/skills"
 cp -R scripts/tools "$work/scripts/tools"
 cp tools/style.css "$work/tools/style.css"
 cp homepage/index.html "$work/homepage/index.html"
+cp skills/index.html "$work/skills/index.html"
 cp tests/tools/authoring/skill.fragment "$work/tools/zeta/skill.html"
 cp tests/tools/authoring/skill.fragment "$work/original.fragment"
 run(){ "$work/scripts/tools/run.sh" "$@"; }
@@ -42,7 +43,7 @@ let skill = html.load("tools/zeta/skill.html");
 let fragment = html.load("original.fragment");
 if (skill.source_inner("main") != fragment.source()) { report.add("test", "skill", 0, "authored bytes changed"); }
 let root = html.load("tools/index.html");
-if (root.select("main li").len() != 1 || root.select("main a").at(0).attr("href") != "/tools/zeta/") { report.add("test", "index", 0, "wrong generated index"); }
+if (root.select("main li").len() != 1 || root.select("main li a").at(0).attr("href") != "/tools/zeta/") { report.add("test", "index", 0, "wrong generated index"); }
 if (skill.select("nav a").len() != 3) { report.add("test", "nav", 0, "optional pages added to nav"); }
 if (skill.select("head title").at(0).text() != "Example & helpers {{CONTENT}} — zeta — lmctl.com tools") { report.add("test", "title", 0, "placeholder expansion corrupted title"); }
 report.write_text("assert.txt");

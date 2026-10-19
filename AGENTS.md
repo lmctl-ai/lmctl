@@ -8,24 +8,26 @@ Entry point for agents and human operators working on **lmctl-website**. Essenti
 - `durable-memory/site-design.md` — Full architectural design: Docusaurus stack, authoring conventions, S3 layout, CloudFront viewer-request functions, and prefix routing.
 - `DEPLOY.md` — Publishing runbook, scoped sync scripts, CloudFront function rollbacks, and quickrun catalog deployment.
 
-## Depends on (clone paths on this machine are not guessable)
+## Sources and generated documentation
 
-| Project | Repo | Local clone | Why |
-|---|---|---|---|
-| lmctl-src | `github.com/mikema3/lmctl-src` (branch `main`) | `/home/mma/repos/lmctl-src` | Canonical source for the `lmctl` CLI. All public docs, options, and skill pages must match actual CLI behavior. Also source for `examples/` (`deploy-examples.sh`) and historical `workflows/` (`deploy-workflows.sh`). |
-| lmprobe | `github.com/lmctlhq/lmprobe` | `/home/mma/repos/lmprobe` | Canonical source for static manual at `https://lmctl.com/lmprobe/` (`scripts/deploy-lmprobe.sh`). Note: must be cloned to this path before deploying (or override `LMPROBE_SITE_DIR`); do not deploy from `/home/mma/repos/lmprobe-src/site` (stale staging tree). |
-| tools/lmfeedback | `github.com/lmctlhq/lmfeedback` | `/home/mma/repos/tools/lmfeedback` | Canonical source for `skills/lmfeedback-skill.md` (`docs/lmfeedback-skill.md` in that repo). The website copy must remain byte-identical. |
-| tools (lmmail, lmnote, lmsheet, lmtext) | `github.com/lmctlhq/<tool>` | `/home/mma/repos/tools/<tool>` | Canonical sources for raw skill pages published under `/skills/` (`lmmail-skill.md`, `lmnote-skill.md`, `lmsheet-skill.md`, `lmtext-skill.md`). |
-| skills-scripts | `github.com/lmctlhq/skills-scripts` | `/home/mma/repos/skills-scripts` | Fleet workflows and validation scripts; its `scripts/check-all-lms.sh` validates website quickrun scripts (`quickrun/*.lms`). |
+This repository is `github.com/lmctl-ai/lmctl`. Verify CLI claims against installed
+`lmctl --help`, subcommand help and the corresponding `lmctl-src`/companion-tool
+source in the mono checkout. lmprobe's public source is `github.com/lmctl-ai/lmprobe`;
+its `site/` supplies the separately deployed manual. Do not assume historical
+machine-specific clone paths or hosted-service availability. The per-skill evidence
+and unverifiable claims are recorded in `durable-memory/skills-audit.md`.
 
-This repo itself: `github.com/lmctl-ai/lmctl` (note: org is `lmctl-ai` and repo is `lmctl`, cloned locally as `lmctl-website`).
+`skills/*.html` is canonical. Markdown is generated locally, not copied verbatim
+from upstream manuals; preserve verified semantics when bringing in upstream fixes.
+The lmhtml exporter is maintained at `github.com/lmctl-ai/lmhtml` and pinned in
+`scripts/tools/lmhtml.lock`.
 
 ## Invariants that look optional
 
 - **Multiple distinct hosted surfaces:** This repo does not just publish Docusaurus docs (`/lmctl/`). The S3 bucket `lmctl-website-prod` co-tenants 11 distinct surfaces:
   1. Apex homepage (`homepage/` -> `https://lmctl.com/`)
   2. Docusaurus documentation (`src/` + `docs/` -> `https://lmctl.com/lmctl/`)
-  3. Raw agent skill files (`skills/` -> `https://lmctl.com/skills/`, plus short aliases `/skills/lmctl-lead.md`, `/skills/lmctl-prompt.md`)
+  3. HTML skills and generated raw Markdown (`skills/` -> `https://lmctl.com/skills/`, plus the short alias `/skills/lmctl-lead.md`)
   4. lmprobe manual (`/lmprobe/`, deployed via `scripts/deploy-lmprobe.sh`)
   5. Sample configs (`examples/` -> `/examples/`, deployed via `scripts/deploy-examples.sh`)
   6. Dynamic quickrun LMScript catalog (`quickrun/` -> `/quickrun/`, deployed via `scripts/deploy-quickrun.sh`)
@@ -36,10 +38,10 @@ This repo itself: `github.com/lmctl-ai/lmctl` (note: org is `lmctl-ai` and repo 
   11. Static tool pages (`tools/` -> `/tools/`, new; deployed ONLY by `scripts/deploy-tools.sh`, never by `deploy.sh`). Plain HTML, one stylesheet, rules in `tools/README.md`, validated by `npm run check:tools` (CI: `.github/workflows/tools-check.yml`).
 - **NEVER run `aws s3 sync --delete` on the S3 bucket root:** The S3 bucket `lmctl-website-prod` holds all prefixes co-tenanted. A root `--delete` wipes the other prefixes. Use scoped sync scripts (`deploy.sh`, `deploy-homepage.sh`, `deploy-quickrun.sh`, `deploy-lmprobe.sh`).
 - **CloudFront Function vs S3 Triple-Key Index Hack:** `infra/lmctl-www-redirect.js` rewrites clean URLs for `/lmctl/*` and `/lmprobe/*` (deployed) and, in source but not yet deployed, `/tools/*` (`node tests/infra/lmctl-www-redirect.test.mjs`). All other paths (`/skills`, `/quickrun`, `/templates`, `/helloexample`, `/lmscript/commands`) pass through untouched. To prevent S3 404 NoSuchKey errors when accessed without `.html`, `scripts/deploy.sh` uploads triple keys: `<prefix>`, `<prefix>/`, and `<prefix>/index.html` (see `durable-memory/site-design.md`).
-- **Documentation checks:** Static `/tools/` pages are checked with `npm run check:tools`; `npm run check:tools:selftest` verifies that the checker rejects malformed fixtures. These commands do not validate `skills/` or Docusaurus `docs/`. There is no `scripts/test-docs.sh` in this repository, so do not rely on that command.
+- **Documentation checks:** Static `/tools/` pages are checked with `npm run check:tools`; `npm run check:tools:selftest` verifies that the checker rejects malformed fixtures. Legacy skills use `npm run check:skills` and `npm run check:skills:selftest`; regenerate with `npm run build:skills`. Neither checker validates Docusaurus `docs/`. There is no `scripts/test-docs.sh` in this repository.
 - **`lmctl prompt`, not `lmctl chat`:** In modern lmctl, member delegation is driven by `lmctl prompt "<teamfile>.lmctl" <alias> "..."`, not the retired `lmctl chat` command.
 - **Relative Markdown links in `docs/`:** `npm run build` fails on broken links and anchors. All cross-page links within `docs/` must be relative Markdown paths (e.g. `./other.md` or `../manuals/foo.md`), never absolute `https://lmctl.com/` URLs.
-- **Never wrap `lmctl` in a shell `timeout`:** A dispatch that dies mid-turn is usually a timeout you set. A shell `timeout` sends SIGTERM mid-turn and leaves dead-PID locks in provider session storage. Turns of 8–47+ minutes are normal. Use `--idle-timeout 0` to disable or an explicit unit (`8h`, `300s`).
+- **Never wrap `lmctl` in a shell `timeout`:** A dispatch that dies mid-turn is usually a timeout you set. A shell `timeout` sends SIGTERM mid-turn and leaves dead-PID locks in provider session storage. Turns of 8–47+ minutes are normal. The current prompt command has no idle-timeout flag; inspect progress with `status`/`tail` and wait for completion.
 - **CloudFront Origin Path must be empty:** S3 objects already reside under the `lmctl/` key prefix. An Origin Path of `/lmctl` double-prefixes requests and returns 404.
 
 ## Commands that are not what you would assume
@@ -56,7 +58,8 @@ This repo itself: `github.com/lmctl-ai/lmctl` (note: org is `lmctl-ai` and repo 
 
 - **Editing `homepage/index.html` thinking it is Docusaurus:** The root homepage `https://lmctl.com/` is plain HTML/CSS in `homepage/`. Docusaurus only renders the subpath `https://lmctl.com/lmctl/`.
 - **Publishing is local/manual, not GitHub Actions:** GitHub Actions push trigger is disabled because its OIDC role cannot write root `index.html`. Deployments are executed manually via `scripts/deploy.sh` with `S3_BUCKET=lmctl-website-prod` and `CF_DISTRIBUTION_ID=E1GKUWTM93U7IV`.
-- **39 fleet teamfiles cite `/skills/lmctl-lead.md`:** The canonical file is `skills/lmctl-lead-skill.md`. `scripts/deploy.sh` copies it to `/skills/lmctl-lead.md` during deployment.
-- **Imported skills byte-parity:** `skills/lmfeedback-skill.md` must remain byte-identical to upstream `tools/lmfeedback/docs/lmfeedback-skill.md`.
+- **39 fleet teamfiles cite `/skills/lmctl-lead.md`:** The canonical file is `skills/lmctl-lead-skill.html`; Markdown is generated. `scripts/deploy.sh` copies it to `/skills/lmctl-lead.md` during deployment.
+- **Generated skills byte-parity:** Every checked-in `skills/*.md` must equal the lmhtml export of its HTML content; the index is generated from the ordered catalog in `scripts/tools/skills.lms`. Retired URLs remain pointer pages.
+- **Skills coordination invariants:** `scripts/tools/skills.lms` rejects removed commands (`lmctl mail`, `health`, `hire`, `refresh`, `restore`, `chat`, `connect`, `serve`, `wake`, `can`, `sees`), `mailbox_queue_enabled`, and queue/mailbox/lane concepts in active Lead guidance. Lead pages must include inline `lmctl prompt` delegation, state that it `blocks`, and include `is busy; wait and retry`, `Author must not equal reviewer`, `Never wrap lmctl in a shell timeout`, explicit reading instructions, and `automatic durable-memory onboarding is not guaranteed`. Fixtures exercise these rules. Utilities such as lmmail retain their own genuine mailbox APIs.
 - **Treat `main` as publish-ready:** Do not draft unreviewed changes directly on `main`. Work on feature branches and merge only after review clears.
 - **Author is never reviewer:** On `.lmctl` teams, work must be reviewed and signed off by another live seat before deployment.

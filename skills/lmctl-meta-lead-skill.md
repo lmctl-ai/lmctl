@@ -1,107 +1,48 @@
-# lmctl — Meta-Lead skill (coordinating multiple teams)
+# lmctl — Meta\-Lead skill
 
-You are a **meta-Lead**: you don't do the work, you coordinate several **team Leads**, each running
-their own `.lmctl` team. Your job is oversight and unblocking across teams — the same
-administration discipline as a Team Lead, one level up. Read the Team Lead **basic** + **advanced**
-skills first; this page is the multi-team layer.
+Coordinate several team Leads by inspecting progress and sending concrete, self\-contained tasks\.
 
-Core stance: **lmctl is LLM-centered orchestration *and administration*.** You administer Leads the
-way a Lead administers members — seed, monitor, unblock, refresh — but never micromanage.
+## Delegate and inspect
 
-## Survey your fleet without disturbing it
-```sh
-lmctl health "<teamA>.lmctl"        # per-team rollup, per each team you run
-lmctl tail "<teamA>.lmctl" Lead     # read a Lead's recent turns; does NOT wake it
+Run `lmctl prompt "<teamfile>.lmctl" Coder "Implement the task and report evidence."` to delegate inline\. The command blocks for one member turn and returns its reply\. Delegation is an action: describing a handoff does not perform it\.
+
+If the receiver `is busy; wait and retry`, inspect with `lmctl status "<teamfile>.lmctl" Coder` or `lmctl tail "<teamfile>.lmctl" Coder`, then retry later\. Do not resend work already accepted\. A human using `lmctl terminal` can legitimately keep a member busy\.
+
 ```
-`health` + `tail` are read-only — use them to see who's progressing vs spinning **before** you send
-anything. In a git repo, `health` shows activity since the last commit: a Lead piling up messages
-and uncommitted files with **no new commit** is spinning — that's your signal to look, not to poke
-blindly.
+lmctl status "<teamfile>.lmctl" --details
+lmctl tail "<teamfile>.lmctl" Coder
+lmctl prompt "<teamfile>.lmctl" Coder --prompt-file task.md
+```
+
+Use an editor or file\-writing tool to create `task.md`; avoid shell expansion of backticks, `$VAR`, and `$(...)` in task text\. Never wrap lmctl in a shell timeout\. Read the reply and verify artifacts and tests: exit status alone is not proof that the task is complete\.
+
+## Review and durable knowledge
+
+Route implementation to Coder, then route the result to an independent Reviewer\. Send defects back for repair and re\-review\. Author must not equal reviewer\. Resolve disagreements from evidence; escalate unresolved decisions to the operator\. Publish only within the operator's authorization\.
+
+Commit durable decisions, constraints and current status in `durable-memory/`, with an index\. Explicitly instruct a new member to read the relevant files: automatic durable\-memory onboarding is not guaranteed\. Session history is not a substitute for committed project knowledge\.
 
 ## Delegate to a Lead
-A Lead's turn can run for minutes — coordinating its own Coder+Reviewer can
-take hours. `lmctl prompt` is synchronous: it blocks and returns the Lead reply.
-```sh
-lmctl prompt "<teamA>.lmctl" Lead "coordinate the X change with your Coder+Reviewer"
+
 ```
-If you remember older lmctl forms, read the old-command block in the basic
-Lead skill. Meta-Lead work now uses synchronous `prompt` by default; busy
-queueing is opt-in.
-
-`prompt`'s built-in `--idle-timeout` defaults to 8 hours — don't override it
-to a short duration when dispatching to a Lead; inspect with `tail`/`health`
-first if one seems stuck.
-
-For peer Lead status notes, use `prompt`. If the target Lead is busy and lmctl
-uses default queue settings, it returns a busy error and creates no queued mail.
-If the opt-in mailbox queue is enabled and lmctl can resolve your sender
-identity, lmctl queues the message in your sender-to-receiver lane:
-
-```sh
-lmctl prompt "<teamA>.lmctl" Lead "status note"
+lmctl status "/path/to/team.lmctl" --details
+lmctl prompt "/path/to/team.lmctl" Lead "Coordinate implementation and independent review; return evidence and remaining blockers."
 ```
 
-Delivery is at-least-once: a duplicate delivery after a crash is possible;
-losing queued work is worse.
-Queued member mail is keyed by `(sender, receiver)`. Base queued delivery is the next
-`lmctl prompt` from that same sender to that same receiver once the receiver is
-free. A prompt from another sender to the same receiver does not flush it. With
-`lmctl serve start` running in normal daemon mode, mailbox relay is an optional
-accelerator that can drain queued lanes proactively. When queueing is off,
-there is nothing for the relay to drain. A receiver held by `lmctl terminal` is
-correctly busy until the human exits the terminal.
+Let each Lead manage its own members\. Avoid content\-free continuation messages\. Check actual transcripts and artifacts before diagnosing a stall; a quiet process or missing provider metric alone does not prove failure\. Keep concurrency within the machine’s capacity and retain required validation before publishing\.
 
-## Warm up a newly-seeded Lead
-When you seed a team and start talking to its Lead, open with a connectivity ping:
-> "use `lmctl prompt` to ping each of your members with 'reply OK' to confirm you can
-> reach them, then proceed."
-This makes the Lead actually exercise delegation from turn one — teams that skip it stall at the
-first hand-off.
+## Replace a session deliberately
 
-## Inspect before messaging Leads
-A Lead mid-turn serves one turn-driving sender at a time. Busy behavior depends
-on the queue setting first: by default busy is refused and not allowed to abort
-the in-flight turn. If queueing is enabled and lmctl can resolve a sender, the
-prompt queues for that `(sender, receiver)` lane. Use `tail`/`health` to inspect
-without waking, then let the runtime/harness own wake and concurrency. Don't
-broadcast turn-driving prompts into a working fleet.
+Inspect `lmctl status "<teamfile>.lmctl" Coder` first\. Preserve current project knowledge and coordinate with the operator before replacing a running session\. From another session, remove only the target member's `sessionid=` field, optionally update `model=`, then run:
 
-## Refresh a drifting Lead
-A running session cannot refresh itself. Refresh the target Lead from a
-different session:
-```sh
-lmctl refresh "<teamA>.lmctl":Lead
 ```
-First make sure that team's `durable-memory/` is current (the Lead re-reads it after refresh —
-that's how it keeps its bearings across the reset). Then refresh. A refreshed Lead loses its
-accumulated session history but recovers its state from durable-memory.
+lmctl lint "<teamfile>.lmctl"
+lmctl seed "<teamfile>.lmctl"
+lmctl prompt "<teamfile>.lmctl" Coder "Read durable-memory/index.md and the task notes, then report your understanding."
+```
 
-## Getting a Lead to actually execute (e.g. commit built work)
-If a Lead seems to "ignore" an instruction, it's almost never an lmctl bug — check these first:
-1. **Don't send empty/continuation nudges.** A message like `Continue from where you left off.` (or
-   any content-free "keep going") has nothing actionable — a Claude Lead correctly does nothing and
-   logs `No response requested.`. **That log line is NOT a reply to your real instruction** — it's
-   the Lead correctly no-opping an *empty* prompt. Send **one concrete, self-contained instruction**
-   and stop nudging.
-2. **Let the Lead write its own commit message.** A Lead will (correctly) refuse to commit blindly
-   under a message that doesn't match the actual tree — that reads as a no-op but is good caution.
-   Say: *"Commit your built work — write an accurate message from `git diff --staged`, then reply the
-   hash."* Don't dictate a message that doesn't describe the changes.
-3. **Read the Lead's REAL turns with `lmctl tail "<team>" Lead`, not the summary log lines.** The
-   one-line `No response requested.` entries are replies to nudges and **hide** the Lead's actual
-   engagement + any real blocker (a message mismatch, a killed command). `tail` shows what truly
-   happened; the summary log misleads.
-4. **Heavy commands get killed under high concurrency.** Running many teams at once starves memory —
-   a pre-commit validator / lint / manifest build can be SIGKILL'd (`exit 137`), stalling the commit.
-   A lint gate is **not** a commit blocker: tell the Lead to commit the built work and run validation
-   separately, and keep concurrency modest (a handful of live teams, not a dozen+).
+Seed initializes missing or placeholder session ids; it does not replay the old conversation\. Keep other members' session fields intact\. Inspect provider\-specific model choices with `lmctl models --help` and `lmctl status "<teamfile>.lmctl" --details` rather than asking a model to identify itself\.
 
-## What NOT to do
-- Don't send empty "continue" prompts on a timer — you'll interrupt working members and cause aborts.
-- Don't chase a metric lmctl can't give (e.g. a context number a provider doesn't expose shows
-  `n/a` — that's not a health signal, don't act on its absence).
-- Don't try to force a member to do something — lmctl offers tools; if a Lead isn't delegating,
-  re-onboard it with a delegation-first instruction, don't build enforcement.
+## Related guidance
 
----
-Live page — kept correct in place at this URL as multi-team practice evolves.
+See [durable memory](</skills/durable-memory.md>) and the [Lead skill](</skills/lmctl-lead-skill.md>)\.

@@ -1,72 +1,43 @@
-# lmctl — Team Lead skill (advanced)
+# lmctl — Team Lead skill (advanced\)
 
-Advanced administration of your team's members: keeping sessions healthy, refreshing/swapping
-them without losing work, and diagnosing a drifting member. Read the **basic** Team Lead skill
-first. The load-bearing principle is unchanged:
-**session = disposable cache; `durable-memory/` = canonical state.** Everything below relies on it.
+Inspect session state, preserve knowledge, and replace sessions deliberately when recovery is necessary\.
 
-## Refresh a bloated or drifting member
-A long session accumulates context and can degrade. `refresh` gives a member a **fresh session**:
-```sh
-lmctl refresh "<teamfile>.lmctl":Coder
+## Delegate and inspect
+
+Run `lmctl prompt "<teamfile>.lmctl" Coder "Implement the task and report evidence."` to delegate inline\. The command blocks for one member turn and returns its reply\. Delegation is an action: describing a handoff does not perform it\.
+
+If the receiver `is busy; wait and retry`, inspect with `lmctl status "<teamfile>.lmctl" Coder` or `lmctl tail "<teamfile>.lmctl" Coder`, then retry later\. Do not resend work already accepted\. A human using `lmctl terminal` can legitimately keep a member busy\.
+
 ```
-The new session starts **clean** and **re-reads `durable-memory/`**. That blankness is the point —
-it's *why* you keep canonical context in durable-memory: refresh is then nearly free.
-- There is deliberately **no automatic "carry the old chat forward"** — that would re-bloat the
-  session you just cleared and risk lossy summarization. If context must survive, it belongs in
-  `durable-memory/`, not in the session.
-- Before refreshing: make sure `durable-memory/` is current (that's the member's memory across the
-  refresh).
-- A session cannot refresh itself while it is running. Refresh the target from a
-  different session, another member, or an operator shell.
+lmctl status "<teamfile>.lmctl" --details
+lmctl tail "<teamfile>.lmctl" Coder
+lmctl prompt "<teamfile>.lmctl" Coder --prompt-file task.md
+```
 
-## Model swap
-To move a member to a different model: remove its `sessionid` from the teamfile line, optionally
-change `model=`, then `lmctl seed`. Same rule — the fresh session re-reads durable-memory, so
-capture anything important there first.
+Use an editor or file\-writing tool to create `task.md`; avoid shell expansion of backticks, `$VAR`, and `$(...)` in task text\. Never wrap lmctl in a shell timeout\. Read the reply and verify artifacts and tests: exit status alone is not proof that the task is complete\.
 
-## The drift → recover procedure
-When a member feels sluggish or off-track:
-1. `lmctl health "<teamfile>.lmctl" Coder` — check its session/activity (informational).
-2. Ensure `durable-memory/` reflects the current state of the work (update it if needed).
-3. `lmctl refresh "<teamfile>.lmctl":Coder` — fresh session, re-reads durable-memory.
-4. Optional: `lmctl tail "<teamfile>.lmctl" Coder` to confirm it came back cleanly.
+## Review and durable knowledge
 
-## Read health like an administrator
-`lmctl health "<teamfile>.lmctl"` is your monitoring surface (information only — it never blocks
-or acts):
-- **Messages since the last commit** climbing with **uncommitted files** and **no new commit** →
-  the member is spinning; intervene (redirect, or refresh).
-- **Context size** where the provider exposes it; `n/a` where it doesn't (not a health signal).
-- Use it to decide *proactively* — refresh a member **before** it degrades, not after.
+Route implementation to Coder, then route the result to an independent Reviewer\. Send defects back for repair and re\-review\. Author must not equal reviewer\. Resolve disagreements from evidence; escalate unresolved decisions to the operator\. Publish only within the operator's authorization\.
 
-## Don't fight the busy-guard
-A member serves one turn-driving sender at a time. By default, `prompt` to a busy
-target returns a busy error instead of interrupting it or creating queued mail.
-Pause and retry later, or inspect without waking it with `lmctl tail`.
-Queueing is opt-in: if `mailbox_queue_enabled=true` or
-`LMCTL_MAILBOX_QUEUE_ENABLED=true` is set and lmctl can resolve a sender,
-`prompt` queues for a busy target in a `(sender, receiver)` lane.
+Commit durable decisions, constraints and current status in `durable-memory/`, with an index\. Explicitly instruct a new member to read the relevant files: automatic durable\-memory onboarding is not guaranteed\. Session history is not a substitute for committed project knowledge\.
 
-Base queued delivery is the next `lmctl prompt` from that same sender to that same
-receiver once the receiver is free; a prompt from another sender to the same
-receiver does not flush it. With `lmctl serve start` running in normal daemon
-mode, mailbox relay is an optional accelerator that can drain queued lanes
-proactively. If queueing is off, there is nothing for the relay to drain. If
-the sender is idle waiting for the reply and no relay drains the lane, delivery
-can deadlock. A live `lmctl terminal` lock is a valid reason to stay busy.
+## Replace a session deliberately
 
-## Cross-team calls
-A Lead can call a member of another team at runtime (cycle-protected automatically). The legacy
-static `_CONNECT_` directive is a **deprecated no-op** — ignore it; cross-team reach is just a
-normal runtime `lmctl prompt` to the other team's member. With default settings,
-busy cross-team targets return a busy error. In queue-enabled setups, busy
-cross-team targets follow the same `(sender, receiver)` lane lifecycle when
-lmctl can resolve sender identity.
+Inspect `lmctl status "<teamfile>.lmctl" Coder` first\. Preserve current project knowledge and coordinate with the operator before replacing a running session\. From another session, remove only the target member's `sessionid=` field, optionally update `model=`, then run:
 
-## Warm up the channel
-Right after seeding, ping each member once (`lmctl prompt "<teamfile>" Coder "reply OK"`) before
-assigning real work — it exercises the delegation path so the first real task lands cleanly.
+```
+lmctl lint "<teamfile>.lmctl"
+lmctl seed "<teamfile>.lmctl"
+lmctl prompt "<teamfile>.lmctl" Coder "Read durable-memory/index.md and the task notes, then report your understanding."
+```
 
----
-Live page — corrected in place at this URL when field practice shows a gap.
+Seed initializes missing or placeholder session ids; it does not replay the old conversation\. Keep other members' session fields intact\. Inspect provider\-specific model choices with `lmctl models --help` and `lmctl status "<teamfile>.lmctl" --details` rather than asking a model to identify itself\.
+
+## Cross\-team work
+
+Use an absolute teamfile path with the same prompt command to address another team\. Inspect status before sending\. A busy result is evidence to wait, not a reason to interrupt the current turn\.
+
+## Related guidance
+
+See [durable memory](</skills/durable-memory.md>) and the [Lead skill](</skills/lmctl-lead-skill.md>)\.

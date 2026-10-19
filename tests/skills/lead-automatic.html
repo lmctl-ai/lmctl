@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmctl Lead skill — lmctl skills</title>
+<meta name="description" content="Administer one team, delegate concrete work, verify results, and keep project knowledge durable.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/">Tools</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmctl Lead skill</h1>
+<p>Administer one team, delegate concrete work, verify results, and keep project knowledge durable.</p>
+<h2 id="delegate-and-inspect">Delegate and inspect</h2>
+<p>Run <code>lmctl prompt &quot;&lt;teamfile&gt;.lmctl&quot; Coder &quot;Implement the task and report evidence.&quot;</code> to delegate inline. The command blocks for one member turn and returns its reply. Delegation is an action: describing a handoff does not perform it.</p>
+<p>If the receiver <code>is busy; wait and retry</code>, inspect with <code>lmctl status &quot;&lt;teamfile&gt;.lmctl&quot; Coder</code> or <code>lmctl tail &quot;&lt;teamfile&gt;.lmctl&quot; Coder</code>, then retry later. Do not resend work already accepted. A human using <code>lmctl terminal</code> can legitimately keep a member busy.</p>
+<pre><code>lmctl status &quot;&lt;teamfile&gt;.lmctl&quot; --details
+lmctl tail &quot;&lt;teamfile&gt;.lmctl&quot; Coder
+lmctl prompt &quot;&lt;teamfile&gt;.lmctl&quot; Coder --prompt-file task.md</code></pre>
+<p>Use an editor or file-writing tool to create <code>task.md</code>; avoid shell expansion of backticks, <code>$VAR</code>, and <code>$(...)</code> in task text. Never wrap lmctl in a shell timeout. Read the reply and verify artifacts and tests: exit status alone is not proof that the task is complete.</p>
+<h2 id="review-and-durable-knowledge">Review and durable knowledge</h2>
+<p>Route implementation to Coder, then route the result to an independent Reviewer. Send defects back for repair and re-review. Author must not equal reviewer. Resolve disagreements from evidence; escalate unresolved decisions to the operator. Publish only within the operator&#39;s authorization.</p>
+<p>Commit durable decisions, constraints and current status in <code>durable-memory/</code>, with an index. Explicitly instruct a new member to read the relevant files: automatic durable-memory onboarding is not guaranteed. Session history is not a substitute for committed project knowledge.</p>
+<h2 id="replace-a-session-deliberately">Replace a session deliberately</h2>
+<p>Inspect <code>lmctl status &quot;&lt;teamfile&gt;.lmctl&quot; Coder</code> first. Preserve current project knowledge and coordinate with the operator before replacing a running session. From another session, remove only the target member&#39;s <code>sessionid=</code> field, optionally update <code>model=</code>, then run:</p>
+<pre><code>lmctl lint &quot;&lt;teamfile&gt;.lmctl&quot;
+lmctl seed &quot;&lt;teamfile&gt;.lmctl&quot;
+lmctl prompt &quot;&lt;teamfile&gt;.lmctl&quot; Coder &quot;Read durable-memory/index.md and the task notes, then report your understanding.&quot;</code></pre>
+<p>Seed initializes missing or placeholder session ids; it does not replay the old conversation. Keep other members&#39; session fields intact. Inspect provider-specific model choices with <code>lmctl models --help</code> and <code>lmctl status &quot;&lt;teamfile&gt;.lmctl&quot; --details</code> rather than asking a model to identify itself.</p>
+<h2 id="related-guidance">Related guidance</h2>
+<p>See <a href="/skills/durable-memory.html">durable memory</a> and the <a href="/skills/lmctl-lead-skill.html">Lead skill</a>.</p>
+<p>Seed automatically reads durable-memory.</p></main>
+<footer>
+<p>Plain HTML skills, with generated Markdown for agents. Source: <a href="https://github.com/lmctl-ai/lmctl/tree/main/skills">github.com/lmctl-ai/lmctl/skills</a>.</p>
+</footer>
+</body>
+</html>

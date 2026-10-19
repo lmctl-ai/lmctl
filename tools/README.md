@@ -138,3 +138,17 @@ indexes, dry-run, source preservation and idempotence.
 Only `scripts/deploy-tools.sh` deploys this section. The template and scripts are
 outside `tools/` and are never uploaded. No Node HTML checker remains; lmscript
 compiles the DSL and lmhtml runs it.
+
+## Legacy /skills/
+
+Legacy utility and coordination skills coexist at `/skills/`. Their authored sources
+are `skills/*.html`; `npm run build:skills` decorates them and generates the Markdown
+compatibility URLs plus the grouped index. `npm run check:skills` rejects drift and
+stale coordination instructions; `npm run check:skills:selftest` tests the checker.
+The ordered catalog and legacy policy live in `scripts/tools/skills.lms`, using the
+same `template.html` and pinned lmhtml host as tools. Edit only `<main>` content.
+Cross-skill links are absolute `/skills/<stem>.html`; the exporter maps link attributes
+to `.md` for raw readers without rewriting code. Retired workflows retain pointer
+pages but leave the active index. New LMScript/lmcad/lmhtml/SDK skills remain in
+`/tools/<tool>/skill.html`; do not create duplicate legacy pages. Preview from the
+repo-root HTTP server at `/skills/`. Audit evidence: `durable-memory/skills-audit.md`.

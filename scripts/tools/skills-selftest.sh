@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$ROOT"
+host=$(bash scripts/tools/run.sh host-path)
+work=$(mktemp -d "${TMPDIR:-/tmp}/skills-selftest.XXXXXX")
+trap 'rm -rf "$work"' EXIT
+mkdir -p "$work/scripts" "$work/tests" "$work/tools" "$work/homepage"
+cp -R scripts/tools "$work/scripts/"
+cp -R skills "$work/"
+cp -R tests/skills "$work/tests/"
+cp tools/style.css tools/index.html "$work/tools/"
+cp homepage/index.html "$work/homepage/"
+cd "$work"
+export LMHTML="$host"
+count=0
+ok(){ count=$((count+1)); echo "ok $count - $1"; }
+bash scripts/tools/run.sh skills --check > result.txt 2>&1 || { cat result.txt; exit 1; }
+ok 'current skills and generated Markdown'
+bash scripts/tools/run.sh skills tests/skills/lead-good.html > result.txt 2>&1 || { cat result.txt; exit 1; }
+ok 'valid coordination page'
+for expected in tests/skills/*.expected; do
+  page=${expected%.expected}.html
+  if bash scripts/tools/run.sh skills "$page" > result.txt 2>&1; then echo "unexpected success: $page"; exit 1; fi
+  grep -Fq "$(cat "$expected")" result.txt || { cat result.txt; exit 1; }
+  ok "$(basename "$page")"
+done
+printf '\nDRIFT\n' >> skills/lmprobe-skill.md
+if bash scripts/tools/run.sh skills --check > result.txt 2>&1; then echo 'drift accepted'; exit 1; fi
+grep -Fq 'skills/lmprobe-skill.md' result.txt
+grep -Fq 'run npm run build:skills' result.txt
+ok 'Markdown drift fails with regeneration command'
+rm skills/index.html skills/lmprobe-skill.md
+if bash scripts/tools/run.sh skills --check > result.txt 2>&1; then echo 'missing generated files accepted'; exit 1; fi
+grep -Fq 'run npm run build:skills' result.txt
+ok 'missing generated files fail with regeneration command'
+bash scripts/tools/run.sh skills > result.txt 2>&1 || { cat result.txt; exit 1; }
+bash scripts/tools/run.sh skills --check > result.txt 2>&1 || { cat result.txt; exit 1; }
+ok 'missing index and Markdown regenerated'
+cp -R skills before
+bash scripts/tools/run.sh skills > result.txt 2>&1 || { cat result.txt; exit 1; }
+diff -qr before skills
+ok 'second build changes zero bytes'
+printf '# orphan\n' > skills/unlisted.md
+if bash scripts/tools/run.sh skills --check > result.txt 2>&1; then echo 'orphan Markdown accepted'; exit 1; fi
+grep -Fq 'skill not in ordered catalog' result.txt
+ok 'orphan Markdown refused'
+echo "PASS: $count skills checks"

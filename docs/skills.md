@@ -5,72 +5,41 @@ sidebar_position: 96
 
 # Skills
 
-You were just seeded, read this first.
+Skills are agent-facing instructions. The [skills catalog](https://lmctl.com/skills/)
+groups utility guides and lmctl orchestration guidance. HTML is the authored source;
+each page also has a generated `.md` URL for agents. Existing raw URLs, including
+`/skills/lmctl-lead.md`, remain available.
 
-Skills are short, agent-facing instructions. They are written for the agent
-that is already inside a provider session and needs to know the local operating
-contract without crawling the whole docs site.
+Start with the [Lead skill](https://lmctl.com/skills/lmctl-lead-skill.html) or
+[Team Lead — basic](https://lmctl.com/skills/lmctl-team-lead-basic-skill.html).
+Delegate inline with `lmctl prompt "<teamfile>.lmctl" Coder "Implement the task and report evidence."`.
+It blocks for one member turn. If the receiver `is busy; wait and retry`, inspect
+`lmctl status` or `lmctl tail` before retrying. Read the reply and verify artifacts;
+exit status alone does not establish task completion. For substantial prompts,
+write a file with an editor and use `--prompt-file` to avoid shell expansion.
 
-The current public lmctl contract is simple:
+Keep committed project knowledge in `durable-memory/` and explicitly ask new
+members to read it. Automatic onboarding is not guaranteed. An independent
+reviewer checks the author's work before publication.
 
-- Delegate with synchronous `lmctl chat <teamfile> <alias> "<prompt>"`.
-- Treat `lmctl chat` exit status as transport status, not task completion.
-- By default, a busy receiver returns a busy error and creates no queued mail.
-  The mailbox queue is opt-in with `mailbox_queue_enabled=true` or
-  `LMCTL_MAILBOX_QUEUE_ENABLED=true`.
-- Use `lmctl chat --json` and `lmctl status` to distinguish a busy result,
-  opt-in queued work, and a finished member reply.
-- Use `lmctl chat ... --prompt-file <path>` for non-trivial prompts. Positional
-  prompts are built by the shell, so backticks, `$(...)`, `$VAR`, and quotes can
-  change before lmctl sees them. Write the prompt file with an editor or
-  file-writing tool, not `echo` or a heredoc.
-- Run `lmctl status` before important sends. In queue-enabled setups, run
-  `lmctl status --since 7d` after queued sends and read `Waiting on:` /
-  `mailbox outbound`; exit `0` can still mean queued.
-- Keep durable project knowledge in `durable-memory/` so a refreshed session or
-  swapped provider keeps the same working memory.
+The catalog includes lmprobe, lmchat, lmmail, lmfeedback, lmnote, lmsheet, lmbio,
+lmfin, lmsound and lmtext. Their API syntax was checked against available source;
+service availability and account permissions must be verified with the operator.
+The four retired coordination workflows remain short compatibility pointers.
 
-Use the docs pages for human context. Use the raw skill files when you are an
-agent being asked to do the work.
+New tool documentation lives in the [tools catalog](https://lmctl.com/tools/),
+including LMScript, lmcad, lmhtml and the C++ DSL SDK. Legacy skills and new tool
+skills coexist; neither needs to duplicate the other's content.
 
-Start here:
+## Editing and generation
 
-- [Team Lead — basic](https://lmctl.com/skills/lmctl-team-lead-basic-skill.md)
-  for the everyday Lead loop.
-- [Verifying delegated work](./manuals/verifying-delegated-work.md) when you
-  need to know whether a delegated turn actually finished.
-- [Mail inspection](./manuals/mail.md) when `status` is not enough detail for
-  queued or delivered messages.
+Edit `skills/<name>.html` using plain content tags inside `<main>`. Run
+`npm run build:skills` to decorate the pages and regenerate Markdown and the grouped
+index. Run `npm run check:skills` and `npm run check:skills:selftest` before committing.
+The lmhtml-hosted script checks the HTML contract, coordination invariants and
+byte-for-byte generated-file drift. CI uses the same commands.
 
-## lmctl team operation
-
-| Skill | Use it when |
-| --- | --- |
-| [lmctl Lead](https://lmctl.com/skills/lmctl-lead.md) | You are the Lead of one `.lmctl` team and need the core delegation/review loop. |
-| [Claude Code lmctl Lead](https://lmctl.com/skills/claudecode-lead-skill.md) | You are running an lmctl Lead inside Claude Code and need background dispatch, notification, Monitor, and stall-evidence discipline. |
-| [opencode lmctl Lead](https://lmctl.com/skills/opencode-lead-skill.md) | You are running an lmctl Lead on opencode and need background CLI run, notification, and resubmission guidance. |
-| [lmctl-admin](https://lmctl.com/skills/lmctl-admin-skill.md) | You need read-only delivery, liveness, or orphan mailbox diagnostics over lmctl state. |
-| [Team Lead — basic](https://lmctl.com/skills/lmctl-team-lead-basic-skill.md) | You need the everyday Lead checklist: delegate, review, keep durable memory current. |
-| [Team Lead — advanced](https://lmctl.com/skills/lmctl-team-lead-advanced-skill.md) | You need refresh, model-swap, health, or drift-recovery guidance. |
-| [lmctl disaster recovery](https://lmctl.com/skills/lmctl-recover-skill.md) | A project directory, `.lmctl` teamfile, or files got deleted and you need to reconstruct them from local event history and provider session transcripts. |
-| [Meta-Lead](https://lmctl.com/skills/lmctl-meta-lead-skill.md) | You coordinate several teams or Leads. |
-| [Team Lead workflow](https://lmctl.com/skills/team-lead-workflow.md) | You need the shortest operating checklist for delegation and review. |
-| [Durable memory](https://lmctl.com/skills/durable-memory.md) | You need to know what belongs in `durable-memory/` and why it is committed. |
-
-## Tool skills
-
-| Skill | Use it when |
-| --- | --- |
-| [lmprobe](https://lmctl.com/skills/lmprobe-skill.md) | You need structural code search: files, grep, definitions, references, or graph queries. |
-| [lmchat](https://lmctl.com/skills/lmchat-skill.md) | You need shared file-room handoff outside lmctl team chat. |
-| [lmmail](https://lmctl.com/skills/lmmail-skill.md) | You need durable asynchronous mailboxes with message bodies and attachments. |
-| [lmfeedback](https://lmctl.com/skills/lmfeedback-skill.md) | You need to embed website feedback and deliver submissions to an owner's lmmail mailbox. |
-| [lmnote](https://lmctl.com/skills/lmnote-skill.md) | You need private per-user notebook files for durable agent notes. |
-| [lmsheet](https://lmctl.com/skills/lmsheet-skill.md) | You need simple per-user spreadsheets with Excel-style A1 addressing. |
-| [lmbio](https://lmctl.com/skills/lmbio-skill.md) | You need local computational-biology helpers. |
-| [lmfin](https://lmctl.com/skills/lmfin-skill.md) | You need local finance/market analytics helpers. |
-| [lmsound](https://lmctl.com/skills/lmsound-skill.md) | You need text-to-speech output. |
-| [lmtext](https://lmctl.com/skills/lmtext-skill.md) | You need speech-to-text transcription for audio files. |
-
-The raw skills index is also available at
-[lmctl.com/skills](https://lmctl.com/skills/).
+Local cross-skill HTML links use `/skills/<name>.html`; Markdown generation maps
+those link attributes to `/skills/<name>.md`, preserving fragments. Code examples
+are never rewritten. Absolute index links work at both `/skills` and `/skills/`.
+See `durable-memory/skills-audit.md` for source evidence and intentional corrections.

@@ -1,0 +1,457 @@
+# Canonical legacy skills: HTML authored; Markdown and index generated.
+# Ordered catalog preserves the two historical group names. Retired pages keep
+# URLs but are intentionally absent from the active index. Add new entries here.
+utilities = "lmchat-skill|lmsound-skill|lmprobe-skill|lmmail-skill|lmfeedback-skill|lmnote-skill|lmsheet-skill|lmtext-skill|lmfin-skill|lmbio-skill|";
+coordination = "lmctl-lead-skill|claudecode-lead-skill|opencode-lead-skill|lmctl-team-lead-basic-skill|lmctl-team-lead-advanced-skill|lmscript-workflow-skill|lmctl-meta-lead-skill|team-lead-workflow|durable-memory|";
+retired = "background-wakeup|communicating-with-mail-skill|lmctl-admin-skill|lmctl-recover-skill|";
+all_md = join(sort(glob("skills/*.md")), "|") + "|";
+all_html = join(sort(glob("skills/*.html")), "|") + "|";
+p = _dsl_ schema="lmhtml.dsl.json";
+fn element_offset(source: string, tag: string, raw: string, ordinal: int) -> int {
+  let start = 0;
+  let found = -1;
+  while (start < str_len(source) && found < 0) {
+    let relative = str_find(str_substr(source, start, str_len(source)), raw);
+    if (relative < 0) { break; }
+    let candidate = start + relative;
+    let prefix = str_substr(source, 0, candidate + str_len(raw));
+    if (html.parse(prefix).source_elements(tag).len() == ordinal + 1) { found = candidate; }
+    start = candidate + str_len(raw);
+  }
+  return found;
+}
+fn missing_separator(gap: string) -> bool {
+  # Comments are invisible, including newlines inside a comment.
+  let parsed = html.parse("<pre>x" + gap + "y</pre>");
+  let text = parsed.select("pre").at(0).text();
+  let visible = str_substr(text, 1, str_len(text) - 2);
+  return parsed.select("*").len() == 4 && str_trim(visible) == "" && !str_contains(visible, "\n") && !str_contains(visible, "\r");
+}
+fn separate_commands(source: string, first: string, second: string) -> string {
+  let result = source;
+  let firsts = html.parse(source).source_elements(first);
+  let seconds = html.parse(source).source_elements(second);
+  for (i in range(0, firsts.len())) {
+    for (j in range(0, seconds.len())) {
+      let end = element_offset(result, first, firsts.at(i), i) + str_len(firsts.at(i));
+      let start = element_offset(result, second, seconds.at(j), j);
+      if (start >= end) {
+        let gap = str_substr(result, end, start - end);
+        if (missing_separator(gap)) {
+          result = str_substr(result, 0, start) + "\n" + str_substr(result, start, str_len(result));
+        }
+      }
+    }
+  }
+  return result;
+}
+fn format_pre(source: string) -> string {
+  let result = separate_commands(source, "kbd", "samp");
+  result = separate_commands(result, "samp", "kbd");
+  let codes = html.parse(result).source_elements("code");
+  for (i in range(0, codes.len())) {
+    let raw = codes.at(i);
+    let inner = html.parse(raw).source_inner("code");
+    let trimmed = inner;
+    while (str_starts_with(trimmed, "\n") || str_starts_with(trimmed, "\r\n")) {
+      let n = 1;
+      if (str_starts_with(trimmed, "\r\n")) { n = 2; }
+      trimmed = str_substr(trimmed, n, str_len(trimmed));
+    }
+    while (str_ends_with(trimmed, "\n")) {
+      let n = 1;
+      if (str_ends_with(trimmed, "\r\n")) { n = 2; }
+      trimmed = str_substr(trimmed, 0, str_len(trimmed) - n);
+    }
+    if (trimmed != inner) {
+      let replacement = str_replace(raw, ">" + inner + "</", ">" + trimmed + "</");
+      let start = element_offset(result, "code", raw, i);
+      result = str_substr(result, 0, start) + replacement + str_substr(result, start + str_len(raw), str_len(result));
+    }
+  }
+  let inner = html.parse(result).source_inner("pre");
+  let trimmed = inner;
+  while (str_starts_with(trimmed, "\n") || str_starts_with(trimmed, "\r\n")) {
+    let n = 1;
+    if (str_starts_with(trimmed, "\r\n")) { n = 2; }
+    trimmed = str_substr(trimmed, n, str_len(trimmed));
+  }
+  while (str_ends_with(trimmed, "\n")) {
+    let n = 1;
+    if (str_ends_with(trimmed, "\r\n")) { n = 2; }
+    trimmed = str_substr(trimmed, 0, str_len(trimmed) - n);
+  }
+  if (trimmed != inner) { result = str_replace(result, ">" + inner + "</", ">" + trimmed + "</"); }
+  return result;
+}
+fn finding(file: string, selector: string, message: string) -> void {
+  report.add("contract", file, 0, selector + ": " + message);
+}
+fn normalized(value: string) -> string {
+  let result = "";
+  let space = false;
+  for (i in range(0, str_len(value))) {
+    let ch = str_substr(value, i, 1);
+    if (ch == " " || ch == "\n" || ch == "\r" || ch == "\t") { space = str_len(result) > 0; }
+    else {
+      if (space) { result = result + " "; }
+      result = result + ch;
+      space = false;
+    }
+  }
+  return result;
+}
+fn filename(path: string) -> string {
+  let start = 0;
+  for (i in range(0, str_len(path))) { if (str_substr(path, i, 1) == "/") { start = i + 1; } }
+  return str_substr(path, start, str_len(path));
+}
+fn check_page(page: Doc) -> void {
+  let file = page.path();
+  if (page.byte_size() > 153600) { finding(file, "document", "page is " + str(page.byte_size()) + " bytes (limit 153600)"); }
+  if (page.doctype() != "html") { finding(file, "document", "page must start with <!doctype html>"); }
+  for (problem in page.markup_errors()) { finding(file, "document", problem); }
+  let pres = page.source_elements("pre");
+  for (i in range(0, pres.len())) {
+    let raw = pres.at(i);
+    if (format_pre(raw) != raw) {
+      let commands = html.parse(raw).source_elements("kbd");
+      let outputs = html.parse(raw).source_elements("samp");
+      let found_command = false;
+      for (k in range(0, commands.len())) {
+        let command_start = element_offset(raw, "kbd", commands.at(k), k);
+        let command_end = command_start + str_len(commands.at(k));
+        let broken = false;
+        for (j in range(0, outputs.len())) {
+          let output_start = element_offset(raw, "samp", outputs.at(j), j);
+          let output_end = output_start + str_len(outputs.at(j));
+          let gap = "not adjacent";
+          if (output_start >= command_end) { gap = str_substr(raw, command_end, output_start - command_end); }
+          if (command_start >= output_end) { gap = str_substr(raw, output_end, command_start - output_end); }
+          if (missing_separator(gap)) { broken = true; }
+        }
+        if (broken) {
+          finding(file, page.select("pre").at(i).path(), "pre formatting: separate kbd/samp with a newline; command: " + html.parse(commands.at(k)).select("kbd").at(0).text());
+          found_command = true;
+        }
+      }
+      if (!found_command) { finding(file, page.select("pre").at(i).path(), "pre formatting: remove empty pre/code boundary lines"); }
+    }
+  }
+  let allowed = "|html|head|meta|title|link|body|header|nav|main|section|footer|h1|h2|h3|h4|p|ul|ol|li|dl|dt|dd|pre|code|kbd|samp|em|strong|a|table|thead|tbody|tr|th|td|blockquote|hr|figure|figcaption|img|";
+  for (node in page.select("*")) {
+    let tag = node.tag();
+    let path = node.path();
+    if (!str_contains(allowed, "|" + tag + "|")) { finding(file, path, "forbidden element <" + tag + ">"); }
+    let attrs = "|";
+    if (tag == "html") { attrs = "|lang|"; }
+    if (tag == "meta") { attrs = "|charset|name|content|"; }
+    if (tag == "link") { attrs = "|rel|href|type|"; }
+    if (tag == "a") { attrs = "|href|"; }
+    if (tag == "img") { attrs = "|src|alt|width|height|"; }
+    if (tag == "h2" || tag == "h3") { attrs = "|id|"; }
+    if (tag == "ol") { attrs = "|start|"; }
+    if (tag == "th") { attrs = "|scope|colspan|rowspan|"; }
+    if (tag == "td") { attrs = "|colspan|rowspan|"; }
+    for (attribute in node.attributes()) {
+      if (!str_contains(attrs, "|" + attribute + "|")) {
+        if (attribute == "id") { finding(file, path, "id is only allowed on h2/h3, not <" + tag + ">"); }
+        else { finding(file, path, "forbidden attribute " + attribute + " on <" + tag + ">"); }
+      }
+    }
+    if (tag == "html" && node.attr("lang") != "en") { finding(file, path, "<html> needs lang=\"en\""); }
+    if (tag == "link") {
+      let href = node.attr("href");
+      if (node.attr("rel") == "icon") {
+        if (node.parent().tag() != "head" || node.attr("type") != "image/png" || !str_starts_with(href, "/tools/") || str_contains(href, "..") || str_contains(href, "%") || str_contains(href, "\\") || !str_ends_with(href, ".png")) {
+          finding(file, path, "favicon must be a local PNG link in head with type=image/png");
+        } else { if (!html.link_exists(page, href)) { finding(file, path, "favicon not found: " + href); } }
+      } else {
+        if (node.attr("rel") != "stylesheet" || href != "/tools/style.css") { finding(file, path, "the only <link> allowed is rel=\"stylesheet\" href=\"/tools/style.css\" or a local PNG icon"); }
+        if (node.has_attr("type")) { finding(file, path, "type is only allowed on the favicon link"); }
+      }
+    }
+    if (tag == "img") {
+      let src = node.attr("src");
+      let page_path = file;
+      if (str_starts_with(page_path, "./")) { page_path = str_substr(page_path, 2, str_len(page_path)); }
+      let decorative = false;
+      if (page_path == "tools/index.html" && node.parent().tag() == "li" && str_ends_with(src, "/img/icon.png")) {
+        let links = node.parent().select("a");
+        if (links.len() == 1 && normalized(links.at(0).text()) != "" && links.at(0).attr("href") == str_substr(src, 0, str_len(src) - 12)) {
+          for (candidate in page.select("main > ul > li > img")) { if (candidate.path() == path) { decorative = true; } }
+        }
+      }
+      let landing_logo = false;
+      if (filename(page_path) == "index.html") {
+        let base = str_substr(page_path, 0, str_len(page_path) - 10);
+        let expected_src = "/" + base + "img/logo.png";
+        let expected_alt = str_substr(base, 6, str_len(base) - 7) + " logo";
+        if (page_path == "tools/index.html") { expected_src = "/tools/img/tools.png"; expected_alt = "lmctl tools"; }
+        if (src == expected_src && node.attr("alt") == expected_alt) {
+          for (candidate in page.select("main > h1 + figure > img")) { if (candidate.path() == path) { landing_logo = true; } }
+        }
+      }
+      if (!node.has_attr("alt") || (!decorative && normalized(node.attr("alt")) == "")) { finding(file, path, "<img> needs a non-empty alt (only catalog icons may have empty alt)"); }
+      if (!decorative) {
+        if (node.parent().tag() != "figure") { finding(file, path, "<img> must be inside <figure>"); }
+        else { if (!landing_logo && node.parent().select("figcaption").len() != 1) { finding(file, path, "<figure> needs one <figcaption>"); } }
+      }
+      let image_path_ok = str_starts_with(src, "/tools/");
+      let component = "";
+      let component_index = 0;
+      for (i in range(7, str_len(src))) {
+        let ch = str_substr(src, i, 1);
+        if (ch == "/") {
+          if (component_index == 0 && component == "") { image_path_ok = false; }
+          if (component_index == 1 && component != "img") { image_path_ok = false; }
+          component_index = component_index + 1;
+          component = "";
+        } else {
+          if (component_index == 0 && !str_contains("abcdefghijklmnopqrstuvwxyz0123456789-", ch)) { image_path_ok = false; }
+          component = component + ch;
+        }
+      }
+      let site_image = str_starts_with(src, "/tools/img/") && component_index == 1;
+      if ((!image_path_ok && !site_image) || (component_index != 2 && !site_image) || component == "" || str_contains(src, "..") || str_contains(src, "?") || str_contains(src, "#") || str_contains(src, "%") || str_contains(src, "\\")) {
+        finding(file, path, "image must be local under /tools/<tool>/img/: " + src);
+      } else {
+        if (!html.link_exists(page, src)) { finding(file, path, "image not found: " + src); }
+        else {
+          if (str_ends_with(str_lower(src), ".png")) {
+            let size = html.png_size(str_substr(src, 1, str_len(src)));
+            if (!node.has_attr("width") || !node.has_attr("height")) { finding(file, path, "PNG needs width and height attributes: " + src); }
+            else { if (node.attr("width") != str(size.width()) || node.attr("height") != str(size.height())) { finding(file, path, "PNG dimensions must match intrinsic " + str(size.width()) + "x" + str(size.height()) + ": " + src); } }
+          }
+        }
+      }
+    }
+    if (tag == "a") {
+      let url = node.attr("href");
+      let kind = html.link_kind(page, url);
+      if (url == "") { finding(file, path, "<a> without href"); }
+      else {
+        if (kind != "external" && !str_starts_with(str_lower(url), "mailto:")) {
+          if (kind == "special" || kind == "outside-root") { finding(file, path, "unsupported link scheme or outside root: " + url); }
+          else {
+            if (!str_starts_with(url, "/") && !str_starts_with(url, "#")) { finding(file, path, "internal links must be site-rooted: " + url); }
+            if (!html.link_exists(page, url) && !(url == "/" && html.link_exists(page, "/homepage/index.html"))) {
+              if (str_starts_with(url, "#")) { finding(file, path, "no id \"" + str_substr(url, 1, str_len(url)) + "\" on this page"); }
+              else { finding(file, path, "broken link " + url + " (" + html.resolve(page, url) + ")"); }
+            }
+          }
+        }
+      }
+    }
+  }
+  let id_nodes = page.select("[id]");
+  for (i in range(0, id_nodes.len())) {
+    let node = id_nodes.at(i);
+    for (j in range(0, i)) { if (node.attr("id") == id_nodes.at(j).attr("id")) { finding(file, node.path(), "duplicate id \"" + node.attr("id") + "\""); } }
+  }
+  if (page.select("head meta[charset='utf-8' i]").len() != 1) { finding(file, "head", "missing <meta charset=\"utf-8\">"); }
+  if (page.select("head meta[name='viewport']").len() != 1) { finding(file, "head", "missing <meta name=\"viewport\">"); }
+  let descriptions = page.select("head meta[name='description']");
+  if (descriptions.len() != 1) { finding(file, "head", "missing <meta name=\"description\">"); }
+  else { if (normalized(descriptions.at(0).attr("content")) == "") { finding(file, "head", "empty meta description"); } }
+  let titles = page.select("head title");
+  if (titles.len() != 1) { finding(file, "head", "missing or empty <title>"); }
+  else { if (normalized(titles.at(0).text()) == "") { finding(file, "head title", "missing or empty <title>"); } }
+  if (!html.link_exists(page, "/tools/style.css")) { finding(file, "head link", "stylesheet not found: /tools/style.css"); }
+  if (page.select("link[rel=icon]").len() > 1) { finding(file, "head", "expected at most one favicon link"); }
+  let stylesheet_count = page.select("link[rel=stylesheet]").len();
+  if (stylesheet_count != 1) { finding(file, "head", "expected exactly one stylesheet <link>, found " + str(stylesheet_count)); }
+  let h1_count = page.select("h1").len();
+  if (h1_count != 1) { finding(file, "main", "expected exactly one <h1>, found " + str(h1_count)); }
+  if (page.select("main h1").len() != h1_count) { finding(file, "h1", "<h1> must be inside <main>"); }
+  let layout = "";
+  for (child in page.select("body > *")) { if (child.tag() != "header") { layout = layout + child.tag() + ","; } }
+  if (layout != "nav,main,footer,") { finding(file, "body", "<body> must contain <nav>, <main>, <footer> in that order"); }
+  if (page.select("nav").len() != 1 || page.select("nav > *").len() != 1 || page.select("nav > ul").len() != 1) { finding(file, "nav", "<nav> must hold exactly one <ul>"); }
+  if (page.select("nav a[href='/tools/']").len() == 0) { finding(file, "nav", "<nav> must link to /tools/"); }
+  if (page.select("kbd, samp").len() != page.select("pre kbd, pre samp").len()) { finding(file, "kbd, samp", "kbd and samp must be inside pre"); }
+}
+fn norm(value: string) -> string {
+  let result = "";
+  let space = false;
+  for (i in range(0, str_len(value))) {
+    let ch = str_substr(value, i, 1);
+    if (ch == " " || ch == "\n" || ch == "\r" || ch == "\t") { space = str_len(result) > 0; }
+    else { if (space) { result = result + " "; } result = result + ch; space = false; }
+  }
+  return result;
+}
+# Prefer a complete sentence within the target; otherwise retain whole words.
+# A single oversized word is kept intact rather than silently mutilated.
+fn excerpt(value: string, limit: int, sentences: bool) -> string {
+  let result = norm(value);
+  let prefix = str_text_prefix(result, limit);
+  if (prefix != result) {
+    let sentence = 0;
+    let word = 0;
+    for (i in range(0, str_len(prefix))) {
+      let ch = str_substr(result, i, 1);
+      let next = str_substr(result, i + 1, 1);
+      if (ch == " ") { word = i; }
+      if ((ch == "." || ch == "!" || ch == "?") && next == " ") { sentence = i + 1; }
+    }
+    if (sentences && sentence > 0) { result = str_substr(result, 0, sentence); }
+    else {
+      # Leave room for the ellipsis, including at an exact word boundary.
+      prefix = str_text_prefix(result, limit - 1);
+      word = 0;
+      for (i in range(0, str_len(prefix))) { if (str_substr(prefix, i, 1) == " ") { word = i; } }
+      if (str_substr(result, str_len(prefix), 1) == " ") { word = str_len(prefix); }
+      if (word == 0) { word = str_find(result, " "); }
+      if (word > 0) { result = str_substr(result, 0, word) + "…"; }
+    }
+  }
+  return result;
+}
+fn escape(value: string) -> string {
+  return str_replace(str_replace(str_replace(str_replace(str_replace(value, "&", "&amp;"), "<", "&lt;"), ">", "&gt;"), "\"", "&quot;"), "{{", "&#123;&#123;");
+}
+fn region(source: string, name: string) -> string {
+  let begin_marker = "<!-- " + name + " -->";
+  let end_marker = "<!-- /" + name + " -->";
+  let offset = str_find(source, begin_marker);
+  let start = offset + str_len(begin_marker);
+  let end = str_find(source, end_marker);
+  if (offset < 0 || end < start) {
+    report.add("template", "scripts/tools/template.html", 0, "missing or invalid region: " + name);
+    report.write_text(${ARGV[1]});
+    report.fail_if_any();
+  }
+  return str_trim(str_substr(source, start, end - start));
+}
+
+fn invariants(page: Doc) -> void {
+  let file = page.path();
+  let text = normalized(page.select("main").at(0).text());
+  let lower = str_lower(text);
+  let forbidden = "lmctl mail|mailbox_queue_enabled|lmctl health|lmctl hire|lmctl refresh|lmctl restore|lmctl chat|lmctl connect|lmctl serve|lmctl wake|lmctl can |lmctl sees|--idle-timeout|";
+  while (str_find(forbidden, "|") >= 0) {
+    let end = str_find(forbidden, "|");
+    let word = str_substr(forbidden, 0, end);
+    forbidden = str_substr(forbidden, end + 1, str_len(forbidden));
+    if (str_contains(lower, word)) { finding(file, "main", "removed command/configuration: " + word); }
+  }
+  if (str_contains(lower, "automatically reads durable-memory") || str_contains(lower, "automatic durable-memory onboarding is guaranteed")) { finding(file, "main", "automatic durable-memory onboarding is not guaranteed"); }
+  let name = filename(file);
+  let lead = str_contains(name, "lead") || name == "team-lead-workflow.html";
+  if (lead) {
+    let banned = "queue|mailbox|lane|";
+    while (str_find(banned, "|") >= 0) {
+      let end = str_find(banned, "|"); let word = str_substr(banned, 0, end);
+      banned = str_substr(banned, end + 1, str_len(banned));
+      if (str_contains(lower, word)) { finding(file, "main", "retired coordination concept: " + word); }
+    }
+    let required = "blocks|is busy; wait and retry|author must not equal reviewer|never wrap lmctl in a shell timeout|explicitly instruct|automatic durable-memory onboarding is not guaranteed|";
+    while (str_find(required, "|") >= 0) {
+      let end = str_find(required, "|"); let word = str_substr(required, 0, end);
+      required = str_substr(required, end + 1, str_len(required));
+      if (!str_contains(lower, word)) { finding(file, "main", "coordination guidance missing: " + word); }
+    }
+    let inline_prompt = false;
+    for (node in page.select("p code")) {
+      if (str_starts_with(node.text(), "lmctl prompt ") && str_contains(node.text(), "Coder") && str_contains(node.text(), "Implement")) { inline_prompt = true; }
+    }
+    if (!inline_prompt) { finding(file, "main", "include lmctl prompt inline delegation with a concrete task"); }
+  }
+}
+fn summary(page: Doc) -> string {
+  let paragraphs = page.select("main p");
+  let result = "";
+  if (paragraphs.len() > 0) { result = excerpt(paragraphs.at(0).text(), 160, true); }
+  return result;
+}
+fn render_skills(body: string, title: string, description: string, raw_path: string) -> string {
+  let template = html.load("scripts/tools/template.html").source();
+  let result = region(template, "layout");
+  result = str_replace(result, "{{TITLE}}", escape(title + " — lmctl skills"));
+  result = str_replace(result, "{{DESCRIPTION}}", escape(description));
+  result = str_replace(result, "{{ICON}}", "");
+  result = str_replace(result, "{{NAV}}", region(template, "skills-nav"));
+  result = str_replace(result, "{{FOOTER}}", region(template, "skills-footer"));
+  let raw_link = "";
+  if (raw_path != "") { raw_link = "<p><a href=\"" + raw_path + "\">Raw Markdown for agents</a></p>"; }
+  result = str_replace(result, "{{RAW_LINK}}", raw_link);
+  result = str_replace(result, "{{CONTENT}}", body);
+  return result + "\n";
+}
+fn store(path: string, result: string, check: bool) -> void {
+  let old = "";
+  if (html.link_exists(html.parse(""), "/" + path)) { old = html.load(path).source(); }
+  if (old != result) {
+    if (check) { finding(path, "document", "generated content stale; run npm run build:skills"); }
+    else { html.save(result, path); }
+  }
+}
+fn index_group(names: string, title: string) -> string {
+  let result = "<h2>" + escape(title) + "</h2>\n<ul>\n";
+  let remaining = names;
+  while (str_find(remaining, "|") >= 0) {
+    let end = str_find(remaining, "|"); let name = str_substr(remaining, 0, end);
+    remaining = str_substr(remaining, end + 1, str_len(remaining));
+    let page = html.load("skills/" + name + ".html");
+    let heading = page.select("main h1");
+    if (heading.len() != 1) { finding(page.path(), "main", "expected one h1"); }
+    else { result = result + "<li><a href=\"/skills/" + name + ".html\">" + escape(normalized(heading.at(0).text())) + "</a> — " + escape(summary(page)) + "</li>\n"; }
+  }
+  return result + "</ul>\n";
+}
+let mode = ${ARGV[2]};
+let check = mode == "--check";
+if (mode != "" && !check) {
+  let page = html.load(mode);
+  check_page(page);
+  if (page.select("main").len() == 1) { invariants(page); }
+} else {
+  let names = ${utilities} + ${coordination} + ${retired};
+  let remaining = names;
+  while (str_find(remaining, "|") >= 0) {
+    let end = str_find(remaining, "|"); let name = str_substr(remaining, 0, end);
+    remaining = str_substr(remaining, end + 1, str_len(remaining));
+    let path = "skills/" + name + ".html";
+    let page = html.load(path);
+    let main = page.select("main");
+    let heading = page.select("main h1");
+    if (main.len() != 1 || heading.len() != 1) { finding(path, "main", "expected one main and one h1"); }
+    else {
+      let content = page.source_outer("main");
+      let result = render_skills(content, normalized(heading.at(0).text()), summary(page), "/skills/" + name + ".md");
+      store(path, result, check);
+      # Rewrite actual link attributes only: code examples remain untouched.
+      let markdown_doc = html.parse(content);
+      for (node in markdown_doc.select("a")) {
+        let url = node.attr("href");
+        if (str_starts_with(url, "/skills/")) {
+          let hash = str_find(url, "#"); let suffix = "";
+          if (hash >= 0) { suffix = str_substr(url, hash, str_len(url)); url = str_substr(url, 0, hash); }
+          if (str_ends_with(url, ".html")) { node.set_attr("href", str_substr(url, 0, str_len(url) - 5) + ".md" + suffix); }
+        }
+      }
+      store("skills/" + name + ".md", markdown_doc.markdown("main"), check);
+      if (check) { check_page(page); invariants(page); }
+    }
+  }
+  let paths = ${all_html} + ${all_md};
+  while (str_find(paths, "|") >= 0) {
+    let end = str_find(paths, "|"); let path = str_substr(paths, 0, end);
+    paths = str_substr(paths, end + 1, str_len(paths));
+    let file = filename(path);
+    let extension_size = 5;
+    if (str_ends_with(file, ".md")) { extension_size = 3; }
+    if (file != "index.html" && !str_contains("|" + names, "|" + str_substr(file, 0, str_len(file) - extension_size) + "|")) { finding(path, "document", "skill not in ordered catalog"); }
+  }
+  let intro = "Provider-agnostic guides an LLM can read to use a tool. Read the HTML pages or fetch their generated Markdown counterparts.";
+  let body = "<main>\n<h1>lmctl skills</h1>\n<p>" + intro + "</p>\n";
+  body = body + index_group(${utilities}, "Utilities (LLM-facing)") + index_group(${coordination}, "lmctl orchestration");
+  body = body + "<p>New tool skills live in the <a href=\"/tools/\">tools catalog</a>. Hosted utilities require an authorized account; deployment availability and permissions must be checked with the operator.</p>\n</main>";
+  store("skills/index.html", render_skills(body, "lmctl skills", excerpt(intro, 160, true), ""), check);
+  if (check && html.link_exists(html.parse(""), "/skills/index.html")) { check_page(html.load("skills/index.html")); }
+}
+report.write_text(${ARGV[1]});
+report.fail_if_any();
+end _dsl_
+savedsl(p, ARGV[0]);

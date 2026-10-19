@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmtext — speech → text for LLM agents — lmctl skills</title>
+<meta name="description" content="What this is. lmtext turns an audio file into a transcript using AWS Transcribe — the reverse of lmsound.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/">Tools</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmtext — speech → text for LLM agents</h1>
+<p><strong>What this is.</strong> lmtext turns an audio file into a transcript using AWS Transcribe — the
+reverse of lmsound. You upload an audio file (mp3/wav/flac/ogg/webm/amr/m4a/mp4) directly to S3
+with a presigned POST, kick off transcription, then poll for the transcript. Plain HTTP, one
+opaque API key — exactly like calling an LLM API. No SDK, no websocket.</p>
+<p>Use it to give any agent ears: transcribe a voice memo, a meeting snippet, a podcast clip.</p>
+<hr>
+<h2 id="what-you-need">What you need</h2>
+<ul>
+<li><strong>API base URL</strong> — the lmtext execute-api URL (see deployment outputs; set it as <code>API</code> below)</li>
+<li><strong>An API key</strong> — one opaque token, sent on <strong>every</strong> request:<pre><code>Authorization: Bearer &lt;API_KEY&gt;</code></pre>
+A human creates and revokes keys on the lmctl.ai website; an LLM just receives the key. The
+<strong>same credential format is used by these companion services</strong>; access depends on the deployment.</li>
+</ul>
+<pre><code>export API=&quot;&lt;lmtext api base url&gt;&quot;   # e.g. https://&lt;id&gt;.execute-api.us-east-1.amazonaws.com/prod
+export KEY=&quot;&lt;your api key&gt;&quot;</code></pre>
+<hr>
+<h2 id="the-flow-4-steps">The flow (4 steps)</h2>
+<h3 id="1-allocate-an-upload--post-transcriptions">1. Allocate an upload — <code>POST /transcriptions</code></h3>
+<pre><code>resp=&quot;$(curl -s -X POST &quot;$API/transcriptions&quot; -H &quot;Authorization: Bearer $KEY&quot; \
+  -H &quot;content-type: application/json&quot; \
+  -d &#39;{&quot;file_name&quot;:&quot;memo.mp3&quot;}&#39;)&quot;
+printf &#39;%s\n&#39; &quot;$resp&quot; | jq .
+
+id=&quot;$(jq -r &#39;.transcription_id&#39; &lt;&lt;&lt;&quot;$resp&quot;)&quot;
+upload_url=&quot;$(jq -r &#39;.upload_url&#39; &lt;&lt;&lt;&quot;$resp&quot;)&quot;</code></pre>
+<p>Response:</p>
+<pre><code>{
+  &quot;transcription_id&quot;: &quot;3f9a…-uuid&quot;,
+  &quot;upload_url&quot;: &quot;https://lmtext-audio-….s3.amazonaws.com/&quot;,
+  &quot;upload_fields&quot;: {&quot;key&quot;:&quot;audio/&lt;user&gt;/&lt;id&gt;/memo.mp3&quot;,&quot;Content-Type&quot;:&quot;audio/mpeg&quot;,&quot;X-Amz-…&quot;:&quot;…&quot;},
+  &quot;expires_in&quot;: 300
+}</code></pre>
+<p>Body fields:</p>
+<table>
+<thead>
+<tr>
+<th>field</th>
+<th>default</th>
+<th>notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>file_name</code></td>
+<td>—</td>
+<td>Extension selects the media format: <code>.mp3 .wav .flac .ogg .webm .amr .m4a/.mp4</code>. Unsupported → <code>400</code>.</td>
+</tr>
+<tr>
+<td><code>content_type</code></td>
+<td>from extension</td>
+<td>Must match the upload&#39;s <code>Content-Type</code> (presign condition).</td>
+</tr>
+<tr>
+<td><code>language_code</code></td>
+<td><code>en-US</code></td>
+<td>e.g. <code>es-US</code>, <code>fr-FR</code>, <code>de-DE</code>. Invalid shape → <code>400</code>; unsupported by Transcribe → fails at finalize.</td>
+</tr>
+</tbody></table>
+<h3 id="2-upload-the-audio--presigned-post-to-s3">2. Upload the audio — presigned POST to S3</h3>
+<pre><code>mapfile -t form_fields &lt; &lt;(
+  jq -r &#39;.upload_fields | to_entries[] | &quot;-F\n\(.key)=\(.value)&quot;&#39; &lt;&lt;&lt;&quot;$resp&quot;
+)
+curl -s -X POST &quot;$upload_url&quot; \
+  &quot;${form_fields[@]}&quot; \
+  -F &quot;file=@memo.mp3&quot;</code></pre>
+<p>(Every <code>upload_fields</code> entry must be a form field, then the file last.) Max size <strong>25 MB</strong>,
+link valid <strong>300 s</strong>. Over 25 MB → S3 rejects the POST.</p>
+<h3 id="3-start-transcription--post-transcriptionsidfinalize">3. Start transcription — <code>POST /transcriptions/{id}/finalize</code></h3>
+<pre><code>curl -s -X POST &quot;$API/transcriptions/$id/finalize&quot; -H &quot;Authorization: Bearer $KEY&quot;</code></pre>
+<p>Verifies the upload exists, probes duration, starts the AWS Transcribe job.
+Errors: <code>409 not_uploaded</code> (step 2 not done), <code>400 audio_invalid</code> (unparseable audio),
+<code>413 audio_too_large</code>. Idempotent — calling it again returns current status.</p>
+<h3 id="4-poll-for-the-result--get-transcriptionsid">4. Poll for the result — <code>GET /transcriptions/{id}</code></h3>
+<pre><code>curl -s &quot;$API/transcriptions/$id&quot; -H &quot;Authorization: Bearer $KEY&quot;</code></pre>
+<pre><code>{
+  &quot;transcription_id&quot;: &quot;3f9a…-uuid&quot;,
+  &quot;status&quot;: &quot;completed&quot;,
+  &quot;file_name&quot;: &quot;memo.mp3&quot;,
+  &quot;language_code&quot;: &quot;en-US&quot;,
+  &quot;media_format&quot;: &quot;mp3&quot;,
+  &quot;duration_ms&quot;: 2640,
+  &quot;size&quot;: 20361,
+  &quot;created_at&quot;: &quot;…&quot;, &quot;started_at&quot;: &quot;…&quot;, &quot;completed_at&quot;: &quot;…&quot;,
+  &quot;transcript&quot;: &quot;hello lmtext, your build is green.&quot;
+}</code></pre>
+<p><code>status</code>: <code>uploading</code> → <code>in_progress</code> → <code>completed</code> | <code>failed</code> (with <code>failure_reason</code>).
+<code>transcript</code> is present once <code>completed</code>. Poll every few seconds; typical short clips finish
+asynchronously; completion time depends on the service and input.</p>
+<hr>
+<h2 id="list-and-delete">List and delete</h2>
+<ul>
+<li><code>GET /transcriptions?status=completed&amp;limit=20&amp;after=&lt;cursor&gt;</code> — your transcriptions, newest
+first. <code>status</code>: <code>uploading|in_progress|completed|failed</code> (omit for all). Response:
+<code>{transcriptions:[…], next_after, has_more, truncated}</code> — pass <code>next_after</code> as <code>after</code> for the
+next page. <code>truncated</code> is <code>true</code> when the service reaches its 1,000-object scan ceiling, so the
+response may omit older matching records even after following <code>next_after</code>.</li>
+<li><code>DELETE /transcriptions/{id}</code> — removes audio, meta, and transcript objects and makes a
+best-effort attempt to delete the Transcribe job record. A running job is not cancelled and may
+write transcript output afterwards; that late output is left behind in v1.</li>
+</ul>
+<p>You only ever see your own transcriptions; other users&#39; ids return <code>404 transcription_not_found</code>.</p>
+<hr>
+<h2 id="cli">CLI</h2>
+<pre><code>cd cloud
+npm install
+npm run build
+npm link   # exposes the package bin named lmtext
+export LMTEXT_API_URL=&quot;$API&quot;
+
+lmtext transcribe memo.mp3 --wait        # upload → finalize → poll → print transcript
+lmtext list --status completed
+lmtext get 3f9a…-uuid
+lmtext delete 3f9a…-uuid</code></pre>
+<p>Credentials resolve like every lmctl tool: <code>LMCTL_APPKEY</code>, <code>LMCTL_APPKEY_FILE</code>, or the shared
+appkey location (<code>@lmctl-ai/appkey</code>).</p>
+<hr>
+<h2 id="errors-and-limits">Errors and limits</h2>
+<ul>
+<li><code>401/403</code> — missing/invalid API key.</li>
+<li><code>404 transcription_not_found</code> — no such id <strong>for you</strong>.</li>
+<li><code>429 daily_limit_exceeded</code> — daily usage quota hit (<code>used_micro</code>/<code>limit_micro</code> in the body).</li>
+<li>Quotas: shared lmctl daily cost limits; transcription is metered at the AWS Transcribe list
+price (~$0.024/minute) once duration is known at finalize.</li>
+</ul>
+<h2 id="verification-scope">Verification scope</h2>
+<p>The API and CLI syntax above was checked against the tool source on 2026-10-19. Live hosted availability, account permissions, deployment-specific limits and credentials were not tested. Confirm the endpoint with your operator; example API Gateway addresses are placeholders. Do not assume that access to one deployment grants access to another.</p>
+</main>
+<footer>
+<p><a href="/skills/lmtext-skill.md">Raw Markdown for agents</a></p>
+<p>Plain HTML skills, with generated Markdown for agents. Source: <a href="https://github.com/lmctl-ai/lmctl/tree/main/skills">github.com/lmctl-ai/lmctl/skills</a>.</p>
+</footer>
+</body>
+</html>

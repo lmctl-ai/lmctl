@@ -1,63 +1,31 @@
----
-name: team-lead-workflow
-description: Team Lead operating guidance for delegation, review loops, arbitration, and escalation.
----
-
 # Skill: Team Lead workflow
 
-Take tasks from the operator. Clarify only when needed, then first use the CLI
-to ping each of your members with a one-line `reply OK` to confirm the
-delegation channel works; then proceed with the task.
+Delegate, review, arbitrate disagreements, and escalate unresolved decisions\.
 
-## How to delegate to a member
+## Delegate and inspect
 
-Use the CLI:
+Run `lmctl prompt "<teamfile>.lmctl" Coder "Implement the task and report evidence."` to delegate inline\. The command blocks for one member turn and returns its reply\. Delegation is an action: describing a handoff does not perform it\.
 
-- `lmctl prompt "<teamfile>" Coder "your task"`
-- `lmctl prompt "<teamfile>" Coder --prompt-file task.md` for non-trivial prompts
+If the receiver `is busy; wait and retry`, inspect with `lmctl status "<teamfile>.lmctl" Coder` or `lmctl tail "<teamfile>.lmctl" Coder`, then retry later\. Do not resend work already accepted\. A human using `lmctl terminal` can legitimately keep a member busy\.
 
-Use `prompt` when you need to drive a member turn and get a reply. Queueing
-is opt-in. By default, a busy target returns a busy error and creates no queued
-mail. If `mailbox_queue_enabled=true` or `LMCTL_MAILBOX_QUEUE_ENABLED=true` is
-set and lmctl can resolve a sender, `prompt` queues in a `(sender, receiver)` lane
-when the target is busy. Queued work follows `queued -> in-flight -> delivered
-with receipt` and is at-least-once. Base queued rule: the next `lmctl prompt`
-from that same sender to that same receiver delivers that sender's queued lane
-once the receiver is free. A prompt from another sender to the same receiver does
-not flush it. With `lmctl serve start` running in normal daemon mode, mailbox
-relay is an optional accelerator: it can drain queued lanes proactively after
-the receiver goes idle. If the sender is idle waiting for the reply and no relay
-drains the lane, delivery can deadlock. If a human is holding the receiver with
-`lmctl terminal`, queued mail waits until that lock is released.
-
-Prefer `--prompt-file` for prompts containing command examples, backticks,
-`$(...)`, `$VAR`, or quotes; positional prompts are assembled by your shell
-before lmctl sees them. Write the prompt file with an editor or file-writing
-tool, not `echo` or a heredoc.
-
-Before important sends, run `lmctl status` to see receiver busy/idle state and
-queued lanes. In queue-enabled setups, after a queued send, run
-`lmctl status --since 7d` and read `Waiting on:` / `mailbox outbound`. Exit `0`
-can mean queued, not delivered.
-
-Warmup/connectivity check first:
-
-```sh
-lmctl prompt "<teamfile>" Coder "reply OK"
+```
+lmctl status "<teamfile>.lmctl" --details
+lmctl tail "<teamfile>.lmctl" Coder
+lmctl prompt "<teamfile>.lmctl" Coder --prompt-file task.md
 ```
 
-## Review loop
+Use an editor or file\-writing tool to create `task.md`; avoid shell expansion of backticks, `$VAR`, and `$(...)` in task text\. Never wrap lmctl in a shell timeout\. Read the reply and verify artifacts and tests: exit status alone is not proof that the task is complete\.
 
-Delegate implementation to Coder, and send completed work to Reviewer1 for
-review. If Reviewer1 finds issues, send the work back to Coder for repair and
-then back to Reviewer1 for re-review.
+## Review and durable knowledge
 
-For complicated design work, ask all reviewers to review. You are the final
-sanity reviewer and technical arbiter.
+Route implementation to Coder, then route the result to an independent Reviewer\. Send defects back for repair and re\-review\. Author must not equal reviewer\. Resolve disagreements from evidence; escalate unresolved decisions to the operator\. Publish only within the operator's authorization\.
 
-If you overrule or reinterpret a review, close the loop with that reviewer
-directly. Tell them the decision and whether their review is signed off, so
-their session does not keep an open review todo.
+Commit durable decisions, constraints and current status in `durable-memory/`, with an index\. Explicitly instruct a new member to read the relevant files: automatic durable\-memory onboarding is not guaranteed\. Session history is not a substitute for committed project knowledge\.
 
-Escalate to the operator when the design is too difficult, the reviews disagree
-in a way you cannot resolve, or the right technical decision is not obvious.
+## Close the review loop
+
+For complicated designs, ask the relevant independent reviewers for evidence\. If you overrule a review, tell that reviewer the decision and whether their review is signed off\. A connectivity check such as `lmctl prompt "<teamfile>.lmctl" Coder "reply OK"` is optional and consumes a real turn\.
+
+## Related guidance
+
+See [durable memory](</skills/durable-memory.md>) and the [Lead skill](</skills/lmctl-lead-skill.md>)\.

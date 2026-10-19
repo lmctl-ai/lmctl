@@ -1,113 +1,82 @@
 # lmprobe skill
 
-Use this skill when you need codebase evidence: finding files, grepping text,
-locating definitions/references, mapping imports/callers/callees, or collecting
-structured search results for another agent.
+Use this skill when you need codebase evidence: finding files, grepping text, locating definitions/references, mapping imports/callers/callees, or collecting structured search results for another agent\.
 
-Canonical manual: https://lmctl.com/lmprobe
+Canonical manual: [https://lmctl\.com/lmprobe](<https://lmctl.com/lmprobe>)
 
-This skill is the fast path. If exact syntax, output formats, GraphQL fields,
-mutation safety, history commands, secrets scanning, or command reference
-details matter, open the manual and use it as the source of truth. The manual
-sections are: Start, Install, Search, Graphs, History, Safe changes, Formats,
-GraphQL, Secrets, Recipes, and Reference.
+This skill is the fast path\. If exact syntax, output formats, GraphQL fields, mutation safety, history commands, secrets scanning, or command reference details matter, open the manual and use it as the source of truth\. The manual sections are: Start, Install, Search, Graphs, History, Safe changes, Formats, GraphQL, Secrets, Recipes, and Reference\.
 
 ## Install
 
-```sh
+```
 npm install -g @lmctl-ai/lmprobe
 ```
 
-Use the global install for repeated agent batches; `npx @lmctl-ai/lmprobe ...`
-re-resolves the package on each invocation and can add seconds per call. Use
-`npx` for one-off runs or when you cannot install globally.
+Use the global install for repeated agent batches; `npx @lmctl-ai/lmprobe ...` re\-resolves the package on each invocation and can add seconds per call\. Use `npx` for one\-off runs or when you cannot install globally\.
 
-If a package installs but fails before startup with a glibc loader error,
-report that as a package/runtime issue; do not switch public instructions to
-`cargo build`.
+If a package installs but fails before startup with a glibc loader error, report that as a package/runtime issue; do not switch public instructions to `cargo build`\.
 
 ## Default workflow
 
 1. Start with JSON unless the user asked for another format:
 
-   ```sh
+   ```
    lmprobe --format json <verb> ...
    ```
-
-2. Prefer lmprobe over ad hoc `find | grep | awk` chains when the task is about
-   code evidence. It returns structured paths, line numbers, diagnostics, and
-   evidence envelopes that are easier for agents to cite.
-
-3. Use raw `find`/`grep` only when lmprobe is unavailable, blocked by the Linux
-   runtime caveat, or the user explicitly asks for shell primitives. Say so in
-   the result.
-
-4. Read `warnings`, `diagnostics`, and `exitStatus`. A no-match, regex warning,
-   unsupported language, or partial result is evidence; do not silently ignore it.
-
-5. For non-basic commands, check https://lmctl.com/lmprobe before running:
-   `history`, `ast-diff`, `impact`, `context`, `trace`, `fix`, `secrets`,
-   alternate output formats, and GraphQL composition have detailed examples
-   there.
+2. Prefer lmprobe over ad hoc `find | grep | awk` chains when the task is about code evidence\. It returns structured paths, line numbers, diagnostics, and evidence envelopes that are easier for agents to cite\.
+3. Use raw `find`/`grep` only when lmprobe is unavailable, blocked by the Linux runtime caveat, or the user explicitly asks for shell primitives\. Say so in the result\.
+4. Read `warnings`, `diagnostics`, and `exit_status` (GraphQL: `exitStatus`\)\. A no\-match, regex warning, unsupported language, or partial result is evidence; do not silently ignore it\.
+5. For non\-basic commands, check [https://lmctl\.com/lmprobe](<https://lmctl.com/lmprobe>) before running: `history`, `ast-diff`, `impact`, `context`, `trace`, `fix`, `secrets`, alternate output formats, and GraphQL composition have detailed examples there\.
 
 ## Fast recipes
 
 Find project markers:
 
-```sh
+```
 lmprobe --format json find '(^|[\\/])package\.json$' .
 lmprobe --format json find '(^|[\\/])(Cargo\.toml|pyproject\.toml|go\.mod)$' .
 ```
 
 Find source files by extension:
 
-```sh
+```
 lmprobe --format json find '\.(rs|ts|tsx|js|jsx|pl|pm)$' .
 ```
 
 Search raw content:
 
-```sh
+```
 lmprobe --format json grep 'login|signin|authenticate' .
 lmprobe --format json grep -i 'todo|fixme' .
 lmprobe --format json grep 'process\.env\.[A-Z0-9_]+' --path apps/web --path packages/shared
 ```
 
-Add context for human-reviewable evidence:
+Add context for human\-reviewable evidence:
 
-```sh
+```
 lmprobe --format json grep -C 3 'login' apps/web
 lmprobe --format json grep --parents --body 'handler|route' src
 ```
 
-Use symbol-aware verbs for identifiers:
+Use symbol\-aware verbs for identifiers:
 
-```sh
+```
 lmprobe --format json def LoginService .
 lmprobe --format json def --body LoginService .
 lmprobe --format json ref LoginService .
 lmprobe --format json search --name Login .
-lmprobe --format json search --name Login --body .
+lmprobe --format json search --name Login --outline .
 ```
 
-`def` skeletonizes declaration bodies by default. Add `--body` when the
-implementation body matters. `search` returns full declaration content by
-default; `search --body` is accepted for parity and readability. The
-current-directory recipe `search --name Login .` is quiet. For other paths,
-prefer `search --name Login --path src/service` to avoid the positional
-query/path ambiguity warning.
+`def` skeletonizes declaration bodies by default\. Add `--body` when the implementation body matters\. `search` returns full declaration content by default; `search --outline` requests a body\-elided declaration outline\. The current\-directory recipe `search --name Login .` is quiet\. For other paths, prefer `search --name Login --path src/service` to avoid the positional query/path ambiguity warning\.
 
-CLI JSON uses snake_case keys and lowercase enum-like values, for example
-`file_path`, `line_number`, `line_content`, and `exit_status: "matched"`.
-GraphQL uses camelCase keys and uppercase enum-style values, for example
-`filePath`, `lineNumber`, `lineContent`, and `exitStatus: MATCHED`.
+CLI JSON uses snake\_case keys and lowercase enum\-like values, for example `file_path`, `line_number`, `line_content`, and `exit_status: "matched"`\. GraphQL uses camelCase keys and uppercase enum\-style values, for example `filePath`, `lineNumber`, `lineContent`, and `exitStatus: MATCHED`\.
 
 ## GraphQL recipes
 
-Use GraphQL when you need several evidence streams in one process or want only
-selected fields.
+Use GraphQL when you need several evidence streams in one process or want only selected fields\.
 
-```sh
+```
 lmprobe query --format json '{
   packages: find(pattern: "(^|[\\\\/])package\\.json$", path: ".") {
     paths
@@ -123,7 +92,7 @@ lmprobe query --format json '{
 
 Find directories with a marker file and then grep only under those directories:
 
-```sh
+```
 lmprobe query --format json '{
   grepDirsWith(
     markerPattern: "(^|[\\\\/])package\\.json$",
@@ -145,10 +114,10 @@ lmprobe query --format json '{
 
 ## Safety and reporting
 
-- Treat lmprobe as read-only unless using explicit mutation verbs such as
-  `fix`, `trace`, or `untrace`.
-- Include exact file paths and line numbers in your answer.
-- Summarize diagnostics or warnings that affect confidence.
-- Do not claim complete repository coverage if the command had partial results,
-  unsupported language warnings, or path exclusions.
-- Public install channel is `@lmctl-ai/lmprobe`; the source repo is closed.
+- Treat lmprobe as read\-only unless using explicit mutation verbs such as `fix`, `trace`, or `untrace`\.
+- Include exact file paths and line numbers in your answer\.
+- Summarize diagnostics or warnings that affect confidence\.
+- Do not claim complete repository coverage if the command had partial results, unsupported language warnings, or path exclusions\.
+- Public install channel is `@lmctl-ai/lmprobe`; the source is public at [https://github\.com/lmctl\-ai/lmprobe](<https://github.com/lmctl-ai/lmprobe>)\.
+
+See the [lmprobe manual](<https://lmctl.com/lmprobe/>) for the full command reference\.

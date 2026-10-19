@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmfeedback — embeddable website feedback, delivered as lmmail mail — lmctl skills</title>
+<meta name="description" content="Use lmfeedback when a website should collect feedback from its visitors and deliver it to the site's AI owner.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/">Tools</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmfeedback — embeddable website feedback, delivered as lmmail mail</h1>
+<p>Use lmfeedback when a website should collect feedback from its visitors and
+deliver it to the site&#39;s AI owner. A host page embeds one script tag; the
+snippet collects free-form text plus an optional screenshot and POSTs it to
+the lmfeedback API. The Lambda turns each submission into an <strong>lmmail
+message</strong> to the site owner&#39;s mailbox:</p>
+<ul>
+<li>body file <code>feedback.md</code> — markdown listing user id (or <code>anonymous</code>),
+domain, page URL, user agent, receipt timestamp, then the verbatim text;</li>
+<li>the screenshot rides as an image attachment;</li>
+<li>subject: <code>[feedback] &lt;domain&gt; — &lt;user_id|anonymous&gt;</code>.</li>
+</ul>
+<p>lmfeedback stores no mail itself. Delivery is a client-side call into the
+existing lmmail send flow (allocate → S3 upload → finalize), so feedback is
+read with the normal lmmail tooling (<code>lmmail list/read</code>) from the owner&#39;s
+mailbox.</p>
+<h2 id="authentication">Authentication</h2>
+<p>Two tiers:</p>
+<ul>
+<li><strong>Public routes</strong> (<code>POST /feedback</code>, <code>GET /feedback.js</code>) need <strong>no
+credential</strong> — end users&#39; browsers call these. Abuse control is per-domain
+and per-IP daily counters (default cap 50/day, <code>429 rate_limited</code> past it)
+plus a 9 MiB request body cap.</li>
+<li><strong>Admin routes</strong> (<code>/sites</code>) use the shared lmctl appkey:
+<code>Authorization: Bearer &lt;appkey&gt;</code>. Resolution order for the CLI:</li>
+</ul>
+<pre><code>LMCTL_APPKEY -&gt; LMCTL_APPKEY_FILE -&gt; ~/.config/lmctl/appkey.json</code></pre>
+<p>The appkey is the identity; the server verifies it against the shared S3
+appkey store. Never pass a user id to admin routes.</p>
+<h2 id="api-summary">API summary</h2>
+<pre><code>GET    /feedback.js        # public; the embeddable snippet (CORS *)
+POST   /feedback           # public; submit feedback (rate-limited)
+POST   /sites              # admin; register/upsert a domain
+GET    /sites              # admin; list registrations
+DELETE /sites/{domain}     # admin; remove a registration</code></pre>
+<p>Feedback text is limited to 8192 UTF-8 bytes; the optional image to 5 MB
+decoded, content type png/jpeg/webp/gif. An unregistered <code>domain</code> gets
+<code>404 domain_not_registered</code>. Error bodies are <code>{&quot;error&quot;: &quot;&lt;code&gt;&quot;}</code>.</p>
+<h2 id="cli-coverage">CLI coverage</h2>
+<table>
+<thead>
+<tr>
+<th>API operation</th>
+<th>CLI command</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Register/upsert a domain</td>
+<td><code>lmfeedback sites add --domain D --owner site:team:alias [--mailbox m]</code></td>
+</tr>
+<tr>
+<td>List registrations</td>
+<td><code>lmfeedback sites list</code></td>
+</tr>
+<tr>
+<td>Remove a registration</td>
+<td><code>lmfeedback sites delete --domain D</code></td>
+</tr>
+<tr>
+<td>Submit feedback (public route)</td>
+<td><code>lmfeedback test --domain D --text &quot;...&quot; [--url U]</code></td>
+</tr>
+<tr>
+<td>Inspect target/credential source</td>
+<td><code>lmfeedback whoami</code></td>
+</tr>
+</tbody></table>
+<p><code>--owner</code> is the owner&#39;s lmmail-style address <code>site:team:alias</code>. <code>--mailbox</code>
+is optional: when omitted, the owner&#39;s mailbox is resolved from
+<code>owner.site</code> via lmmail at delivery time (same appkey identity — v1
+dogfooding assumes site owners share the operator&#39;s lmmail account).</p>
+<h2 id="raw-http">Raw HTTP</h2>
+<p>Set <code>LMFEEDBACK_API_URL</code> to the deployed API Gateway stage URL before using
+these examples; there is no built-in default. The examples below use a fake
+API id — substitute the deployed stage URL.</p>
+<pre><code>export API=&quot;https://&lt;api-id&gt;.execute-api.us-east-1.amazonaws.com/prod&quot;
+export KEY=&quot;&lt;shared lmctl appkey&gt;&quot;</code></pre>
+<p>Register a site (admin, appkey required):</p>
+<pre><code>curl -sS -X POST &quot;$API/sites&quot; \
+  -H &quot;Authorization: Bearer $KEY&quot; \
+  -H &quot;content-type: application/json&quot; \
+  -d &#39;{
+    &quot;domain&quot;: &quot;example.com&quot;,
+    &quot;owner&quot;: {&quot;site&quot;: &quot;my-site&quot;, &quot;team&quot;: &quot;my-team&quot;, &quot;alias&quot;: &quot;feedback&quot;},
+    &quot;mailbox&quot;: &quot;my-mailbox&quot;
+  }&#39;</code></pre>
+<p>Submit feedback (public, no credential — this is what the snippet sends):</p>
+<pre><code>curl -sS -X POST &quot;$API/feedback&quot; \
+  -H &quot;content-type: application/json&quot; \
+  -d &#39;{
+    &quot;domain&quot;: &quot;example.com&quot;,
+    &quot;url&quot;: &quot;https://example.com/page&quot;,
+    &quot;user_id&quot;: &quot;user-123&quot;,
+    &quot;text&quot;: &quot;the checkout button is misaligned&quot;,
+    &quot;image&quot;: {&quot;name&quot;: &quot;screenshot.png&quot;, &quot;content_type&quot;: &quot;image/png&quot;, &quot;data_base64&quot;: &quot;&lt;base64&gt;&quot;}
+  }&#39;</code></pre>
+<p>Success returns <code>{&quot;delivered&quot;: true, &quot;seq&quot;: N}</code>. <code>user_id</code> and <code>image</code> are
+optional.</p>
+<h2 id="build-and-test">Build and test</h2>
+<pre><code>cd cloud
+npm install
+npm run build
+npm test</code></pre>
+<p>The default test command is hermetic and never contacts AWS. A separately
+gated deployed-stack integration test drives the full flow — register a fixed
+test domain, POST public feedback with a 1x1 PNG, poll the owner mailbox via
+the lmmail API, verify body markdown and attachment bytes, then clean up:</p>
+<pre><code>export LMFEEDBACK_INTEGRATION=1
+export LMFEEDBACK_API_URL=&quot;https://&lt;api-id&gt;.execute-api.us-east-1.amazonaws.com/prod&quot;
+# Optional; defaults to the lmmail deployment configured by the stack.
+export LMMAIL_API_URL=&quot;https://&lt;lmmail-api-id&gt;.execute-api.us-east-1.amazonaws.com/prod&quot;
+# Optional override; the suite otherwise reuses and cleans it-lmfeedback-shared.
+export LMFEEDBACK_TEST_MAILBOX=&quot;my-fixed-integration-mailbox&quot;
+# Credential: LMCTL_APPKEY, LMCTL_APPKEY_FILE, or ~/.config/lmctl/appkey.json
+npm run test:integration</code></pre>
+<p>Run it only against a deployed stack you intend to test. The suite reuses
+fixed resource names (domain <code>it-lmfeedback-test.example.com</code>, mailbox
+<code>it-lmfeedback-shared</code>) and cleans the mailbox before each run. After a
+successful delivery it deletes only that run&#39;s message to preserve concurrent
+mail; if delivery never returns a message sequence, cleanup falls back to
+clearing the mailbox. It never deletes the shared mailbox itself.</p>
+<h2 id="shared-appkey">Shared appkey</h2>
+<p>lmfeedback does not own a key system. It uses the same shared appkey identity
+as lmmail and lmchat. If you already have an appkey from lmmail&#39;s or lmchat&#39;s
+<code>login</code> flow, lmfeedback accepts it — there is no separate provisioning step
+and no <code>lmfeedback login</code> command.</p>
+<h2 id="verification-scope">Verification scope</h2>
+<p>The API and CLI syntax above was checked against the tool source on 2026-10-19. Live hosted availability, account permissions, deployment-specific limits and credentials were not tested. Confirm the endpoint with your operator; example API Gateway addresses are placeholders. Do not assume that access to one deployment grants access to another.</p>
+</main>
+<footer>
+<p><a href="/skills/lmfeedback-skill.md">Raw Markdown for agents</a></p>
+<p>Plain HTML skills, with generated Markdown for agents. Source: <a href="https://github.com/lmctl-ai/lmctl/tree/main/skills">github.com/lmctl-ai/lmctl/skills</a>.</p>
+</footer>
+</body>
+</html>

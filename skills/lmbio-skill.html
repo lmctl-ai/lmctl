@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmbio skill — lmctl skills</title>
+<meta name="description" content="Use lmbio when an agent needs deterministic local computational-biology results with machine-readable JSON.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/">Tools</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmbio skill</h1>
+<p>Use <code>lmbio</code> when an agent needs deterministic local computational-biology results with machine-readable JSON.</p>
+<p>Current stable surface:</p>
+<ul>
+<li>Exact rational HMM Viterbi decoding.</li>
+<li>Exact Fitch small parsimony for rooted binary trees.</li>
+<li>Exact Mendelian cross and Hardy-Weinberg genetics.</li>
+<li>Exact motif/PWM count, frequency, consensus, and candidate scoring.</li>
+<li>Exact Needleman-Wunsch and Smith-Waterman alignment matrices and tracebacks.</li>
+<li>Exact suffix array, BWT, inverse BWT, and FM-index backward-search intervals.</li>
+<li>Exact Fisher/hypergeometric statistics, enrichment over-representation, and pharmacovigilance disproportionality.</li>
+<li>Cache-first iCite and UniProt data pulls for lmmol review substrate work.</li>
+<li>Local sequence, protein, and BED-like interval utilities.</li>
+<li>Cache-first PubMed and ClinicalTrials.gov summary pulls.</li>
+<li>Cache-first RxNorm, PubChem, and openFDA drug-label pulls.</li>
+</ul>
+<h2 id="general-rules">General rules</h2>
+<ul>
+<li>Use <code>--json</code> for agent calls.</li>
+<li>Treat every rational as an exact reduced string: <code>&quot;num/den&quot;</code> or an integer string like <code>&quot;1&quot;</code>.</li>
+<li>Do not parse human output when <code>--json</code> is available.</li>
+<li>On failure, <code>lmbio</code> exits non-zero and emits a JSON error object when <code>--json</code> is set.</li>
+</ul>
+<h2 id="exact-hmm-viterbi">Exact HMM Viterbi</h2>
+<p>Command shape:</p>
+<pre><code>lmbio hmm viterbi \
+  --states I,N \
+  --symbols G,A \
+  --start I=1/2,N=1/2 \
+  --trans I,I=3/4 I,N=1/4 N,I=1/4 N,N=3/4 \
+  --emit I,G=3/4 I,A=1/4 N,G=1/4 N,A=3/4 \
+  --obs GGA \
+  --json</code></pre>
+<p>The JSON includes:</p>
+<ul>
+<li><code>inputs</code>: normalized states, symbols, observation, start, transition, and emission probabilities.</li>
+<li><code>trellis</code>: exact Viterbi trellis rows in observation order.</li>
+<li><code>backpointers</code>: traceback choices for each row after the first.</li>
+<li><code>path</code>: selected Viterbi path.</li>
+<li><code>prob</code>: exact probability of the best single path.</li>
+<li><code>forward_total</code>: exact sum over all possible state paths.</li>
+<li><code>tie_break</code>: deterministic tie-break rule.</li>
+<li><code>brute_force</code>: exhaustive oracle path/probability/path count.</li>
+</ul>
+<p>For the canonical egtry fixture, <code>prob</code> is <code>&quot;81/2048&quot;</code> and <code>forward_total</code> is <code>&quot;15/128&quot;</code>.</p>
+<h2 id="fitch-small-parsimony">Fitch Small Parsimony</h2>
+<p>Command shape:</p>
+<pre><code>lmbio parsimony fitch \
+  --tree &#39;((&quot;A&quot;,&quot;C&quot;),(&quot;A&quot;,&quot;G&quot;))&#39; \
+  --json</code></pre>
+<p>Tree input is a nested tuple/array shape:</p>
+<ul>
+<li>leaf = non-empty string state</li>
+<li>internal = exactly two child nodes</li>
+<li>non-binary internal nodes fail closed</li>
+</ul>
+<p>The JSON includes:</p>
+<ul>
+<li><code>inputs.tree</code>: normalized nested-array tree.</li>
+<li><code>inputs.alphabet</code>: sorted observed leaf-state alphabet.</li>
+<li><code>score</code>: Fitch parsimony score.</li>
+<li><code>nodes</code>: postorder node records with <code>id</code>, <code>leaf</code>, <code>state</code>, <code>children</code>, <code>set</code>, and <code>union</code>.</li>
+<li><code>assignment</code>: array indexed by node id.</li>
+<li><code>induced_mutations</code>: mutation count induced by the deterministic assignment.</li>
+<li><code>brute_force</code>: exhaustive internal-node labeling oracle.</li>
+</ul>
+<p>For the canonical egtry fixture, <code>score</code> is <code>2</code>, <code>assignment</code> is <code>[&quot;A&quot;,&quot;C&quot;,&quot;A&quot;,&quot;A&quot;,&quot;G&quot;,&quot;A&quot;,&quot;A&quot;]</code>, and <code>brute_force.labelings_enumerated</code> is <code>27</code>.</p>
+<h2 id="golden-fixture-replay">Golden Fixture Replay</h2>
+<p>Use this to verify byte-stable outputs against committed fixtures:</p>
+<pre><code>lmbio golden check golden/hmm_viterbi/gga.json --json
+lmbio golden check golden/align_nw/acgt_agt.json --json
+lmbio golden check golden/align_nw/empty_a_ag.json --json
+lmbio golden check golden/align_sw/tacgt_acg.json --json
+lmbio golden check golden/parsimony_fitch/basic_binary.json --json
+lmbio golden check golden/genetics_hardy_weinberg/counts_9_12_4.json --json
+lmbio golden check golden/genetics_cross/dihybrid_aabb.json --json
+lmbio golden check golden/genetics_cross/monohybrid_aa.json --json
+lmbio golden check golden/motif_pwm/default.json --json
+lmbio golden check golden/motif_pwm/pseudocount_1.json --json
+lmbio golden check golden/search_index/gattaca.json --json
+lmbio golden check golden/search_backward/gattaca_a.json --json
+lmbio golden check --all --json</code></pre>
+<p>A passing check returns <code>pass:true</code> and <code>first_diff_byte:null</code>. A mismatch exits non-zero.</p>
+<h2 id="genetics">Genetics</h2>
+<p>Hardy-Weinberg from observed genotype counts:</p>
+<pre><code>lmbio genetics hardy-weinberg --counts AA=9,Aa=12,aa=4 --json</code></pre>
+<p>The JSON includes exact <code>p</code>, <code>q</code>, genotype frequencies, smallest integer ratio, and <code>sum:&quot;1&quot;</code>.</p>
+<p>Dihybrid cross:</p>
+<pre><code>lmbio genetics cross --p1 AaBb --p2 AaBb --json</code></pre>
+<p>The JSON includes sorted genotype probabilities, phenotype ratios in dominance-product order, smallest integer ratio, and <code>sum:&quot;1&quot;</code>.</p>
+<p>Phenotype labels use the egtry shorthand convention for every gene: dominant is <code>&lt;Upper&gt;_</code> such as <code>A_</code>; recessive is doubled lowercase such as <code>aa</code>.</p>
+<h2 id="motif-pwm">Motif PWM</h2>
+<p>Count/frequency matrix and candidate scores:</p>
+<pre><code>lmbio motif pwm \
+  --instances ACGT,ACGA,ACGT,AGGT \
+  --score ACGT \
+  --score ACGA \
+  --score TCGT \
+  --json</code></pre>
+<p>Use <code>--pseudocount</code> for exact rational pseudocounts:</p>
+<pre><code>lmbio motif pwm \
+  --instances ACGT,ACGA,ACGT,AGGT \
+  --pseudocount 1/2 \
+  --score TCGT \
+  --json</code></pre>
+<p>The JSON includes raw count matrix, exact frequency matrix, column sums, consensus with alphabet-order tie-break, exact candidate scores, and the brute-force best candidate.</p>
+<h2 id="alignment-dp">Alignment DP</h2>
+<p>Needleman-Wunsch global alignment:</p>
+<pre><code>lmbio align nw \
+  --a ACGT \
+  --b AGT \
+  --match 1 \
+  --mismatch -1 \
+  --gap -2 \
+  --json</code></pre>
+<p>Smith-Waterman local alignment:</p>
+<pre><code>lmbio align sw \
+  --a TACGT \
+  --b ACG \
+  --match 1 \
+  --mismatch -1 \
+  --gap -2 \
+  --json</code></pre>
+<p>The JSON includes the full integer <code>score_matrix</code>, optimal <code>score</code>, aligned strings, origin-first traceback <code>path</code>, and frozen tie-break text. Traceback priority is diagonal, then up, then left; local alignment starts from the first maximum cell in row-major order.</p>
+<h2 id="contract-helpers">Contract Helpers</h2>
+<p>Check the active stable schema:</p>
+<pre><code>lmbio --schema-version</code></pre>
+<p>Compare a fixture&#39;s command output against an externally generated expected-output file:</p>
+<pre><code>lmbio golden check golden/align_nw/acgt_agt.json --against /tmp/spine-output.json --json</code></pre>
+<p>This mode exits 0 on byte equality and exits 1 on mismatch.</p>
+<h2 id="search-indexing">Search Indexing</h2>
+<p>Build exact suffix-array/BWT index facts:</p>
+<pre><code>lmbio search index --text GATTACA --json</code></pre>
+<p>Run FM-index-style exact backward search:</p>
+<pre><code>lmbio search backward --text GATTACA --pattern A --json</code></pre>
+<p>The JSON includes half-open <code>[lo,hi)</code> interval, count, ascending text-position occurrences, and the sentinel/order rules. Empty or over-long patterns are value cases that return the empty interval, not errors.</p>
+<h2 id="exact-stats-core">Exact Stats Core</h2>
+<p>Run Fisher&#39;s exact test over a 2x2 table. Counts are <code>a,b,c,d</code>, or labeled <code>a=...,b=...,c=...,d=...</code>:</p>
+<pre><code>lmbio stats fisher --counts 3,1,1,3 --alternative two-sided --json</code></pre>
+<p>The JSON includes exact table margins, exact observed hypergeometric probability, exact <code>p_value</code>, <code>p_value_float</code>, support bounds, and exact odds ratio where finite. Alternatives are <code>less</code>, <code>greater</code>, and <code>two-sided</code>.</p>
+<p>Run exact over-representation analysis with Benjamini-Hochberg correction:</p>
+<pre><code>lmbio enrich overrep \
+  --foreground BRCA1,TP53 \
+  --terms examples/term_genes.tsv \
+  --universe BRCA1,BRCA2,TP53,PIK3CA,PTEN,AKT1,EGFR \
+  --json</code></pre>
+<p>The terms file is tab-delimited <code>term&lt;TAB&gt;gene</code>. Each result includes <code>k</code>, <code>n</code>, <code>K</code>, <code>N</code>, matched IDs, exact hypergeometric upper-tail <code>p_value</code>, and exact BH <code>q_value_bh</code>.</p>
+<p>Run a lightweight pharmacovigilance disproportionality check:</p>
+<pre><code>lmbio pv dispro --counts 10,90,5,995 --json</code></pre>
+<p>The 2x2 table means <code>a=drug_event</code>, <code>b=drug_other_events</code>, <code>c=other_drugs_event</code>, <code>d=other_drugs_other_events</code>. The JSON includes exact PRR, ROR, chi-square, Fisher greater-tail p-value, a simple signal flag (<code>PRR&gt;=2 and chi_square&gt;=4 and a&gt;=3</code>), and <code>signal_not_causation:true</code>.</p>
+<h2 id="icite">iCite</h2>
+<p>Fetch review citation metrics in batches:</p>
+<pre><code>lmbio icite \
+  --pmids 10196379,10323242,10484981,10486320,10549356 \
+  --since 2015 \
+  --json</code></pre>
+<p>The JSON is keyed by PMID under <code>papers</code>. Each item includes raw iCite metrics such as <code>citations</code>, <code>citations_per_year</code>, <code>rcr</code>, <code>year</code>, and <code>is_clinical</code>. Bad PMIDs become per-item <code>error</code> objects. Use <code>--refresh</code> to bypass cache and <code>--cache-dir</code> to pin the cache location.
+The root object includes <code>resolved</code>, <code>errors</code>, <code>included</code>, and <code>filtered_out</code> counts. <code>--since &lt;year&gt;</code> marks resolved papers with <code>included:true/false</code> without dropping any requested PMID from the response.</p>
+<h2 id="uniprot">UniProt</h2>
+<p>Fetch review protein substrate fields in batches:</p>
+<pre><code>lmbio uniprot \
+  --accessions P38398,P00533,P01308,P42345,P04637 \
+  --json</code></pre>
+<p>The JSON is keyed by accession under <code>proteins</code>. Each item includes name, genes, organism taxon, function text, Pfam, InterPro, GO, EC, disease xrefs, disease free text, keywords, subcellular location, sequence length, protein existence, and cited PMIDs. GO terms are <code>{&quot;id&quot;,&quot;name&quot;,&quot;aspect&quot;}</code> objects with clean labels. Disease xrefs are disease-involvement references only, not gene/locus OMIM records. Bad accessions become per-item <code>error</code> objects. Use <code>--refresh</code> to bypass cache and <code>--cache-dir</code> to pin the cache location. The root object includes <code>resolved</code> and <code>errors</code> counts.</p>
+<h2 id="sequence-utilities">Sequence Utilities</h2>
+<p>Use these for small teaching examples, FASTA snippets, and LLM-visible sequence summaries:</p>
+<pre><code>lmbio seq stats --seq ACGTNN --json
+lmbio seq revcomp --seq ACGTRYSWKMBDHVN --json
+lmbio seq translate --seq ATGGGATAA --json
+lmbio seq orfs --seq CCCATGAAATAA --json</code></pre>
+<p>All sequence commands also accept <code>--fasta &lt;path&gt;</code> or <code>--fasta -</code> for stdin. <code>seq stats</code> emits exact reduced fractions for GC and N content. <code>seq translate</code> uses the standard genetic code and returns <code>*</code> for stops. <code>seq orfs</code> reports zero-based half-open nucleotide coordinates.</p>
+<p>Sample data lives under <code>examples/</code>, and a live FASTA can be downloaded with:</p>
+<pre><code>curl -L &#39;https://rest.uniprot.org/uniprotkb/P04637.fasta&#39; -o /tmp/P04637.fasta
+lmbio seq stats --fasta /tmp/P04637.fasta --json</code></pre>
+<h2 id="protein-stats">Protein Stats</h2>
+<p>Summarize small protein sequences:</p>
+<pre><code>lmbio protein stats --seq ACDEKRFWY --json
+lmbio protein stats --fasta examples/sample_protein.fa --json</code></pre>
+<p>The JSON includes length, amino-acid composition, molecular-weight estimate, acidic/basic/charged/aromatic/hydrophobic counts. The mass is a lightweight average-residue estimate, not a proteomics-grade exact mass calculator.</p>
+<h2 id="interval-arithmetic">Interval Arithmetic</h2>
+<p>Merge or intersect BED-like half-open intervals:</p>
+<pre><code>lmbio interval merge --input examples/intervals_a.bed --json
+lmbio interval intersect --a examples/intervals_a.bed --b examples/intervals_b.bed --json
+lmbio interval coverage --a examples/intervals_a.bed --b examples/intervals_b.bed --json
+lmbio interval complement --input examples/intervals_a.bed --genome examples/genome.sizes --json
+lmbio interval closest --a examples/intervals_a.bed --b examples/intervals_b.bed --json</code></pre>
+<p>Input is tab-delimited <code>chrom start end [name]</code>. Genome sizes for complement are <code>chrom&lt;TAB&gt;size</code>. Coverage reports exact reduced covered-base fractions and avoids double-counting overlapping B intervals. Closest returns all equally near B intervals. These commands are intentionally simple and memory-light; they are for small/medium feature sets and teaching/review substrate checks, not a full BEDTools replacement.</p>
+<h2 id="pubmed">PubMed</h2>
+<p>Fetch PubMed ESummary metadata in batches:</p>
+<pre><code>lmbio pubmed \
+  --pmids 10549356,31452104,99999999 \
+  --links \
+  --max-links 5 \
+  --links-mode edges \
+  --cache-dir /tmp/lmbio-example-cache \
+  --refresh \
+  --json</code></pre>
+<p>The JSON is keyed by PMID under <code>papers</code> and includes title, source, journal, pubdate, year, authors, pubtypes, DOI, fetched date, provenance, <code>resolved</code>, and <code>errors</code>. Bad PMIDs become per-item <code>error</code> objects. <code>--links</code> adds bounded <code>references</code> and <code>cited_by</code> arrays using NCBI ELink; use <code>--max-links</code> to keep citation graphs small. <code>--links-mode edges</code> also emits top-level directed edge rows <code>{from,to,kind}</code> for review graph ingestion. Cached link arrays are truncated to the requested <code>--max-links</code> in the response and report a warning when truncation occurs.</p>
+<p>Raw sample download:</p>
+<pre><code>curl -L &#39;https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&amp;id=10549356,31452104&amp;retmode=json&#39; -o /tmp/pubmed-esummary.json</code></pre>
+<h2 id="clinicaltrialsgov">ClinicalTrials.gov</h2>
+<p>Fetch ClinicalTrials.gov v2 study summaries by NCT ID:</p>
+<pre><code>lmbio clinicaltrials \
+  --ncts NCT04280705,NCT00000000 \
+  --cache-dir /tmp/lmbio-example-cache \
+  --refresh \
+  --json</code></pre>
+<p>The JSON is keyed by NCT ID under <code>studies</code> and includes title, status, dates, conditions, keywords, sponsor, study type, phases, enrollment, interventions, summary, fetched date, provenance, <code>resolved</code>, and <code>errors</code>. Bad NCT IDs become per-item <code>error</code> objects.</p>
+<p>Raw sample download:</p>
+<pre><code>curl -L &#39;https://clinicaltrials.gov/api/v2/studies/NCT04280705&#39; -o /tmp/NCT04280705.json</code></pre>
+<h2 id="drug-and-compound-data">Drug and Compound Data</h2>
+<p>Resolve medication strings or RxCUIs with RxNorm:</p>
+<pre><code>lmbio drug rxnorm --names aspirin,remdesivir --json
+lmbio drug rxnorm --rxcuis 1191 --json</code></pre>
+<p>The JSON is keyed by input under <code>drugs</code> and includes RxCUI, name, TTY, synonym, suppress flag, UMLS CUI, ingredient concepts when available, RxNorm version, cache provenance, and per-item structured errors.</p>
+<p>Fetch PubChem compound properties by CID or name:</p>
+<pre><code>lmbio compound pubchem --cids 2244 --json
+lmbio compound pubchem --names aspirin --json</code></pre>
+<p>The JSON is keyed by input under <code>compounds</code> and includes CID, formula, molecular weight, canonical/isomeric SMILES when PubChem returns them, InChIKey, IUPAC name, XLogP, TPSA, title, and cache provenance. PubChem properties are fetched; lmbio is not doing RDKit-style local chemistry here.</p>
+<p>Fetch openFDA drug-label summaries:</p>
+<pre><code>lmbio drug label --search &#39;openfda.generic_name:&quot;remdesivir&quot;&#39; --limit 1 --json</code></pre>
+<p>The JSON includes selected label sections: brand/generic/manufacturer names, product NDCs, indications, contraindications, warnings, boxed warnings, adverse reactions, drug interactions, effective time, provenance, and a disclaimer. Treat labels as regulatory source text, not medical advice.</p>
+</main>
+<footer>
+<p><a href="/skills/lmbio-skill.md">Raw Markdown for agents</a></p>
+<p>Plain HTML skills, with generated Markdown for agents. Source: <a href="https://github.com/lmctl-ai/lmctl/tree/main/skills">github.com/lmctl-ai/lmctl/skills</a>.</p>
+</footer>
+</body>
+</html>

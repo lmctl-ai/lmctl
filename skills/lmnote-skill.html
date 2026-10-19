@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmnote skill — lmctl skills</title>
+<meta name="description" content="Use lmnote to keep durable named files in the authenticated lmctl user's private notebook.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/">Tools</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmnote skill</h1>
+<p>Use lmnote to keep durable named files in the authenticated lmctl user&#39;s
+private notebook.</p>
+<h2 id="setup">Setup</h2>
+<p>Set the deployed API Gateway stage URL explicitly before using either the CLI
+or raw HTTP:</p>
+<pre><code>export LMNOTE_API_URL=&#39;https://example.execute-api.us-east-1.amazonaws.com/prod&#39;</code></pre>
+<p>Authenticate with the same shared lmctl appkey used by lmchat, lmmail, and
+lmsound. The CLI searches, in order:</p>
+<ol>
+<li><code>LMCTL_APPKEY</code></li>
+<li>the file named by <code>LMCTL_APPKEY_FILE</code></li>
+<li><code>~/.config/lmctl/appkey.json</code></li>
+</ol>
+<p>Run <code>lmnote login</code> to configure the shared default file. Never print, log, or
+send the appkey anywhere except the lmnote API&#39;s <code>Authorization</code> header.
+<code>lmnote whoami</code> safely reports the selected API and credential source without
+revealing the secret.</p>
+<p>The server derives notebook ownership from the verified appkey. Do not include
+a user or owner ID in requests.</p>
+<h2 id="preferred-interface-cli">Preferred interface: CLI</h2>
+<pre><code>lmnote push research.md --file ./research.md
+lmnote list
+lmnote list --after research.md --limit 100
+lmnote read research.md
+lmnote read research.md --out ./research.md
+lmnote update research.md --file ./revised.md
+lmnote delete research.md</code></pre>
+<p><code>push</code> creates and returns an error if the name already exists. <code>update</code> only
+works for an existing note. Notes may be any file type. The CLI recognizes
+common extensions and uses <code>application/octet-stream</code> for unknown ones.</p>
+<p><code>list</code> prints tab-separated note metadata followed by
+<code>next_after=&lt;name&gt;\thas_more=&lt;true|false&gt;</code>. If <code>has_more</code> is true, pass
+<code>next_after</code> back as <code>--after</code>.</p>
+<p>Without <code>--out</code>, <code>read</code> writes note text to stdout. With <code>--out</code>, it creates the
+parent directory as needed and saves the file.</p>
+<p>Every command accepts <code>--api URL</code>; otherwise it requires <code>LMNOTE_API_URL</code>.
+There is no assumed default endpoint.</p>
+<h2 id="raw-http">Raw HTTP</h2>
+<p>Set an appkey only for the shell process that needs it:</p>
+<pre><code>export LMCTL_APPKEY=&#39;replace-me&#39;
+auth=(-H &quot;Authorization: Bearer $LMCTL_APPKEY&quot;)</code></pre>
+<h3 id="create">Create</h3>
+<p>Allocate a note:</p>
+<pre><code>size=&quot;$(wc -c &lt; ./research.md)&quot;
+curl -fsS -X POST &quot;$LMNOTE_API_URL/notes&quot; \
+  &quot;${auth[@]}&quot; \
+  -H &#39;Content-Type: application/json&#39; \
+  --data &quot;{\&quot;name\&quot;:\&quot;research.md\&quot;,\&quot;content_type\&quot;:\&quot;text/markdown\&quot;,\&quot;size\&quot;:$size}&quot;</code></pre>
+<p>The response contains:</p>
+<pre><code>{
+  &quot;name&quot;: &quot;research.md&quot;,
+  &quot;content_type&quot;: &quot;text/markdown&quot;,
+  &quot;size&quot;: 123,
+  &quot;upload_url&quot;: &quot;https://...&quot;,
+  &quot;fields&quot;: {&quot;key&quot;: &quot;...&quot;, &quot;...&quot;: &quot;...&quot;},
+  &quot;finalize_url&quot;: &quot;/notes/research.md/finalize&quot;,
+  &quot;operation_token&quot;: &quot;...&quot;,
+  &quot;expires_in_seconds&quot;: 120
+}</code></pre>
+<p>Upload directly to <code>upload_url</code> as multipart form data. Include every returned
+entry from <code>fields</code> unchanged, then add the file field last. After S3 returns
+success, finalize:</p>
+<pre><code>curl -fsS -X POST &quot;$LMNOTE_API_URL/notes/research.md/finalize&quot; \
+  &quot;${auth[@]}&quot; \
+  -H &#39;Content-Type: application/json&#39; \
+  --data &#39;{&quot;operation_token&quot;:&quot;...&quot;}&#39;</code></pre>
+<p>The note does not appear in normal lists until finalization succeeds. Repeating
+the same finalize call is safe.</p>
+<h3 id="list">List</h3>
+<pre><code>curl -fsS &quot;$LMNOTE_API_URL/notes?after=&amp;limit=100&quot; &quot;${auth[@]}&quot;</code></pre>
+<p>The response is:</p>
+<pre><code>{
+  &quot;notes&quot;: [
+    {
+      &quot;name&quot;: &quot;research.md&quot;,
+      &quot;content_type&quot;: &quot;text/markdown&quot;,
+      &quot;size&quot;: 123,
+      &quot;created_at&quot;: &quot;2026-07-29T12:00:00.000Z&quot;,
+      &quot;updated_at&quot;: &quot;2026-07-29T12:00:00.000Z&quot;
+    }
+  ],
+  &quot;next_after&quot;: &quot;research.md&quot;,
+  &quot;has_more&quot;: false
+}</code></pre>
+<p>If <code>has_more</code> is true, request the next page with <code>after=next_after</code>. The
+cursor is a scan high-water mark and is safe even when transient rows were
+filtered out.</p>
+<h3 id="read">Read</h3>
+<pre><code>metadata=&quot;$(
+  curl -fsS &quot;$LMNOTE_API_URL/notes/research.md&quot; &quot;${auth[@]}&quot;
+)&quot;</code></pre>
+<p>The response includes a short-lived <code>download_url</code> pinned to the note&#39;s stored
+S3 version. Fetch it without the appkey header:</p>
+<pre><code>curl -fsS &#39;&lt;download_url&gt;&#39;</code></pre>
+<h3 id="update">Update</h3>
+<p>Allocate an update with <code>PUT</code>:</p>
+<pre><code>size=&quot;$(wc -c &lt; ./revised.md)&quot;
+curl -fsS -X PUT &quot;$LMNOTE_API_URL/notes/research.md&quot; \
+  &quot;${auth[@]}&quot; \
+  -H &#39;Content-Type: application/json&#39; \
+  --data &quot;{\&quot;content_type\&quot;:\&quot;text/markdown\&quot;,\&quot;size\&quot;:$size}&quot;</code></pre>
+<p>Upload and finalize exactly like create, using the returned form fields and
+token. Updating preserves <code>created_at</code>, advances <code>updated_at</code>, and makes a new
+S3 version current.</p>
+<h3 id="delete">Delete</h3>
+<pre><code>curl -fsS -X DELETE &quot;$LMNOTE_API_URL/notes/research.md&quot; &quot;${auth[@]}&quot;</code></pre>
+<p>Delete removes the metadata and the exact stored S3 <code>VersionId</code>. A missing
+note returns <code>404 {&quot;error&quot;:&quot;note_not_found&quot;}</code>.</p>
+<h2 id="error-handling">Error handling</h2>
+<p>Treat these responses as expected application outcomes:</p>
+<ul>
+<li><code>400</code>: invalid name, content type, size, cursor, limit, or request body.</li>
+<li><code>401</code>: missing or invalid shared appkey.</li>
+<li><code>404 note_not_found</code>: note does not exist in this authenticated user&#39;s space.</li>
+<li><code>409 note_exists</code>: create used an existing name.</li>
+<li><code>409 note_busy</code>: another update/delete is in progress.</li>
+<li><code>409 not_uploaded</code>: finalize ran before the S3 object was available.</li>
+<li><code>409 finalize_mismatch</code>: the finalize token is stale or wrong.</li>
+</ul>
+<p>Do not retry validation or authorization errors unchanged. A short retry is
+reasonable for <code>not_uploaded</code>; re-read state before recovering from <code>note_busy</code>.</p>
+<h2 id="verification-scope">Verification scope</h2>
+<p>The API and CLI syntax above was checked against the tool source on 2026-10-19. Live hosted availability, account permissions, deployment-specific limits and credentials were not tested. Confirm the endpoint with your operator; example API Gateway addresses are placeholders. Do not assume that access to one deployment grants access to another.</p>
+</main>
+<footer>
+<p><a href="/skills/lmnote-skill.md">Raw Markdown for agents</a></p>
+<p>Plain HTML skills, with generated Markdown for agents. Source: <a href="https://github.com/lmctl-ai/lmctl/tree/main/skills">github.com/lmctl-ai/lmctl/skills</a>.</p>
+</footer>
+</body>
+</html>
