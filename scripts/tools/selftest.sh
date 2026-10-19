@@ -44,7 +44,7 @@ let fragment = html.load("original.fragment");
 if (skill.source_inner("main") != fragment.source()) { report.add("test", "skill", 0, "authored bytes changed"); }
 let root = html.load("tools/index.html");
 if (root.select("main li").len() != 1 || root.select("main li a").at(0).attr("href") != "/tools/zeta/") { report.add("test", "index", 0, "wrong generated index"); }
-if (skill.select("nav a").len() != 3) { report.add("test", "nav", 0, "optional pages added to nav"); }
+if (skill.select("nav a").len() != 5) { report.add("test", "nav", 0, "shared site links or optional pages missing from nav"); }
 if (skill.select("head title").at(0).text() != "Example & helpers {{CONTENT}} — zeta — lmctl.com tools") { report.add("test", "title", 0, "placeholder expansion corrupted title"); }
 report.write_text("assert.txt");
 report.fail_if_any();
@@ -178,7 +178,7 @@ let fallback = html.load("tools/zeta/guide-gamma.html");
 if (fallback.select("meta[name='description']").at(0).attr("content") != "Éclair tooling preserves whole words while describing repeatable operations for teams using plain HTML documents and predictable command line programs with…") { report.add("test", "words", 0, "not a whole-word UTF-8 excerpt"); }
 let labels = "";
 for (link in page.select("nav a")) { labels = labels + link.text() + "|"; }
-if (labels != "Tools|Overview|Skill|Guide: lmcad|Guide: lmcad (guide-beta)|Guide: Fallback|") { report.add("test", "nav", 0, labels); }
+if (labels != "lmctl.com|Tools|Skills|Overview|Skill|Guide: lmcad|Guide: lmcad (guide-beta)|Guide: Fallback|") { report.add("test", "nav", 0, labels); }
 let original = html.load("visual.original").source();
 let expected = original;
 # Only the actual pre changes, not the identical snippet in the comment.

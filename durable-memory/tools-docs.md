@@ -16,9 +16,10 @@ it; `main` is not auto-published and `/tools/` is not part of `scripts/deploy.sh
 
 ## The 30-second version
 
-1. Write `tools/<tool>/skill.html`: an h1, an introductory paragraph and the nine
+1. Write `tools/<tool>/index.html` as the tool overview and
+   `tools/<tool>/skill.html` with an h1, an introductory paragraph and the nine
    skill headings (below), using only plain tags. A bare fragment is fine.
-2. `npm run decorate:tools` (adds head, nav, footer, indexes, icons).
+2. `npm run decorate:tools` (adds head, nav, footer, catalog, icons).
 3. `npm run check:tools` (must print `check: OK`).
 4. Commit the content and the generated HTML together.
 
@@ -32,7 +33,7 @@ or newer. The runner downloads the pinned lmhtml release itself.
 | `tools/style.css` | The only stylesheet, element selectors only; change it for everyone |
 | `tools/index.html` | Generated catalog, one entry per tool; never hand-edit |
 | `tools/<tool>/<role>[-<topic>].html` | Authored content pages (decorated in place) |
-| `tools/<tool>/index.html` | Generated tool overview; never author it |
+| `tools/<tool>/index.html` | Authored tool overview, decorated in place |
 | `tools/<tool>/img/` | Local images; `icon.png` (64×64) and `logo.png` (256×256) are picked up automatically |
 | `tools/<tool>/repo.txt` | Optional: one repository URL when it is not `github.com/lmctl-ai/<tool>` |
 | `tools/img/` | Site icon (`icon.png`) and catalog logo (`tools.png`) |
@@ -99,15 +100,18 @@ doctype, `lang`, charset, viewport, `<title>` (h1 + suffix), description (kept
 if present, else from the first paragraph, shortened to ≤160 characters at a
 sentence or word boundary), the single stylesheet link, the PNG favicon when
 `img/icon.png` exists, the tool nav (pages that exist, ordered by role then
-filename), the footer with the repository link, each tool's `index.html` (h1,
-first paragraph, logo, page links, repository) and the catalog
+filename), the footer with the repository link, and the catalog
 `tools/index.html` with decorative icons. It fills missing PNG width/height.
+Each authored tool `index.html` remains the overview, including its figures;
+do not create a separate `guide-overview.html`. Missing indexes get a basic
+generated landing page marked as generated until an overview is written.
 
 It never rewrites authored content: text, comments, quotes and entities are kept
 as source bytes. The only edits inside content: a newline between adjacent
 kbd/samp in a `pre`, and empty leading/trailing lines in `pre` are removed. A
-second run changes no bytes and no timestamps. Do not hand-edit nav, footer or
-indexes: decoration overwrites them, and `check` reports stale decoration.
+second run changes no bytes and no timestamps. Do not hand-edit nav or footer;
+tool overview content belongs in its authored index, while the site catalog is
+generated.
 
 ## Authoring guidance for an LLM
 
@@ -221,8 +225,8 @@ explicit `.html` files and the directory keys work.
 - **Node and compiler versions.** The npm package declares Node ≥ 24.15; CI runs
   the checks on Node 22 (npm warns, the compiler works). Use a current Node
   locally. `run.sh` requires lmscript ≥ 0.2.347.
-- **Decoration owns nav, footer and indexes.** Hand edits there are overwritten
-  or reported as stale; change `template.html` instead.
+- **Decoration owns nav, footer and the site catalog.** Tool overview indexes
+  are authored content; change their text directly and rerun decoration.
 - **PNG budget.** 30 KB hard limit, 20 KB warning; lossless recompression helps,
   smaller renders help more.
 - **No classes, no per-page CSS.** Style changes go into `tools/style.css` for all

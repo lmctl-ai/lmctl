@@ -291,7 +291,7 @@ fn check_page(page: Doc) -> void {
   for (child in page.select("body > *")) { if (child.tag() != "header") { layout = layout + child.tag() + ","; } }
   if (layout != "nav,main,footer,") { finding(file, "body", "<body> must contain <nav>, <main>, <footer> in that order"); }
   if (page.select("nav").len() != 1 || page.select("nav > *").len() != 1 || page.select("nav > ul").len() != 1) { finding(file, "nav", "<nav> must hold exactly one <ul>"); }
-  if (page.select("nav a[href='/tools/']").len() == 0) { finding(file, "nav", "<nav> must link to /tools/"); }
+  if (page.select("nav a[href='/tools/']").len() == 0 || page.select("nav a[href='/skills/']").len() == 0 || page.select("nav a[href='/']").len() == 0) { finding(file, "nav", "navigation must link to lmctl.com, Tools and Skills"); }
   if (page.select("kbd, samp").len() != page.select("pre kbd, pre samp").len()) { finding(file, "kbd, samp", "kbd and samp must be inside pre"); }
   let headings = "";
   let last_heading = "";
@@ -299,6 +299,7 @@ fn check_page(page: Doc) -> void {
   # ROLE RULES: vocabulary/order/labels live in roles.lms; this is the one
   # section for role-specific content policy. Optional roles need not exist.
   let name = filename(file);
+    if (name == "guide-overview.html") { finding(file, "document", "use index.html for the tool overview; remove guide-overview.html"); }
   if (name != "index.html" && !(file == "tools/" + name || file == "./tools/" + name)) {
     let stem = str_substr(name, 0, str_len(name) - 5);
     let valid_name = str_ends_with(name, ".html") && str_len(stem) > 0;

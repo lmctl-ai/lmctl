@@ -322,24 +322,40 @@ while (str_find(tool_dirs, "|") >= 0) {
   }
   let nav = str_replace(region(template_source, "tool-nav"), "{{TOOL}}", escape(tool));
   nav = str_replace(nav, "{{PAGE_LINKS}}", links);
-  # Stable alphabetical source page; generated index is never its own input.
+  # Authored indexes are overviews. A marked generated index remains a fallback
+  # for newly added tools that have not written an overview yet.
+  let index_exists = html.link_exists(root_probe, "/" + directory + "/index.html");
+  let index_page = html.parse("");
+  if (index_exists) { index_page = html.load(directory + "/index.html"); }
+  let authored_index = index_exists && !str_contains(index_page.source(), "<!-- generated tool index -->");
   let tool_title = "";
   let tool_summary = "";
+  if (authored_index) { tool_title = heading(index_page); tool_summary = summary(index_page); }
   for (page in pages) {
     if (basename(page.path()) == "index.html") { continue; }
     if (tool_title == "") { tool_title = heading(page); tool_summary = summary(page); }
     let result = render(tool_layout, nav, footer, content(page), page_title(heading(page), tool), page_description(page));
     store(page.path(), result, page.source(), check, differences(page, result));
   }
-  let index_content = str_replace(region(template_source, "tool-index"), "{{TOOL_TITLE}}", escape(tool_title));
-  index_content = str_replace(index_content, "{{LOGO}}", logo("/tools/" + tool + "/img/logo.png", tool + " logo"));
-  index_content = str_replace(index_content, "{{SUMMARY}}", escape(tool_summary));
-  index_content = str_replace(index_content, "{{REPO}}", escape(repo));
-  index_content = str_replace(index_content, "{{PAGE_LINKS}}", links);
-  let index_path = directory + "/index.html";
-  let before = "";
-  for (page in pages) { if (basename(page.path()) == "index.html") { before = page.source(); } }
-  store(index_path, render(tool_layout, nav, footer, index_content, page_title(tool_title, tool), tool_summary), before, check, "missing or stale generated tool index");
+  let index_body = "";
+  let index_description = tool_summary;
+  let index_before = "";
+  if (authored_index) {
+    index_body = content(index_page);
+    index_description = page_description(index_page);
+    index_before = index_page.source();
+  } else {
+    index_body = "<!-- generated tool index -->\n" + str_replace(region(template_source, "tool-index"), "{{TOOL_TITLE}}", escape(tool_title));
+    index_body = str_replace(index_body, "{{LOGO}}", logo("/tools/" + tool + "/img/logo.png", tool + " logo"));
+    index_body = str_replace(index_body, "{{SUMMARY}}", escape(tool_summary));
+    index_body = str_replace(index_body, "{{REPO}}", escape(repo));
+    index_body = str_replace(index_body, "{{PAGE_LINKS}}", links);
+    if (index_exists) { index_before = index_page.source(); }
+  }
+  let index_result = render(tool_layout, nav, footer, index_body, page_title(tool_title, tool), index_description);
+  let index_diff = "missing or stale generated tool index";
+  if (authored_index) { index_diff = differences(index_page, index_result); }
+  store(directory + "/index.html", index_result, index_before, check, index_diff);
   let icon = "";
   if (asset_exists(icon_path)) { icon = "<img src=\"" + escape(icon_path) + "\" alt=\"\">"; }
   tool_links = tool_links + "<li>" + icon + "<a href=\"/tools/" + escape(tool) + "/\">" + escape(tool_title) + "</a> — " + escape(tool_summary) + "</li>\n";

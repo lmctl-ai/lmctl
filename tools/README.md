@@ -15,7 +15,8 @@ publishing, pitfalls) see `durable-memory/tools-docs.md`.
    `guide-schema.html`, `recipes.html`, `reference.html`, `faq.html` or
    `changelog.html`. Choose pages that help this tool's readers.
 3. Run `npm run decorate:tools`, then `npm run check:tools`, and commit the content
-   and generated HTML together. Do not author or edit an `index.html`.
+   and decorated HTML together. Author `index.html` as the tool overview; the
+   decorator adds its shared shell and navigation.
 
 Install Node supported by the published compiler and
 `npm i -g @lmctl-ai/lmctl@0.2.347` (or newer) once. The runner downloads the
@@ -56,13 +57,15 @@ writes nothing and exits nonzero on a difference. Apply with
 CI uses the same command; undecorated pages say `run npm run decorate:tools`.
 
 The template, outside the deployed tree, has named regions for the common
-layout, tool/site nav and footer variants, and tool/site indexes. Edit it once
+layout, tool/site nav and footer variants, and generated site catalog. Edit it once
 and apply decoration to propagate changes. Placeholders for tool name, title,
 description and repository are visible in that file. The repository is derived
 as `https://github.com/lmctl-ai/<tool>`. A rare repository-name exception can
 provide one URL in `tools/<tool>/repo.txt`; lmscript uses the website repository
 because there is no public `lmctl-ai/lmscript` repository. This is tool-level,
 not per-page configuration.
+
+Both site and tool navigation begin with `lmctl.com`, `Tools`, and `Skills`.
 
 Titles come from h1 plus the tool/site suffix. An existing nonempty description
 is retained; otherwise it comes from the first content paragraph, as do generated
@@ -79,14 +82,12 @@ Other preformatted spacing stays intact. Loose
 fragments are wrapped in main. Invalid content such as a div or class attribute is **not repaired**: the contract checker
 reports it. Explicit main content is retained as well.
 
-Each tool index is generated from the first content page in alphabetical
-filename order: its h1 and first paragraph, links to the pages that exist, and
-the derived repository link. The catalog has exactly one entry per tool with
-content pages, in alphabetical directory order. Titles/summaries come from the
-same source as the generated tool index, never a second configuration. New tools
-appear automatically; deleted tools disappear. Missing indexes are recreated.
-The old authored overview pages were preserved as `guide-overview.html` during
-migration; old `user-guide.html` pages are now `guide.html`.
+Each tool's authored `index.html` is its overview and is decorated in place.
+It contains the overview text and any figures; do not create a separate
+`guide-overview.html`. If an index is missing, decoration creates a basic
+generated landing page until an overview is authored. The catalog has exactly
+one entry per tool with content pages, in alphabetical directory order. Tool
+titles and summaries come from the overview index.
 
 ## Derived artwork
 
@@ -97,8 +98,8 @@ immediately after the tool index's h1. Site pages use `tools/img/icon.png` as
 the favicon; `tools/img/tools.png` supplies the catalog's logo.
 Missing optional assets produce no markup; deleting an asset and rerunning
 decoration removes its generated references. Other head link resources remain
-forbidden. Indexes, including existing index files, are regenerated as described
-above, so repeated decoration never duplicates logos.
+forbidden. Authored overview indexes keep their content while their shared shell
+is refreshed; the generated site catalog is rebuilt from them.
 
 ## Content contract
 
