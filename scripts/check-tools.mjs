@@ -3,12 +3,10 @@
 // Zero dependencies (Node 22). Prints file:line: message for every problem
 // and exits 1 when there is any.
 //
-//   node scripts/check-tools.mjs              check tools/ (skips tools/_template)
-//   node scripts/check-tools.mjs --template   also check tools/_template
+//   node scripts/check-tools.mjs              check every page under tools/
 //   node scripts/check-tools.mjs --selftest   every tests/tools/*.html must fail
 //                                             with the message named in its
-//                                             first-line <!-- expect: ... -->,
-//                                             and tools/_template must pass
+//                                             first-line <!-- expect: ... -->
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, relative, dirname, basename, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -222,20 +220,19 @@ function checkLinks(file, result, pages) {
   }
 }
 
-function htmlFiles(dir, includeTemplate) {
+function htmlFiles(dir) {
   const out = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (entry.name.startsWith('.')) continue;
-    if (entry.name === '_template' && !includeTemplate) continue;
     const full = join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...htmlFiles(full, includeTemplate));
+    if (entry.isDirectory()) out.push(...htmlFiles(full));
     else if (entry.name.endsWith('.html')) out.push(full);
   }
   return out.sort();
 }
 
-function checkTree(includeTemplate) {
-  const files = htmlFiles(TOOLS, includeTemplate);
+function checkTree() {
+  const files = htmlFiles(TOOLS);
   const pages = new Map(files.map((f) => [f, checkPage(f)]));
   const errors = [];
   for (const [file, result] of pages) checkLinks(file, result, pages);
@@ -259,7 +256,6 @@ function checkTree(includeTemplate) {
   // Every tool is listed on tools/index.html.
   const indexPage = pages.get(join(TOOLS, 'index.html'));
   for (const tool of byTool.keys()) {
-    if (tool === '_template') continue;
     if (indexPage && !indexPage.links.some((l) => l.href.startsWith(`/tools/${tool}/`))) {
       errors.push(`tools/index.html:1: tool ${tool} is not listed`);
     }
@@ -281,18 +277,13 @@ function selftest() {
     console.log(`${hit ? 'ok  ' : 'FAIL'} ${relative(ROOT, file)} (expect: ${expect ?? 'missing <!-- expect: ... -->'})`);
     if (!hit) { failures++; for (const e of result.errors) console.log(`       got: ${e}`); }
   }
-  const template = checkTree(true);
-  const templateErrors = template.errors.filter((e) => e.includes('_template'));
-  console.log(`${templateErrors.length ? 'FAIL' : 'ok  '} tools/_template passes`);
-  for (const e of templateErrors) console.log(`       got: ${e}`);
-  failures += templateErrors.length ? 1 : 0;
-  console.log(failures ? `selftest: ${failures} failure(s)` : `selftest: ${bad.length + 1} cases passed`);
+  console.log(failures ? `selftest: ${failures} failure(s)` : `selftest: ${bad.length} cases passed`);
   return failures ? 1 : 0;
 }
 
 const args = new Set(process.argv.slice(2));
 if (args.has('--selftest')) process.exit(selftest());
-const { files, errors } = checkTree(args.has('--template'));
+const { files, errors } = checkTree();
 for (const e of errors) console.log(e);
 console.log(errors.length ? `check-tools: ${errors.length} error(s) in ${files.length} page(s)` : `check-tools: ${files.length} page(s) OK`);
 process.exit(errors.length ? 1 : 0);

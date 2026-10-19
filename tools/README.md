@@ -6,11 +6,12 @@ framework, no JavaScript, no build step. Published only by
 
 ## Add or improve a tool
 
-1. Copy the template: `cp -R tools/_template tools/<tool>` (`<tool>` is the
-   lowercase repo name, e.g. `lmhtml`).
-2. In the four copied files replace `_template` with `<tool>`, `Tool name`
-   with the tool's name and `TOOL-REPO` with its GitHub repo, then write the
-   content. Keep the nav and footer identical on all four pages.
+1. Copy a finished tool directory as your starting point, for example
+   `cp -R tools/lmscript tools/<tool>` (`<tool>` is the lowercase repo name,
+   e.g. `lmhtml`).
+2. In the four copied files replace the tool name, its GitHub repo and every
+   `/tools/lmscript/` link with `/tools/<tool>/`, then write the content.
+   Keep the nav and footer identical on all four pages.
 3. Add one line for the tool to `tools/index.html`.
 4. Run `npm run check:tools` until it prints no errors.
 5. Open a pull request. CI runs the same check.
