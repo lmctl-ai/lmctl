@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcad user guide</title>
+<meta name="description" content="Installation, schema reference, CLI behavior, supported outputs and host-side limits for lmcad.">
+<link rel="stylesheet" href="/tools/style.css">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/tools/lmcad/">Overview</a></li>
+<li><a href="/tools/lmcad/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmcad/user-guide.html">User guide</a></li>
+<li><a href="/tools/lmcad/skill.html">Skill</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcad user guide</h1>
+<h2>Overview</h2>
+<p>lmcad is a native host for lmscript bytecode. Its schema exposes OpenCASCADE solids, a headless software renderer, PNG and APNG output, and STL/OBJ export. The schema is embedded in the executable, so every bytecode file passed to one invocation is checked against the same schema.</p>
+<h2>Install</h2>
+<p>Download the latest Linux x64 or Linux arm64 binary from <a href="https://github.com/lmctl-ai/lmcad/releases/latest">GitHub Releases</a>. To build from source, install C++17, CMake and Ninja, build OpenCASCADE 8.0.1 as a static prefix, then configure lmcad with <code>-DLMCAD_OCCT_PREFIX=/path/to/prefix</code> and <code>-DLMCAD_FULL_STATIC=ON</code>. The <a href="https://github.com/lmctl-ai/lmcad#build-opencascade-once">README build section</a> has the exact build commands. Install lmscript with <code>npm i -g @lmctl-ai/lmctl</code> to compile examples.</p>
+<h2>Concepts</h2>
+<ul><li><strong>Schema:</strong> the embedded JSON declares typed context, functions and methods. <code>lmcad --schema --json</code> prints those bytes.</li><li><strong>Solid:</strong> methods on <code>Shape</code> return handles to edited OpenCASCADE shapes; volume and bounding-box accessors query the solid.</li><li><strong>Sketch:</strong> chain <code>point(x,y)</code> calls, close the polygon, then extrude or revolve it.</li><li><strong>Animation:</strong> create an <code>Animation</code>, render the current scene with <code>add_frame()</code>, then call <code>finish()</code> to write APNG.</li><li><strong>Collections:</strong> CSV input returns <code>Keyframes</code>; iterate with <code>for (key in keys)</code> or an indexed range and <code>at(i)</code>.</li></ul>
+<h2>Reference</h2>
+<p>The following canonical member list is the output of <code>lmcad --schema</code>; it is grouped by declared type.</p>
+<pre><code>Context
+  scene: Scene
+
+Functions
+  material() -> Material
+  read_keyframes_csv(string) -> Keyframes
+
+Animation
+  Animation.add_frame() -> Animation
+  Animation.finish() -> void
+Camera
+  Camera.clipping(float, float) -> Camera
+  Camera.look_at(float, float, float, float, float, float) -> Camera
+Keyframe
+  Keyframe.b() -> float
+  Keyframe.g() -> float
+  Keyframe.r() -> float
+  Keyframe.time() -> float
+  Keyframe.x() -> float
+  Keyframe.y() -> float
+  Keyframe.z() -> float
+Keyframes
+  Keyframes.at(int) -> Keyframe
+  Keyframes.len() -> int
+Light
+  Light.intensity(float) -> Light
+Material
+  Material.color(float, float, float) -> Material
+  Material.roughness(float) -> Material
+Scene
+  Scene.ambient(float) -> Scene
+  Scene.animation(string, int, int, int) -> Animation
+  Scene.assert_close(float, float, float) -> void
+  Scene.background(float, float, float) -> Scene
+  Scene.box(float, float, float, Material) -> Shape
+  Scene.camera(float, float, float, float, float, float, float) -> Camera
+  Scene.cylinder(float, float, Material) -> Shape
+  Scene.directional_light(float, float, float, float) -> Light
+  Scene.export_obj(string) -> void
+  Scene.export_stl(string) -> void
+  Scene.extrude(Sketch, float, Material) -> Shape
+  Scene.fill_light(float, float, float, float) -> Light
+  Scene.fit_camera(float, float) -> Camera
+  Scene.render_png(string, int, int) -> void
+  Scene.render_ppm(string, int, int) -> void
+  Scene.revolve_y(Sketch, Material) -> Shape
+  Scene.sketch() -> Sketch
+  Scene.sphere(float, Material) -> Shape
+  Scene.supersample(int) -> Scene
+Shape
+  Shape.chamfer(float) -> Shape
+  Shape.color(float, float, float) -> Shape
+  Shape.cut(Shape) -> Shape
+  Shape.fillet(float) -> Shape
+  Shape.hollow(float) -> Shape
+  Shape.hollow_top(float) -> Shape
+  Shape.intersect(Shape) -> Shape
+  Shape.max_x() -> float
+  Shape.max_y() -> float
+  Shape.max_z() -> float
+  Shape.min_x() -> float
+  Shape.min_y() -> float
+  Shape.min_z() -> float
+  Shape.mirror(string) -> Shape
+  Shape.name(string) -> Shape
+  Shape.position(float, float, float) -> Shape
+  Shape.rotate(float, float, float) -> Shape
+  Shape.scale(float, float, float) -> Shape
+  Shape.translate(float, float, float) -> Shape
+  Shape.union(Shape) -> Shape
+  Shape.visible(bool) -> Shape
+  Shape.volume() -> float
+Sketch
+  Sketch.close() -> Sketch
+  Sketch.point(float, float) -> Sketch</code></pre>
+<p>CLI contract:</p>
+<dl><dt><code>lmcad --schema</code></dt><dd>Prints a compact registry-derived summary, context first and then functions and type members.</dd><dt><code>lmcad --schema --json</code></dt><dd>Prints the embedded schema bytes, byte-for-byte.</dd><dt><code>lmcad --dsl-signatures</code></dt><dd>Prints canonical registry signatures for comparison with <code>lmscript --dsl-signatures schema.json</code>.</dd><dt><code>lmcad --dsl FILE [FILE ...]</code></dt><dd>Runs bytecode files in order. Objects and scene state persist between files; VM locals are fresh for each file. The first failure stops execution.</dd></dl>
+<p>Exit 0 means success; exit 2 means invalid command-line syntax; exit 3 means bytecode load or DSL/host run failure; exit 4 is an application failure. Successful runs emit one JSON result line per completed block.</p>
+<h3>Output formats</h3>
+<ul><li>PNG: still images and numbered animation frames.</li><li>APNG: animated PNG with frame count and playback timing stored in the file.</li><li>STL: binary triangle mesh for solid-printing workflows.</li><li>OBJ: text mesh output.</li><li>PPM: simple RGB raster output.</li></ul>
+<h2>Tasks</h2>
+<ul><li>Render an image: make a camera, add lights, then call <code>scene.render_png(path, width, height)</code>.</li><li>Fit a camera: call <code>scene.fit_camera(fov, margin)</code>; explicit camera look-at or clipping settings turn off automatic fitting.</li><li>Assert a model value: call <code>shape.volume()</code> and <code>scene.assert_close(actual, expected, tolerance)</code>.</li><li>Export a solid: call <code>scene.export_stl(path)</code> or <code>scene.export_obj(path)</code>.</li><li>Create an animation: use <code>scene.animation(path, width, height, fps)</code>, add frames after each scene update, and finish the writer.</li></ul>
+<h2>Limits</h2>
+<p>Host-side checks require finite, positive geometry dimensions and valid cameras. Render dimensions must be positive and bounded. Supersampling is limited to 1–4; each high-resolution raster dimension is at most 8192 and the working image has at most 16,777,216 pixels. APNG output is limited to 240 frames and 64,000,000 total frame pixels. A 36-frame 1920×1080 animation exceeds that total-pixel bound. The VM itself does not impose execution, stack, local-variable or string-size budgets; scripts should be treated as trusted inputs.</p>
+<h2>Troubleshooting</h2>
+<ul><li><strong>Schema mismatch:</strong> compile with the schema file matching this executable; inspect <code>lmcad --schema --json</code>.</li><li><strong>No camera:</strong> every render needs a camera or a successful camera fit.</li><li><strong>Compiler rejects names or types:</strong> compare against the canonical signatures above and use explicit <code>float(i)</code> when passing an integer to a float parameter.</li><li><strong>OCCT operation fails:</strong> reduce fillet or shell size and check that the model has valid positive dimensions.</li><li><strong>Animation output is absent:</strong> call <code>finish()</code>; an unfinished animation is discarded.</li></ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcad">github.com/lmctl-ai/lmcad</a>.</p>
+</footer>
+</body>
+</html>

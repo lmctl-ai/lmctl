@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcad — headless CAD and rendering</title>
+<meta name="description" content="A native script host for 3D solids, still renders, exports and animated PNG output.">
+<link rel="stylesheet" href="/tools/style.css">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/tools/lmcad/">Overview</a></li>
+<li><a href="/tools/lmcad/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmcad/user-guide.html">User guide</a></li>
+<li><a href="/tools/lmcad/skill.html">Skill</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcad</h1>
+<p><strong>Experimental, latest release.</strong> lmcad runs lmscript bytecode as a headless C++ CAD host. It models solids with OpenCASCADE, renders PNG images and APNG animations, and exports STL or OBJ meshes.</p>
+<p><a href="https://github.com/lmctl-ai/lmcad/releases/latest">Download the latest release</a> for Linux x64 or Linux arm64. For source builds, use the <a href="https://github.com/lmctl-ai/lmcad#build-opencascade-once">OCCT build instructions</a>; they build OpenCASCADE 8.0.1 into a reusable prefix before configuring lmcad.</p>
+<ul>
+<li><a href="https://github.com/lmctl-ai/lmcad">Source repository</a></li>
+<li><a href="https://github.com/lmctl-ai/lmcad/issues">Report an issue</a></li>
+<li><a href="https://github.com/lmctl-ai/lmcad/blob/main/LICENSE">MIT license</a></li>
+<li><a href="/tools/lmcad/tutorial.html">Tutorial</a>: compile a script, render a looped scene and create a tween animation.</li>
+<li><a href="/tools/lmcad/user-guide.html">User guide</a>: CLI, schema, outputs, limits and troubleshooting.</li>
+<li><a href="/tools/lmcad/skill.html">Skill</a>: practical guidance for generating and checking lmcad scripts.</li>
+</ul>
+<figure><img src="/tools/lmcad/img/plate-with-holes.png" alt="Gray rectangular plate with eight round through-holes"><figcaption>A plate cut with a loop of cylinder bores.</figcaption></figure>
+<figure><img src="/tools/lmcad/img/brick.png" alt="Red rectangular brick with two rows of raised cylindrical studs"><figcaption>A patterned brick built by looping over unions.</figcaption></figure>
+<figure><img src="/tools/lmcad/img/vase.png" alt="Blue tapered hollow vase with an open top"><figcaption>A hollow vessel made from a revolved sketch.</figcaption></figure>
+<figure><img src="/tools/lmcad/img/mug.png" alt="Blue hollow mug with a rounded handle"><figcaption>A revolved cup body with a fused handle.</figcaption></figure>
+<figure><img src="/tools/lmcad/img/tween-frame.png" alt="Small shaded sphere at an intermediate animation position"><figcaption>One frame from a CSV-keyframed tween.</figcaption></figure>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcad">github.com/lmctl-ai/lmcad</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcad tutorial</title>
+<meta name="description" content="A command-driven introduction to compiling and running lmcad scripts, range loops and APNG animation.">
+<link rel="stylesheet" href="/tools/style.css">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/tools/lmcad/">Overview</a></li>
+<li><a href="/tools/lmcad/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmcad/user-guide.html">User guide</a></li>
+<li><a href="/tools/lmcad/skill.html">Skill</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcad tutorial</h1>
+<p>Run these examples from the lmcad source directory after installing the latest lmscript compiler and building lmcad. The first script source below is saved as <code>hello.lms</code> in a text editor.</p>
+<h2>1. Write a DSL block and compile it</h2>
+<pre><code>p = _dsl_ schema="schema/lmcad.dsl.json";
+scene.background(0.04, 0.06, 0.1);
+let blue = material().color(0.18, 0.62, 0.88);
+scene.box(2.0, 1.2, 0.8, blue);
+scene.camera(42.0, 0.0, 3.0, 8.0, 0.0, 0.0, 0.0);
+scene.directional_light(-0.4, -1.0, -0.5, 0.72);
+scene.fill_light(0.8, -0.2, 0.9, 0.42);
+scene.ambient(0.24);
+scene.fit_camera(42.0, 1.25);
+scene.render_png("build/hello.png", 480, 320);
+end _dsl_
+savedsl(p, "build/hello.dslb");</code></pre>
+<p>Compile the file with the published compiler and run the bytecode. The compiler emits a bytecode file; the host prints one JSON result line.</p>
+<pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript hello.lms build/hello.dslb</kbd>
+<samp>exit status: 0</samp></pre>
+<pre><kbd>build/lmcad --dsl build/hello.dslb</kbd>
+<samp>{"ok": true, "result": null}</samp></pre>
+<pre><kbd>file build/hello.png</kbd>
+<samp>build/hello.png: PNG image data, 480 x 320, 8-bit/color RGB, non-interlaced</samp></pre>
+<p>Open <code>build/hello.png</code> in an image viewer to inspect the fitted camera, silhouette and lighting.</p>
+<h2>2. Render a range loop</h2>
+<p>Range loops use an integer counter and an exclusive upper bound. This example places seven boxes along the x-axis:</p>
+<pre><code>for (i in range(0, 7)) {
+  let x = float(i) - 3.0;
+  scene.box(0.7, 0.7, 0.7, mat).position(x, 0.0, 0.0);
+}</code></pre>
+<p>Compile and run the complete loop example:</p>
+<pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript examples/loop-row.lms build/loop-row.dslb</kbd>
+<samp>exit status: 0</samp></pre>
+<pre><kbd>build/lmcad --dsl build/loop-row.dslb</kbd>
+<samp>{"ok": true, "result": null}</samp></pre>
+<pre><kbd>file build/loop-row.png</kbd>
+<samp>build/loop-row.png: PNG image data, 480 x 270, 8-bit/color RGB, non-interlaced</samp></pre>
+<h2>3. Create a tween animation</h2>
+<p>The tween example reads keyframes from CSV, interpolates position and color in DSL loops, writes numbered PNGs and assembles a 30-frame APNG.</p>
+<pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript examples/tween.lms build/tween.dslb</kbd>
+<samp>exit status: 0</samp></pre>
+<pre><kbd>build/lmcad --dsl build/tween.dslb</kbd>
+<samp>{"ok": true, "result": null}</samp></pre>
+<pre><kbd>ls -lh build/tween.apng build/tween-15.png</kbd>
+<samp>build/tween.apng  67K
+build/tween-15.png  2.3K</samp></pre>
+<pre><kbd>file build/tween-15.png</kbd>
+<samp>build/tween-15.png: PNG image data, 160 x 120, 8-bit/color RGB, non-interlaced</samp></pre>
+<h2>What you learned</h2>
+<p>A script binds to a schema, compiles to portable bytecode and runs inside the native host. The same typed API supports solid modeling, range loops, CSV-backed keyframes, PNG output and APNG animation.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcad">github.com/lmctl-ai/lmcad</a>.</p>
+</footer>
+</body>
+</html>
