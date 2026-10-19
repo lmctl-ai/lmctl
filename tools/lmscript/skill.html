@@ -36,11 +36,9 @@
 
 <h2 id="install">Install</h2>
 <p>Requires Node.js 24.15 or later.</p>
-<pre>
-<kbd>npm install -g @lmctl-ai/lmctl</kbd>
+<pre><kbd>npm install -g @lmctl-ai/lmctl</kbd>
 <kbd>lmscript --version</kbd>
-<samp>lmscript 0.2.348</samp>
-</pre>
+<samp>lmscript 0.2.348</samp></pre>
 
 <h2 id="commands">Commands</h2>
 <table>
@@ -117,13 +115,11 @@ for (line in lines(r.stdout)) {
 }
 println(f"{len(changed)} changed file(s)");</code></pre>
 <h3 id="example-dry-run">Show the plan before deleting</h3>
-<pre>
-<kbd>lmscript --dry-run cleanup.lms</kbd>
+<pre><kbd>lmscript --dry-run cleanup.lms</kbd>
 <samp>PLAN complete
 1. /home/me/cleanup.lms:1:1 dummy write_file ["out/report.txt","done\n"]
 2. /home/me/cleanup.lms:2:1 dummy delete_file ["out/notes.txt"]
-3. /home/me/cleanup.lms:3:1 handled println ["cleaned up"]</samp>
-</pre>
+3. /home/me/cleanup.lms:3:1 handled println ["cleaned up"]</samp></pre>
 <h3 id="example-dsl">Experimental: compile a <code>_dsl_</code> program for a native host</h3>
 <p><strong>Experimental; the syntax may change.</strong> A <code>_dsl_</code> block holds code in a separate, statically typed language that a native host program (for example lmhtml or lmcad) runs. lmscript compiles it at check time against the host's schema and <code>savedsl</code> writes the bytecode; the host runs it.</p>
 <ol>
@@ -145,13 +141,11 @@ for (i in range(0, pages.len())) {
 report.write_text("broken.txt");
 end _dsl_
 savedsl(check, "links.dslb");</code></pre>
-<pre>
-<kbd>lmscript links.lms</kbd>
+<pre><kbd>lmscript links.lms</kbd>
 <kbd>lmhtml --dsl links.dslb</kbd>
 <samp>{"ok": true, "result": null}</samp>
 <kbd>cat broken.txt</kbd>
-<samp>broken-link site/index.html:0: missing.html not found</samp>
-</pre>
+<samp>broken-link site/index.html:0: missing.html not found</samp></pre>
 <p>Rules inside <code>_dsl_</code>: <code>let x = expr;</code> with inferred types, <code>if</code>/<code>else</code>, <code>for (i in range(a, b))</code>, <code>while</code> with <code>break</code>/<code>continue</code>; types <code>int</code>, <code>float</code> (write <code>1.0</code>), <code>string</code>, <code>bool</code> and the schema's object types; int and float never mix (<code>float(i)</code> converts); strings join with <code>+</code> and <code>str(x)</code>; host lists via <code>xs.len()</code> and <code>xs.at(i)</code>. No lmscript functions, lists, maps or user functions inside the block. The compiled value is opaque: only <code>savedsl(value, "file.dslb")</code> accepts it. The host refuses bytecode compiled against a different schema (it checks a SHA-256 of the schema bytes), so recompile when the host changes. The built-in <code>lmscript help dsl</code> text in 0.2.348 is older than the compiler: <code>while</code>/<code>break</code>/<code>continue</code> do work.</p>
 
 <h2 id="errors-and-exit-codes">Errors and exit codes</h2>

@@ -34,13 +34,9 @@
 
 <h2 id="install">Install</h2>
 <p>lmscript is in the npm package <code>@lmctl-ai/lmctl</code>, together with <code>lmctl</code>. It needs Node.js 24.15 or later.</p>
-<pre>
-<kbd>npm install -g @lmctl-ai/lmctl</kbd>
-</pre>
-<pre>
-<kbd>lmscript --version</kbd>
-<samp>lmscript 0.2.348</samp>
-</pre>
+<pre><kbd>npm install -g @lmctl-ai/lmctl</kbd></pre>
+<pre><kbd>lmscript --version</kbd>
+<samp>lmscript 0.2.348</samp></pre>
 <p>Update with the same command; <code>npm view @lmctl-ai/lmctl version</code> shows the latest published version.</p>
 
 <h2 id="concepts">Concepts</h2>
@@ -62,11 +58,9 @@
 <h2 id="reference">Reference</h2>
 
 <h3 id="cli">Command line</h3>
-<pre>
-<kbd>lmscript [OPTIONS] FILE [ARGS…]</kbd>
+<pre><kbd>lmscript [OPTIONS] FILE [ARGS…]</kbd>
 <kbd>lmscript [OPTIONS] - [ARGS…]</kbd>
-<kbd>lmscript [OPTIONS] -e CODE [ARGS…]</kbd>
-</pre>
+<kbd>lmscript [OPTIONS] -e CODE [ARGS…]</kbd></pre>
 <p>Options go before the script; everything after <code>FILE</code>, <code>-</code> (read the script from standard input) or <code>-e CODE</code> is passed to the script in <code>ARGV</code>, including words that look like options.</p>
 <table>
 <thead><tr><th>Option</th><th>Meaning</th></tr></thead>
@@ -186,8 +180,7 @@ println(op(2, 5));</code></pre>
 </tbody>
 </table>
 <p>Everything else is a plain function: <code>push(list, x)</code>, <code>keys(m)</code>, <code>contains(list, x)</code>, <code>sort(list, "field")</code>, <code>set(m, "a.b", v)</code>. Writing a missing key creates it (<code>m.k = v</code>); reading one is an error that names the fix:</p>
-<pre><samp>map user has no key "email"; test with user.has("email") or read user.get("email", default)</samp>
-</pre>
+<pre><samp>map user has no key "email"; test with user.has("email") or read user.get("email", default)</samp></pre>
 
 <h3 id="modules">Modules and imports</h3>
 <pre><code># lib/textutil.lms
@@ -268,8 +261,7 @@ r = system(argv, 10000);            # computed argv, 10 s timeout</code></pre>
 
 <h3 id="dry-run">Check, dry run and run in detail</h3>
 <p>A normal run is: check, then a silent dry pass, then the real run. The dry pass simulates up to 10 iterations per loop and gives up after 100 ms; a cut-short dry pass still allows the real run. If the dry pass hits a fatal error before any simulated effect, the real run does not start (exit 1). The dry pass is not a proof: data read at run time can differ, and untaken branches are not simulated. <code>--dry-run --plan-format json</code> prints one JSON report:</p>
-<pre>
-<kbd>lmscript --dry-run --plan-format json pj.lms</kbd>
+<pre><kbd>lmscript --dry-run --plan-format json pj.lms</kbd>
 <samp>{
   "version": 1,
   "status": "complete",
@@ -290,8 +282,7 @@ r = system(argv, 10000);            # computed argv, 10 s timeout</code></pre>
   ],
   "stop": null,
   "diagnostics": []
-}</samp>
-</pre>
+}</samp></pre>
 
 <h3 id="other">Other features</h3>
 <dl>
@@ -335,8 +326,7 @@ savedsl(check, "links.dslb");</code></pre></li>
 <li>Not available: lmscript functions, lists and maps, user functions and types.</li>
 <li><code>${expr}</code> in the body inserts an lmscript value as a typed literal before compiling (string, int, float or bool).</li>
 <li>Type errors are check errors at the exact position, before anything runs:
-<pre><samp>error:/home/me/bad.lms:2:27: _dsl_: method Html.load_dir expects string for argument 1; found int</samp>
-</pre></li>
+<pre><samp>error:/home/me/bad.lms:2:27: _dsl_: method Html.load_dir expects string for argument 1; found int</samp></pre></li>
 <li>The compiled value is opaque: printing it is an error; <code>savedsl(value, path)</code> is the only use (atomic write; nothing is written under <code>--dry-run</code>).</li>
 <li><code>lmscript --dsl-signatures SCHEMA</code> prints the schema's functions and methods, one per line.</li>
 </ul>
@@ -358,9 +348,7 @@ println(f"commit {trim(r.stdout)}");</code></pre>
 <h3 id="task-preview">Preview a destructive script</h3>
 <p>Run <code>lmscript --dry-run script.lms</code> and read the plan; then run it normally.</p>
 <h3 id="task-one-liner">Run a one-liner</h3>
-<pre>
-<kbd>lmscript -e 'println(len(list_dir(".")));'</kbd>
-</pre>
+<pre><kbd>lmscript -e 'println(len(list_dir(".")));'</kbd></pre>
 
 <h2 id="limits">Limits</h2>
 <ul>

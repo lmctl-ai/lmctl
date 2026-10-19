@@ -44,10 +44,8 @@ g.say("Hello from the DSL");
 end _dsl_
 savedsl(p, "demo.dslb");</code></pre>
 <p>Run the compiler:</p>
-<pre>
-<kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript demo.lms demo.dslb</kbd>
-<samp>exit status: 0</samp>
-</pre>
+<pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript demo.lms demo.dslb</kbd>
+<samp>exit status: 0</samp></pre>
 <h2>3. Implement and build the host</h2>
 <p>This host binds <code>Greeter.say</code>, loads bytecode against the exact schema bytes, supplies a live object through <code>Context</code>, and reports a standard JSON result line.</p>
 <pre><code>#include "dslvm.hpp"
@@ -68,25 +66,17 @@ int main(int argc, char** argv) {
   program.run(context, reg);
   return dslvm::report_ok(dslvm::json_escape(greeter.last));
 }</code></pre>
-<pre>
-<kbd>g++ -std=c++17 -Iinclude greeter.cpp -o greeter</kbd>
-<samp>host build: 0</samp>
-</pre>
+<pre><kbd>g++ -std=c++17 -Iinclude greeter.cpp -o greeter</kbd>
+<samp>host build: 0</samp></pre>
 <h2>4. Check signatures and run</h2>
 <p>Compare the compiler's canonical signature list with the registry, then run the compiled chunk:</p>
-<pre>
-<kbd>./greeter --signatures</kbd>
+<pre><kbd>./greeter --signatures</kbd>
 <samp>context g: Greeter
-method Greeter.say(string) -&gt; void</samp>
-</pre>
-<pre>
-<kbd>diff -u &lt;(npx --yes --package=@lmctl-ai/lmctl -- lmscript --dsl-signatures schema.json) &lt;(./greeter --signatures)</kbd>
-<samp>signature parity: 0</samp>
-</pre>
-<pre>
-<kbd>./greeter demo.dslb schema.json</kbd>
-<samp>{"ok": true, "result": "Hello from the DSL"}</samp>
-</pre>
+method Greeter.say(string) -&gt; void</samp></pre>
+<pre><kbd>diff -u &lt;(npx --yes --package=@lmctl-ai/lmctl -- lmscript --dsl-signatures schema.json) &lt;(./greeter --signatures)</kbd>
+<samp>signature parity: 0</samp></pre>
+<pre><kbd>./greeter demo.dslb schema.json</kbd>
+<samp>{"ok": true, "result": "Hello from the DSL"}</samp></pre>
 <h2>What you learned</h2>
 <p>The compiler binds imports to the schema bytes; the host registers matching signatures, loads the program, provides owned objects through a context and executes the verified bytecode.</p>
 </main>

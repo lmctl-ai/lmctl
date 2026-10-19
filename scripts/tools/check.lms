@@ -74,6 +74,19 @@ fn format_pre(source: string) -> string {
       result = str_substr(result, 0, start) + replacement + str_substr(result, start + str_len(raw), str_len(result));
     }
   }
+  let inner = html.parse(result).source_inner("pre");
+  let trimmed = inner;
+  while (str_starts_with(trimmed, "\n") || str_starts_with(trimmed, "\r\n")) {
+    let n = 1;
+    if (str_starts_with(trimmed, "\r\n")) { n = 2; }
+    trimmed = str_substr(trimmed, n, str_len(trimmed));
+  }
+  while (str_ends_with(trimmed, "\n")) {
+    let n = 1;
+    if (str_ends_with(trimmed, "\r\n")) { n = 2; }
+    trimmed = str_substr(trimmed, 0, str_len(trimmed) - n);
+  }
+  if (trimmed != inner) { result = str_replace(result, ">" + inner + "</", ">" + trimmed + "</"); }
   return result;
 }
 fn finding(file: string, selector: string, message: string) -> void {
@@ -145,7 +158,7 @@ fn check_page(page: Doc) -> void {
           found_command = true;
         }
       }
-      if (!found_command) { finding(file, page.select("pre").at(i).path(), "pre formatting: remove empty code boundary lines"); }
+      if (!found_command) { finding(file, page.select("pre").at(i).path(), "pre formatting: remove empty pre/code boundary lines"); }
     }
   }
   let allowed = "|html|head|meta|title|link|body|header|nav|main|section|footer|h1|h2|h3|h4|p|ul|ol|li|dl|dt|dd|pre|code|kbd|samp|em|strong|a|table|thead|tbody|tr|th|td|blockquote|hr|figure|figcaption|img|";
@@ -186,14 +199,14 @@ fn check_page(page: Doc) -> void {
       let page_path = file;
       if (str_starts_with(page_path, "./")) { page_path = str_substr(page_path, 2, str_len(page_path)); }
       let decorative = false;
-      if (page_path == "tools/index.html" && node.parent().tag() == "li" && node.attr("width") == "32" && node.attr("height") == "32" && str_ends_with(src, "/img/icon.png")) {
+      if (page_path == "tools/index.html" && node.parent().tag() == "li" && str_ends_with(src, "/img/icon.png")) {
         let links = node.parent().select("a");
         if (links.len() == 1 && normalized(links.at(0).text()) != "" && links.at(0).attr("href") == str_substr(src, 0, str_len(src) - 12)) {
           for (candidate in page.select("main > ul > li > img")) { if (candidate.path() == path) { decorative = true; } }
         }
       }
       let landing_logo = false;
-      if (filename(page_path) == "index.html" && node.attr("width") == "128" && node.attr("height") == "128") {
+      if (filename(page_path) == "index.html") {
         let base = str_substr(page_path, 0, str_len(page_path) - 10);
         let expected_src = "/" + base + "img/logo.png";
         let expected_alt = str_substr(base, 6, str_len(base) - 7) + " logo";
@@ -202,7 +215,7 @@ fn check_page(page: Doc) -> void {
           for (candidate in page.select("main > h1 + figure > img")) { if (candidate.path() == path) { landing_logo = true; } }
         }
       }
-      if (!node.has_attr("alt") || (!decorative && normalized(node.attr("alt")) == "")) { finding(file, path, "<img> needs a non-empty alt (only catalog 32x32 icons may have empty alt)"); }
+      if (!node.has_attr("alt") || (!decorative && normalized(node.attr("alt")) == "")) { finding(file, path, "<img> needs a non-empty alt (only catalog icons may have empty alt)"); }
       if (!decorative) {
         if (node.parent().tag() != "figure") { finding(file, path, "<img> must be inside <figure>"); }
         else { if (!landing_logo && node.parent().select("figcaption").len() != 1) { finding(file, path, "<figure> needs one <figcaption>"); } }
@@ -225,7 +238,16 @@ fn check_page(page: Doc) -> void {
       let site_image = str_starts_with(src, "/tools/img/") && component_index == 1;
       if ((!image_path_ok && !site_image) || (component_index != 2 && !site_image) || component == "" || str_contains(src, "..") || str_contains(src, "?") || str_contains(src, "#") || str_contains(src, "%") || str_contains(src, "\\")) {
         finding(file, path, "image must be local under /tools/<tool>/img/: " + src);
-      } else { if (!html.link_exists(page, src)) { finding(file, path, "image not found: " + src); } }
+      } else {
+        if (!html.link_exists(page, src)) { finding(file, path, "image not found: " + src); }
+        else {
+          if (str_ends_with(str_lower(src), ".png")) {
+            let size = html.png_size(str_substr(src, 1, str_len(src)));
+            if (!node.has_attr("width") || !node.has_attr("height")) { finding(file, path, "PNG needs width and height attributes: " + src); }
+            else { if (node.attr("width") != str(size.width()) || node.attr("height") != str(size.height())) { finding(file, path, "PNG dimensions must match intrinsic " + str(size.width()) + "x" + str(size.height()) + ": " + src); } }
+          }
+        }
+      }
     }
     if (tag == "a") {
       let url = node.attr("href");

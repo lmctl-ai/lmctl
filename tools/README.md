@@ -69,9 +69,11 @@ within 160 characters, or end at a whole word with an ellipsis. A single oversiz
 Include an introductory paragraph. Old automatically truncated descriptions
 are regenerated from that paragraph.
 Authored content is retained as source bytes, including comments, quotes and
-entities, with two formatting exceptions: adjacent kbd/samp commands and output
+entities, with formatting exceptions: adjacent kbd/samp commands and output
 inside pre gain a separating newline, and empty leading/trailing newline lines
-inside pre/code are removed. Other preformatted spacing stays intact. Loose
+inside pre and pre/code are removed. Missing PNG width/height attributes are
+also filled from the image header.
+Other preformatted spacing stays intact. Loose
 fragments are wrapped in main. Invalid content such as a div or class attribute is **not repaired**: the contract checker
 reports it. Explicit main content is retained as well.
 
@@ -87,10 +89,10 @@ migration; old `user-guide.html` pages are now `guide.html`.
 ## Derived artwork
 
 Authors do not add icon markup. When `tools/<tool>/img/icon.png` exists,
-decoration adds the PNG favicon to every tool page and a decorative 32×32 icon
-to its catalog entry. `tools/<tool>/img/logo.png` supplies the 128×128 logo
+decoration adds the PNG favicon to every tool page and a decorative icon
+to its catalog entry. `tools/<tool>/img/logo.png` supplies the logo
 immediately after the tool index's h1. Site pages use `tools/img/icon.png` as
-the favicon; `tools/img/tools.png` supplies the catalog's 128×128 logo.
+the favicon; `tools/img/tools.png` supplies the catalog's logo.
 Missing optional assets produce no markup; deleting an asset and rerunning
 decoration removes its generated references. Other head link resources remain
 forbidden. Indexes, including existing index files, are regenerated as described
@@ -107,7 +109,10 @@ above, so repeated decoration never duplicates logos.
   Paste real output.
 - Images are local `/tools/<tool>/img/<file>` or `/tools/img/<file>` and must
   exist. They require an alt attribute, with nonempty text except the generated
-  32×32 catalog icons beside their tool links. Width/height attributes are allowed.
+  catalog icons beside their tool links. PNG width/height attributes must match
+  the actual pixel dimensions.
+  Decoration fills missing attributes from the PNG header; incorrect existing
+  attributes remain findings. Generated icons use 64×64 and logos 256×256.
   Content images stay inside a figure with a figcaption; generated landing logos
   need no caption. Each page is at most 153600 bytes.
 - PNG files anywhere under tools must be smaller than 30 KB (30000 bytes).

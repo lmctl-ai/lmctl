@@ -13,3 +13,8 @@
 
 <pre><kbd>comment gap</kbd><!-- invisible
 newline --><samp>output</samp></pre>
+
+<pre>
+<kbd>boundary command</kbd>
+<samp>boundary output</samp>
+</pre>

@@ -66,6 +66,19 @@ fn format_pre(source: string) -> string {
       result = str_substr(result, 0, start) + replacement + str_substr(result, start + str_len(raw), str_len(result));
     }
   }
+  let inner = html.parse(result).source_inner("pre");
+  let trimmed = inner;
+  while (str_starts_with(trimmed, "\n") || str_starts_with(trimmed, "\r\n")) {
+    let n = 1;
+    if (str_starts_with(trimmed, "\r\n")) { n = 2; }
+    trimmed = str_substr(trimmed, n, str_len(trimmed));
+  }
+  while (str_ends_with(trimmed, "\n")) {
+    let n = 1;
+    if (str_ends_with(trimmed, "\r\n")) { n = 2; }
+    trimmed = str_substr(trimmed, 0, str_len(trimmed) - n);
+  }
+  if (trimmed != inner) { result = str_replace(result, ">" + inner + "</", ">" + trimmed + "</"); }
   return result;
 }
 fn norm(value: string) -> string {
@@ -143,9 +156,33 @@ fn page_title(title: string, tool: string) -> string {
   return result + " — lmctl.com tools";
 }
 fn summary(page: Doc) -> string {
-  let paragraphs = html.parse(content(page)).select("main p");
+  let paragraphs = page.select("main p");
+  if (paragraphs.len() == 0) { paragraphs = page.select("body > p, body > :not(nav):not(footer) p"); }
   let result = "";
   if (paragraphs.len() > 0) { result = excerpt(paragraphs.at(0).text(), 160, true); }
+  return result;
+}
+fn image_dimensions(source: string) -> string {
+  let result = source;
+  let images = html.parse(source).source_elements("img");
+  for (i in range(0, images.len())) {
+    let raw = images.at(i);
+    let node = html.parse(raw).select("img").at(0);
+    let src = node.attr("src");
+    if (str_starts_with(src, "/tools/") && str_ends_with(str_lower(src), ".png") && html.link_exists(html.parse(""), src)) {
+      if (!node.has_attr("width") || !node.has_attr("height")) {
+        let size = html.png_size(str_substr(src, 1, str_len(src)));
+        let attrs = "";
+        if (!node.has_attr("width")) { attrs = attrs + " width=\"" + str(size.width()) + "\""; }
+        if (!node.has_attr("height")) { attrs = attrs + " height=\"" + str(size.height()) + "\""; }
+        let close = str_len(raw) - 1;
+        if (str_substr(raw, close - 1, 1) == "/") { close = close - 1; }
+        let replacement = str_substr(raw, 0, close) + attrs + str_substr(raw, close, str_len(raw));
+        let offset = element_offset(result, "img", raw, i);
+        result = str_substr(result, 0, offset) + replacement + str_substr(result, offset + str_len(raw), str_len(result));
+      }
+    }
+  }
   return result;
 }
 fn content(page: Doc) -> string {
@@ -173,7 +210,8 @@ fn page_description(page: Doc) -> string {
   let meta = page.select("head meta[name='description']");
   if (meta.len() > 0 && norm(meta.at(0).attr("content")) != "") {
     let previous = norm(meta.at(0).attr("content"));
-    let paragraphs = html.parse(content(page)).select("main p");
+    let paragraphs = page.select("main p");
+    if (paragraphs.len() == 0) { paragraphs = page.select("body > p, body > :not(nav):not(footer) p"); }
     let old_generated = "";
     if (paragraphs.len() > 0) { old_generated = str_trim(str_text_prefix(norm(paragraphs.at(0).text()), 160)); }
     if (previous != old_generated) { result = excerpt(previous, 160, true); }
@@ -191,7 +229,7 @@ fn favicon(path: string) -> string {
 }
 fn logo(path: string, alt: string) -> string {
   let result = "";
-  if (asset_exists(path)) { result = "<figure><img src=\"" + escape(path) + "\" alt=\"" + escape(alt) + "\" width=\"128\" height=\"128\"></figure>"; }
+  if (asset_exists(path)) { result = "<figure><img src=\"" + escape(path) + "\" alt=\"" + escape(alt) + "\"></figure>"; }
   return result;
 }
 fn render(layout: string, nav: string, footer: string, body: string, title: string, description: string) -> string {
@@ -200,7 +238,7 @@ fn render(layout: string, nav: string, footer: string, body: string, title: stri
   result = str_replace(result, "{{DESCRIPTION}}", escape(description));
   result = str_replace(result, "{{NAV}}", nav);
   result = str_replace(result, "{{FOOTER}}", footer);
-  return str_replace(result, "{{CONTENT}}", body) + "\n";
+  return image_dimensions(str_replace(result, "{{CONTENT}}", body) + "\n");
 }
 fn differences(page: Doc, result: string) -> string {
   let wanted = html.parse(result);
@@ -303,7 +341,7 @@ while (str_find(tool_dirs, "|") >= 0) {
   for (page in pages) { if (basename(page.path()) == "index.html") { before = page.source(); } }
   store(index_path, render(tool_layout, nav, footer, index_content, page_title(tool_title, tool), tool_summary), before, check, "missing or stale generated tool index");
   let icon = "";
-  if (asset_exists(icon_path)) { icon = "<img src=\"" + escape(icon_path) + "\" alt=\"\" width=\"32\" height=\"32\">"; }
+  if (asset_exists(icon_path)) { icon = "<img src=\"" + escape(icon_path) + "\" alt=\"\">"; }
   tool_links = tool_links + "<li>" + icon + "<a href=\"/tools/" + escape(tool) + "/\">" + escape(tool_title) + "</a> — " + escape(tool_summary) + "</li>\n";
 }
 for (page in html.load_dir("tools", "*.html", "*/*.html")) {

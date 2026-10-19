@@ -184,6 +184,7 @@ let expected = original;
 expected = str_replace(expected, "-->\n<pre><kbd>demo one</kbd> <samp>one</samp><kbd>demo two</kbd><samp>two</samp></pre>", "-->\n<pre><kbd>demo one</kbd> \n<samp>one</samp>\n<kbd>demo two</kbd>\n<samp>two</samp></pre>");
 expected = str_replace(expected, "<code>\n  example &lt;input&gt;\n    preserve indentation\n</code>", "<code>  example &lt;input&gt;\n    preserve indentation</code>");
 expected = str_replace(expected, "newline --><samp>output</samp>", "newline -->\n<samp>output</samp>");
+expected = str_replace(expected, "<pre>\n<kbd>boundary command</kbd>\n<samp>boundary output</samp>\n</pre>", "<pre><kbd>boundary command</kbd>\n<samp>boundary output</samp></pre>");
 if (page.source_inner("main") != expected) { report.add("test", "pre", 0, "changed unrelated authored bytes or missed formatting"); }
 if (fallback.source_elements("code").at(0) != "<code>  crlf preserved</code>") { report.add("test", "crlf", 0, "blank boundary lines remain"); }
 report.write_text("visual-assert.txt");
@@ -214,9 +215,9 @@ let index = html.load("tools/zeta/index.html");
 let skill = html.load("tools/zeta/skill.html");
 if (skill.select("head link[rel=icon][type='image/png'][href='/tools/zeta/img/icon.png']").len() != 1 || skill.select("head link[rel=stylesheet]").len() != 1) { report.add("test", "head", 0, "favicon or stylesheet count"); }
 if (root.select("head link[rel=icon][href='/tools/img/icon.png']").len() != 1) { report.add("test", "head", 0, "site favicon missing"); }
-if (root.select("main > ul > li > img[src='/tools/zeta/img/icon.png'][alt=''][width='32'][height='32']").len() != 1) { report.add("test", "catalog", 0, "decorative icon missing"); }
-if (index.select("main > h1 + figure > img[src='/tools/zeta/img/logo.png'][alt='zeta logo'][width='128'][height='128']").len() != 1 || index.select("figure").len() != 1) { report.add("test", "logo", 0, "tool logo missing or duplicated"); }
-if (root.select("main > h1 + figure > img[src='/tools/img/tools.png'][alt='lmctl tools'][width='128'][height='128']").len() != 1) { report.add("test", "logo", 0, "site logo missing"); }
+if (root.select("main > ul > li > img[src='/tools/zeta/img/icon.png'][alt=''][width='64'][height='64']").len() != 1) { report.add("test", "catalog", 0, "decorative icon missing"); }
+if (index.select("main > h1 + figure > img[src='/tools/zeta/img/logo.png'][alt='zeta logo'][width='256'][height='256']").len() != 1 || index.select("figure").len() != 1) { report.add("test", "logo", 0, "tool logo missing or duplicated"); }
+if (root.select("main > h1 + figure > img[src='/tools/img/tools.png'][alt='lmctl tools'][width='256'][height='256']").len() != 1) { report.add("test", "logo", 0, "site logo missing"); }
 report.write_text("icons-assert.txt");
 report.fail_if_any();
 end _dsl_
@@ -224,6 +225,32 @@ savedsl(p, ARGV[0]);
 LMS
 "$compiler" "$work/icons-assert.lms" "$work/icons-assert.dslb"
 (cd "$work" && "$host" --dsl "$work/icons-assert.dslb") || { cat "$work/icons-assert.txt"; exit 1; }
+cat > "$work/tools/zeta/guide-images.html" <<'HTML'
+<h1>Images</h1><p>Intrinsic geometry reserves layout space.</p><h2>Overview</h2>
+<!-- <img src='/tools/zeta/img/logo.png'> -->
+<figure><img src='/tools/zeta/img/logo.png' alt='A logo'><figcaption>Example.</figcaption></figure>
+<figure><img src='/tools/zeta/img/icon.png' alt='An icon' width='64'><figcaption>Example.</figcaption></figure>
+HTML
+expect_failure 'PNG needs width and height attributes' contract
+run decorate
+run check
+cat > "$work/dimensions.lms" <<'LMS'
+p = _dsl_ schema="lmhtml.dsl.json";
+let page = html.load("tools/zeta/guide-images.html");
+if (page.select("img[width='256'][height='256']").len() != 1 || page.select("img[width='64'][height='64']").len() != 1) { report.add("test", "dimensions", 0, "missing pair or half-pair not filled"); }
+if (!str_contains(page.source(), "<!-- <img src='/tools/zeta/img/logo.png'> -->")) { report.add("test", "dimensions", 0, "comment changed"); }
+report.write_text("dimensions.txt");
+report.fail_if_any();
+html.save(str_replace(page.source(), "width='64'", "width='12'"), "tools/zeta/guide-images.html");
+end _dsl_
+savedsl(p, ARGV[0]);
+LMS
+"$compiler" "$work/dimensions.lms" "$work/dimensions.dslb"
+(cd "$work" && "$host" --dsl "$work/dimensions.dslb") || { cat "$work/dimensions.txt"; exit 1; }
+run decorate
+expect_failure 'PNG dimensions must match intrinsic 64x64' contract
+rm "$work/tools/zeta/guide-images.html"
+run decorate
 cp -R "$work/tools" "$work/icons-unchanged"
 run decorate
 for file in "$work"/tools/*.html "$work"/tools/*/*.html; do cmp "$file" "$work/icons-unchanged/${file#"$work/tools/"}"; done
