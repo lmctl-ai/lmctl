@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="150" viewBox="0 0 240 150" role="img" aria-labelledby="t d">
+  <title id="t">A cross-provider agent team</title><desc id="d">A Lead connects to coder and reviewer agents across providers.</desc>
+  <rect x="8" y="8" width="224" height="134" rx="14" fill="#edf6f5" stroke="#17364a" stroke-width="2"/>
+  <path d="M120 59v28M62 87h116M62 87v13m58-13v13m58-13v13" fill="none" stroke="#176a70" stroke-width="4" stroke-linecap="round"/>
+  <g><rect x="82" y="25" width="76" height="36" rx="9" fill="#17364a"/><text x="120" y="48" fill="#fff" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700">LEAD</text></g>
+  <g><rect x="24" y="100" width="76" height="28" rx="8" fill="#b9e8e4" stroke="#176a70"/><text x="62" y="119" fill="#123342" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700">CODER</text></g>
+  <g><rect x="140" y="100" width="76" height="28" rx="8" fill="#f5d99e" stroke="#98601b"/><text x="178" y="119" fill="#3e2d12" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700">REVIEW</text></g>
+</svg>

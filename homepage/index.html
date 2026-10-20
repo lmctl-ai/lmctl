@@ -1,71 +1,90 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>lmctl — AI Control Plane</title>
-    <meta name="description" content="lmctl is a local-first control plane for teams of AI coding agents — provider-agnostic, with independent cross-provider review and durable memory that outlives any single session.">
-    <link rel="canonical" href="https://lmctl.com/">
-    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="lmctl — AI Control Plane">
-    <meta property="og:description" content="A local-first control plane for teams of AI coding agents — provider-agnostic, independent cross-provider review, and durable memory that outlives any single session.">
-    <meta property="og:url" content="https://lmctl.com/">
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="lmctl — AI Control Plane">
-    <meta name="twitter:description" content="A local-first control plane for teams of AI coding agents — provider-agnostic, independent cross-provider review, and durable memory that outlives any single session.">
-    <link rel="stylesheet" href="assets/style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>lmctl — AI automation for software work</title>
+  <meta name="description" content="Move from managing AI sessions to automating repeatable software workflows with provider choice, named teams and human-defined acceptance criteria.">
+  <link rel="canonical" href="https://lmctl.com/">
+  <link rel="icon" href="/assets/icon.png" type="image/png">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="lmctl — AI automation for software work">
+  <meta property="og:description" content="Start with named agent sessions. Build teams, delegate work and run repeatable AI workflows with people setting the goal and acceptance criteria.">
+  <meta property="og:url" content="https://lmctl.com/">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="lmctl — AI automation for software work">
+  <meta name="twitter:description" content="From agent sessions to repeatable AI workflows: choose providers, coordinate teams and keep people at the decision points.">
+  <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
-    <header>
-        <h1>lmctl</h1>
-        <p class="tagline">A provider-agnostic control plane for teams of AI coding agents.</p>
-    </header>
-    <main>
-        <section class="hero-intro">
-            <div class="hero-copy">
-                <p>AI agents shouldn't be locked to one provider, one workflow, or one context window. lmctl is a local-first control plane for running <strong>teams</strong> of AI coding agents — across providers, with adversarial cross-provider review and durable memory, composed in plain text.</p>
-                <p>Not an IDE, not another chatbot. It coordinates the agent tools you already use.</p>
-                <div class="cta">
-                    <a href="/lmctl">Read the docs →</a>
-                    <span class="muted">shipped — install and use it today</span>
-                </div>
-                <pre><code>npm install -g @lmctl-ai/lmctl</code></pre>
-                <p class="muted">Already use Claude Code or Codex? <a href="/lmctl/docs/tutorials/baby-steps">One command lists all your sessions in one place →</a></p>
-            </div>
-            <figure class="screencast-slot" data-video-src="/assets/screencasts/my-data.mp4">
-                <div class="screencast-placeholder">
-                    <span class="screencast-kicker">Planned screencast</span>
-                    <strong>“that’s MY data”</strong>
-                    <span>Drop <code>my-data.mp4</code> here later to show <code>lmctl ls</code> lighting up real Claude, Codex, and other provider sessions.</span>
-                </div>
-                <figcaption>Future asset path: <code>/assets/screencasts/my-data.mp4</code></figcaption>
-            </figure>
-        </section>
-
-        <section>
-            <h2>Why lmctl</h2>
-            <p>Every agentic tool wants to be the whole platform. That leaves you with three kinds of lock-in:</p>
-
-            <h3>Provider lock-in</h3>
-            <p>You're trapped in one ecosystem — and most "AI code review" is really <em>self-review</em>: one model grading its own work in a different hat, which rubber-stamps its own blind spots. lmctl makes review <strong>adversarial</strong> — the reviewer is a different provider <em>and</em> model from the author. A Claude lead hands coding to Codex and has Gemini review it, so the check is genuinely independent of the work. Different models have different blind spots, and that <strong>diversity</strong> is the point: a varied team catches what one model — or its own clones — can't. <a href="/lmctl/docs/why/adversarial-review">More on adversarial review →</a></p>
-            <p>And "provider-agnostic" is literal: the first-class CLIs — <strong>Claude Code, Codex, Copilot CLI, Qwen Code, Antigravity</strong> — sit side by side, and the OpenCode provider reaches <strong>any other model — local (Ollama) or remote</strong> (DeepSeek, Qwen, OpenRouter, Copilot's GPT/Claude/Gemini, and more). Pick <em>any collection</em> and put them in one team, working together — not one model at a time. <a href="/lmctl/docs/why/players-and-diversity">More on players &amp; model diversity →</a></p>
-
-            <h3>Workflow lock-in</h3>
-            <p>When most tools say "multi-agent," one provider auto-spawns the agents and you just watch. lmctl is the opposite — <strong>you</strong> are in charge: you divide the work and build the team in plain text from simple building blocks (a lead talks to its members; teams connect to other teams), choose which provider and model plays each role — top-tier for design, leaner models for routine coding — and tune how they interact. Agents from different providers, orchestrated by you — not clones of one. And you never have to <em>switch</em> to save money: lmctl is an <strong>orchestrator, not a model</strong> — <strong>add</strong> a cheaper provider (say Alibaba's Qwen Coding Plan via Qwen Code) for high-volume coding and keep your premium model for the judgment. <a href="/lmctl/docs/why/cost-and-model-routing">Cost &amp; model routing →</a> · <a href="/lmctl/docs/why/bring-your-own-subscriptions">Bring your own subscriptions →</a></p>
-
-            <h3>Context-window lock-in</h3>
-            <p>The industry's answer is bigger context windows — but every window eventually loses to a long-running project, and a session is bound to one provider and one folder. lmctl spreads work across specialized agents — planning, coding, review — and keeps a provider- and directory-agnostic memory (<strong>durable-memory</strong>). If a session fills up or breaks, start a fresh one — nothing is lost. <a href="/lmctl/docs/why/context-and-durable-memory">More on context &amp; durable memory →</a></p>
-        </section>
-
-        <section>
-            <h2>Get started</h2>
-            <pre><code>npm install -g @lmctl-ai/lmctl</code></pre>
-            <p>Then head to the <a href="/lmctl">docs</a> to define your first team.</p>
-        </section>
-    </main>
-    <footer>
-        <p>lmctl</p>
-    </footer>
+  <nav class="site-nav" aria-label="Main navigation">
+    <a class="brand" href="/" aria-label="lmctl home"><img src="/assets/logo.png" width="140" height="40" alt="lmCtl"></a>
+    <div class="nav-links">
+      <a href="/lmctl">Docs</a>
+      <a href="/tools/">Tools</a>
+      <a href="/skills/">Skills</a>
+    </div>
+  </nav>
+  <header class="hero">
+    <p class="eyebrow">From AI orchestration to AI automation</p>
+    <h1>People set the goal.<br>AI teams do the work.</h1>
+    <p class="hero-copy">lmctl grows from a clear view of agent sessions into repeatable, provider-flexible workflows. Keep the important decisions with people; automate the steps in between.</p>
+    <figure class="hero-figure">
+      <img src="/assets/automation-ladder.svg" width="960" height="300" alt="Four levels of AI automation: inspect named sessions, coordinate a team, delegate a workflow, then automate repeatable work; people define the goal and review the result.">
+      <figcaption>From hands-on turns to a human-defined goal and final review.</figcaption>
+    </figure>
+    <p class="cta"><a href="/lmctl">Read the docs <span aria-hidden="true">→</span></a></p>
+  </header>
+  <main>
+    <section class="levels" aria-label="Four levels of AI automation">
+      <article class="level">
+        <figure><img src="/assets/level-sessions.svg" width="240" height="150" alt="A named team of provider sessions with a status, history and usage view."></figure>
+        <div>
+          <p class="level-number">Level 1</p>
+          <h2>Manage agent sessions</h2>
+          <p>Give provider sessions a team and member name in a plain-text <code>.lmctl</code> teamfile, so work is organized by role instead of an opaque session ID. Use <code>lmctl status</code>, <code>lmctl running</code>, <code>lmctl tail</code>, <code>lmctl usage</code> and <code>lmctl ratelimit</code> to inspect activity, history, recorded costs and provider limits.</p>
+        </div>
+      </article>
+      <article class="level">
+        <figure><img src="/assets/level-team.svg" width="240" height="150" alt="A Lead agent exchanges work with coding and review members from different providers."></figure>
+        <div>
+          <p class="level-number">Level 2</p>
+          <h2>Coordinate a team with a person in the loop</h2>
+          <p>Compose a Lead, coding and review members across supported provider CLIs in a readable teamfile; members can communicate through the Lead and call across teams. <code>lmctl plan</code>, <code>lmctl lint</code>, <code>lmctl seed</code> and <code>lmctl prompt</code> help create, check, start and use that team without copying messages between provider tools.</p>
+        </div>
+      </article>
+      <article class="level">
+        <figure><img src="/assets/level-delegate.svg" width="240" height="150" alt="A person defines the request and acceptance criteria, an AI team carries out the middle steps, and the person reviews the result."></figure>
+        <div>
+          <p class="level-number">Level 3</p>
+          <h2>Delegate the middle of the workflow</h2>
+          <p>Set the requirement and acceptance criteria up front, then let a Lead assign work and coordinate its members while you step away from each turn. lmctl can track prompts and runs, but the workflow and approval boundaries come from your instructions; review the result yourself before accepting it.</p>
+        </div>
+      </article>
+      <article class="level">
+        <figure><img src="/assets/level-automation.svg" width="240" height="150" alt="An automation script routes a task through an author, acceptance checks and an independent reviewer, returning a result for human review."></figure>
+        <div>
+          <p class="level-number">Level 4</p>
+          <h2>Automate repeatable AI work</h2>
+          <p>After a person sets the request and acceptance rules, an agent can help draft an LMScript automation. Run it with <code>lmctl script</code>: a workflow can read a request form, call team members or provider sessions, check acceptance conditions and route independent review. People still define the rules and judge the result; scripts have full local authority, so run only code you trust.</p>
+        </div>
+      </article>
+    </section>
+    <section class="why">
+      <h2>Keep your choices open</h2>
+      <ul>
+        <li><strong>Provider:</strong> mix tools such as Claude Code, Codex, Copilot CLI, Qwen Code, Antigravity and OpenCode in one team.</li>
+        <li><strong>Workflow:</strong> keep team roles and repeatable steps in files you can read, review and change.</li>
+        <li><strong>Context:</strong> keep project knowledge in durable memory so it can outlast a provider session.</li>
+      </ul>
+    </section>
+  </main>
+  <footer>
+    <a href="/lmctl">Docs</a>
+    <a href="/tools/">Tools</a>
+    <a href="/skills/">Skills</a>
+    <a href="/">lmctl.com</a>
+  </footer>
 </body>
 </html>

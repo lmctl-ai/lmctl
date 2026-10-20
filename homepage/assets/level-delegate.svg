@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="150" viewBox="0 0 240 150" role="img" aria-labelledby="t d">
+  <title id="t">Human sets the task and reviews the outcome</title><desc id="d">A person provides a goal, an agent team works, and the person checks the result.</desc>
+  <rect x="8" y="8" width="224" height="134" rx="14" fill="#edf6f5" stroke="#17364a" stroke-width="2"/>
+  <circle cx="42" cy="63" r="20" fill="#b9e8e4" stroke="#176a70" stroke-width="2"/><circle cx="42" cy="58" r="5" fill="#17364a"/><path d="M31 74c2-11 20-11 22 0" fill="none" stroke="#17364a" stroke-width="4" stroke-linecap="round"/>
+  <text x="42" y="101" text-anchor="middle" fill="#17364a" font-family="system-ui,sans-serif" font-size="11" font-weight="700">DEFINE</text>
+  <path d="M72 64h36m-9-9 9 9-9 9M168 64h21m-9-9 9 9-9 9" fill="none" stroke="#176a70" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="111" y="39" width="54" height="50" rx="9" fill="#17364a"/><circle cx="128" cy="56" r="5" fill="#89d5cb"/><circle cx="148" cy="56" r="5" fill="#f5c16c"/><path d="M123 74h30" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+  <path d="M198 46a20 20 0 1 0 0 36" fill="none" stroke="#b95d30" stroke-width="3"/><path d="m188 76 10 6-1-12" fill="#b95d30"/>
+  <text x="198" y="101" text-anchor="middle" fill="#17364a" font-family="system-ui,sans-serif" font-size="11" font-weight="700">REVIEW</text>
+</svg>

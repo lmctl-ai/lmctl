@@ -4,13 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Page Not Found — lmctl</title>
+    <link rel="icon" href="/assets/icon.png" type="image/png">
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
-    <header>
-        <h1>lmctl</h1>
-        <p class="tagline">404 — Page Not Found</p>
+    <nav class="site-nav" aria-label="Main navigation">
+        <a class="brand" href="/" aria-label="lmctl home"><img src="/assets/logo.png" width="140" height="40" alt="lmCtl"></a>
+        <div class="nav-links">
+            <a href="/lmctl">Docs</a>
+            <a href="/tools/">Tools</a>
+            <a href="/skills/">Skills</a>
+        </div>
+    </nav>
+    <header class="hero">
+        <p class="eyebrow">404</p>
+        <h1>Page not found</h1>
+        <p class="tagline">The page you requested is not here.</p>
     </header>
     <main>
         <section>
@@ -19,7 +29,10 @@
         </section>
     </main>
     <footer>
-        <p>lmctl</p>
+        <a href="/lmctl">Docs</a>
+        <a href="/tools/">Tools</a>
+        <a href="/skills/">Skills</a>
+        <a href="/">lmctl.com</a>
     </footer>
 </body>
 </html>
