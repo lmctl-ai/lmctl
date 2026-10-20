@@ -25,35 +25,35 @@
 <p>Everything here was checked against lmscript 0.2.348. For a guided first session see the <a href="/tools/lmscript/tutorial.html">tutorial</a>.</p>
 
 <h2 id="overview">Overview</h2>
-<p>lmscript is a dynamically typed scripting language for automation. A script is a <code>.lms</code> text file run by the <code>lmscript</code> command. The language is deliberately small: statements, functions, lists and maps, a large standard library of plain functions, built-in blocks for CSV/JSON/TOML/properties/GraphQL/command data, and direct process execution without a shell.</p>
+<p>lmscript is a dynamically typed scripting language for automation. A script is a .lms text file run by the lmscript command. The language is deliberately small: statements, functions, lists and maps, a large standard library of plain functions, built-in blocks for CSV/JSON/TOML/properties/GraphQL/command data, and direct process execution without a shell.</p>
 <p>Two properties shape how you work with it:</p>
 <ul>
-<li><strong>Check before run.</strong> Every run first checks the whole script (syntax, undeclared names, wrong argument counts, unknown functions and methods, bad data blocks), including code in branches that will not run. Errors stop the script with exit code 2 before anything happens.</li>
-<li><strong>Dry run before run.</strong> After the check, a normal run executes the script once in a simulation in which file writes, deletes and program runs are recorded instead of performed. Only if that pass finds no fatal failure does the real run start. <code>--dry-run</code> shows that plan instead of running.</li>
+<li>Check before run. Every run first checks the whole script (syntax, undeclared names, wrong argument counts, unknown functions and methods, bad data blocks), including code in branches that will not run. Errors stop the script with exit code 2 before anything happens.</li>
+<li>Dry run before run. After the check, a normal run executes the script once in a simulation in which file writes, deletes and program runs are recorded instead of performed. Only if that pass finds no fatal failure does the real run start. --dry-run shows that plan instead of running.</li>
 </ul>
 <p>Scripts run with your full local permissions. There is no sandbox: run only scripts you trust.</p>
 
 <h2 id="install">Install</h2>
-<p>lmscript is in the npm package <code>@lmctl-ai/lmctl</code>, together with <code>lmctl</code>. It needs Node.js 24.15 or later.</p>
+<p>lmscript is in the npm package @lmctl-ai/lmctl, together with lmctl. It needs Node.js 24.15 or later.</p>
 <pre><kbd>npm install -g @lmctl-ai/lmctl</kbd></pre>
 <pre><kbd>lmscript --version</kbd>
 <samp>lmscript 0.2.348</samp></pre>
-<p>Update with the same command; <code>npm view @lmctl-ai/lmctl version</code> shows the latest published version.</p>
+<p>Update with the same command; npm view @lmctl-ai/lmctl version shows the latest published version.</p>
 
 <h2 id="concepts">Concepts</h2>
 <dl>
 <dt>Script</dt>
-<dd>A UTF-8 text file, conventionally <code>NAME.lms</code>, run as <code>lmscript NAME.lms [args…]</code>. Top-level statements run in order; functions are hoisted.</dd>
+<dd>A UTF-8 text file, conventionally NAME.lms, run as lmscript NAME.lms [args…]. Top-level statements run in order; functions are hoisted.</dd>
 <dt>Check</dt>
-<dd>Static analysis of the whole file and its imports. Diagnostics have the form <code>error:FILE:LINE:COLUMN: message</code>.</dd>
+<dd>Static analysis of the whole file and its imports. Diagnostics have the form error:FILE:LINE:COLUMN: message.</dd>
 <dt>Dry pass and plan</dt>
-<dd>A simulated execution. Effects are recorded as <em>dummy</em> calls with typed placeholder results (<code>true</code>, <code>0</code>, empty string/list/map or <code>null</code>); read-only calls really run. The record is the <em>plan</em>.</dd>
+<dd>A simulated execution. Effects are recorded as dummy calls with typed placeholder results (true, 0, empty string/list/map or null); read-only calls really run. The record is the plan.</dd>
 <dt>Strict access</dt>
-<dd>Reading a missing map key or list index is an error, not <code>undefined</code>. Use <code>m.has(k)</code>, <code>m.get(k, default)</code> or <code>l.get(i, default)</code> when something may be absent.</dd>
+<dd>Reading a missing map key or list index is an error, not undefined. Use m.has(k), m.get(k, default) or l.get(i, default) when something may be absent.</dd>
 <dt>Module</dt>
-<dd>An lmscript file included with <code>import</code>; a file that starts with <code>package NAME;</code> exposes its functions as <code>NAME.fn()</code>.</dd>
+<dd>An lmscript file included with import; a file that starts with package NAME; exposes its functions as NAME.fn().</dd>
 <dt>Data block</dt>
-<dd>A marker such as <code>_csv_</code> whose text body follows the statement and ends with <code>end _csv_</code>; the value is parsed data.</dd>
+<dd>A marker such as _csv_ whose text body follows the statement and ends with end _csv_; the value is parsed data.</dd>
 </dl>
 
 <h2 id="reference">Reference</h2>
@@ -62,26 +62,26 @@
 <pre><kbd>lmscript [OPTIONS] FILE [ARGS…]</kbd>
 <kbd>lmscript [OPTIONS] - [ARGS…]</kbd>
 <kbd>lmscript [OPTIONS] -e CODE [ARGS…]</kbd></pre>
-<p>Options go before the script; everything after <code>FILE</code>, <code>-</code> (read the script from standard input) or <code>-e CODE</code> is passed to the script in <code>ARGV</code>, including words that look like options.</p>
+<p>Options go before the script; everything after FILE, - (read the script from standard input) or -e CODE is passed to the script in ARGV, including words that look like options.</p>
 <table>
 <thead><tr><th>Option</th><th>Meaning</th></tr></thead>
 <tbody>
-<tr><td><code>--check</code></td><td>Check only; run nothing. Exit 0 or 2.</td></tr>
-<tr><td><code>--lint</code></td><td>Like <code>--check</code>.</td></tr>
-<tr><td><code>--check-files</code></td><td>Also verify path literals (<code>i"…"</code>, <code>o"…"</code>) against the file system, read-only.</td></tr>
-<tr><td><code>--dry-run</code></td><td>Run only the simulation and print the plan on stdout; findings go to stderr.</td></tr>
-<tr><td><code>--plan-format text|json</code></td><td>Plan format for <code>--dry-run</code>.</td></tr>
-<tr><td><code>--dry-loop-limit N</code></td><td>Loop iterations simulated per loop in the dry pass (default 10).</td></tr>
-<tr><td><code>--dryrun-timeout MS</code></td><td>Time limit of the dry pass (default 100 ms before a normal run, 5000 ms for <code>--dry-run</code>).</td></tr>
-<tr><td><code>--no-preflight</code></td><td>Skip the dry pass before a normal run (the check still runs).</td></tr>
-<tr><td><code>--trace FILE</code></td><td>Write an execution trace to FILE.</td></tr>
-<tr><td><code>--resumepoint PATH</code></td><td>Start a <code>recover</code> block at the named resume point.</td></tr>
-<tr><td><code>--pref FILE</code></td><td>Overlay a TOML properties file on <code>PROPS</code>.</td></tr>
-<tr><td><code>--module SPEC=FILE</code></td><td>Use a local file for a schema-module import.</td></tr>
-<tr><td><code>--base-dir DIR</code>, <code>--source-name LABEL</code></td><td>Import resolution base and the file name used in diagnostics (useful with <code>-</code> and <code>-e</code>).</td></tr>
-<tr><td><code>--dsl-signatures SCHEMA</code></td><td>Print a DSL schema's canonical signatures (see <a href="#dsl">DSL blocks</a>).</td></tr>
-<tr><td><code>--version</code>, <code>-v</code></td><td>Print the version.</td></tr>
-<tr><td><code>help</code>, <code>help NAME</code>, <code>help topics</code></td><td>List all functions by category, explain one function or built-in, list or show language topics.</td></tr>
+<tr><td>--check</td><td>Check only; run nothing. Exit 0 or 2.</td></tr>
+<tr><td>--lint</td><td>Like --check.</td></tr>
+<tr><td>--check-files</td><td>Also verify path literals (i"…", o"…") against the file system, read-only.</td></tr>
+<tr><td>--dry-run</td><td>Run only the simulation and print the plan on stdout; findings go to stderr.</td></tr>
+<tr><td>--plan-format text|json</td><td>Plan format for --dry-run.</td></tr>
+<tr><td>--dry-loop-limit N</td><td>Loop iterations simulated per loop in the dry pass (default 10).</td></tr>
+<tr><td>--dryrun-timeout MS</td><td>Time limit of the dry pass (default 100 ms before a normal run, 5000 ms for --dry-run).</td></tr>
+<tr><td>--no-preflight</td><td>Skip the dry pass before a normal run (the check still runs).</td></tr>
+<tr><td>--trace FILE</td><td>Write an execution trace to FILE.</td></tr>
+<tr><td>--resumepoint PATH</td><td>Start a recover block at the named resume point.</td></tr>
+<tr><td>--pref FILE</td><td>Overlay a TOML properties file on PROPS.</td></tr>
+<tr><td>--module SPEC=FILE</td><td>Use a local file for a schema-module import.</td></tr>
+<tr><td>--base-dir DIR, --source-name LABEL</td><td>Import resolution base and the file name used in diagnostics (useful with - and -e).</td></tr>
+<tr><td>--dsl-signatures SCHEMA</td><td>Print a DSL schema's canonical signatures (see <a href="#dsl">DSL blocks</a>).</td></tr>
+<tr><td>--version, -v</td><td>Print the version.</td></tr>
+<tr><td>help, help NAME, help topics</td><td>List all functions by category, explain one function or built-in, list or show language topics.</td></tr>
 </tbody>
 </table>
 
@@ -90,72 +90,72 @@
 <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
 <tbody>
 <tr><td>0</td><td>Success (also a complete or truncated dry run).</td></tr>
-<tr><td>1</td><td>Run-time failure: a run-time error, a failed <code>require</code> or <code>assert</code>, recorded <code>error()</code> calls, a usage error.</td></tr>
-<tr><td>2</td><td>Check error (syntax, undeclared name, bad block, missing path literal); also a failed dry run under <code>--dry-run</code>.</td></tr>
-<tr><td>N</td><td><code>exit(N)</code> with N from 0 to 255.</td></tr>
+<tr><td>1</td><td>Run-time failure: a run-time error, a failed require or assert, recorded error() calls, a usage error.</td></tr>
+<tr><td>2</td><td>Check error (syntax, undeclared name, bad block, missing path literal); also a failed dry run under --dry-run.</td></tr>
+<tr><td>N</td><td>exit(N) with N from 0 to 255.</td></tr>
 <tr><td>130 / 143</td><td>Interrupted by SIGINT / SIGTERM.</td></tr>
 </tbody>
 </table>
 
 <h3 id="syntax">Syntax basics</h3>
 <ul>
-<li>Every simple statement ends with <code>;</code>: assignments, calls, <code>let</code>, <code>return</code>, <code>break</code>, <code>continue</code>, <code>import</code>, <code>package</code>, command statements. Blocks (<code>if</code>, <code>while</code>, <code>for</code>, <code>fn</code>) end with <code>}</code> and take no <code>;</code>. A stray extra <code>;</code> is an error.</li>
-<li>Every <code>if</code>/<code>else</code>/<code>while</code>/<code>for</code> body is a <code>{ … }</code> block, even for one statement.</li>
-<li>Comments: <code># …</code>, <code>// …</code> and <code>/* … */</code>.</li>
-<li>Identifiers: ASCII letters, digits and <code>_</code>, case-sensitive. Reserved words include <code>fn function let if else while for return break continue true false null parallel sync import system cmd recover resumepoint</code>.</li>
-<li>Numbers: <code>42</code>, <code>1.5</code>, <code>.5</code>; no exponent, hex or <code>_</code> forms; <code>-</code> is an operator.</li>
+<li>Every simple statement ends with ;: assignments, calls, let, return, break, continue, import, package, command statements. Blocks (if, while, for, fn) end with } and take no ;. A stray extra ; is an error.</li>
+<li>Every if/else/while/for body is a { … } block, even for one statement.</li>
+<li>Comments: # …, // … and /* … */.</li>
+<li>Identifiers: ASCII letters, digits and _, case-sensitive. Reserved words include fn function let if else while for return break continue true false null parallel sync import system cmd recover resumepoint.</li>
+<li>Numbers: 42, 1.5, .5; no exponent, hex or _ forms; - is an operator.</li>
 </ul>
 
 <h3 id="values">Values and types</h3>
 <table>
-<thead><tr><th>Value</th><th>Literal</th><th><code>type(x)</code></th></tr></thead>
+<thead><tr><th>Value</th><th>Literal</th><th>type(x)</th></tr></thead>
 <tbody>
-<tr><td>null</td><td><code>null</code></td><td><code>null</code></td></tr>
-<tr><td>boolean</td><td><code>true</code>, <code>false</code></td><td><code>boolean</code></td></tr>
-<tr><td>number (64-bit float)</td><td><code>3</code>, <code>2.5</code></td><td><code>number</code></td></tr>
-<tr><td>string</td><td><code>"a"</code>, <code>'a'</code>, <code>f"…"</code>, <code>r"…"</code>, <code>"""…"""</code></td><td><code>string</code></td></tr>
-<tr><td>list</td><td><code>[1, "a", null]</code>, tuple <code>(1, 2)</code></td><td><code>array</code></td></tr>
-<tr><td>map</td><td><code>{name: "Ada", "key with space": 1}</code></td><td><code>object</code></td></tr>
-<tr><td>function reference</td><td>a function's name, e.g. <code>len</code></td><td><code>function</code></td></tr>
+<tr><td>null</td><td>null</td><td>null</td></tr>
+<tr><td>boolean</td><td>true, false</td><td>boolean</td></tr>
+<tr><td>number (64-bit float)</td><td>3, 2.5</td><td>number</td></tr>
+<tr><td>string</td><td>"a", 'a', f"…", r"…", """…"""</td><td>string</td></tr>
+<tr><td>list</td><td>[1, "a", null], tuple (1, 2)</td><td>array</td></tr>
+<tr><td>map</td><td>{name: "Ada", "key with space": 1}</td><td>object</td></tr>
+<tr><td>function reference</td><td>a function's name, e.g. len</td><td>function</td></tr>
 </tbody>
 </table>
-<p>Lists and maps are references: assigning one to another variable does not copy it. No trailing commas in list or map literals. Map keys are identifiers or plain strings; use <code>m["if"]</code> or <code>m[k]</code> for other keys. Keys are returned in JavaScript order: integer-like keys first in numeric order, then the others in insertion order.</p>
-<p>False values are <code>null</code>, <code>false</code>, <code>0</code> and the empty string; empty lists and maps are true.</p>
+<p>Lists and maps are references: assigning one to another variable does not copy it. No trailing commas in list or map literals. Map keys are identifiers or plain strings; use m["if"] or m[k] for other keys. Keys are returned in JavaScript order: integer-like keys first in numeric order, then the others in insertion order.</p>
+<p>False values are null, false, 0 and the empty string; empty lists and maps are true.</p>
 
 <h3 id="strings">Strings</h3>
 <table>
 <thead><tr><th>Form</th><th>Behaviour</th></tr></thead>
 <tbody>
-<tr><td><code>"text"</code>, <code>'text'</code></td><td>Plain string; <code>\n \t \r \\ \" \'</code> escapes.</td></tr>
-<tr><td><code>f"Hi {name}"</code></td><td>Formatted: <code>{expr}</code> fields are checked expressions; <code>{{</code> and <code>}}</code> give literal braces. Lists and maps insert as compact JSON.</td></tr>
-<tr><td><code>r"C:\dir"</code></td><td>Raw: backslashes stay as written.</td></tr>
-<tr><td><code>rf"…"</code>, <code>fr"…"</code></td><td>Raw text with formatted fields.</td></tr>
-<tr><td><code>"""…"""</code>, <code>'''…'''</code></td><td>Multi-line (also with <code>f</code>/<code>r</code> prefixes); no dedent.</td></tr>
-<tr><td><code>i"in.txt"</code>, <code>o"out.txt"</code>, <code>io"f"</code></td><td>Path literals: a path the script reads, writes or both; checked to exist (or be writable) before the first statement runs.</td></tr>
+<tr><td>"text", 'text'</td><td>Plain string; \n \t \r \\ \" \' escapes.</td></tr>
+<tr><td>f"Hi {name}"</td><td>Formatted: {expr} fields are checked expressions; {{ and }} give literal braces. Lists and maps insert as compact JSON.</td></tr>
+<tr><td>r"C:\dir"</td><td>Raw: backslashes stay as written.</td></tr>
+<tr><td>rf"…", fr"…"</td><td>Raw text with formatted fields.</td></tr>
+<tr><td>"""…""", '''…'''</td><td>Multi-line (also with f/r prefixes); no dedent.</td></tr>
+<tr><td>i"in.txt", o"out.txt", io"f"</td><td>Path literals: a path the script reads, writes or both; checked to exist (or be writable) before the first statement runs.</td></tr>
 </tbody>
 </table>
-<p>There are no heredocs. <code>+</code> concatenates (and converts the other operand to text); <code>str(x)</code> converts explicitly. <code>expand(text, vars)</code> fills <code>${name}</code> placeholders from a map.</p>
+<p>There are no heredocs. + concatenates (and converts the other operand to text); str(x) converts explicitly. expand(text, vars) fills ${name} placeholders from a map.</p>
 
 <h3 id="operators">Operators</h3>
-<p>From lowest to highest precedence: assignment <code>=</code>; <code>cond ? a : b</code>; <code>||</code>; <code>&amp;&amp;</code>; <code>==</code> <code>!=</code>; <code>&lt;</code> <code>&lt;=</code> <code>&gt;</code> <code>&gt;=</code>; <code>+</code> <code>-</code>; <code>*</code> <code>/</code> <code>%</code>; unary <code>!</code> <code>-</code>; call, index and member access. Equality is strict (<code>0 == false</code> is false); lists and maps compare by identity. <code>&amp;&amp;</code> and <code>||</code> return one of their operands (<code>null || "x"</code> is <code>"x"</code>). Division by zero is a run-time error. There is no <code>++</code>, <code>+=</code>, <code>**</code>, bitwise or <code>in</code> operator.</p>
+<p>From lowest to highest precedence: assignment =; cond ? a : b; ||; &amp;&amp;; == !=; &lt; &lt;= > >=; + -; * / %; unary ! -; call, index and member access. Equality is strict (0 == false is false); lists and maps compare by identity. &amp;&amp; and || return one of their operands (null || "x" is "x"). Division by zero is a run-time error. There is no ++, +=, **, bitwise or in operator.</p>
 
 <h3 id="control-flow">Control flow</h3>
-<pre><code>if (n &gt; 10) {
+<pre><code>if (n > 10) {
   println("big");
-} else if (n &gt; 0) {
+} else if (n > 0) {
   println("small");
 } else {
   println("none");
 }
 
-while (queue_len &gt; 0) { queue_len = queue_len - 1; }
+while (queue_len > 0) { queue_len = queue_len - 1; }
 
 for (let i = 0; i &lt; 3; i = i + 1) { println(i); }
 
 for (item in ["a", "b"]) { println(item); }      # list values
 for (key in {x: 1, y: 2}) { println(key); }      # map keys
 for (ch in "héllo") { println(ch); }             # characters</code></pre>
-<p><code>break;</code> and <code>continue;</code> act on the innermost loop. A <code>for (x in …)</code> loop iterates a snapshot of the sequence. Loops stop with an error after 1,000,000 iterations.</p>
+<p>break; and continue; act on the innermost loop. A for (x in …) loop iterates a snapshot of the sequence. Loops stop with an error after 1,000,000 iterations.</p>
 
 <h3 id="functions">Functions and scope</h3>
 <pre><code>fn area(w, h) {
@@ -165,22 +165,22 @@ println(area(3, 4));
 op = area;            # a function reference
 println(op(2, 5));</code></pre>
 <ul>
-<li>Functions are declared at top level only, with a fixed number of parameters; there are no anonymous functions or closures. A function without <code>return</code> returns <code>null</code>. Recursion depth is limited to 1000 calls.</li>
+<li>Functions are declared at top level only, with a fixed number of parameters; there are no anonymous functions or closures. A function without return returns null. Recursion depth is limited to 1000 calls.</li>
 <li>Assignments inside a function create local variables; they never change a global of the same name. Changing the contents of a list or map passed in does affect the caller.</li>
-<li>Blocks are scopes: a name first assigned inside an <code>if</code> or loop body does not exist after it (check error <code>Undeclared variable</code>). Assign it before the block.</li>
-<li><code>let x = …;</code> declares explicitly (a second <code>let x</code> in the same scope is an error); <code>let (a, b) = list;</code> and <code>[a, b] = list;</code> destructure, filling missing values with <code>null</code>.</li>
+<li>Blocks are scopes: a name first assigned inside an if or loop body does not exist after it (check error Undeclared variable). Assign it before the block.</li>
+<li>let x = …; declares explicitly (a second let x in the same scope is an error); let (a, b) = list; and [a, b] = list; destructure, filling missing values with null.</li>
 </ul>
 
 <h3 id="containers">Lists, maps and methods</h3>
 <table>
 <thead><tr><th>Type</th><th>Methods</th></tr></thead>
 <tbody>
-<tr><td>map</td><td><code>get(key, default)</code>, <code>has(key)</code>, <code>len()</code>, <code>keys()</code></td></tr>
-<tr><td>list</td><td><code>get(index, default)</code>, <code>len()</code></td></tr>
-<tr><td>string</td><td><code>len()</code></td></tr>
+<tr><td>map</td><td>get(key, default), has(key), len(), keys()</td></tr>
+<tr><td>list</td><td>get(index, default), len()</td></tr>
+<tr><td>string</td><td>len()</td></tr>
 </tbody>
 </table>
-<p>Everything else is a plain function: <code>push(list, x)</code>, <code>keys(m)</code>, <code>contains(list, x)</code>, <code>sort(list, "field")</code>, <code>set(m, "a.b", v)</code>. Writing a missing key creates it (<code>m.k = v</code>); reading one is an error that names the fix:</p>
+<p>Everything else is a plain function: push(list, x), keys(m), contains(list, x), sort(list, "field"), set(m, "a.b", v). Writing a missing key creates it (m.k = v); reading one is an error that names the fix:</p>
 <pre><samp>map user has no key "email"; test with user.has("email") or read user.get("email", default)</samp></pre>
 
 <h3 id="modules">Modules and imports</h3>
@@ -192,9 +192,9 @@ fn shout(s) { return upper(s) + "!"; }
 import "lib/textutil.lms";
 println(textutil.shout("hi"));</code></pre>
 <ul>
-<li><code>import "path";</code> includes another lmscript file (relative to the importing file) or an <code>https://</code> URL at that point. Each location loads once; import order matters (import a module before using it).</li>
-<li>Without <code>package</code>, the imported functions and variables are used unqualified. With <code>package NAME;</code> at the top, callers write <code>NAME.fn()</code>.</li>
-<li><code>import "native:git";</code> loads the built-in native git module. A JSON tool schema (<code>import "./tool.cli.schema.v1.json";</code>) turns a command-line tool's published operations into functions.</li>
+<li>import "path"; includes another lmscript file (relative to the importing file) or an https:// URL at that point. Each location loads once; import order matters (import a module before using it).</li>
+<li>Without package, the imported functions and variables are used unqualified. With package NAME; at the top, callers write NAME.fn().</li>
+<li>import "native:git"; loads the built-in native git module. A JSON tool schema (import "./tool.cli.schema.v1.json";) turns a command-line tool's published operations into functions.</li>
 <li>JavaScript and npm packages cannot be imported.</li>
 </ul>
 
@@ -211,16 +211,16 @@ end _toml_</code></pre>
 <table>
 <thead><tr><th>Marker</th><th>Value</th></tr></thead>
 <tbody>
-<tr><td><code>_csv_</code></td><td>List of maps (first line is the header) or, with <code>heading=false</code>, list of lists. Option <code>delimiter=";"</code>. Numbers and true/false/null are typed.</td></tr>
-<tr><td><code>_json_</code></td><td>The parsed JSON value (strict JSON).</td></tr>
-<tr><td><code>_toml_</code></td><td>A map (TOML 1.0).</td></tr>
-<tr><td><code>_props_</code></td><td>A flat map of strings (Java properties).</td></tr>
-<tr><td><code>_cmd_</code></td><td>An argument list for <code>system</code>, one command spread over several lines.</td></tr>
-<tr><td><code>_graphql_</code></td><td>A GraphQL document as a string, syntax-checked.</td></tr>
-<tr><td><code>_dsl_</code></td><td>Experimental: a compiled program for a native host (<a href="#dsl">below</a>).</td></tr>
+<tr><td>_csv_</td><td>List of maps (first line is the header) or, with heading=false, list of lists. Option delimiter=";". Numbers and true/false/null are typed.</td></tr>
+<tr><td>_json_</td><td>The parsed JSON value (strict JSON).</td></tr>
+<tr><td>_toml_</td><td>A map (TOML 1.0).</td></tr>
+<tr><td>_props_</td><td>A flat map of strings (Java properties).</td></tr>
+<tr><td>_cmd_</td><td>An argument list for system, one command spread over several lines.</td></tr>
+<tr><td>_graphql_</td><td>A GraphQL document as a string, syntax-checked.</td></tr>
+<tr><td>_dsl_</td><td>Experimental: a compiled program for a native host (<a href="#dsl">below</a>).</td></tr>
 </tbody>
 </table>
-<p>Rules: the statement ends with <code>;</code> on the marker line; the body starts on the next line; the block closes with a line that is exactly <code>end _csv_</code> (matching marker, column 1). Blank lines and lines starting with <code>#</code> are dropped. <code>${expr}</code> inserts a value safely: it can never add rows, cells or quotes. All blocks are validated by the check, before anything runs.</p>
+<p>Rules: the statement ends with ; on the marker line; the body starts on the next line; the block closes with a line that is exactly end _csv_ (matching marker, column 1). Blank lines and lines starting with # are dropped. ${expr} inserts a value safely: it can never add rows, cells or quotes. All blocks are validated by the check, before anything runs.</p>
 
 <h3 id="commands">Running programs</h3>
 <pre><code>r = system git status --short;      # run now, without a shell
@@ -230,38 +230,38 @@ println(r.stdout);
 argv = cmd git log -n ${count};      # build ["git","log","-n","5"]
 r = system(argv, 10000);            # computed argv, 10 s timeout</code></pre>
 <ul>
-<li><code>system WORDS;</code> runs a program and returns <code>{stdout, stderr, code, signal, timed_out, duration_ms, pid}</code>. A non-zero exit is data: check <code>r.code</code>.</li>
-<li>Words split on spaces; quotes group words; <code>${expr}</code> inserts a value as one word, or a list as several words.</li>
-<li>Pipes, redirects, <code>;</code>, globbing, <code>~</code> and <code>$( )</code> are refused. For shell features run a shell explicitly: <code>system(["bash", "-c", script])</code>, passing data as extra arguments.</li>
+<li>system WORDS; runs a program and returns {stdout, stderr, code, signal, timed_out, duration_ms, pid}. A non-zero exit is data: check r.code.</li>
+<li>Words split on spaces; quotes group words; ${expr} inserts a value as one word, or a list as several words.</li>
+<li>Pipes, redirects, ;, globbing, ~ and $( ) are refused. For shell features run a shell explicitly: system(["bash", "-c", script]), passing data as extra arguments.</li>
 <li>Default timeout 60 s; output is limited to 10 MiB.</li>
 </ul>
 
 <h3 id="stdlib">Standard library</h3>
-<p><code>lmscript help</code> lists every function with its signature; <code>lmscript help NAME</code> explains one. Highlights by category:</p>
+<p>lmscript help lists every function with its signature; lmscript help NAME explains one. Highlights by category:</p>
 <table>
 <thead><tr><th>Category</th><th>Examples</th></tr></thead>
 <tbody>
-<tr><td>Strings</td><td><code>split join trim upper lower replace replace_all starts_with ends_with contains index_of substring slice pad_start sprintf format words lines regex_test regex_match regex_find_all regex_replace</code></td></tr>
-<tr><td>Lists</td><td><code>len push pop first last range sort reverse unique flatten chunk take drop sum avg enumerate concat</code></td></tr>
-<tr><td>Maps and data</td><td><code>keys values get set has_key merge pluck filter_by find_by json_parse json_stringify</code></td></tr>
-<tr><td>Files</td><td><code>read_file write_file append_file read_lines write_lines read_json write_json read_csv write_csv file_exists list_dir glob mkdir copy_file move_file delete_file path_join basename dirname temp_file</code></td></tr>
-<tr><td>System</td><td><code>system env set_env which sleep_ms now date strftime exit require assert error warning</code></td></tr>
-<tr><td>Output</td><td><code>println print printf</code> (<code>printf</code> adds no newline)</td></tr>
-<tr><td>Types</td><td><code>type str is_string is_number is_array is_map is_function is_empty is_blank</code></td></tr>
+<tr><td>Strings</td><td>split join trim upper lower replace replace_all starts_with ends_with contains index_of substring slice pad_start sprintf format words lines regex_test regex_match regex_find_all regex_replace</td></tr>
+<tr><td>Lists</td><td>len push pop first last range sort reverse unique flatten chunk take drop sum avg enumerate concat</td></tr>
+<tr><td>Maps and data</td><td>keys values get set has_key merge pluck filter_by find_by json_parse json_stringify</td></tr>
+<tr><td>Files</td><td>read_file write_file append_file read_lines write_lines read_json write_json read_csv write_csv file_exists list_dir glob mkdir copy_file move_file delete_file path_join basename dirname temp_file</td></tr>
+<tr><td>System</td><td>system env set_env which sleep_ms now date strftime exit require assert error warning</td></tr>
+<tr><td>Output</td><td>println print printf (printf adds no newline)</td></tr>
+<tr><td>Types</td><td>type str is_string is_number is_array is_map is_function is_empty is_blank</td></tr>
 </tbody>
 </table>
-<p>With lmctl installed, the <code>lm_*</code> functions (for example <code>lm_prompt</code>) drive agent teams; see <code>lmscript help lmctl</code>.</p>
+<p>With lmctl installed, the lm_* functions (for example lm_prompt) drive agent teams; see lmscript help lmctl.</p>
 
 <h3 id="properties">Arguments, environment and properties</h3>
 <ul>
-<li><code>ARGV</code>: the list of words after the script name.</li>
-<li><code>env("NAME", default)</code>: an environment variable.</li>
-<li><code>PROPS.a.b</code>: read-only properties from <code>~/.lmctl/init.toml</code> (or <code>$LMCTL_HOME/init.toml</code>), overlaid by <code>--pref FILE</code>.</li>
-<li><code>Directory</code>: the working directory.</li>
+<li>ARGV: the list of words after the script name.</li>
+<li>env("NAME", default): an environment variable.</li>
+<li>PROPS.a.b: read-only properties from ~/.lmctl/init.toml (or $LMCTL_HOME/init.toml), overlaid by --pref FILE.</li>
+<li>Directory: the working directory.</li>
 </ul>
 
 <h3 id="dry-run">Check, dry run and run in detail</h3>
-<p>A normal run is: check, then a silent dry pass, then the real run. The dry pass simulates up to 10 iterations per loop and gives up after 100 ms; a cut-short dry pass still allows the real run. If the dry pass hits a fatal error before any simulated effect, the real run does not start (exit 1). The dry pass is not a proof: data read at run time can differ, and untaken branches are not simulated. <code>--dry-run --plan-format json</code> prints one JSON report:</p>
+<p>A normal run is: check, then a silent dry pass, then the real run. The dry pass simulates up to 10 iterations per loop and gives up after 100 ms; a cut-short dry pass still allows the real run. If the dry pass hits a fatal error before any simulated effect, the real run does not start (exit 1). The dry pass is not a proof: data read at run time can differ, and untaken branches are not simulated. --dry-run --plan-format json prints one JSON report:</p>
 <pre><kbd>lmscript --dry-run --plan-format json pj.lms</kbd>
 <samp>{
   "version": 1,
@@ -287,21 +287,20 @@ r = system(argv, 10000);            # computed argv, 10 s timeout</code></pre>
 
 <h3 id="other">Other features</h3>
 <dl>
-<dt><code>parallel([f(a), g(b)])</code></dt>
+<dt>parallel([f(a), g(b)])</dt>
 <dd>Runs the calls concurrently and returns their results in order.</dd>
-<dt><code>recover { resumepoint NAME: … }</code></dt>
-<dd>Named entry points; <code>--resumepoint NAME</code> restarts a failed script from there. It saves no state.</dd>
-<dt><code>require(value, message)</code></dt>
-<dd>Returns <code>value</code> or stops with <code>message</code> (exit 1) when it is null or empty.</dd>
+<dt>recover { resumepoint NAME: … }</dt>
+<dd>Named entry points; --resumepoint NAME restarts a failed script from there. It saves no state.</dd>
+<dt>require(value, message)</dt>
+<dd>Returns value or stops with message (exit 1) when it is null or empty.</dd>
 </dl>
 
-<h3 id="dsl">Experimental: <code>_dsl_</code> blocks for native hosts</h3>
-<p><strong>Experimental.</strong> The syntax and the bytecode format may change without compatibility. A <code>_dsl_</code> block is not lmscript: its body is code in a small, statically typed language, compiled at check time against a <em>schema</em> that a native host program publishes. lmscript only compiles and saves the program; the host loads and runs it. Hosts include <a href="/tools/lmhtml/skill.html">lmhtml</a> (HTML checking) and <a href="/tools/lmcad/index.html">lmcad</a> (3D shapes and images); hosts are built with the C++ runtime <a href="/tools/cpp-dsl-sdk/index.html">cpp-dsl-sdk</a>.</p>
+<h3 id="dsl">Experimental: _dsl_ blocks for native hosts</h3>
+<p>Experimental. The syntax and the bytecode format may change without compatibility. A _dsl_ block is not lmscript: its body is code in a small, statically typed language, compiled at check time against a schema that a native host program publishes. lmscript only compiles and saves the program; the host loads and runs it. Hosts include <a href="/tools/lmhtml/skill.html">lmhtml</a> (HTML checking) and <a href="/tools/lmcad/index.html">lmcad</a> (3D shapes and images); hosts are built with the C++ runtime <a href="/tools/cpp-dsl-sdk/index.html">cpp-dsl-sdk</a>.</p>
 <p>The workflow, verified with lmscript 0.2.348 and lmhtml v0.1.0:</p>
 <ol>
-<li>Get the host's schema: <code>lmhtml --schema --json &gt; lmhtml.dsl.json</code> (<code>lmhtml --schema</code> prints a short summary).</li>
-<li>Write a script with a <code>_dsl_</code> block and <code>savedsl</code>:
-<pre><code>check = _dsl_ schema="lmhtml.dsl.json";
+<li>Get the host's schema: lmhtml --schema --json > lmhtml.dsl.json (lmhtml --schema prints a short summary).</li>
+<li>Write a script with a _dsl_ block and savedsl: <pre><code>check = _dsl_ schema="lmhtml.dsl.json";
 let pages = html.load_dir("site");
 for (i in range(0, pages.len())) {
   let page = pages.at(i);
@@ -316,22 +315,21 @@ for (i in range(0, pages.len())) {
 report.write_text("broken.txt");
 end _dsl_
 savedsl(check, "links.dslb");</code></pre></li>
-<li>Compile by running the script: <code>lmscript links.lms</code> writes <code>links.dslb</code>.</li>
-<li>Run it in the host: <code>lmhtml --dsl links.dslb</code> prints one JSON result line, <code>{"ok": true, "result": null}</code>, and writes <code>broken.txt</code>.</li>
+<li>Compile by running the script: lmscript links.lms writes links.dslb.</li>
+<li>Run it in the host: lmhtml --dsl links.dslb prints one JSON result line, {"ok": true, "result": null}, and writes broken.txt.</li>
 </ol>
 <p>The language inside the block:</p>
 <ul>
-<li>Statements: <code>let x = expr;</code> (type inferred, no annotations), <code>x = expr;</code>, <code>if (c) { } else if (c) { } else { }</code>, <code>for (i in range(a, b)) { }</code> (int bounds, end excluded), <code>while (c) { }</code> with <code>break;</code>/<code>continue;</code>, and calls. Every statement ends with <code>;</code>, every body is a block.</li>
-<li>Types: <code>int</code> (64-bit, wraps), <code>float</code> (literals need a fraction: <code>1.0</code>), <code>string</code>, <code>bool</code>, and the object types the schema defines. Arithmetic never mixes int and float; <code>float(i)</code> converts. <code>"a" + "b"</code> concatenates strings; <code>str(x)</code> converts a number or bool to text.</li>
-<li>The schema's context objects (for lmhtml: <code>html</code> and <code>report</code>) and functions are the only API. Host collections are walked with <code>range(0, xs.len())</code> and <code>xs.at(i)</code>.</li>
+<li>Statements: let x = expr; (type inferred, no annotations), x = expr;, if (c) { } else if (c) { } else { }, for (i in range(a, b)) { } (int bounds, end excluded), while (c) { } with break;/continue;, and calls. Every statement ends with ;, every body is a block.</li>
+<li>Types: int (64-bit, wraps), float (literals need a fraction: 1.0), string, bool, and the object types the schema defines. Arithmetic never mixes int and float; float(i) converts. "a" + "b" concatenates strings; str(x) converts a number or bool to text.</li>
+<li>The schema's context objects (for lmhtml: html and report) and functions are the only API. Host collections are walked with range(0, xs.len()) and xs.at(i).</li>
 <li>Not available: lmscript functions, lists and maps, user functions and types.</li>
-<li><code>${expr}</code> in the body inserts an lmscript value as a typed literal before compiling (string, int, float or bool).</li>
-<li>Type errors are check errors at the exact position, before anything runs:
-<pre><samp>error:/home/me/bad.lms:2:27: _dsl_: method Html.load_dir expects string for argument 1; found int</samp></pre></li>
-<li>The compiled value is opaque: printing it is an error; <code>savedsl(value, path)</code> is the only use (atomic write; nothing is written under <code>--dry-run</code>).</li>
-<li><code>lmscript --dsl-signatures SCHEMA</code> prints the schema's functions and methods, one per line.</li>
+<li>${expr} in the body inserts an lmscript value as a typed literal before compiling (string, int, float or bool).</li>
+<li>Type errors are check errors at the exact position, before anything runs: <pre><samp>error:/home/me/bad.lms:2:27: _dsl_: method Html.load_dir expects string for argument 1; found int</samp></pre></li>
+<li>The compiled value is opaque: printing it is an error; savedsl(value, path) is the only use (atomic write; nothing is written under --dry-run).</li>
+<li>lmscript --dsl-signatures SCHEMA prints the schema's functions and methods, one per line.</li>
 </ul>
-<p>The bytecode records the SHA-256 of the exact schema bytes; a host refuses a file compiled against a different schema. Note: the built-in <code>lmscript help dsl</code> text in 0.2.348 still describes the previous version (no <code>while</code>, bytecode v4); the released compiler supports <code>while</code>/<code>break</code>/<code>continue</code> and writes bytecode v5, which current hosts require.</p>
+<p>The bytecode records the SHA-256 of the exact schema bytes; a host refuses a file compiled against a different schema. Note: the built-in lmscript help dsl text in 0.2.348 still describes the previous version (no while, bytecode v4); the released compiler supports while/break/continue and writes bytecode v5, which current hosts require.</p>
 
 <h2 id="tasks">Tasks</h2>
 <h3 id="task-csv-report">Summarize a CSV file</h3>
@@ -347,38 +345,38 @@ if (r.code != 0) {
 }
 println(f"commit {trim(r.stdout)}");</code></pre>
 <h3 id="task-preview">Preview a destructive script</h3>
-<p>Run <code>lmscript --dry-run script.lms</code> and read the plan; then run it normally.</p>
+<p>Run lmscript --dry-run script.lms and read the plan; then run it normally.</p>
 <h3 id="task-one-liner">Run a one-liner</h3>
 <pre><kbd>lmscript -e 'println(len(list_dir(".")));'</kbd></pre>
 
 <h2 id="limits">Limits</h2>
 <ul>
 <li>No sandbox: scripts can read, write and run anything your user can.</li>
-<li>Loops: 1,000,000 iterations; call depth: 1000; program output captured by <code>system</code>: 10 MiB; default <code>system</code> timeout: 60 s.</li>
-<li>No classes, closures, anonymous functions, nested function declarations, <code>++</code> or compound assignment.</li>
+<li>Loops: 1,000,000 iterations; call depth: 1000; program output captured by system: 10 MiB; default system timeout: 60 s.</li>
+<li>No classes, closures, anonymous functions, nested function declarations, ++ or compound assignment.</li>
 <li>Numbers are 64-bit floats (exact integers up to 2^53).</li>
 <li>The dry pass simulates at most 10 iterations per loop and 100 ms by default; it cannot predict data that only exists at run time.</li>
-<li><code>_dsl_</code> blocks are experimental.</li>
+<li>_dsl_ blocks are experimental.</li>
 </ul>
 
 <h2 id="troubleshooting">Troubleshooting</h2>
 <dl>
-<dt><code>Expected ';' after the assignment; every statement ends with ';'</code></dt>
-<dd>Add the <code>;</code> at the reported position. Blocks (<code>}</code>) take none.</dd>
-<dt><code>Undeclared variable 'x'</code></dt>
+<dt>Expected ';' after the assignment; every statement ends with ';'</dt>
+<dd>Add the ; at the reported position. Blocks (}) take none.</dd>
+<dt>Undeclared variable 'x'</dt>
 <dd>The name is first assigned inside a block or misspelled. Assign it before the block.</dd>
-<dt><code>map m has no key "k"; …</code></dt>
-<dd>Use <code>m.has("k")</code> or <code>m.get("k", default)</code>.</dd>
-<dt><code>Expected '{' after if (...); braces are required …</code></dt>
-<dd>Wrap the body in <code>{ }</code>.</dd>
-<dt>A command with <code>|</code> or <code>&gt;</code> is refused</dt>
-<dd><code>system</code> runs no shell. Do the piping in lmscript or call <code>bash -c</code> explicitly.</dd>
-<dt><code>path literal i"x" (resolved ./x) does not exist</code></dt>
+<dt>map m has no key "k"; …</dt>
+<dd>Use m.has("k") or m.get("k", default).</dd>
+<dt>Expected '{' after if (...); braces are required …</dt>
+<dd>Wrap the body in { }.</dd>
+<dt>A command with | or > is refused</dt>
+<dd>system runs no shell. Do the piping in lmscript or call bash -c explicitly.</dd>
+<dt>path literal i"x" (resolved ./x) does not exist</dt>
 <dd>The input file is missing relative to the working directory; this check runs before any effect.</dd>
 <dt>The real run did not start after a failure</dt>
-<dd>The dry pass hit a fatal error first. Run <code>lmscript --dry-run script.lms</code> to see where.</dd>
-<dt><code>_dsl_</code> error, or the host says <code>LOAD_SCHEMA_MISMATCH</code></dt>
-<dd>Recompile against the exact schema the host prints with <code>--schema --json</code>; the bytecode embeds the schema hash.</dd>
+<dd>The dry pass hit a fatal error first. Run lmscript --dry-run script.lms to see where.</dd>
+<dt>_dsl_ error, or the host says LOAD_SCHEMA_MISMATCH</dt>
+<dd>Recompile against the exact schema the host prints with --schema --json; the bytecode embeds the schema hash.</dd>
 </dl>
 </main>
 <footer>

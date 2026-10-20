@@ -31,7 +31,7 @@
 <samp>lmscript 0.2.348</samp></pre>
 
 <h2 id="step-2">Step 2: Run your first script</h2>
-<p>Save this as <code>hello.lms</code>. Every statement ends with <code>;</code>; <code>#</code> starts a comment.</p>
+<p>Save this as hello.lms. Every statement ends with ;; # starts a comment.</p>
 <pre><code># hello.lms: the smallest useful script
 name = "world";
 println("Hello, " + name + "!");</code></pre>
@@ -39,7 +39,7 @@ println("Hello, " + name + "!");</code></pre>
 <samp>Hello, world!</samp></pre>
 
 <h2 id="step-3">Step 3: Lists, maps and formatted strings</h2>
-<p>Lists use <code>[ ]</code>, maps use <code>{ }</code>. An <code>f"…"</code> string evaluates the expressions in braces. Negative list indexes count from the end. Save as <code>values.lms</code>:</p>
+<p>Lists use [ ], maps use { }. An f"…" string evaluates the expressions in braces. Negative list indexes count from the end. Save as values.lms:</p>
 <pre><code>langs = ["lmscript", "C++", "Rust"];
 person = {name: "Ada", year: 1815};
 println(f"{person.name} was born in {person.year}.");
@@ -51,7 +51,7 @@ println(upper("quiet") + " " + str(3 * 4) + " " + json_stringify(person));</code
 QUIET 12 {"name":"Ada","year":1815}</samp></pre>
 
 <h2 id="step-4">Step 4: Loops and conditions</h2>
-<p>Every <code>if</code>, <code>for</code> and <code>while</code> body needs braces. <code>range(1, 6)</code> is 1 to 5. A map's <code>get(key, default)</code> reads a key that may be missing. Save as <code>loops.lms</code>:</p>
+<p>Every if, for and while body needs braces. range(1, 6) is 1 to 5. A map's get(key, default) reads a key that may be missing. Save as loops.lms:</p>
 <pre><code>total = 0;
 for (n in range(1, 6)) {
   if (n % 2 == 0) {
@@ -75,7 +75,7 @@ or: 1
 not: 1</samp></pre>
 
 <h2 id="step-5">Step 5: Functions</h2>
-<p>Define functions with <code>fn</code>. They can call themselves and can be used before their definition. Save as <code>functions.lms</code>:</p>
+<p>Define functions with fn. They can call themselves and can be used before their definition. Save as functions.lms:</p>
 <pre><code>fn greet(name, punctuation) {
   return f"Hello, {name}{punctuation}";
 }
@@ -92,7 +92,7 @@ println(f"10! = {factorial(10)}");</code></pre>
 10! = 3628800</samp></pre>
 
 <h2 id="step-6">Step 6: Command-line arguments</h2>
-<p>Words after the script name arrive in the list <code>ARGV</code>. Save as <code>args.lms</code>:</p>
+<p>Words after the script name arrive in the list ARGV. Save as args.lms:</p>
 <pre><code>who = ARGV.get(0, "nobody");
 println(f"{len(ARGV)} argument(s); first: {who}");</code></pre>
 <pre><kbd>lmscript args.lms Ada Grace</kbd>
@@ -101,7 +101,7 @@ println(f"{len(ARGV)} argument(s); first: {who}");</code></pre>
 <samp>0 argument(s); first: nobody</samp></pre>
 
 <h2 id="step-7">Step 7: Files</h2>
-<p>The standard library reads and writes text, lines, JSON and CSV. Save as <code>files.lms</code>:</p>
+<p>The standard library reads and writes text, lines, JSON and CSV. Save as files.lms:</p>
 <pre><code>mkdir("out");
 write_lines("out/notes.txt", ["first", "second", "third"]);
 lines = read_lines("out/notes.txt");
@@ -114,7 +114,7 @@ println(f"summary.json count = {data.count}");</code></pre>
 summary.json count = 3</samp></pre>
 
 <h2 id="step-8">Step 8: Data written inside the script</h2>
-<p>A data block puts CSV, JSON, TOML or properties text straight into the script. The statement ends with <code>;</code> on the marker line and the block closes with a line <code>end _csv_</code> (or <code>end _json_</code>, …). CSV numbers become numbers. Save as <code>data.lms</code>:</p>
+<p>A data block puts CSV, JSON, TOML or properties text straight into the script. The statement ends with ; on the marker line and the block closes with a line end _csv_ (or end _json_, …). CSV numbers become numbers. Save as data.lms:</p>
 <pre><code>scores = _csv_;
 name,score
 Ada,95
@@ -123,7 +123,7 @@ Linus,79
 end _csv_
 best = scores[0];
 for (row in scores) {
-  if (row.score &gt; best.score) {
+  if (row.score > best.score) {
     best = row;
   }
 }
@@ -137,7 +137,7 @@ println(f"retries={config.retries} hosts={join(config.hosts, ",")}");</code></pr
 retries=3 hosts=a.example,b.example</samp></pre>
 
 <h2 id="step-9">Step 9: Run other programs</h2>
-<p><code>system</code> runs a program directly (no shell) and returns its output and exit code as data; <code>cmd</code> only builds the argument list. <code>${…}</code> inserts a value as one argument. Save as <code>run.lms</code>:</p>
+<p>system runs a program directly (no shell) and returns its output and exit code as data; cmd only builds the argument list. ${…} inserts a value as one argument. Save as run.lms:</p>
 <pre><code>r = system node --version;
 println(f"exit code {r.code}; node says {trim(r.stdout)}");
 argv = cmd git log --oneline -n ${3};
@@ -147,7 +147,7 @@ println(json_stringify(argv));</code></pre>
 ["git","log","--oneline","-n","3"]</samp></pre>
 
 <h2 id="step-10">Step 10: Let the checker find mistakes</h2>
-<p><code>--check</code> parses and checks a script without running it. This file forgets a <code>;</code>:</p>
+<p>--check parses and checks a script without running it. This file forgets a ;:</p>
 <pre><code>total = 1 + 2
 println(total);</code></pre>
 <pre><kbd>lmscript --check broken.lms</kbd>
@@ -156,14 +156,14 @@ println(total);</code></pre>
 <pre><kbd>lmscript --check hello.lms</kbd></pre>
 
 <h2 id="step-11">Step 11: Missing keys are errors</h2>
-<p>Reading a key that a map does not have stops the script with a message that names the fix. Save as <code>strict.lms</code>:</p>
+<p>Reading a key that a map does not have stops the script with a message that names the fix. Save as strict.lms:</p>
 <pre><code>user = {name: "Ada"};
 println(user.email);</code></pre>
 <pre><kbd>lmscript strict.lms</kbd>
 <samp>error:/home/me/lmscript-tutorial/strict.lms:2:14: map user has no key "email"; test with user.has("email") or read user.get("email", default)</samp></pre>
 
 <h2 id="step-12">Step 12: Preview effects with a dry run</h2>
-<p><code>--dry-run</code> executes the script in a simulation and prints the plan of effects instead of performing them. Save as <code>cleanup.lms</code>:</p>
+<p>--dry-run executes the script in a simulation and prints the plan of effects instead of performing them. Save as cleanup.lms:</p>
 <pre><code>write_file("out/report.txt", "done\n");
 delete_file("out/notes.txt");
 println("cleaned up");</code></pre>
@@ -178,7 +178,7 @@ summary.json</samp></pre>
 <p>Nothing was written or deleted. A normal run does this dry pass silently first and only then runs for real.</p>
 
 <h2 id="step-13">Step 13: Put functions in a module</h2>
-<p>A file that starts with <code>package NAME;</code> is a module; <code>import</code> includes it and its functions are called as <code>NAME.fn()</code>. Save as <code>lib/textutil.lms</code>:</p>
+<p>A file that starts with package NAME; is a module; import includes it and its functions are called as NAME.fn(). Save as lib/textutil.lms:</p>
 <pre><code>package textutil;
 
 fn shout(s) {
@@ -193,7 +193,7 @@ fn initials(full_name) {
   }
   return result;
 }</code></pre>
-<p>and <code>use_module.lms</code> next to the <code>lib</code> directory:</p>
+<p>and use_module.lms next to the lib directory:</p>
 <pre><code>import "lib/textutil.lms";
 println(textutil.shout("hello"));
 println(textutil.initials("Ada King Lovelace"));</code></pre>
@@ -202,7 +202,7 @@ println(textutil.initials("Ada King Lovelace"));</code></pre>
 AKL</samp></pre>
 
 <h2 id="step-14">Step 14: Exit codes and quick help</h2>
-<p><code>exit(n)</code> ends the script with that exit code. Save as <code>errors.lms</code>:</p>
+<p>exit(n) ends the script with that exit code. Save as errors.lms:</p>
 <pre><code>path = ARGV.get(0, "missing.txt");
 if (!file_exists(path)) {
   println(f"no such file: {path}");
@@ -213,12 +213,12 @@ println(read_file(path));</code></pre>
 <samp>no such file: missing.txt</samp></pre>
 <pre><kbd>echo $?</kbd>
 <samp>3</samp></pre>
-<p>Every built-in function documents itself, and <code>-e</code> runs a one-line program:</p>
+<p>Every built-in function documents itself, and -e runs a one-line program:</p>
 <pre><kbd>lmscript help trim</kbd>
 <samp>Usage: lmscript [--check|--dry-run|--lint] [--no-preflight] [--trace FILE]
   [--dry-loop-limit N] [--dryrun-timeout MS] [--plan-format text|json]
   [--resumepoint PATH] [--pref FILE] [--module SPEC=FILE]... [--check-files]
-  [--base-dir dir] [--source-name label] &lt;file&gt;|-| -e &lt;code&gt; [args...]
+  [--base-dir dir] [--source-name label] &lt;file>|-| -e &lt;code> [args...]
 Function: trim(s: string): string
 Built-in: core
 Category:    Strings
@@ -229,13 +229,13 @@ Example: clean = trim("  hello  ");</samp></pre>
 
 <h2 id="what-you-learned">What you learned</h2>
 <ul>
-<li>Statements end with <code>;</code> and every block needs braces.</li>
-<li>Lists, maps, <code>f"…"</code> strings, <code>for (x in …)</code> loops and <code>fn</code> functions.</li>
-<li>Arguments arrive in <code>ARGV</code>; <code>exit(n)</code> sets the exit code.</li>
-<li>Files and data: <code>read_lines</code>, <code>write_json</code>, and inline <code>_csv_</code> / <code>_json_</code> blocks.</li>
-<li><code>system</code> runs programs without a shell and returns their result as data.</li>
-<li><code>--check</code> finds mistakes, <code>--dry-run</code> shows effects before they happen, and missing keys are errors.</li>
-<li>Modules with <code>package</code> and <code>import</code>; <code>lmscript help NAME</code> for any function.</li>
+<li>Statements end with ; and every block needs braces.</li>
+<li>Lists, maps, f"…" strings, for (x in …) loops and fn functions.</li>
+<li>Arguments arrive in ARGV; exit(n) sets the exit code.</li>
+<li>Files and data: read_lines, write_json, and inline _csv_ / _json_ blocks.</li>
+<li>system runs programs without a shell and returns their result as data.</li>
+<li>--check finds mistakes, --dry-run shows effects before they happen, and missing keys are errors.</li>
+<li>Modules with package and import; lmscript help NAME for any function.</li>
 </ul>
 <p>Next: the <a href="/tools/lmscript/guide.html">user guide</a> for the full reference, or the <a href="/tools/lmscript/skill.html">skill page</a> if an agent will write your scripts.</p>
 </main>

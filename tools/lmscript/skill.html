@@ -22,15 +22,15 @@
 </nav>
 <main>
 <h1>lmscript skill</h1>
-<p>For an LLM agent that writes or runs lmscript. lmscript looks like JavaScript or Python but is neither; most mistakes come from borrowing their syntax. Follow the rules below, then let <code>lmscript --check</code> and <code>--dry-run</code> prove the script before you run it. Verified against lmscript 0.2.348.</p>
+<p>For an LLM agent that writes or runs lmscript. lmscript looks like JavaScript or Python but is neither; most mistakes come from borrowing their syntax. Follow the rules below, then let lmscript --check and --dry-run prove the script before you run it. Verified against lmscript 0.2.348.</p>
 
 <h2 id="purpose">Purpose</h2>
 <p>lmscript automates local work: read and write files, transform CSV/JSON/TOML data, run other programs without a shell, and drive lmctl agent teams. A script is checked statically and simulated (dry pass) before every real run, so a correct script fails early instead of half-way.</p>
 
 <h2 id="when-to-use-it">When to use it</h2>
 <ul>
-<li>Use it for file and data plumbing, running command-line tools in sequence with checked exit codes, and lmctl workflows (<code>lm_*</code> functions).</li>
-<li>Use it when the user wants a reviewable plan: <code>--dry-run</code> lists every write, delete and program run before it happens.</li>
+<li>Use it for file and data plumbing, running command-line tools in sequence with checked exit codes, and lmctl workflows (lm_* functions).</li>
+<li>Use it when the user wants a reviewable plan: --dry-run lists every write, delete and program run before it happens.</li>
 <li>Do not use it for long-running services, user interfaces, numeric heavy lifting or anything that needs npm packages; it cannot import JavaScript.</li>
 <li>Do not use it to run untrusted input as code: there is no sandbox.</li>
 </ul>
@@ -45,57 +45,57 @@
 <table>
 <thead><tr><th>Command</th><th>Use</th></tr></thead>
 <tbody>
-<tr><td><code>lmscript --check FILE</code></td><td>Static check only. Run after every edit.</td></tr>
-<tr><td><code>lmscript --check-files FILE</code></td><td>Check plus existence of path literals (<code>i"…"</code>, <code>o"…"</code>).</td></tr>
-<tr><td><code>lmscript --dry-run FILE [ARGS]</code></td><td>Simulate and print the plan of effects; changes nothing.</td></tr>
-<tr><td><code>lmscript FILE [ARGS]</code></td><td>Check, silent dry pass, then the real run.</td></tr>
-<tr><td><code>lmscript -e 'CODE'</code></td><td>Run a one-line program (quote it for the shell).</td></tr>
-<tr><td><code>lmscript help NAME</code></td><td>Signature, description and example of a function; <code>lmscript help</code> lists all; <code>help topics</code> lists topics (csv, json, cmd, dsl, path, methods, …).</td></tr>
-<tr><td><code>lmscript --dsl-signatures SCHEMA</code></td><td>List a DSL schema's functions and methods (experimental <code>_dsl_</code> blocks).</td></tr>
+<tr><td>lmscript --check FILE</td><td>Static check only. Run after every edit.</td></tr>
+<tr><td>lmscript --check-files FILE</td><td>Check plus existence of path literals (i"…", o"…").</td></tr>
+<tr><td>lmscript --dry-run FILE [ARGS]</td><td>Simulate and print the plan of effects; changes nothing.</td></tr>
+<tr><td>lmscript FILE [ARGS]</td><td>Check, silent dry pass, then the real run.</td></tr>
+<tr><td>lmscript -e 'CODE'</td><td>Run a one-line program (quote it for the shell).</td></tr>
+<tr><td>lmscript help NAME</td><td>Signature, description and example of a function; lmscript help lists all; help topics lists topics (csv, json, cmd, dsl, path, methods, …).</td></tr>
+<tr><td>lmscript --dsl-signatures SCHEMA</td><td>List a DSL schema's functions and methods (experimental _dsl_ blocks).</td></tr>
 </tbody>
 </table>
-<p>Options go before the file; every word after the file is script data in <code>ARGV</code>.</p>
+<p>Options go before the file; every word after the file is script data in ARGV.</p>
 
 <h2 id="inputs-and-outputs">Inputs and outputs</h2>
 <ul>
-<li>Input: the <code>.lms</code> file (or <code>-</code> for stdin, or <code>-e CODE</code>), arguments in <code>ARGV</code>, environment via <code>env("NAME", default)</code>, files the script reads.</li>
-<li>Output: <code>println</code>/<code>print</code> write a line to stdout; <code>printf</code> writes exactly its text (add <code>\n</code> yourself); diagnostics go to stderr as <code>error:FILE:LINE:COLUMN: message</code>.</li>
-<li>Exit code: 0 success, 1 run-time failure, 2 check error, or the value given to <code>exit(n)</code>.</li>
-<li><code>--dry-run</code> prints a plan (<code>--plan-format json</code> for one JSON object).</li>
+<li>Input: the .lms file (or - for stdin, or -e CODE), arguments in ARGV, environment via env("NAME", default), files the script reads.</li>
+<li>Output: println/print write a line to stdout; printf writes exactly its text (add \n yourself); diagnostics go to stderr as error:FILE:LINE:COLUMN: message.</li>
+<li>Exit code: 0 success, 1 run-time failure, 2 check error, or the value given to exit(n).</li>
+<li>--dry-run prints a plan (--plan-format json for one JSON object).</li>
 </ul>
 
 <h3 id="rules-syntax">Syntax rules that differ from JavaScript and Python</h3>
 <ul>
-<li>Every simple statement ends with <code>;</code>. A block's closing <code>}</code> takes no <code>;</code>. Never write <code>;;</code> or <code>};</code>.</li>
-<li>Every <code>if</code>/<code>else</code>/<code>while</code>/<code>for</code> body has braces, even one statement.</li>
-<li>Functions: <code>fn name(a, b) { … }</code> at top level only. No arrow functions, lambdas, closures, nested functions, default parameters, classes or <code>this</code>.</li>
-<li>No <code>++</code>, <code>+=</code>, <code>**</code>, <code>===</code>, <code>in</code> operator, spread or optional chaining. Write <code>i = i + 1;</code>.</li>
-<li>Loops: <code>for (x in list)</code>, <code>for (k in map)</code> (keys), <code>for (let i = 0; i &lt; n; i = i + 1)</code>, <code>while (c)</code>. <code>range(a, b)</code> excludes <code>b</code>.</li>
-<li>Strings: <code>f"Hello {name}"</code> for interpolation (not <code>`…${x}`</code>); <code>"""…"""</code> for multi-line; no heredocs.</li>
-<li>A name first assigned inside a block does not exist after it. Assign it before the <code>if</code>/loop.</li>
+<li>Every simple statement ends with ;. A block's closing } takes no ;. Never write ;; or };.</li>
+<li>Every if/else/while/for body has braces, even one statement.</li>
+<li>Functions: fn name(a, b) { … } at top level only. No arrow functions, lambdas, closures, nested functions, default parameters, classes or this.</li>
+<li>No ++, +=, **, ===, in operator, spread or optional chaining. Write i = i + 1;.</li>
+<li>Loops: for (x in list), for (k in map) (keys), for (let i = 0; i &lt; n; i = i + 1), while (c). range(a, b) excludes b.</li>
+<li>Strings: f"Hello {name}" for interpolation (not `…${x}`); """…""" for multi-line; no heredocs.</li>
+<li>A name first assigned inside a block does not exist after it. Assign it before the if/loop.</li>
 <li>Assigning to a global inside a function creates a local; return values instead. Mutating a passed list/map does affect the caller.</li>
-<li>Missing map keys and list indexes are errors. Use <code>m.has("k")</code>, <code>m.get("k", default)</code>, <code>list.get(i, default)</code>.</li>
-<li>Methods exist only for <code>map.get/has/len/keys</code>, <code>list.get/len</code>, <code>string.len</code>. Everything else is a function: <code>push(list, x)</code>, <code>keys(m)</code>, <code>upper(s)</code>, <code>split(s, ",")</code>, <code>join(list, ",")</code>, <code>contains(x, v)</code>. Never <code>list.push(x)</code>, <code>s.upper()</code>, <code>s.split()</code>.</li>
-<li>No trailing commas in list or map literals. <code>type()</code> reports lists as <code>array</code> and maps as <code>object</code>.</li>
-<li>Equality is strict; <code>0 == false</code> is false. Empty lists and maps are truthy.</li>
-<li>Do not invent function names: check with <code>lmscript help NAME</code>.</li>
+<li>Missing map keys and list indexes are errors. Use m.has("k"), m.get("k", default), list.get(i, default).</li>
+<li>Methods exist only for map.get/has/len/keys, list.get/len, string.len. Everything else is a function: push(list, x), keys(m), upper(s), split(s, ","), join(list, ","), contains(x, v). Never list.push(x), s.upper(), s.split().</li>
+<li>No trailing commas in list or map literals. type() reports lists as array and maps as object.</li>
+<li>Equality is strict; 0 == false is false. Empty lists and maps are truthy.</li>
+<li>Do not invent function names: check with lmscript help NAME.</li>
 </ul>
 
 <h2 id="safety-rules">Safety rules</h2>
 <ul>
 <li>Scripts run with the user's full permissions. Never run a script you have not checked, and never build lmscript source from untrusted text.</li>
-<li>Before any script that writes, moves or deletes files or runs programs, run <code>lmscript --dry-run</code> and read the plan. Report the plan to the user when the effects are destructive.</li>
-<li>Run programs with <code>system</code>/<code>cmd</code>: no shell is involved, so <code>${value}</code> is always one argument and cannot inject commands. Pipes, redirects, <code>;</code>, globs and <code>$( )</code> are refused on purpose; do not work around that with <code>bash -c</code> plus string-built commands. If a shell is truly needed, pass data as separate arguments: <code>system(["bash", "-c", "grep -c \"$1\" \"$2\"", "_", pattern, file])</code>.</li>
-<li>A non-zero exit of a program is data: always check <code>r.code</code> (and <code>r.timed_out</code>) and stop with <code>exit(1)</code> or <code>require</code> on failure.</li>
-<li>Use path literals <code>i"input.csv"</code> / <code>o"out.json"</code> for fixed paths so missing inputs fail before any effect.</li>
-<li>Do not wrap lmctl agent calls in a shell <code>timeout</code>; long agent turns are normal.</li>
+<li>Before any script that writes, moves or deletes files or runs programs, run lmscript --dry-run and read the plan. Report the plan to the user when the effects are destructive.</li>
+<li>Run programs with system/cmd: no shell is involved, so ${value} is always one argument and cannot inject commands. Pipes, redirects, ;, globs and $( ) are refused on purpose; do not work around that with bash -c plus string-built commands. If a shell is truly needed, pass data as separate arguments: system(["bash", "-c", "grep -c \"$1\" \"$2\"", "_", pattern, file]).</li>
+<li>A non-zero exit of a program is data: always check r.code (and r.timed_out) and stop with exit(1) or require on failure.</li>
+<li>Use path literals i"input.csv" / o"out.json" for fixed paths so missing inputs fail before any effect.</li>
+<li>Do not wrap lmctl agent calls in a shell timeout; long agent turns are normal.</li>
 <li>Do not print secrets: the dry-run plan shows call arguments.</li>
 </ul>
 
 <h2 id="worked-examples">Worked examples</h2>
 <h3 id="example-data">Transform data with checked failures</h3>
 <pre><code>rows = read_csv(i"orders.csv");          # fails before any effect if missing
-require(len(rows) &gt; 0, "orders.csv has no rows");
+require(len(rows) > 0, "orders.csv has no rows");
 totals = {};
 for (r in rows) {
   totals[r.customer] = totals.get(r.customer, 0) + r.amount;
@@ -121,11 +121,11 @@ println(f"{len(changed)} changed file(s)");</code></pre>
 1. /home/me/cleanup.lms:1:1 dummy write_file ["out/report.txt","done\n"]
 2. /home/me/cleanup.lms:2:1 dummy delete_file ["out/notes.txt"]
 3. /home/me/cleanup.lms:3:1 handled println ["cleaned up"]</samp></pre>
-<h3 id="example-dsl">Experimental: compile a <code>_dsl_</code> program for a native host</h3>
-<p><strong>Experimental; the syntax may change.</strong> A <code>_dsl_</code> block holds code in a separate, statically typed language that a native host program (for example lmhtml or lmcad) runs. lmscript compiles it at check time against the host's schema and <code>savedsl</code> writes the bytecode; the host runs it.</p>
+<h3 id="example-dsl">Experimental: compile a _dsl_ program for a native host</h3>
+<p>Experimental; the syntax may change. A _dsl_ block holds code in a separate, statically typed language that a native host program (for example lmhtml or lmcad) runs. lmscript compiles it at check time against the host's schema and savedsl writes the bytecode; the host runs it.</p>
 <ol>
-<li>Get the schema from the host: <code>lmhtml --schema --json &gt; lmhtml.dsl.json</code>. Read <code>lmhtml --schema</code> (or <code>lmscript --dsl-signatures lmhtml.dsl.json</code>) for the available context objects, functions and methods. Use only those.</li>
-<li>Write the block; the statement ends with <code>;</code> on the marker line and the block closes with a line exactly <code>end _dsl_</code>:</li>
+<li>Get the schema from the host: lmhtml --schema --json > lmhtml.dsl.json. Read lmhtml --schema (or lmscript --dsl-signatures lmhtml.dsl.json) for the available context objects, functions and methods. Use only those.</li>
+<li>Write the block; the statement ends with ; on the marker line and the block closes with a line exactly end _dsl_:</li>
 </ol>
 <pre><code>check = _dsl_ schema="lmhtml.dsl.json";
 let pages = html.load_dir("site");
@@ -147,40 +147,40 @@ savedsl(check, "links.dslb");</code></pre>
 <samp>{"ok": true, "result": null}</samp>
 <kbd>cat broken.txt</kbd>
 <samp>broken-link site/index.html:0: missing.html not found</samp></pre>
-<p>Rules inside <code>_dsl_</code>: <code>let x = expr;</code> with inferred types, <code>if</code>/<code>else</code>, <code>for (i in range(a, b))</code>, <code>while</code> with <code>break</code>/<code>continue</code>; types <code>int</code>, <code>float</code> (write <code>1.0</code>), <code>string</code>, <code>bool</code> and the schema's object types; int and float never mix (<code>float(i)</code> converts); strings join with <code>+</code> and <code>str(x)</code>; host lists via <code>xs.len()</code> and <code>xs.at(i)</code>. No lmscript functions, lists, maps or user functions inside the block. The compiled value is opaque: only <code>savedsl(value, "file.dslb")</code> accepts it. The host refuses bytecode compiled against a different schema (it checks a SHA-256 of the schema bytes), so recompile when the host changes. The built-in <code>lmscript help dsl</code> text in 0.2.348 is older than the compiler: <code>while</code>/<code>break</code>/<code>continue</code> do work.</p>
+<p>Rules inside _dsl_: let x = expr; with inferred types, if/else, for (i in range(a, b)), while with break/continue; types int, float (write 1.0), string, bool and the schema's object types; int and float never mix (float(i) converts); strings join with + and str(x); host lists via xs.len() and xs.at(i). No lmscript functions, lists, maps or user functions inside the block. The compiled value is opaque: only savedsl(value, "file.dslb") accepts it. The host refuses bytecode compiled against a different schema (it checks a SHA-256 of the schema bytes), so recompile when the host changes. The built-in lmscript help dsl text in 0.2.348 is older than the compiler: while/break/continue do work.</p>
 
 <h2 id="errors-and-exit-codes">Errors and exit codes</h2>
 <table>
 <thead><tr><th>Exit</th><th>Meaning</th><th>What to do</th></tr></thead>
 <tbody>
 <tr><td>0</td><td>Success</td><td>Verify the outputs (below).</td></tr>
-<tr><td>1</td><td>Run-time failure, failed <code>require</code>/<code>assert</code>, recorded <code>error()</code>, usage error</td><td>Read the <code>error:FILE:LINE:COL</code> line; fix the data handling or the guard.</td></tr>
-<tr><td>2</td><td>Check error: syntax, undeclared name, wrong arity, unknown function or method, bad data or <code>_dsl_</code> block, missing <code>i"…"</code> path</td><td>Nothing ran. Fix the reported position and run <code>--check</code> again.</td></tr>
-<tr><td>N</td><td><code>exit(N)</code></td><td>Script-defined.</td></tr>
+<tr><td>1</td><td>Run-time failure, failed require/assert, recorded error(), usage error</td><td>Read the error:FILE:LINE:COL line; fix the data handling or the guard.</td></tr>
+<tr><td>2</td><td>Check error: syntax, undeclared name, wrong arity, unknown function or method, bad data or _dsl_ block, missing i"…" path</td><td>Nothing ran. Fix the reported position and run --check again.</td></tr>
+<tr><td>N</td><td>exit(N)</td><td>Script-defined.</td></tr>
 </tbody>
 </table>
 <table>
 <thead><tr><th>Message (start)</th><th>Fix</th></tr></thead>
 <tbody>
-<tr><td><code>Expected ';' after the assignment</code></td><td>Add <code>;</code>.</td></tr>
-<tr><td><code>Expected '{' after if (...)</code></td><td>Add braces around the body.</td></tr>
-<tr><td><code>Undeclared variable 'x'</code></td><td>Assign <code>x</code> before the block, or fix the spelling.</td></tr>
-<tr><td><code>Unexpected token '+' in expression</code></td><td>Usually <code>x++</code> or <code>x += 1</code>: write <code>x = x + 1;</code>.</td></tr>
-<tr><td><code>Unexpected token 'fn' in expression</code></td><td>No anonymous functions; declare a top-level <code>fn</code> and pass its name.</td></tr>
-<tr><td><code>Function declarations are only allowed at top level</code></td><td>Move the <code>fn</code> out of the other function.</td></tr>
-<tr><td><code>map m has no key "k"</code></td><td><code>m.has("k")</code> or <code>m.get("k", default)</code>.</td></tr>
-<tr><td><code>Division by zero</code></td><td>Guard the divisor.</td></tr>
-<tr><td><code>_dsl_: method T.m expects …</code></td><td>Match the schema signature (<code>--dsl-signatures</code>).</td></tr>
+<tr><td>Expected ';' after the assignment</td><td>Add ;.</td></tr>
+<tr><td>Expected '{' after if (...)</td><td>Add braces around the body.</td></tr>
+<tr><td>Undeclared variable 'x'</td><td>Assign x before the block, or fix the spelling.</td></tr>
+<tr><td>Unexpected token '+' in expression</td><td>Usually x++ or x += 1: write x = x + 1;.</td></tr>
+<tr><td>Unexpected token 'fn' in expression</td><td>No anonymous functions; declare a top-level fn and pass its name.</td></tr>
+<tr><td>Function declarations are only allowed at top level</td><td>Move the fn out of the other function.</td></tr>
+<tr><td>map m has no key "k"</td><td>m.has("k") or m.get("k", default).</td></tr>
+<tr><td>Division by zero</td><td>Guard the divisor.</td></tr>
+<tr><td>_dsl_: method T.m expects …</td><td>Match the schema signature (--dsl-signatures).</td></tr>
 </tbody>
 </table>
 
 <h2 id="how-to-verify">How to verify</h2>
 <ol>
-<li><code>lmscript --check script.lms</code> prints nothing and exits 0. Repeat after every edit.</li>
-<li><code>lmscript --check-files script.lms</code> when the script uses path literals.</li>
-<li><code>lmscript --dry-run script.lms ARGS</code>: the plan lists exactly the writes, deletes and program runs you intend, with the right arguments.</li>
-<li>Run it; confirm exit code 0 (or the documented code) and that the expected files or output exist, for example by reading them back with <code>read_file</code>/<code>read_json</code> or <code>ls</code>.</li>
-<li>For <code>_dsl_</code>: the script exits 0 and writes the <code>.dslb</code>; <code>HOST --dsl file.dslb</code> prints <code>{"ok": true, …}</code> with exit 0; check the files the host program wrote.</li>
+<li>lmscript --check script.lms prints nothing and exits 0. Repeat after every edit.</li>
+<li>lmscript --check-files script.lms when the script uses path literals.</li>
+<li>lmscript --dry-run script.lms ARGS: the plan lists exactly the writes, deletes and program runs you intend, with the right arguments.</li>
+<li>Run it; confirm exit code 0 (or the documented code) and that the expected files or output exist, for example by reading them back with read_file/read_json or ls.</li>
+<li>For _dsl_: the script exits 0 and writes the .dslb; HOST --dsl file.dslb prints {"ok": true, …} with exit 0; check the files the host program wrote.</li>
 <li>Report what you ran and what you checked; never claim success from exit code 0 alone when files were supposed to change.</li>
 </ol>
 </main>

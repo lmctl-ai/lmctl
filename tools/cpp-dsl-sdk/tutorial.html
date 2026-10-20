@@ -22,7 +22,7 @@
 </nav>
 <main>
 <h1>cpp-dsl-sdk tutorial</h1>
-<p>This walkthrough uses a small host with one object method. Save the schema, DSL and C++ source below in one directory. Copy <code>include/dslvm.hpp</code> from the SDK into a local <code>include/</code> directory.</p>
+<p>This walkthrough uses a small host with one object method. Save the schema, DSL and C++ source below in one directory. Copy include/dslvm.hpp from the SDK into a local include/ directory.</p>
 <h2>1. Declare the host schema</h2>
 <pre><code>{
   "dsl.schema": 2,
@@ -48,15 +48,15 @@ savedsl(p, "demo.dslb");</code></pre>
 <pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript demo.lms demo.dslb</kbd>
 <samp>exit status: 0</samp></pre>
 <h2>3. Implement and build the host</h2>
-<p>This host binds <code>Greeter.say</code>, loads bytecode against the exact schema bytes, supplies a live object through <code>Context</code>, and reports a standard JSON result line.</p>
+<p>This host binds Greeter.say, loads bytecode against the exact schema bytes, supplies a live object through Context, and reports a standard JSON result line.</p>
 <pre><code>#include "dslvm.hpp"
-#include &lt;iostream&gt;
+#include &lt;iostream>
 struct Greeter { std::string last; };
 int main(int argc, char** argv) {
   dslvm::Registry reg;
   reg.context("g", "Greeter");
   reg.method("Greeter", "say", {"string"}, "void", [](void* self, dslvm::Args&amp; a) {
-    static_cast&lt;Greeter*&gt;(self)-&gt;last = a[0].s; return dslvm::Value::none();
+    static_cast&lt;Greeter*>(self)->last = a[0].s; return dslvm::Value::none();
   });
   if (argc == 2 &amp;&amp; std::string(argv[1]) == "--signatures") {
     for (const auto&amp; s : reg.signatures()) std::cout &lt;&lt; s &lt;&lt; '\n'; return 0;
@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
 <p>Compare the compiler's canonical signature list with the registry, then run the compiled chunk:</p>
 <pre><kbd>./greeter --signatures</kbd>
 <samp>context g: Greeter
-method Greeter.say(string) -&gt; void</samp></pre>
+method Greeter.say(string) -> void</samp></pre>
 <pre><kbd>diff -u &lt;(npx --yes --package=@lmctl-ai/lmctl -- lmscript --dsl-signatures schema.json) &lt;(./greeter --signatures)</kbd>
 <samp>signature parity: 0</samp></pre>
 <pre><kbd>./greeter demo.dslb schema.json</kbd>

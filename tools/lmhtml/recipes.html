@@ -23,7 +23,7 @@
 </nav>
 <main>
 <h1>lmhtml recipes</h1>
-<p>Each recipe uses the synthetic pages under the tutorial scratch directory. Compile from the directory containing <code>schema-lmhtml.json</code>; the snippets save reports and outputs below <code>build/</code> or <code>output/</code>.</p>
+<p>Each recipe uses the synthetic pages under the tutorial scratch directory. Compile from the directory containing schema-lmhtml.json; the snippets save reports and outputs below build/ or output/.</p>
 <h2>Check broken links on a site</h2>
 <p>Walk each page and each link. Skip external, special and outside-root targets by policy, and ignore a generated noise pattern.</p>
 <pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript build/check-links.lms</kbd>
@@ -48,8 +48,8 @@ id-unused site:0: teem (did you mean team?)</samp></pre>
 <kbd>lmhtml --dsl build/diff.dslb</kbd>
 <samp>{"ok": true, "result": null}</samp>
 <kbd>cat build/diff.txt</kbd>
-<samp>diff-changed compare/before/page.html:0: html &gt; body:nth-child(2) &gt; p.intro:nth-child(2): text differs
-diff-added compare/after/page.html:0: html &gt; body:nth-child(2) &gt; p:nth-child(3)
+<samp>diff-changed compare/before/page.html:0: html > body:nth-child(2) > p.intro:nth-child(2): text differs
+diff-added compare/after/page.html:0: html > body:nth-child(2) > p:nth-child(3)
 summary page:0: 2 differences</samp></pre>
 <h2>Extract common parts into a template</h2>
 <p>Find repeated subtrees in four sample pages and write a template with slot markers for page-specific content.</p>
@@ -71,7 +71,7 @@ output/page1.html
 output/page2.html
 output/page3.html</samp></pre>
 <h2>Ignore generated noise with link_kind and str_match</h2>
-<p>Link checks should state what is deliberately outside scope. This version ignores external/special/outside-root targets and a synthetic <code>noise-*.html</code> pattern, while still reporting a missing local page.</p>
+<p>Link checks should state what is deliberately outside scope. This version ignores external/special/outside-root targets and a synthetic noise-*.html pattern, while still reporting a missing local page.</p>
 <pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript build/check-links.lms</kbd>
 <samp>(no output; exit 0)</samp>
 <kbd>lmhtml --dsl build/check-links.dslb</kbd>
@@ -85,19 +85,30 @@ output/page3.html</samp></pre>
 <kbd>lmhtml mdcheck durable-memory</kbd></pre>
 <h2>Build a templated Markdown site</h2>
 <p>Save this shell as shell.html. Metadata is escaped; the required content placeholder inserts the converted document body.</p>
-<pre><code>&lt;!doctype html&gt;&lt;html lang=&quot;en&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;&lt;title&gt;{{title}}&lt;/title&gt;&lt;/head&gt;&lt;body&gt;&lt;nav&gt;{{toc}}&lt;/nav&gt;&lt;main&gt;{{content}}&lt;/main&gt;&lt;/body&gt;&lt;/html&gt;</code></pre>
+<pre><code>&lt;!doctype html>&lt;html lang="en">&lt;head>&lt;meta charset="utf-8">&lt;title>{{title}}&lt;/title>&lt;/head>&lt;body>&lt;nav>{{toc}}&lt;/nav>&lt;main>{{content}}&lt;/main>&lt;/body>&lt;/html></code></pre>
 <pre><kbd>lmhtml site durable-memory build/memory-web --template shell.html</kbd></pre>
 <h2>Post-process a Markdown document with DSL</h2>
 <p>The conversion returns the same Doc type used by every existing selector and mutation. Save this as build/plan.lms:</p>
-<pre><code>p = _dsl_ schema=&quot;schema-lmhtml.json&quot;;
-let doc = html.from_markdown(&quot;# Release plan\n\nChecks before publishing.&quot;);
-doc.select(&quot;h1&quot;).at(0).set_attr(&quot;id&quot;, &quot;release-plan&quot;);
-html.save(doc, &quot;build/plan.html&quot;);
+<pre><code>p = _dsl_ schema="schema-lmhtml.json";
+let doc = html.from_markdown("# Release plan\n\nChecks before publishing.");
+doc.select("h1").at(0).set_attr("id", "release-plan");
+html.save(doc, "build/plan.html");
 end _dsl_
-savedsl(p, &quot;build/plan.dslb&quot;);</code></pre>
-<pre><kbd>lmhtml --dsl-schema --json &gt; build/schema-lmhtml.json</kbd>
+savedsl(p, "build/plan.dslb");</code></pre>
+<pre><kbd>lmhtml --dsl-schema --json > build/schema-lmhtml.json</kbd>
 <kbd>lmscript build/plan.lms</kbd>
 <kbd>lmhtml --dsl build/plan.dslb</kbd></pre>
+<h2>Plain content for agents</h2>
+<p>Use lint to measure unnecessary decoration and entities, normalize to remove them without changing the text, and clean to extract main content for agents. Plain prose has no inline code or emphasis. Copyable commands belong in blocks. Text needs only ampersand and less-than escapes; attributes need only ampersand and quote escapes.</p>
+<pre><code>lmhtml lint --stats --json skills tools durable-memory
+lmhtml lint --stats --compare BEFORE_DIRECTORY AFTER_DIRECTORY
+lmhtml normalize skills tools
+lmhtml lint durable-memory
+lmhtml clean page.html --base https://example.org/docs/page.html
+lmhtml clean page.html --check
+lmhtml clean https://example.org/docs/page.html --markdown</code></pre>
+<p>clean is deterministic and offline for files. URL input uses curl and requires network access; it runs no JavaScript. Extraction removes navigation, forms, scripts, styles and common advertising/cookie containers, resolves links and prints byte counts and a bytes/4 token estimate on stderr. Heuristics can miss unusual site layouts: inspect extracted content before relying on it. clean --check compares extraction with the page's main content and fails with a diff if content would be dropped.</p>
+<p>normalize preserves code-block alignment, removes inline typography, repairs entities and unfolds prose. lint counts violations per file and in total, with densities per 100 words; --config FILE accepts DIRECTORY METRIC MAX_COUNT rows. Defaults are zero, with h2/h3 anchors retained. The DSL equivalents are Doc.normalize() and Doc.clean(base_url).</p>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmhtml">github.com/lmctl-ai/lmhtml</a>.</p>

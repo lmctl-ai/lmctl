@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>lmfin — a lightweight local finance CLI for LLM agents — lmctl skills</title>
-<meta name="description" content="lmfin is a local command-line tool for financial data, analysis and valuation using public market sources.">
+<meta name="description" content="Use when you need financial data through the lmfin API.">
 <link rel="stylesheet" href="/tools/style.css">
 <link rel="icon" type="image/png" href="/tools/img/icon.png">
 </head>
@@ -18,50 +18,39 @@
 </nav>
 <main>
 <h1>lmfin — a lightweight local finance CLI for LLM agents</h1>
-<p><strong>What this is.</strong> <code>lmfin</code> is a single, fast, local command-line binary that pulls <strong>free public
-financial data</strong> from the internet and runs <strong>quantitative analysis on the user&#39;s own machine</strong>.
-It is built for you, an LLM agent: you run a subcommand, add <code>--json</code>, and parse a <strong>stable JSON
-contract</strong>. No API key, no account, no SDK — just a binary on <code>PATH</code> and a shell.</p>
-<p>Use it to answer real finance questions with real numbers: &quot;how volatile is AAPL vs the S&amp;P 500?&quot;,
-&quot;price this option&quot;, &quot;what&#39;s this bond&#39;s duration?&quot;, &quot;build a risk-parity portfolio&quot;, &quot;are these
-two stocks cointegrated?&quot;. The <strong>LLM is the brain; lmfin is the deterministic hands.</strong></p>
+<p>What this is. lmfin is a single, fast, local command-line binary that pulls free public financial data from the internet and runs quantitative analysis on the user's own machine. It is built for you, an LLM agent: you run a subcommand, add --json, and parse a stable JSON contract. No API key, no account, no SDK — just a binary on PATH and a shell.</p>
+<p>Use it to answer real finance questions with real numbers: "how volatile is AAPL vs the S&amp;P 500?", "price this option", "what's this bond's duration?", "build a risk-parity portfolio", "are these two stocks cointegrated?". The LLM is the brain; lmfin is the deterministic hands.</p>
 <blockquote>
-<p>Informational only — <strong>not investment advice.</strong> lmfin reports public facts and standard
-computations; it makes no recommendations.</p>
+<p>Informational only — not investment advice. lmfin reports public facts and standard computations; it makes no recommendations.</p>
 </blockquote>
 <hr>
 <h2 id="install">Install</h2>
-<p>The published package is <code>@lmctl-ai/lmfin</code> (0.1.0 was available at audit time).</p>
+<p>The published package is @lmctl-ai/lmfin (0.1.0 was available at audit time).</p>
 <pre><code>npm install -g @lmctl-ai/lmfin
 lmfin --version
 lmfin --help</code></pre>
-<p>If you have an authorized source checkout, <code>cargo build --release</code> produces
-<code>target/release/lmfin</code>, and <code>cargo install --path .</code> installs a local build.
-Data endpoints and availability can change; inspect the returned provenance.</p>
+<p>If you have an authorized source checkout, cargo build --release produces target/release/lmfin, and cargo install --path . installs a local build. Data endpoints and availability can change; inspect the returned provenance.</p>
 <h2 id="how-to-use-it">How to use it</h2>
-<p><code>lmfin</code> is a local binary. If it is on <code>PATH</code>, just run it. Every subcommand accepts <code>--json</code> for a
-machine-readable object (parse this); without <code>--json</code> you get a human table.</p>
+<p>lmfin is a local binary. If it is on PATH, just run it. Every subcommand accepts --json for a machine-readable object (parse this); without --json you get a human table.</p>
 <pre><code>lmfin --help                       # list all commands
 lmfin returns AAPL --window 1y --json</code></pre>
-<p>Pattern for you as an agent: <strong>build the command, run it, parse the <code>--json</code> output, explain it.</strong>
-Numbers in JSON are decimals (e.g. <code>0.1569</code> = 15.69%), not pre-formatted percentages.</p>
-<p>Data is fetched fresh and cached locally (1-day TTL) under the OS cache dir. Sources are all
-keyless: <strong>Yahoo Finance</strong> (prices), <strong>SEC EDGAR</strong> (company fundamentals), <strong>FRED</strong> (macro).</p>
+<p>Pattern for you as an agent: build the command, run it, parse the --json output, explain it. Numbers in JSON are decimals (e.g. 0.1569 = 15.69%), not pre-formatted percentages.</p>
+<p>Data is fetched fresh and cached locally (1-day TTL) under the OS cache dir. Sources are all keyless: Yahoo Finance (prices), SEC EDGAR (company fundamentals), FRED (macro).</p>
 <hr>
 <h2 id="market-analytics">Market analytics</h2>
 <pre><code># Return &amp; risk; add --vs BENCH for beta/correlation/alpha
 lmfin returns AAPL --window 6mo --vs SPY --json
-#  -&gt; cumulative_return, annualized_return, annualized_vol, sharpe, log_sharpe,
+#  -> cumulative_return, annualized_return, annualized_vol, sharpe, log_sharpe,
 #     max_drawdown, risk_free_rate, vs:{beta, correlation, alpha_annualized, ...}
 
 # Full performance tear-sheet (empyrical/QuantStats conventions)
 lmfin perf AAPL --window 2y --vs SPY --json
-#  -&gt; sharpe, sortino, calmar, omega, VaR/CVaR (95/99), capture ratios,
+#  -> sharpe, sortino, calmar, omega, VaR/CVaR (95/99), capture ratios,
 #     ulcer/UPI, kelly, win_rate, drawdown details, monthly/yearly tables
 
 # 40+ technical indicators + interpretive signals
 lmfin ta AAPL --window 1y --json
-#  -&gt; trend (SMA/EMA/HMA/DEMA/TEMA/KAMA), momentum (RSI/MACD/Stoch/CCI/Williams%R/
+#  -> trend (SMA/EMA/HMA/DEMA/TEMA/KAMA), momentum (RSI/MACD/Stoch/CCI/Williams%R/
 #     TSI/Aroon), ADX/PSAR, Bollinger/Keltner/ATR, OBV/MFI/CMF, Ichimoku, signals
 
 # Experimental / descriptive analytics
@@ -72,7 +61,7 @@ lmfin vol AAPL --window 5y --json        # GARCH(1,1) volatility fit + forecast 
 
 # Portfolio construction (long-only)
 lmfin portfolio SPY TLT GLD --window 5y --method all --json
-#  -&gt; methods: equal, invvar, riskparity (ERC), hrp, minvar, maxsharpe (+ Ledoit-Wolf --shrinkage)
+#  -> methods: equal, invvar, riskparity (ERC), hrp, minvar, maxsharpe (+ Ledoit-Wolf --shrinkage)
 
 # Efficient frontier
 lmfin frontier AAPL MSFT NVDA GOOGL --window 2y --json       # numeric N-asset frontier
@@ -82,8 +71,7 @@ lmfin frontier two --ret-a 0.10 --vol-a 0.20 --ret-b 0.06 --vol-b 0.10 --corr 0 
 lmfin macro cpi --source fred --json                     # FRED series (aliases: cpi, unrate, fedfunds, dgs10, gdp, vix, ...)
 lmfin macro --list                         # the built-in FRED catalog</code></pre>
 <h2 id="classical-finance-calculators-exact-arithmetic">Classical-finance calculators (exact arithmetic)</h2>
-<p>These are pure calculators (validated against textbook pinned numbers), useful for teaching,
-checking, and pricing. Give explicit inputs.</p>
+<p>These are pure calculators (validated against textbook pinned numbers), useful for teaching, checking, and pricing. Give explicit inputs.</p>
 <pre><code># Options: Black-Scholes price + Greeks + implied vol; binomial CRR European/American; payoff
 lmfin option --spot 100 --strike 100 --rate 0.05 --vol 0.20 --time 1 --type call --json
 lmfin option --spot 100 --strike 100 --rate 0.05 --vol 0.20 --time 1 --type put \
@@ -105,23 +93,18 @@ lmfin forward --spot 100 --rate 0.05 --time 1 --income-fv 3 --json   # income at
 <hr>
 <h2 id="reading-the-output">Reading the output</h2>
 <ul>
-<li>Every <code>--json</code> object has a <strong>stable key contract</strong> — safe to parse programmatically.</li>
-<li>Rates/returns are <strong>decimals</strong> (multiply by 100 for percent).</li>
-<li><code>null</code> means &quot;not enough data&quot; (e.g. SMA-200 on a short window) — not an error.</li>
-<li>Market-analytics commands (<code>regime</code>, <code>factors</code>, <code>portfolio</code>, <code>pairs</code>, <code>vol</code>) are <strong>experimental
-and descriptive</strong>; the calculators (<code>option</code>, <code>tvm</code>, <code>bond</code>, <code>dcf</code>, <code>forward</code>, <code>frontier</code>) are
-<strong>exact arithmetic</strong> validated against textbook numbers.</li>
-<li>Prefer the <code>sharpe</code> field (simple-return / empyrical convention); <code>returns</code> also exposes
-<code>log_sharpe</code>.</li>
+<li>Every --json object has a stable key contract — safe to parse programmatically.</li>
+<li>Rates/returns are decimals (multiply by 100 for percent).</li>
+<li>null means "not enough data" (e.g. SMA-200 on a short window) — not an error.</li>
+<li>Market-analytics commands (regime, factors, portfolio, pairs, vol) are experimental and descriptive; the calculators (option, tvm, bond, dcf, forward, frontier) are exact arithmetic validated against textbook numbers.</li>
+<li>Prefer the sharpe field (simple-return / empyrical convention); returns also exposes log_sharpe.</li>
 </ul>
 <h2 id="tips-for-agents">Tips for agents</h2>
 <ul>
-<li>Run <code>lmfin &lt;command&gt; --help</code> to see exact flags before composing a command.</li>
-<li>Chain commands for a fuller picture: <code>fundamentals</code> + <code>perf</code> + <code>ta</code> for a single-name brief;
-<code>factors</code> + <code>portfolio</code> + <code>frontier</code> for a basket.</li>
-<li>If a data fetch fails (network/ticker), the command errors with context — surface it and retry or
-adjust the ticker.</li>
-<li>Always attach the &quot;not investment advice&quot; caveat when presenting results to a person.</li>
+<li>Run lmfin COMMAND --help to see exact flags before composing a command.</li>
+<li>Chain commands for a fuller picture: fundamentals + perf + ta for a single-name brief; factors + portfolio + frontier for a basket.</li>
+<li>If a data fetch fails (network/ticker), the command errors with context — surface it and retry or adjust the ticker.</li>
+<li>Always attach the "not investment advice" caveat when presenting results to a person.</li>
 </ul>
 </main>
 <footer>

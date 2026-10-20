@@ -19,30 +19,31 @@
 <main>
 <h1>lmctl skills</h1>
 <p>Provider-agnostic guides an LLM can read to use a tool. Skills are plain HTML for humans and agents.</p>
+<p>Choose: Lead of one team → lmctl-lead; running inside Claude Code → claudecode-lead; several Leads → meta-lead; everyday loop → team-lead basic; recovery → advanced; executable workflows → lmscript-workflow.</p>
 <h2>Utilities (LLM-facing)</h2>
 <ul>
-<li><a href="/skills/lmchat-skill.html">lmchat — a shared file room for LLM agents</a> — lmchat is an append-only shared room where each message is stored as a file.</li>
-<li><a href="/skills/lmsound-skill.html">lmsound — text → speech for LLM agents</a> — lmsound converts text to audio files using AWS Polly.</li>
-<li><a href="/skills/lmprobe-skill.html">lmprobe skill</a> — lmprobe searches codebases and reports files, text matches, definitions, references, imports and call relationships as structured results.</li>
-<li><a href="/skills/lmmail-skill.html">lmmail — simple asynchronous mail for LLM agents</a> — lmmail sends durable messages and attachments between globally named mailboxes, with commands for creating, sending, listing and reading mail.</li>
-<li><a href="/skills/lmfeedback-skill.html">lmfeedback — embeddable website feedback, delivered as lmmail mail</a> — Use lmfeedback when a website should collect feedback from its visitors and deliver it to the site's AI owner.</li>
-<li><a href="/skills/lmnote-skill.html">lmnote skill</a> — Use lmnote to keep durable named files in the authenticated lmctl user's private notebook.</li>
-<li><a href="/skills/lmsheet-skill.html">lmsheet skill</a> — Use lmsheet for small, durable spreadsheets in the authenticated lmctl user's private namespace. Data is stored as strings in DynamoDB.</li>
-<li><a href="/skills/lmtext-skill.html">lmtext — speech → text for LLM agents</a> — lmtext transcribes audio files with AWS Transcribe, complementing the text-to-speech tool lmsound.</li>
-<li><a href="/skills/lmfin-skill.html">lmfin — a lightweight local finance CLI for LLM agents</a> — lmfin is a local command-line tool for financial data, analysis and valuation using public market sources.</li>
-<li><a href="/skills/lmbio-skill.html">lmbio skill</a> — Use lmbio when an agent needs deterministic local computational-biology results with machine-readable JSON.</li>
+<li>Use when agents need a shared room for requests, files and replies. — <a href="https://lmctl.com/skills/lmchat-skill.html">lmchat — a shared file room for LLM agents</a></li>
+<li>Use when you need to synthesize speech from text or SSML. — <a href="https://lmctl.com/skills/lmsound-skill.html">lmsound — text → speech for LLM agents</a></li>
+<li>Use when you need to inspect web pages, fetch content or capture browser evidence. — <a href="https://lmctl.com/skills/lmprobe-skill.html">lmprobe skill</a></li>
+<li>Use when agents need explicit mailbox and message operations through lmmail. — <a href="https://lmctl.com/skills/lmmail-skill.html">lmmail — simple asynchronous mail for LLM agents</a></li>
+<li>Use when you need to submit and track product feedback. — <a href="https://lmctl.com/skills/lmfeedback-skill.html">lmfeedback — embeddable website feedback, delivered as lmmail mail</a></li>
+<li>Use when you need to create, find or update persistent notes. — <a href="https://lmctl.com/skills/lmnote-skill.html">lmnote skill</a></li>
+<li>Use when you need to read or update structured spreadsheet data. — <a href="https://lmctl.com/skills/lmsheet-skill.html">lmsheet skill</a></li>
+<li>Use when you need text processing through the lmtext service. — <a href="https://lmctl.com/skills/lmtext-skill.html">lmtext — speech → text for LLM agents</a></li>
+<li>Use when you need financial data through the lmfin API. — <a href="https://lmctl.com/skills/lmfin-skill.html">lmfin — a lightweight local finance CLI for LLM agents</a></li>
+<li>Use when you need biological data through the lmbio API. — <a href="https://lmctl.com/skills/lmbio-skill.html">lmbio skill</a></li>
 </ul>
 <h2>lmctl orchestration</h2>
 <ul>
-<li><a href="/skills/lmctl-lead-skill.html">lmctl Lead skill</a> — Administer one team, delegate concrete work, verify results, and keep project knowledge durable.</li>
-<li><a href="/skills/claudecode-lead-skill.html">Claude Code lmctl Lead skill</a> — Run an lmctl team from Claude Code using the same verified delegation and review contract as any provider.</li>
-<li><a href="/skills/opencode-lead-skill.html">opencode lmctl Lead skill</a> — Run an lmctl team from opencode using the provider-independent command contract.</li>
-<li><a href="/skills/lmctl-team-lead-basic-skill.html">lmctl — Team Lead skill (basic)</a> — Use the everyday Coder → Reviewer → Lead loop with a seeded .lmctl teamfile.</li>
-<li><a href="/skills/lmctl-team-lead-advanced-skill.html">lmctl — Team Lead skill (advanced)</a> — Inspect session state, preserve knowledge, and replace sessions deliberately when recovery is necessary.</li>
-<li><a href="/skills/lmscript-workflow-skill.html">lmscript workflow skill</a> — This guide explains how to author parameterized lmscript workflows that users can download, configure and run with lmctl.</li>
-<li><a href="/skills/lmctl-meta-lead-skill.html">lmctl — Meta-Lead skill</a> — Coordinate several team Leads by inspecting progress and sending concrete, self-contained tasks.</li>
-<li><a href="/skills/team-lead-workflow.html">Skill: Team Lead workflow</a> — Delegate, review, arbitrate disagreements, and escalate unresolved decisions.</li>
-<li><a href="/skills/durable-memory.html">Skill: Durable memory</a> — Keep portable project decisions and operating context in committed durable-memory/ files.</li>
+<li>Use when you lead one lmctl team and delegate work to independent members. — <a href="https://lmctl.com/skills/lmctl-lead-skill.html">lmctl Lead skill</a></li>
+<li>Use when you lead an lmctl team from inside Claude Code. — <a href="https://lmctl.com/skills/claudecode-lead-skill.html">Claude Code lmctl Lead skill</a></li>
+<li>Use when you lead an lmctl team from inside OpenCode. — <a href="https://lmctl.com/skills/opencode-lead-skill.html">opencode lmctl Lead skill</a></li>
+<li>Use when you need the everyday task, review and verification loop. — <a href="https://lmctl.com/skills/lmctl-team-lead-basic-skill.html">lmctl — Team Lead skill (basic)</a></li>
+<li>Use when a team member needs session recovery, a model change or drift diagnosis. — <a href="https://lmctl.com/skills/lmctl-team-lead-advanced-skill.html">lmctl — Team Lead skill (advanced)</a></li>
+<li>Use when you need an executable workflow that coordinates multiple agent turns. — <a href="https://lmctl.com/skills/lmscript-workflow-skill.html">lmscript workflow skill</a></li>
+<li>Use when you coordinate several team Leads. — <a href="https://lmctl.com/skills/lmctl-meta-lead-skill.html">lmctl — Meta-Lead skill</a></li>
+<li>Use when you need a short checklist for delegation and independent review. — <a href="https://lmctl.com/skills/team-lead-workflow.html">Skill: Team Lead workflow</a></li>
+<li>Use when project state must survive compaction, a new session or a provider change. — <a href="https://lmctl.com/skills/durable-memory.html">Skill: Durable memory</a></li>
 </ul>
 <p>New tool skills live in the <a href="/tools/">tools catalog</a>. Hosted utilities require an authorized account; deployment availability and permissions must be checked with the operator.</p>
 </main>

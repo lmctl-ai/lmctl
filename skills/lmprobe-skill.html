@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>lmprobe skill — lmctl skills</title>
-<meta name="description" content="lmprobe searches codebases and reports files, text matches, definitions, references, imports and call relationships as structured results.">
+<meta name="description" content="Use when you need to inspect web pages, fetch content or capture browser evidence.">
 <link rel="stylesheet" href="/tools/style.css">
 <link rel="icon" type="image/png" href="/tools/img/icon.png">
 </head>
@@ -18,94 +18,61 @@
 </nav>
 <main>
 <h1>lmprobe skill</h1>
-<p>Use this skill when you need codebase evidence: finding files, grepping text,
-locating definitions/references, mapping imports/callers/callees, or collecting
-structured search results for another agent.</p>
+<p>Use this skill when you need codebase evidence: finding files, grepping text, locating definitions/references, mapping imports/callers/callees, or collecting structured search results for another agent.</p>
 <p>Canonical manual: <a href="https://lmctl.com/lmprobe">https://lmctl.com/lmprobe</a></p>
-<p>This skill is the fast path. If exact syntax, output formats, GraphQL fields,
-mutation safety, history commands, secrets scanning, or command reference
-details matter, open the manual and use it as the source of truth. The manual
-sections are: Start, Install, Search, Graphs, History, Safe changes, Formats,
-GraphQL, Secrets, Recipes, and Reference.</p>
+<p>This skill is the fast path. If exact syntax, output formats, GraphQL fields, mutation safety, history commands, secrets scanning, or command reference details matter, open the manual and use it as the source of truth. The manual sections are: Start, Install, Search, Graphs, History, Safe changes, Formats, GraphQL, Secrets, Recipes, and Reference.</p>
 <h2 id="install">Install</h2>
 <pre><code>npm install -g @lmctl-ai/lmprobe</code></pre>
-<p>Use the global install for repeated agent batches; <code>npx @lmctl-ai/lmprobe ...</code>
-re-resolves the package on each invocation and can add seconds per call. Use
-<code>npx</code> for one-off runs or when you cannot install globally.</p>
-<p>If a package installs but fails before startup with a glibc loader error,
-report that as a package/runtime issue; do not switch public instructions to
-<code>cargo build</code>.</p>
+<p>Use the global install for repeated agent batches; npx @lmctl-ai/lmprobe ... re-resolves the package on each invocation and can add seconds per call. Use npx for one-off runs or when you cannot install globally.</p>
+<p>If a package installs but fails before startup with a glibc loader error, report that as a package/runtime issue; do not switch public instructions to cargo build.</p>
 <h2 id="default-workflow">Default workflow</h2>
 <ol>
-<li><p>Start with JSON unless the user asked for another format:</p>
-<pre><code>lmprobe --format json &lt;verb&gt; ...</code></pre>
-</li>
-<li><p>Prefer lmprobe over ad hoc <code>find | grep | awk</code> chains when the task is about
-code evidence. It returns structured paths, line numbers, diagnostics, and
-evidence envelopes that are easier for agents to cite.</p>
-</li>
-<li><p>Use raw <code>find</code>/<code>grep</code> only when lmprobe is unavailable, blocked by the Linux
-runtime caveat, or the user explicitly asks for shell primitives. Say so in
-the result.</p>
-</li>
-<li><p>Read <code>warnings</code>, <code>diagnostics</code>, and <code>exit_status</code> (GraphQL: <code>exitStatus</code>). A no-match, regex warning,
-unsupported language, or partial result is evidence; do not silently ignore it.</p>
-</li>
-<li><p>For non-basic commands, check <a href="https://lmctl.com/lmprobe">https://lmctl.com/lmprobe</a> before running:
-<code>history</code>, <code>ast-diff</code>, <code>impact</code>, <code>context</code>, <code>trace</code>, <code>fix</code>, <code>secrets</code>,
-alternate output formats, and GraphQL composition have detailed examples
-there.</p>
-</li>
+<li><p>Start with JSON unless the user asked for another format:</p> <pre><code>lmprobe --format json VERB ...</code></pre> </li>
+<li><p>Prefer lmprobe over ad hoc find | grep | awk chains when the task is about code evidence. It returns structured paths, line numbers, diagnostics, and evidence envelopes that are easier for agents to cite.</p> </li>
+<li><p>Use raw find/grep only when lmprobe is unavailable, blocked by the Linux runtime caveat, or the user explicitly asks for shell primitives. Say so in the result.</p> </li>
+<li><p>Read warnings, diagnostics, and exit_status (GraphQL: exitStatus). A no-match, regex warning, unsupported language, or partial result is evidence; do not silently ignore it.</p> </li>
+<li><p>For non-basic commands, check <a href="https://lmctl.com/lmprobe">https://lmctl.com/lmprobe</a> before running: history, ast-diff, impact, context, trace, fix, secrets, alternate output formats, and GraphQL composition have detailed examples there.</p> </li>
 </ol>
 <h2 id="fast-recipes">Fast recipes</h2>
 <p>Find project markers:</p>
-<pre><code>lmprobe --format json find &#39;(^|[\\/])package\.json$&#39; .
-lmprobe --format json find &#39;(^|[\\/])(Cargo\.toml|pyproject\.toml|go\.mod)$&#39; .</code></pre>
+<pre><code>lmprobe --format json find '(^|[\\/])package\.json$' .
+lmprobe --format json find '(^|[\\/])(Cargo\.toml|pyproject\.toml|go\.mod)$' .</code></pre>
 <p>Find source files by extension:</p>
-<pre><code>lmprobe --format json find &#39;\.(rs|ts|tsx|js|jsx|pl|pm)$&#39; .</code></pre>
+<pre><code>lmprobe --format json find '\.(rs|ts|tsx|js|jsx|pl|pm)$' .</code></pre>
 <p>Search raw content:</p>
-<pre><code>lmprobe --format json grep &#39;login|signin|authenticate&#39; .
-lmprobe --format json grep -i &#39;todo|fixme&#39; .
-lmprobe --format json grep &#39;process\.env\.[A-Z0-9_]+&#39; --path apps/web --path packages/shared</code></pre>
+<pre><code>lmprobe --format json grep 'login|signin|authenticate' .
+lmprobe --format json grep -i 'todo|fixme' .
+lmprobe --format json grep 'process\.env\.[A-Z0-9_]+' --path apps/web --path packages/shared</code></pre>
 <p>Add context for human-reviewable evidence:</p>
-<pre><code>lmprobe --format json grep -C 3 &#39;login&#39; apps/web
-lmprobe --format json grep --parents --body &#39;handler|route&#39; src</code></pre>
+<pre><code>lmprobe --format json grep -C 3 'login' apps/web
+lmprobe --format json grep --parents --body 'handler|route' src</code></pre>
 <p>Use symbol-aware verbs for identifiers:</p>
 <pre><code>lmprobe --format json def LoginService .
 lmprobe --format json def --body LoginService .
 lmprobe --format json ref LoginService .
 lmprobe --format json search --name Login .
 lmprobe --format json search --name Login --outline .</code></pre>
-<p><code>def</code> skeletonizes declaration bodies by default. Add <code>--body</code> when the
-implementation body matters. <code>search</code> returns full declaration content by
-default; <code>search --outline</code> requests a body-elided declaration outline. The
-current-directory recipe <code>search --name Login .</code> is quiet. For other paths,
-prefer <code>search --name Login --path src/service</code> to avoid the positional
-query/path ambiguity warning.</p>
-<p>CLI JSON uses snake_case keys and lowercase enum-like values, for example
-<code>file_path</code>, <code>line_number</code>, <code>line_content</code>, and <code>exit_status: &quot;matched&quot;</code>.
-GraphQL uses camelCase keys and uppercase enum-style values, for example
-<code>filePath</code>, <code>lineNumber</code>, <code>lineContent</code>, and <code>exitStatus: MATCHED</code>.</p>
+<p>def skeletonizes declaration bodies by default. Add --body when the implementation body matters. search returns full declaration content by default; search --outline requests a body-elided declaration outline. The current-directory recipe search --name Login . is quiet. For other paths, prefer search --name Login --path src/service to avoid the positional query/path ambiguity warning.</p>
+<p>CLI JSON uses snake_case keys and lowercase enum-like values, for example file_path, line_number, line_content, and exit_status: "matched". GraphQL uses camelCase keys and uppercase enum-style values, for example filePath, lineNumber, lineContent, and exitStatus: MATCHED.</p>
 <h2 id="graphql-recipes">GraphQL recipes</h2>
-<p>Use GraphQL when you need several evidence streams in one process or want only
-selected fields.</p>
-<pre><code>lmprobe query --format json &#39;{
-  packages: find(pattern: &quot;(^|[\\\\/])package\\.json$&quot;, path: &quot;.&quot;) {
+<p>Use GraphQL when you need several evidence streams in one process or want only selected fields.</p>
+<pre><code>lmprobe query --format json '{
+  packages: find(pattern: "(^|[\\\\/])package\\.json$", path: ".") {
     paths
     exitStatus
   }
-  auth: grep(pattern: &quot;login|signin|authenticate&quot;, path: &quot;.&quot;, around: 2) {
+  auth: grep(pattern: "login|signin|authenticate", path: ".", around: 2) {
     hits { filePath lineNumber lineContent }
     warnings { code message hint }
     exitStatus
   }
-}&#39;</code></pre>
+}'</code></pre>
 <p>Find directories with a marker file and then grep only under those directories:</p>
-<pre><code>lmprobe query --format json &#39;{
+<pre><code>lmprobe query --format json '{
   grepDirsWith(
-    markerPattern: &quot;(^|[\\\\/])package\\.json$&quot;,
-    pattern: &quot;oauth|copilot|openai&quot;,
-    path: &quot;.&quot;,
+    markerPattern: "(^|[\\\\/])package\\.json$",
+    pattern: "oauth|copilot|openai",
+    path: ".",
     around: 2,
     parents: true
   ) {
@@ -117,16 +84,14 @@ selected fields.</p>
     }
     exitStatus
   }
-}&#39;</code></pre>
+}'</code></pre>
 <h2 id="safety-and-reporting">Safety and reporting</h2>
 <ul>
-<li>Treat lmprobe as read-only unless using explicit mutation verbs such as
-<code>fix</code>, <code>trace</code>, or <code>untrace</code>.</li>
+<li>Treat lmprobe as read-only unless using explicit mutation verbs such as fix, trace, or untrace.</li>
 <li>Include exact file paths and line numbers in your answer.</li>
 <li>Summarize diagnostics or warnings that affect confidence.</li>
-<li>Do not claim complete repository coverage if the command had partial results,
-unsupported language warnings, or path exclusions.</li>
-<li>Public install channel is <code>@lmctl-ai/lmprobe</code>; the source is public at <a href="https://github.com/lmctl-ai/lmprobe">https://github.com/lmctl-ai/lmprobe</a>.</li>
+<li>Do not claim complete repository coverage if the command had partial results, unsupported language warnings, or path exclusions.</li>
+<li>Public install channel is @lmctl-ai/lmprobe; the source is public at <a href="https://github.com/lmctl-ai/lmprobe">https://github.com/lmctl-ai/lmprobe</a>.</li>
 </ul>
 <p>See the <a href="https://lmctl.com/lmprobe/">lmprobe manual</a> for the full command reference.</p>
 </main>

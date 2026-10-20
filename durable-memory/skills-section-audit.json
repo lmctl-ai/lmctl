@@ -1,0 +1,709 @@
+{
+  "base": "1fe5971",
+  "token_estimate": "UTF-8 bytes / 4, rounded up; not a model tokenizer",
+  "files": [
+    {
+      "file": "skills/background-wakeup.html",
+      "old_bytes": 975,
+      "html_bytes": 1055,
+      "old_estimated_tokens": 244,
+      "html_estimated_tokens": 264,
+      "old_words": 138,
+      "html_words": 29,
+      "removed_or_renamed_sections": [],
+      "old_sections": [],
+      "new_sections": [],
+      "disposition": "Retired: removed wake/serve workflow. Pointer remains; no current command is claimed."
+    },
+    {
+      "file": "skills/claudecode-lead-skill.html",
+      "old_bytes": 5997,
+      "html_bytes": 3193,
+      "old_estimated_tokens": 1500,
+      "html_estimated_tokens": 799,
+      "old_words": 885,
+      "html_words": 312,
+      "removed_or_renamed_sections": [
+        "Dispatch every prompt in the background",
+        "Wake up and decide the next task when the harness notifies you",
+        "You do not need to poll for inbound mail by default",
+        "If your configuration explicitly enables queueing",
+        "Address teams by absolute path",
+        "Read evidence before declaring a stall"
+      ],
+      "old_sections": [
+        "Dispatch every prompt in the background",
+        "Wake up and decide the next task when the harness notifies you",
+        "You do not need to poll for inbound mail by default",
+        "If your configuration explicitly enables queueing",
+        "Address teams by absolute path",
+        "Read evidence before declaring a stall"
+      ],
+      "new_sections": [
+        "Delegate and inspect",
+        "Review and durable knowledge",
+        "Harness integration",
+        "Related guidance"
+      ],
+      "disposition": "Replaced removed queue/mail sections with blocking prompt and busy retry. Background execution is conditional on the harness. Absolute team paths and evidence-first inspection remain valid; restored below where needed."
+    },
+    {
+      "file": "skills/communicating-with-mail-skill.html",
+      "old_bytes": 5570,
+      "html_bytes": 1184,
+      "old_estimated_tokens": 1393,
+      "html_estimated_tokens": 296,
+      "old_words": 856,
+      "html_words": 39,
+      "removed_or_renamed_sections": [
+        "The one idea",
+        "Two patterns you will actually use",
+        "1. Async chat between two agents",
+        "2. Remote execution",
+        "If you are a one-shot agent (no tool calls, no session memory)",
+        "Habits that make a fresh LLM effective on mail",
+        "Minimal reference"
+      ],
+      "old_sections": [
+        "The one idea",
+        "Two patterns you will actually use",
+        "1. Async chat between two agents",
+        "2. Remote execution",
+        "If you are a one-shot agent (no tool calls, no session memory)",
+        "Habits that make a fresh LLM effective on mail",
+        "Minimal reference"
+      ],
+      "new_sections": [],
+      "disposition": "Retired: removed lmctl mail and delivery workflow. The separate lmmail utility is not removed."
+    },
+    {
+      "file": "skills/durable-memory.html",
+      "old_bytes": 1468,
+      "html_bytes": 3001,
+      "old_estimated_tokens": 367,
+      "html_estimated_tokens": 751,
+      "old_words": 188,
+      "html_words": 298,
+      "removed_or_renamed_sections": [
+        "Why it exists",
+        "What survives",
+        "Git split",
+        "Inbox relation",
+        "Practice"
+      ],
+      "old_sections": [
+        "Why it exists",
+        "What survives",
+        "Git split",
+        "Inbox relation",
+        "Practice"
+      ],
+      "new_sections": [
+        "How it works",
+        "Recommended format for new notes"
+      ],
+      "disposition": "Reorganized around Markdown notes and generated index. Removed obsolete inbox linkage, automatic onboarding and universal git-ignore policy; retained persistence boundaries, explicit reading and committed canonical state."
+    },
+    {
+      "file": "skills/lmbio-skill.html",
+      "old_bytes": 13935,
+      "html_bytes": 15829,
+      "old_estimated_tokens": 3484,
+      "html_estimated_tokens": 3958,
+      "old_words": 1656,
+      "html_words": 1656,
+      "removed_or_renamed_sections": [],
+      "old_sections": [
+        "General rules",
+        "Exact HMM Viterbi",
+        "Fitch Small Parsimony",
+        "Golden Fixture Replay",
+        "Genetics",
+        "Motif PWM",
+        "Alignment DP",
+        "Contract Helpers",
+        "Search Indexing",
+        "Exact Stats Core",
+        "iCite",
+        "UniProt",
+        "Sequence Utilities",
+        "Protein Stats",
+        "Interval Arithmetic",
+        "PubMed",
+        "ClinicalTrials.gov",
+        "Drug and Compound Data"
+      ],
+      "new_sections": [
+        "General rules",
+        "Exact HMM Viterbi",
+        "Fitch Small Parsimony",
+        "Golden Fixture Replay",
+        "Genetics",
+        "Motif PWM",
+        "Alignment DP",
+        "Contract Helpers",
+        "Search Indexing",
+        "Exact Stats Core",
+        "iCite",
+        "UniProt",
+        "Sequence Utilities",
+        "Protein Stats",
+        "Interval Arithmetic",
+        "PubMed",
+        "ClinicalTrials.gov",
+        "Drug and Compound Data"
+      ],
+      "disposition": "All original headings retained. Commands/API examples and warnings remain, with deployment/permission limits from the source audit. Inline typography and placeholder spelling changed without removing instructions."
+    },
+    {
+      "file": "skills/lmchat-skill.html",
+      "old_bytes": 8247,
+      "html_bytes": 10108,
+      "old_estimated_tokens": 2062,
+      "html_estimated_tokens": 2527,
+      "old_words": 1195,
+      "html_words": 1252,
+      "removed_or_renamed_sections": [],
+      "old_sections": [
+        "What you need",
+        "Manage rooms",
+        "List your rooms",
+        "Create a room",
+        "Send a one-line note (simplest \u2014 no file dance)",
+        "Post / list / get files",
+        "1. Post a file \u2014 announce, upload, commit",
+        "2. List files (read new messages)",
+        "3. Get a file (download a message)",
+        "4. Delete a handled message",
+        "The async handoff loop",
+        "Own a room: treat it as your backlog",
+        "Conventions"
+      ],
+      "new_sections": [
+        "What you need",
+        "Manage rooms",
+        "List your rooms",
+        "Create a room",
+        "Send a one-line note (simplest \u2014 no file dance)",
+        "Post / list / get files",
+        "1. Post a file \u2014 announce, upload, commit",
+        "2. List files (read new messages)",
+        "3. Get a file (download a message)",
+        "4. Delete a handled message",
+        "The async handoff loop",
+        "Own a room: treat it as your backlog",
+        "Conventions",
+        "Verification scope"
+      ],
+      "disposition": "All original headings retained. Commands/API examples and warnings remain, with deployment/permission limits from the source audit. Inline typography and placeholder spelling changed without removing instructions. Own a room keeps every backlog/ownership/delete warning as plain prose; no inline code or emphasis remains."
+    },
+    {
+      "file": "skills/lmctl-admin-skill.html",
+      "old_bytes": 2701,
+      "html_bytes": 1125,
+      "old_estimated_tokens": 676,
+      "html_estimated_tokens": 282,
+      "old_words": 338,
+      "html_words": 36,
+      "removed_or_renamed_sections": [
+        "Setup",
+        "Commands",
+        "Operating rules"
+      ],
+      "old_sections": [
+        "Setup",
+        "Commands",
+        "Operating rules"
+      ],
+      "new_sections": [],
+      "disposition": "Retired: health and delivery administration commands no longer exist in current help."
+    },
+    {
+      "file": "skills/lmctl-lead-skill.html",
+      "old_bytes": 4619,
+      "html_bytes": 5471,
+      "old_estimated_tokens": 1155,
+      "html_estimated_tokens": 1368,
+      "old_words": 664,
+      "html_words": 590,
+      "removed_or_renamed_sections": [
+        "Essential commands",
+        "Details"
+      ],
+      "old_sections": [
+        "Essential commands",
+        "Work loop",
+        "Recovery",
+        "Details"
+      ],
+      "new_sections": [
+        "Delegate and inspect",
+        "Background work",
+        "Work loop",
+        "Review and durable knowledge",
+        "Recovery",
+        "Related guidance"
+      ],
+      "disposition": "Restored agent-addressed opening, canonical-memory rule, Work loop, Recovery and basic/advanced links. Essential commands and Details are retained under Delegate and inspect and Related guidance. Restored systemd warning with linger qualification. Current prompt help has no idle-timeout flag: old 15ms gotcha is historical and is deliberately not shipped as an instruction."
+    },
+    {
+      "file": "skills/lmctl-meta-lead-skill.html",
+      "old_bytes": 6228,
+      "html_bytes": 4141,
+      "old_estimated_tokens": 1557,
+      "html_estimated_tokens": 1036,
+      "old_words": 981,
+      "html_words": 411,
+      "removed_or_renamed_sections": [
+        "Survey your fleet without disturbing it",
+        "Warm up a newly-seeded Lead",
+        "Inspect before messaging Leads",
+        "Refresh a drifting Lead",
+        "Getting a Lead to actually execute (e.g. commit built work)",
+        "What NOT to do"
+      ],
+      "old_sections": [
+        "Survey your fleet without disturbing it",
+        "Delegate to a Lead",
+        "Warm up a newly-seeded Lead",
+        "Inspect before messaging Leads",
+        "Refresh a drifting Lead",
+        "Getting a Lead to actually execute (e.g. commit built work)",
+        "What NOT to do"
+      ],
+      "new_sections": [
+        "Delegate and inspect",
+        "Review and durable knowledge",
+        "Delegate to a Lead",
+        "Replace a session deliberately",
+        "Related guidance"
+      ],
+      "disposition": "Replaced health with status, removed refresh/serve and queue-dependent claims. Fleet survey, concrete delegation, evidence-first diagnosis and deliberate session replacement survive. Warm-up is explicit rather than promised automatic onboarding."
+    },
+    {
+      "file": "skills/lmctl-recover-skill.html",
+      "old_bytes": 20084,
+      "html_bytes": 1263,
+      "old_estimated_tokens": 5021,
+      "html_estimated_tokens": 316,
+      "old_words": 2830,
+      "html_words": 54,
+      "removed_or_renamed_sections": [
+        "lmctl restore-teamfile \u2014 reconstruct a missing teamfile",
+        "Troubleshooting restore-teamfile",
+        "lmctl restore \u2014 replay a session's file writes back onto disk",
+        "What gets replayed",
+        "The three placement/overwrite rules",
+        "Reading the output",
+        "Per-file action/reason reference \u2014 what to do about each one",
+        "Multi-agent teams: sweep every alias, don't stop at one",
+        "sed/awk -i/interpreter edits are a permanent, easy-to-miss blind spot",
+        "End-to-end recovery checklist",
+        "What this cannot do"
+      ],
+      "old_sections": [
+        "lmctl restore-teamfile \u2014 reconstruct a missing teamfile",
+        "Troubleshooting restore-teamfile",
+        "lmctl restore \u2014 replay a session's file writes back onto disk",
+        "What gets replayed",
+        "The three placement/overwrite rules",
+        "Reading the output",
+        "Per-file action/reason reference \u2014 what to do about each one",
+        "Multi-agent teams: sweep every alias, don't stop at one",
+        "sed/awk -i/interpreter edits are a permanent, easy-to-miss blind spot",
+        "End-to-end recovery checklist",
+        "What this cannot do"
+      ],
+      "new_sections": [],
+      "disposition": "Retired: restore and restore-teamfile commands no longer exist. No claim of replaying shell edits remains."
+    },
+    {
+      "file": "skills/lmctl-team-lead-advanced-skill.html",
+      "old_bytes": 4194,
+      "html_bytes": 3878,
+      "old_estimated_tokens": 1049,
+      "html_estimated_tokens": 970,
+      "old_words": 619,
+      "html_words": 383,
+      "removed_or_renamed_sections": [
+        "Refresh a bloated or drifting member",
+        "Model swap",
+        "The drift \u2192 recover procedure",
+        "Read health like an administrator",
+        "Don't fight the busy-guard",
+        "Cross-team calls",
+        "Warm up the channel"
+      ],
+      "old_sections": [
+        "Refresh a bloated or drifting member",
+        "Model swap",
+        "The drift \u2192 recover procedure",
+        "Read health like an administrator",
+        "Don't fight the busy-guard",
+        "Cross-team calls",
+        "Warm up the channel"
+      ],
+      "new_sections": [
+        "Delegate and inspect",
+        "Review and durable knowledge",
+        "Replace a session deliberately",
+        "Cross-team work",
+        "Related guidance"
+      ],
+      "disposition": "Replaced refresh/health with status and deliberate session-field replacement plus seed. Removed queue/busy override assumptions. Recovery, model selection, cross-team targeting and explicit reading instructions remain."
+    },
+    {
+      "file": "skills/lmctl-team-lead-basic-skill.html",
+      "old_bytes": 6375,
+      "html_bytes": 3090,
+      "old_estimated_tokens": 1594,
+      "html_estimated_tokens": 773,
+      "old_words": 958,
+      "html_words": 282,
+      "removed_or_renamed_sections": [
+        "Delegate a task to a member",
+        "Queued delegation",
+        "If you learned an older lmctl (older command habits)",
+        "Watch a member without disturbing it",
+        "Check team health",
+        "The work loop (Coder -> Reviewer -> Lead)",
+        "Keep knowledge durable",
+        "Add a member"
+      ],
+      "old_sections": [
+        "Delegate a task to a member",
+        "Queued delegation",
+        "If you learned an older lmctl (older command habits)",
+        "Watch a member without disturbing it",
+        "Check team health",
+        "The work loop (Coder -> Reviewer -> Lead)",
+        "Keep knowledge durable",
+        "Add a member"
+      ],
+      "new_sections": [
+        "Delegate and inspect",
+        "Review and durable knowledge",
+        "Team setup",
+        "Related guidance"
+      ],
+      "disposition": "Merged duplicate command and work-loop sections into current prompt/status/tail guidance. Removed queued delegation and hire/connect/chat/health. Kept concrete task, blocking reply, independent review and durable-memory practices."
+    },
+    {
+      "file": "skills/lmfeedback-skill.html",
+      "old_bytes": 5559,
+      "html_bytes": 7187,
+      "old_estimated_tokens": 1390,
+      "html_estimated_tokens": 1797,
+      "old_words": 712,
+      "html_words": 762,
+      "removed_or_renamed_sections": [],
+      "old_sections": [
+        "Authentication",
+        "API summary",
+        "CLI coverage",
+        "Raw HTTP",
+        "Build and test",
+        "Shared appkey"
+      ],
+      "new_sections": [
+        "Authentication",
+        "API summary",
+        "CLI coverage",
+        "Raw HTTP",
+        "Build and test",
+        "Shared appkey",
+        "Verification scope"
+      ],
+      "disposition": "All original headings retained. Commands/API examples and warnings remain, with deployment/permission limits from the source audit. Inline typography and placeholder spelling changed without removing instructions."
+    },
+    {
+      "file": "skills/lmfin-skill.html",
+      "old_bytes": 6750,
+      "html_bytes": 7481,
+      "old_estimated_tokens": 1688,
+      "html_estimated_tokens": 1871,
+      "old_words": 961,
+      "html_words": 892,
+      "removed_or_renamed_sections": [
+        "Install (local dogfood \u2014 build from source)"
+      ],
+      "old_sections": [
+        "Install (local dogfood \u2014 build from source)",
+        "How to use it",
+        "Market analytics",
+        "Fundamentals & macro",
+        "Classical-finance calculators (exact arithmetic)",
+        "Reading the output",
+        "Tips for agents"
+      ],
+      "new_sections": [
+        "Install",
+        "How to use it",
+        "Market analytics",
+        "Fundamentals & macro",
+        "Classical-finance calculators (exact arithmetic)",
+        "Reading the output",
+        "Tips for agents"
+      ],
+      "disposition": "Replaced machine-local install paths with verified installation guidance. API sections retained."
+    },
+    {
+      "file": "skills/lmmail-skill.html",
+      "old_bytes": 5053,
+      "html_bytes": 6019,
+      "old_estimated_tokens": 1264,
+      "html_estimated_tokens": 1505,
+      "old_words": 598,
+      "html_words": 577,
+      "removed_or_renamed_sections": [],
+      "old_sections": [
+        "Fastest path: CLI",
+        "Raw HTTP",
+        "API summary"
+      ],
+      "new_sections": [
+        "Fastest path: CLI",
+        "Raw HTTP",
+        "API summary",
+        "Verification scope"
+      ],
+      "disposition": "All original headings retained. Commands/API examples and warnings remain, with deployment/permission limits from the source audit. Inline typography and placeholder spelling changed without removing instructions. Word-count reduction comes from formatting and removal of unverified deployment assumptions; owner authorization, send/finalize, read state, deletion, limits and integration-test caveats remain."
+    },
+    {
+      "file": "skills/lmnote-skill.html",
+      "old_bytes": 5121,
+      "html_bytes": 6719,
+      "old_estimated_tokens": 1281,
+      "html_estimated_tokens": 1680,
+      "old_words": 607,
+      "html_words": 659,
+      "removed_or_renamed_sections": [],
+      "old_sections": [
+        "Setup",
+        "Preferred interface: CLI",
+        "Raw HTTP",
+        "Create",
+        "List",
+        "Read",
+        "Update",
+        "Delete",
+        "Error handling"
+      ],
+      "new_sections": [
+        "Setup",
+        "Preferred interface: CLI",
+        "Raw HTTP",
+        "Create",
+        "List",
+        "Read",
+        "Update",
+        "Delete",
+        "Error handling",
+        "Verification scope"
+      ],
+      "disposition": "All original headings retained. Commands/API examples and warnings remain, with deployment/permission limits from the source audit. Inline typography and placeholder spelling changed without removing instructions."
+    },
+    {
+      "file": "skills/lmprobe-skill.html",
+      "old_bytes": 4937,
+      "html_bytes": 6346,
+      "old_estimated_tokens": 1235,
+      "html_estimated_tokens": 1587,
+      "old_words": 635,
+      "html_words": 646,
+      "removed_or_renamed_sections": [],
+      "old_sections": [
+        "Install",
+        "Default workflow",
+        "Fast recipes",
+        "GraphQL recipes",
+        "Safety and reporting"
+      ],
+      "new_sections": [
+        "Install",
+        "Default workflow",
+        "Fast recipes",
+        "GraphQL recipes",
+        "Safety and reporting"
+      ],
+      "disposition": "All original headings retained. Commands/API examples and warnings remain, with deployment/permission limits from the source audit. Inline typography and placeholder spelling changed without removing instructions."
+    },
+    {
+      "file": "skills/lmscript-workflow-skill.html",
+      "old_bytes": 16999,
+      "html_bytes": 15062,
+      "old_estimated_tokens": 4250,
+      "html_estimated_tokens": 3766,
+      "old_words": 2770,
+      "html_words": 2171,
+      "removed_or_renamed_sections": [],
+      "old_sections": [
+        "Why a workflow, not a skill or a spec",
+        "What a workflow is",
+        "Rules that must be enforced, not just followed",
+        "A complete example",
+        "A larger request form",
+        "Common gotchas",
+        "Checking a workflow before you run it"
+      ],
+      "new_sections": [
+        "Why a workflow, not a skill or a spec",
+        "What a workflow is",
+        "Rules that must be enforced, not just followed",
+        "A complete example",
+        "A larger request form",
+        "Common gotchas",
+        "Checking a workflow before you run it"
+      ],
+      "disposition": "Restored Why a workflow, not a skill or a spec, design/approval boundaries, disagreement attribution and final evidence. Removed unverifiable anecdotes/shared-library promises and universal claims about all skills or approval policies. Remaining sections and executable example retained; prior source audit verified script syntax."
+    },
+    {
+      "file": "skills/lmsheet-skill.html",
+      "old_bytes": 4812,
+      "html_bytes": 6385,
+      "old_estimated_tokens": 1203,
+      "html_estimated_tokens": 1597,
+      "old_words": 572,
+      "html_words": 624,
+      "removed_or_renamed_sections": [],
+      "old_sections": [
+        "Setup",
+        "Addressing and semantics",
+        "CLI",
+        "Raw HTTP",
+        "Errors"
+      ],
+      "new_sections": [
+        "Setup",
+        "Addressing and semantics",
+        "CLI",
+        "Raw HTTP",
+        "Errors",
+        "Verification scope"
+      ],
+      "disposition": "All original headings retained. Commands/API examples and warnings remain, with deployment/permission limits from the source audit. Inline typography and placeholder spelling changed without removing instructions."
+    },
+    {
+      "file": "skills/lmsound-skill.html",
+      "old_bytes": 6501,
+      "html_bytes": 8397,
+      "old_estimated_tokens": 1626,
+      "html_estimated_tokens": 2100,
+      "old_words": 800,
+      "html_words": 866,
+      "removed_or_renamed_sections": [],
+      "old_sections": [
+        "What you need",
+        "Synthesize speech \u2014 POST /speak",
+        "Body fields (all but text optional)",
+        "SSML \u2014 fine-grained control",
+        "Pick a voice \u2014 GET /voices",
+        "Re-download later \u2014 GET /speak/{id}",
+        "List your recent audio \u2014 GET /speak",
+        "Check your monthly spend \u2014 GET /usage",
+        "Notes"
+      ],
+      "new_sections": [
+        "What you need",
+        "Synthesize speech \u2014 POST /speak",
+        "Body fields (all but text optional)",
+        "SSML \u2014 fine-grained control",
+        "Pick a voice \u2014 GET /voices",
+        "Re-download later \u2014 GET /speak/{id}",
+        "List your recent audio \u2014 GET /speak",
+        "Check your monthly spend \u2014 GET /usage",
+        "Notes",
+        "Verification scope"
+      ],
+      "disposition": "All original headings retained. Commands/API examples and warnings remain, with deployment/permission limits from the source audit. Inline typography and placeholder spelling changed without removing instructions."
+    },
+    {
+      "file": "skills/lmtext-skill.html",
+      "old_bytes": 5243,
+      "html_bytes": 7076,
+      "old_estimated_tokens": 1311,
+      "html_estimated_tokens": 1769,
+      "old_words": 656,
+      "html_words": 699,
+      "removed_or_renamed_sections": [],
+      "old_sections": [
+        "What you need",
+        "The flow (4 steps)",
+        "1. Allocate an upload \u2014 POST /transcriptions",
+        "2. Upload the audio \u2014 presigned POST to S3",
+        "3. Start transcription \u2014 POST /transcriptions/{id}/finalize",
+        "4. Poll for the result \u2014 GET /transcriptions/{id}",
+        "List and delete",
+        "CLI",
+        "Errors and limits"
+      ],
+      "new_sections": [
+        "What you need",
+        "The flow (4 steps)",
+        "1. Allocate an upload \u2014 POST /transcriptions",
+        "2. Upload the audio \u2014 presigned POST to S3",
+        "3. Start transcription \u2014 POST /transcriptions/{id}/finalize",
+        "4. Poll for the result \u2014 GET /transcriptions/{id}",
+        "List and delete",
+        "CLI",
+        "Errors and limits",
+        "Verification scope"
+      ],
+      "disposition": "All original headings retained. Commands/API examples and warnings remain, with deployment/permission limits from the source audit. Inline typography and placeholder spelling changed without removing instructions."
+    },
+    {
+      "file": "skills/opencode-lead-skill.html",
+      "old_bytes": 1935,
+      "html_bytes": 3099,
+      "old_estimated_tokens": 484,
+      "html_estimated_tokens": 775,
+      "old_words": 287,
+      "html_words": 294,
+      "removed_or_renamed_sections": [
+        "Background CLI run + notification",
+        "Resubmission still drives your crew forward",
+        "Background job tool surface",
+        "Open question",
+        "Everything else"
+      ],
+      "old_sections": [
+        "Background CLI run + notification",
+        "Resubmission still drives your crew forward",
+        "Background job tool surface",
+        "Open question",
+        "Everything else"
+      ],
+      "new_sections": [
+        "Delegate and inspect",
+        "Review and durable knowledge",
+        "Harness integration",
+        "Related guidance"
+      ],
+      "disposition": "Removed unverified harness-specific background/notification APIs and a historical open question. Current guidance is conditional on actual harness capabilities, with prompt/status/tail and explicit onboarding."
+    },
+    {
+      "file": "skills/team-lead-workflow.html",
+      "old_bytes": 2851,
+      "html_bytes": 3085,
+      "old_estimated_tokens": 713,
+      "html_estimated_tokens": 772,
+      "old_words": 432,
+      "html_words": 290,
+      "removed_or_renamed_sections": [
+        "How to delegate to a member",
+        "Review loop"
+      ],
+      "old_sections": [
+        "How to delegate to a member",
+        "Review loop"
+      ],
+      "new_sections": [
+        "Delegate and inspect",
+        "Review and durable knowledge",
+        "Close the review loop",
+        "Related guidance"
+      ],
+      "disposition": "Combined delegation and review into a current short checklist; prompt blocks, busy retry and author/reviewer separation retained."
+    }
+  ]
+}

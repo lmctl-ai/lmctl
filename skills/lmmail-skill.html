@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>lmmail — simple asynchronous mail for LLM agents — lmctl skills</title>
-<meta name="description" content="lmmail sends durable messages and attachments between globally named mailboxes, with commands for creating, sending, listing and reading mail.">
+<meta name="description" content="Use when agents need explicit mailbox and message operations through lmmail.">
 <link rel="stylesheet" href="/tools/style.css">
 <link rel="icon" type="image/png" href="/tools/img/icon.png">
 </head>
@@ -18,17 +18,13 @@
 </nav>
 <main>
 <h1>lmmail — simple asynchronous mail for LLM agents</h1>
-<p>Use lmmail when an agent or human needs a durable, connection-free handoff.
-The address is a globally unique mailbox name. One mail contains:</p>
+<p>Use lmmail when an agent or human needs a durable, connection-free handoff. The address is a globally unique mailbox name. One mail contains:</p>
 <ul>
-<li>one text body (<code>.txt</code>, <code>.md</code>, or <code>.html</code>);</li>
+<li>one text body (.txt, .md, or .html);</li>
 <li>zero or more attachments of any file type;</li>
-<li>a subject, server-derived sender, mailbox-local sequence number, timestamp,
-and read/unread state.</li>
+<li>a subject, server-derived sender, mailbox-local sequence number, timestamp, and read/unread state.</li>
 </ul>
-<p>Any authenticated lmctl appkey may send to an existing mailbox. Only the
-mailbox owner may list, read, or delete its mail. Listing never marks messages
-read; fetching one message does.</p>
+<p>Any authenticated lmctl appkey may send to an existing mailbox. Only the mailbox owner may list, read, or delete its mail. Listing never marks messages read; fetching one message does.</p>
 <h2 id="fastest-path-cli">Fastest path: CLI</h2>
 <pre><code>lmmail login
 lmmail whoami
@@ -38,69 +34,63 @@ lmmail send build-owner --file ./handoff.md --attach ./logs.zip ./report.pdf
 lmmail list build-owner --status unread --after 0
 lmmail read build-owner 4 --out ./message-4
 lmmail delete build-owner 4</code></pre>
-<p><code>read</code> downloads the body and all attachments into the output directory and
-marks the message read. <code>send</code> prints the assigned sequence number.</p>
-<p>Set <code>LMMAIL_API_URL</code> or pass <code>--api URL</code>. Authentication always uses
-<code>Authorization: Bearer &lt;appkey&gt;</code>. Credential resolution is:</p>
-<pre><code>LMCTL_APPKEY -&gt; LMCTL_APPKEY_FILE -&gt; ~/.config/lmctl/appkey.json</code></pre>
-<p>Never pass a user id. The appkey is the identity, and the server stamps sender
-and owner fields from it.</p>
+<p>read downloads the body and all attachments into the output directory and marks the message read. send prints the assigned sequence number.</p>
+<p>Set LMMAIL_API_URL or pass --api URL. Authentication always uses Authorization: Bearer APP_KEY. Credential resolution is:</p>
+<pre><code>LMCTL_APPKEY -> LMCTL_APPKEY_FILE -> ~/.config/lmctl/appkey.json</code></pre>
+<p>Never pass a user id. The appkey is the identity, and the server stamps sender and owner fields from it.</p>
 <h2 id="raw-http">Raw HTTP</h2>
-<p>Set <code>LMMAIL_API_URL</code> to the deployed API Gateway stage URL before using the
-raw-HTTP examples; do not assume the optional vanity route is live.</p>
-<pre><code>export LMMAIL_API_URL=&quot;https://&lt;api-id&gt;.execute-api.us-east-1.amazonaws.com/prod&quot;
-export API=&quot;$LMMAIL_API_URL&quot;
-export KEY=&quot;&lt;shared lmctl appkey&gt;&quot;</code></pre>
+<p>Set LMMAIL_API_URL to the deployed API Gateway stage URL before using the raw-HTTP examples; do not assume the optional vanity route is live.</p>
+<pre><code>export LMMAIL_API_URL="https://API_ID.execute-api.us-east-1.amazonaws.com/prod"
+export API="$LMMAIL_API_URL"
+export KEY="APP_KEY"</code></pre>
 <p>Create and list your mailboxes:</p>
-<pre><code>curl -sS -X POST &quot;$API/mailboxes&quot; \
-  -H &quot;Authorization: Bearer $KEY&quot; \
-  -H &quot;content-type: application/json&quot; \
-  -d &#39;{&quot;mailbox_name&quot;:&quot;build-owner&quot;}&#39;
+<pre><code>curl -sS -X POST "$API/mailboxes" \
+  -H "Authorization: Bearer $KEY" \
+  -H "content-type: application/json" \
+  -d '{"mailbox_name":"build-owner"}'
 
-curl -sS &quot;$API/mailboxes&quot; -H &quot;Authorization: Bearer $KEY&quot;</code></pre>
+curl -sS "$API/mailboxes" -H "Authorization: Bearer $KEY"</code></pre>
 <p>Send is allocate, direct-upload, finalize:</p>
-<pre><code>RESP=&quot;$(
-  curl -sS -X POST &quot;$API/mailboxes/build-owner/messages&quot; \
-    -H &quot;Authorization: Bearer $KEY&quot; \
-    -H &quot;content-type: application/json&quot; \
-    -d &#39;{
-      &quot;subject&quot;:&quot;test report&quot;,
-      &quot;body&quot;:{&quot;name&quot;:&quot;report.md&quot;,&quot;content_type&quot;:&quot;text/markdown&quot;,&quot;size&quot;:42},
-      &quot;attachments&quot;:[{&quot;name&quot;:&quot;logs.zip&quot;,&quot;content_type&quot;:&quot;application/zip&quot;,&quot;size&quot;:2048}]
-    }&#39;
-)&quot;</code></pre>
-<p>For the body and every attachment, send every returned field to its own
-<code>upload_url</code>:</p>
-<pre><code>URL=&quot;$(jq -r &#39;.body.upload_url&#39; &lt;&lt;&lt;&quot;$RESP&quot;)&quot;
+<pre><code>RESP="$(
+  curl -sS -X POST "$API/mailboxes/build-owner/messages" \
+    -H "Authorization: Bearer $KEY" \
+    -H "content-type: application/json" \
+    -d '{
+      "subject":"test report",
+      "body":{"name":"report.md","content_type":"text/markdown","size":42},
+      "attachments":[{"name":"logs.zip","content_type":"application/zip","size":2048}]
+    }'
+)"</code></pre>
+<p>For the body and every attachment, send every returned field to its own upload_url:</p>
+<pre><code>URL="$(jq -r '.body.upload_url' &lt;&lt;&lt;"$RESP")"
 mapfile -t FIELDS &lt; &lt;(
-  jq -r &#39;.body.fields | to_entries[] | &quot;-F&quot;, &quot;\(.key)=\(.value)&quot;&#39; &lt;&lt;&lt;&quot;$RESP&quot;
+  jq -r '.body.fields | to_entries[] | "-F", "\(.key)=\(.value)"' &lt;&lt;&lt;"$RESP"
 )
-curl -sS -X POST &quot;$URL&quot; &quot;${FIELDS[@]}&quot; -F &quot;file=@report.md&quot;
+curl -sS -X POST "$URL" "${FIELDS[@]}" -F "file=@report.md"
 
-URL=&quot;$(jq -r &#39;.attachments[0].upload_url&#39; &lt;&lt;&lt;&quot;$RESP&quot;)&quot;
+URL="$(jq -r '.attachments[0].upload_url' &lt;&lt;&lt;"$RESP")"
 mapfile -t FIELDS &lt; &lt;(
-  jq -r &#39;.attachments[0].fields | to_entries[] | &quot;-F&quot;, &quot;\(.key)=\(.value)&quot;&#39; &lt;&lt;&lt;&quot;$RESP&quot;
+  jq -r '.attachments[0].fields | to_entries[] | "-F", "\(.key)=\(.value)"' &lt;&lt;&lt;"$RESP"
 )
-curl -sS -X POST &quot;$URL&quot; &quot;${FIELDS[@]}&quot; -F &quot;file=@logs.zip&quot;
+curl -sS -X POST "$URL" "${FIELDS[@]}" -F "file=@logs.zip"
 
-curl -sS -X POST &quot;$API$(jq -r &#39;.finalize_url&#39; &lt;&lt;&lt;&quot;$RESP&quot;)&quot; \
-  -H &quot;Authorization: Bearer $KEY&quot;</code></pre>
+curl -sS -X POST "$API$(jq -r '.finalize_url' &lt;&lt;&lt;"$RESP")" \
+  -H "Authorization: Bearer $KEY"</code></pre>
 <p>List mail:</p>
-<pre><code>curl -sS &quot;$API/mailboxes/build-owner/messages?status=unread&amp;after=0&quot; \
-  -H &quot;Authorization: Bearer $KEY&quot;</code></pre>
-<p>Valid status values are <code>all</code>, <code>unread</code>, and <code>read</code>; default is <code>all</code>.
-<code>after</code> is exclusive and defaults to <code>0</code>. Sequence gaps are normal.</p>
+<pre><code>curl -sS "$API/mailboxes/build-owner/messages?status=unread&amp;after=0" \
+  -H "Authorization: Bearer $KEY"</code></pre>
+<p>Valid status values are all, unread, and read; default is all. after is exclusive and defaults to 0. Sequence gaps are normal.</p>
 <p>Read metadata and obtain 120-second body/attachment download URLs:</p>
-<pre><code>MAIL=&quot;$(
-  curl -sS &quot;$API/mailboxes/build-owner/messages/4&quot; \
-    -H &quot;Authorization: Bearer $KEY&quot;
-)&quot;
-curl -sS &quot;$(jq -r &#39;.body.download_url&#39; &lt;&lt;&lt;&quot;$MAIL&quot;)&quot; -o report.md
-curl -sS &quot;$(jq -r &#39;.attachments[0].download_url&#39; &lt;&lt;&lt;&quot;$MAIL&quot;)&quot; -o logs.zip</code></pre>
+<pre><code>MAIL="$(
+  curl -sS "$API/mailboxes/build-owner/messages/4" \
+    -H "Authorization: Bearer $KEY"
+)"
+curl -sS "$(jq -r '.body.download_url' &lt;&lt;&lt;"$MAIL")" -o report.md
+curl -sS "$(jq -r '.attachments[0].download_url' &lt;&lt;&lt;"$MAIL")" -o logs.zip</code></pre>
 <p>The GET above marks message 4 read.</p>
 <p>Delete:</p>
-<pre><code>curl -sS -X DELETE &quot;$API/mailboxes/build-owner/messages/4&quot; \
-  -H &quot;Authorization: Bearer $KEY&quot;</code></pre>
+<pre><code>curl -sS -X DELETE "$API/mailboxes/build-owner/messages/4" \
+  -H "Authorization: Bearer $KEY"</code></pre>
 <h2 id="api-summary">API summary</h2>
 <pre><code>POST   /mailboxes
 GET    /mailboxes
@@ -109,13 +99,8 @@ POST   /mailboxes/{name}/messages/{seq}/finalize
 GET    /mailboxes/{name}/messages?status=...&amp;after=...
 GET    /mailboxes/{name}/messages/{seq}
 DELETE /mailboxes/{name}/messages/{seq}</code></pre>
-<p>Bodies and attachments are each limited to 100 MiB. Mailbox names use letters,
-digits, <code>.</code>, <code>_</code>, and <code>-</code>, start with a letter or digit, and are at most 128
-characters. There are no folders, threads, search, or replies in v1.</p>
-<p>For deployed-stack verification, the repository includes
-<code>cloud/test-integration/cli-aws.test.ts</code>. It is disabled unless
-<code>LMMAIL_INTEGRATION=1</code>; it requires <code>LMMAIL_API_URL</code>, a fresh globally unique
-<code>LMMAIL_TEST_MAILBOX</code>, and a shared appkey from the normal resolution chain.</p>
+<p>Bodies and attachments are each limited to 100 MiB. Mailbox names use letters, digits, ., _, and -, start with a letter or digit, and are at most 128 characters. There are no folders, threads, search, or replies in v1.</p>
+<p>For deployed-stack verification, the repository includes cloud/test-integration/cli-aws.test.ts. It is disabled unless LMMAIL_INTEGRATION=1; it requires LMMAIL_API_URL, a fresh globally unique LMMAIL_TEST_MAILBOX, and a shared appkey from the normal resolution chain.</p>
 <h2 id="verification-scope">Verification scope</h2>
 <p>The API and CLI syntax above was checked against the tool source on 2026-10-19. Live hosted availability, account permissions, deployment-specific limits and credentials were not tested. Confirm the endpoint with your operator; example API Gateway addresses are placeholders. Do not assume that access to one deployment grants access to another.</p>
 </main>

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>lmsound — text → speech for LLM agents — lmctl skills</title>
-<meta name="description" content="lmsound converts text to audio files using AWS Polly.">
+<meta name="description" content="Use when you need to synthesize speech from text or SSML.">
 <link rel="stylesheet" href="/tools/style.css">
 <link rel="icon" type="image/png" href="/tools/img/icon.png">
 </head>
@@ -18,47 +18,39 @@
 </nav>
 <main>
 <h1>lmsound — text → speech for LLM agents</h1>
-<p><strong>What this is.</strong> lmsound turns text into an audio file using AWS Polly. You <code>POST</code> some text
-(plain or SSML), the server synthesizes speech, stores the audio, and hands you back a short-lived
-<strong>presigned download URL</strong> for the <code>mp3</code> (or <code>ogg</code>/<code>pcm</code>). Plain HTTP, one opaque API key — exactly
-like calling an LLM API. No SDK, no websocket, no schema dance.</p>
+<p>What this is. lmsound turns text into an audio file using AWS Polly. You POST some text (plain or SSML), the server synthesizes speech, stores the audio, and hands you back a short-lived presigned download URL for the mp3 (or ogg/pcm). Plain HTTP, one opaque API key — exactly like calling an LLM API. No SDK, no websocket, no schema dance.</p>
 <p>Use it to give any agent a voice: narrate a summary, read out an alert, produce a spoken reply.</p>
 <hr>
 <h2 id="what-you-need">What you need</h2>
 <ul>
-<li><strong>API base URL</strong> — <code>https://lmctl.ai/tools/lmsound</code></li>
-<li><strong>An API key</strong> — one opaque token, exactly like an LLM API key. Send it on <strong>every</strong> request:<pre><code>Authorization: Bearer &lt;API_KEY&gt;</code></pre>
-A human creates and revokes keys on the lmctl.ai website; an LLM just receives the key. The <strong>same
-key is shared by deployments using the same configured appkey store</strong>.</li>
+<li>API base URL — https://lmctl.ai/tools/lmsound</li>
+<li>An API key — one opaque token, exactly like an LLM API key. Send it on every request:<pre><code>Authorization: Bearer API_KEY</code></pre> A human creates and revokes keys on the lmctl.ai website; an LLM just receives the key. The same key is shared by deployments using the same configured appkey store.</li>
 </ul>
-<pre><code>export API=&quot;https://lmctl.ai/tools/lmsound&quot;
-export KEY=&quot;&lt;your api key&gt;&quot;</code></pre>
+<pre><code>export API="https://lmctl.ai/tools/lmsound"
+export KEY="API_KEY"</code></pre>
 <hr>
-<h2 id="synthesize-speech--post-speak">Synthesize speech — <code>POST /speak</code></h2>
-<pre><code>curl -s -X POST &quot;$API/speak&quot; -H &quot;Authorization: Bearer $KEY&quot; \
-  -H &quot;content-type: application/json&quot; \
-  -d &#39;{&quot;text&quot;:&quot;Hello from lmsound. Your build is green.&quot;}&#39;</code></pre>
+<h2 id="synthesize-speech--post-speak">Synthesize speech — POST /speak</h2>
+<pre><code>curl -s -X POST "$API/speak" -H "Authorization: Bearer $KEY" \
+  -H "content-type: application/json" \
+  -d '{"text":"Hello from lmsound. Your build is green."}'</code></pre>
 <p>Response:</p>
 <pre><code>{
-  &quot;id&quot;: &quot;3f9a…-uuid&quot;,
-  &quot;voice_id&quot;: &quot;Joanna&quot;,
-  &quot;engine&quot;: &quot;neural&quot;,
-  &quot;format&quot;: &quot;mp3&quot;,
-  &quot;text_type&quot;: &quot;text&quot;,
-  &quot;char_count&quot;: 42,
-  &quot;size&quot;: 20361,
-  &quot;duration_ms&quot;: 2640,
-  &quot;sample_rate&quot;: 24000,
-  &quot;bitrate&quot;: 48000,
-  &quot;download_url&quot;: &quot;https://…s3…?X-Amz-Expires=300&amp;…&quot;
+  "id": "3f9a…-uuid",
+  "voice_id": "Joanna",
+  "engine": "neural",
+  "format": "mp3",
+  "text_type": "text",
+  "char_count": 42,
+  "size": 20361,
+  "duration_ms": 2640,
+  "sample_rate": 24000,
+  "bitrate": 48000,
+  "download_url": "https://…s3…?X-Amz-Expires=300&amp;…"
 }</code></pre>
-<p><code>duration_ms</code>, <code>sample_rate</code> (Hz) and <code>bitrate</code> (bps) are measured from the synthesized audio — no
-need to re-probe with <code>ffprobe</code>. They&#39;re handy for aligning narration to video/animation beats. (For
-<code>pcm</code>, which has no container header, these media stats may be omitted.)
-Fetch the audio (the <code>download_url</code> is a presigned GET, valid for <strong>300 seconds by default</strong> (configurable with <code>ttl</code>)):</p>
+<p>duration_ms, sample_rate (Hz) and bitrate (bps) are measured from the synthesized audio — no need to re-probe with ffprobe. They're handy for aligning narration to video/animation beats. (For pcm, which has no container header, these media stats may be omitted.) Fetch the audio (the download_url is a presigned GET, valid for 300 seconds by default (configurable with ttl)):</p>
 <pre><code># Copy download_url from the JSON response into AUDIO_URL.
-curl --fail --location &quot;$AUDIO_URL&quot; -o hello.mp3</code></pre>
-<h3 id="body-fields-all-but-text-optional">Body fields (all but <code>text</code> optional)</h3>
+curl --fail --location "$AUDIO_URL" -o hello.mp3</code></pre>
+<h3 id="body-fields-all-but-text-optional">Body fields (all but text optional)</h3>
 <table>
 <thead>
 <tr>
@@ -68,92 +60,81 @@ curl --fail --location &quot;$AUDIO_URL&quot; -o hello.mp3</code></pre>
 </tr>
 </thead>
 <tbody><tr>
-<td><code>text</code></td>
+<td>text</td>
 <td>—</td>
-<td>1–3000 characters. Empty → <code>400 invalid_text</code>; over 3000 → <code>400 text_too_long</code>.</td>
+<td>1–3000 characters. Empty → 400 invalid_text; over 3000 → 400 text_too_long.</td>
 </tr>
 <tr>
-<td><code>voice_id</code></td>
-<td><code>Joanna</code></td>
-<td>Any Polly voice — see <code>GET /voices</code>. Unknown/incompatible → <code>400 invalid_voice</code>.</td>
+<td>voice_id</td>
+<td>Joanna</td>
+<td>Any Polly voice — see GET /voices. Unknown/incompatible → 400 invalid_voice.</td>
 </tr>
 <tr>
-<td><code>engine</code></td>
-<td><code>neural</code></td>
-<td><code>standard</code> | <code>neural</code> | <code>long-form</code> | <code>generative</code>. <code>neural</code> is great quality broadly; <code>generative</code>/<code>long-form</code> are the highest quality but only some voices support them (the error lists which).</td>
+<td>engine</td>
+<td>neural</td>
+<td>standard | neural | long-form | generative. neural is great quality broadly; generative/long-form are the highest quality but only some voices support them (the error lists which).</td>
 </tr>
 <tr>
-<td><code>format</code></td>
-<td><code>mp3</code></td>
-<td><code>mp3</code> | <code>ogg_vorbis</code> | <code>pcm</code>.</td>
+<td>format</td>
+<td>mp3</td>
+<td>mp3 | ogg_vorbis | pcm.</td>
 </tr>
 <tr>
-<td><code>text_type</code></td>
+<td>text_type</td>
 <td>auto</td>
-<td><code>text</code> or <code>ssml</code>. Omitted → auto-detected (<code>ssml</code> if the text starts with <code>&lt;speak</code>).</td>
+<td>text or ssml. Omitted → auto-detected (ssml if the text starts with &lt;speak).</td>
 </tr>
 <tr>
-<td><code>sample_rate</code></td>
+<td>sample_rate</td>
 <td>Polly default</td>
-<td>Hz as a string. <code>mp3</code>/<code>ogg_vorbis</code>: <code>8000</code>|<code>16000</code>|<code>22050</code>|<code>24000</code>; <code>pcm</code>: <code>8000</code>|<code>16000</code>. Invalid for the format → <code>400 invalid_sample_rate</code>.</td>
+<td>Hz as a string. mp3/ogg_vorbis: 8000|16000|22050|24000; pcm: 8000|16000. Invalid for the format → 400 invalid_sample_rate.</td>
 </tr>
 <tr>
-<td><code>ttl</code></td>
-<td><code>300</code></td>
-<td>Lifetime (seconds) of the returned <code>download_url</code>, <code>60</code>–<code>3600</code>. Out of range → <code>400 invalid_ttl</code>. Bump it for batch pipelines that generate many clips before assembling.</td>
+<td>ttl</td>
+<td>300</td>
+<td>Lifetime (seconds) of the returned download_url, 60–3600. Out of range → 400 invalid_ttl. Bump it for batch pipelines that generate many clips before assembling.</td>
 </tr>
 </tbody></table>
 <h3 id="ssml--fine-grained-control">SSML — fine-grained control</h3>
-<pre><code>curl -s -X POST &quot;$API/speak&quot; -H &quot;Authorization: Bearer $KEY&quot; \
-  -H &quot;content-type: application/json&quot; -d &#39;{
-    &quot;voice_id&quot;:&quot;Matthew&quot;,&quot;engine&quot;:&quot;neural&quot;,
-    &quot;text&quot;:&quot;&lt;speak&gt;Deploy &lt;break time=\&quot;300ms\&quot;/&gt; &lt;emphasis&gt;succeeded&lt;/emphasis&gt;.&lt;/speak&gt;&quot;
-  }&#39;</code></pre>
-<p>Set <code>text_type:&quot;ssml&quot;</code> explicitly, or just start the text with <code>&lt;speak&gt;</code> and it&#39;s detected.
-Malformed SSML → <code>400 {&quot;error&quot;:&quot;invalid_ssml&quot;}</code>.</p>
+<pre><code>curl -s -X POST "$API/speak" -H "Authorization: Bearer $KEY" \
+  -H "content-type: application/json" -d '{
+    "voice_id":"Matthew","engine":"neural",
+    "text":"&lt;speak>Deploy &lt;break time=\"300ms\"/> &lt;emphasis>succeeded&lt;/emphasis>.&lt;/speak>"
+  }'</code></pre>
+<p>Set text_type:"ssml" explicitly, or just start the text with &lt;speak> and it's detected. Malformed SSML → 400 {"error":"invalid_ssml"}.</p>
 <hr>
-<h2 id="pick-a-voice--get-voices">Pick a voice — <code>GET /voices</code></h2>
-<pre><code>curl -s &quot;$API/voices&quot; -H &quot;Authorization: Bearer $KEY&quot;
-# -&gt; {&quot;voices&quot;:[{&quot;id&quot;:&quot;Joanna&quot;,&quot;name&quot;:&quot;Joanna&quot;,&quot;language_code&quot;:&quot;en-US&quot;,
-#      &quot;gender&quot;:&quot;Female&quot;,&quot;supported_engines&quot;:[&quot;standard&quot;,&quot;neural&quot;,&quot;generative&quot;]}, …]}</code></pre>
+<h2 id="pick-a-voice--get-voices">Pick a voice — GET /voices</h2>
+<pre><code>curl -s "$API/voices" -H "Authorization: Bearer $KEY"
+# -> {"voices":[{"id":"Joanna","name":"Joanna","language_code":"en-US",
+#      "gender":"Female","supported_engines":["standard","neural","generative"]}, …]}</code></pre>
 <p>Filter to the voices you can actually use with an engine/language:</p>
-<pre><code>curl -s &quot;$API/voices?engine=generative&amp;language=en-US&quot; -H &quot;Authorization: Bearer $KEY&quot;</code></pre>
-<p>Use <code>supported_engines</code> to choose a valid <code>voice_id</code> × <code>engine</code> pair before calling <code>/speak</code>.</p>
+<pre><code>curl -s "$API/voices?engine=generative&amp;language=en-US" -H "Authorization: Bearer $KEY"</code></pre>
+<p>Use supported_engines to choose a valid voice_id × engine pair before calling /speak.</p>
 <hr>
-<h2 id="re-download-later--get-speakid">Re-download later — <code>GET /speak/{id}</code></h2>
-<p>The <code>download_url</code> from <code>/speak</code> expires after the requested TTL (5 minutes by default). To get a <strong>fresh</strong> link for an audio you
-already made, hit its id — the server <code>302</code>-redirects to a new presigned URL:</p>
-<pre><code>curl -sL &quot;$API/speak/3f9a…-uuid&quot; -H &quot;Authorization: Bearer $KEY&quot; -o hello.mp3
-# fresh link with a longer lifetime: add ?ttl=&lt;60..3600&gt; (default 300s)
-curl -sL &quot;$API/speak/3f9a…-uuid?ttl=1800&quot; -H &quot;Authorization: Bearer $KEY&quot; -o hello.mp3</code></pre>
-<p>Ids are scoped to your key — someone else&#39;s id returns <code>404 not_found</code>.</p>
-<h2 id="list-your-recent-audio--get-speak">List your recent audio — <code>GET /speak</code></h2>
-<pre><code>curl -s &quot;$API/speak&quot; -H &quot;Authorization: Bearer $KEY&quot;
-# -&gt; {&quot;items&quot;:[{&quot;id&quot;:&quot;3f9a…&quot;,&quot;format&quot;:&quot;mp3&quot;,&quot;size&quot;:20361,&quot;created_at&quot;:&quot;…&quot;}, …]}  # newest first</code></pre>
-<h2 id="check-your-monthly-spend--get-usage">Check your monthly spend — <code>GET /usage</code></h2>
-<p>There&#39;s a per-user <strong>monthly Polly spend cap</strong>. Check where you stand:</p>
-<pre><code>curl -s &quot;$API/usage&quot; -H &quot;Authorization: Bearer $KEY&quot;
-# -&gt; {&quot;month&quot;:&quot;2026-07&quot;,&quot;used_usd&quot;:0.0123,&quot;cap_usd&quot;:10,&quot;remaining_usd&quot;:9.9877}</code></pre>
-<p>When a <code>POST /speak</code> would push you over the cap it&#39;s rejected with
-<code>429 {&quot;error&quot;:&quot;monthly_cap_exceeded&quot;,&quot;cap_usd&quot;:10,&quot;used_usd&quot;:…}</code> <strong>before</strong> any audio is synthesized
-The estimate is not a billing guarantee, especially under concurrent requests. Cost is estimated from characters × the engine&#39;s Polly rate;
-the counter resets at the start of each UTC month.</p>
+<h2 id="re-download-later--get-speakid">Re-download later — GET /speak/{id}</h2>
+<p>The download_url from /speak expires after the requested TTL (5 minutes by default). To get a fresh link for an audio you already made, hit its id — the server 302-redirects to a new presigned URL:</p>
+<pre><code>curl -sL "$API/speak/3f9a…-uuid" -H "Authorization: Bearer $KEY" -o hello.mp3
+# fresh link with a longer lifetime: add ?ttl=SECONDS (default 300s)
+curl -sL "$API/speak/3f9a…-uuid?ttl=1800" -H "Authorization: Bearer $KEY" -o hello.mp3</code></pre>
+<p>Ids are scoped to your key — someone else's id returns 404 not_found.</p>
+<h2 id="list-your-recent-audio--get-speak">List your recent audio — GET /speak</h2>
+<pre><code>curl -s "$API/speak" -H "Authorization: Bearer $KEY"
+# -> {"items":[{"id":"3f9a…","format":"mp3","size":20361,"created_at":"…"}, …]}  # newest first</code></pre>
+<h2 id="check-your-monthly-spend--get-usage">Check your monthly spend — GET /usage</h2>
+<p>There's a per-user monthly Polly spend cap. Check where you stand:</p>
+<pre><code>curl -s "$API/usage" -H "Authorization: Bearer $KEY"
+# -> {"month":"2026-07","used_usd":0.0123,"cap_usd":10,"remaining_usd":9.9877}</code></pre>
+<p>When a POST /speak would push you over the cap it's rejected with 429 {"error":"monthly_cap_exceeded","cap_usd":10,"used_usd":…} before any audio is synthesized The estimate is not a billing guarantee, especially under concurrent requests. Cost is estimated from characters × the engine's Polly rate; the counter resets at the start of each UTC month.</p>
 <hr>
 <h2 id="notes">Notes</h2>
 <ul>
-<li><strong>Errors</strong> are JSON <code>{&quot;error&quot;:&quot;&lt;code&gt;&quot;}</code> with the matching HTTP status: <code>invalid_text</code>,
-<code>text_too_long</code>, <code>invalid_engine</code>, <code>invalid_format</code>, <code>invalid_voice</code>, <code>invalid_ssml</code>,
-<code>invalid_text_type</code>, <code>invalid_sample_rate</code>, <code>invalid_ttl</code>, <code>not_found</code>, and <code>monthly_cap_exceeded</code> (429).</li>
-<li><strong>Limits:</strong> <code>text</code> is 1–3000 characters per call (no auto-chunking — split longer text yourself and
-synthesize per block). Pick <code>voice_id</code> from <code>GET /voices</code>; <code>engine</code>∈<code>standard|neural|long-form|generative</code>;
-<code>format</code>∈<code>mp3|ogg_vorbis|pcm</code>. Authorization depends on the deployment’s appkey store.</li>
-<li><strong>Audio is disposable</strong> — objects expire after 7 days. Re-synthesize or re-download before then.</li>
-<li><strong>Never returns raw bytes through the API</strong> — always a presigned S3 URL, so large audio is fine.</li>
-<li>One key = one user&#39;s scope. <code>char_count</code> counts Unicode codepoints (what Polly bills).</li>
+<li>Errors are JSON {"error":"ERROR_CODE"} with the matching HTTP status: invalid_text, text_too_long, invalid_engine, invalid_format, invalid_voice, invalid_ssml, invalid_text_type, invalid_sample_rate, invalid_ttl, not_found, and monthly_cap_exceeded (429).</li>
+<li>Limits: text is 1–3000 characters per call (no auto-chunking — split longer text yourself and synthesize per block). Pick voice_id from GET /voices; engine∈standard|neural|long-form|generative; format∈mp3|ogg_vorbis|pcm. Authorization depends on the deployment’s appkey store.</li>
+<li>Audio is disposable — objects expire after 7 days. Re-synthesize or re-download before then.</li>
+<li>Never returns raw bytes through the API — always a presigned S3 URL, so large audio is fine.</li>
+<li>One key = one user's scope. char_count counts Unicode codepoints (what Polly bills).</li>
 </ul>
-<p>That&#39;s the whole skill: <code>POST /speak</code> to synthesize (text or SSML), <code>GET /voices</code> to choose a
-narrator, <code>GET /speak/{id}</code> for a fresh link, <code>GET /speak</code> to list — all with one
-<code>Authorization: Bearer &lt;API_KEY&gt;</code>.</p>
+<p>That's the whole skill: POST /speak to synthesize (text or SSML), GET /voices to choose a narrator, GET /speak/{id} for a fresh link, GET /speak to list — all with one Authorization: Bearer API_KEY.</p>
 <h2 id="verification-scope">Verification scope</h2>
 <p>The API and CLI syntax above was checked against the tool source on 2026-10-19. Live hosted availability, account permissions, deployment-specific limits and credentials were not tested. Confirm the endpoint with your operator; example API Gateway addresses are placeholders. Do not assume that access to one deployment grants access to another.</p>
 </main>

@@ -22,7 +22,7 @@
 </nav>
 <main>
 <h1>lmcad tutorial</h1>
-<p>Run these examples from the lmcad source directory after installing the latest lmscript compiler and building lmcad. The first script source below is saved as <code>hello.lms</code> in a text editor.</p>
+<p>Run these examples from the lmcad source directory after installing the latest lmscript compiler and building lmcad. The first script source below is saved as hello.lms in a text editor.</p>
 <h2>1. Write a DSL block and compile it</h2>
 <pre><code>p = _dsl_ schema="schema/lmcad.dsl.json";
 scene.background(0.04, 0.06, 0.1);
@@ -43,7 +43,7 @@ savedsl(p, "build/hello.dslb");</code></pre>
 <samp>{"ok": true, "result": null}</samp></pre>
 <pre><kbd>file build/hello.png</kbd>
 <samp>build/hello.png: PNG image data, 480 x 320, 8-bit/color RGB, non-interlaced</samp></pre>
-<p>Open <code>build/hello.png</code> in an image viewer to inspect the fitted camera, silhouette and lighting.</p>
+<p>Open build/hello.png in an image viewer to inspect the fitted camera, silhouette and lighting.</p>
 <h2>2. Render a range loop</h2>
 <p>Range loops use an integer counter and an exclusive upper bound. This example places seven boxes along the x-axis:</p>
 <pre><code>for (i in range(0, 7)) {

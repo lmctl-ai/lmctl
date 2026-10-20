@@ -28,106 +28,117 @@
 <h2>Install and run</h2>
 <p>Use the latest binary from <a href="https://github.com/lmctl-ai/lmhtml/releases">Releases</a>. For source builds, follow the setup and build steps in the <a href="https://github.com/lmctl-ai/lmhtml#build">README</a>. Install Node.js 24.15 or newer for the published compiler.</p>
 <pre><code>lmhtml --dsl-schema
-lmhtml --dsl-schema --json &gt; lmhtml.dsl.json
+lmhtml --dsl-schema --json > lmhtml.dsl.json
 lmhtml --dsl-signatures
 npx --yes --package=@lmctl-ai/lmctl -- lmscript audit.lms build/audit.dslb
 lmhtml --dsl build/audit.dslb [more.dslb ...]</code></pre>
-<p><code>--dsl-schema</code> prints a compact human-readable summary; <code>--dsl-schema --json</code> prints the embedded compiler input byte-for-byte. <code>--dsl-signatures</code> prints the bound host signatures. Multiple bytecode files run in order against the same embedded schema; all files are loaded and verified before execution. Use <code>--dry-run</code> to report saves without writing.</p>
+<p>--dsl-schema prints a compact human-readable summary; --dsl-schema --json prints the embedded compiler input byte-for-byte. --dsl-signatures prints the bound host signatures. Multiple bytecode files run in order against the same embedded schema; all files are loaded and verified before execution. Use --dry-run to report saves without writing.</p>
 <h2>Reference</h2>
-<p>The following members are copied from the output of <code>lmhtml --dsl-schema</code> (lmhtml v0.2.0). Contexts are followed by functions and then each host type with its methods.</p>
+<p>The following members are copied from the output of lmhtml --dsl-schema (lmhtml v0.2.0). Contexts are followed by functions and then each host type with its methods.</p>
 <h3>Contexts and functions</h3>
 <pre><code>context html: Html
 context report: Report
-fn str_contains(string, string) -&gt; bool
-fn str_difference(StrList, StrList) -&gt; StrList
-fn str_ends_with(string, string) -&gt; bool
-fn str_find(string, string) -&gt; int
-fn str_len(string) -&gt; int
-fn str_list() -&gt; StrList
-fn str_lower(string) -&gt; string
-fn str_match(string, string) -&gt; bool
-fn str_replace(string, string, string) -&gt; string
-fn str_starts_with(string, string) -&gt; bool
-fn str_substr(string, int, int) -&gt; string
-fn str_trim(string) -&gt; string
-fn str_union(StrList, StrList) -&gt; StrList
-fn suggest(string, StrList) -&gt; StrList</code></pre>
+fn str_contains(string, string) -> bool
+fn str_difference(StrList, StrList) -> StrList
+fn str_ends_with(string, string) -> bool
+fn str_find(string, string) -> int
+fn str_len(string) -> int
+fn str_list() -> StrList
+fn str_lower(string) -> string
+fn str_match(string, string) -> bool
+fn str_replace(string, string, string) -> string
+fn str_starts_with(string, string) -> bool
+fn str_substr(string, int, int) -> string
+fn str_trim(string) -> string
+fn str_union(StrList, StrList) -> StrList
+fn suggest(string, StrList) -> StrList</code></pre>
 <h3>Doc</h3>
-<pre><code>Doc.byte_size() -&gt; int
-Doc.classes_used() -&gt; StrList
-Doc.css_classes() -&gt; StrList
-Doc.css_ids() -&gt; StrList
-Doc.doctype() -&gt; string
-Doc.ids() -&gt; StrList
-Doc.links() -&gt; StrList
-Doc.markup_errors() -&gt; StrList
-Doc.path() -&gt; string
-Doc.select(string) -&gt; NodeList
-Doc.source() -&gt; string
-Doc.source_inner(string) -&gt; string
-Doc.source_outer(string) -&gt; string</code></pre>
+<pre><code>Doc.byte_size() -> int
+Doc.classes_used() -> StrList
+Doc.css_classes() -> StrList
+Doc.css_ids() -> StrList
+Doc.doctype() -> string
+Doc.ids() -> StrList
+Doc.links() -> StrList
+Doc.markup_errors() -> StrList
+Doc.path() -> string
+Doc.select(string) -> NodeList
+Doc.source() -> string
+Doc.source_inner(string) -> string
+Doc.source_outer(string) -> string</code></pre>
 <h3>DocList</h3>
-<pre><code>DocList.at(int) -&gt; Doc
-DocList.classes_used() -&gt; StrList
-DocList.css_classes() -&gt; StrList
-DocList.css_ids() -&gt; StrList
-DocList.ids() -&gt; StrList
-DocList.len() -&gt; int</code></pre>
+<pre><code>DocList.at(int) -> Doc
+DocList.classes_used() -> StrList
+DocList.css_classes() -> StrList
+DocList.css_ids() -> StrList
+DocList.ids() -> StrList
+DocList.len() -> int</code></pre>
 <h3>Html</h3>
-<pre><code>Html.diff(Doc, Doc) -&gt; int
-Html.link_exists(Doc, string) -&gt; bool
-Html.link_kind(Doc, string) -&gt; string
-Html.load(string) -&gt; Doc
-Html.load_dir(string) -&gt; DocList
-Html.load_dir(string, string, string) -&gt; DocList
-Html.parse(string) -&gt; Doc
-Html.resolve(Doc, string) -&gt; string
-Html.save(Doc, string) -&gt; void
-Html.save(string, string) -&gt; void
-Html.write_template(DocList, int, string) -&gt; int</code></pre>
+<pre><code>Html.diff(Doc, Doc) -> int
+Html.link_exists(Doc, string) -> bool
+Html.link_kind(Doc, string) -> string
+Html.load(string) -> Doc
+Html.load_dir(string) -> DocList
+Html.load_dir(string, string, string) -> DocList
+Html.parse(string) -> Doc
+Html.resolve(Doc, string) -> string
+Html.save(Doc, string) -> void
+Html.save(string, string) -> void
+Html.write_template(DocList, int, string) -> int</code></pre>
 <h3>Node</h3>
-<pre><code>Node.attr(string) -&gt; string
-Node.attributes() -&gt; StrList
-Node.has_attr(string) -&gt; bool
-Node.hash() -&gt; int
-Node.insert_after(string) -&gt; Node
-Node.insert_before(string) -&gt; Node
-Node.outer_html() -&gt; string
-Node.parent() -&gt; Node
-Node.path() -&gt; string
-Node.remove() -&gt; void
-Node.replace_with(string) -&gt; Node
-Node.select(string) -&gt; NodeList
-Node.set_attr(string, string) -&gt; Node
-Node.tag() -&gt; string
-Node.text() -&gt; string</code></pre>
+<pre><code>Node.attr(string) -> string
+Node.attributes() -> StrList
+Node.has_attr(string) -> bool
+Node.hash() -> int
+Node.insert_after(string) -> Node
+Node.insert_before(string) -> Node
+Node.outer_html() -> string
+Node.parent() -> Node
+Node.path() -> string
+Node.remove() -> void
+Node.replace_with(string) -> Node
+Node.select(string) -> NodeList
+Node.set_attr(string, string) -> Node
+Node.tag() -> string
+Node.text() -> string</code></pre>
 <h3>NodeList</h3>
-<pre><code>NodeList.at(int) -&gt; Node
-NodeList.len() -&gt; int</code></pre>
+<pre><code>NodeList.at(int) -> Node
+NodeList.len() -> int</code></pre>
 <h3>Report</h3>
-<pre><code>Report.add(string, string, int, string) -&gt; void
-Report.fail_if_any() -&gt; void
-Report.write_json(string) -&gt; void
-Report.write_text(string) -&gt; void</code></pre>
+<pre><code>Report.add(string, string, int, string) -> void
+Report.fail_if_any() -> void
+Report.write_json(string) -> void
+Report.write_text(string) -> void</code></pre>
 <h3>StrList</h3>
-<pre><code>StrList.at(int) -&gt; string
-StrList.len() -&gt; int</code></pre>
+<pre><code>StrList.at(int) -> string
+StrList.len() -> int</code></pre>
 <h2>Output and exit codes</h2>
-<p>Successful execution prints one JSON line: <code>{"ok": true, "result": null}</code>. Exit 0 is success, 2 is usage or compilation failure, 3 is bytecode load or host runtime failure, and 4 is an application-level report failure. Reports are informational unless the script calls <code>report.fail_if_any()</code>.</p>
+<p>Successful execution prints one JSON line: {"ok": true, "result": null}. Exit 0 is success, 2 is usage or compilation failure, 3 is bytecode load or host runtime failure, and 4 is an application-level report failure. Reports are informational unless the script calls report.fail_if_any().</p>
 <h2>Host behavior</h2>
-<ul><li><code>html.load_dir(dir, include, exclude)</code> filters relative paths; hidden files are included, directory symlinks are not followed, and returned paths are sorted.</li><li><code>link_kind</code> classifies internal pages/assets, anchors, external URLs, special schemes and paths outside the root. External URLs are not fetched.</li><li><code>html.diff</code> normalizes whitespace, comments, attribute order and <code>data-*</code> attributes.</li><li><code>html.write_template</code> reports common subtrees and inserts slot markers in a sample template.</li><li><code>html.save</code> writes atomically within the working directory; use <code>--dry-run</code> before a real rewrite.</li></ul>
+<ul><li>html.load_dir(dir, include, exclude) filters relative paths; hidden files are included, directory symlinks are not followed, and returned paths are sorted.</li><li>link_kind classifies internal pages/assets, anchors, external URLs, special schemes and paths outside the root. External URLs are not fetched.</li><li>html.diff normalizes whitespace, comments, attribute order and data-* attributes.</li><li>html.write_template reports common subtrees and inserts slot markers in a sample template.</li><li>html.save writes atomically within the working directory; use --dry-run before a real rewrite.</li></ul>
 <h2>Limits and troubleshooting</h2>
 <p>The CLI accepts bytecode v5 and schema v2. Only the current bytecode version is read. The VM has no execution budget or allocation caps, so run trusted bytecode. HTML saving expects valid UTF-8; unsupported legacy encodings are refused. Serialization may normalize wrappers, tag casing, quoting and optional elements. If compilation reports an unknown member, retrieve the schema JSON from the same host version and compile against it. If a save fails, check that the destination is under the working directory and inspect the host error.</p>
 <h2>Markdown notes and generated indexes</h2>
-<p>lmhtml reads .md with CommonMark plus GFM tables, task lists, strikethrough and autolinks. Raw HTML is disabled by default; <code>md2html --allow-html</code> enables it for trusted input. A leading <code>---</code> metadata block recognizes single-line title and summary values; otherwise the first h1 and paragraph supply them. <code>Doc.title()</code> and <code>Doc.summary()</code> expose the metadata.</p>
+<p>lmhtml reads .md with CommonMark plus GFM tables, task lists, strikethrough and autolinks. Raw HTML is disabled by default; md2html --allow-html enables it for trusted input. A leading --- metadata block recognizes single-line title and summary values; otherwise the first h1 and paragraph supply them. Doc.title() and Doc.summary() expose the metadata.</p>
 <pre><kbd>lmhtml index durable-memory</kbd>
 <kbd>lmhtml index durable-memory --check</kbd>
 <kbd>lmhtml mdcheck durable-memory</kbd></pre>
-<p>The generated index.md lists relative chapter links and one-line descriptions in filename order. An optional <code>--order FILE</code> lists relative paths, one per line, to place first. Generation is deterministic and --check reports drift without writing. Headings receive lowercase ASCII hyphenated IDs, with numeric suffixes for duplicates.</p>
+<p>The generated index.md lists relative chapter links and one-line descriptions in filename order. An optional --order FILE lists relative paths, one per line, to place first. Generation is deterministic and --check reports drift without writing. Headings receive lowercase ASCII hyphenated IDs, with numeric suffixes for duplicates.</p>
 <h2>Template a Markdown web view</h2>
-<p>A trusted HTML shell supports five placeholders: <code>{{title}}</code>, <code>{{summary}}</code>, <code>{{path}}</code>, <code>{{content}}</code>, and <code>{{toc}}</code>. Metadata is escaped for HTML text or quoted attributes; content and toc are markup. Substitution happens once. Without a template, output is a minimal HTML5 document with no CSS or class names.</p>
+<p>A trusted HTML shell supports five placeholders: {{title}}, {{summary}}, {{path}}, {{content}}, and {{toc}}. Metadata is escaped for HTML text or quoted attributes; content and toc are markup. Substitution happens once. Without a template, output is a minimal HTML5 document with no CSS or class names.</p>
 <pre><kbd>lmhtml site durable-memory build/memory-web --template shell.html</kbd></pre>
-<p>Local chapter links become .html links with anchors preserved; assets are copied. Source links are checked before writes. Output must not overlap input and must stay within the working directory. Use a fresh output directory when removing chapters; site does not delete unrelated files. To decorate further, load Markdown with <code>html.load</code>, <code>html.from_markdown</code>, or <code>html.render_markdown</code>, mutate the same Lexbor tree, and save it atomically.</p>
+<p>Local chapter links become .html links with anchors preserved; assets are copied. Source links are checked before writes. Output must not overlap input and must stay within the working directory. Use a fresh output directory when removing chapters; site does not delete unrelated files. To decorate further, load Markdown with html.load, html.from_markdown, or html.render_markdown, mutate the same Lexbor tree, and save it atomically.</p>
+<h2>Plain content for agents</h2>
+<p>Use lint to measure unnecessary decoration and entities, normalize to remove them without changing the text, and clean to extract main content for agents. Plain prose has no inline code or emphasis. Copyable commands belong in blocks. Text needs only ampersand and less-than escapes; attributes need only ampersand and quote escapes.</p>
+<pre><code>lmhtml lint --stats --json skills tools durable-memory
+lmhtml lint --stats --compare BEFORE_DIRECTORY AFTER_DIRECTORY
+lmhtml normalize skills tools
+lmhtml lint durable-memory
+lmhtml clean page.html --base https://example.org/docs/page.html
+lmhtml clean page.html --check
+lmhtml clean https://example.org/docs/page.html --markdown</code></pre>
+<p>clean is deterministic and offline for files. URL input uses curl and requires network access; it runs no JavaScript. Extraction removes navigation, forms, scripts, styles and common advertising/cookie containers, resolves links and prints byte counts and a bytes/4 token estimate on stderr. Heuristics can miss unusual site layouts: inspect extracted content before relying on it. clean --check compares extraction with the page's main content and fails with a diff if content would be dropped.</p>
+<p>normalize preserves code-block alignment, removes inline typography, repairs entities and unfolds prose. lint counts violations per file and in total, with densities per 100 words; --config FILE accepts DIRECTORY METRIC MAX_COUNT rows. Defaults are zero, with h2/h3 anchors retained. The DSL equivalents are Doc.normalize() and Doc.clean(base_url).</p>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmhtml">github.com/lmctl-ai/lmhtml</a>.</p>
