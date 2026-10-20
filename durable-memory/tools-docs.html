@@ -8,7 +8,7 @@
 <h1>/tools/ documentation: how to create and improve a tool's pages</h1>
 <p>A guide for an LLM (or a person) adding or improving a tool's documentation in the static <code>/tools/</code> section. <code>tools/README.md</code> is the short contract; this file explains how the pieces fit, how to gather facts, and what has gone wrong before.</p>
 <h2 id="purpose-and-where-it-is-published">Purpose and where it is published</h2>
-<p><code>tools/</code> is the source of <a href="https://lmctl.com/tools/">https://lmctl.com/tools/</a>: one plain-HTML section per tool (lmscript, lmcad, lmhtml, cpp-dsl-sdk, …), each with a skill page written for LLM agents plus optional tutorial, guide, recipes, reference, FAQ and changelog pages. There is no framework, no JavaScript and no build step: authors write content HTML, and <code>scripts/tools/</code> (an lmscript <code>_dsl_</code> program run by the lmhtml host) decorates and checks it. Only <code>scripts/deploy-tools.sh</code> publishes it; <code>main</code> is not auto-published and <code>/tools/</code> is not part of <code>scripts/deploy.sh</code>.</p>
+<p><code>tools/</code> is the source of <a href="https://lmctl.com/tools/">https://lmctl.com/tools/</a>: one plain-HTML section per tool (lmscript, lmcad, lmhtml, cpp-dsl-sdk, …), each with a skill page written for LLM agents plus optional tutorial, guide, recipes, reference, FAQ and changelog pages. There is no framework, no JavaScript and no build step: authors write content HTML, and <code>scripts/tools/</code> (an lmscript <code>_dsl_</code> program run by the lmhtml host) decorates and checks it. <code>scripts/deploy-tools.sh</code> publishes it directly, and a push to <code>main</code> automatically publishes changed tool pages through the path-filtered static workflow. Details are in <a href="publishing.html">Publishing lmctl.com</a>.</p>
 <h2 id="the-30-second-version">The 30-second version</h2>
 <ol>
 <li>Write <code>tools/&lt;tool&gt;/index.html</code> as the tool overview and <code>tools/&lt;tool&gt;/skill.html</code> with an h1, an introductory paragraph and the nine skill headings (below), using only plain tags. If its repository is not <code>github.com/lmctl-ai/&lt;tool&gt;</code>, add <code>tools/&lt;tool&gt;/repo.txt</code> containing the repository URL. A bare fragment is fine.</li>
@@ -120,8 +120,9 @@
 <li><strong>Enhance lmhtml</strong> (when the DSL needs a host member): change lmhtml upstream, release it, then update <code>scripts/tools/lmhtml.lock</code>: <code>version vX.Y.Z</code> and one <code>asset sha256</code> line per platform, computed from the downloaded release assets (not local builds). <code>LMHTML=/path/to/lmhtml</code> tests an unreleased build.</li>
 </ul>
 <h2 id="publishing">Publishing</h2>
-<pre><code>DRY_RUN=1 scripts/deploy-tools.sh   # preview the S3 sync, no invalidation
-scripts/deploy-tools.sh             # publish (operator with AWS access)</code></pre>
+<pre><code>AWS_PROFILE=lmctl-website-deploy DRY_RUN=1 bash scripts/deploy-tools.sh
+AWS_PROFILE=lmctl-website-deploy bash scripts/deploy-tools.sh</code></pre>
+<p>A push to <code>main</code> also runs the static publisher automatically after checks; no manual approval gate is used. See <a href="publishing.html">the publishing guide</a> for the workflow, credentials, other site areas and live verification.</p>
 <p>The script refuses unless <code>run.sh check</code> passes, stages <code>tools/</code> without <code>_template</code>, <code>README.md</code> or hidden files, refuses file types other than html/css/png/svg/txt and symlinks, syncs each type under <code>s3://…/tools/</code> only (HTML no-cache, CSS/images one day), stores each <code>index.html</code> under the slashless and trailing-slash keys, and invalidates <code>/tools*</code>. Clean URLs (<code>/tools/lmcad</code>, <code>/tools/lmcad/tutorial</code>) additionally need the <code>/tools/*</code> rules in <code>infra/lmctl-www-redirect.js</code> deployed to CloudFront; until then, links to explicit <code>.html</code> files and the directory keys work.</p>
 <h2 id="known-limits-and-pitfalls">Known limits and pitfalls</h2>
 <ul>
@@ -145,7 +146,7 @@ scripts/deploy-tools.sh             # publish (operator with AWS access)</code><
 <li>icons rendered (<code>render.sh --check</code> passes), PNGs &lt; 20 KB</li>
 <li>visual review at narrow/wide, light/dark and print; findings fixed</li>
 <li>prose is public-safe; experimental features are labelled</li>
-<li>content and generated HTML committed together; publishing left to <code>deploy-tools.sh</code></li>
+<li>content and generated HTML committed together; push to <code>main</code> for checked automatic publication or use the manual script after a dry run</li>
 </ul>
 </body>
 </html>
