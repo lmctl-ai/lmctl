@@ -6,6 +6,8 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+import sys
+sys.dont_write_bytecode = True
 from unittest.mock import patch
 
 HERE = Path(__file__).resolve().parent
@@ -63,9 +65,66 @@ class LiveTests(unittest.TestCase):
                 Path(args[-1]).write_bytes(obj['data'])
                 return {}
             self.fail('unexpected AWS mutation: ' + str(args))
-        with patch.object(site, 'aws', fake_aws):
+        with patch.object(site, 'aws', fake_aws), patch.object(site, 'fetch_targets', side_effect=lambda targets: {k: (v['data'], {'content-type': v['content_type'], 'cache-control': v['cache_control']}, None) for k, v in targets.items()}):
             site.deploy('tools')
         self.assertFalse(any(call[0] == 'cloudfront' for call in calls))
+
+    def test_levels_aliases(self):
+        entries = site.inventory('homepage')
+        for key in ('levels', 'levels/'):
+            self.assertEqual(entries[key], entries['levels/index.html'])
+            self.assertIn(key, site.live_targets(entries))
+        self.assertEqual(site.live_targets(entries)[''], entries['index.html'])
+
+    def test_stale_edge_with_current_s3(self):
+        entries = site.inventory('homepage')
+        calls = []
+        def fake_aws(*args):
+            calls.append(args)
+            if args[0] == 'cloudfront':
+                return {'Invalidation': {'Id': 'fixture'}}
+            operation = args[1]
+            if operation == 'list-objects-v2':
+                prefix = args[args.index('--prefix') + 1] if '--prefix' in args else ''
+                keys = [k for k in entries if k.startswith(prefix) and ('--delimiter' not in args or '/' not in k)]
+                return {'Contents': [{'Key': k} for k in keys]}
+            obj = entries[args[args.index('--key') + 1]]
+            if operation == 'head-object':
+                return dict(ETag=site.hashlib.md5(obj['data'], usedforsecurity=False).hexdigest(), ContentType=obj['content_type'], CacheControl=obj['cache_control'])
+            if operation == 'get-object':
+                Path(args[-1]).write_bytes(obj['data'])
+                return {}
+            self.fail('unexpected S3 write: ' + str(args))
+        def stale(targets):
+            responses = {k: (v['data'], {'content-type': v['content_type'], 'cache-control': v['cache_control']}, None) for k, v in targets.items()}
+            data, headers, error = responses['assets/style.css']
+            responses['assets/style.css'] = (b'old cached CSS', headers, error)
+            return responses
+        with patch.object(site, 'aws', fake_aws), patch.object(site, 'fetch_targets', side_effect=stale), patch.object(site, 'poll_differences'):
+            site.deploy('homepage')
+        invalidations = [c for c in calls if c[0] == 'cloudfront']
+        self.assertEqual(len(invalidations), 1)
+        self.assertEqual(invalidations[0][invalidations[0].index('--paths') + 1:], ('/assets/style.css',))
+        calls.clear()
+        with patch.dict(site.os.environ, {'DRY_RUN': '1'}), patch.object(site, 'aws', fake_aws), patch.object(site, 'fetch_targets', side_effect=stale), patch.object(site, 'poll_differences') as poll:
+            site.deploy('homepage')
+        self.assertFalse(any(c[0] == 'cloudfront' for c in calls))
+        poll.assert_not_called()
+
+    def test_poll_only_differing_paths_and_reinvalidate_once(self):
+        obj = dict(data=b'new', sha256=site.digest(b'new'), content_type='text/css', cache_control=site.DAY)
+        good = (b'new', {'content-type': 'text/css', 'cache-control': site.DAY}, None)
+        bad = (b'old', good[1], None)
+        targets = {'fresh.css': obj, 'stale.css': obj}
+        responses = {'fresh.css': good, 'stale.css': bad}
+        with patch.object(site.time, 'monotonic', side_effect=[0, 0, 150, 200]), patch.object(site.time, 'sleep'), patch.object(site, 'invalidate') as invalidate, patch.object(site, 'fetch_targets', side_effect=[{'stale.css': bad}, {'stale.css': bad}, {'stale.css': good}]) as fetch:
+            site.poll_differences(targets, responses)
+        invalidate.assert_called_once_with({'stale.css': obj})
+        self.assertTrue(all(set(c.args[0]) == {'stale.css'} for c in fetch.call_args_list))
+        self.assertEqual(responses['stale.css'], good)
+        with patch.object(site.time, 'monotonic', side_effect=[0, 300]):
+            with self.assertRaisesRegex(RuntimeError, 'did not converge: /stale.css'):
+                site.poll_differences({'stale.css': obj}, {'stale.css': bad})
 
     def test_real_lmhtml_discovery(self):
         host = subprocess.check_output(['bash', str(HERE / 'run.sh'), 'host-path'], text=True).strip()

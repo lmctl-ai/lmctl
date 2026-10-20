@@ -51,7 +51,7 @@ def inventory(area, root=ROOT):
             raise ValueError(f'unexpected publication file: {path}')
         key = rel.as_posix() if area == 'homepage' else f'{area}/{rel.as_posix()}'
         add(key, path)
-        if path.name == 'index.html' and area != 'homepage':
+        if path.name == 'index.html' and '/' in key:
             prefix = key[:-len('/index.html')]
             add(prefix, path)
             add(prefix + '/', path)
@@ -84,6 +84,7 @@ def deploy(area):
     present = {v['Key'] for v in listed.get('Contents', [])}
     if area == 'homepage':
         present.update(v['Key'] for v in aws('s3api', 'list-objects-v2', '--bucket', bucket, '--delimiter', '/').get('Contents', []))
+        present.update(v['Key'] for v in aws('s3api', 'list-objects-v2', '--bucket', bucket, '--prefix', 'levels/').get('Contents', []))
     def changed(item):
         key, obj = item
         if key not in present:
@@ -106,7 +107,7 @@ def deploy(area):
         # Reject a corrupt or manually edited inventory that escapes its area.
         for key in deletions:
             if area == 'homepage':
-                valid = key.startswith('assets/') or key in ('index.html', '404.html', 'robots.txt', 'sitemap.xml')
+                valid = key.startswith(('assets/', 'levels/')) or key in ('levels', 'index.html', '404.html', 'robots.txt', 'sitemap.xml')
             else:
                 valid = key == area or key.startswith(area + '/')
             if not valid:
@@ -130,35 +131,23 @@ def deploy(area):
         # Commit the ownership inventory last, so a failed deletion is retried.
         if MANIFESTS[area] in changes:
             upload(MANIFESTS[area])
-    paths = sorted({'/' + k for k in changes + deletions} | ({'/'} if 'index.html' in changes else set()))
-    if paths and os.environ.get('DRY_RUN') != '1':
-        for start in range(0, len(paths), 1000):
-            response = aws('cloudfront', 'create-invalidation', '--distribution-id', distribution, '--paths', *paths[start:start + 1000])
-            ident = response['Invalidation']['Id']
-            print(f'waiting for invalidation {ident} ({len(paths[start:start + 1000])} exact paths)', flush=True)
-            try:
-                aws('cloudfront', 'wait', 'invalidation-completed', '--distribution-id', distribution, '--id', ident)
-            except RuntimeError as exc:
-                if 'AccessDenied' not in str(exc) or 'GetInvalidation' not in str(exc):
-                    raise
-                print(str(exc) + '\nFalling back to live byte/header polling; no IAM change.', flush=True)
-                origin = os.environ.get('SITE_ORIGIN', 'https://lmctl.com').rstrip('/')
-                for attempt in range(40):
-                    remaining = []
-                    for key in changes:
-                        response = fetch(origin + '/' + urllib.parse.quote(key, safe='/'))
-                        if compare(key, expected[key], response):
-                            remaining.append(key)
-                    for key in deletions:
-                        _, _, error = fetch(origin + '/' + urllib.parse.quote(key, safe='/'))
-                        if not error or not ('404' in error or '403' in error):
-                            remaining.append(key)
-                    if not remaining:
-                        break
-                    print(f'waiting for {len(remaining)} live objects (poll {attempt + 1}/40)', flush=True)
-                    time.sleep(10)
-                else:
-                    raise RuntimeError('live publication did not converge: ' + ', '.join(remaining))
+    targets = live_targets(expected)
+    targets.update({key: None for key in deletions})
+    responses = fetch_targets(targets)
+    stale = differing(targets, responses)
+    # Include writes for other edge locations, and stale CDN copies even when
+    # S3 needed no writes (e.g. a previous deploy stopped before invalidation).
+    paths = set(changes + deletions) | set(stale)
+    if 'index.html' in changes:
+        paths.add('')
+    print(f'{area}: {len(stale)} live differences; {len(paths)} invalidation paths', flush=True)
+    if os.environ.get('DRY_RUN') == '1':
+        for key in sorted(paths):
+            print(f'DRY_RUN: would invalidate /{key}', flush=True)
+        print('DRY_RUN: no writes, invalidations or polling; live differences checked before proposed uploads')
+    else:
+        invalidate(paths)
+        poll_differences(targets, responses)
     print(f'{area}: {len(changes)} uploads, {len(deletions)} deletions; unchanged objects skipped')
 
 
@@ -184,6 +173,66 @@ def compare(key, obj, response):
     return findings
 
 
+def live_targets(expected):
+    targets = dict(expected)
+    if 'index.html' in targets:
+        targets[''] = targets['index.html']  # CloudFront default root object
+    return targets
+
+
+def live_url(key):
+    return os.environ.get('SITE_ORIGIN', 'https://lmctl.com').rstrip('/') + '/' + urllib.parse.quote(key, safe='/')
+
+
+def fetch_targets(targets):
+    keys = sorted(targets)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=12) as pool:
+        return dict(zip(keys, pool.map(fetch, map(live_url, keys))))
+
+
+def differing(targets, responses):
+    pending = {}
+    for key, obj in targets.items():
+        response = responses[key]
+        if obj is None:
+            error = response[2] or ''
+            bad = not (error.startswith('HTTP Error 404:') or error.startswith('HTTP Error 403:'))
+        else:
+            bad = bool(compare(key, obj, response))
+        if bad:
+            pending[key] = obj
+    return pending
+
+
+def invalidate(keys):
+    paths = sorted('/' + key for key in keys)
+    for start in range(0, len(paths), 1000):
+        batch = paths[start:start + 1000]
+        response = aws('cloudfront', 'create-invalidation', '--distribution-id',
+                       os.environ.get('CF_DISTRIBUTION_ID', 'E1GKUWTM93U7IV'), '--paths', *batch)
+        print(f"invalidation {response['Invalidation']['Id']}: " + ', '.join(batch), flush=True)
+
+
+def poll_differences(targets, responses, timeout=300, interval=15):
+    # Retain successful responses. Re-fetch only mismatches, for about five
+    # minutes, and re-invalidate the remaining paths once halfway through.
+    pending = differing(targets, responses)
+    started = time.monotonic()
+    reinvalidated = False
+    while pending:
+        elapsed = time.monotonic() - started
+        if elapsed >= timeout:
+            raise RuntimeError('live publication did not converge: ' + ', '.join('/' + k for k in pending))
+        if not reinvalidated and elapsed >= timeout / 2:
+            invalidate(pending)
+            reinvalidated = True
+        print(f'waiting for {len(pending)} live differences: ' + ', '.join('/' + k for k in pending), flush=True)
+        time.sleep(min(interval, timeout - elapsed))
+        responses.update(fetch_targets(pending))
+        pending = differing(pending, responses)
+    return responses
+
+
 def inventory_diff(expected, actual):
     return ([f'missing inventory entry {k}' for k in sorted(set(expected) - set(actual))] +
             [f'extra inventory entry {k}' for k in sorted(set(actual) - set(expected))])
@@ -202,7 +251,7 @@ def inspect_html(files, work, host):
     return output['findings'] if isinstance(output, dict) else output
 
 
-def verify(areas):
+def verify(areas, repair_cdn=False):
     origin = os.environ.get('SITE_ORIGIN', 'https://lmctl.com').rstrip('/')
     parsed_origin = urllib.parse.urlsplit(origin)
     if parsed_origin.scheme not in ('http', 'https') or parsed_origin.path not in ('', '/'):
@@ -219,6 +268,12 @@ def verify(areas):
         with concurrent.futures.ThreadPoolExecutor(max_workers=12) as pool:
             for address, response in zip(missing, pool.map(fetch, missing)):
                 cache[address] = response
+    if repair_cdn:
+        targets = live_targets(expected)
+        responses = fetch_targets(targets)
+        invalidate(differing(targets, responses))
+        poll_differences(targets, responses)
+        cache.update({url(key): response for key, response in responses.items()})
     get_many(url(k) for k in expected)
     for key, obj in expected.items():
         findings.extend(compare(key, obj, cache[url(key)]))
@@ -275,7 +330,7 @@ def verify(areas):
                     continue
                 address = paths[row['file']]
                 location = urllib.parse.urlsplit(address).path
-                if not (location == '/' or location == '/index.html' or location.startswith(('/tools', '/skills'))):
+                if not (location == '/' or location == '/index.html' or location.startswith(('/tools', '/skills', '/levels'))):
                     continue
                 selector, href = row['message'].split('\t', 1)
                 resolved = urllib.parse.urlsplit(urllib.parse.urljoin(bases.get(address, address), href))
@@ -305,6 +360,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('mode', choices=['deploy', 'verify', 'changed'])
     parser.add_argument('areas', nargs='*')
+    parser.add_argument('--repair-cdn', action='store_true', help='verify: invalidate live mismatches and poll for five minutes (AWS required)')
     args = parser.parse_args()
     if args.mode == 'changed':
         before = os.environ.get('BEFORE', '')
@@ -326,7 +382,7 @@ def main():
     if any(a not in MANIFESTS for a in areas):
         parser.error('areas must be tools, skills or homepage')
     if args.mode == 'verify':
-        return verify(areas)
+        return verify(areas, repair_cdn=args.repair_cdn)
     for area in areas:
         deploy(area)
     return 0

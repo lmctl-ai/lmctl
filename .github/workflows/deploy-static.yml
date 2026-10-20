@@ -64,9 +64,4 @@ jobs:
             bash "scripts/deploy-$area.sh"
           done
       - name: Verify live bytes, headers, links, images and anchors
-        run: |
-          for attempt in 1 2 3; do
-            if bash scripts/tools/verify-live.sh; then exit 0; fi
-            if [ "$attempt" != 3 ]; then sleep 15; fi
-          done
-          exit 1
+        run: bash scripts/tools/verify-live.sh --repair-cdn

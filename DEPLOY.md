@@ -77,8 +77,9 @@ all three areas; pushes select areas from the push range. The existing full manu
 workflow remains available. Both use `site-deploy` concurrency without cancellation.
 
 The independent scripts `deploy-tools.sh`, `deploy-skills.sh` and
-`deploy-homepage.sh` do not need a Docusaurus build. `DRY_RUN=1` reads S3 and prints
-changed keys without writes or invalidations. To run locally:
+`deploy-homepage.sh` do not need a Docusaurus build. `DRY_RUN=1` reads S3 and the
+CDN, and prints proposed uploads, deletions and exact invalidation paths without
+writes, invalidations or polling. To run locally:
 
 ```sh
 export AWS_PROFILE=lmctl-website-deploy
@@ -98,10 +99,16 @@ individually, never root-synced or root-deleted. Each area publishes a determini
 `deploy-manifest.json` (homepage's is under assets/). Only obsolete keys owned by
 a previous manifest can be deleted. Out-of-band files are preserved.
 
-Only changed object paths are invalidated (plus `/` when index.html changes).
-The publisher waits for invalidation; if GetInvalidation is denied, it polls live
-bytes/headers instead. No IAM edits are made. Live verification retries in CI and
-compares every managed file/alias byte-for-byte, including Content-Type and
+Invalidations include uploaded/deleted paths AND paths whose live bytes or headers
+still differ from the repo after syncing, even if S3 was already current. The root
+alias `/` is checked too. Homepage directory indexes such as `levels/index.html`
+also publish and verify the exact `levels` and `levels/` keys.
+The publisher polls only differing paths for about five minutes and re-invalidates
+remaining differences once halfway through. It does not require GetInvalidation.
+CI runs `verify-live.sh --repair-cdn` for the same targeted repair/poll on any
+remaining live mismatches (AWS credentials required); plain `verify-live.sh`
+remains read-only and immediately reports differences. No IAM edits are made.
+Live verification compares every managed file/alias byte-for-byte, including Content-Type and
 Cache-Control. It detects missing/extra entries in the published inventories and
 hash differences. HTTP cannot enumerate unlinked, unmanaged bucket objects;
 those are outside the inventory and are not deleted or claimed as verified.
