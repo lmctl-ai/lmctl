@@ -4,7 +4,7 @@ Write plain HTML content. lmhtml supplies the document shell, navigation,
 footers and indexes from `scripts/tools/template.html`; there are no CSS names,
 framework components, per-page configuration files or required optional pages.
 For the full guide (gathering facts by running the tool, icons, visual review,
-publishing, pitfalls) see `durable-memory/tools-docs.html`.
+publishing, pitfalls) see `durable-memory/tools-docs.md`.
 
 ## Add a tool
 

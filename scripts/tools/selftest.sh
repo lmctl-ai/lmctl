@@ -36,7 +36,7 @@ run decorate
 run check
 echo 'ok - bare skill-only tool, missing own/site indexes, check is read-only'
 host=$("$HERE/run.sh" host-path)
-"$host" --schema --json > "$work/lmhtml.dsl.json"
+"$host" --dsl-schema --json > "$work/lmhtml.dsl.json"
 cat > "$work/assert.lms" <<'LMS'
 p = _dsl_ schema="lmhtml.dsl.json";
 let skill = html.load("tools/zeta/skill.html");

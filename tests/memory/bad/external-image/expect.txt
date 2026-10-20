@@ -1,1 +1,0 @@
-image must be a local file

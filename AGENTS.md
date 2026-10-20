@@ -4,8 +4,9 @@ Entry point for agents and human operators working on **lmctl-website**. Essenti
 
 ## Long material in `durable-memory/`
 
-- `durable-memory/index.html` — History of docs re-baselines, CLI command migrations, and delivery-model updates.
-- `durable-memory/site-design.html` — Full architectural design: Docusaurus stack, authoring conventions, S3 layout, CloudFront viewer-request functions, and prefix routing.
+- `durable-memory/index.md` — Generated chapter links and one-line summaries; read this first.
+- `durable-memory/history.md` — Historical docs re-baselines and retired workflows; not current command guidance.
+- `durable-memory/site-design.md` — Full architectural design: Docusaurus stack, authoring conventions, S3 layout, CloudFront viewer-request functions, and prefix routing.
 - `DEPLOY.md` — Publishing runbook, scoped sync scripts, CloudFront function rollbacks, and quickrun catalog deployment.
 
 ## Sources and generated documentation
@@ -15,18 +16,29 @@ This repository is `github.com/lmctl-ai/lmctl`. Verify CLI claims against instal
 source in the mono checkout. lmprobe's public source is `github.com/lmctl-ai/lmprobe`;
 its `site/` supplies the separately deployed manual. Do not assume historical
 machine-specific clone paths or hosted-service availability. The per-skill evidence
-and unverifiable claims are recorded in `durable-memory/skills-audit.html`.
+and unverifiable claims are recorded in `durable-memory/skills-audit.md`.
 
 Skills are HTML only (`skills/*.html`). There are no Markdown skill copies,
 HTML-to-Markdown conversion or cross-format drift checks. `build:skills` only
 decorates HTML and generates the HTML index. The pinned lmhtml host is maintained
 at `github.com/lmctl-ai/lmhtml`; its generic exporter is not used by skills.
 
+## Durable memory
+
+Author notes as Markdown (`durable-memory/*.md`), without emoji. Run
+`npm run build:memory-index` after editing a chapter; commit the generated
+`index.md` with the source notes. `npm run check:memory` checks index drift,
+links/anchors and the no-emoji policy. The wrappers use the checksum-pinned
+lmhtml native Markdown commands; there is no HTML source profile or compatibility
+stub. `npm run build:memory-web` optionally builds templated HTML under
+`build/memory-web`. Durable-memory is not published by the static workflow.
+See `durable-memory/memory-format.md` for authoring and template rules.
+
 ## Tools docs
 
 The static `/tools/` section (one plain-HTML section per tool, skill page for
 LLM agents plus optional tutorial/guide pages) has its own guide:
-`durable-memory/tools-docs.html`. The three commands: `npm run decorate:tools`
+`durable-memory/tools-docs.md`. The three commands: `npm run decorate:tools`
 (generate head, nav, footer, indexes, icons), `npm run check:tools` (contract +
 stale decoration), `npm run check:tools:selftest` (checker fixtures). Push to main publishes changed static areas automatically; `scripts/deploy-tools.sh`
 remains the independent manual entry point.
@@ -46,7 +58,7 @@ remains the independent manual entry point.
   10. Historical workflow catalog (`workflows/` -> `/workflows/`, deployed via `scripts/deploy-workflows.sh`)
   11. Static tool pages (`tools/` -> `/tools/`, new; deployed by the static push workflow or `scripts/deploy-tools.sh`, never by `deploy.sh`). Plain HTML, one stylesheet, rules in `tools/README.md`, validated by `npm run check:tools` (CI: `.github/workflows/tools-check.yml`).
 - **NEVER run `aws s3 sync --delete` on the S3 bucket root:** The S3 bucket `lmctl-website-prod` holds all prefixes co-tenanted. A root `--delete` wipes the other prefixes. Use scoped sync scripts (`deploy.sh`, `deploy-homepage.sh`, `deploy-quickrun.sh`, `deploy-lmprobe.sh`).
-- **CloudFront Function vs S3 Triple-Key Index Hack:** `infra/lmctl-www-redirect.js` rewrites clean URLs for `/lmctl/*` and `/lmprobe/*` (deployed) and, in source but not yet deployed, `/tools/*` (`node tests/infra/lmctl-www-redirect.test.mjs`). All other paths (`/skills`, `/quickrun`, `/templates`, `/helloexample`, `/lmscript/commands`) pass through untouched. To prevent S3 404 NoSuchKey errors when accessed without `.html`, the static deploy scripts upload triple keys: `<prefix>`, `<prefix>/`, and `<prefix>/index.html` (see `durable-memory/site-design.html`).
+- **CloudFront Function vs S3 Triple-Key Index Hack:** `infra/lmctl-www-redirect.js` rewrites clean URLs for `/lmctl/*` and `/lmprobe/*` (deployed) and, in source but not yet deployed, `/tools/*` (`node tests/infra/lmctl-www-redirect.test.mjs`). All other paths (`/skills`, `/quickrun`, `/templates`, `/helloexample`, `/lmscript/commands`) pass through untouched. To prevent S3 404 NoSuchKey errors when accessed without `.html`, the static deploy scripts upload triple keys: `<prefix>`, `<prefix>/`, and `<prefix>/index.html` (see `durable-memory/site-design.md`).
 - **Documentation checks:** Static `/tools/` pages are checked with `npm run check:tools`; `npm run check:tools:selftest` verifies that the checker rejects malformed fixtures. Legacy skills use `npm run check:skills` and `npm run check:skills:selftest`; regenerate with `npm run build:skills`. Neither checker validates Docusaurus `docs/`. There is no `scripts/test-docs.sh` in this repository.
 - **`lmctl prompt`, not `lmctl chat`:** In modern lmctl, member delegation is driven by `lmctl prompt "<teamfile>.lmctl" <alias> "..."`, not the retired `lmctl chat` command.
 - **Relative Markdown links in `docs/`:** `npm run build` fails on broken links and anchors. All cross-page links within `docs/` must be relative Markdown paths (e.g. `./other.md` or `../manuals/foo.md`), never absolute `https://lmctl.com/` URLs.

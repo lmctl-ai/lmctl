@@ -53,7 +53,7 @@ IFS=. read -r major minor patch <<< "$version"
 ((major > 0 || minor > 2 || (minor == 2 && patch >= 347))) || { echo 'lmscript >= 0.2.347 required' >&2; exit 2; }
 work=$(mktemp -d "${TMPDIR:-/tmp}/lmctl-tools.XXXXXX")
 trap 'rm -rf "$work"' EXIT
-"$host" --schema --json > "$work/lmhtml.dsl.json"
+"$host" --dsl-schema --json > "$work/lmhtml.dsl.json"
 if [[ $command_name == check && $# == 0 ]]; then
   "$HERE/run.sh" decorate --check
 fi

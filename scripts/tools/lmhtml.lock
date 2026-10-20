@@ -1,8 +1,8 @@
-# lmctl-ai/lmhtml v0.5.2; release workflow 39310363639, commit bb2d3e2.
-# SHA256 computed from downloaded GitHub release assets (not local builds).
-version v0.5.2
-lmhtml-linux-arm64 95b23a72363e72e4d59d8bf79bd9d9c71d240eb56ada992c230dc4f523e29aec
-lmhtml-linux-x64 7d1931b123c5fada6dfe70d08dba85c972f97bdb46b60a3d503c2299c1f090b5
-lmhtml-macos-arm64 71fa53f13fe61f04efe43b97d76e21fe120c45f7862ee71f4145570461d124af
-lmhtml-macos-x64 cd7f9f410350a8e472308cb9943b914eca39e65e40d59362e2745bfbfb343a29
-lmhtml-windows-x64.exe 14eb87549607571b1df53b4e6cc2cd18fafe0f3fda1b535267122de02e2a7a43
+# lmctl-ai/lmhtml v0.6.2; five-platform release run 39489142158.
+# SHA256 of downloaded release binaries; md4c MIT notice is in release THIRD_PARTY_NOTICES.
+version v0.6.2
+lmhtml-linux-arm64 5e38c36ed0a2e9db507456b89279106bded88b611cd7f3c92d18991c07192566
+lmhtml-linux-x64 93e63b9725ece20047fcf4670b9b467c72c6ba455bdef95bbc17cde078b504bf
+lmhtml-macos-arm64 d42a499d85d439c6b9284f7597dfb947e4d437fa7f862bf7b15f5571e3aa9e00
+lmhtml-macos-x64 148134bc27a926299aaff1fdc16175836f47974381e27e7150b5765ea4b8f6d0
+lmhtml-windows-x64.exe bd77848b5a0e1be7a245f3bf8420ffbc09fffa200a2cfffc6f38c5374bcaec00

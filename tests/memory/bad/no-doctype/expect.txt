@@ -1,1 +1,0 @@
-must start with <!doctype html>

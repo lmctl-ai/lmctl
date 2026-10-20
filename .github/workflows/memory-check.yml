@@ -1,6 +1,6 @@
 name: memory-check
 
-# Validates durable-memory/ against the content-only HTML profile
+# Validates Markdown index drift, links/anchors and the no-emoji policy
 # (scripts/memory/**). No secrets, read-only token, no deploy.
 on:
   pull_request:
@@ -26,11 +26,9 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24.15
-      - name: install published DSL compiler
-        run: npm i -g @lmctl-ai/lmctl@0.2.347
       - name: check durable-memory notes and index
         run: npm run check:memory
-      - name: memory profile self-test
+      - name: Markdown memory self-test
         run: npm run check:memory:selftest
       - name: build the web view
         run: npm run build:memory-web

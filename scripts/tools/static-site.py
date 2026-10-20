@@ -292,7 +292,7 @@ def verify(areas, repair_cdn=False):
     link_count = 0
     with tempfile.TemporaryDirectory(prefix='lmctl-live-') as tmp:
         work = Path(tmp)
-        schema = subprocess.check_output([host, '--schema', '--json'])
+        schema = subprocess.check_output([host, '--dsl-schema', '--json'])
         (work / 'lmhtml.dsl.json').write_bytes(schema)
         scanned = set()
         anchors = {}
