@@ -27,14 +27,14 @@
 <p>lmhtml is a native host for auditing links and CSS names, comparing HTML documents, extracting templates, and applying shared-page edits.</p>
 <h2>Install and run</h2>
 <p>Use the latest binary from <a href="https://github.com/lmctl-ai/lmhtml/releases">Releases</a>. For source builds, follow the setup and build steps in the <a href="https://github.com/lmctl-ai/lmhtml#build">README</a>. Install Node.js 24.15 or newer for the published compiler.</p>
-<pre><code>lmhtml --schema
-lmhtml --schema --json &gt; lmhtml.dsl.json
+<pre><code>lmhtml --dsl-schema
+lmhtml --dsl-schema --json &gt; lmhtml.dsl.json
 lmhtml --dsl-signatures
 npx --yes --package=@lmctl-ai/lmctl -- lmscript audit.lms build/audit.dslb
 lmhtml --dsl build/audit.dslb [more.dslb ...]</code></pre>
-<p><code>--schema</code> prints a compact human-readable summary; <code>--schema --json</code> prints the embedded compiler input byte-for-byte. <code>--dsl-signatures</code> prints the bound host signatures. Multiple bytecode files run in order against the same embedded schema; all files are loaded and verified before execution. Use <code>--dry-run</code> to report saves without writing.</p>
+<p><code>--dsl-schema</code> prints a compact human-readable summary; <code>--dsl-schema --json</code> prints the embedded compiler input byte-for-byte. <code>--dsl-signatures</code> prints the bound host signatures. Multiple bytecode files run in order against the same embedded schema; all files are loaded and verified before execution. Use <code>--dry-run</code> to report saves without writing.</p>
 <h2>Reference</h2>
-<p>The following members are copied from the output of <code>lmhtml --schema</code> (lmhtml v0.2.0). Contexts are followed by functions and then each host type with its methods.</p>
+<p>The following members are copied from the output of <code>lmhtml --dsl-schema</code> (lmhtml v0.2.0). Contexts are followed by functions and then each host type with its methods.</p>
 <h3>Contexts and functions</h3>
 <pre><code>context html: Html
 context report: Report
@@ -118,6 +118,16 @@ StrList.len() -&gt; int</code></pre>
 <ul><li><code>html.load_dir(dir, include, exclude)</code> filters relative paths; hidden files are included, directory symlinks are not followed, and returned paths are sorted.</li><li><code>link_kind</code> classifies internal pages/assets, anchors, external URLs, special schemes and paths outside the root. External URLs are not fetched.</li><li><code>html.diff</code> normalizes whitespace, comments, attribute order and <code>data-*</code> attributes.</li><li><code>html.write_template</code> reports common subtrees and inserts slot markers in a sample template.</li><li><code>html.save</code> writes atomically within the working directory; use <code>--dry-run</code> before a real rewrite.</li></ul>
 <h2>Limits and troubleshooting</h2>
 <p>The CLI accepts bytecode v5 and schema v2. Only the current bytecode version is read. The VM has no execution budget or allocation caps, so run trusted bytecode. HTML saving expects valid UTF-8; unsupported legacy encodings are refused. Serialization may normalize wrappers, tag casing, quoting and optional elements. If compilation reports an unknown member, retrieve the schema JSON from the same host version and compile against it. If a save fails, check that the destination is under the working directory and inspect the host error.</p>
+<h2>Markdown notes and generated indexes</h2>
+<p>lmhtml reads .md with CommonMark plus GFM tables, task lists, strikethrough and autolinks. Raw HTML is disabled by default; <code>md2html --allow-html</code> enables it for trusted input. A leading <code>---</code> metadata block recognizes single-line title and summary values; otherwise the first h1 and paragraph supply them. <code>Doc.title()</code> and <code>Doc.summary()</code> expose the metadata.</p>
+<pre><kbd>lmhtml index durable-memory</kbd>
+<kbd>lmhtml index durable-memory --check</kbd>
+<kbd>lmhtml mdcheck durable-memory</kbd></pre>
+<p>The generated index.md lists relative chapter links and one-line descriptions in filename order. An optional <code>--order FILE</code> lists relative paths, one per line, to place first. Generation is deterministic and --check reports drift without writing. Headings receive lowercase ASCII hyphenated IDs, with numeric suffixes for duplicates.</p>
+<h2>Template a Markdown web view</h2>
+<p>A trusted HTML shell supports five placeholders: <code>{{title}}</code>, <code>{{summary}}</code>, <code>{{path}}</code>, <code>{{content}}</code>, and <code>{{toc}}</code>. Metadata is escaped for HTML text or quoted attributes; content and toc are markup. Substitution happens once. Without a template, output is a minimal HTML5 document with no CSS or class names.</p>
+<pre><kbd>lmhtml site durable-memory build/memory-web --template shell.html</kbd></pre>
+<p>Local chapter links become .html links with anchors preserved; assets are copied. Source links are checked before writes. Output must not overlap input and must stay within the working directory. Use a fresh output directory when removing chapters; site does not delete unrelated files. To decorate further, load Markdown with <code>html.load</code>, <code>html.from_markdown</code>, or <code>html.render_markdown</code>, mutate the same Lexbor tree, and save it atomically.</p>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmhtml">github.com/lmctl-ai/lmhtml</a>.</p>

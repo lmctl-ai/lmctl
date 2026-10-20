@@ -78,6 +78,26 @@ output/page3.html</samp></pre>
 <samp>{"ok": true, "result": null}</samp>
 <kbd>cat build/links.txt</kbd>
 <samp>broken-link site/index.html:0: missing.html not found</samp></pre>
+<h2>Generate and check a Markdown chapter index</h2>
+<p>Give each note an h1 and introductory paragraph, then generate its chapter entry once.</p>
+<pre><kbd>lmhtml index durable-memory</kbd>
+<kbd>lmhtml index durable-memory --check</kbd>
+<kbd>lmhtml mdcheck durable-memory</kbd></pre>
+<h2>Build a templated Markdown site</h2>
+<p>Save this shell as shell.html. Metadata is escaped; the required content placeholder inserts the converted document body.</p>
+<pre><code>&lt;!doctype html&gt;&lt;html lang=&quot;en&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;&lt;title&gt;{{title}}&lt;/title&gt;&lt;/head&gt;&lt;body&gt;&lt;nav&gt;{{toc}}&lt;/nav&gt;&lt;main&gt;{{content}}&lt;/main&gt;&lt;/body&gt;&lt;/html&gt;</code></pre>
+<pre><kbd>lmhtml site durable-memory build/memory-web --template shell.html</kbd></pre>
+<h2>Post-process a Markdown document with DSL</h2>
+<p>The conversion returns the same Doc type used by every existing selector and mutation. Save this as build/plan.lms:</p>
+<pre><code>p = _dsl_ schema=&quot;schema-lmhtml.json&quot;;
+let doc = html.from_markdown(&quot;# Release plan\n\nChecks before publishing.&quot;);
+doc.select(&quot;h1&quot;).at(0).set_attr(&quot;id&quot;, &quot;release-plan&quot;);
+html.save(doc, &quot;build/plan.html&quot;);
+end _dsl_
+savedsl(p, &quot;build/plan.dslb&quot;);</code></pre>
+<pre><kbd>lmhtml --dsl-schema --json &gt; build/schema-lmhtml.json</kbd>
+<kbd>lmscript build/plan.lms</kbd>
+<kbd>lmhtml --dsl build/plan.dslb</kbd></pre>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmhtml">github.com/lmctl-ai/lmhtml</a>.</p>
