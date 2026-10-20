@@ -19,7 +19,7 @@ a:hover { color: var(--accent-strong); }
 a:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 3px; }
 .site-nav { max-width: 1120px; min-height: 72px; margin: auto; padding: 12px 28px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .brand { display: inline-flex; align-items: center; }
-.brand img { display: block; width: 140px; height: 40px; object-fit: contain; }
+.brand img { display: block; width: 52px; height: 52px; object-fit: contain; }
 .nav-links, footer { display: flex; align-items: center; gap: 24px; }
 .nav-links a, footer a { font-weight: 650; text-decoration: none; }
 .hero { padding: 72px 24px 54px; text-align: center; color: var(--hero-ink); background: var(--hero); }
@@ -41,6 +41,14 @@ main { width: min(100% - 40px, 1000px); margin: 0 auto; padding: 52px 0 28px; }
 .level-number { margin-top: 0; margin-bottom: 0; color: var(--accent); }
 h2 { margin: 0 0 8px; font-size: clamp(1.45rem, 3vw, 1.85rem); line-height: 1.25; letter-spacing: -.02em; }
 .level p:last-child { margin-bottom: 0; }
+.level > div > p:last-child a { font-weight: 700; }
+.detail-page { max-width: 900px; }
+.detail-lede { color: var(--muted); font-size: 1.12rem; }
+.detail-page .eyebrow { color: var(--accent); }
+.detail-video { width: 100%; height: auto; display: block; margin: 24px 0 10px; border: 1px solid var(--line); border-radius: 12px; background: #09111f; }
+.transcript { padding: 14px 18px; border-left: 4px solid var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+.level-nav { display: flex; justify-content: space-between; gap: 18px; margin: 34px 0 10px; }
+.level-nav a { font-weight: 700; }
 code { padding: .08em .28em; border-radius: 4px; background: color-mix(in srgb, var(--ink) 8%, var(--surface)); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .92em; }
 .why { margin-top: 36px; padding: 24px 28px; border-left: 5px solid var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
 .why h2 { font-size: 1.4rem; }
@@ -55,7 +63,7 @@ footer a { color: var(--muted); }
 }
 @media (max-width: 620px) {
   .site-nav { min-height: 62px; padding: 10px 16px; gap: 12px; }
-  .brand img { width: 112px; height: 32px; }
+  .brand img { width: 52px; height: 52px; }
   .nav-links, footer { gap: 14px; }
   .hero { padding: 52px 18px 42px; }
   .hero-copy { font-size: 1.04rem; }
@@ -63,6 +71,7 @@ footer a { color: var(--muted); }
   .level { grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 18px; }
   .level figure { max-width: 220px; }
   .why { padding: 20px; }
+  .level-nav { flex-wrap: wrap; }
   footer { row-gap: 10px; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }

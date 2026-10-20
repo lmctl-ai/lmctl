@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Give AI sessions names and a team — lmctl</title>
+  <meta name="description" content="Organize provider sessions by team and member name, then inspect activity, history, usage and provider limits.">
+  <link rel="canonical" href="https://lmctl.com/levels/level-1-sessions.html">
+  <link rel="icon" href="/assets/icon.png" type="image/png">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+  <nav class="site-nav" aria-label="Main navigation">
+    <a class="brand" href="/" aria-label="lmctl home"><img src="/assets/logo.png" width="52" height="52" alt="lmCtl"></a>
+    <div class="nav-links"><a href="/lmctl">Docs</a><a href="/tools/">Tools</a><a href="/skills/">Skills</a></div>
+  </nav>
+  <main class="detail-page">
+    <p class="eyebrow">Level 1 · Agent session management</p>
+    <h1>Give AI sessions names and a team</h1>
+    <p class="detail-lede">Organize provider sessions by team and member name, then inspect activity, history, usage and provider limits.</p>
+    <video class="detail-video" controls muted playsinline preload="metadata" poster="/assets/videos/level-1-poster.png" width="480" height="270">
+      <source src="/assets/videos/level-1.mp4" type="video/mp4">
+      <source src="/assets/videos/level-1.webm" type="video/webm">
+      <p>Your browser cannot play this video. <a href="/assets/videos/level-1.mp4">Download the MP4 video</a>.</p>
+    </video>
+    <p class="transcript"><strong>Video description:</strong> Anonymous session orbs gather into named teams. A lens brings one session into view while the usage bars rise.</p>
+    <h2>The idea</h2>
+    <p>A plain-text <code>.lmctl</code> teamfile gives each provider session a team and member name, so you can see who is doing what without relying on UUIDs. The same teamfile can hold sessions from different supported provider tools.</p>
+    <h2>What ships today</h2>
+    <p><code>lmctl status</code> lists the configured team; <code>lmctl running</code> shows active work; <code>lmctl tail</code> peeks at session history; <code>lmctl usage</code> summarizes recorded usage; and <code>lmctl ratelimit</code> reports provider limits.</p>
+    <h2>Read more</h2>
+    <ul><li><a href="/lmctl/docs/manuals/teamfile-format">Teamfile format</a></li> <li><a href="/lmctl/docs/manuals/cli-reference">CLI reference</a></li></ul>
+    <nav class="level-nav" aria-label="Browse the four levels"><a href="/">← Home</a> <a href="/levels/index.html">All four levels</a> <a href="/levels/level-2-orchestration.html">Next: Level 2 →</a></nav>
+  </main>
+  <footer><a href="/lmctl">Docs</a><a href="/tools/">Tools</a><a href="/skills/">Skills</a><a href="/">lmctl.com</a></footer>
+</body>
+</html>

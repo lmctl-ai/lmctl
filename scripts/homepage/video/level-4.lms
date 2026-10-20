@@ -1,0 +1,89 @@
+out = ARGV[0];
+p = _dsl_ schema="lmcad.dsl.json";
+let frame_count = 240;
+let render_width = 480;
+let render_height = 270;
+let blue = material().color(0.18, 0.60, 0.94).specular(0.18).shininess(22.0);
+let teal = material().color(0.14, 0.78, 0.68).specular(0.20).shininess(24.0);
+let gold = material().color(0.98, 0.68, 0.20).specular(0.22).shininess(26.0);
+let violet = material().color(0.62, 0.45, 0.94).specular(0.18).shininess(22.0);
+let flow_period = 96;
+let coral = material().color(0.96, 0.38, 0.28).specular(0.18).shininess(22.0);
+let green = material().color(0.28, 0.80, 0.48).specular(0.18).shininess(22.0);
+
+# Shared look block: keep identical in all four homepage storyboards.
+scene.background(0.035, 0.055, 0.10);
+scene.directional_light(-0.55, -1.0, -0.45, 0.82);
+scene.fill_light(0.7, -0.15, 0.8, 0.28);
+scene.ambient(0.19);
+scene.supersample(1);
+
+# Brainstorming starts with a person and two architect agents.
+let human = scene.sphere(0.56, teal).position(-8.0, 1.2, 0.0);
+let human_body = scene.cylinder(0.38, 1.2, teal).position(-8.0, 0.05, 0.0);
+let architect0 = scene.sphere(0.52, blue).position(-6.6, 1.55, 0.0);
+let architect1 = scene.sphere(0.52, violet).position(-3.9, 0.15, 0.0);
+
+# A long flat gold panel unrolls in four sections; no text is drawn.
+let panel0 = scene.box(1.90, 0.48, 0.30, gold).position(-2.95, 2.6, -0.2).visible(false);
+let panel1 = scene.box(1.90, 0.48, 0.30, gold).position(-0.98, 2.6, -0.2).visible(false);
+let panel2 = scene.box(1.90, 0.48, 0.30, gold).position(0.98, 2.6, -0.2).visible(false);
+let panel3 = scene.box(1.90, 0.48, 0.30, gold).position(2.95, 2.6, -0.2).visible(false);
+let script_line0 = scene.box(1.30, 0.07, 0.10, blue).position(-2.95, 2.72, 0.02).visible(false);
+let script_line1 = scene.box(1.30, 0.07, 0.10, blue).position(-0.98, 2.72, 0.02).visible(false);
+let script_line2 = scene.box(1.30, 0.07, 0.10, violet).position(0.98, 2.50, 0.02).visible(false);
+let script_line3 = scene.box(1.30, 0.07, 0.10, violet).position(2.95, 2.50, 0.02).visible(false);
+
+# Four visible stages: work, review, QA, acceptance.
+let work = scene.box(1.9, 1.1, 0.48, blue).position(-5.0, -1.1, 0.0).visible(false);
+let review = scene.box(1.9, 1.1, 0.48, violet).position(-1.7, -1.1, 0.0).visible(false);
+let qa = scene.box(1.9, 1.1, 0.48, coral).position(1.7, -1.1, 0.0).visible(false);
+let acceptance = scene.box(1.9, 1.1, 0.48, green).position(5.0, -1.1, 0.0).visible(false);
+let worker0 = scene.sphere(0.42, blue).position(-5.0, 0.25, 0.0).visible(false);
+let worker1 = scene.sphere(0.42, violet).position(-1.7, 0.25, 0.0).visible(false);
+let worker2 = scene.sphere(0.42, coral).position(1.7, 0.25, 0.0).visible(false);
+let worker3 = scene.sphere(0.42, green).position(5.0, 0.25, 0.0).visible(false);
+let human_right = scene.sphere(0.56, teal).position(8.3, -0.45, 0.0).visible(false);
+let human_right_body = scene.cylinder(0.38, 1.1, teal).position(8.3, -1.55, 0.0).visible(false);
+
+# Gold dots make the review loop visible as a return arc to the work stage.
+let arc0 = scene.sphere(0.09, gold).position(-1.5, 0.2, 0.65);
+let arc1 = scene.sphere(0.09, gold).position(-2.0, 0.7, 0.65);
+let arc2 = scene.sphere(0.09, gold).position(-2.7, 1.1, 0.65);
+let arc3 = scene.sphere(0.09, gold).position(-3.5, 1.25, 0.65);
+let arc4 = scene.sphere(0.09, gold).position(-4.3, 1.1, 0.65);
+let arc5 = scene.sphere(0.09, gold).position(-4.8, 0.7, 0.65);
+let arc6 = scene.sphere(0.09, gold).position(-5.0, 0.2, 0.65);
+
+# A green check shape marks the acceptance stage.
+let tick_short = scene.box(0.58, 0.18, 0.20, green).position(6.45, -1.20, 0.55).rotate(0.0, 0.0, -0.72).visible(false);
+let tick_long = scene.box(0.96, 0.18, 0.20, green).position(7.05, -0.99, 0.55).rotate(0.0, 0.0, 0.62).visible(false);
+let token = scene.sphere(0.20, gold);
+let camera = scene.camera(44.0, 0.0, 0.0, 15.5, 0.0, 0.0, 0.0);
+for (frame in range(0, frame_count)) {
+  let t = float(frame) / float(frame_count - 1);
+  panel0.visible(t > 0.02); panel1.visible(t > 0.07); panel2.visible(t > 0.12); panel3.visible(t > 0.17);
+  script_line0.visible(t > 0.07); script_line1.visible(t > 0.12); script_line2.visible(t > 0.17); script_line3.visible(t > 0.22);
+
+  let spawn_t = t > 0.24;
+  work.visible(spawn_t); worker0.visible(spawn_t);
+  review.visible(t > 0.32); worker1.visible(t > 0.32);
+  qa.visible(t > 0.40); worker2.visible(t > 0.40);
+  acceptance.visible(t > 0.48); worker3.visible(t > 0.48);
+  human_right.visible(t > 0.80); human_right_body.visible(t > 0.80);
+
+  let tick_t = t > 0.82;
+  tick_short.visible(tick_t); tick_long.visible(tick_t);
+
+  let cycle = float(frame % flow_period) / float(flow_period - 1);
+  if (cycle < 0.68) {
+    let flow_t = ease(cycle / 0.68);
+    token.position(lerp(-5.0, 5.0, flow_t), -1.1, 0.85);
+  } else {
+    let return_t = ease((cycle - 0.68) / 0.32);
+    token.position(lerp(-1.7, -5.0, return_t), lerp(-0.15, 0.2, sin(return_t * 3.14159)), 0.85);
+  }
+  scene.render_png("frames/level-4/frame-" + str(frame) + ".png", render_width, render_height);
+}
+end _dsl_
+savedsl(p, out);

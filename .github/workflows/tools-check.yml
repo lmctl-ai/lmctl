@@ -4,10 +4,10 @@ name: tools-check
 # read-only token, no deploy.
 on:
   pull_request:
-    paths: ["skills/**", "skills-moved/**", "tests/skills/**", "tools/**", "scripts/tools/**", "package.json", "homepage/index.html", "tests/tools/**", ".github/workflows/tools-check.yml"]
+    paths: ["skills/**", "skills-moved/**", "tests/skills/**", "tools/**", "scripts/tools/**", "package.json", "homepage/**", "scripts/homepage/video/**", "tests/tools/**", ".github/workflows/tools-check.yml"]
   push:
     branches: [main]
-    paths: ["skills/**", "skills-moved/**", "tests/skills/**", "tools/**", "scripts/tools/**", "package.json", "homepage/index.html", "tests/tools/**", ".github/workflows/tools-check.yml"]
+    paths: ["skills/**", "skills-moved/**", "tests/skills/**", "tools/**", "scripts/tools/**", "package.json", "homepage/**", "scripts/homepage/video/**", "tests/tools/**", ".github/workflows/tools-check.yml"]
 
 permissions:
   contents: read
@@ -25,11 +25,13 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 22
+          node-version: 24.15
       - name: install published DSL compiler
         run: npm i -g @lmctl-ai/lmctl@0.2.347
       - name: check tools pages
         run: npm run check:tools
+      - name: check homepage video pages and media
+        run: npm run check:homepage
       - name: checker self-test
         run: npm run check:tools:selftest
       - name: check HTML skills, index and invariants

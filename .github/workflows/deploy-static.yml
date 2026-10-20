@@ -7,6 +7,8 @@ on:
       - 'skills/**'
       - 'skills-moved/**'
       - 'homepage/**'
+      - 'scripts/homepage/video/**'
+      - 'scripts/tools/homepage-videos.lms'
       - 'scripts/deploy*.sh'
       - 'scripts/tools/**'
       - '.github/workflows/deploy-static.yml'
@@ -30,12 +32,14 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 22
+          node-version: 24.15
       - name: Install published DSL compiler
         run: npm i -g @lmctl-ai/lmctl@0.2.347
       - name: Check pages, memory and fixtures (checksum-pinned lmhtml)
         run: |
           npm run check:tools
+          npm run check:homepage
+          python3 scripts/tools/test-live.py
           npm run check:skills
           npm run check:memory
           npm run check:tools:selftest

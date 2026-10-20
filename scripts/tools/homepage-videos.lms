@@ -1,0 +1,49 @@
+# Check the published homepage explainers and their media with lmhtml's parser.
+p = _dsl_ schema="lmhtml.dsl.json";
+fn finding(file: string, detail: string) -> void {
+  report.add("homepage-video", file, 0, detail);
+}
+let home = html.load("homepage/index.html");
+let root_probe = html.parse("");
+let names = "level-1-sessions.html|level-2-orchestration.html|level-3-hands-off-lead.html|level-4-automation.html|";
+let media_names = "level-1|level-2|level-3|level-4|";
+while (str_find(names, "|") >= 0) {
+  let cut = str_find(names, "|");
+  let page_name = str_substr(names, 0, cut);
+  names = str_substr(names, cut + 1, str_len(names));
+  cut = str_find(media_names, "|");
+  let media_name = str_substr(media_names, 0, cut);
+  media_names = str_substr(media_names, cut + 1, str_len(media_names));
+  let route = "/levels/" + page_name;
+  if (home.select("a[href='" + route + "']").len() == 0) { finding("homepage/index.html", "missing level link " + route); }
+  let file = "homepage/levels/" + page_name;
+  let page = html.load(file);
+  if (page.select("main h1").len() != 1) { finding(file, "expected one page heading"); }
+  let videos = page.select("video");
+  if (videos.len() != 1) { finding(file, "expected exactly one video"); }
+  else {
+    let video = videos.at(0);
+    if (!video.has_attr("controls") || !video.has_attr("muted") || !video.has_attr("playsinline") || video.attr("preload") != "metadata") { finding(file, "video needs controls, muted, playsinline and preload=metadata"); }
+    if (video.attr("width") != "480" || video.attr("height") != "270") { finding(file, "video dimensions must be 480x270"); }
+    if (video.attr("poster") != "/assets/videos/" + media_name + "-poster.png") { finding(file, "poster path must match its level video"); }
+    let poster_file = "homepage/assets/videos/" + media_name + "-poster.png";
+    if (!html.link_exists(root_probe, "/" + poster_file)) { finding(file, "missing poster: " + poster_file); }
+    else if (html.load(poster_file).byte_size() > 60000) { finding(poster_file, "poster exceeds 60 KB"); }
+    let mp4_file = "homepage/assets/videos/" + media_name + ".mp4";
+    let webm_file = "homepage/assets/videos/" + media_name + ".webm";
+    if (video.select("source[src='/assets/videos/" + media_name + ".mp4'][type='video/mp4']").len() != 1) { finding(file, "missing H.264 MP4 source"); }
+    if (video.select("source[src='/assets/videos/" + media_name + ".webm'][type='video/webm']").len() != 1) { finding(file, "missing VP9 WebM source"); }
+    if (!html.link_exists(root_probe, "/" + mp4_file)) { finding(file, "missing MP4: " + mp4_file); }
+    else if (html.load(mp4_file).byte_size() > 1572864) { finding(mp4_file, "MP4 exceeds 1.5 MiB"); }
+    if (!html.link_exists(root_probe, "/" + webm_file)) { finding(file, "missing WebM: " + webm_file); }
+    else if (html.load(webm_file).byte_size() > 1572864) { finding(webm_file, "WebM exceeds 1.5 MiB"); }
+    if (page.select(".transcript").len() != 1) { finding(file, "video needs a transcript paragraph"); }
+    if (page.select("a[href='/levels/index.html']").len() != 1) { finding(file, "missing link to the level index"); }
+  }
+}
+if (html.load("homepage/levels/index.html").select("main h1").len() != 1) { finding("homepage/levels/index.html", "missing levels index"); }
+report.write_text(${ARGV[1]});
+report.fail_if_any();
+report.write_text(${ARGV[1]});
+end _dsl_
+savedsl(p, ARGV[0]);

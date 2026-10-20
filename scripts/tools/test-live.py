@@ -35,6 +35,18 @@ class LiveTests(unittest.TestCase):
         self.assertNotIn('README.md', site.inventory('homepage'))
         self.assertNotIn('tools/README.md', tools)
 
+    def test_homepage_video_inventory_types_and_cache(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'homepage/assets/videos').mkdir(parents=True)
+            (root / 'homepage/assets/videos/level-1.mp4').write_bytes(b'mp4')
+            (root / 'homepage/assets/videos/level-1.webm').write_bytes(b'webm')
+            entries = site.inventory('homepage', root)
+        self.assertEqual(entries['assets/videos/level-1.mp4']['content_type'], 'video/mp4')
+        self.assertEqual(entries['assets/videos/level-1.webm']['content_type'], 'video/webm')
+        self.assertEqual(entries['assets/videos/level-1.mp4']['cache_control'], site.DAY)
+        self.assertEqual(entries['assets/videos/level-1.webm']['cache_control'], site.DAY)
+
     def test_noop_does_not_write_or_invalidate(self):
         entries = site.inventory('tools')
         calls = []

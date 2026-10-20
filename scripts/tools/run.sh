@@ -6,7 +6,7 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 cd "$ROOT"
 command_name=${1:-check}
 if (($#)); then shift; fi
-case "$command_name" in check|contract|decorate|links|skills|host-path) ;; *) echo 'usage: run.sh check [file] | decorate [--check] | links [site-root]' >&2; exit 2;; esac
+case "$command_name" in check|contract|decorate|links|skills|host-path|homepage-videos) ;; *) echo 'usage: run.sh check [file] | decorate [--check] | links [site-root] | homepage-videos' >&2; exit 2;; esac
 sha256_file() {
   if command -v sha256sum >/dev/null; then sha256sum "$1"; else shasum -a 256 "$1"; fi
 }

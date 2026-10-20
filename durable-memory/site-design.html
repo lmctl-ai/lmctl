@@ -53,6 +53,8 @@ npm run serve   # preview the built artifact locally</code></pre>
 <pre><code>npm run build
 S3_BUCKET=lmctl-website-prod CF_DISTRIBUTION_ID=E1GKUWTM93U7IV bash scripts/deploy.sh</code></pre>
 <p><code>scripts/deploy.sh</code> publishes the Docusaurus build under <code>s3://lmctl-website-prod/lmctl/</code> and runs its full-deployment smoke checks. The static workflow separately publishes changed homepage, tools and skills assets. Neither path has a manual approval gate. See <a href="publishing.html">Publishing lmctl.com</a> for S3 scopes, AWS identity, dry runs and live verification.</p>
+<h2 id="homepage">Root homepage</h2>
+<p>The root homepage at <code>homepage/index.html</code> presents four levels from named agent sessions to repeatable AI automation. Each level links to an accessible detail page with a silent animated explainer. Storyboards, frame rendering and media checks are documented in <a href="homepage-videos.html">Homepage animated explainers</a>.</p>
 <h2 id="static-tool-pages-tools">Static tool pages (<code>/tools/</code>)</h2>
 <p>A separate surface from the Docusaurus site: plain HTML pages for each tool (skill page for LLM agents, optional tutorial/guide/recipes/reference/FAQ/ changelog) in <code>tools/</code>, one shared stylesheet, no framework and no build step. Authors write content only; <code>npm run decorate:tools</code> derives head, nav, footer, indexes and icons from <code>scripts/tools/template.html</code>, and <code>npm run check:tools</code> enforces the contract (also in CI). It is published by <code>scripts/deploy-tools.sh</code>, either from the static workflow or directly, never by <code>scripts/deploy.sh</code>. See <a href="tools-docs.html">tools-docs.html</a> for the full guide.</p>
 </body>

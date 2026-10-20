@@ -1,0 +1,105 @@
+out = ARGV[0];
+p = _dsl_ schema="lmcad.dsl.json";
+let frame_count = 240;
+let render_width = 480;
+let render_height = 270;
+let blue = material().color(0.20, 0.62, 0.92).specular(0.18).shininess(22.0);
+let teal = material().color(0.18, 0.78, 0.68).specular(0.20).shininess(24.0);
+let gold = material().color(0.96, 0.66, 0.20).specular(0.20).shininess(26.0);
+let violet = material().color(0.61, 0.47, 0.92).specular(0.18).shininess(22.0);
+
+# Shared look block: keep identical in all four homepage storyboards.
+scene.background(0.035, 0.055, 0.10);
+scene.directional_light(-0.55, -1.0, -0.45, 0.82);
+scene.fill_light(0.7, -0.15, 0.8, 0.28);
+scene.ambient(0.19);
+scene.supersample(1);
+
+# Color bands stand in for named teams without text in the scene.
+scene.box(4.8, 0.08, 0.12, teal).position(-4.6, 2.55, -0.8);
+scene.box(4.8, 0.08, 0.12, gold).position(-4.6, 0.0, -0.8);
+scene.box(4.8, 0.08, 0.12, violet).position(-4.6, -2.55, -0.8);
+
+# Anonymous session orbs begin apart, then settle into team rows.
+let s0 = scene.sphere(0.42, teal).position(-9.0, 3.8, 0.0);
+let s1 = scene.sphere(0.42, teal).position(-3.8, -3.4, 0.0);
+let s2 = scene.sphere(0.42, gold).position(-7.0, -0.7, 0.0);
+let s3 = scene.sphere(0.42, gold).position(-1.4, 3.3, 0.0);
+let s4 = scene.sphere(0.42, violet).position(-9.0, -3.8, 0.0);
+let s5 = scene.sphere(0.42, violet).position(-2.8, 0.8, 0.0);
+
+# A gold lens is drawn as eight small spheres around one session.
+let peek = scene.sphere(0.68, teal).position(-5.4, 2.55, 0.1).visible(false);
+let l0 = scene.box(0.75, 0.14, 0.10, gold).rotate(0.0, 0.0, 1.5708).visible(false);
+let l1 = scene.box(0.75, 0.14, 0.10, gold).rotate(0.0, 0.0, 2.3562).visible(false);
+let l2 = scene.box(0.75, 0.14, 0.10, gold).rotate(0.0, 0.0, 3.1416).visible(false);
+let l3 = scene.box(0.75, 0.14, 0.10, gold).rotate(0.0, 0.0, -2.3562).visible(false);
+let l4 = scene.box(0.75, 0.14, 0.10, gold).rotate(0.0, 0.0, -1.5708).visible(false);
+let l5 = scene.box(0.75, 0.14, 0.10, gold).rotate(0.0, 0.0, -0.7854).visible(false);
+let l6 = scene.box(0.75, 0.14, 0.10, gold).visible(false);
+let l7 = scene.box(0.75, 0.14, 0.10, gold).rotate(0.0, 0.0, 0.7854).visible(false);
+
+# The usage gauge rises at the end of the story.
+let g00 = scene.box(0.38, 0.56, 0.22, gold).position(3.7, -1.50, 0.0).visible(false);
+let g01 = scene.box(0.38, 0.56, 0.22, gold).position(3.7, -0.90, 0.0).visible(false);
+let g02 = scene.box(0.38, 0.56, 0.22, gold).position(3.7, -0.30, 0.0).visible(false);
+let g03 = scene.box(0.38, 0.56, 0.22, gold).position(3.7, 0.30, 0.0).visible(false);
+let g10 = scene.box(0.38, 0.56, 0.22, gold).position(4.6, -1.50, 0.0).visible(false);
+let g11 = scene.box(0.38, 0.56, 0.22, gold).position(4.6, -0.90, 0.0).visible(false);
+let g12 = scene.box(0.38, 0.56, 0.22, gold).position(4.6, -0.30, 0.0).visible(false);
+let g13 = scene.box(0.38, 0.56, 0.22, gold).position(4.6, 0.30, 0.0).visible(false);
+let g20 = scene.box(0.38, 0.56, 0.22, gold).position(5.5, -1.50, 0.0).visible(false);
+let g21 = scene.box(0.38, 0.56, 0.22, gold).position(5.5, -0.90, 0.0).visible(false);
+let g22 = scene.box(0.38, 0.56, 0.22, gold).position(5.5, -0.30, 0.0).visible(false);
+let g23 = scene.box(0.38, 0.56, 0.22, gold).position(5.5, 0.30, 0.0).visible(false);
+let g30 = scene.box(0.38, 0.56, 0.22, gold).position(6.4, -1.50, 0.0).visible(false);
+let g31 = scene.box(0.38, 0.56, 0.22, gold).position(6.4, -0.90, 0.0).visible(false);
+let g32 = scene.box(0.38, 0.56, 0.22, gold).position(6.4, -0.30, 0.0).visible(false);
+let g33 = scene.box(0.38, 0.56, 0.22, gold).position(6.4, 0.30, 0.0).visible(false);
+
+let camera = scene.camera(43.0, 0.0, 0.0, 16.5, 0.0, 0.0, 0.0);
+for (frame in range(0, frame_count)) {
+  let t = float(frame) / float(frame_count - 1);
+  let group_t = ease(clamp(t / 0.42, 0.0, 1.0));
+  s0.position(lerp(-9.0, -5.4, group_t), lerp(3.8, 2.55, group_t), 0.0);
+  s1.position(lerp(-3.8, -3.8, group_t), lerp(-3.4, 2.55, group_t), 0.0);
+  s2.position(lerp(-7.0, -5.4, group_t), lerp(-0.7, 0.0, group_t), 0.0);
+  s3.position(lerp(-1.4, -3.8, group_t), lerp(3.3, 0.0, group_t), 0.0);
+  s4.position(lerp(-9.0, -5.4, group_t), lerp(-3.8, -2.55, group_t), 0.0);
+  s5.position(lerp(-2.8, -3.8, group_t), lerp(0.8, -2.55, group_t), 0.0);
+
+  let lens_t = ease(clamp((t - 0.42) / 0.28, 0.0, 1.0));
+  let radius = 0.86 + 0.14 * lens_t;
+  let lens_visible = t > 0.42 && t < 0.70;
+  s0.visible(!lens_visible);
+  peek.visible(lens_visible);
+  l0.visible(lens_visible); l1.visible(lens_visible); l2.visible(lens_visible); l3.visible(lens_visible);
+  l4.visible(lens_visible); l5.visible(lens_visible); l6.visible(lens_visible); l7.visible(lens_visible);
+  l0.visible(lens_visible); l1.visible(lens_visible); l2.visible(lens_visible); l3.visible(lens_visible);
+  l4.visible(lens_visible); l5.visible(lens_visible); l6.visible(lens_visible); l7.visible(lens_visible);
+  l0.position(-5.4 + radius, 2.55, 0.35);
+  l1.position(-5.4 + 0.707 * radius, 2.55 + 0.707 * radius, 0.35);
+  l2.position(-5.4, 2.55 + radius, 0.35);
+  l3.position(-5.4 - 0.707 * radius, 2.55 + 0.707 * radius, 0.35);
+  l4.position(-5.4 - radius, 2.55, 0.35);
+  l5.position(-5.4 - 0.707 * radius, 2.55 - 0.707 * radius, 0.35);
+  l6.position(-5.4, 2.55 - radius, 0.35);
+  l7.position(-5.4 + 0.707 * radius, 2.55 - 0.707 * radius, 0.35);
+
+  let usage_t = ease(clamp((t - 0.55) / 0.35, 0.0, 1.0));
+  g00.visible(usage_t > 0.05); g01.visible(usage_t > 0.28); g02.visible(usage_t > 0.55); g03.visible(usage_t > 0.82);
+  g10.visible(usage_t > 0.05); g11.visible(usage_t > 0.42); g12.visible(usage_t > 0.78);
+  g20.visible(usage_t > 0.05); g21.visible(usage_t > 0.20); g22.visible(usage_t > 0.42); g23.visible(usage_t > 0.70);
+  g30.visible(usage_t > 0.05); g31.visible(usage_t > 0.33); g32.visible(usage_t > 0.60); g33.visible(usage_t > 0.90);
+
+  if (t > 0.42 && t < 0.70) {
+    let zoom = ease((t - 0.42) / 0.28);
+    let distance = lerp(16.5, 12.0, zoom);
+    camera.look_at(0.0, 0.0, distance, -5.4, 2.55, 0.0);
+  } else {
+    camera.look_at(0.0, 0.0, 16.5, 0.0, 0.0, 0.0);
+  }
+  scene.render_png("frames/level-1/frame-" + str(frame) + ".png", render_width, render_height);
+}
+end _dsl_
+savedsl(p, out);
