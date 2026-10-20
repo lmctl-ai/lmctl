@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="320" viewBox="0 0 360 320" role="img" aria-labelledby="title desc">
+  <title id="title">Four rising levels of agent automation</title>
+  <desc id="desc">Four compact steps rise from hands-on turns to automation. Your role at each level is written on the step, from every turn to a final review.</desc>
+  <defs><style>.label{font:700 12px system-ui,sans-serif;fill:#f5f8fb}.small{font:600 11px system-ui,sans-serif;fill:#dce7f0}.stage{fill:#31475c;fill-opacity:.9;stroke:#6fbdb4;stroke-width:1.5}.line{fill:none;stroke:#f5c16c;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}</style></defs>
+  <rect x="3" y="3" width="354" height="314" rx="16" fill="#152438" stroke="#526a7e"/>
+  <path class="line" d="M28 234H32V282H32M172 282H181V212H190M265 181V160H180V142H170M95 111V90H180V76H190M340 76H351V25" fill="none" stroke="#f5c16c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text class="small" x="6" y="215">You start</text>
+  <circle cx="18" cy="234" r="10" fill="#f5c16c"/><circle cx="18" cy="231" r="2.6" fill="#152438"/><path d="M13 239c1-4 9-4 10 0" fill="none" stroke="#152438" stroke-width="2" stroke-linecap="round"/>
+  <g><rect class="stage" x="32" y="251" width="140" height="62" rx="8"/><text class="label" x="42" y="272">L1 · Know sessions</text><text class="small" x="42" y="294">You: every turn</text></g>
+  <g><rect class="stage" x="190" y="181" width="150" height="62" rx="8"/><text class="label" x="200" y="202">L2 · Coordinate</text><text class="small" x="200" y="224">You: in the loop</text></g>
+  <g><rect class="stage" x="20" y="111" width="150" height="62" rx="8"/><text class="label" x="30" y="132">L3 · Delegate</text><text class="small" x="30" y="153">You: start and end</text></g>
+  <g><rect class="stage" x="190" y="41" width="150" height="70" rx="8"/><text class="label" x="200" y="61">L4 · Automate</text><text class="small" x="200" y="81">You: brainstorm</text><text class="small" x="200" y="99">and verdict</text></g>
+  <circle cx="342" cy="25" r="9" fill="#f5c16c"/><circle cx="342" cy="22" r="2.4" fill="#152438"/><path d="M337 30c1-4 9-4 10 0" fill="none" stroke="#152438" stroke-width="2" stroke-linecap="round"/><text class="small" x="331" y="13" text-anchor="end">You review</text>
+</svg>

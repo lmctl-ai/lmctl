@@ -3,23 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>lmctl — AI automation for software work</title>
-  <meta name="description" content="Move from managing AI sessions to automating repeatable software workflows with provider choice, named teams and human-defined acceptance criteria.">
+  <title>lmctl — Stop babysitting agents. Hand them the whole job.</title>
+  <meta name="description" content="lmctl is a command-line tool for naming, connecting and scripting the AI coding tools you already use, from agent sessions to repeatable workflows.">
   <link rel="canonical" href="https://lmctl.com/">
   <link rel="icon" href="/assets/icon.png" type="image/png">
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="lmctl — AI automation for software work">
-  <meta property="og:description" content="Start with named agent sessions. Build teams, delegate work and run repeatable AI workflows with people setting the goal and acceptance criteria.">
+  <meta property="og:title" content="lmctl — Stop babysitting agents. Hand them the whole job.">
+  <meta property="og:description" content="Name your AI sessions, connect agents across providers and script repeatable work. You set the goal and review the result.">
   <meta property="og:url" content="https://lmctl.com/">
+  <meta property="og:image" content="https://lmctl.com/assets/logo.png">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="lmctl — AI automation for software work">
-  <meta name="twitter:description" content="From agent sessions to repeatable AI workflows: choose providers, coordinate teams and keep people at the decision points.">
+  <meta name="twitter:title" content="lmctl — Stop babysitting agents. Hand them the whole job.">
+  <meta name="twitter:description" content="From named sessions to whole-job automation, with people at the start and the end.">
+  <meta name="twitter:image" content="https://lmctl.com/assets/logo.png">
   <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
   <nav class="site-nav" aria-label="Main navigation">
-    <a class="brand" href="/" aria-label="lmctl home"><img src="/assets/logo.png" width="52" height="52" alt="lmCtl"></a>
+    <a class="brand" href="/" aria-label="lmctl home"><img src="/assets/icon.png" width="36" height="36" alt=""><span>lmctl</span></a>
     <div class="nav-links">
       <a href="/lmctl">Docs</a>
       <a href="/tools/">Tools</a>
@@ -27,68 +30,76 @@
     </div>
   </nav>
   <header class="hero">
-    <p class="eyebrow">From AI orchestration to AI automation</p>
-    <h1>People set the goal.<br>AI teams do the work.</h1>
-    <p class="hero-copy">lmctl grows from a clear view of agent sessions into repeatable, provider-flexible workflows. Keep the important decisions with people; automate the steps in between.</p>
-    <figure class="hero-figure">
-      <img src="/assets/automation-ladder.svg" width="960" height="300" alt="Four levels of AI automation: inspect named sessions, coordinate a team, delegate a workflow, then automate repeatable work; people define the goal and review the result.">
-      <figcaption>From hands-on turns to a human-defined goal and final review.</figcaption>
-    </figure>
-    <p class="cta"><a href="/lmctl">Read the docs <span aria-hidden="true">→</span></a></p>
+    <p class="eyebrow">Orchestration needs you at every turn. Automation needs you twice: at the start and at the end.</p>
+    <h1>Stop babysitting agents.<br>Hand them the whole job.</h1>
+    <p class="hero-copy">lmctl is a command-line tool that names, connects and scripts the AI coding tools you already use (Claude Code, Codex, Copilot CLI, Qwen Code...), so your involvement shrinks from every turn to one brief and one review.</p>
+    <p class="new-workflow"><strong>A new workflow:</strong> Claude writes, Codex independently reviews the same repo in a separate session, and the Lead coordinates fixes. No copy-paste between tools; review still matters.</p>
+    <div class="hero-showcase">
+      <div class="proof">
+        <p class="proof-label">A roster you can read. Sessions you can name.</p>
+        <pre><samp>$ cat scratch/demo.lmctl
+_MEMBER_ alias=Lead provider=claude
+_MEMBER_ alias=Coder provider=codex
+_MEMBER_ alias=Review provider=claude
+$ lmctl --db scratch/empty.sqlite status scratch/demo.lmctl --json | jq -r '[.members[] | "\(.alias) · \(.provider)"] | join(" | ")'
+Lead · claude | Coder · codex | Review · claude</samp></pre>
+        <p class="glossary"><strong>Teamfile:</strong> a plain-text <code>.lmctl</code> roster. <strong>Lead:</strong> the agent that coordinates the team. <strong>LMScript:</strong> lmctl's workflow scripting language.</p>
+      </div>
+      <picture class="hero-figure">
+        <source media="(max-width: 620px)" srcset="/assets/automation-ladder-mobile.svg">
+        <img src="/assets/automation-ladder.svg" width="960" height="360" alt="Four rising levels: name sessions, coordinate a team, delegate the middle, automate the workflow. Your role changes from every turn to starting and reviewing.">
+      </picture>
+    </div>
+    <p class="cta"><a href="/lmctl">Read the docs</a><a class="cta-secondary" href="https://github.com/lmctl-ai/lmctl">GitHub</a></p>
   </header>
-  <main>
+  <main id="main">
     <section class="levels" aria-label="Four levels of AI automation">
       <article class="level">
-        <figure><img src="/assets/level-sessions.svg" width="240" height="150" alt="A named team of provider sessions with a status, history and usage view."></figure>
+        <figure><img src="/assets/level-sessions.svg" width="240" height="150" alt="Named team sessions grouped by provider, with status, history and usage views."></figure>
         <div>
-          <p class="level-number">Level 1</p>
-          <h2>Manage agent sessions</h2>
-          <p>Give provider sessions a team and member name in a plain-text <code>.lmctl</code> teamfile, so work is organized by role instead of an opaque session ID. Use <code>lmctl status</code>, <code>lmctl running</code>, <code>lmctl tail</code>, <code>lmctl usage</code> and <code>lmctl ratelimit</code> to inspect activity, history, recorded costs and provider limits.</p>
-          <p><a href="/levels/level-1-sessions.html">Learn more about named sessions</a></p>
+          <p class="level-number">Level 1 · You: every turn</p>
+          <h2>Know your agents by name</h2>
+          <p><code>lead</code>, not <code>3f9c...a71e</code>. Name every session by team and role in a plain-text teamfile. <code>lmctl running</code> shows activity (<code>--tree</code> follows delegation), <code>lmctl tail</code> replays history, <code>lmctl usage</code> reports recorded usage, and <code>lmctl ratelimit</code> checks supported providers' live limits.</p>
+          <p><a href="/levels/level-1-sessions.html">Watch level 1 in 10 s</a></p>
         </div>
       </article>
       <article class="level">
-        <figure><img src="/assets/level-team.svg" width="240" height="150" alt="A Lead agent exchanges work with coding and review members from different providers."></figure>
+        <figure><img src="/assets/level-team.svg" width="240" height="150" alt="A Lead coordinates coder and reviewer agents from different providers, with provider badges on the team members."></figure>
         <div>
-          <p class="level-number">Level 2</p>
-          <h2>Coordinate a team with a person in the loop</h2>
-          <p>Compose a Lead, coding and review members across supported provider CLIs in a readable teamfile; members can communicate through the Lead and call across teams. <code>lmctl plan</code>, <code>lmctl lint</code>, <code>lmctl seed</code> adds missing session IDs, and <code>lmctl prompt</code> sends a request through the team without copying messages between provider tools.</p>
-          <p><a href="/levels/level-2-orchestration.html">Learn more about team orchestration</a></p>
+          <p class="level-number">Level 2 · You: in the loop</p>
+          <h2>Agents talk to each other, you stop copy-pasting</h2>
+          <p>Put Claude, Codex and Qwen on one team. The Lead is your proxy: one <code>lmctl prompt</code> and members hand work to each other. <code>lmctl plan</code> creates the teamfile, <code>lmctl lint</code> validates it, and <code>lmctl seed</code> creates missing provider sessions.</p>
+          <p><a href="/levels/level-2-orchestration.html">Watch level 2 in 10 s</a></p>
         </div>
       </article>
       <article class="level">
-        <figure><img src="/assets/level-delegate.svg" width="240" height="150" alt="A person defines the request and acceptance criteria, an AI team carries out the middle steps, and the person reviews the result."></figure>
+        <figure><img src="/assets/level-delegate.svg" width="240" height="150" alt="A person sets the goal, a Lead coordinates a team, and the person reviews the returned result."></figure>
         <div>
-          <p class="level-number">Level 3</p>
-          <h2>Delegate the middle of the workflow</h2>
-          <p>Set the requirement and acceptance criteria up front, then let a Lead assign work and coordinate its members while you step away from each turn. lmctl can track prompts and runs, but the workflow and approval boundaries come from your instructions; review the result yourself before accepting it.</p>
-          <p><a href="/levels/level-3-hands-off-lead.html">Learn more about hands-off delegation</a></p>
+          <p class="level-number">Level 3 · You: start and end</p>
+          <h2>Teach the Lead to run the team</h2>
+          <p>Write the requirement and acceptance criteria, then step away. The Lead assigns work, runs review rounds and reports back; you inspect and decide.</p>
+          <p><a href="/levels/level-3-hands-off-lead.html">Watch level 3 in 10 s</a></p>
         </div>
       </article>
       <article class="level">
-        <figure><img src="/assets/level-automation.svg" width="240" height="150" alt="An automation script routes a task through an author, acceptance checks and an independent reviewer, returning a result for human review."></figure>
+        <figure><img src="/assets/level-automation.svg" width="240" height="150" alt="A readable workflow script routes work through an author, review and checks before returning a result."></figure>
         <div>
-          <p class="level-number">Level 4</p>
-          <h2>Automate repeatable AI work</h2>
-          <p>After a person sets the request and acceptance rules, an agent can help draft an LMScript automation. Run it with <code>lmctl script</code>: a workflow can read a request form, call team members or provider sessions, check acceptance conditions and route independent review. People still define the rules and judge the result; scripts have full local authority, so run only code you trust.</p>
-          <p><a href="/levels/level-4-automation.html">Learn more about AI automation</a></p>
+          <p class="level-number">Level 4 · You: brainstorm and verdict</p>
+          <h2>Agents write the automation</h2>
+          <p>Brainstorm the process with an architect agent. It writes an LMScript that allocates teams, follows the workflow, checks acceptance criteria and runs review and QA loops; run it with <code>lmctl script</code>. Your job is the idea and the verdict.</p>
+          <p><a href="/levels/level-4-automation.html">Watch level 4 in 10 s</a></p>
         </div>
       </article>
     </section>
-    <section class="why">
-      <h2>Keep your choices open</h2>
-      <ul>
-        <li><strong>Provider:</strong> mix tools such as Claude Code, Codex, Copilot CLI, Qwen Code, Antigravity and OpenCode in one team.</li>
-        <li><strong>Workflow:</strong> keep team roles and repeatable steps in files you can read, review and change.</li>
-        <li><strong>Context:</strong> keep project knowledge in durable memory so it can outlast a provider session.</li>
-      </ul>
-    </section>
+    <p class="provider-line">Any mix of providers. Teams and workflows in readable files. Memory that outlives any session.</p>
+    <p class="memory-note">Durable memory is project notes that survive session replacement and provider changes; each new agent is told to read them.</p>
+    <p class="safety-note">LMScript runs with your local authority. Run only code you trust.</p>
   </main>
   <footer>
     <a href="/lmctl">Docs</a>
     <a href="/tools/">Tools</a>
     <a href="/skills/">Skills</a>
-    <a href="/">lmctl.com</a>
+    <a href="https://github.com/lmctl-ai/lmctl">GitHub</a>
   </footer>
 </body>
 </html>

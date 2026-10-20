@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="240" height="150" viewBox="0 0 240 150" role="img" aria-labelledby="t d">
-  <title id="t">A cross-provider agent team</title><desc id="d">A Lead connects to coder and reviewer agents across providers.</desc>
-  <rect x="8" y="8" width="224" height="134" rx="14" fill="#edf6f5" stroke="#17364a" stroke-width="2"/>
-  <path d="M120 59v28M62 87h116M62 87v13m58-13v13m58-13v13" fill="none" stroke="#176a70" stroke-width="4" stroke-linecap="round"/>
-  <g><rect x="82" y="25" width="76" height="36" rx="9" fill="#17364a"/><text x="120" y="48" fill="#fff" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700">LEAD</text></g>
-  <g><rect x="24" y="100" width="76" height="28" rx="8" fill="#b9e8e4" stroke="#176a70"/><text x="62" y="119" fill="#123342" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700">CODER</text></g>
-  <g><rect x="140" y="100" width="76" height="28" rx="8" fill="#f5d99e" stroke="#98601b"/><text x="178" y="119" fill="#3e2d12" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700">REVIEW</text></g>
+  <title id="t">Agents coordinate through a Lead</title><desc id="d">A Lead connects coder and reviewer members; Claude and Codex provider badges identify the sessions.</desc>
+  <rect x="5" y="5" width="230" height="140" rx="14" fill="#152438" fill-opacity=".9" stroke="#526a7e" stroke-width="2"/>
+  <path d="M120 61v23M62 84h116M62 84v14m116-14v14" fill="none" stroke="#72c6bd" stroke-width="3" stroke-linecap="round"/>
+  <rect x="82" y="25" width="76" height="36" rx="9" fill="#31475c" stroke="#f5c16c" stroke-width="2"/><text x="120" y="48" fill="#f5f8fb" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700">LEAD</text>
+  <rect x="24" y="98" width="76" height="30" rx="8" fill="#31475c" stroke="#72c6bd"/><text x="40" y="117" fill="#f5f8fb" text-anchor="start" font-family="system-ui,sans-serif" font-size="10" font-weight="700">CODER</text><circle cx="88" cy="113" r="8" fill="#152438" stroke="#88a8ef"/><text x="88" y="116" text-anchor="middle" fill="#f5f8fb" font-family="system-ui,sans-serif" font-size="6" font-weight="700">CX</text>
+  <rect x="140" y="98" width="76" height="30" rx="8" fill="#31475c" stroke="#f5c16c"/><text x="151" y="117" fill="#f5f8fb" text-anchor="start" font-family="system-ui,sans-serif" font-size="9" font-weight="700">REVIEW</text><circle cx="207" cy="113" r="8" fill="#152438" stroke="#f5c16c"/><text x="207" y="116" text-anchor="middle" fill="#f5f8fb" font-family="system-ui,sans-serif" font-size="6" font-weight="700">CL</text>
 </svg>

@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="240" height="150" viewBox="0 0 240 150" role="img" aria-labelledby="t d">
-  <title id="t">Named agent sessions</title><desc id="d">Lead, coder and reviewer sessions with status and usage indicators.</desc>
-  <rect x="8" y="8" width="224" height="134" rx="14" fill="#edf6f5" stroke="#17364a" stroke-width="2"/>
-  <rect x="23" y="25" width="194" height="28" rx="7" fill="#17364a"/><circle cx="38" cy="39" r="5" fill="#89d5cb"/><text x="52" y="44" fill="#fff" font-family="system-ui,sans-serif" font-size="13" font-weight="700">TEAM / SESSION</text>
-  <g font-family="system-ui,sans-serif" font-size="12" fill="#183247"><text x="28" y="77">Lead</text><text x="28" y="101">Coder</text><text x="28" y="125">Review</text></g>
-  <g fill="#0b6c69"><circle cx="92" cy="73" r="5"/><circle cx="92" cy="97" r="5"/><circle cx="92" cy="121" r="5"/></g>
-  <g stroke="#92a7b4" stroke-width="5" stroke-linecap="round"><path d="M110 73h76"/><path d="M110 97h59"/><path d="M110 121h43"/></g>
+  <title id="t">Named provider sessions</title><desc id="d">Sessions grouped by team and role with status, history and usage indicators.</desc>
+  <rect x="5" y="5" width="230" height="140" rx="14" fill="#152438" fill-opacity=".9" stroke="#526a7e" stroke-width="2"/>
+  <text x="20" y="27" fill="#f5c16c" font-family="system-ui,sans-serif" font-size="12" font-weight="700">TEAM · PRODUCT</text>
+  <rect x="18" y="38" width="204" height="27" rx="6" fill="#31475c" fill-opacity=".9"/><circle cx="32" cy="51" r="5" fill="#f5c16c"/><text x="44" y="55" fill="#f5f8fb" font-family="system-ui,sans-serif" font-size="12" font-weight="700">Lead</text><rect x="168" y="44" width="42" height="15" rx="7" fill="#405d78"/><text x="189" y="55" fill="#e4eef8" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" font-weight="700">CLAUDE</text>
+  <rect x="18" y="70" width="204" height="27" rx="6" fill="#31475c" fill-opacity=".9"/><circle cx="32" cy="83" r="5" fill="#88a8ef"/><text x="44" y="87" fill="#f5f8fb" font-family="system-ui,sans-serif" font-size="12" font-weight="700">Coder</text><rect x="168" y="76" width="42" height="15" rx="7" fill="#405d78"/><text x="189" y="87" fill="#e4eef8" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" font-weight="700">CODEX</text>
+  <path d="M20 117h52m9 0h52m9 0h52" stroke="#f5c16c" stroke-width="5" stroke-linecap="round"/><text x="20" y="136" fill="#dce7f0" font-family="system-ui,sans-serif" font-size="10">status</text><text x="81" y="136" fill="#dce7f0" font-family="system-ui,sans-serif" font-size="10">history</text><text x="143" y="136" fill="#dce7f0" font-family="system-ui,sans-serif" font-size="10">usage</text>
 </svg>
