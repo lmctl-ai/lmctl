@@ -31,7 +31,7 @@ The static artifact is written to `build/` with Docusaurus `baseUrl` set to
 | Docs (`/lmctl/`) | Included in `deploy.sh` |
 | Homepage (root) | `./scripts/deploy-homepage.sh` (also in `deploy.sh`) |
 | lmprobe static manual (`/lmprobe/`) | `./scripts/deploy-lmprobe.sh` |
-| HTML-only skills (`/skills/`) | Included in `deploy.sh`; run `npm run build:skills` and `npm run check:skills` first |
+| HTML-only skills (`/skills/`) | `./scripts/deploy-skills.sh` (also in `deploy.sh`) |
 | Hello examples (`/helloexample/`) | Included in `deploy.sh` |
 | Templates (`/templates/`) | Included in `deploy.sh` |
 | LMScript commands (`/lmscript/commands/`) | Included in `deploy.sh` |
@@ -66,17 +66,53 @@ bundle with `LMPROBE_SITE_DIR=/path/to/site` and the metadata root with
 sync without invalidating CloudFront. Hidden files such as `.git/` are stripped
 from the staging tree before upload.
 
-`scripts/deploy-tools.sh` publishes the static tool pages in `tools/` to
-`s3://$S3_BUCKET/tools/` (scoped prefix; `--delete` never touches the bucket
-root) and invalidates `/tools*`. It first runs `scripts/tools/run.sh check` (decoration preview, then contract validation),
-never uploads `tools/_template`, `tools/README.md` or hidden files, refuses
-any file type other than html/css/png/svg/txt, sets `no-cache` on HTML and a
-one-day cache on CSS and images, and also stores each `index.html` under the
-slashless and trailing-slash keys so `/tools/` and `/tools/<tool>` work even
-before the CloudFront function below is deployed. `DRY_RUN=1` previews the
-sync and skips the invalidation. It is deliberately not called by
-`deploy.sh`; run it on its own after the pages are reviewed. Authoring rules:
-`tools/README.md`; check with `npm run check:tools`.
+## Automatic static publishing
+
+Pushes to main affecting tools, skills, migration notices, homepage, deploy scripts,
+tooling or the static workflow run `.github/workflows/deploy-static.yml`. There is
+no approval gate. The workflow checks tools, skills and memory plus their selftests,
+then uses GitHub OIDC for `arn:aws:iam::254332045686:role/lmctl-website-deploy`.
+Checkout credentials are not persisted; actions are SHA-pinned. Dispatch publishes
+all three areas; pushes select areas from the push range. The existing full manual
+workflow remains available. Both use `site-deploy` concurrency without cancellation.
+
+The independent scripts `deploy-tools.sh`, `deploy-skills.sh` and
+`deploy-homepage.sh` do not need a Docusaurus build. `DRY_RUN=1` reads S3 and prints
+changed keys without writes or invalidations. To run locally:
+
+```sh
+export AWS_PROFILE=lmctl-website-deploy
+DRY_RUN=1 bash scripts/deploy-tools.sh
+bash scripts/deploy-tools.sh
+bash scripts/deploy-skills.sh
+bash scripts/deploy-homepage.sh
+bash scripts/tools/verify-live.sh
+```
+
+The shared Python transport (`scripts/tools/static-site.py`) compares local MD5
+with S3 ETag and checks MIME/cache metadata, then uploads only changed objects via
+PutObject. It uses exact keys, including trailing-slash index aliases. HTML and
+notices are `no-cache, max-age=0, must-revalidate`; CSS/images have a one-day cache.
+README, hidden files and tool templates are excluded. Homepage files are copied
+individually, never root-synced or root-deleted. Each area publishes a deterministic
+`deploy-manifest.json` (homepage's is under assets/). Only obsolete keys owned by
+a previous manifest can be deleted. Out-of-band files are preserved.
+
+Only changed object paths are invalidated (plus `/` when index.html changes).
+The publisher waits for invalidation; if GetInvalidation is denied, it polls live
+bytes/headers instead. No IAM edits are made. Live verification retries in CI and
+compares every managed file/alias byte-for-byte, including Content-Type and
+Cache-Control. It detects missing/extra entries in the published inventories and
+hash differences. HTTP cannot enumerate unlinked, unmanaged bucket objects;
+those are outside the inventory and are not deleted or claimed as verified.
+
+`SITE_ORIGIN=https://other.example bash scripts/tools/verify-live.sh` checks any
+HTTP(S) origin (no AWS credentials). Optional arguments select `tools`, `skills`
+and/or `homepage`. The live HTML is parsed by `live-links.lms` running the locked
+lmhtml binary, not a hand-written tokenizer. It follows links/images and checks
+anchors, expanding tools/skills pages and homepage links while ignoring external
+origins. Referenced pages on other hosted sections are checked but not recursively
+crawled. Production absolute lmctl.com URLs are remapped to the selected origin.
 
 ## CloudFront constraints for prefix behaviors
 
@@ -90,8 +126,8 @@ sync and skips the invalidation. It is deliberately not called by
   `/internal/lmctl/index.html`. The source now also routes `/tools/*`
   (`/tools` → `/tools/index.html`, `/tools/<tool>` → `/tools/<tool>/index.html`,
   deeper extensionless pages → `.html`, trailing slash → 301 slashless); that
-  change is **not deployed yet** — publish the function before relying on
-  clean `/tools/` URLs. Test: `node tests/infra/lmctl-www-redirect.test.mjs`. lmprobe assets are written with `/lmprobe/...`
+  change is an admin deployment step. Index aliases work before and after it;
+  the static workflow never publishes the function. Test: `node tests/infra/lmctl-www-redirect.test.mjs`. lmprobe assets are written with `/lmprobe/...`
   absolute URLs, so no Origin Path is needed. The function does not implement
   404 handling.
 

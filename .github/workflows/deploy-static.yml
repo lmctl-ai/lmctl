@@ -1,0 +1,68 @@
+name: deploy-static
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/**'
+      - 'skills/**'
+      - 'skills-moved/**'
+      - 'homepage/**'
+      - 'scripts/deploy*.sh'
+      - 'scripts/tools/**'
+      - '.github/workflows/deploy-static.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: site-deploy
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    env:
+      AWS_REGION: us-east-1
+      AWS_DEFAULT_REGION: us-east-1
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Install published DSL compiler
+        run: npm i -g @lmctl-ai/lmctl@0.2.347
+      - name: Check pages, memory and fixtures (checksum-pinned lmhtml)
+        run: |
+          npm run check:tools
+          npm run check:skills
+          npm run check:memory
+          npm run check:tools:selftest
+          npm run check:skills:selftest
+          npm run check:memory:selftest
+      - name: Select changed static areas
+        id: areas
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+          EVENT: ${{ github.event_name }}
+        run: echo "areas=$(python3 scripts/tools/static-site.py changed)" >> "$GITHUB_OUTPUT"
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6
+        with:
+          role-to-assume: arn:aws:iam::254332045686:role/lmctl-website-deploy
+          aws-region: us-east-1
+      - name: Publish changed areas and wait for exact-path invalidations
+        env:
+          AREAS: ${{ steps.areas.outputs.areas }}
+        run: |
+          for area in $AREAS; do
+            bash "scripts/deploy-$area.sh"
+          done
+      - name: Verify live bytes, headers, links, images and anchors
+        run: |
+          for attempt in 1 2 3; do
+            if bash scripts/tools/verify-live.sh; then exit 0; fi
+            if [ "$attempt" != 3 ]; then sleep 15; fi
+          done
+          exit 1

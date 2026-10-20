@@ -15,7 +15,7 @@ This repository is `github.com/lmctl-ai/lmctl`. Verify CLI claims against instal
 source in the mono checkout. lmprobe's public source is `github.com/lmctl-ai/lmprobe`;
 its `site/` supplies the separately deployed manual. Do not assume historical
 machine-specific clone paths or hosted-service availability. The per-skill evidence
-and unverifiable claims are recorded in `durable-memory/skills-audit.md`.
+and unverifiable claims are recorded in `durable-memory/skills-audit.html`.
 
 Skills are HTML only (`skills/*.html`). There are no Markdown skill copies,
 HTML-to-Markdown conversion or cross-format drift checks. `build:skills` only
@@ -28,8 +28,8 @@ The static `/tools/` section (one plain-HTML section per tool, skill page for
 LLM agents plus optional tutorial/guide pages) has its own guide:
 `durable-memory/tools-docs.html`. The three commands: `npm run decorate:tools`
 (generate head, nav, footer, indexes, icons), `npm run check:tools` (contract +
-stale decoration), `npm run check:tools:selftest` (checker fixtures). Publish
-only with `scripts/deploy-tools.sh`.
+stale decoration), `npm run check:tools:selftest` (checker fixtures). Push to main publishes changed static areas automatically; `scripts/deploy-tools.sh`
+remains the independent manual entry point.
 
 ## Invariants that look optional
 
@@ -44,9 +44,9 @@ only with `scripts/deploy-tools.sh`.
   8. Template catalog (`templates/` -> `/templates/`)
   9. Curated LMScript command library (`lmscript/commands/` -> `/lmscript/commands/`)
   10. Historical workflow catalog (`workflows/` -> `/workflows/`, deployed via `scripts/deploy-workflows.sh`)
-  11. Static tool pages (`tools/` -> `/tools/`, new; deployed ONLY by `scripts/deploy-tools.sh`, never by `deploy.sh`). Plain HTML, one stylesheet, rules in `tools/README.md`, validated by `npm run check:tools` (CI: `.github/workflows/tools-check.yml`).
+  11. Static tool pages (`tools/` -> `/tools/`, new; deployed by the static push workflow or `scripts/deploy-tools.sh`, never by `deploy.sh`). Plain HTML, one stylesheet, rules in `tools/README.md`, validated by `npm run check:tools` (CI: `.github/workflows/tools-check.yml`).
 - **NEVER run `aws s3 sync --delete` on the S3 bucket root:** The S3 bucket `lmctl-website-prod` holds all prefixes co-tenanted. A root `--delete` wipes the other prefixes. Use scoped sync scripts (`deploy.sh`, `deploy-homepage.sh`, `deploy-quickrun.sh`, `deploy-lmprobe.sh`).
-- **CloudFront Function vs S3 Triple-Key Index Hack:** `infra/lmctl-www-redirect.js` rewrites clean URLs for `/lmctl/*` and `/lmprobe/*` (deployed) and, in source but not yet deployed, `/tools/*` (`node tests/infra/lmctl-www-redirect.test.mjs`). All other paths (`/skills`, `/quickrun`, `/templates`, `/helloexample`, `/lmscript/commands`) pass through untouched. To prevent S3 404 NoSuchKey errors when accessed without `.html`, `scripts/deploy.sh` uploads triple keys: `<prefix>`, `<prefix>/`, and `<prefix>/index.html` (see `durable-memory/site-design.html`).
+- **CloudFront Function vs S3 Triple-Key Index Hack:** `infra/lmctl-www-redirect.js` rewrites clean URLs for `/lmctl/*` and `/lmprobe/*` (deployed) and, in source but not yet deployed, `/tools/*` (`node tests/infra/lmctl-www-redirect.test.mjs`). All other paths (`/skills`, `/quickrun`, `/templates`, `/helloexample`, `/lmscript/commands`) pass through untouched. To prevent S3 404 NoSuchKey errors when accessed without `.html`, the static deploy scripts upload triple keys: `<prefix>`, `<prefix>/`, and `<prefix>/index.html` (see `durable-memory/site-design.html`).
 - **Documentation checks:** Static `/tools/` pages are checked with `npm run check:tools`; `npm run check:tools:selftest` verifies that the checker rejects malformed fixtures. Legacy skills use `npm run check:skills` and `npm run check:skills:selftest`; regenerate with `npm run build:skills`. Neither checker validates Docusaurus `docs/`. There is no `scripts/test-docs.sh` in this repository.
 - **`lmctl prompt`, not `lmctl chat`:** In modern lmctl, member delegation is driven by `lmctl prompt "<teamfile>.lmctl" <alias> "..."`, not the retired `lmctl chat` command.
 - **Relative Markdown links in `docs/`:** `npm run build` fails on broken links and anchors. All cross-page links within `docs/` must be relative Markdown paths (e.g. `./other.md` or `../manuals/foo.md`), never absolute `https://lmctl.com/` URLs.
@@ -66,7 +66,7 @@ only with `scripts/deploy-tools.sh`.
 ## Traps that have bitten people
 
 - **Editing `homepage/index.html` thinking it is Docusaurus:** The root homepage `https://lmctl.com/` is plain HTML/CSS in `homepage/`. Docusaurus only renders the subpath `https://lmctl.com/lmctl/`.
-- **Publishing is local/manual, not GitHub Actions:** GitHub Actions push trigger is disabled because its OIDC role cannot write root `index.html`. Deployments are executed manually via `scripts/deploy.sh` with `S3_BUCKET=lmctl-website-prod` and `CF_DISTRIBUTION_ID=E1GKUWTM93U7IV`.
+- **Static pushes publish automatically:** `.github/workflows/deploy-static.yml` checks tools, skills, memory and fixtures, assumes the website role with OIDC, and deploys changed tools/skills/homepage areas. No special gate. It shares the non-cancelling `site-deploy` concurrency group with the existing manual workflow. Exact-byte/header comparison skips unchanged objects; only changed paths are invalidated. `scripts/tools/verify-live.sh` uses the pinned lmhtml for live link/anchor discovery and checks publication hashes and headers. Independent scripts accept `DRY_RUN=1`; never edit IAM or publish the CloudFront function as part of a content deploy.
 - **Skill URLs:** `/skills/lmctl-lead.html` aliases `lmctl-lead-skill.html`. All old `.md` URLs receive only the hand-written text/plain notices in `skills-moved/` for one release cycle. They are not skill content; the operator will remove them later.
 - **HTML-only skills:** Never add `skills/*.md`. The grouped HTML index is generated from the ordered catalog in `scripts/tools/skills.lms`. Retired workflows remain HTML pointer pages.
 - **Current command list:** The checker validates `lmctl` commands in `<kbd>` and command code blocks against `scripts/tools/lmctl-subcommands.lms`. Refresh it with `python3 scripts/tools/update-lmctl-subcommands.py` (parses installed `lmctl --help`); review the list before committing.
