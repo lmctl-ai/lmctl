@@ -55,7 +55,10 @@ work=$(mktemp -d "${TMPDIR:-/tmp}/lmctl-tools.XXXXXX")
 trap 'rm -rf "$work"' EXIT
 "$host" --dsl-schema --json > "$work/lmhtml.dsl.json"
 if [[ $command_name == check && $# == 0 ]]; then
-  "$HERE/run.sh" decorate --check
+  if ! "$HERE/run.sh" decorate --check; then
+    "$host" lint --stats --config "$HERE/plain.conf" tools || true
+    exit 1
+  fi
 fi
 script_name=$command_name
 [[ $command_name != check && $command_name != contract ]] || script_name=check
@@ -78,5 +81,19 @@ fi
 status=0
 "$host" ${host_args:+"${host_args[@]}"} --dsl "$work/program.dslb" > "$work/result.json" || status=$?
 [[ ! -f $work/report.txt ]] || cat "$work/report.txt"
-if ((status)); then cat "$work/result.json" >&2; else echo "$command_name: OK"; fi
+if ((status)); then cat "$work/result.json" >&2; fi
+case "$command_name" in
+    check|contract) "$host" lint --config "$HERE/plain.conf" "${argument:-tools}" || status=$? ;;
+    skills) if [[ $argument == --check || -z $argument ]]; then "$host" lint --config "$HERE/plain.conf" skills || status=$?; else "$host" lint --config "$HERE/plain.conf" "$argument" || status=$?; fi ;;
+esac
+if ((status == 0)); then
+  shopt -s globstar nullglob
+  pages=()
+  case "$command_name" in
+    check|contract) if [[ -n $argument ]]; then pages=("$argument"); else pages=(tools/**/*.html); fi ;;
+    skills) if [[ -n $argument && $argument != --check ]]; then pages=("$argument"); else pages=(skills/*.html); fi ;;
+  esac
+  for page in "${pages[@]}"; do "$host" clean --check "$page" >/dev/null 2>"$work/clean.txt" || { cat "$work/clean.txt" >&2; status=1; }; done
+fi
+if ((status == 0)); then echo "$command_name: OK"; fi
 exit "$status"

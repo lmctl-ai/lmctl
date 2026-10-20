@@ -221,11 +221,11 @@
     {
       "file": "skills/lmctl-lead-skill.html",
       "old_bytes": 4619,
-      "html_bytes": 5471,
+      "html_bytes": 5594,
       "old_estimated_tokens": 1155,
-      "html_estimated_tokens": 1368,
+      "html_estimated_tokens": 1399,
       "old_words": 664,
-      "html_words": 590,
+      "html_words": 608,
       "removed_or_renamed_sections": [
         "Essential commands",
         "Details"

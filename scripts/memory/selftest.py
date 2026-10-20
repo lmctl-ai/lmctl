@@ -46,6 +46,9 @@ with tempfile.TemporaryDirectory(dir=ROOT/'build', prefix='memory-markdown-') as
     (work/'beta.md').rename(notes/'beta.md');run('index',notes)
     (notes/'alpha.md').write_text(alpha+'\n\U0001f600\n')
     run('index',notes);run('check',notes,expected='emoji U+1F600')
+    for addition, expected in [('**decorative**', 'md_emphasis'), ('`inline`', 'md_inline_code'), ('<b>raw</b>', 'raw_html'), ('a soft\nbreak', 'hard_wrap')]:
+        (notes/'alpha.md').write_text(alpha+'\n'+addition+'\n')
+        run('index',notes);run('check',notes,expected=expected)
     (notes/'alpha.md').write_text(alpha)
     (notes/'leftover.html').write_text('<h1>Old profile</h1>')
     run('index',notes);run('check',notes,expected='HTML notes are retired')

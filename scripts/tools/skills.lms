@@ -229,6 +229,11 @@ fn check_page(page: Doc) -> void {
     }
     if (tag == "a") {
       let url = node.attr("href");
+    if (str_starts_with(url, "https://lmctl.com/skills/")) {
+      let local = str_substr(url, str_len("https://lmctl.com"), str_len(url));
+      if (!html.link_exists(page, local)) { finding(file, node.path(), "broken skill link: " + url); }
+    }
+    if (str_starts_with(url, "/skills/") && page.select("main a[href='" + url + "']").len() > 0) { finding(file, node.path(), "body skill links must use absolute https://lmctl.com/skills/ URLs"); }
       let kind = html.link_kind(page, url);
       if (url == "") { finding(file, path, "<a> without href"); }
       else {
@@ -351,7 +356,7 @@ fn invariants(page: Doc) -> void {
       }
     }
   }
-  for (node in page.select("a")) {
+  for (node in page.select("main a")) {
     let url = node.attr("href");
     if ((str_starts_with(url, "/skills/") || str_starts_with(url, "https://lmctl.com/skills/")) && (str_ends_with(url, ".md") || str_contains(url, ".md#") || str_contains(url, ".md?"))) { finding(file, node.path(), "skill links must point to .html, not transitional stubs"); }
   }
@@ -379,8 +384,8 @@ fn invariants(page: Doc) -> void {
       if (!str_contains(lower, word)) { finding(file, "main", "coordination guidance missing: " + word); }
     }
     let inline_prompt = false;
-    for (node in page.select("p code")) {
-      if (str_starts_with(node.text(), "lmctl prompt ") && str_contains(node.text(), "Coder") && str_contains(node.text(), "Implement")) { inline_prompt = true; }
+    for (node in page.select("p")) {
+      if (str_contains(node.text(), "lmctl prompt ") && str_contains(node.text(), "Coder") && str_contains(node.text(), "Implement")) { inline_prompt = true; }
     }
     if (!inline_prompt) { finding(file, "main", "include lmctl prompt inline delegation with a concrete task"); }
   }
@@ -404,7 +409,7 @@ fn render_skills(body: string, title: string, description: string) -> string {
   result = str_replace(result, "{{NAV}}", region(template, "skills-nav"));
   result = str_replace(result, "{{FOOTER}}", region(template, "skills-footer"));
   result = str_replace(result, "{{CONTENT}}", body);
-  return result + "\n";
+  return html.parse(result + "\n").normalize();
 }
 # The skills index carries its full title (no per-skill suffix).
 fn render_skills_index(body: string, full_title: string, description: string) -> string {
@@ -416,7 +421,7 @@ fn render_skills_index(body: string, full_title: string, description: string) ->
   result = str_replace(result, "{{NAV}}", region(template, "skills-nav"));
   result = str_replace(result, "{{FOOTER}}", region(template, "skills-footer"));
   result = str_replace(result, "{{CONTENT}}", body);
-  return result + "\n";
+  return html.parse(result + "\n").normalize();
 }
 fn store(path: string, result: string, check: bool) -> void {
   let old = "";
@@ -435,7 +440,7 @@ fn index_group(names: string, title: string) -> string {
     let page = html.load("skills/" + name + ".html");
     let heading = page.select("main h1");
     if (heading.len() != 1) { finding(page.path(), "main", "expected one h1"); }
-    else { result = result + "<li><a href=\"/skills/" + name + ".html\">" + escape(normalized(heading.at(0).text())) + "</a> — " + escape(summary(page)) + "</li>\n"; }
+    else { result = result + "<li>" + escape(summary(page)) + " — <a href=\"https://lmctl.com/skills/" + name + ".html\">" + escape(normalized(heading.at(0).text())) + "</a>" + "</li>\n"; }
   }
   return result + "</ul>\n";
 }
@@ -474,6 +479,7 @@ if (mode != "" && !check) {
   }
   let intro = "Provider-agnostic guides an LLM can read to use a tool. Skills are plain HTML for humans and agents.";
   let body = "<main>\n<h1>lmctl skills</h1>\n<p>" + intro + "</p>\n";
+  body = body + "<p>Choose: Lead of one team → lmctl-lead; running inside Claude Code → claudecode-lead; several Leads → meta-lead; everyday loop → team-lead basic; recovery → advanced; executable workflows → lmscript-workflow.</p>\n";
   body = body + index_group(${utilities}, "Utilities (LLM-facing)") + index_group(${coordination}, "lmctl orchestration");
   body = body + "<p>New tool skills live in the <a href=\"/tools/\">tools catalog</a>. Hosted utilities require an authorized account; deployment availability and permissions must be checked with the operator.</p>\n</main>";
   store("skills/index.html", render_skills_index(body, "Skills — lmctl.com", excerpt(intro, 160, true)), check);

@@ -30,8 +30,8 @@ lmctl prompt "TEAMFILE.lmctl" Coder \
   --prompt-file task.md</code></pre>
 <p>Use an editor or file-writing tool to create task.md; avoid shell expansion of backticks, $VAR, and $(...) in task text. Never wrap lmctl in a shell timeout. Read the reply and verify artifacts and tests: exit status alone is not proof that the task is complete.</p>
 <h2>Background work</h2>
-<p>Use your harness's tracked background execution when a blocking prompt must outlive your current turn. On a systemd host with KillUserProcesses=yes, a raw shell background job in the login session can be terminated at logout. A user service runs outside that session scope; persistence after the last logout also depends on the user manager's linger policy. Check that policy with the operator.</p>
-<pre><code>systemd-run --user --collect bash -lc 'lmctl prompt TEAMFILE.lmctl Coder "Implement X."'</code></pre>
+<p>Use your harness's tracked background execution when a blocking prompt must outlive your current turn. On a systemd host with KillUserProcesses=yes, a raw shell background job in the login session can be terminated at logout. A user service runs outside that session scope; persistence after the last logout also depends on the user manager's linger policy. Check that policy with the operator. Use absolute executable and teamfile paths so the service does not depend on the login shell's working directory or PATH.</p>
+<pre><code>systemd-run --user --collect /PATH/lmctl prompt /PATH/TEAMFILE.lmctl Coder "Implement X."</code></pre>
 <h2>Work loop</h2>
 <ol>
 <li>Hand a concrete task to Coder.</li>

@@ -41,7 +41,8 @@ cat > "$work/assert.lms" <<'LMS'
 p = _dsl_ schema="lmhtml.dsl.json";
 let skill = html.load("tools/zeta/skill.html");
 let fragment = html.load("original.fragment");
-if (skill.source_inner("main") != fragment.source()) { report.add("test", "skill", 0, "authored bytes changed"); }
+if (skill.source_inner("main") != str_replace(fragment.source(), "&lt;input&gt;", "&lt;input>")) { report.add("test", "skill", 0, "authored bytes changed"); }
+if (skill.select("main").at(0).text() != fragment.select("body").at(0).text()) { report.add("test", "skill", 0, "authored text changed"); }
 let root = html.load("tools/index.html");
 if (root.select("main li").len() != 1 || root.select("main li a").at(0).attr("href") != "/tools/zeta/") { report.add("test", "index", 0, "wrong generated index"); }
 if (skill.select("nav a").len() != 5) { report.add("test", "nav", 0, "shared site links or optional pages missing from nav"); }
@@ -97,11 +98,11 @@ cp "$work/original.fragment" "$work/tools/zeta/Skill.html"
 run decorate
 expect_failure 'bad page name' contract
 rm "$work/tools/zeta/Skill.html"
-# Invalid author content is preserved for the contract checker, never repaired.
+# Structural errors remain findings; the plain profile removes presentational attributes.
 { cat "$work/original.fragment"; printf '<div class="bad">Do not erase me.</div>\n'; } > "$work/tools/zeta/skill.html"
 run decorate
 expect_failure 'forbidden element <div>' contract
-expect_failure 'forbidden attribute class' contract
+if [[ $(cat "$work/tools/zeta/skill.html") == *'class="bad"'* ]]; then echo 'FAIL: decoration attribute retained'; exit 1; fi
 cp "$work/original.fragment" "$work/tools/zeta/skill.html"
 run decorate
 # Missing skill headings remain a role failure after decoration.
@@ -182,8 +183,8 @@ if (labels != "lmctl.com|Tools|Skills|Overview|Skill|Guide: lmcad|Guide: lmcad (
 let original = html.load("visual.original").source();
 let expected = original;
 # Only the actual pre changes, not the identical snippet in the comment.
-expected = str_replace(expected, "-->\n<pre><kbd>demo one</kbd> <samp>one</samp><kbd>demo two</kbd><samp>two</samp></pre>", "-->\n<pre><kbd>demo one</kbd> \n<samp>one</samp>\n<kbd>demo two</kbd>\n<samp>two</samp></pre>");
-expected = str_replace(expected, "<code>\n  example &lt;input&gt;\n    preserve indentation\n</code>", "<code>  example &lt;input&gt;\n    preserve indentation</code>");
+expected = str_replace(expected, "-->\n<pre><kbd>demo one</kbd> <samp>one</samp><kbd>demo two</kbd><samp>two</samp></pre>", "-->\n<pre><kbd>demo one</kbd>\n<samp>one</samp>\n<kbd>demo two</kbd>\n<samp>two</samp></pre>");
+expected = str_replace(expected, "<code>\n  example &lt;input&gt;\n    preserve indentation\n</code>", "<code>  example &lt;input>\n    preserve indentation</code>");
 expected = str_replace(expected, "newline --><samp>output</samp>", "newline -->\n<samp>output</samp>");
 expected = str_replace(expected, "<pre>\n<kbd>boundary command</kbd>\n<samp>boundary output</samp>\n</pre>", "<pre><kbd>boundary command</kbd>\n<samp>boundary output</samp></pre>");
 if (page.source_inner("main") != expected) { report.add("test", "pre", 0, "changed unrelated authored bytes or missed formatting"); }

@@ -1,8 +1,8 @@
-# lmctl-ai/lmhtml v0.6.3; five-platform release run 39491248128.
-# SHA256 of downloaded release binaries; md4c MIT notice is in release THIRD_PARTY_NOTICES.
-version v0.6.3
-lmhtml-linux-arm64 2eb740ee0f1b9211e261517d3222c20fb5d277d6b0d78a434b10ecfc8179b019
-lmhtml-linux-x64 d6dcd3c1d67e8c68f764c8726138ea2cd678e5bd860c539e17e2769ef1c14ef3
-lmhtml-macos-arm64 88d79aaafb0380c8da856449817b1ffa3d9f756f787b4a60b46be5167b4c8809
-lmhtml-macos-x64 633b6daf7bf82a0db772c01372b6a163abd05a08cd1aaf5d5c507b2002fa83b0
-lmhtml-windows-x64.exe b5fd86420a7328a4e3e21df04a6675c6a7d04477b73e56abb5d58c7d2e5eb617
+# lmctl-ai/lmhtml v0.7.2; five-platform release run 39497196153.
+# SHA256 of downloaded release binaries; MIT and third-party notices accompany the release.
+version v0.7.2
+lmhtml-linux-arm64 371e70677925b4ebbf49b8e4fd875b3391adf65d714a26267df5ad72c3806b77
+lmhtml-linux-x64 6646ecb168fb2a045969ecf5a533a6cce6448f093a2bc18bac3653d948de800c
+lmhtml-macos-arm64 bd65790663b0f6ae8e62f82d8bec78dc266e1c69688e7a30d78c9b3c96a5b8f2
+lmhtml-macos-x64 69112b4ece7ecd1bc4499e25d9bec48b27a3640344a3b78dc01c2f0232209e48
+lmhtml-windows-x64.exe 3875ac733bfbddcd328859edd2938c2b5b9f54dcfafeebfe997fcb733aec4014

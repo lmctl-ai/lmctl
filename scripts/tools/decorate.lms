@@ -238,7 +238,7 @@ fn render(layout: string, nav: string, footer: string, body: string, title: stri
   result = str_replace(result, "{{DESCRIPTION}}", escape(description));
   result = str_replace(result, "{{NAV}}", nav);
   result = str_replace(result, "{{FOOTER}}", footer);
-  return image_dimensions(str_replace(result, "{{CONTENT}}", body) + "\n");
+  return html.parse(image_dimensions(str_replace(result, "{{CONTENT}}", body) + "\n")).normalize();
 }
 fn differences(page: Doc, result: string) -> string {
   let wanted = html.parse(result);
