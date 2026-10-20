@@ -18,7 +18,7 @@
 </nav>
 <main>
 <h1>lmsound — text → speech for LLM agents</h1>
-<p>What this is. lmsound turns text into an audio file using AWS Polly. You POST some text (plain or SSML), the server synthesizes speech, stores the audio, and hands you back a short-lived presigned download URL for the mp3 (or ogg/pcm). Plain HTTP, one opaque API key — exactly like calling an LLM API. No SDK, no websocket, no schema dance.</p>
+<p>What this is. lmsound turns text into an audio file using AWS Polly. You POST some text (plain or SSML), the server synthesizes speech, stores the audio, and hands you back a short-lived signed download URL for the mp3 (or ogg/pcm). Plain HTTP, one opaque API key — exactly like calling an LLM API. No SDK, no websocket, no schema dance.</p>
 <p>Use it to give any agent a voice: narrate a summary, read out an alert, produce a spoken reply.</p>
 <hr>
 <h2 id="what-you-need">What you need</h2>
@@ -45,9 +45,9 @@ export KEY="API_KEY"</code></pre>
   "duration_ms": 2640,
   "sample_rate": 24000,
   "bitrate": 48000,
-  "download_url": "https://…s3…?X-Amz-Expires=300&amp;…"
+  "download_url": "https://lmctl.ai/tools/lmsound/_blob/download?…&amp;expires=…&amp;signature=…"
 }</code></pre>
-<p>duration_ms, sample_rate (Hz) and bitrate (bps) are measured from the synthesized audio — no need to re-probe with ffprobe. They're handy for aligning narration to video/animation beats. (For pcm, which has no container header, these media stats may be omitted.) Fetch the audio (the download_url is a presigned GET, valid for 300 seconds by default (configurable with ttl)):</p>
+<p>duration_ms, sample_rate (Hz) and bitrate (bps) are measured from the synthesized audio — no need to re-probe with ffprobe. They're handy for aligning narration to video/animation beats. (For pcm, which has no container header, these media stats may be omitted.) Fetch the audio (the download_url is a signed GET, valid for 300 seconds by default (configurable with ttl)):</p>
 <pre><code># Copy download_url from the JSON response into AUDIO_URL.
 curl --fail --location "$AUDIO_URL" -o hello.mp3</code></pre>
 <h3 id="body-fields-all-but-text-optional">Body fields (all but text optional)</h3>
@@ -112,7 +112,7 @@ curl --fail --location "$AUDIO_URL" -o hello.mp3</code></pre>
 <p>Use supported_engines to choose a valid voice_id × engine pair before calling /speak.</p>
 <hr>
 <h2 id="re-download-later--get-speakid">Re-download later — GET /speak/{id}</h2>
-<p>The download_url from /speak expires after the requested TTL (5 minutes by default). To get a fresh link for an audio you already made, hit its id — the server 302-redirects to a new presigned URL:</p>
+<p>The download_url from /speak expires after the requested TTL (5 minutes by default). To get a fresh link for an audio you already made, hit its id — the server 302-redirects to a new signed URL:</p>
 <pre><code>curl -sL "$API/speak/3f9a…-uuid" -H "Authorization: Bearer $KEY" -o hello.mp3
 # fresh link with a longer lifetime: add ?ttl=SECONDS (default 300s)
 curl -sL "$API/speak/3f9a…-uuid?ttl=1800" -H "Authorization: Bearer $KEY" -o hello.mp3</code></pre>
@@ -131,12 +131,12 @@ curl -sL "$API/speak/3f9a…-uuid?ttl=1800" -H "Authorization: Bearer $KEY" -o h
 <li>Errors are JSON {"error":"ERROR_CODE"} with the matching HTTP status: invalid_text, text_too_long, invalid_engine, invalid_format, invalid_voice, invalid_ssml, invalid_text_type, invalid_sample_rate, invalid_ttl, not_found, and monthly_cap_exceeded (429).</li>
 <li>Limits: text is 1–3000 characters per call (no auto-chunking — split longer text yourself and synthesize per block). Pick voice_id from GET /voices; engine∈standard|neural|long-form|generative; format∈mp3|ogg_vorbis|pcm. Authorization depends on the deployment’s appkey store.</li>
 <li>Audio is disposable — objects expire after 7 days. Re-synthesize or re-download before then.</li>
-<li>Never returns raw bytes through the API — always a presigned S3 URL, so large audio is fine.</li>
+<li>Never returns raw bytes through the API — always a short-lived signed URL on lmctl.ai that serves the audio, so large audio is fine.</li>
 <li>One key = one user's scope. char_count counts Unicode codepoints (what Polly bills).</li>
 </ul>
 <p>That's the whole skill: POST /speak to synthesize (text or SSML), GET /voices to choose a narrator, GET /speak/{id} for a fresh link, GET /speak to list — all with one Authorization: Bearer API_KEY.</p>
 <h2 id="verification-scope">Verification scope</h2>
-<p>The API and CLI syntax above was checked against the tool source on 2026-10-19. Live hosted availability, account permissions, deployment-specific limits and credentials were not tested. Confirm the endpoint with your operator; example API Gateway addresses are placeholders. Do not assume that access to one deployment grants access to another.</p>
+<p>The API and CLI syntax above was checked against the tool source on 2026-10-19. The raw HTTP steps were also run end to end against https://lmctl.ai on 2026-10-20. Account permissions, limits and credentials differ per deployment; confirm them with your operator. Do not assume that access to one deployment grants access to another.</p>
 </main>
 <footer>
 <p>Plain HTML skills for humans and agents. Source: <a href="https://github.com/lmctl-ai/lmctl/tree/main/skills">github.com/lmctl-ai/lmctl/skills</a>.</p>

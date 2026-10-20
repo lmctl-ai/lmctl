@@ -39,8 +39,8 @@ lmmail delete build-owner 4</code></pre>
 <pre><code>LMCTL_APPKEY -> LMCTL_APPKEY_FILE -> ~/.config/lmctl/appkey.json</code></pre>
 <p>Never pass a user id. The appkey is the identity, and the server stamps sender and owner fields from it.</p>
 <h2 id="raw-http">Raw HTTP</h2>
-<p>Set LMMAIL_API_URL to the deployed API Gateway stage URL before using the raw-HTTP examples; do not assume the optional vanity route is live.</p>
-<pre><code>export LMMAIL_API_URL="https://API_ID.execute-api.us-east-1.amazonaws.com/prod"
+<p>Set LMMAIL_API_URL to https://lmctl.ai/lmmail before using the raw-HTTP examples (or pass --api URL to the CLI).</p>
+<pre><code>export LMMAIL_API_URL="https://lmctl.ai/lmmail"
 export API="$LMMAIL_API_URL"
 export KEY="APP_KEY"</code></pre>
 <p>Create and list your mailboxes:</p>
@@ -102,7 +102,7 @@ DELETE /mailboxes/{name}/messages/{seq}</code></pre>
 <p>Bodies and attachments are each limited to 100 MiB. Mailbox names use letters, digits, ., _, and -, start with a letter or digit, and are at most 128 characters. There are no folders, threads, search, or replies in v1.</p>
 <p>For deployed-stack verification, the repository includes cloud/test-integration/cli-aws.test.ts. It is disabled unless LMMAIL_INTEGRATION=1; it requires LMMAIL_API_URL, a fresh globally unique LMMAIL_TEST_MAILBOX, and a shared appkey from the normal resolution chain.</p>
 <h2 id="verification-scope">Verification scope</h2>
-<p>The API and CLI syntax above was checked against the tool source on 2026-10-19. Live hosted availability, account permissions, deployment-specific limits and credentials were not tested. Confirm the endpoint with your operator; example API Gateway addresses are placeholders. Do not assume that access to one deployment grants access to another.</p>
+<p>The API and CLI syntax above was checked against the tool source on 2026-10-19. The raw HTTP steps were also run end to end against https://lmctl.ai on 2026-10-20. Account permissions, limits and credentials differ per deployment; confirm them with your operator. Do not assume that access to one deployment grants access to another.</p>
 </main>
 <footer>
 <p>Plain HTML skills for humans and agents. Source: <a href="https://github.com/lmctl-ai/lmctl/tree/main/skills">github.com/lmctl-ai/lmctl/skills</a>.</p>

@@ -18,10 +18,10 @@
 </nav>
 <main>
 <h1>lmsheet skill</h1>
-<p>Use lmsheet for small, durable spreadsheets in the authenticated lmctl user's private namespace. Data is stored as strings in DynamoDB.</p>
+<p>Use lmsheet for small, durable spreadsheets in the authenticated lmctl user's private namespace. Data is stored as strings.</p>
 <h2 id="setup">Setup</h2>
-<p>Always set the deployed API Gateway stage URL explicitly:</p>
-<pre><code>export LMSHEET_API_URL='https://example.execute-api.us-east-1.amazonaws.com/prod'</code></pre>
+<p>Always set the API base explicitly:</p>
+<pre><code>export LMSHEET_API_URL='https://lmctl.ai/lmsheet'</code></pre>
 <p>Use the shared lmctl appkey. The CLI resolves it from:</p>
 <ol>
 <li>LMCTL_APPKEY</li>
@@ -82,7 +82,7 @@ json=(-H 'Content-Type: application/json')</code></pre>
 <p>Use "row_num":10 in that body for explicit placement. An occupied row returns 409 row_exists.</p>
 <p>Read:</p>
 <pre><code>curl -fsS "$LMSHEET_API_URL/sheets/contacts/rows?after=0&amp;limit=100" "${auth[@]}"</code></pre>
-<p>The response includes sheet metadata, rows, next_after, and has_more. Raw-HTTP clients must continue with after=next_after while has_more is true and tolerate an empty final page, because DynamoDB can return a LastEvaluatedKey for a full page even when no later rows exist. The cursor is a DynamoDB scan high-water mark.</p>
+<p>The response includes sheet metadata, rows, next_after, and has_more. Raw-HTTP clients must continue with after=next_after while has_more is true and tolerate an empty final page: a full page can be followed by a page with no rows. Treat next_after as an opaque position.</p>
 <p>Update row cells:</p>
 <pre><code>curl -fsS -X PUT "$LMSHEET_API_URL/sheets/contacts/rows/1" \
   "${auth[@]}" "${json[@]}" \
@@ -109,7 +109,7 @@ curl -fsS -X DELETE "$LMSHEET_API_URL/sheets/contacts" "${auth[@]}"</code></pre>
 </ul>
 <p>Do not retry validation or authorization errors unchanged. Re-read before recovering from a concurrent update.</p>
 <h2 id="verification-scope">Verification scope</h2>
-<p>The API and CLI syntax above was checked against the tool source on 2026-10-19. Live hosted availability, account permissions, deployment-specific limits and credentials were not tested. Confirm the endpoint with your operator; example API Gateway addresses are placeholders. Do not assume that access to one deployment grants access to another.</p>
+<p>The API and CLI syntax above was checked against the tool source on 2026-10-19. The raw HTTP steps were also run end to end against https://lmctl.ai on 2026-10-20. Account permissions, limits and credentials differ per deployment; confirm them with your operator. Do not assume that access to one deployment grants access to another.</p>
 </main>
 <footer>
 <p>Plain HTML skills for humans and agents. Source: <a href="https://github.com/lmctl-ai/lmctl/tree/main/skills">github.com/lmctl-ai/lmctl/skills</a>.</p>

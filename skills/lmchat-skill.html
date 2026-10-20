@@ -24,7 +24,7 @@
 <h2 id="what-you-need">What you need</h2>
 <ul>
 <li>API base URL — https://lmctl.ai/tools/lmchat</li>
-<li>An API key — one opaque token, exactly like an LLM API key. Send it on every request:<pre><code>Authorization: Bearer API_KEY</code></pre> Resolution order (first match wins): LMCTL_APPKEY env var → LMCTL_APPKEY_FILE env var (path to a key file) → ~/.config/lmctl/appkey.json (the shared appkey, same file lmchat/lmmail/ lmnote/lmsheet all use) → ~/.config/lmctl/lmchat-apikey (legacy, lmchat-specific — note apikey, not appkey) → LMCHAT_APP_KEY env var (legacy). A human creates and revokes keys on the lmctl.ai website; an LLM reads this file and sends the key. One key = one user's scope: it can list/create that user's rooms and read/write their files.</li>
+<li>An API key — one opaque token, exactly like an LLM API key. Send it on every request:<pre><code>Authorization: Bearer API_KEY</code></pre> Resolution order (first match wins): LMCTL_APPKEY env var → LMCTL_APPKEY_FILE env var (path to a key file) → ~/.config/lmctl/appkey.json (the shared appkey, same file lmchat/lmmail/ lmnote/lmsheet all use) (the older ~/.config/lmctl/lmchat-apikey file and LMCHAT_APP_KEY variable are no longer accepted). A human creates and revokes keys on the lmctl.ai website; an LLM reads this file and sends the key. One key = one user's scope: it can list/create that user's rooms and read/write their files.</li>
 </ul>
 <pre><code>export API="https://lmctl.ai/tools/lmchat"
 KEY="${LMCTL_APPKEY:-}"
@@ -32,9 +32,7 @@ KEY="${LMCTL_APPKEY:-}"
   KEY="$(cat "$LMCTL_APPKEY_FILE" 2>/dev/null || true)"
 [ -z "$KEY" ] &amp;&amp; [ -f ~/.config/lmctl/appkey.json ] &amp;&amp; \
   KEY="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["appkey"])' \
-  &lt; ~/.config/lmctl/appkey.json)"
-[ -z "$KEY" ] &amp;&amp; [ -f ~/.config/lmctl/lmchat-apikey ] &amp;&amp; KEY="$(cat ~/.config/lmctl/lmchat-apikey)"
-[ -z "$KEY" ] &amp;&amp; KEY="${LMCHAT_APP_KEY:-}"</code></pre>
+  &lt; ~/.config/lmctl/appkey.json)"</code></pre>
 <hr>
 <h2 id="manage-rooms">Manage rooms</h2>
 <h3 id="list-your-rooms">List your rooms</h3>
@@ -82,7 +80,7 @@ curl -s -X POST "$API/rooms/$ROOM/files/$SEQ/commit" -H "Authorization: Bearer $
   -H "content-type: application/json" -d '{"name":"bug_report.zip"}'</code></pre>
 <p>size = real byte length (1 … 100 MiB). content_type is a hint. The returned seq is this message's number.</p>
 <blockquote>
-<p>Skip commit and the file still appears — just not instantly. Without step (c), listing is eventually-consistent (a few seconds) while a background indexer catches up. Call commit for read-after-write; a 204 from step (b) already means the bytes are safely stored.</p>
+<p>Skip commit and the file still appears — just not instantly. Without step (c), the server commits it on its own the next time its sweeper runs, which is every 30 seconds, so allow up to about 30 seconds (it was under 10 seconds in a test). Call commit for read-after-write; a 204 from step (b) already means the bytes are safely stored.</p>
 </blockquote>
 <h3 id="2-list-files-read-new-messages">2. List files (read new messages)</h3>
 <pre><code>curl -s "$API/rooms/$ROOM/files?after=0" -H "Authorization: Bearer $KEY"
@@ -120,7 +118,7 @@ loop:
 </ul>
 <p>That's the whole skill: POST /rooms to make a room, POST …/files to send, GET …/files?after= to read new ones, GET …/files/{seq} to fetch — all with one Authorization: Bearer API_KEY.</p>
 <h2 id="verification-scope">Verification scope</h2>
-<p>The API and CLI syntax above was checked against the tool source on 2026-10-19. Live hosted availability, account permissions, deployment-specific limits and credentials were not tested. Confirm the endpoint with your operator; example API Gateway addresses are placeholders. Do not assume that access to one deployment grants access to another.</p>
+<p>The API and CLI syntax above was checked against the tool source on 2026-10-19. The raw HTTP steps were also run end to end against https://lmctl.ai on 2026-10-20. Account permissions, limits and credentials differ per deployment; confirm them with your operator. Do not assume that access to one deployment grants access to another.</p>
 </main>
 <footer>
 <p>Plain HTML skills for humans and agents. Source: <a href="https://github.com/lmctl-ai/lmctl/tree/main/skills">github.com/lmctl-ai/lmctl/skills</a>.</p>
