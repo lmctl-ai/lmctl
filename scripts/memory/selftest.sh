@@ -5,6 +5,8 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$HERE/../.."
+# These fixtures need scratch space, not a Docusaurus build.
+mkdir -p build
 run() { "$HERE/run.sh" "$@"; }
 count=0
 for case_dir in tests/memory/bad/*/; do
