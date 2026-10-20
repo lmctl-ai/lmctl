@@ -1,0 +1,24 @@
+# files is supplied by the HTTP transport; all HTML interpretation uses lmhtml.
+p = _dsl_ schema="lmhtml.dsl.json";
+let remaining = ${files};
+while (str_find(remaining, "|") >= 0) {
+  let end = str_find(remaining, "|");
+  let file = str_substr(remaining, 0, end);
+  remaining = str_substr(remaining, end + 1, str_len(remaining));
+  let page = html.load(file);
+  for (base in page.select("base[href]")) {
+    report.add("base", file, 0, base.attr("href"));
+  }
+  for (node in page.select("[id], a[name]")) {
+    if (node.has_attr("id")) { report.add("anchor", file, 0, node.attr("id")); }
+    if (node.has_attr("name")) { report.add("anchor", file, 0, node.attr("name")); }
+  }
+  for (node in page.select("a[href], link[href], img[src], script[src], source[src], video[src], video[poster], audio[src], iframe[src]")) {
+    if (node.has_attr("href")) { report.add("link", file, 0, node.path() + "\t" + node.attr("href")); }
+    if (node.has_attr("src")) { report.add("link", file, 0, node.path() + "\t" + node.attr("src")); }
+    if (node.has_attr("poster")) { report.add("link", file, 0, node.path() + "\t" + node.attr("poster")); }
+  }
+}
+report.write_json(${ARGV[1]});
+end _dsl_
+savedsl(p, ARGV[0]);

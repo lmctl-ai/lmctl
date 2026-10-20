@@ -288,3 +288,6 @@ for file in "$work"/tools/*.html "$work"/tools/*/*.html; do cmp "$file" "$work/v
 run decorate --check
 echo 'ok - optional icons/logos, missing files, PNG limits and nonfatal warnings, icon idempotence'
 printf 'PASS: %s named fixtures, current tree and authoring/index lifecycle tests\n' "$count"
+
+# Live publication comparisons and native lmhtml link discovery.
+python3 "$HERE/test-live.py"

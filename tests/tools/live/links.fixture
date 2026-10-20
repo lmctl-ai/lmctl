@@ -1,0 +1,6 @@
+<!doctype html><html lang="en"><head><title>Live link fixture</title><base href="/tools/demo/"></head><body>
+<h1 id="hello">Hello</h1><a name="old"></a>
+<a href="skill.html#hello">Internal</a><a href="https://example.org/">External</a>
+<img src="img/icon.png" alt="Icon"><video poster="img/poster.png"><source src="demo.mp4"></video>
+<a href="missing.html#absent">Broken</a>
+</body></html>

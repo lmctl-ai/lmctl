@@ -1,0 +1,7 @@
+[
+  {"name":"identical", "body":"published\n", "type":"text/html; charset=utf-8", "cache":"no-cache, max-age=0, must-revalidate", "findings":0},
+  {"name":"different", "body":"stale\n", "type":"text/html; charset=utf-8", "cache":"no-cache, max-age=0, must-revalidate", "findings":1},
+  {"name":"wrong MIME", "body":"published\n", "type":"text/plain", "cache":"no-cache, max-age=0, must-revalidate", "findings":1},
+  {"name":"stale cache policy", "body":"published\n", "type":"text/html; charset=utf-8", "cache":"public, max-age=86400", "findings":1},
+  {"name":"missing", "error":"HTTP Error 404: Not Found", "findings":1}
+]

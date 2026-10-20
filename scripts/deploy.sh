@@ -23,23 +23,7 @@ fi
 SOURCE_REVISION="$(git rev-parse HEAD 2>/dev/null || printf 'unknown')"
 printf '{"sourceRevision":"%s"}\n' "${SOURCE_REVISION}" > build/sourceRevision.json
 
-aws s3 cp homepage/index.html "s3://${S3_BUCKET}/index.html" \
-  --content-type 'text/html; charset=utf-8' \
-  --cache-control 'no-cache, max-age=0, must-revalidate'
-aws s3 cp homepage/404.html "s3://${S3_BUCKET}/404.html" \
-  --content-type 'text/html; charset=utf-8' \
-  --cache-control 'no-cache, max-age=0, must-revalidate'
-aws s3 cp homepage/robots.txt "s3://${S3_BUCKET}/robots.txt" \
-  --content-type 'text/plain; charset=utf-8' \
-  --cache-control 'no-cache, max-age=0, must-revalidate'
-aws s3 cp homepage/sitemap.xml "s3://${S3_BUCKET}/sitemap.xml" \
-  --content-type 'application/xml; charset=utf-8' \
-  --cache-control 'no-cache, max-age=0, must-revalidate'
-aws s3 sync homepage/assets/ "s3://${S3_BUCKET}/assets/" \
-  --cache-control 'public, max-age=31536000, immutable'
-aws cloudfront create-invalidation \
-  --distribution-id "${CF_DISTRIBUTION_ID}" \
-  --paths '/' '/index.html' '/404.html' '/robots.txt' '/sitemap.xml' '/assets/*'
+bash scripts/deploy-homepage.sh
 
 DEST="s3://${S3_BUCKET}/lmctl/"
 
@@ -75,7 +59,7 @@ fi
 
 for spec in \
   '/lmctl/|Teamfile-driven AI-agent coordination' \
-  '/lmctl/docs/skills|You were just seeded' \
+  '/lmctl/docs/skills|Skills' \
   '/lmctl/docs/tutorials/install-first-run|Baby steps' \
   '/lmctl/docs/manuals/verifying-delegated-work|Verifying delegated work'
 do
@@ -93,72 +77,9 @@ do
   fi
 done
 
-# --- Skills are HTML ONLY. skills-moved/ contains checked-in, hand-written
-# one-paragraph transitional notices, NOT skill content or converter output.
-# Publish them as text/plain at the old .md keys for one release cycle;
-# the operator will remove these stubs later. Never regenerate them from HTML.
-# No --delete: never wipe skills published out-of-band.
-aws s3 sync skills-moved/ "s3://${S3_BUCKET}/skills/" \
-  --exclude '*' --include '*.md' \
-  --content-type 'text/plain; charset=utf-8' \
-  --cache-control 'no-cache, max-age=0, must-revalidate'
-aws s3 sync skills/ "s3://${S3_BUCKET}/skills/" \
-  --exclude '*' --include '*.html' --exclude '.*' \
-  --content-type 'text/html; charset=utf-8' \
-  --cache-control 'no-cache, max-age=0, must-revalidate'
-aws s3 cp skills/index.html "s3://${S3_BUCKET}/skills/index.html" \
-  --content-type 'text/html; charset=utf-8' \
-  --cache-control 'no-cache, max-age=0, must-revalidate'
-# HTML alias for the Lead skill; its old .md alias is a notice in skills-moved/.
-aws s3 cp skills/lmctl-lead-skill.html "s3://${S3_BUCKET}/skills/lmctl-lead.html" \
-  --content-type 'text/html; charset=utf-8' \
-  --cache-control 'no-cache, max-age=0, must-revalidate'
-aws s3api put-object \
-  --bucket "${S3_BUCKET}" \
-  --key 'skills/' \
-  --body skills/index.html \
-  --content-type 'text/html; charset=utf-8' \
-  --cache-control 'no-cache, max-age=0, must-revalidate'
-aws s3api put-object \
-  --bucket "${S3_BUCKET}" \
-  --key 'skills' \
-  --body skills/index.html \
-  --content-type 'text/html; charset=utf-8' \
-  --cache-control 'no-cache, max-age=0, must-revalidate'
-SKILLS_INVALIDATION_ID="$(
-  aws cloudfront create-invalidation \
-    --distribution-id "${CF_DISTRIBUTION_ID}" \
-    --paths '/skills' '/skills/' '/skills/*' \
-    --query 'Invalidation.Id' \
-    --output text
-)"
-aws cloudfront wait invalidation-completed \
-  --distribution-id "${CF_DISTRIBUTION_ID}" \
-  --id "${SKILLS_INVALIDATION_ID}"
-
-for path in '/skills' '/skills/' '/skills/index.html'; do
-  headers="$(curl -fsSI "${SITE_ORIGIN}${path}")"
-  if ! grep -qi '^content-type: text/html' <<<"${headers}"; then
-    echo "skills smoke failed content-type for ${SITE_ORIGIN}${path}" >&2
-    exit 1
-  fi
-  body="$(curl -fsS "${SITE_ORIGIN}${path}")"
-  if ! grep -q '<title>lmctl skills</title>' <<<"${body}"; then
-    echo "skills smoke failed for ${SITE_ORIGIN}${path}" >&2
-    exit 1
-  fi
-done
-
-headers="$(curl -fsSI "${SITE_ORIGIN}/skills/lmctl-lead.md")"
-if ! grep -qi '^content-type: text/markdown' <<<"${headers}"; then
-  echo "skills smoke failed content-type for ${SITE_ORIGIN}/skills/lmctl-lead.md" >&2
-  exit 1
-fi
-body="$(curl -fsS "${SITE_ORIGIN}/skills/lmctl-lead.md")"
-if ! grep -q '# lmctl Lead skill' <<<"${body}"; then
-  echo "skills smoke failed marker for ${SITE_ORIGIN}/skills/lmctl-lead.md" >&2
-  exit 1
-fi
+# HTML-only skills and hand-written text/plain migration notices; no docs build needed.
+bash scripts/deploy-skills.sh
+bash scripts/tools/verify-live.sh skills
 
 # --- helloexample: publish per-provider connectivity-check teamfiles to lmctl.com/helloexample/
 # (source of truth = this repo's helloexample/). Mirrors the skills/ pattern above exactly.
@@ -304,15 +225,6 @@ done
 
 for spec in \
   '/lmprobe/|text/html|lmprobe Manual' \
-  '/skills/claudecode-lead-skill.md|text/markdown|# Claude Code lmctl Lead skill' \
-  '/skills/opencode-lead-skill.md|text/markdown|# opencode lmctl Lead skill' \
-  '/skills/lmctl-admin-skill.md|text/markdown|# lmctl-admin skill' \
-  '/skills/lmprobe-skill.md|text/markdown|# lmprobe skill' \
-  '/skills/lmmail-skill.md|text/markdown|# lmmail — simple asynchronous mail for LLM agents' \
-  '/skills/lmfeedback-skill.md|text/markdown|# lmfeedback — embeddable website feedback, delivered as lmmail mail' \
-  '/skills/lmnote-skill.md|text/markdown|# lmnote skill' \
-  '/skills/lmsheet-skill.md|text/markdown|# lmsheet skill' \
-  '/skills/lmtext-skill.md|text/markdown|# lmtext — speech → text for LLM agents' \
   '/examples/opencode.json|application/json|"provider"' \
   '/helloexample/claude.lmctl|text/plain|_MEMBER_ alias=Lead provider=claude' \
   '/helloexample/codex.lmctl|text/plain|_MEMBER_ alias=Lead provider=codex' \
