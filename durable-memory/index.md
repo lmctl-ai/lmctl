@@ -4,7 +4,7 @@
 Read the relevant chapter before changing this repository.
 
 - [Website history](history.md) — Historical changes and evidence retained from the previous authored index. Dated entries describe past behavior, not current command guidance; consult publishing.md and skills-audit.md for current decisions.
-- [Homepage animated explainers](homepage-videos.md) — The four homepage levels use short silent animations rendered from deterministic lmcad storyboards, with stable media URLs so a future renderer can replace the frame-generation step without changing page markup.
+- [Homepage level videos](homepage-videos.md) — Four silent, ten-second clips illustrate the homepage's four product levels. Each storyboard has a 240-frame, 24 fps sequence. The published versions are rendered with lmcad at 480×270; the page URLs, video markup, posters, transcripts and navigation are independent of the renderer.
 - [Durable memory format: Markdown notes](memory-format.md) — Author durable memory as readable Markdown, keep a generated chapter index, and build an optional HTML web view with lmhtml. The notes contain project knowledge, not presentation or emoji.
 - [Publishing lmctl.com](publishing.md) — Static homepage, tools and skills changes publish automatically from main after the path-filtered workflow checks them, uploads changed objects, invalidates their exact URLs and verifies the live site.
 - [lmctl docs site — design & authoring](site-design.md) — The public documentation site for lmctl, served at lmctl.com/lmctl/ (a path prefix, not a subdomain). This page covers how the site is built, authored, rendered, and published. It is itself public — keep it free of internal paths, infrastructure secrets, or unreleased features.

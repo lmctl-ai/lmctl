@@ -1,0 +1,729 @@
+{
+  "dsl.schema": 2,
+  "name": "lmblender",
+  "types": {
+    "Scene": {
+      "methods": {
+        "camera_look_at": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "camera_dof": [
+          {
+            "params": [
+              "float",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "camera_orthographic": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "fit_camera": [
+          {
+            "params": [
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "studio_setup": [
+          {
+            "params": [],
+            "returns": "void"
+          }
+        ],
+        "area_light": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "sun_light": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "spot_light": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "ground_plane": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "wall_plane_y": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "checker_material": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "Material"
+          }
+        ],
+        "noise_material": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "Material"
+          }
+        ],
+        "image_material": [
+          {
+            "params": [
+              "string",
+              "float"
+            ],
+            "returns": "Material"
+          }
+        ],
+        "point_light": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "world_color": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "sky_texture": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "environment_texture": [
+          {
+            "params": [
+              "string",
+              "float",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "transparent_background": [
+          {
+            "params": [
+              "bool"
+            ],
+            "returns": "void"
+          }
+        ],
+        "expect_int": [
+          {
+            "params": [
+              "int",
+              "int"
+            ],
+            "returns": "void"
+          }
+        ],
+        "import_obj": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "Mesh"
+          }
+        ],
+        "import_stl": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "Mesh"
+          }
+        ],
+        "import_ply": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "Mesh"
+          }
+        ],
+        "import_gltf": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "Mesh"
+          }
+        ],
+        "instance_mesh": [
+          {
+            "params": [
+              "Mesh",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "Mesh"
+          }
+        ],
+        "material": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "Material"
+          }
+        ],
+        "render_png": [
+          {
+            "params": [
+              "string",
+              "int",
+              "int",
+              "int"
+            ],
+            "returns": "void"
+          }
+        ],
+        "render_exr": [
+          {
+            "params": [
+              "string",
+              "int",
+              "int",
+              "int"
+            ],
+            "returns": "void"
+          }
+        ],
+        "render_passes": [
+          {
+            "params": [
+              "string",
+              "int",
+              "int",
+              "int"
+            ],
+            "returns": "void"
+          }
+        ],
+        "render_timeout": [
+          {
+            "params": [
+              "int"
+            ],
+            "returns": "void"
+          }
+        ],
+        "render_settings": [
+          {
+            "params": [
+              "int",
+              "int",
+              "bool"
+            ],
+            "returns": "void"
+          }
+        ],
+        "set_view_transform": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "void"
+          }
+        ],
+        "version": [
+          {
+            "params": [],
+            "returns": "string"
+          }
+        ],
+        "plane": [
+          {
+            "params": [
+              "float"
+            ],
+            "returns": "Mesh"
+          }
+        ],
+        "cube": [
+          {
+            "params": [
+              "float"
+            ],
+            "returns": "Mesh"
+          }
+        ],
+        "uv_sphere": [
+          {
+            "params": [
+              "float",
+              "int",
+              "int",
+              "bool"
+            ],
+            "returns": "Mesh"
+          }
+        ],
+        "cylinder": [
+          {
+            "params": [
+              "float",
+              "float",
+              "int",
+              "bool"
+            ],
+            "returns": "Mesh"
+          }
+        ],
+        "cone": [
+          {
+            "params": [
+              "float",
+              "float",
+              "int",
+              "bool"
+            ],
+            "returns": "Mesh"
+          }
+        ],
+        "torus": [
+          {
+            "params": [
+              "float",
+              "float",
+              "int",
+              "int",
+              "bool"
+            ],
+            "returns": "Mesh"
+          }
+        ],
+        "checker_ground": [
+          {
+            "params": [
+              "float",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "light_clamp": [
+          {
+            "params": [
+              "float",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "render_sequence": [
+          {
+            "params": [
+              "string",
+              "int",
+              "int",
+              "int",
+              "int",
+              "int"
+            ],
+            "returns": "void"
+          }
+        ],
+        "render_apng": [
+          {
+            "params": [
+              "string",
+              "int",
+              "int",
+              "int",
+              "int",
+              "int",
+              "int"
+            ],
+            "returns": "void"
+          }
+        ],
+        "camera_keyframe": [
+          {
+            "params": [
+              "int",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "string"
+            ],
+            "returns": "void"
+          }
+        ],
+        "ramp_material": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "Material"
+          }
+        ],
+        "motion_blur": [
+          {
+            "params": [
+              "bool",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "area_light_shape": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "string"
+            ],
+            "returns": "void"
+          }
+        ]
+      }
+    },
+    "Mesh": {
+      "methods": {
+        "set_material": [
+          {
+            "params": [
+              "Material"
+            ],
+            "returns": "void"
+          }
+        ],
+        "set_smooth": [
+          {
+            "params": [
+              "bool"
+            ],
+            "returns": "void"
+          }
+        ],
+        "translate": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "scale": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "rotate_x": [
+          {
+            "params": [
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "vertex_count": [
+          {
+            "params": [],
+            "returns": "int"
+          }
+        ],
+        "triangle_count": [
+          {
+            "params": [],
+            "returns": "int"
+          }
+        ],
+        "min_x": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "min_y": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "min_z": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "max_x": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "max_y": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "max_z": [
+          {
+            "params": [],
+            "returns": "float"
+          }
+        ],
+        "keyframe_transform": [
+          {
+            "params": [
+              "int",
+              "float",
+              "float",
+              "float",
+              "string"
+            ],
+            "returns": "void"
+          }
+        ]
+      }
+    },
+    "Material": {
+      "methods": {
+        "subsurface": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "volume": [
+          {
+            "params": [
+              "string",
+              "float",
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "keyframe_color": [
+          {
+            "params": [
+              "int",
+              "float",
+              "float",
+              "float",
+              "string"
+            ],
+            "returns": "void"
+          }
+        ],
+        "bump": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "texture_maps": [
+          {
+            "params": [
+              "string",
+              "string",
+              "string",
+              "string"
+            ],
+            "returns": "void"
+          }
+        ],
+        "mix_with": [
+          {
+            "params": [
+              "Material",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "mix_with_texture": [
+          {
+            "params": [
+              "Material",
+              "string"
+            ],
+            "returns": "void"
+          }
+        ],
+        "backface_culling": [
+          {
+            "params": [
+              "bool"
+            ],
+            "returns": "void"
+          }
+        ]
+      }
+    }
+  },
+  "context": {
+    "scene": "Scene"
+  }
+}

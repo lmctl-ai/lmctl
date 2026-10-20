@@ -1,0 +1,105 @@
+out = ARGV[0];
+p = _dsl_ schema="schema/lmblender.dsl.json";
+# lmblender 0.2.1 currently projects one scene unit differently on X and Z for 16:9 outputs.
+# These wrappers compensate so spheres remain round and scene layouts retain their intended proportions.
+fn screen_z(value: float) -> float { return value * 1.78; }
+fn round_sphere(radius: float, segments: int, rings: int) -> Mesh {
+  let mesh = scene.uv_sphere(radius, segments, rings, true);
+  mesh.scale(1.0, 1.0, 1.78);
+  return mesh;
+}
+fn tall_cylinder(radius: float, height: float, segments: int) -> Mesh {
+  return scene.cylinder(radius, screen_z(height), segments, true);
+}
+
+let samples = 16;
+let frame_width = 960;
+let frame_height = 540;
+let teal = scene.material(0.04, 0.62, 0.53, 0.24, 0.23, 0.0, 0.02, 0.22, 0.18, 0.65);
+let gold = scene.material(0.83, 0.48, 0.10, 0.28, 0.20, 0.0, 0.30, 0.12, 0.01, 1.2);
+let blue = scene.material(0.04, 0.28, 0.74, 0.22, 0.25, 0.0, 0.01, 0.08, 0.30, 0.55);
+let violet = scene.material(0.34, 0.18, 0.72, 0.24, 0.22, 0.0, 0.11, 0.03, 0.30, 0.55);
+let coral = scene.material(0.75, 0.16, 0.10, 0.25, 0.24, 0.0, 0.24, 0.035, 0.01, 0.7);
+let green = scene.material(0.08, 0.48, 0.20, 0.22, 0.24, 0.0, 0.04, 0.28, 0.08, 0.8);
+let packet = scene.material(0.95, 0.86, 0.58, 0.12, 0.17, 0.0, 0.65, 0.36, 0.06, 1.8);
+
+# Shared look: dark navy world, gold key, blue fill, glossy provider colors.
+scene.world_color(0.008, 0.016, 0.040, 0.55);
+scene.set_view_transform("AgX");
+scene.render_settings(6, 17, true);
+scene.render_timeout(3600);
+scene.area_light(-8.0, -10.0, screen_z(12.0), 0.0, 0.0, screen_z(0.0), 1.0, 0.78, 0.48, 1400.0, 8.0);
+scene.area_light(8.0, -6.0, screen_z(5.0), 0.0, 0.0, screen_z(0.0), 0.20, 0.52, 1.0, 500.0, 10.0);
+
+# Brainstorming human and two architects begin at the left.
+let human = round_sphere(0.50, 36, 20); human.set_material(teal); human.translate(-9.0, 0.0, screen_z(1.0));
+let human_body = tall_cylinder(0.36, 1.05, 32); human_body.set_material(teal); human_body.translate(-9.0, 0.0, screen_z(-0.05));
+let architect0 = round_sphere(0.52, 36, 20); architect0.set_material(blue);
+let architect1 = round_sphere(0.52, 36, 20); architect1.set_material(violet);
+architect0.keyframe_transform(0, -6.8, 0.0, screen_z(1.45), "linear"); architect0.keyframe_transform(55, -6.8, 0.0, screen_z(1.45), "ease"); architect0.keyframe_transform(78, -6.8, 0.0, screen_z(1.45), "ease"); architect0.keyframe_transform(239, -6.8, 0.0, screen_z(1.45), "linear");
+architect1.keyframe_transform(0, -5.0, 0.0, screen_z(0.1), "linear"); architect1.keyframe_transform(55, -5.0, 0.0, screen_z(0.1), "ease"); architect1.keyframe_transform(78, -6.4, 0.0, screen_z(0.1), "ease"); architect1.keyframe_transform(239, -6.4, 0.0, screen_z(0.1), "linear");
+
+# The script surface unrolls across the upper half of the composition.
+let panel0 = scene.cube(1.0); panel0.scale(2.0, 0.42, screen_z(0.72)); panel0.set_material(gold);
+let panel1 = scene.cube(1.0); panel1.scale(2.0, 0.42, screen_z(0.72)); panel1.set_material(gold);
+let panel2 = scene.cube(1.0); panel2.scale(2.0, 0.42, screen_z(0.72)); panel2.set_material(gold);
+let panel3 = scene.cube(1.0); panel3.scale(2.0, 0.42, screen_z(0.72)); panel3.set_material(gold);
+panel0.keyframe_transform(0, 0.0, 0.0, screen_z(8.0), "linear"); panel0.keyframe_transform(68, -3.2, 0.0, screen_z(3.0), "ease"); panel0.keyframe_transform(239, -3.2, 0.0, screen_z(3.0), "linear");
+panel1.keyframe_transform(0, 0.0, 0.0, screen_z(8.0), "linear"); panel1.keyframe_transform(68, -1.1, 0.0, screen_z(3.0), "ease"); panel1.keyframe_transform(239, -1.1, 0.0, screen_z(3.0), "linear");
+panel2.keyframe_transform(0, 0.0, 0.0, screen_z(8.0), "linear"); panel2.keyframe_transform(68, 1.1, 0.0, screen_z(3.0), "ease"); panel2.keyframe_transform(239, 1.1, 0.0, screen_z(3.0), "linear");
+panel3.keyframe_transform(0, 0.0, 0.0, screen_z(8.0), "linear"); panel3.keyframe_transform(68, 3.2, 0.0, screen_z(3.0), "ease"); panel3.keyframe_transform(239, 3.2, 0.0, screen_z(3.0), "linear");
+let line0 = scene.cube(1.0); line0.scale(1.28, 0.18, screen_z(0.08)); line0.set_material(blue); line0.translate(-3.2, -0.3, screen_z(3.25));
+let line1 = scene.cube(1.0); line1.scale(1.28, 0.18, screen_z(0.08)); line1.set_material(blue); line1.translate(-1.1, -0.3, screen_z(3.25));
+let line2 = scene.cube(1.0); line2.scale(1.28, 0.18, screen_z(0.08)); line2.set_material(violet); line2.translate(1.1, -0.3, screen_z(3.25));
+let line3 = scene.cube(1.0); line3.scale(1.28, 0.18, screen_z(0.08)); line3.set_material(violet); line3.translate(3.2, -0.3, screen_z(3.25));
+line0.keyframe_transform(0, 0.0, -0.3, screen_z(8.0), "linear"); line0.keyframe_transform(72, -3.2, -0.3, screen_z(3.25), "ease"); line0.keyframe_transform(239, -3.2, -0.3, screen_z(3.25), "linear");
+line1.keyframe_transform(0, 0.0, -0.3, screen_z(8.0), "linear"); line1.keyframe_transform(72, -1.1, -0.3, screen_z(3.25), "ease"); line1.keyframe_transform(239, -1.1, -0.3, screen_z(3.25), "linear");
+line2.keyframe_transform(0, 0.0, -0.3, screen_z(8.0), "linear"); line2.keyframe_transform(72, 1.1, -0.3, screen_z(3.25), "ease"); line2.keyframe_transform(239, 1.1, -0.3, screen_z(3.25), "linear");
+line3.keyframe_transform(0, 0.0, -0.3, screen_z(8.0), "linear"); line3.keyframe_transform(72, 3.2, -0.3, screen_z(3.25), "ease"); line3.keyframe_transform(239, 3.2, -0.3, screen_z(3.25), "linear");
+
+# Teams spawn in a four-stage work, review, QA and acceptance pipeline.
+let stage0 = scene.cube(1.0); stage0.scale(1.7, 0.48, screen_z(0.82)); stage0.set_material(blue);
+let stage1 = scene.cube(1.0); stage1.scale(1.7, 0.48, screen_z(0.82)); stage1.set_material(violet);
+let stage2 = scene.cube(1.0); stage2.scale(1.7, 0.48, screen_z(0.82)); stage2.set_material(coral);
+let stage3 = scene.cube(1.0); stage3.scale(1.7, 0.48, screen_z(0.82)); stage3.set_material(green);
+stage0.keyframe_transform(0, -5.0, 0.0, screen_z(-24.0), "linear"); stage0.keyframe_transform(108, -5.0, 0.0, screen_z(-24.0), "linear"); stage0.keyframe_transform(120, -5.0, 0.0, screen_z(-1.15), "ease"); stage0.keyframe_transform(239, -5.0, 0.0, screen_z(-1.15), "linear");
+stage1.keyframe_transform(0, -1.7, 0.0, screen_z(-24.0), "linear"); stage1.keyframe_transform(122, -1.7, 0.0, screen_z(-24.0), "linear"); stage1.keyframe_transform(134, -1.7, 0.0, screen_z(-1.15), "ease"); stage1.keyframe_transform(239, -1.7, 0.0, screen_z(-1.15), "linear");
+stage2.keyframe_transform(0, 1.7, 0.0, screen_z(-24.0), "linear"); stage2.keyframe_transform(136, 1.7, 0.0, screen_z(-24.0), "linear"); stage2.keyframe_transform(148, 1.7, 0.0, screen_z(-1.15), "ease"); stage2.keyframe_transform(239, 1.7, 0.0, screen_z(-1.15), "linear");
+stage3.keyframe_transform(0, 5.0, 0.0, screen_z(-24.0), "linear"); stage3.keyframe_transform(150, 5.0, 0.0, screen_z(-24.0), "linear"); stage3.keyframe_transform(162, 5.0, 0.0, screen_z(-1.15), "ease"); stage3.keyframe_transform(239, 5.0, 0.0, screen_z(-1.15), "linear");
+let worker0 = round_sphere(0.36, 32, 18); worker0.set_material(blue); worker0.keyframe_transform(0, -5.0, 0.0, screen_z(-24.0), "linear"); worker0.keyframe_transform(72, -5.0, 0.0, screen_z(-24.0), "linear"); worker0.keyframe_transform(126, -5.0, 0.0, screen_z(0.05), "ease"); worker0.keyframe_transform(239, -5.0, 0.0, screen_z(0.05), "linear");
+let worker1 = round_sphere(0.36, 32, 18); worker1.set_material(violet); worker1.keyframe_transform(0, -1.7, 0.0, screen_z(-24.0), "linear"); worker1.keyframe_transform(128, -1.7, 0.0, screen_z(-24.0), "linear"); worker1.keyframe_transform(140, -1.7, 0.0, screen_z(0.05), "ease"); worker1.keyframe_transform(239, -1.7, 0.0, screen_z(0.05), "linear");
+let worker2 = round_sphere(0.36, 32, 18); worker2.set_material(coral); worker2.keyframe_transform(0, 1.7, 0.0, screen_z(-24.0), "linear"); worker2.keyframe_transform(142, 1.7, 0.0, screen_z(-24.0), "linear"); worker2.keyframe_transform(154, 1.7, 0.0, screen_z(0.05), "ease"); worker2.keyframe_transform(239, 1.7, 0.0, screen_z(0.05), "linear");
+let worker3 = round_sphere(0.36, 32, 18); worker3.set_material(green); worker3.keyframe_transform(0, 5.0, 0.0, screen_z(-24.0), "linear"); worker3.keyframe_transform(156, 5.0, 0.0, screen_z(-24.0), "linear"); worker3.keyframe_transform(168, 5.0, 0.0, screen_z(0.05), "ease"); worker3.keyframe_transform(239, 5.0, 0.0, screen_z(0.05), "linear");
+
+# The final acceptance result returns to a human at the right edge.
+let human_right = round_sphere(0.48, 36, 20); human_right.set_material(teal);
+let body_right = tall_cylinder(0.36, 1.05, 32); body_right.set_material(teal);
+human_right.keyframe_transform(0, 15.0, 0.0, screen_z(0.4), "linear"); human_right.keyframe_transform(190, 15.0, 0.0, screen_z(0.4), "ease"); human_right.keyframe_transform(218, 9.4, 0.0, screen_z(0.4), "ease"); human_right.keyframe_transform(239, 9.4, 0.0, screen_z(0.4), "linear");
+body_right.keyframe_transform(0, 15.0, 0.0, screen_z(-0.65), "linear"); body_right.keyframe_transform(190, 15.0, 0.0, screen_z(-0.65), "ease"); body_right.keyframe_transform(218, 9.4, 0.0, screen_z(-0.65), "ease"); body_right.keyframe_transform(239, 9.4, 0.0, screen_z(-0.65), "linear");
+
+# Review loops back toward work as a chain of glowing points; a dot-built check appears last.
+let arc0 = round_sphere(0.11, 16, 10); arc0.set_material(packet);
+let arc1 = round_sphere(0.11, 16, 10); arc1.set_material(packet);
+let arc2 = round_sphere(0.11, 16, 10); arc2.set_material(packet);
+let arc3 = round_sphere(0.11, 16, 10); arc3.set_material(packet);
+let arc4 = round_sphere(0.11, 16, 10); arc4.set_material(packet);
+arc0.keyframe_transform(0, 0.0, 0.0, screen_z(-24.0), "linear"); arc0.keyframe_transform(160, -1.7, 0.0, screen_z(0.5), "ease"); arc0.keyframe_transform(239, -1.7, 0.0, screen_z(0.5), "linear");
+arc1.keyframe_transform(0, 0.0, 0.0, screen_z(-24.0), "linear"); arc1.keyframe_transform(166, -2.5, 0.0, screen_z(1.15), "ease"); arc1.keyframe_transform(239, -2.5, 0.0, screen_z(1.15), "linear");
+arc2.keyframe_transform(0, 0.0, 0.0, screen_z(-24.0), "linear"); arc2.keyframe_transform(172, -3.5, 0.0, screen_z(1.45), "ease"); arc2.keyframe_transform(239, -3.5, 0.0, screen_z(1.45), "linear");
+arc3.keyframe_transform(0, 0.0, 0.0, screen_z(-24.0), "linear"); arc3.keyframe_transform(178, -4.5, 0.0, screen_z(1.15), "ease"); arc3.keyframe_transform(239, -4.5, 0.0, screen_z(1.15), "linear");
+arc4.keyframe_transform(0, 0.0, 0.0, screen_z(-24.0), "linear"); arc4.keyframe_transform(184, -5.0, 0.0, screen_z(0.5), "ease"); arc4.keyframe_transform(239, -5.0, 0.0, screen_z(0.5), "linear");
+let check0 = round_sphere(0.18, 20, 12); check0.set_material(green); check0.keyframe_transform(0, 10.0, 0.0, screen_z(-8.0), "linear"); check0.keyframe_transform(220, 6.25, 0.0, screen_z(-1.0), "ease"); check0.keyframe_transform(239, 6.25, 0.0, screen_z(-1.0), "linear");
+let check1 = round_sphere(0.18, 20, 12); check1.set_material(green); check1.keyframe_transform(0, 10.0, 0.0, screen_z(-8.0), "linear"); check1.keyframe_transform(221, 6.53, 0.0, screen_z(-1.28), "ease"); check1.keyframe_transform(239, 6.53, 0.0, screen_z(-1.28), "linear");
+let check2 = round_sphere(0.18, 20, 12); check2.set_material(green); check2.keyframe_transform(0, 10.0, 0.0, screen_z(-8.0), "linear"); check2.keyframe_transform(222, 6.81, 0.0, screen_z(-1.56), "ease"); check2.keyframe_transform(239, 6.81, 0.0, screen_z(-1.56), "linear");
+let check3 = round_sphere(0.18, 20, 12); check3.set_material(green); check3.keyframe_transform(0, 10.0, 0.0, screen_z(-8.0), "linear"); check3.keyframe_transform(223, 7.09, 0.0, screen_z(-1.73), "ease"); check3.keyframe_transform(239, 7.09, 0.0, screen_z(-1.73), "linear");
+let check4 = round_sphere(0.18, 20, 12); check4.set_material(green); check4.keyframe_transform(0, 10.0, 0.0, screen_z(-8.0), "linear"); check4.keyframe_transform(224, 7.37, 0.0, screen_z(-1.45), "ease"); check4.keyframe_transform(239, 7.37, 0.0, screen_z(-1.45), "linear");
+let check5 = round_sphere(0.18, 20, 12); check5.set_material(green); check5.keyframe_transform(0, 10.0, 0.0, screen_z(-8.0), "linear"); check5.keyframe_transform(225, 7.65, 0.0, screen_z(-1.17), "ease"); check5.keyframe_transform(239, 7.65, 0.0, screen_z(-1.17), "linear");
+let check6 = round_sphere(0.18, 20, 12); check6.set_material(green); check6.keyframe_transform(0, 10.0, 0.0, screen_z(-8.0), "linear"); check6.keyframe_transform(226, 7.93, 0.0, screen_z(-0.89), "ease"); check6.keyframe_transform(239, 7.93, 0.0, screen_z(-0.89), "linear");
+let check7 = round_sphere(0.18, 20, 12); check7.set_material(green); check7.keyframe_transform(0, 10.0, 0.0, screen_z(-8.0), "linear"); check7.keyframe_transform(227, 8.21, 0.0, screen_z(-0.61), "ease"); check7.keyframe_transform(239, 8.21, 0.0, screen_z(-0.61), "linear");
+let check8 = round_sphere(0.18, 20, 12); check8.set_material(green); check8.keyframe_transform(0, 10.0, 0.0, screen_z(-8.0), "linear"); check8.keyframe_transform(228, 8.49, 0.0, screen_z(-0.33), "ease"); check8.keyframe_transform(239, 8.49, 0.0, screen_z(-0.33), "linear");
+
+scene.camera_look_at(0.0, -28.0, screen_z(8.0), 0.0, 0.0, screen_z(-0.1), 40.0);
+scene.render_sequence("frames/level-4/frame-{frame}.png", 0, 119, samples, frame_width, frame_height);
+scene.render_sequence("frames/level-4/frame-{frame}.png", 120, 239, samples, frame_width, frame_height);
+end _dsl_
+savedsl(p, out);
