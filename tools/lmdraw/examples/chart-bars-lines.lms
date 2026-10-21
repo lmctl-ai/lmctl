@@ -1,0 +1,77 @@
+# Bar chart and line chart from data arrays. Loops in lmscript build the
+# bar path, the polyline point list and the marker circles; the DSL chunk
+# just paints them. No chart library involved: geometry is explicit.
+bar_vals = [4.0, 8.0, 12.0, 6.0, 9.0, 14.0, 11.0, 7.0];
+line_vals = [3.0, 5.0, 4.0, 8.0, 7.0, 10.0, 9.0, 12.0];
+months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug"];
+left = 70.0;
+base = 380.0;
+step = 60.0;
+bar_w = 34.0;
+scale = 20.0;
+
+bars_d = "";
+for (i in range(0, bar_vals.len())) {
+  let x = left + i * step + (step - bar_w) / 2.0;
+  let h = bar_vals[i] * scale;
+  bars_d = bars_d + "M " + str(x) + " " + str(base) + " L " + str(x) + " " + str(base - h) +
+    " L " + str(x + bar_w) + " " + str(base - h) + " L " + str(x + bar_w) + " " + str(base) + " Z ";
+}
+
+line_pts = "";
+for (i in range(0, line_vals.len())) {
+  let x = left + i * step + step / 2.0;
+  let y = base - line_vals[i] * scale;
+  line_pts = line_pts + (i == 0 ? "" : " ") + str(x) + " " + str(y);
+}
+
+markers_d = "";
+for (i in range(0, line_vals.len())) {
+  let x = left + i * step + step / 2.0;
+  let y = base - line_vals[i] * scale;
+  let r = 5.0;
+  markers_d = markers_d + "M " + str(x - r) + " " + str(y) +
+    " A " + str(r) + " " + str(r) + " 0 1 0 " + str(x + r) + " " + str(y) +
+    " A " + str(r) + " " + str(r) + " 0 1 0 " + str(x - r) + " " + str(y) + " Z ";
+}
+
+# y-axis grid lines at 100/200/300 plus baseline and y axis
+grid_d = "M 70.0 100.0 L 700.0 100.0 M 70.0 200.0 L 700.0 200.0 " +
+  "M 70.0 300.0 L 700.0 300.0 M 70.0 380.0 L 700.0 380.0 M 70.0 60.0 L 70.0 380.0 ";
+
+out = ARGV.len() > 0 ? ARGV[0] : "build/chart-bars-lines.dslb";
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(800, 460, "#101820");
+
+scene.path(${grid_d}, "none", "#31465c", 1.0);
+scene.path(${bars_d}, "#3d6b99", "none", 1.0);
+let trend = scene.polyline(${line_pts}, "#f5c16c", 2.5);
+trend.set_attr("marker-mid", "dot");
+scene.path(${markers_d}, "#f5c16c", "#101820", 1.0);
+
+# y tick labels (explicit: no text loop over scalars is possible)
+scene.text(56.0, 105.0, 12.0, "14", "#9db4c8").set_attr("text-anchor", "end");
+scene.text(56.0, 205.0, 12.0, "9", "#9db4c8").set_attr("text-anchor", "end");
+scene.text(56.0, 305.0, 12.0, "4", "#9db4c8").set_attr("text-anchor", "end");
+
+# x tick labels
+scene.text(100.0, 402.0, 12.0, ${months[0]}, "#9db4c8").set_attr("text-anchor", "middle");
+scene.text(160.0, 402.0, 12.0, ${months[1]}, "#9db4c8").set_attr("text-anchor", "middle");
+scene.text(220.0, 402.0, 12.0, ${months[2]}, "#9db4c8").set_attr("text-anchor", "middle");
+scene.text(280.0, 402.0, 12.0, ${months[3]}, "#9db4c8").set_attr("text-anchor", "middle");
+scene.text(340.0, 402.0, 12.0, ${months[4]}, "#9db4c8").set_attr("text-anchor", "middle");
+scene.text(400.0, 402.0, 12.0, ${months[5]}, "#9db4c8").set_attr("text-anchor", "middle");
+scene.text(460.0, 402.0, 12.0, ${months[6]}, "#9db4c8").set_attr("text-anchor", "middle");
+scene.text(520.0, 402.0, 12.0, ${months[7]}, "#9db4c8").set_attr("text-anchor", "middle");
+
+scene.text(70.0, 44.0, 20.0, "reviews per month", "#dbe7f3").set_attr("font-weight", "700");
+scene.text(70.0, 432.0, 12.0, "bars: merged, line: reviewed", "#9db4c8");
+scene.render_png("build/rendered/chart-bars-lines.png", 800, 460, 1);
+end _dsl_
+savedsl(p, out);
+println(f"wrote {out}");
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

@@ -14,7 +14,8 @@
 <main>
 <h1>Typed host blocks</h1>
 <p>Compile native host calls with install declarations for lmdraw, lmcad, and lmhtml.</p>
-<p>The declarations select release binaries and obtain their schemas. The first compile needs an internet connection to fetch an uncached release; later compiles can use the local cache. Compilation saves bytecode in the working directory. Run each bytecode file with its host to render or process it.</p>
+<p>A host is a separate program that provides extra operations. Its schema describes the calls and types that lmscript can check. A host block is compiled to bytecode, a file of instructions for that host. The install declaration tells lmscript where to get a missing host release; it does not install a general-purpose command on PATH.</p>
+<p>The declarations select release binaries and obtain their schemas. The first compile needs an internet connection to fetch an uncached release; later compiles can use the local cache. Compilation saves bytecode in the working directory. The example then runs each bytecode file with the exact host binary used to check that block, and writes any generated assets under build/rendered.</p>
 <h2>Script: dsl-hosts.lms</h2>
 <pre><code>if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
@@ -24,6 +25,8 @@ scene.text(32.0, 76.0, 32.0, "Hello from lmscript", "#f5c16c");
 scene.render_png("build/rendered/hello.png", 480, 270, 1);
 end _dsl_
 savedsl(draw, path_join(Directory, "hello.dslb"));
+draw_run = system ${dsl_cli(draw)} --dsl ${path_join(Directory, "hello.dslb")};
+require(draw_run.code == 0, draw_run.stderr);
 
 cad = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
 let mat = material();
@@ -32,24 +35,26 @@ scene.fit_camera(1.2, 1.0);
 scene.render_png("build/rendered/block.png", 320, 240);
 end _dsl_
 savedsl(cad, path_join(Directory, "block.dslb"));
+cad_run = system ${dsl_cli(cad)} --dsl ${path_join(Directory, "block.dslb")};
+require(cad_run.code == 0, cad_run.stderr);
 
 html = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 let doc = html.parse("&lt;!doctype html>&lt;title>Example&lt;/title>&lt;p>Checked&lt;/p>");
 report.add("example.html", doc.source(), 0, "tutorial example");
 end _dsl_
 savedsl(html, path_join(Directory, "audit.dslb"));
-println("compiled lmdraw, lmcad and lmhtml bytecode");
+html_run = system ${dsl_cli(html)} --dsl ${path_join(Directory, "audit.dslb")};
+require(html_run.code == 0, html_run.stderr);
+println("compiled and ran lmdraw, lmcad and lmhtml");
 </code></pre>
 <h2>Run it</h2>
 <pre><code>lmscript examples/dsl-hosts.lms</code></pre>
-<p>The command above compiles the three blocks and writes hello.dslb, block.dslb and audit.dslb beside the working directory. Run the files with the matching host. lmdraw writes build/rendered/hello.png, lmcad writes build/rendered/block.png, and lmhtml adds its finding to the report.</p>
-<pre><code>lmdraw --dsl hello.dslb
-lmcad --dsl block.dslb
-lmhtml --dsl audit.dslb</code></pre>
+<p>The command above compiles and runs all three host blocks. lmdraw writes build/rendered/hello.png, lmcad writes build/rendered/block.png, and lmhtml processes its report entry. lmscript uses the installed host path associated with each compiled block, so you do not need to put downloaded hosts on PATH.</p>
 <h2>Compiler output</h2>
-<pre><samp>compiled lmdraw, lmcad and lmhtml bytecode</samp></pre>
-<h2>Host output</h2>
-<pre><samp>{"ok": true, "result": null}</samp></pre>
+<pre><samp>compiled and ran lmdraw, lmcad and lmhtml</samp></pre>
+<h2>Generated files</h2>
+<pre><samp>build/rendered/hello.png
+build/rendered/block.png</samp></pre>
 
 <p><a href="errors-require.html">Previous: Errors and require</a> · <a href="teams.html">Next: Driving teams</a></p>
 <p>Try it: download <a href="examples/dsl-hosts.lms">examples/dsl-hosts.lms</a>, then run the command above from a working directory that can write its outputs.</p>

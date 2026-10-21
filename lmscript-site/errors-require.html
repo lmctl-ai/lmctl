@@ -14,6 +14,7 @@
 <main>
 <h1>Errors and require</h1>
 <p>Use require for a condition that must hold; a failed requirement stops the run with an error.</p>
+<p>require is an assertion for a condition the script depends on. This example succeeds because the score is positive. If the condition is false, lmscript reports the supplied message and exits; the <a href="troubleshooting.html">troubleshooting page</a> shows a reproduced failure and its exit code.</p>
 <h2>Script: errors-require.lms</h2>
 <pre><code>score = 7;
 require(score > 0, "score must be positive");

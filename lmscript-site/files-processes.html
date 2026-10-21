@@ -14,6 +14,7 @@
 <main>
 <h1>Files and processes</h1>
 <p>Write and read a temporary file, then run a process as an argument array without a shell.</p>
+<p>temp_file chooses a temporary path, and remove_file cleans it up after the example. system receives a list where the first item is the program and the remaining items are its arguments; it returns a result map, including captured standard output. No shell parses this list.</p>
 <h2>Script: files-processes.lms</h2>
 <pre><code>path = temp_file();
 write_file(path, "first line\nsecond line\n");

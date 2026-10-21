@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base href="/lmscript/">
+<title>A small multi-agent workflow — lmscript</title>
+<meta name="description" content="Route a task from Lead to Coder to Reviewer with a short LMScript workflow.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li></ul></nav>
+<main>
+<h1>A small multi-agent workflow</h1>
+<p>This example makes the handoffs explicit: Lead assigns one bounded task to Coder, Coder reports what changed, and Reviewer checks that report. Lead receives the review result and can decide whether to ask Coder for a revision. The teamfile aliases used below are Lead, Coder, and Reviewer.</p>
+<p>The diagram shows the message path. The arrow from Reviewer back to Lead is the review report; any requested revision is a new Lead-to-Coder prompt. The <a href="/tools/lmdraw/get_started.html">lmdraw getting-started guide</a> explains the drawing host used to create the diagram.</p>
+<p><img src="img/team-message-flow.png" alt="Lead assigns a task to Coder, Coder reports changes to Reviewer, and Reviewer sends findings back to Lead; Lead may request a revision from Coder." width="960" height="360"></p>
+<p>The sample is offline by default. Run with --live TEAMFILE only after you have prepared a teamfile containing Lead, Coder, and Reviewer members and intend to send real provider prompts.</p>
+<h2>Script: multi-agent-workflow.lms</h2>
+<pre><code># Preview the sequence unless --live TEAMFILE is provided.
+if (ARGV.get(0, "") == "--live") {
+  team = ARGV.get(1, "team.lmctl");
+  checked = lm_lint(team);
+  require(checked.status == "ok", f"Teamfile is invalid: {checked.error}");
+  seeded = lm_seed(team);
+  require(seeded.status == "ok", f"Could not seed team: {seeded.error}");
+  task = lm_prompt(team, "Lead", "Assign Coder a small task. Return the exact task in one short paragraph.");
+  require(task.status == "ok", f"Lead assignment failed: {task.error}");
+  work = lm_prompt(team, "Coder", f"Complete this task and report changed files: {task.reply}");
+  require(work.status == "ok", f"Coder failed: {work.error}");
+  review = lm_prompt(team, "Reviewer", f"Review the Coder's report and changes. Report findings and whether revisions are needed: {work.reply}");
+  require(review.status == "ok", f"Review failed: {review.error}");
+  handoff = lm_prompt(team, "Lead", f"Summarize the review and decide the next step: {review.reply}");
+  require(handoff.status == "ok", f"Lead handoff failed: {handoff.error}");
+  println(handoff.reply);
+} else {
+  println("Preview only. Live order: Lead assigns, Coder works, Reviewer reviews, Lead decides.");
+}
+</code></pre>
+<h2>Run it</h2>
+<pre><code>lmscript examples/multi-agent-workflow.lms
+lmscript examples/multi-agent-workflow.lms --live TEAMFILE</code></pre>
+<h2>Preview output</h2>
+<pre><samp>Preview only. Live order: Lead assigns, Coder works, Reviewer reviews, Lead decides.</samp></pre>
+<p>Each lm_prompt waits for a reply and returns a status plus reply text. The require calls stop the workflow at the first failed handoff, so later prompts do not run with a missing assignment or work report. Session creation and prompt calls are real provider activity in live mode.</p>
+<p><a href="team-automation.html">Previous: Writing a team automation</a> · <a href="autorun-script.html">Next: Writing an autorun script</a></p>
+<p>Try it: download <a href="examples/multi-agent-workflow.lms">examples/multi-agent-workflow.lms</a>, then run the offline command above. For a live run, replace TEAMFILE with your prepared teamfile path.</p>
+</main>
+<footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
+</body>
+</html>

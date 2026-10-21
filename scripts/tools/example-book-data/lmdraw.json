@@ -3,7 +3,8 @@
   "get_started": "/tools/lmdraw/get_started.html",
   "images": {
     "render-assets": "automation-ladder.png",
-    "animated-ladder": "animated-ladder-frame.png"
+    "animated-ladder": "animated-ladder-frame.png",
+    "tween-morph": "tween-morph-frame.png"
   },
   "rendered": {
     "title-card": "build/rendered/title-card.png",

@@ -1,0 +1,75 @@
+# Decision/branching flowchart: start stadium, process box, decision
+# diamond, a no branch that loops back for more samples, a yes branch
+# that ships to the end stadium. Elbow edges
+# (H/V path commands) and named SVG markers. Colors are literal
+# because script fns cannot capture chunk-level lets.
+out = ARGV.len() > 0 ? ARGV[0] : "build/decision-flowchart.dslb";
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(960, 560, "#101820");
+
+fn stadium(x: float, y: float, w: float, h: float, title: string) -> void {
+  let r = scene.rect(x - w / 2.0, y - h / 2.0, w, h, "#1e3247");
+  r.set_attr("stroke", "#f5c16c");
+  r.set_attr("stroke-width", "2");
+  r.set_attr("rx", str(h / 2.0));
+  let label = scene.text(x, y + 5.0, 16.0, title, "#dbe7f3", w - 24.0);
+  label.set_attr("text-anchor", "middle");
+}
+
+fn process(x: float, y: float, w: float, h: float, title: string) -> void {
+  let r = scene.rect(x - w / 2.0, y - h / 2.0, w, h, "#1e3247");
+  r.set_attr("stroke", "#4a6a88");
+  r.set_attr("stroke-width", "2");
+  r.set_attr("rx", "8");
+  let label = scene.text(x, y + 5.0, 16.0, title, "#dbe7f3", w - 24.0);
+  label.set_attr("text-anchor", "middle");
+}
+
+# start -> process -> decision
+stadium(480.0, 60.0, 140.0, 44.0, "start");
+process(480.0, 170.0, 180.0, 64.0, "collect samples");
+let start_edge = scene.line(480.0, 84.0, 480.0, 130.0, "#f5c16c", 2.5);
+start_edge.set_attr("marker-end", "arrow");
+
+# decision diamond built from a path
+scene.path("M 480.0 250.0 L 570.0 310.0 L 480.0 370.0 L 390.0 310.0 Z",
+  "#1e3247", "#4a6a88", 2.0);
+let q = scene.text(480.0, 315.0, 15.0, "enough?", "#dbe7f3");
+q.set_attr("text-anchor", "middle");
+let decision_edge = scene.line(480.0, 204.0, 480.0, 242.0, "#f5c16c", 2.5);
+decision_edge.set_attr("marker-end", "arrow");
+
+# yes branch: elbow right, process, back into merge
+let yes_edge = scene.path("M 570.0 310.0 H 640.0 V 398.0", "none", "#6fbdb4", 2.5);
+yes_edge.set_attr("marker-end", "arrow");
+let yes_tag = scene.text(618.0, 298.0, 14.0, "yes", "#6fbdb4");
+yes_tag.set_attr("text-anchor", "middle");
+process(640.0, 430.0, 150.0, 60.0, "ship it");
+
+# no branch: elbow left, process, back into merge
+let no_edge = scene.path("M 390.0 310.0 H 320.0 V 398.0", "none", "#d9897a", 2.5);
+no_edge.set_attr("marker-end", "diamond");
+let no_tag = scene.text(342.0, 298.0, 14.0, "no", "#d9897a");
+no_tag.set_attr("text-anchor", "middle");
+process(320.0, 430.0, 150.0, 60.0, "collect more samples before retry");
+
+# collect more loops back into collect samples
+let again_edge = scene.path("M 245.0 430.0 H 150.0 V 170.0 H 386.0", "none", "#d9897a", 2.5);
+again_edge.set_attr("marker-end", "arrow");
+let again_tag = scene.text(150.0, 306.0, 13.0, "again", "#d9897a");
+again_tag.set_attr("text-anchor", "middle");
+again_tag.set_attr("transform", "rotate(-90 150 300)");
+
+# ship it -> done
+let finish_edge = scene.line(640.0, 460.0, 640.0, 490.0, "#6fbdb4", 2.5);
+finish_edge.set_attr("marker-end", "arrow");
+stadium(640.0, 518.0, 140.0, 44.0, "done");
+scene.render_png("build/rendered/decision-flowchart.png", 960, 560, 1);
+end _dsl_
+savedsl(p, out);
+println(f"wrote {out}");
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

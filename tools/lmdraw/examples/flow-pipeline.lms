@@ -1,0 +1,59 @@
+# Flow diagram with arrows: a four-stage document pipeline with rounded
+# boxes, straight connectors with marker arrows, and a curved feedback
+# edge. Geometry comes from data lists with loops in lmscript; repeated
+# boxes are one path of rounded-rect subpaths.
+xs = [60.0, 290.0, 520.0, 750.0];
+titles = ["Ingest", "Normalize", "Review", "Publish"];
+
+# one path: four rounded boxes (arc corners) at x=xs[i]
+boxes_d = "";
+for (i in range(0, xs.len())) {
+  let x = xs[i];
+  let y = 150.0;
+  let w = 150.0;
+  let h = 90.0;
+  let r = 10.0;
+  boxes_d = boxes_d + "M " + str(x + r) + " " + str(y) +
+    " L " + str(x + w - r) + " " + str(y) +
+    " A " + str(r) + " " + str(r) + " 0 0 1 " + str(x + w) + " " + str(y + r) +
+    " L " + str(x + w) + " " + str(y + h - r) +
+    " A " + str(r) + " " + str(r) + " 0 0 1 " + str(x + w - r) + " " + str(y + h) +
+    " L " + str(x + r) + " " + str(y + h) +
+    " A " + str(r) + " " + str(r) + " 0 0 1 " + str(x) + " " + str(y + h - r) +
+    " L " + str(x) + " " + str(y + r) +
+    " A " + str(r) + " " + str(r) + " 0 0 1 " + str(x + r) + " " + str(y) + " Z ";
+}
+
+out = ARGV.len() > 0 ? ARGV[0] : "build/flow-pipeline.dslb";
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(960, 420, "#101820");
+
+scene.path(${boxes_d}, "#1e3247", "#4a6a88", 2.0);
+let shaft0 = scene.line(216.0, 195.0, 284.0, 195.0, "#f5c16c", 2.5);
+shaft0.set_attr("marker-end", "arrow");
+let shaft1 = scene.line(446.0, 195.0, 514.0, 195.0, "#f5c16c", 2.5);
+shaft1.set_attr("marker-end", "arrow");
+let shaft2 = scene.line(676.0, 195.0, 744.0, 195.0, "#f5c16c", 2.5);
+shaft2.set_attr("marker-end", "arrow");
+
+scene.text(135.0, 201.0, 17.0, ${titles[0]}, "#dbe7f3").set_attr("text-anchor", "middle");
+scene.text(365.0, 201.0, 17.0, ${titles[1]}, "#dbe7f3").set_attr("text-anchor", "middle");
+scene.text(595.0, 201.0, 17.0, ${titles[2]}, "#dbe7f3").set_attr("text-anchor", "middle");
+scene.text(825.0, 201.0, 17.0, ${titles[3]}, "#dbe7f3").set_attr("text-anchor", "middle");
+
+# curved feedback edge: Publish back to Normalize, under the pipeline
+scene.path("M 825.0 240.0 C 825.0 330.0 365.0 330.0 365.0 240.0", "none", "#8fb4d9", 2.0);
+scene.path("M 365.0 240.0 L 371.5 252.0 L 358.5 252.0 Z", "#8fb4d9", "none", 1.0);
+scene.text(480.0, 368.0, 15.0, "revision feedback", "#8fb4d9").set_attr("text-anchor", "middle");
+
+scene.text(60.0, 70.0, 26.0, "Document pipeline", "#dbe7f3").set_attr("font-weight", "700");
+scene.text(60.0, 100.0, 15.0, "sequential stages, one feedback loop", "#9db4c8", 245.0);
+scene.render_png("build/rendered/flow-pipeline.png", 960, 420, 1);
+end _dsl_
+savedsl(p, out);
+println(f"wrote {out}");
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

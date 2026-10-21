@@ -36,11 +36,13 @@ run_expect() {
   fi
   printf 'PASS %s\n' "$file"
 }
-# A real run is the documented first-use path for install=@latest. This example
-# only saves bytecode under the temporary working directory; it does not launch
-# any provider or render host. It warms verified release assets for --check.
-run_expect dsl-hosts.lms 'compiled lmdraw, lmcad and lmhtml bytecode'
+# Run native hosts in the temporary working directory so their rendered files
+# stay out of the source tree, while warming verified release assets for --check.
+run_expect dsl-hosts.lms 'compiled and ran lmdraw, lmcad and lmhtml'
 for file in lmscript-site/examples/*.lms; do
+  case "$file" in
+    lmscript-site/examples/undeclared-name.lms) continue ;;
+  esac
   "$LMSCRIPT_BIN" --check "$file"
 done
 run_expect hello-vars.lms 'Hello, Ada!' Ada
@@ -51,4 +53,35 @@ run_expect errors-require.lms 'requirements passed'
 run_expect teams.lms 'Preview only. Run with --live to seed a provider session.'
 run_expect team-automation.lms 'Preview only. Run with --live TEAMFILE to lint, seed, work, review and open the Lead terminal.'
 run_expect autorun-entry.lms $'Autorun role: @role(Lead.provider) / @role(Lead.model)\nAdd your task here, then run this file with lmctl autorun.'
-printf 'lmscript site check: 9 examples passed\n'
+run_expect multi-agent-workflow.lms 'Preview only. Live order: Lead assigns, Coder works, Reviewer reviews, Lead decides.'
+run_expect script-lifecycle-diagram.lms 'compiled script lifecycle diagram'
+run_expect team-message-flow.lms 'compiled team message flow diagram'
+for image in script-lifecycle.png team-message-flow.png; do
+  if [[ ! -s "$tmp/build/rendered/$image" ]]; then
+    printf 'FAIL diagram example did not render build/rendered/%s\n' "$image" >&2
+    exit 1
+  fi
+  if ! cmp -s "$tmp/build/rendered/$image" "$ROOT/lmscript-site/img/$image"; then
+    printf 'FAIL published image %s does not match its lmdraw example output\n' "$image" >&2
+    exit 1
+  fi
+done
+run_expect autorun-script.lms 'Wrote portable-team.lmctl'
+run_error() {
+  local file="$1" expected="$2" expected_code="$3"
+  shift 3
+  local actual code
+  set +e
+  actual="$(cd "$tmp" && "$LMSCRIPT_BIN" --source-name "$file" "$ROOT/lmscript-site/examples/$file" "$@" 2>&1)"
+  code=$?
+  set -e
+  if [[ "$actual" != "$expected" || "$code" != "$expected_code" ]]; then
+    printf 'FAIL %s (exit %s)\nexpected (exit %s):\n%s\nactual:\n%s\n' "$file" "$code" "$expected_code" "$expected" "$actual" >&2
+    exit 1
+  fi
+  printf 'PASS expected error %s (exit %s)\n' "$file" "$code"
+}
+run_error undeclared-name.lms "error:undeclared-name.lms:1:9: Undeclared variable 'greet'" 2
+run_error missing-map-key.lms 'error:missing-map-key.lms:2:16: map record has no key "email"; test with record.has("email") or read record.get("email", default)' 1
+run_error failed-require.lms 'error:failed-require.lms:2:1: score must be positive' 1
+printf 'lmscript site check: 13 passing examples and 3 reproduced errors\n'

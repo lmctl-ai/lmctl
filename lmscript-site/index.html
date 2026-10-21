@@ -15,8 +15,10 @@
 <h1>lmscript</h1>
 <p>lmscript is a small scripting language and command-line interpreter for automating files, data, processes, native tools, and AI teams. A script is checked before it runs; a dry preflight previews effects before the real pass.</p>
 <p>Start with the tutorials in order. Each chapter includes a script you can download, a command to run it, and output from the published compiler.</p>
+<p>New to lmscript? Follow the numbered path first, then keep the <a href="cheatsheet.html">quick cheat sheet</a> nearby. The command names, braces, semicolons, and function calls should feel familiar if you know another programming language; the built-ins and host blocks are specific to lmscript.</p>
 <h2>Reading order</h2><ol>
 <li><a href="hello-vars.html">Hello and variables</a> — Start with a variable, an argument, and an f-string.</li>
+<li><a href="cheatsheet.html">Quick cheat sheet</a> — One-page syntax and the built-ins used most often.</li>
 <li><a href="control-flow-functions.html">Control flow and functions</a> — Use a function and a loop to compute a result; continue skips one iteration.</li>
 <li><a href="strings-data.html">Strings and data</a> — Read JSON data, update a list, build a map, and format the result.</li>
 <li><a href="files-processes.html">Files and processes</a> — Write and read a temporary file, then run a process as an argument array without a shell.</li>
@@ -24,9 +26,11 @@
 <li><a href="dsl-hosts.html">Typed host blocks</a> — Compile native host calls with install declarations for lmdraw, lmcad, and lmhtml.</li>
 <li><a href="teams.html">Driving teams</a> — The default path is offline. Enable live mode to seed a configured Lead, prompt once, then open its terminal in interactive mode.</li>
 <li><a href="team-automation.html">Writing a team automation</a> — Build a repeatable workflow from team setup, seeding, prompts, checks, and a final handoff.</li>
-<li><a href="autorun-entry.html">Starting with lmctl autorun</a> — Declare a provider role in comments and let lmctl autorun prepare a local script before starting the session.</li>
+<li><a href="multi-agent-workflow.html">A small multi-agent workflow</a> — Lead assigns work to Coder; Reviewer checks it; Lead handles revisions.</li>
+<li><a href="autorun-script.html">Writing an autorun script</a> — Declare provider roles and placeholders so lmctl autorun can map them on another machine.</li>
 </ol>
 <h2>Reference</h2><ul><li><a href="guide.html">User guide</a>: command-line options, runtime values, lmctl functions, and error fixes.</li><li><a href="https://lmctl.com/skills/lmscript-workflow-skill.html">Workflow authoring skill</a>: patterns for writing maintainable team scripts.</li><li><a href="/tools/lmscript/">lmscript tool page</a>: package and project information.</li></ul>
+<p>When a script fails, use <a href="troubleshooting.html">Troubleshooting</a> to compare the exact compiler output with common mistakes.</p>
 <p>Use <a href="https://github.com/lmctl-ai/lmctl">the source repository</a> for releases and issue tracking.</p>
 </main>
 <footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>

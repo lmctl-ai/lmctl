@@ -1,0 +1,50 @@
+# Geometry figure: a circle with radius and tangent line, an ellipse with
+# foci and the constant-sum property PF1 + PF2 = 2a. Pure lmdraw primitives,
+# all coordinates computed with plain arithmetic (no trig needed for the
+# chosen 45 and 60 degree points).
+out = ARGV.len() > 0 ? ARGV[0] : "build/geometry-ellipse.dslb";
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(800, 460, "#101820");
+
+# ---- left: circle, radius, tangent at 45 degrees ----
+# center (200, 240), r 110; point at 45 deg: (277.78, 162.22)
+scene.circle(200.0, 240.0, 110.0, "none").set_attr("stroke", "#3d6b99").set_attr("stroke-width", "2.5");
+scene.line(200.0, 240.0, 277.8, 162.2, "#9db4c8", 1.5);
+scene.circle(200.0, 240.0, 4.0, "#9db4c8");
+scene.circle(277.8, 162.2, 4.0, "#f5c16c");
+# tangent through the point, direction (0.7071, 0.7071), +- 90
+let tangent = scene.line(214.2, 98.6, 341.4, 225.8, "#f5c16c", 2.5);
+tangent.set_attr("marker-start", "diamond");
+scene.text(228.0, 215.0, 13.0, "r", "#9db4c8");
+scene.text(318.0, 190.0, 13.0, "tangent", "#f5c16c");
+scene.text(120.0, 396.0, 16.0, "circle", "#dbe7f3").set_attr("font-weight", "700");
+
+# ---- right: ellipse with foci ----
+# center (560, 240), a 170, b 100, c = sqrt(a*a - b*b) = 137.48
+scene.ellipse(560.0, 240.0, 170.0, 100.0, "none").set_attr("stroke", "#3d6b99").set_attr("stroke-width", "2.5");
+scene.line(390.0, 240.0, 730.0, 240.0, "#31465c", 1.0);
+# foci
+scene.circle(422.5, 240.0, 5.0, "#f5c16c");
+scene.circle(697.5, 240.0, 5.0, "#f5c16c");
+scene.text(412.0, 264.0, 13.0, "F1", "#f5c16c");
+scene.text(692.0, 264.0, 13.0, "F2", "#f5c16c");
+# point P at 60 deg: (645.0, 153.4); lines from both foci
+scene.circle(645.0, 153.4, 4.0, "#dbe7f3");
+let distance_f1 = scene.line(422.5, 240.0, 645.0, 153.4, "#7fa8d0", 1.5);
+distance_f1.set_attr("stroke-dasharray", "5 4");
+let distance_f2 = scene.line(697.5, 240.0, 645.0, 153.4, "#7fa8d0", 1.5);
+distance_f2.set_attr("stroke-dasharray", "5 4");
+scene.text(652.0, 148.0, 13.0, "P", "#dbe7f3");
+scene.text(470.0, 396.0, 16.0, "ellipse", "#dbe7f3").set_attr("font-weight", "700");
+scene.text(440.0, 424.0, 13.0, "PF1 + PF2 = 2a (constant)", "#9db4c8");
+
+scene.text(40.0, 44.0, 20.0, "circle and ellipse facts", "#dbe7f3").set_attr("font-weight", "700");
+scene.render_png("build/rendered/geometry-ellipse.png", 800, 460, 1);
+end _dsl_
+savedsl(p, out);
+println(f"wrote {out}");
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

@@ -1,0 +1,105 @@
+# Table/grid: a quarterly metrics table with header row, row heads, zebra
+# rows, a vertical separator, one highlighted cell, and a small arrow path
+# overlay stepping across cells. Cell rectangles come from loops in
+# lmscript building path strings.
+headers = ["metric", "q1", "q2", "q3", "q4"];
+rows = ["renders", "errors", "reviews", "merges"];
+data = [
+  ["128", "96", "142", "151"],
+  ["3", "7", "2", "1"],
+  ["22", "19", "25", "31"],
+  ["9", "12", "17", "21"]
+];
+left = 80.0;
+top = 90.0;
+col_w = [150.0, 120.0, 120.0, 120.0, 120.0];
+row_h = 44.0;
+
+fn cx(c) {
+  let x = left;
+  for (k in range(0, c)) {
+    x = x + col_w[k];
+  }
+  return x;
+}
+fn rc(x, y, w, h) {
+  return "M " + str(x) + " " + str(y) + " L " + str(x + w) + " " + str(y) +
+    " L " + str(x + w) + " " + str(y + h) + " L " + str(x) + " " + str(y + h) + " Z ";
+}
+
+head_d = "";
+for (c in range(0, 5)) {
+  head_d = head_d + rc(cx(c), top, col_w[c], row_h);
+}
+zebra_a_d = "";
+zebra_b_d = "";
+for (r in range(0, 4)) {
+  for (c in range(0, 5)) {
+    if (r % 2 == 0) {
+      zebra_a_d = zebra_a_d + rc(cx(c), top + row_h * (r + 1), col_w[c], row_h);
+    } else {
+      zebra_b_d = zebra_b_d + rc(cx(c), top + row_h * (r + 1), col_w[c], row_h);
+    }
+  }
+}
+out = ARGV.len() > 0 ? ARGV[0] : "build/table-metrics.dslb";
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(960, 430, "#101820");
+
+scene.path(${zebra_a_d}, "#16222f", "#3a556e", 1.0);
+scene.path(${zebra_b_d}, "#1b2a39", "#3a556e", 1.0);
+scene.path(${head_d}, "#2b4358", "#3a556e", 1.0);
+
+# vertical separator after the row-head column
+scene.line(230.0, 90.0, 230.0, 310.0, "#f5c16c", 2.5);
+
+# header labels and body text (explicit statements: the DSL has no
+# host collections to loop over, and lmscript loops cannot emit chunk statements)
+scene.text(155.0, 118.0, 14.0, "metric", "#f5c16c").set_attr("text-anchor", "middle");
+scene.text(290.0, 118.0, 14.0, "q1", "#f5c16c").set_attr("text-anchor", "middle");
+scene.text(410.0, 118.0, 14.0, "q2", "#f5c16c").set_attr("text-anchor", "middle");
+scene.text(530.0, 118.0, 14.0, "q3", "#f5c16c").set_attr("text-anchor", "middle");
+scene.text(650.0, 118.0, 14.0, "q4", "#f5c16c").set_attr("text-anchor", "middle");
+scene.text(92.0, 162.0, 14.0, "renders", "#dbe7f3").set_attr("text-anchor", "start");
+scene.text(338.0, 162.0, 14.0, "128", "#dbe7f3").set_attr("text-anchor", "end");
+scene.text(458.0, 162.0, 14.0, "96", "#dbe7f3").set_attr("text-anchor", "end");
+scene.text(578.0, 162.0, 14.0, "142", "#dbe7f3").set_attr("text-anchor", "end");
+scene.text(698.0, 162.0, 14.0, "151", "#dbe7f3").set_attr("text-anchor", "end");
+scene.text(92.0, 206.0, 14.0, "errors", "#dbe7f3").set_attr("text-anchor", "start");
+scene.text(338.0, 206.0, 14.0, "3", "#dbe7f3").set_attr("text-anchor", "end");
+scene.text(458.0, 206.0, 14.0, "7", "#dbe7f3").set_attr("text-anchor", "end");
+scene.text(578.0, 206.0, 14.0, "2", "#dbe7f3").set_attr("text-anchor", "end");
+scene.text(698.0, 206.0, 14.0, "1", "#dbe7f3").set_attr("text-anchor", "end");
+scene.text(92.0, 250.0, 14.0, "reviews", "#dbe7f3").set_attr("text-anchor", "start");
+scene.text(338.0, 250.0, 14.0, "22", "#dbe7f3").set_attr("text-anchor", "end");
+scene.text(458.0, 250.0, 14.0, "19", "#dbe7f3").set_attr("text-anchor", "end");
+scene.text(578.0, 250.0, 14.0, "25", "#dbe7f3").set_attr("text-anchor", "end");
+scene.text(698.0, 250.0, 14.0, "31", "#dbe7f3").set_attr("text-anchor", "end");
+scene.text(92.0, 294.0, 14.0, "merges", "#dbe7f3").set_attr("text-anchor", "start");
+scene.text(338.0, 294.0, 14.0, "9", "#dbe7f3").set_attr("text-anchor", "end");
+scene.text(458.0, 294.0, 14.0, "12", "#dbe7f3").set_attr("text-anchor", "end");
+scene.text(578.0, 294.0, 14.0, "17", "#dbe7f3").set_attr("text-anchor", "end");
+
+# highlighted cell: q4 merges is hot
+let hot = scene.rect(590.0, 266.0, 120.0, 44.0, "#3f5d2a");
+hot.set_attr("stroke", "#7bbf5a");
+hot.set_attr("stroke-width", "2");
+scene.text(698.0, 294.0, 14.0, "21", "#d8f3b0").set_attr("text-anchor", "end");
+
+for (c in range(0, 2)) {
+  let y = 200.0;
+  let x1 = 326.0 + 120.0 * float(c);
+  let x2 = 440.0 + 120.0 * float(c);
+  let arrow = scene.line(x1, y, x2, y, "#f5c16c", 1.8);
+  arrow.set_attr("marker-end", "arrow");
+}
+scene.text(242.0, 338.0, 15.0, "error count falling across quarters", "#9db4c8");
+scene.render_png("build/rendered/table-metrics.png", 960, 430, 1);
+end _dsl_
+savedsl(p, out);
+println(f"wrote {out}");
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

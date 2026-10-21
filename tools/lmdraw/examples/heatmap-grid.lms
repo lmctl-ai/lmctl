@@ -1,0 +1,83 @@
+# Cell grid / heat map: an 8 by 8 grid colored by a computed score with a
+# four-level color scale. Buckets come from loops in lmscript grouping
+# cells into one path per level.
+days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+cell = 40.0;
+gap = 6.0;
+x0 = 110.0;
+y0 = 70.0;
+
+# score in 0..1 from a deterministic pattern
+# lmscript has no trig builtins; use a deterministic fractional hash.
+fn score(i, j) {
+  let x = 0.377 * (i + 1) + 0.618 * (j + 1) + 0.114 * i * j;
+  let v = x - floor(x);
+  return clamp(v, 0.0, 1.0);
+}
+
+lvl0 = "";
+lvl1 = "";
+lvl2 = "";
+lvl3 = "";
+for (i in range(0, 7)) {
+  for (j in range(0, 8)) {
+    let x = x0 + j * (cell + gap);
+    let y = y0 + i * (cell + gap);
+    let v = score(i, j);
+    let rect = "M " + str(x) + " " + str(y) + " L " + str(x + cell) + " " + str(y) +
+      " L " + str(x + cell) + " " + str(y + cell) + " L " + str(x) + " " + str(y + cell) + " Z ";
+    if (v < 0.25) {
+      lvl0 = lvl0 + rect;
+    } else if (v < 0.5) {
+      lvl1 = lvl1 + rect;
+    } else if (v < 0.75) {
+      lvl2 = lvl2 + rect;
+    } else {
+      lvl3 = lvl3 + rect;
+    }
+  }
+}
+
+out = ARGV.len() > 0 ? ARGV[0] : "build/heatmap-grid.dslb";
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(620, 560, "#101820");
+
+scene.path(${lvl0}, "#1a2a3a", "#101820", 1.0);
+scene.path(${lvl1}, "#2b4a66", "#101820", 1.0);
+scene.path(${lvl2}, "#4a7a9e", "#101820", 1.0);
+scene.path(${lvl3}, "#f5c16c", "#101820", 1.0);
+
+# labels (explicit: DSL loops cannot drive lmscript interpolations)
+scene.text(100.0, 94.0, 12.0, "mon", "#9db4c8").set_attr("text-anchor", "end");
+scene.text(100.0, 140.0, 12.0, "tue", "#9db4c8").set_attr("text-anchor", "end");
+scene.text(100.0, 186.0, 12.0, "wed", "#9db4c8").set_attr("text-anchor", "end");
+scene.text(100.0, 232.0, 12.0, "thu", "#9db4c8").set_attr("text-anchor", "end");
+scene.text(100.0, 278.0, 12.0, "fri", "#9db4c8").set_attr("text-anchor", "end");
+scene.text(100.0, 324.0, 12.0, "sat", "#9db4c8").set_attr("text-anchor", "end");
+scene.text(100.0, 370.0, 12.0, "sun", "#9db4c8").set_attr("text-anchor", "end");
+scene.text(130.0, 58.0, 12.0, "1", "#9db4c8").set_attr("text-anchor", "middle");
+scene.text(176.0, 58.0, 12.0, "2", "#9db4c8").set_attr("text-anchor", "middle");
+scene.text(222.0, 58.0, 12.0, "3", "#9db4c8").set_attr("text-anchor", "middle");
+scene.text(268.0, 58.0, 12.0, "4", "#9db4c8").set_attr("text-anchor", "middle");
+scene.text(314.0, 58.0, 12.0, "5", "#9db4c8").set_attr("text-anchor", "middle");
+scene.text(360.0, 58.0, 12.0, "6", "#9db4c8").set_attr("text-anchor", "middle");
+scene.text(406.0, 58.0, 12.0, "7", "#9db4c8").set_attr("text-anchor", "middle");
+scene.text(452.0, 58.0, 12.0, "8", "#9db4c8").set_attr("text-anchor", "middle");
+
+# legend
+scene.rect(float(${x0}), 500.0, float(${cell}), float(${cell}), "#1a2a3a");
+scene.rect(float(${x0 + 1.0 * (cell + gap)}), 500.0, float(${cell}), float(${cell}), "#2b4a66");
+scene.rect(float(${x0 + 2.0 * (cell + gap)}), 500.0, float(${cell}), float(${cell}), "#4a7a9e");
+scene.rect(float(${x0 + 3.0 * (cell + gap)}), 500.0, float(${cell}), float(${cell}), "#f5c16c");
+scene.text(float(${x0 + 4.0 * (cell + gap) + 10.0}), 524.0, 12.0, "score from low to high", "#9db4c8", 78.0).set_attr("text-anchor", "start");
+
+scene.text(float(${x0}), 40.0, 18.0, "activity heat map", "#dbe7f3").set_attr("font-weight", "700");
+scene.render_png("build/rendered/heatmap-grid.png", 620, 560, 1);
+end _dsl_
+savedsl(p, out);
+println(f"wrote {out}");
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

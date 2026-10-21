@@ -1,0 +1,83 @@
+# Tween/morph and draw-on animation. lmscript computes per-frame path data
+# (a rounded-square <-> circle morph by control-point lerp, and the growing
+# prefix of a pulse polyline); the DSL chunk just sets attributes and renders
+# one PNG per frame. Six morph frames, then fourteen draw-on frames.
+fn lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+# Rounded square (4 cubic segments, corner radius ~30) and a circle
+# (kappa approximation, r 90) with the same command structure: M + 4 x C.
+sq = [400.0, 160.0, 430.0, 160.0, 470.0, 190.0, 470.0, 230.0,
+      470.0, 270.0, 430.0, 300.0, 400.0, 300.0,
+      370.0, 300.0, 330.0, 270.0, 330.0, 230.0,
+      330.0, 190.0, 370.0, 160.0, 400.0, 160.0];
+co = [400.0, 140.0, 449.7, 140.0, 490.0, 180.3, 490.0, 230.0,
+      490.0, 279.7, 449.7, 320.0, 400.0, 320.0,
+      350.3, 320.0, 310.0, 279.7, 310.0, 230.0,
+      310.0, 180.3, 350.3, 140.0, 400.0, 140.0];
+blends = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0];
+
+morph_ds = ["", "", "", "", "", ""];
+for (b in range(0, blends.len())) {
+  let t = blends[b];
+  let d = "M " + str(lerp(sq[0], co[0], t)) + " " + str(lerp(sq[1], co[1], t));
+  for (s in range(0, 4)) {
+    let o = 2 + s * 6;
+    d = d + " C " + str(lerp(sq[o], co[o], t)) + " " + str(lerp(sq[o + 1], co[o + 1], t)) +
+      " " + str(lerp(sq[o + 2], co[o + 2], t)) + " " + str(lerp(sq[o + 3], co[o + 3], t)) +
+      " " + str(lerp(sq[o + 4], co[o + 4], t)) + " " + str(lerp(sq[o + 5], co[o + 5], t));
+  }
+  morph_ds[b] = d + " Z";
+}
+
+# The full pulse path stays in place; changing dash offset reveals it over time.
+xs = [80.0, 200.0, 240.0, 280.0, 320.0, 380.0, 420.0, 460.0, 500.0, 560.0, 600.0, 640.0, 680.0, 720.0];
+ys = [250.0, 250.0, 170.0, 320.0, 250.0, 250.0, 190.0, 300.0, 250.0, 250.0, 150.0, 330.0, 250.0, 250.0];
+all_pts = "";
+for (k in range(0, xs.len())) {
+  all_pts = all_pts + (k == 0 ? "" : " ") + str(xs[k]) + " " + str(ys[k]);
+}
+
+out = ARGV.len() > 0 ? ARGV[0] : "build/tween-morph.dslb";
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+
+# Part 1: morph. One path node, six frames.
+scene.canvas(800, 460, "#101820");
+scene.text(40.0, 50.0, 20.0, "morph: rounded square to circle", "#dbe7f3").set_attr("font-weight", "700");
+scene.text(40.0, 78.0, 13.0, "control points interpolated per frame", "#9db4c8");
+let blob = scene.path(${morph_ds[0]}, "#3d6b99", "#7fa8d0", 2.5);
+scene.render_png("build/rendered/morph-0.png", 800, 460, 1);
+blob.set_attr("d", ${morph_ds[1]});
+scene.render_png("build/rendered/morph-1.png", 800, 460, 1);
+blob.set_attr("d", ${morph_ds[2]});
+scene.render_png("build/rendered/morph-2.png", 800, 460, 1);
+blob.set_attr("d", ${morph_ds[3]});
+scene.render_png("build/rendered/morph-3.png", 800, 460, 1);
+blob.set_attr("d", ${morph_ds[4]});
+scene.render_png("build/rendered/morph-4.png", 800, 460, 1);
+blob.set_attr("d", ${morph_ds[5]});
+scene.render_png("build/rendered/morph-5.png", 800, 460, 1);
+
+# Part 2: draw-on by animating stroke-dashoffset on the complete polyline.
+scene.canvas(800, 460, "#101820");
+scene.text(40.0, 50.0, 20.0, "draw-on: pulse line", "#dbe7f3").set_attr("font-weight", "700");
+scene.text(40.0, 78.0, 13.0, "dash offset reveals one retained path", "#9db4c8");
+scene.line(60.0, 250.0, 740.0, 250.0, "#31465c", 1.0);
+let ink = scene.polyline(${all_pts}, "#f5c16c", 3.0);
+ink.set_attr("stroke-dasharray", "1400 1400");
+ink.set_attr("stroke-dashoffset", "1400");
+ink.set_attr("marker-end", "arrow");
+for (i in range(0, 14)) {
+  let offset = 1400.0 * float(13 - i) / 13.0;
+  ink.set_attr("stroke-dashoffset", str(offset));
+  scene.render_png("build/rendered/drawon-" + str(i) + ".png", 800, 460, 1);
+}
+end _dsl_
+savedsl(p, out);
+println(f"wrote {out}");
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

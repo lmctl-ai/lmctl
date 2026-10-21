@@ -16,7 +16,8 @@
 <p>This reference follows lmscript 0.2.373, the published compiler used to check the examples. lmscript is in the @lmctl-ai/lmctl package and requires Node.js 24.15 or later.</p>
 <h2 id="overview">Overview</h2>
 <p>A script is a UTF-8 .lms file. lmscript checks the whole file before running it, then normally performs a short dry preflight before the real run. The dry pass records planned writes, deletes and child processes; it is useful for review but it is not a security sandbox. Scripts run with the invoking user's local authority.</p>
-<p>Use lmscript directly for a standalone script. Use lmctl script FILE when a script needs lmctl's installed provider configuration and agent services. lmctl autorun URL is the onboarding path for a published script with provider role declarations; it is available in the next lmctl release.</p>
+<p><img src="img/script-lifecycle.png" alt="A script is checked, preflighted to preview planned effects, and then run for real." width="960" height="300"></p>
+<p>Use lmscript directly for a standalone script. Use lmctl script FILE when a script needs lmctl's installed provider configuration and agent services. Use lmctl autorun URL (or a local .lms file) to check declared provider roles, map missing providers, and run the script.</p>
 <h2 id="install">Install and first checks</h2>
 <pre><code>npm install -g @lmctl-ai/lmctl
 lmscript --version
@@ -87,7 +88,7 @@ prompt_human(question)</code></pre>
 <tr><td>lmscript --dry-run FILE [ARGS...]</td><td>Run the simulation and print its plan; exit 0 or 2.</td></tr>
 <tr><td>lmscript --dsl-signatures SCHEMA</td><td>Print canonical DSL signatures from a schema file.</td></tr>
 <tr><td>lmctl script FILE [ARGS...]</td><td>Run with lmctl provider configuration and automation services.</td></tr>
-<tr><td>lmctl autorun URL</td><td>Fetch, configure, check and run a published script that declares provider roles. Available in the next lmctl release.</td></tr>
+<tr><td>lmctl autorun URL or ./FILE.lms</td><td>Fetch or load a script, check declared provider roles, map missing providers, and run it. Non-interactive and --save-only modes save a rewritten script without running it.</td></tr>
 </tbody></table>
 <p>Other useful options include --no-preflight, --plan-format text|json, --dry-loop-limit N, --dryrun-timeout MS, --pref FILE, --module SPEC=FILE, --trace FILE, --base-dir DIR and --source-name LABEL. Run lmscript --help for the installed compiler's full option list.</p>
 <h2 id="errors">Common errors and fixes</h2>

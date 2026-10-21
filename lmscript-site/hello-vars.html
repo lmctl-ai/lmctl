@@ -14,6 +14,7 @@
 <main>
 <h1>Hello and variables</h1>
 <p>Start with a variable, an argument, and an f-string.</p>
+<p>A variable is a name that holds a value. ARGV is the list of words after the script filename, and get(0, "world") uses its first word or the fallback when no word was supplied. An f-string inserts the value inside braces into the sentence.</p>
 <h2>Script: hello-vars.lms</h2>
 <pre><code>name = ARGV.get(0, "world");
 println(f"Hello, {name}!");
@@ -23,7 +24,7 @@ println(f"Hello, {name}!");
 <h2>Output</h2>
 <pre><samp>Hello, Ada!</samp></pre>
 
-<p><a href="control-flow-functions.html">Next: Control flow and functions</a></p>
+<p><a href="cheatsheet.html">Next: Quick cheat sheet</a></p>
 <p>Try it: download <a href="examples/hello-vars.lms">examples/hello-vars.lms</a>, then run the command above from a working directory that can write its outputs.</p>
 </main>
 <footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
