@@ -1,5 +1,5 @@
 # files is supplied by the HTTP transport; all HTML interpretation uses lmhtml.
-p = _dsl_ schema="lmhtml.dsl.json";
+p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 let remaining = ${files};
 while (str_find(remaining, "|") >= 0) {
   let end = str_find(remaining, "|");

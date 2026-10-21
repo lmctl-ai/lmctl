@@ -1,0 +1,5 @@
+# Resolve the same release binary that cli=install blocks compile against.
+p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+let ready = true;
+end _dsl_
+write_file(ARGV[0], dsl_cli(p)[0]);

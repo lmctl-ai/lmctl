@@ -47,7 +47,7 @@ npm run start
 
 ## Tools
 
-Static tool guides are published at [lmctl.com/tools](<https://lmctl.com/tools/>); authoring and validation details are in [tools/README.md](<./tools/README.md>).
+Static tool guides are published at [lmctl.com/tools](<https://lmctl.com/tools/>); authoring and validation details are in [tools/README.md](<./tools/README.md>). Repository checks compile lmscript scripts against the host release declared in each script, using lmscript 0.2.369 or newer; downloads are SHA-256 verified and cached.
 
 ## Quickrun samples
 

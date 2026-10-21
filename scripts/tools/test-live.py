@@ -130,7 +130,6 @@ class LiveTests(unittest.TestCase):
         host = subprocess.check_output(['bash', str(HERE / 'run.sh'), 'host-path'], text=True).strip()
         with tempfile.TemporaryDirectory() as tmp:
             work = Path(tmp)
-            (work / 'lmhtml.dsl.json').write_bytes(subprocess.check_output([host, '--dsl-schema', '--json']))
             page = work / 'page.html'
             page.write_bytes((site.ROOT / 'tests/tools/live/links.fixture').read_bytes())
             rows = site.inspect_html([page], work, host)

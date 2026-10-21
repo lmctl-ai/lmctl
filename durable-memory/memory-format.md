@@ -39,12 +39,12 @@ Run from the repository root:
 
 | Command | Result |
 | --- | --- |
-| bash scripts/memory/run.sh index durable-memory | Generate index.md with the pinned lmhtml CLI |
+| bash scripts/memory/run.sh index durable-memory | Generate index.md with the lmhtml release cached by lmscript |
 | npm run check:memory | Check index drift, links/anchors and the no-emoji policy |
 | npm run check:memory:selftest | Exercise drift, broken links, emoji and deterministic web builds |
 | npm run build:memory-web | Convert notes to build/memory-web with the optional template |
 
-The wrappers are thin: run.sh index DIR \[--check\] calls lmhtml index; check DIR calls index --check, mdcheck, and the repository policy scanner; web DIR OUT calls lmhtml site. Native Markdown commands need the lmhtml binary and no lmscript compiler. The wrapper obtains the SHA256-pinned release from scripts/tools/lmhtml.lock, or uses LMHTML=/path/to/lmhtml.
+The wrappers are thin: run.sh index DIR \[--check\] calls lmhtml index; check DIR calls index --check, mdcheck, and the repository policy scanner; web DIR OUT calls lmhtml site. Unless LMHTML=/path/to/lmhtml is set, the tools runner resolves the GitHub release declared in its lmscript files, so lmscript 0.2.369 or newer is required. lmscript verifies release downloads by SHA-256 and stores them in its tool cache.
 
 The checker reports a stale index with its regeneration command, rejects broken internal links/anchors, rejects HTML note sources, and reports emoji with file, line and code point. External URLs are not fetched. The audit JSON is retained as source evidence and may be linked from notes.
 

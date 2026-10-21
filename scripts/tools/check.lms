@@ -8,7 +8,7 @@ for (directory in glob("tools/*/")) {
 }
 case_paths = join(sort(glob("tools/*/*.[hH][tT][mM][lL]")), "|") + "|";
 png_paths = join(sort(glob("tools/**/*.png")), "|") + "|";
-p = _dsl_ schema="lmhtml.dsl.json";
+p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 # Source-preserving pre formatting (kept identical in check/decorate).
 # Locate the nth real element with the host tokenizer, not a text match alone:
 # a comment or script may contain an identical-looking HTML snippet.

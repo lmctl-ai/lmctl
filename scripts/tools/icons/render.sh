@@ -14,8 +14,8 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../.." && pwd)"
-LMCAD="${LMCAD:-lmcad}"
-LMSCRIPT_VERSION="${LMSCRIPT_VERSION:-0.2.348}"
+LMCAD="${LMCAD:-}"
+LMSCRIPT_VERSION="${LMSCRIPT_VERSION:-0.2.369}"
 MAX_BYTES=20480
 MODE="write"
 PREVIEW=""
@@ -32,8 +32,6 @@ lmscript_cmd() {
   fi
 }
 
-command -v "$LMCAD" >/dev/null 2>&1 || { echo "lmcad not found: set LMCAD=/path/to/lmcad" >&2; exit 1; }
-
 # Every script must carry the same shared look block.
 shared() { sed -n '/^# --- shared icon look/,/^# --- end shared icon look ---/p' "$1"; }
 reference="$(shared "$HERE/tools.lms")"
@@ -44,7 +42,13 @@ done
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
-"$LMCAD" --schema --json > "$WORK/lmcad.dsl.json"
+if [[ -z $LMCAD ]]; then
+  lmscript_cmd "$ROOT/scripts/tools/lmcad-path.lms" "$WORK/lmcad-path.txt"
+  LMCAD=$(cat "$WORK/lmcad-path.txt")
+fi
+[[ -x $LMCAD ]] || { echo "lmcad is not executable: $LMCAD" >&2; exit 1; }
+PATH="$(dirname "$LMCAD"):$PATH"
+export PATH
 
 status=0
 for script in "$HERE"/*.lms; do

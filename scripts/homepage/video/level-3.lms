@@ -1,5 +1,5 @@
 out = ARGV[0];
-p = _dsl_ schema="lmcad.dsl.json";
+p = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
 let frame_count = 240;
 let render_width = 480;
 let render_height = 270;

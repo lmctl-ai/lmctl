@@ -13,7 +13,7 @@ tools/ is the source of [https://lmctl.com/tools/](<https://lmctl.com/tools/>): 
 3. npm run check:tools (must print check: OK).
 4. Commit the content and the generated HTML together, including repo.txt when needed.
 
-Prerequisite once: any compatible lmscript compiler on PATH (or set LMSCRIPT for icon rendering). The runner downloads the pinned lmhtml release itself.
+Prerequisite once: lmscript 0.2.369 or newer on PATH (or set LMSCRIPT for icon rendering). Each script declares its host with cli and install; lmscript reads that release binary's embedded schema and downloads a missing asset into its tool cache with SHA-256 verification. CI installs the matching compiler release and works from an empty host cache. lmhtml and lmcad scripts use @latest. lmdraw v0.1.0 has platform-named assets but no --version output, which install requires; lmblender releases are still drafts. Keep local schemas for those two until their release binaries satisfy the install contract.
 
 ## Layout
 
@@ -26,10 +26,9 @@ Prerequisite once: any compatible lmscript compiler on PATH (or set LMSCRIPT for
 | tools/\<tool\>/img/ | Local images; icon.png (64×64) and logo.png (256×256) are picked up automatically |
 | tools/\<tool\>/repo.txt | Required: one repository URL when it is not github.com/lmctl-ai/\<tool\> |
 | tools/img/ | Site icon (icon.png) and catalog logo (tools.png) |
-| scripts/tools/run.sh | Runner: downloads the pinned lmhtml, compiles a DSL script, runs it |
+| scripts/tools/run.sh | Runner: compiles and runs against the lmhtml release named by each script |
 | scripts/tools/check.lms, decorate.lms, links.lms, roles.lms | Checker, decorator, link checker, role table |
 | scripts/tools/template.html | Shared shell: layout, nav/footer variants, index regions |
-| scripts/tools/lmhtml.lock | lmhtml release version + SHA256 per platform asset |
 | scripts/tools/icons/ | lmcad icon scripts and render.sh |
 | tests/tools/ | Named bad fixtures (\<!-- expect: … --\>) and authoring fixtures |
 | scripts/deploy-tools.sh | The only publisher of /tools/ |
@@ -118,7 +117,7 @@ CI (.github/workflows/tools-check.yml, read-only token, pinned actions) runs the
 - Add a rule: put it in the marked ROLE RULES section of check.lms (or the general checks), add a bad fixture tests/tools/\<name\>.html whose first line is \<!-- expect: \<message\> --\>, run the self-test.
 - Add a role: one name=Label pair in roles.lms, its rule in ROLE RULES; decoration picks up order and label automatically.
 - Change the shell: edit template.html, run npm run decorate:tools, commit every regenerated page.
-- Enhance lmhtml (when the DSL needs a host member): change lmhtml upstream, release it, then update scripts/tools/lmhtml.lock: version vX.Y.Z and one asset sha256 line per platform, computed from the downloaded release assets (not local builds). LMHTML=/path/to/lmhtml tests an unreleased build.
+- Enhance lmhtml (when the DSL needs a host member): change lmhtml upstream, release it, then verify the @latest install declaration resolves the new binary and rerun the checks. Set LMHTML=/path/to/lmhtml to test an unreleased build.
 
 ## Publishing
 
@@ -135,7 +134,7 @@ The script refuses unless run.sh check passes. It excludes templates, README and
 
 - Serialization normalizes HTML. lexbor (inside lmhtml) inserts implied tags (tbody, html/head/body) and re-quotes attributes when it serializes a document; decoration therefore splices regions into the source bytes instead of re-serializing pages. Keep it that way when changing decorate.lms.
 - Idempotence is tested. A decoration change that alters bytes on a second run fails the self-test; make generated regions deterministic.
-- Node and compiler versions. The npm package declares Node ≥ 24.15; CI runs the checks on Node 22 (npm warns, the compiler works). Use a current Node locally. run.sh requires lmscript ≥ 0.2.347.
+- Node and compiler versions. The npm package declares Node ≥ 24.15 and CI uses Node 24.15. run.sh requires lmscript ≥ 0.2.369 for cli=install support.
 - Decoration owns nav, footer and the site catalog. Tool overview indexes are authored content; change their text directly and rerun decoration.
 - PNG budget. 30 KB hard limit, 20 KB warning; lossless recompression helps, smaller renders help more.
 - No classes, no per-page CSS. Style changes go into tools/style.css for all pages, using element selectors; the pages must also read well without CSS.

@@ -1,8 +1,0 @@
-# lmctl-ai/lmhtml v0.7.2; five-platform release run 39497196153.
-# SHA256 of downloaded release binaries; MIT and third-party notices accompany the release.
-version v0.7.2
-lmhtml-linux-arm64 371e70677925b4ebbf49b8e4fd875b3391adf65d714a26267df5ad72c3806b77
-lmhtml-linux-x64 6646ecb168fb2a045969ecf5a533a6cce6448f093a2bc18bac3653d948de800c
-lmhtml-macos-arm64 bd65790663b0f6ae8e62f82d8bec78dc266e1c69688e7a30d78c9b3c96a5b8f2
-lmhtml-macos-x64 69112b4ece7ecd1bc4499e25d9bec48b27a3640344a3b78dc01c2f0232209e48
-lmhtml-windows-x64.exe 3875ac733bfbddcd328859edd2938c2b5b9f54dcfafeebfe997fcb733aec4014

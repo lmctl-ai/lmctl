@@ -1,10 +1,9 @@
 # /tools/ icons
 
 The tool icons are rendered by [lmcad](https://github.com/lmctl-ai/lmcad)
-from lmscript `_dsl_` scripts: one script per icon, compiled with the
-published lmscript compiler against the schema `lmcad --schema --json`
-prints, then run by the lmcad host. Shapes, not text, carry each tool's
-identity; booleans and loops build them.
+from lmscript `_dsl_` scripts. Each script names the lmcad release whose
+embedded schema compiles it; the resulting bytecode runs on that same host.
+Shapes, not text, carry each tool's identity; booleans and loops build them.
 
 | Script | Shape | Output |
 | --- | --- | --- |
@@ -31,7 +30,7 @@ LMCAD=/path/to/lmcad scripts/tools/icons/render.sh --check    # verify committed
 LMCAD=/path/to/lmcad scripts/tools/icons/render.sh --preview /tmp/icons  # also 32 px renders
 ```
 
-`render.sh` compiles with `npx --package=@lmctl-ai/lmctl@0.2.348 -- lmscript`
+`render.sh` compiles with `npx --package=@lmctl-ai/lmctl@0.2.369 -- lmscript`
 (override with `LMSCRIPT=...` or `LMSCRIPT_VERSION=...`). Output is
 deterministic: the same lmcad binary renders byte-identical PNGs, and
 `--check` renders into a temporary directory and compares. A different lmcad

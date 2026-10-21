@@ -27,7 +27,9 @@ jobs:
         with:
           node-version: 24.15
       - name: install published DSL compiler
-        run: npm i -g @lmctl-ai/lmctl@0.2.347
+        run: npm i -g @lmctl-ai/lmctl@0.2.369
+      - name: Resolve lmhtml from the lmscript tool cache
+        run: echo "LMHTML=$(bash scripts/tools/run.sh host-path)" >> "$GITHUB_ENV"
       - name: check tools pages
         run: npm run check:tools
       - name: check homepage video pages and media

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Thin wrappers around the checksum-pinned lmhtml Markdown CLI.
+# Thin wrappers around the lmscript-resolved lmhtml Markdown CLI.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"

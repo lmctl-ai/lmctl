@@ -4,7 +4,7 @@
 # (No helper functions: script fns cannot capture the constants below.)
 # Usage (see README.md): lmscript site.lms OUT_DIR OUT.dslb, then lmcad --dsl OUT.dslb
 out = ARGV.get(0, "build");
-p = _dsl_ schema="lmcad.dsl.json";
+p = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
 # --- shared icon look: identical in every icon script (render.sh --check verifies) ---
 scene.background(0.17, 0.20, 0.27);
 scene.directional_light(-0.5, -1.0, -0.6, 0.85);

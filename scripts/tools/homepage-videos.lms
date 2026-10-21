@@ -1,5 +1,5 @@
 # Check the published homepage explainers and their media with lmhtml's parser.
-p = _dsl_ schema="lmhtml.dsl.json";
+p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 fn finding(file: string, detail: string) -> void {
   report.add("homepage-video", file, 0, detail);
 }

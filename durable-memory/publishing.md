@@ -49,7 +49,7 @@ Use scripts/deploy-skills.sh or scripts/deploy-homepage.sh for their respective 
 
 ## Verify the published site
 
-The workflow runs scripts/tools/verify-live.sh --repair-cdn after publishing. It compares every managed object and index alias against the repository byte-for-byte, checks SHA-256 inventories plus content type and cache headers, then uses the locked lmhtml parser and checker to crawl managed HTML, follow internal links and images, and validate anchors. Referenced pages outside the owned areas are checked but are not recursively crawled.
+The workflow runs scripts/tools/verify-live.sh --repair-cdn after publishing. It compares every managed object and index alias against the repository byte-for-byte, checks SHA-256 inventories plus content type and cache headers, then uses the release-installed lmhtml parser and checker to crawl managed HTML, follow internal links and images, and validate anchors. Referenced pages outside the owned areas are checked but are not recursively crawled.
 
 Run the same verifier against production or any HTTP(S) origin without AWS credentials. It defaults to tools, skills and homepage; optional area names narrow the check.
 

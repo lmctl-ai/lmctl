@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Read-only comparison of every legacy skill against its pre-migration source.
-Uses the pinned lmhtml parser for old Markdown; HTMLParser only measures output.
+Uses the release-installed lmhtml parser for old Markdown; HTMLParser only measures output.
 No content or Markdown skill artefacts are generated in the repository.
 """
 import argparse, html, json, re, subprocess, tempfile

@@ -3,7 +3,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 SCRIPT_DIR="$ROOT/scripts/homepage/video"
 PUBLISHED_DIR="$ROOT/homepage/assets/videos"
-ENGINE=lmblender MODE=render ONLY_LEVEL= PUBLISH=0 AUDIO_DIR=
+ENGINE=lmblender MODE=render ONLY_LEVEL='' PUBLISH=0 AUDIO_DIR=''
 FRAME_COUNT=240 FRAME_RATE=24
 LMCAD_WIDTH=480 LMCAD_HEIGHT=270 BLENDER_WIDTH=1280 BLENDER_HEIGHT=720 BLENDER_SAMPLES=64
 while (($#)); do
@@ -21,17 +21,16 @@ LMCAD_BIN="${LMCAD_BIN:-$(command -v lmcad || true)}"
 LMBLENDER_BIN="${LMBLENDER_BIN:-$(command -v lmblender || echo /home/ubuntu/lmblender-release/current/bin/lmblender)}"
 LMDRAW_BIN="${LMDRAW_BIN:-$(command -v lmdraw || echo /home/ubuntu/lmdraw-release/current/bin/lmdraw)}"
 LMSCRIPT_BIN="${LMSCRIPT_BIN:-$(command -v lmscript || true)}"
-[[ -x $LMSCRIPT_BIN ]] || { echo 'Install lmscript >= 0.2.347 and put it on PATH.' >&2; exit 2; }
+[[ -x $LMSCRIPT_BIN ]] || { echo 'Install @lmctl-ai/lmctl@0.2.369 or newer and put lmscript on PATH.' >&2; exit 2; }
+compiler_version=$($LMSCRIPT_BIN --version 2>&1 | awk '{print $NF}')
+IFS=. read -r compiler_major compiler_minor compiler_patch <<< "$compiler_version"
+[[ $compiler_major =~ ^[0-9]+$ && $compiler_minor =~ ^[0-9]+$ && $compiler_patch =~ ^[0-9]+$ ]] || { echo "unrecognized lmscript version: $compiler_version" >&2; exit 2; }
+((compiler_major > 0 || compiler_minor > 2 || (compiler_minor == 2 && compiler_patch >= 369))) || { echo 'lmscript >= 0.2.369 required for cli=install.' >&2; exit 2; }
 for tool in ffmpeg ffprobe; do command -v "$tool" >/dev/null || { echo "$tool is required." >&2; exit 2; }; done
 sha256_file() { if command -v sha256sum >/dev/null; then sha256sum "$1"; else shasum -a 256 "$1"; fi; }
 file_size() { if stat -c '%s' "$1" >/dev/null 2>&1; then stat -c '%s' "$1"; else stat -f '%z' "$1"; fi; }
 if [[ $ENGINE == lmcad ]]; then
-  [[ -x $LMCAD_BIN ]] || { echo 'Set LMCAD_BIN to the lmcad v0.1.1 release binary.' >&2; exit 2; }
-  case "$(uname -s):$(uname -m)" in Linux:aarch64|Linux:arm64) asset=linux-arm64 ;; Linux:x86_64|Linux:amd64) asset=linux-x64 ;; Darwin:arm64|Darwin:aarch64) asset=macos-arm64 ;; Darwin:x86_64) asset=macos-x64 ;; *) echo 'No v0.1.1 binary checksum is recorded for this platform.' >&2; exit 2 ;; esac
-  expected=$(awk -v key="$asset" '$1 == key { print $2 }' "$SCRIPT_DIR/lmcad-v0.1.1.sha256")
-  actual=$(sha256_file "$LMCAD_BIN"); actual=${actual%% *}
-  [[ -n $expected && $actual == "$expected" ]] || { echo "LMCAD_BIN must match the v0.1.1 $asset release checksum." >&2; exit 2; }
-  OUTPUT_DIR=$PUBLISHED_DIR; SOURCE_DIR=$SCRIPT_DIR; HASH_FILE=$SCRIPT_DIR/frames.sha256; WIDTH=$LMCAD_WIDTH; HEIGHT=$LMCAD_HEIGHT
+  OUTPUT_DIR="${LMCAD_OUTPUT_DIR:-$PUBLISHED_DIR}"; SOURCE_DIR=$SCRIPT_DIR; HASH_FILE="${LMCAD_HASH_FILE:-$SCRIPT_DIR/frames.sha256}"; WIDTH=$LMCAD_WIDTH; HEIGHT=$LMCAD_HEIGHT
 else
   [[ -x $LMBLENDER_BIN ]] || { echo 'Install lmblender 0.3.1 and set LMBLENDER_BIN.' >&2; exit 2; }
   [[ -x $LMDRAW_BIN ]] || { echo 'Install lmdraw 0.1.0 and set LMDRAW_BIN.' >&2; exit 2; }
@@ -41,6 +40,15 @@ fi
 mkdir -p "$OUTPUT_DIR"
 work=$(mktemp -d "${TMPDIR:-/tmp}/lmctl-homepage-video.XXXXXX")
 trap 'rm -rf -- "$work"' EXIT
+if [[ $ENGINE == lmcad ]]; then
+  if [[ -z $LMCAD_BIN ]]; then
+    "$LMSCRIPT_BIN" "$ROOT/scripts/tools/lmcad-path.lms" "$work/lmcad-path.txt"
+    LMCAD_BIN=$(cat "$work/lmcad-path.txt")
+  fi
+  [[ -x $LMCAD_BIN ]] || { echo "lmcad is not executable: $LMCAD_BIN" >&2; exit 2; }
+  PATH="$(dirname "$LMCAD_BIN"):$PATH"
+  export PATH
+fi
 if [[ $ENGINE == lmblender ]]; then
   # The cache key excludes overlays, so title/layout edits do not rerender Cycles.
   cache_root="${LMBLENDER_FRAME_CACHE:-$ROOT/build/homepage-video/lmblender-cycles}"

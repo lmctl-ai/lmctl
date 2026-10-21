@@ -4,10 +4,10 @@ name: memory-check
 # (scripts/memory/**). No secrets, read-only token, no deploy.
 on:
   pull_request:
-    paths: ["durable-memory/**", "scripts/memory/**", "tests/memory/**", "scripts/tools/lmhtml.lock", ".github/workflows/memory-check.yml"]
+    paths: ["durable-memory/**", "scripts/memory/**", "scripts/tools/**", "tests/memory/**", ".github/workflows/memory-check.yml"]
   push:
     branches: [main]
-    paths: ["durable-memory/**", "scripts/memory/**", "tests/memory/**", "scripts/tools/lmhtml.lock", ".github/workflows/memory-check.yml"]
+    paths: ["durable-memory/**", "scripts/memory/**", "scripts/tools/**", "tests/memory/**", ".github/workflows/memory-check.yml"]
 
 permissions:
   contents: read
@@ -26,6 +26,10 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24.15
+      - name: Install published DSL compiler
+        run: npm i -g @lmctl-ai/lmctl@0.2.369
+      - name: Resolve lmhtml from the lmscript tool cache
+        run: echo "LMHTML=$(bash scripts/tools/run.sh host-path)" >> "$GITHUB_ENV"
       - name: check durable-memory notes and index
         run: npm run check:memory
       - name: Markdown memory self-test

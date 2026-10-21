@@ -245,7 +245,9 @@ def inspect_html(files, work, host):
     driver = work / 'driver.lms'
     driver.write_text('files = ' + json.dumps("|".join(paths) + "|") + ';\n' + (ROOT / 'scripts/tools/live-links.lms').read_text())
     report = work / 'links.json'
-    subprocess.run([os.environ.get('LMSCRIPT_BIN', 'lmscript'), str(driver), str(work / 'links.dslb'), str(report)], check=True, stdout=subprocess.DEVNULL)
+    compiler_env = os.environ.copy()
+    compiler_env['PATH'] = str(Path(host).resolve().parent) + os.pathsep + compiler_env.get('PATH', '')
+    subprocess.run([os.environ.get('LMSCRIPT_BIN', 'lmscript'), str(driver), str(work / 'links.dslb'), str(report)], check=True, stdout=subprocess.DEVNULL, env=compiler_env)
     subprocess.run([host, '--dsl', str(work / 'links.dslb')], check=True, stdout=subprocess.DEVNULL)
     output = json.loads(report.read_text())
     return output['findings'] if isinstance(output, dict) else output
@@ -292,8 +294,6 @@ def verify(areas, repair_cdn=False):
     link_count = 0
     with tempfile.TemporaryDirectory(prefix='lmctl-live-') as tmp:
         work = Path(tmp)
-        schema = subprocess.check_output([host, '--dsl-schema', '--json'])
-        (work / 'lmhtml.dsl.json').write_bytes(schema)
         scanned = set()
         anchors = {}
         references = []

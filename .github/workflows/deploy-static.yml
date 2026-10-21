@@ -34,8 +34,10 @@ jobs:
         with:
           node-version: 24.15
       - name: Install published DSL compiler
-        run: npm i -g @lmctl-ai/lmctl@0.2.347
-      - name: Check pages, memory and fixtures (checksum-pinned lmhtml)
+        run: npm i -g @lmctl-ai/lmctl@0.2.369
+      - name: Resolve lmhtml from the lmscript tool cache
+        run: echo "LMHTML=$(bash scripts/tools/run.sh host-path)" >> "$GITHUB_ENV"
+      - name: Check pages, memory and fixtures (release-installed hosts)
         run: |
           npm run check:tools
           npm run check:homepage
