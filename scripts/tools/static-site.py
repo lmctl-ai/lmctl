@@ -64,7 +64,7 @@ def inventory(area, root=ROOT):
             raise ValueError(f'refusing symlink: {path}')
         if not path.is_file():
             continue
-        allowed = ({'.html', '.lms'} if area == 'lmscript' else
+        allowed = ({'.html', '.lms', '.png'} if area == 'lmscript' else
                    {'.html', '.css', '.png', '.svg', '.txt', '.lms'} if area == 'tools' else
                    {'.html'} if area == 'skills' else
                    set(TYPES) - {'.md', '.lms'} if area == 'homepage' else
