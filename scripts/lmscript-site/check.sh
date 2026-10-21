@@ -36,6 +36,10 @@ run_expect() {
   fi
   printf 'PASS %s\n' "$file"
 }
+# A real run is the documented first-use path for install=@latest. This example
+# only saves bytecode under the temporary working directory; it does not launch
+# any provider or render host. It warms verified release assets for --check.
+run_expect dsl-hosts.lms 'compiled lmdraw, lmcad and lmhtml bytecode'
 for file in lmscript-site/examples/*.lms; do
   "$LMSCRIPT_BIN" --check "$file"
 done
@@ -44,7 +48,6 @@ run_expect control-flow-functions.lms 'sum=46'
 run_expect strings-data.lms $'DRAW has 3 members: Ada, Lin, Mina\n{"team":"draw","count":3}'
 run_expect files-processes.lms $'lines=2 last=second line\nprocess=process-ok'
 run_expect errors-require.lms 'requirements passed'
-run_expect dsl-hosts.lms 'compiled lmdraw, lmcad and lmhtml bytecode'
 run_expect teams.lms 'Preview only. Run with --live to seed a provider session.'
 run_expect team-automation.lms 'Preview only. Run with --live TEAMFILE to lint, seed, work, review and open the Lead terminal.'
 run_expect autorun-entry.lms $'Autorun role: @role(Lead.provider) / @role(Lead.model)\nAdd your task here, then run this file with lmctl autorun.'
