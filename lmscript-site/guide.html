@@ -23,7 +23,7 @@ lmscript --version
 lmscript --check examples/hello-vars.lms Ada
 lmscript --dry-run examples/hello-vars.lms Ada
 lmctl script examples/hello-vars.lms Ada</code></pre>
-<p>--check checks syntax, names, calls and embedded blocks without running the script. --dry-run executes only the simulated pass and prints its plan. A normal run checks first, performs the preflight, then executes for real. --no-preflight skips only the dry pass. --dsl-signatures SCHEMA prints canonical signatures for a schema v2 native host.</p>
+<p>The static-check option checks syntax, names, calls and embedded blocks without running the script. Dry-run mode executes only the simulated pass and prints its plan. A normal run checks first, performs the preflight, then executes for real. The no-preflight option skips only the dry pass. The signature-printing option prints canonical signatures for a schema v2 native host.</p>
 <h2 id="values">Values and syntax</h2>
 <p>Values are null, booleans, numbers, strings, lists and maps. Statements end in semicolons. if, for, while and function bodies use braces. Lists and maps are mutable references; use clone when you need a shallow copy. A missing map key or list index is an error; use has or get with a default when absence is expected.</p>
 <pre><code>for (name in ["Ada", "Lin"]) {
@@ -43,7 +43,7 @@ require(area(3, 4) == 12, "area calculation failed");</code></pre>
 </tbody></table>
 <p>Directory and NonInteractive are read-only and cannot be set in init.toml. Standalone lmscript and lmctl script can both read the configured init.toml properties; use --pref FILE before the script to overlay one explicit properties file. lmctl script also connects the lmctl automation functions to provider sessions and team services.</p>
 <h2 id="blocks">Data and native blocks</h2>
-<p>_json_, _csv_, _toml_ and _props_ blocks parse embedded data. _cmd_ and _graphql_ have their own checked forms. Experimental _dsl_ blocks compile typed code against a host schema. They can select a release host with install="github:lmctl-ai/NAME@latest"; the host provides the schema and runs saved bytecode. The schema, compiler and host must agree.</p>
+<p>JSON, CSV, TOML and properties blocks parse embedded data. Command and GraphQL blocks have their own checked forms. Experimental typed native blocks compile code against a host schema. They can select a release host with an install declaration; the host provides the schema and runs saved bytecode. The schema, compiler and host must agree.</p>
 <pre><code>p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(480, 270, "#152438");
 scene.text(32.0, 76.0, 32.0, "Hello", "#f5c16c");
@@ -55,7 +55,8 @@ savedsl(p, "build/hello.dslb");</code></pre>
 <pre><code>lm_agent(member, prompt, options)
 lm_agent_message(member, prompt, options)
 lm_batch_close(handle, status, error)
-lm_batch_open(teamfile, alias, batchfile, options) or lm_batch_open(member, options)
+lm_batch_open(teamfile, alias, batchfile, options)
+lm_batch_open(member, options)
 lm_batch_turn(handle, prompt, index, total)
 lm_classify_failure(text, options)
 lm_error(value, ...values)
@@ -94,7 +95,7 @@ prompt_human(question)</code></pre>
 <tr><td>Undeclared variable</td><td>Assign the name before a block if it is needed afterward; block-created names stay in that block.</td></tr>
 <tr><td>Wrong argument count or unknown function</td><td>Check spelling and arity with lmscript help NAME or lmscript help.</td></tr>
 <tr><td>Missing map key or list index</td><td>Use has(key) or get(key, default) before reading optional data.</td></tr>
-<tr><td>Check error in _dsl_ block</td><td>Compare the call and types with the host's --schema output; use --schema --json for the compiler schema and match the pinned host release.</td></tr>
+<tr><td>Check error in a native block</td><td>Compare the call and types with the host's schema summary; use its JSON schema output for compiler input and match the pinned host release.</td></tr>
 <tr><td>require failed or run-time error</td><td>Read the located diagnostic, correct the input or condition, then rerun --check before the script.</td></tr>
 <tr><td>Provider unavailable</td><td>Run lmctl init, choose an installed provider and model, then rerun the team workflow.</td></tr>
 </tbody></table>

@@ -14,7 +14,7 @@
 <main>
 <h1>Typed host blocks</h1>
 <p>Compile native host calls with install declarations for lmdraw, lmcad, and lmhtml.</p>
-<p>The declarations select release binaries and obtain their schema from each host. The sample saves bytecode beside the working directory; running the saved bytecode is the step that renders or audits files.</p>
+<p>The declarations select release binaries and obtain their schemas. The first compile needs an internet connection to fetch an uncached release; later compiles can use the local cache. Compilation saves bytecode in the working directory. Run each bytecode file with its host to render or process it.</p>
 <h2>Script: dsl-hosts.lms</h2>
 <pre><code>if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
@@ -42,8 +42,14 @@ println("compiled lmdraw, lmcad and lmhtml bytecode");
 </code></pre>
 <h2>Run it</h2>
 <pre><code>lmscript examples/dsl-hosts.lms</code></pre>
-<h2>Output</h2>
+<p>The command above compiles the three blocks and writes hello.dslb, block.dslb and audit.dslb beside the working directory. Run the files with the matching host. lmdraw writes build/rendered/hello.png, lmcad writes build/rendered/block.png, and lmhtml adds its finding to the report.</p>
+<pre><code>lmdraw --dsl hello.dslb
+lmcad --dsl block.dslb
+lmhtml --dsl audit.dslb</code></pre>
+<h2>Compiler output</h2>
 <pre><samp>compiled lmdraw, lmcad and lmhtml bytecode</samp></pre>
+<h2>Host output</h2>
+<pre><samp>{"ok": true, "result": null}</samp></pre>
 
 <p><a href="errors-require.html">Previous: Errors and require</a> · <a href="teams.html">Next: Driving teams</a></p>
 <p>Try it: download <a href="examples/dsl-hosts.lms">examples/dsl-hosts.lms</a>, then run the command above from a working directory that can write its outputs.</p>
