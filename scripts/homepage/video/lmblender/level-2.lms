@@ -61,7 +61,18 @@ gold.keyframe_color(184, 1.0, 0.76, 0.24, "ease");
 gold.keyframe_color(212, 0.83, 0.48, 0.10, "ease");
 gold.keyframe_color(239, 0.83, 0.48, 0.10, "linear");
 
-scene.camera_look_at(0.0, -16.0, 6.5, 0.0, 0.0, 0.0, 38.0);
+scene.camera_look_at(0.0, -15.0, 5.4, 0.0, 0.0, 1.5, 44.0);
+scene.camera_keyframe(0, 0.0, -15.0, 5.4, -0.3, 0.0, 1.5, "linear");
+scene.camera_keyframe(60, -1.0, -14.3, 5.0, 0.0, 0.0, 1.5, "ease");
+scene.camera_keyframe(120, 1.0, -14.3, 5.0, 0.0, 0.0, 1.5, "ease");
+scene.camera_keyframe(180, 0.0, -15.0, 5.4, 0.3, 0.0, 1.5, "ease");
+scene.camera_keyframe(239, 0.0, -15.0, 5.4, -0.3, 0.0, 1.5, "linear");
+scene.camera_optics_keyframe(0, 44.0, 10.0, "linear");
+scene.camera_optics_keyframe(45, 44.0, 10.0, "linear");
+scene.camera_optics_keyframe(78, 41.0, 10.0, "ease");
+scene.camera_optics_keyframe(160, 41.0, 10.0, "linear");
+scene.camera_optics_keyframe(200, 44.0, 10.0, "ease");
+scene.camera_optics_keyframe(239, 44.0, 10.0, "linear");
 
 if (${final}) {
   scene.render_sequence("frames/level-2/frame-{frame}.png", 0, 59, 0, ${fw}, ${fh});

@@ -1,0 +1,23 @@
+out = ARGV[0];
+p = _dsl_ schema="schema/lmdraw.dsl.json";
+scene.canvas(1280, 720, "#152438");
+let navy = scene.linear_gradient("navy", 0.0, 0.0, 1.0, 1.0);
+navy.stop(0.0, "#111f32");
+navy.stop(0.55, "#152438");
+navy.stop(1.0, "#203750");
+scene.rect(0.0, 0.0, 1280.0, 720.0, "url(#navy)");
+let vignette = scene.linear_gradient("edge", 0.0, 0.0, 1.0, 0.0);
+vignette.stop(0.0, "#08132170");
+vignette.stop(0.22, "#08132100");
+vignette.stop(0.78, "#08132100");
+vignette.stop(1.0, "#08132170");
+scene.rect(0.0, 0.0, 1280.0, 720.0, "url(#edge)");
+let vertical = scene.linear_gradient("vertical", 0.0, 0.0, 0.0, 1.0);
+vertical.stop(0.0, "#08132160");
+vertical.stop(0.2, "#08132100");
+vertical.stop(0.8, "#08132100");
+vertical.stop(1.0, "#08132160");
+scene.rect(0.0, 0.0, 1280.0, 720.0, "url(#vertical)");
+scene.render_png("build/rendered/backdrop.png", 1280, 720, 1);
+end _dsl_
+savedsl(p, out);

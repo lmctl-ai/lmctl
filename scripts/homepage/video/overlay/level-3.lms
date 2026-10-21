@@ -1,0 +1,33 @@
+out = ARGV[0];
+p = _dsl_ schema="schema/lmdraw.dsl.json";
+scene.canvas(1280, 720, "#00000000");
+let gold = "#f5c16c";
+let paper = "#f5f8fb";
+let bar = scene.rect(36.0, 28.0, 1208.0, 112.0, "#091625E8");
+scene.rect(36.0, 28.0, 9.0, 112.0, gold);
+scene.text(72.0, 106.0, 42.0, "Set the goal. Review the result.", paper);
+let badge = scene.rect(1050.0, 54.0, 160.0, 56.0, "#263d54E8"); badge.set_attr("rx", "14");
+let badge_text = scene.text(1068.0, 94.0, 34.0, "LEVEL 3", gold); badge_text.set_attr("font-weight", "700");
+let req = scene.rect(54.0, 282.0, 330.0, 142.0, "#091625E8"); req.set_attr("rx", "14");
+let req1 = scene.text(78.0, 336.0, 40.0, "REQUIREMENT", gold); req1.set_attr("font-weight", "700");
+let req2 = scene.text(78.0, 388.0, 40.0, "ACCEPTANCE", paper); req2.set_attr("font-weight", "700");
+let req3 = scene.text(78.0, 426.0, 40.0, "CRITERIA", paper); req3.set_attr("font-weight", "700");
+let lead_box = scene.rect(476.0, 570.0, 330.0, 62.0, "#091625E8"); lead_box.set_attr("rx", "14");
+let lead = scene.text(510.0, 614.0, 42.0, "LEAD + TEAM", gold); lead.set_attr("font-weight", "700");
+let review_box = scene.rect(896.0, 150.0, 312.0, 88.0, "#091625E8"); review_box.set_attr("rx", "14");
+let review = scene.text(926.0, 194.0, 42.0, "REVIEW", "#74d8cf"); review.set_attr("font-weight", "700");
+let verdict = scene.text(926.0, 228.0, 38.0, "YOUR VERDICT", paper);
+for (i in range(0, 240)) {
+  let req_opacity = "0";
+  if (i < 120) { req_opacity = "1"; }
+  req.set_attr("opacity", req_opacity); req1.set_attr("opacity", req_opacity); req2.set_attr("opacity", req_opacity); req3.set_attr("opacity", req_opacity);
+  let lead_opacity = "0";
+  if (i >= 50 && i < 190) { lead_opacity = "1"; }
+  lead_box.set_attr("opacity", lead_opacity); lead.set_attr("opacity", lead_opacity);
+  let review_opacity = "0";
+  if (i >= 178) { review_opacity = "1"; }
+  review_box.set_attr("opacity", review_opacity); review.set_attr("opacity", review_opacity); verdict.set_attr("opacity", review_opacity);
+  scene.render_png("build/rendered/overlay-" + str(i) + ".png", 1280, 720, 1);
+}
+end _dsl_
+savedsl(p, out);

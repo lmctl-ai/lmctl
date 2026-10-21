@@ -1,0 +1,37 @@
+out = ARGV[0];
+p = _dsl_ schema="schema/lmdraw.dsl.json";
+scene.canvas(1280, 720, "#00000000");
+let gold = "#f5c16c";
+let paper = "#f5f8fb";
+let bar = scene.rect(36.0, 28.0, 1208.0, 112.0, "#091625E8");
+scene.rect(36.0, 28.0, 9.0, 112.0, gold);
+scene.text(72.0, 106.0, 42.0, "Turn a repeatable job into automation", paper);
+let badge = scene.rect(1050.0, 54.0, 160.0, 56.0, "#263d54E8"); badge.set_attr("rx", "14");
+let badge_text = scene.text(1068.0, 94.0, 34.0, "LEVEL 4", gold); badge_text.set_attr("font-weight", "700");
+let brainstorm = scene.rect(62.0, 184.0, 310.0, 64.0, "#091625E8"); brainstorm.set_attr("rx", "14");
+let brain_text = scene.text(92.0, 228.0, 42.0, "BRAINSTORM", "#74d8cf"); brain_text.set_attr("font-weight", "700");
+let script = scene.rect(462.0, 184.0, 240.0, 64.0, "#091625E8"); script.set_attr("rx", "14");
+let script_text = scene.text(514.0, 228.0, 42.0, "SCRIPT", gold); script_text.set_attr("font-weight", "700");
+let chips = scene.rect(68.0, 584.0, 218.0, 70.0, "#0b1929E8"); chips.set_attr("rx", "14");
+let c0 = scene.text(131.0, 632.0, 42.0, "WORK", "#75a9ff"); c0.set_attr("font-weight", "700");
+let ch1 = scene.rect(346.0, 584.0, 218.0, 70.0, "#0b1929E8"); ch1.set_attr("rx", "14");
+let c1 = scene.text(378.0, 632.0, 42.0, "REVIEW", "#c4a6ff"); c1.set_attr("font-weight", "700");
+let ch2 = scene.rect(624.0, 584.0, 180.0, 70.0, "#0b1929E8"); ch2.set_attr("rx", "14");
+let c2 = scene.text(691.0, 632.0, 42.0, "QA", "#ff997c"); c2.set_attr("font-weight", "700");
+let ch3 = scene.rect(864.0, 584.0, 336.0, 70.0, "#0b1929E8"); ch3.set_attr("rx", "14");
+let c3 = scene.text(922.0, 632.0, 40.0, "ACCEPTANCE", "#82d48d"); c3.set_attr("font-weight", "700");
+for (i in range(0, 240)) {
+  let brain_opacity = "0";
+  if (i < 68) { brain_opacity = "1"; }
+  brainstorm.set_attr("opacity", brain_opacity); brain_text.set_attr("opacity", brain_opacity);
+  let script_opacity = "0";
+  if (i >= 45 && i < 105) { script_opacity = "1"; }
+  script.set_attr("opacity", script_opacity); script_text.set_attr("opacity", script_opacity);
+  let op0 = "0"; if (i >= 96) { op0 = "1"; } chips.set_attr("opacity", op0); c0.set_attr("opacity", op0);
+  let op1 = "0"; if (i >= 110) { op1 = "1"; } ch1.set_attr("opacity", op1); c1.set_attr("opacity", op1);
+  let op2 = "0"; if (i >= 124) { op2 = "1"; } ch2.set_attr("opacity", op2); c2.set_attr("opacity", op2);
+  let op3 = "0"; if (i >= 138) { op3 = "1"; } ch3.set_attr("opacity", op3); c3.set_attr("opacity", op3);
+  scene.render_png("build/rendered/overlay-" + str(i) + ".png", 1280, 720, 1);
+}
+end _dsl_
+savedsl(p, out);

@@ -58,35 +58,22 @@ lens.keyframe_transform(180, 0.0, 0.0, -40.0, "ease");
 lens.keyframe_visible(181, false, "linear");
 lens.keyframe_transform(239, 0.0, 0.0, -40.0, "linear");
 
-# Camera: static, then retarget to the framed sphere and zoom the vertical
-# FOV 39 -> 27 degrees (about 1.4x), then back. Gentle: the band row stays.
-scene.camera_look_at(0.0, -15.0, 4.5, -0.5, 0.0, 1.5, 40.0);
-scene.camera_keyframe(0, 0.0, -15.0, 4.5, -0.5, 0.0, 1.5, "linear");
-scene.camera_keyframe(110, 0.0, -15.0, 4.5, -4.5, 0.0, 1.2, "ease");
-scene.camera_keyframe(170, 0.0, -15.0, 4.5, -4.5, 0.0, 1.2, "ease");
-scene.camera_keyframe(190, 0.0, -15.0, 4.5, -0.5, 0.0, 1.5, "ease");
-scene.camera_keyframe(239, 0.0, -15.0, 4.5, -0.5, 0.0, 1.5, "linear");
-scene.camera_optics_keyframe(0, 40.0, 10.0, "linear");
-scene.camera_optics_keyframe(110, 40.0, 10.0, "linear");
-scene.camera_optics_keyframe(130, 30.0, 10.0, "ease");
-scene.camera_optics_keyframe(170, 30.0, 10.0, "linear");
-scene.camera_optics_keyframe(190, 40.0, 10.0, "ease");
-scene.camera_optics_keyframe(239, 40.0, 10.0, "linear");
+# Camera stays wide enough for all three teams, then tightens slightly for the
+# session peek before returning to the full team view.
+scene.camera_look_at(-4.5, -8.5, 3.0, -4.5, 0.0, 1.2, 40.0);
+scene.camera_keyframe(0, -4.5, -8.5, 3.0, -4.5, 0.0, 1.2, "linear");
+scene.camera_keyframe(110, -4.5, -8.5, 3.0, -5.8, 0.0, 1.2, "ease");
+scene.camera_keyframe(170, -4.5, -8.5, 3.0, -5.8, 0.0, 1.2, "ease");
+scene.camera_keyframe(190, -4.5, -8.5, 3.0, -4.5, 0.0, 1.2, "ease");
+scene.camera_keyframe(239, -4.5, -8.5, 3.0, -4.5, 0.0, 1.2, "linear");
+scene.camera_optics_keyframe(0, 48.0, 10.0, "linear");
+scene.camera_optics_keyframe(110, 48.0, 10.0, "linear");
+scene.camera_optics_keyframe(132, 46.0, 10.0, "ease");
+scene.camera_optics_keyframe(170, 46.0, 10.0, "linear");
+scene.camera_optics_keyframe(190, 48.0, 10.0, "ease");
+scene.camera_optics_keyframe(239, 48.0, 10.0, "linear");
 
-# Four bottom-aligned columns rise one at a time, heights increasing; each is
-# invisible until its own beat starts (nothing appears early).
-let b0 = scene.cube(1.0); b0.scale(0.42, 0.24, 0.80); b0.set_material(gold);
-b0.keyframe_visible(0, false, "linear"); b0.keyframe_visible(148, true, "linear");
-b0.keyframe_transform(0, 18.0, 0.0, -1.7, "linear"); b0.keyframe_transform(148, 18.0, 0.0, -1.7, "linear"); b0.keyframe_transform(162, 2.8, 0.0, -1.8, "ease"); b0.keyframe_transform(239, 2.8, 0.0, -1.8, "linear");
-let b1 = scene.cube(1.0); b1.scale(0.42, 0.24, 1.30); b1.set_material(teal);
-b1.keyframe_visible(0, false, "linear"); b1.keyframe_visible(154, true, "linear");
-b1.keyframe_transform(0, 18.0, 0.0, -1.7, "linear"); b1.keyframe_transform(154, 18.0, 0.0, -1.7, "linear"); b1.keyframe_transform(168, 3.7, 0.0, -1.55, "ease"); b1.keyframe_transform(239, 3.7, 0.0, -1.55, "linear");
-let b2 = scene.cube(1.0); b2.scale(0.42, 0.24, 1.80); b2.set_material(blue);
-b2.keyframe_visible(0, false, "linear"); b2.keyframe_visible(160, true, "linear");
-b2.keyframe_transform(0, 18.0, 0.0, -1.7, "linear"); b2.keyframe_transform(160, 18.0, 0.0, -1.7, "linear"); b2.keyframe_transform(174, 4.6, 0.0, -1.3, "ease"); b2.keyframe_transform(239, 4.6, 0.0, -1.3, "linear");
-let b3 = scene.cube(1.0); b3.scale(0.42, 0.24, 2.30); b3.set_material(violet);
-b3.keyframe_visible(0, false, "linear"); b3.keyframe_visible(166, true, "linear");
-b3.keyframe_transform(0, 18.0, 0.0, -1.7, "linear"); b3.keyframe_transform(166, 18.0, 0.0, -1.7, "linear"); b3.keyframe_transform(180, 5.5, 0.0, -1.05, "ease"); b3.keyframe_transform(239, 5.5, 0.0, -1.05, "linear");
+# Usage progress is shown in the lmdraw overlay; keep the 3D scene focused on teams.
 
 if (${final}) {
   # 240 frames at 1280x720 exceed the 64M total-pixel sequence budget; the

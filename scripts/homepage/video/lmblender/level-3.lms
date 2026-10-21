@@ -74,10 +74,17 @@ body_right.keyframe_transform(0, 16.0, 0.0, -0.65, "linear");
 body_right.keyframe_visible(170, true, "linear");
 body_right.keyframe_transform(175, 16.0, 0.0, -0.65, "ease"); body_right.keyframe_transform(206, 8.4, 0.0, -0.65, "ease"); body_right.keyframe_transform(239, 8.4, 0.0, -0.65, "linear");
 
-scene.camera_look_at(0.0, -16.5, 6.2, -1.0, 0.0, 0.2, 38.0);
-# Static keys pin the camera: without them the preset auto_frame owns it.
-scene.camera_keyframe(0, 0.0, -16.5, 6.2, -1.0, 0.0, 0.2, "linear");
-scene.camera_keyframe(239, 0.0, -16.5, 6.2, -1.0, 0.0, 0.2, "linear");
+scene.camera_look_at(-2.0, -15.0, 5.1, -2.0, 0.0, 0.0, 38.0);
+scene.camera_keyframe(0, -2.0, -15.0, 5.1, -2.0, 0.0, 0.0, "linear");
+scene.camera_keyframe(60, -1.0, -14.0, 4.8, -1.0, 0.0, 0.0, "ease");
+scene.camera_keyframe(120, 0.0, -13.2, 4.6, 0.0, 0.0, 0.0, "ease");
+scene.camera_keyframe(175, 5.0, -14.8, 5.0, 5.0, 0.0, 0.0, "ease");
+scene.camera_keyframe(239, 5.0, -14.8, 5.0, 5.0, 0.0, 0.0, "linear");
+scene.camera_optics_keyframe(0, 40.0, 10.0, "linear");
+scene.camera_optics_keyframe(60, 36.0, 10.0, "ease");
+scene.camera_optics_keyframe(120, 37.0, 10.0, "ease");
+scene.camera_optics_keyframe(175, 36.0, 10.0, "ease");
+scene.camera_optics_keyframe(239, 36.0, 10.0, "linear");
 
 if (${final}) {
   scene.render_sequence("frames/level-3/frame-{frame}.png", 0, 59, 0, ${fw}, ${fh});
