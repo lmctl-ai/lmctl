@@ -51,4 +51,4 @@ Static tool guides are published at [lmctl.com/tools](<https://lmctl.com/tools/>
 
 ## Quickrun samples
 
-The hosted [quickrun catalog](<https://lmctl.com/quickrun/>) is generated from quickrun/\*.lms. lmctl quickrun displays index.txt; lmctl quickrun solo runs the current solo.lms. Add a description comment and deploy the catalog with scripts/deploy-quickrun.sh to add a task without releasing lmctl again.
+The hosted [autorun catalog](<https://lmctl.com/quickrun/>) is generated from quickrun/*.lms. `lmctl autorun` lists and runs its scripts; `lmctl quickrun` remains as a deprecated alias. Add a description comment and deploy the catalog with scripts/deploy-quickrun.sh to add a task without releasing lmctl again. Hosted hello onboarding is an autorun script at helloexample/hello.lms.

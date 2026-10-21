@@ -1,8 +1,9 @@
 // Generated from one template for each tool's solo and trio samples.
 // --seed-only seeds the team without dispatching model turns.
+// autorun-role: Lead provider=claude model=claude-sonnet-5-5
 tool = "lmdraw";
 mode = "solo";
-members = "_MEMBER_ alias=Lead provider=claude model=claude-sonnet-5-5\n";
+members = "_MEMBER_ alias=Lead provider=@role(Lead.provider) model=@role(Lead.model)\n";
 task = "Create a small, clearly labeled lmdraw diagram on a dark navy canvas. Use the public lmdraw host to compile and render a PNG, and report the source path and how you verified the output.";
 resources = "Read and follow these references:\nLMScript DSL: https://lmctl.com/tools/lmscript/skill.html\nlmdraw API: https://lmctl.com/tools/lmdraw/guide.html\nExample book: https://lmctl.com/tools/lmdraw/examples/title-card.html\n";
 seed_only = false;

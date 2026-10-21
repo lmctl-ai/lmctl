@@ -1,5 +1,6 @@
 // Generated from one template for each tool's solo and trio samples.
 // --seed-only seeds the team without dispatching model turns.
+@@ROLE_HEADERS@@
 tool = @@TOOL@@;
 mode = @@MODE@@;
 members = @@MEMBERS@@;

@@ -23,7 +23,11 @@ def main():
     for mode in ("solo", "trio"):
         members = data["members"][mode]
         member_lines = "\n".join(
-            "_MEMBER_ alias={alias} provider={provider} model={model}".format(**member)
+            "_MEMBER_ alias={alias} provider=@role({alias}.provider) model=@role({alias}.model)".format(**member)
+            for member in members
+        )
+        role_headers = "\n".join(
+            "// autorun-role: {alias} provider={provider} model={model}".format(**member)
             for member in members
         )
         resources = "Read and follow these references:\n" + "".join(
@@ -32,6 +36,7 @@ def main():
         replacements = {
             "@@TOOL@@": json.dumps(tool),
             "@@MODE@@": json.dumps(mode),
+            "@@ROLE_HEADERS@@": role_headers,
             "@@MEMBERS@@": json.dumps(member_lines + "\n"),
             "@@TASK@@": json.dumps(data["task"]),
             "@@RESOURCES@@": json.dumps(resources),
