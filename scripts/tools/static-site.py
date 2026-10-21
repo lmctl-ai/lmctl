@@ -24,6 +24,20 @@ TYPES = {'.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
          '.mp4': 'video/mp4', '.webm': 'video/webm', '.ico': 'image/x-icon'}
 MANIFESTS = {'tools': 'tools/deploy-manifest.json', 'skills': 'skills/deploy-manifest.json',
              'homepage': 'assets/deploy-manifest.json'}
+AREAS = (*MANIFESTS, 'helloexample')
+
+
+def changed_areas(paths):
+    areas = set()
+    for path in paths:
+        if path.startswith(('scripts/', '.github/workflows/deploy-static.yml')):
+            areas.update(MANIFESTS)
+        for area in MANIFESTS:
+            if path.startswith(area + '/') or (area == 'skills' and path.startswith('skills-moved/')):
+                areas.add(area)
+        if path.startswith('helloexample/') or path == 'scripts/deploy-helloexample.sh':
+            areas.add('helloexample')
+    return areas
 
 
 def digest(data):
@@ -367,16 +381,10 @@ def main():
         before = os.environ.get('BEFORE', '')
         after = os.environ.get('AFTER', 'HEAD')
         if not before or set(before) == {'0'} or os.environ.get('EVENT') == 'workflow_dispatch':
-            print('tools skills homepage')
+            print(' '.join(AREAS))
             return 0
         paths = subprocess.check_output(['git', 'diff', '--name-only', '-z', before, after], cwd=ROOT).decode().split('\0')
-        areas = set()
-        for path in paths:
-            if path.startswith(('scripts/', '.github/workflows/deploy-static.yml')):
-                areas.update(MANIFESTS)
-            for area in MANIFESTS:
-                if path.startswith(area + '/') or (area == 'skills' and path.startswith('skills-moved/')):
-                    areas.add(area)
+        areas = changed_areas(paths)
         print(' '.join(sorted(areas)))
         return 0
     areas = args.areas or list(MANIFESTS)

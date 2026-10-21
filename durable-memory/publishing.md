@@ -4,8 +4,8 @@ Static homepage, tools and skills changes publish automatically from main after 
 
 ## Automatic static publishing
 
-1. Commit a change and push it to main. The .github/workflows/deploy-static.yml workflow runs for changes under homepage/, tools/, skills/, skills-moved/, deployment scripts, the tools scripts, or the workflow itself. A manual workflow dispatch selects all three areas.
-2. The workflow checks tools, skills and durable memory, then runs their self-tests. A failing check stops publication.
+1. Commit a change and push it to main. The .github/workflows/deploy-static.yml workflow runs for changes under homepage/, tools/, skills/, skills-moved/, helloexample/, deployment scripts, the tools scripts, or the workflow itself. A manual workflow dispatch selects all four areas.
+2. The workflow checks tools, skills, homepage media and durable memory, then runs their self-tests. A failing check stops publication.
 3. The changed-area selector chooses homepage, tools and/or skills from the push range. Changes under scripts/ select all three.
 4. For each selected area, the publisher compares its manifest with S3 and uploads only missing or changed objects. It deletes only obsolete keys recorded in that area's previous manifest.
 5. Uploaded/deleted paths and stale live CDN copies are invalidated even if S3 is already current. The workflow polls only mismatches for about five minutes and re-invalidates remaining paths once, then runs full link verification.
@@ -25,7 +25,8 @@ The production defaults are S3 bucket lmctl-website-prod and CloudFront distribu
 | /lmprobe/ | lmprobe site bundle; scripts/deploy-lmprobe.sh | Standalone deployment script |
 | /examples/ and /workflows/ | Mirrored catalogs; scripts/deploy-examples.sh and scripts/deploy-workflows.sh | Standalone mirror scripts |
 | /quickrun/ | quickrun/; scripts/deploy-quickrun.sh | Standalone script builds, uploads and verifies its catalog |
-| /helloexample/, /templates/, and /lmscript/commands/ | Repository sources; scripts/deploy.sh | Included in the separate full deployment |
+| /helloexample/ | helloexample/; scripts/deploy-helloexample.sh | Incremental text-script and catalog upload with byte/content-type verification |
+| /templates/ and /lmscript/commands/ | Repository sources; scripts/deploy.sh | Included in the separate full deployment |
 
 The static-area publisher sets MIME and cache headers, writes a deterministic ownership manifest, preserves untracked S3 objects and invalidates only changed or deleted paths. HTML is revalidated without caching; CSS and images use a one-day cache. The Docusaurus deployment gives hashed assets long-lived immutable caching and revalidates HTML and the sitemap.
 

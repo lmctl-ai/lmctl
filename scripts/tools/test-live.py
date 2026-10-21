@@ -24,6 +24,10 @@ class LiveTests(unittest.TestCase):
                 response = (fixture.get('body', '').encode(), {'content-type': fixture.get('type'), 'cache-control': fixture.get('cache')}, fixture.get('error'))
                 self.assertEqual(len(site.compare('page.html', obj, response)), fixture['findings'])
 
+    def test_helloexample_paths_select_incremental_deploy(self):
+        self.assertEqual(site.changed_areas(["helloexample/hello.lms"]), {"helloexample"})
+        self.assertEqual(site.changed_areas(["scripts/deploy-helloexample.sh"]), {"helloexample", "tools", "skills", "homepage"})
+
     def test_missing_and_extra_inventory(self):
         self.assertEqual(site.inventory_diff({'a', 'b'}, {'b', 'c'}), ['missing inventory entry a', 'extra inventory entry c'])
 

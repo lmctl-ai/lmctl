@@ -11,6 +11,7 @@ on:
       - 'scripts/tools/homepage-videos.lms'
       - 'scripts/deploy*.sh'
       - 'scripts/tools/**'
+      - 'helloexample/**'
       - '.github/workflows/deploy-static.yml'
   workflow_dispatch:
 permissions:

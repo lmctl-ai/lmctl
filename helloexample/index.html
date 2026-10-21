@@ -17,13 +17,15 @@
  @media(prefers-color-scheme:dark){body{background:#141414;color:#e8e8e8}.d{color:#aaa}code{background:#262626}a{color:#5aa2ff}h1{color:#fff}}
 </style></head><body>
 <h1>lmctl hello examples</h1>
-<p class="sub">One minimal, single-member teamfile per provider — the connectivity check behind <code>lmctl hello &lt;provider&gt; -p "..."</code>. Each is fetched, seeded, and sent your prompt in one command.</p>
+<p class="sub">Run the hosted onboarding script with <code>lmctl autorun https://lmctl.com/helloexample/hello.lms "your prompt"</code>. It creates a numbered teamfile, seeds the Lead, sends your prompt, and prints continuation commands.</p>
+<p>Legacy provider teamfiles remain available for older lmctl versions.</p>
+<p><a href="hello.lms">Read the autorun hello script</a>.</p>
 
 <ul>
- <li><a href="claude.lmctl">claude.lmctl</a> <span class="d">— <code>lmctl hello claude -p "hi"</code></span></li>
- <li><a href="codex.lmctl">codex.lmctl</a> <span class="d">— <code>lmctl hello codex -p "hi"</code></span></li>
- <li><a href="agy.lmctl">agy.lmctl</a> <span class="d">— <code>lmctl hello agy -p "hi"</code></span></li>
- <li><a href="kimi.lmctl">kimi.lmctl</a> <span class="d">— <code>lmctl hello kimi -p "hi"</code></span></li>
+ <li><a href="claude.lmctl">claude.lmctl</a> <span class="d">— <code>legacy teamfile for claude</code></span></li>
+ <li><a href="codex.lmctl">codex.lmctl</a> <span class="d">— <code>legacy teamfile for codex</code></span></li>
+ <li><a href="agy.lmctl">agy.lmctl</a> <span class="d">— <code>legacy teamfile for agy</code></span></li>
+ <li><a href="kimi.lmctl">kimi.lmctl</a> <span class="d">— <code>legacy teamfile for kimi</code></span></li>
 </ul>
 
 <p class="sub" style="margin-top:2.5rem">Looking for a real, multi-member team to try instead of a one-off check? See the <a href="/templates/">template library</a>, or read <a href="/lmctl/docs/manuals/teamfile-format">how a teamfile works</a>.</p>
