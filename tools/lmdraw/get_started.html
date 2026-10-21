@@ -32,10 +32,11 @@
 <li><a href="/tools/lmdraw/lmdraw_trio.lms">lmdraw_trio.lms</a> seeds a Lead, a Gemini Coder, and a Codex Reviewer. The quickrun passes the Lead's assignment to the Coder, the Coder's result to the Reviewer, then returns both to the Lead for a report.</li>
 </ul>
 <p>Install lmctl and configure the providers in your local profile before running a quickrun. Each run writes a new numbered teamfile in the current directory, seeds the sessions, and opens a terminal unless you pass the global non-interactive option.</p>
+<p>The agent-created drawing script uses an LMScript _dsl_ declaration to install and run the lmdraw native host. Rendering happens locally; lmdraw has no public HTTP rendering service.</p>
 <h2>Run a quickrun</h2>
 <p>From a terminal in a directory where you want the teamfile to live, run one of these commands:</p>
-<pre><code>lmctl quickrun https://lmctl.com/tools/lmdraw/lmdraw_solo.lms
-lmctl quickrun https://lmctl.com/tools/lmdraw/lmdraw_trio.lms</code></pre>
+<pre><code>lmctl autorun https://lmctl.com/tools/lmdraw/lmdraw_solo.lms
+lmctl autorun https://lmctl.com/tools/lmdraw/lmdraw_trio.lms</code></pre>
 <p>The Lead receives a drawing task and the reference links below. When the terminal opens, talk to the Lead as you would in a normal lmctl team session. Use the generated Prompt command to continue later or Resume to reopen the same Lead.</p>
 <h2>References given to the agents</h2>
 <ul>
@@ -45,7 +46,7 @@ lmctl quickrun https://lmctl.com/tools/lmdraw/lmdraw_trio.lms</code></pre>
 </ul>
 <h2>Test without sending a task</h2>
 <p>Append --seed-only to seed the team and skip all agent prompts. This is useful for checking provider setup without asking the agents to do drawing work.</p>
-<pre><code>lmctl --non-interactive quickrun \
+<pre><code>lmctl --non-interactive autorun \
   https://lmctl.com/tools/lmdraw/lmdraw_solo.lms \
   --seed-only</code></pre>
 <p>Read <a href="/tools/lmdraw/skill.html">the lmdraw skill</a> for script-authoring rules, or browse the <a href="/tools/lmdraw/examples/">example book</a>.</p>

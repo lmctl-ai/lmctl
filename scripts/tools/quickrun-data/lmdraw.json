@@ -14,5 +14,5 @@
     {"label": "lmdraw API", "url": "https://lmctl.com/tools/lmdraw/guide.html"},
     {"label": "Example book", "url": "https://lmctl.com/tools/lmdraw/examples/title-card.html"}
   ],
-  "task": "Create a small, clearly labeled lmdraw diagram on a dark navy canvas. Use the public lmdraw host to compile and render a PNG, and report the source path and how you verified the output."
+  "task": "Create a small, clearly labeled lmdraw diagram on a dark navy canvas. Use the lmdraw native host, installed by the LMScript _dsl_ declaration, to compile and render a PNG locally. There is no public HTTP rendering service. Report the source path and how you verified the output."
 }
