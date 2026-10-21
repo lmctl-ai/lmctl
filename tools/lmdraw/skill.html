@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmdraw script authoring skill — lmdraw — lmctl.com tools</title>
+<meta name="description" content="Use lmdraw to create editable 2D scenes and render still images or animation frames through typed lmscript calls.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmdraw/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmdraw/">Overview</a></li>
+<li><a href="/tools/lmdraw/skill.html">Skill</a></li>
+<li><a href="/tools/lmdraw/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmdraw/guide.html">Guide</a></li>
+</ul>
+</nav>
+<main><h1>lmdraw script authoring skill</h1>
+<p>Use lmdraw to create editable 2D scenes and render still images or animation frames through typed lmscript calls.</p>
+<h2>Purpose</h2>
+<p>Write lmscript programs that create retained vector nodes, import supported SVG artwork, update node attributes and render PNG images or frame sequences.</p>
+<h2>When to use it</h2>
+<p>Choose lmdraw for diagrams, title cards, vector overlays and scripted 2D animation. Use it when the same scene should produce many frames by changing a few attributes. Use a 3D host when the work depends on solid geometry, perspective or physical lighting.</p>
+<h2>Install</h2>
+<p>Download the latest lmdraw binary from <a href="https://github.com/lmctl-ai/lmdraw/releases/latest">GitHub Releases</a>. Install Node.js 24.15 or newer and use the published lmscript compiler with npx. Source builds require C++17, CMake, Ninja and Python 3; the project README has the build steps.</p>
+<h2>Commands</h2>
+<pre><code>npx --yes --package=@lmctl-ai/lmctl -- lmscript scene.lms build/scene.dslb
+lmdraw --dsl build/scene.dslb
+lmdraw --schema
+lmdraw --schema --json
+lmdraw --dsl-signatures</code></pre>
+<p>Compile against the exact JSON printed by lmdraw --schema --json. The short --schema summary is for people; the JSON is the compiler input.</p>
+<h2>Inputs and outputs</h2>
+<ul>
+<li>Programs use an _dsl_ block and schema version 2. The host reads bytecode version 5.</li>
+<li>scene.canvas(width, height, background) starts a scene. Its coordinates are CSS pixels, with x increasing right and y increasing down.</li>
+<li>Nodes are returned as handles. node.set_attr(name, value) uses SVG-style attribute names such as fill, stroke, opacity, transform, font-size and text-anchor.</li>
+<li>scene.load_svg(path, id) reads a supported SVG from assets/ and returns the node with that id. Repeated loads of the same file can obtain additional handles.</li>
+<li>PNG outputs are written below build/rendered/. Loops can write numbered frames, which ffmpeg can encode as video.</li>
+</ul>
+<pre><code>Context: scene: Scene
+Scene.canvas(int, int, string) -> Scene
+Scene.rect(float, float, float, float, string) -> Node
+Scene.circle(float, float, float, string) -> Node
+Scene.path(string, string, string, float) -> Node
+Scene.text(float, float, float, string, string) -> Node
+Scene.load_svg(string, string) -> Node
+Scene.render_png(string, int, int, int) -> void
+Node.set_attr(string, string) -> Node
+Group.add(Node) -> Group
+Scene.linear_gradient(string, float, float, float, float) -> Gradient</code></pre>
+<h2>Safety rules</h2>
+<ul>
+<li>Run only bytecode you trust. The VM has no instruction or allocation budget.</li>
+<li>Canvas dimensions, image pixel totals, scene nodes, SVG input and bytecode have host-side limits. Keep rendering scale within the total-pixel limit.</li>
+<li>SVG files must be direct children of assets/. External files, URLs, scripts, stylesheets, CSS classes, event handlers, DTDs, animation and filters are refused.</li>
+<li>PNG paths must be direct children of build/rendered/. Path traversal and symbolic-link escapes are rejected.</li>
+<li>There are no DSL list values. Host collections, where provided, use len(), at(i) and foreach; lmdraw itself does not expose a collection API.</li>
+<li>Use float(i) when a loop index participates in float arithmetic. Integer and float values do not mix implicitly.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>A five-minute path is: compile a title card, run it, inspect the PNG, load an SVG node, then change an attribute and render again.</p>
+<ol>
+<li>Make a title card with scene.canvas, scene.rect and scene.text. Set typography and decoration using node.set_attr.</li>
+<li>Load an SVG by path and element id, then change a presentation attribute such as opacity or fill before rendering.</li>
+<li>For animation, loop over frame indices, compute t as float(i) / float(frame_count - 1), update string-valued attributes with str(lerp(...)), and call scene.render_png for each numbered frame.</li>
+<li>Encode frames with ffmpeg using a fixed frame rate and pixel format. Keep the numbered PNGs when you need to inspect or regenerate the video.</li>
+<li>Use scene.measure_text before positioning a label. Text uses bundled Noto Sans; complex-script shaping and bidirectional layout are not provided.</li>
+</ol>
+<h2>Errors and exit codes</h2>
+<p>Exit code 0 means success. Exit code 2 indicates invalid command-line arguments. Exit code 3 indicates bytecode loading, verification or a DSL host-call error. Exit code 4 indicates another application failure. A rejected SVG usually needs unsupported CSS, filters, scripts or external references removed. An output path error means the PNG must be written directly inside build/rendered/.</p>
+<h2>How to verify</h2>
+<ol>
+<li>Compile using the schema bytes from lmdraw --schema --json.</li>
+<li>Compare lmscript --dsl-signatures schema.json with lmdraw --dsl-signatures when checking schema and registry parity.</li>
+<li>Run the bytecode and confirm the host prints its success result.</li>
+<li>Check image dimensions and inspect the render visually. Re-run the same input and compare PNG bytes when determinism matters.</li>
+<li>For animation, count the numbered frames, inspect first, middle and last images, and verify the encoded video dimensions and frame rate.</li>
+</ol>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmdraw">github.com/lmctl-ai/lmdraw</a>.</p>
+</footer>
+</body>
+</html>

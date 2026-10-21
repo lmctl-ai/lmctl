@@ -4,7 +4,7 @@ A guide for an LLM (or a person) adding or improving a tool's documentation in t
 
 ## Purpose and where it is published
 
-tools/ is the source of [https://lmctl.com/tools/](<https://lmctl.com/tools/>): one plain-HTML section per tool (lmscript, lmcad, lmhtml, cpp-dsl-sdk, …), each with a skill page written for LLM agents plus optional tutorial, guide, recipes, reference, FAQ and changelog pages. There is no framework, no JavaScript and no build step: authors write content HTML, and scripts/tools/ (an lmscript \_dsl\_ program run by the lmhtml host) decorates and checks it. scripts/deploy-tools.sh publishes it directly, and a push to main automatically publishes changed tool pages through the path-filtered static workflow. Details are in [Publishing lmctl.com](<publishing.md>).
+tools/ is the source of [https://lmctl.com/tools/](<https://lmctl.com/tools/>): one plain-HTML section per tool (lmscript, lmcad, lmdraw, lmhtml, cpp-dsl-sdk, …), each with a skill page written for LLM agents plus optional tutorial, guide, recipes, reference, FAQ and changelog pages. There is no framework, no JavaScript and no build step: authors write content HTML, and scripts/tools/ (an lmscript \_dsl\_ program run by the lmhtml host) decorates and checks it. scripts/deploy-tools.sh publishes it directly, and a push to main automatically publishes changed tool pages through the path-filtered static workflow. Details are in [Publishing lmctl.com](<publishing.md>).
 
 ## The 30-second version
 
@@ -71,7 +71,7 @@ It never rewrites authored content: text, comments, quotes and entities are kept
 - Public-safe prose: no internal requirement numbers, team or agent names, private repository names or local paths; experimental features are labelled experimental.
 - A good skill page lets another LLM use the tool correctly on the first try: exact install and version, the few commands that matter with their flags, input/output formats, what is destructive and needs a dry run, syntax that differs from languages it will guess at, worked examples that were run, exit codes with fixes, and a verification loop (how to prove success).
 - Size: a skill page of 8–20 KB, as many numbered tutorial steps as the task needs (typically 4–12), and a guide that is a real reference rather than a second skill.
-- Examples to copy: /tools/lmscript/skill.html (language skill), /tools/lmcad/ (images and animations), /tools/lmhtml/ (recipes page), /tools/cpp-dsl-sdk/ (library/SDK).
+- Examples to copy: /tools/lmscript/skill.html (language skill), /tools/lmcad/ (images and animations), /tools/lmdraw/ (retained 2D scenes and SVG input), /tools/lmhtml/ (recipes page), /tools/cpp-dsl-sdk/ (library/SDK).
 
 ## Icons
 

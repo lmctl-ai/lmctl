@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Render scenes and animation with lmdraw — lmdraw — lmctl.com tools</title>
+<meta name="description" content="These commands were run from the lmdraw source root with lmdraw v0.1.0 and lmscript 0.2.359.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmdraw/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmdraw/">Overview</a></li>
+<li><a href="/tools/lmdraw/skill.html">Skill</a></li>
+<li><a href="/tools/lmdraw/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmdraw/guide.html">Guide</a></li>
+</ul>
+</nav>
+<main><h1>Render scenes and animation with lmdraw</h1>
+<p>These commands were run from the lmdraw source root with lmdraw v0.1.0 and lmscript 0.2.359. The SVG example uses the bundled homepage automation-ladder drawing. Paths are shown relative to that root.</p>
+<h2>1. Compile a title card</h2>
+<p>Compile the included title-card program against the schema path embedded in the script.</p>
+<pre><kbd>lmscript examples/title-card.lms build/title-card.dslb</kbd>
+<samp>wrote build/title-card.dslb</samp></pre>
+<h2>2. Render and inspect the still</h2>
+<p>The host writes PNG output below build/rendered/ and prints a success result.</p>
+<pre><kbd>./build/lmdraw --dsl build/title-card.dslb</kbd>
+<samp>{"ok": true, "result": null}</samp>
+<kbd>file build/rendered/title-card.png</kbd>
+<samp>build/rendered/title-card.png: PNG image data, 960 x 540, 8-bit/color RGBA, non-interlaced</samp></pre>
+<figure><img src="/tools/lmdraw/img/title-card.png" alt="The rendered lmdraw title card with a dark blue panel and large white heading." width="480" height="270"><figcaption>The title-card example output.</figcaption></figure>
+<h2>3. Load an SVG and change an attribute</h2>
+<p>The included example loads the bundled homepage automation-ladder SVG fixture by id, changes opacity on the retained handle, and renders it. It also demonstrates loading multiple SVG assets in one program.</p>
+<pre><kbd>lmscript examples/render-assets.lms build/render-assets.dslb</kbd>
+<samp>wrote six SVG renders</samp>
+<kbd>./build/lmdraw --dsl build/render-assets.dslb</kbd>
+<samp>{"ok": true, "result": null}</samp>
+<kbd>file build/rendered/svg-automation-ladder.png</kbd>
+<samp>build/rendered/svg-automation-ladder.png: PNG image data, 960 x 360, 8-bit/color RGBA, non-interlaced</samp></pre>
+<figure><img src="/tools/lmdraw/img/automation-ladder.png" alt="A four-stage rising automation ladder illustration rendered from SVG." width="480" height="180"><figcaption>The same source drawing is included as an example render.</figcaption></figure>
+<h2>4. Render a 24-frame tween</h2>
+<p>The animation script updates an SVG opacity and a marker position in a range loop. It writes 24 numbered PNG frames.</p>
+<pre><kbd>lmscript examples/animated-ladder.lms build/animated-ladder.dslb</kbd>
+<samp>wrote 24 deterministic numbered frames</samp>
+<kbd>./build/lmdraw --dsl build/animated-ladder.dslb</kbd>
+<samp>wrote 24 deterministic numbered frames</samp>
+<kbd>ls build/rendered/ladder-*.png | wc -l</kbd>
+<samp>24</samp></pre>
+<figure><img src="/tools/lmdraw/img/animated-ladder-frame.png" alt="A frame from the automation ladder tween, showing a gold marker on the right." width="480" height="180"><figcaption>A representative numbered frame.</figcaption></figure>
+<h2>5. Encode the frames as MP4</h2>
+<p>ffmpeg combines the numbered PNGs into a one-second H.264 video at 24 frames per second. ffprobe confirms its codec and dimensions.</p>
+<pre><kbd>ffmpeg -hide_banner -loglevel error -framerate 24 -start_number 0 -i 'build/rendered/ladder-%d.png' -frames:v 24 -c:v libx264 -pix_fmt yuv420p -movflags +faststart -y build/animated-ladder.mp4</kbd>
+<samp>(no output; exit 0)</samp>
+<kbd>ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height,r_frame_rate -show_entries format=duration -of default=noprint_wrappers=1 build/animated-ladder.mp4</kbd>
+<samp>codec_name=h264
+width=640
+height=240
+r_frame_rate=24/1
+duration=1.000000</samp></pre>
+<p>To run these commands with a release install, replace ./build/lmdraw with the path to the downloaded lmdraw executable. The example scripts and generated frames remain the same.</p>
+<h2>What you learned</h2>
+<p>Compile each scene against lmdraw's embedded schema, run the bytecode with the host, inspect the generated PNG, and use a deterministic numbered sequence as input to ffmpeg.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmdraw">github.com/lmctl-ai/lmdraw</a>.</p>
+</footer>
+</body>
+</html>

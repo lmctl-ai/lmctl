@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmdraw API and SVG guide — lmdraw — lmctl.com tools</title>
+<meta name="description" content="lmdraw is a native host for retained 2D scenes.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmdraw/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmdraw/">Overview</a></li>
+<li><a href="/tools/lmdraw/skill.html">Skill</a></li>
+<li><a href="/tools/lmdraw/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmdraw/guide.html">Guide</a></li>
+</ul>
+</nav>
+<main><h1>lmdraw API and SVG guide</h1>
+<h2>Overview</h2>
+<p>lmdraw is a native host for retained 2D scenes. Its schema creates vector and text nodes, loads a restricted SVG subset, updates SVG-style attributes and writes PNG files. The bytecode VM is version 5 and the schema is version 2.</p>
+<p>Coordinates use CSS pixels with the origin at the upper left, x increasing right and y increasing down. Text y coordinates are baselines. A scene starts with scene.canvas(width, height, background) or scene.load_svg(path, id).</p>
+<h2>CLI</h2>
+<pre><code>lmdraw --schema
+lmdraw --schema --json
+lmdraw --dsl-signatures
+lmdraw --dsl FILE.dslb [FILE.dslb ...]</code></pre>
+<p>The short schema output is generated from the host registry. JSON output is the exact embedded schema bytes used by lmscript. Multiple bytecode files are validated before execution, then run in order.</p>
+<h2>Schema summary</h2>
+<p>This list is copied from lmdraw --schema. The output is the canonical compact summary for authors.</p>
+<pre><code>Context
+context scene: Scene
+
+Gradient
+Gradient.stop(float, string) -> Gradient
+
+Group
+Group.add(Group) -> Group
+Group.add(Node) -> Group
+Group.set_attr(string, string) -> Group
+
+Node
+Node.set_attr(string, string) -> Node
+
+Scene
+Scene.canvas(int, int, string) -> Scene
+Scene.circle(float, float, float, string) -> Node
+Scene.ellipse(float, float, float, float, string) -> Node
+Scene.group() -> Group
+Scene.image(string, float, float, float, float) -> Node
+Scene.line(float, float, float, float, string, float) -> Node
+Scene.linear_gradient(string, float, float, float, float) -> Gradient
+Scene.load_font(string, string, bool) -> void
+Scene.load_svg(string, string) -> Node
+Scene.measure_text(string, float, bool) -> float
+Scene.path(string, string, string, float) -> Node
+Scene.polyline(string, string, float) -> Node
+Scene.rect(float, float, float, float, string) -> Node
+Scene.render_png(string, int, int, int) -> void
+Scene.text(float, float, float, string, string) -> Node</code></pre>
+<p>For the exact compiler input, save lmdraw --schema --json to a file and use that JSON in the _dsl_ declaration. lmdraw --dsl-signatures prints the registry side of the compiler parity check.</p>
+<h2>Retained nodes and attributes</h2>
+<p>Constructors return Node, Group or Gradient handles. Node.set_attr(name, value) updates a node using SVG attribute names. Group.add attaches a node or group. A node or group may have only one parent, and group cycles are rejected.</p>
+<table>
+<thead><tr><th>Attribute family</th><th>Names and values</th></tr></thead>
+<tbody>
+<tr><td>Paint</td><td>fill and stroke accept named colors, hex colors, none, or a same-scene linear-gradient reference such as url(#warm).</td></tr>
+<tr><td>Opacity</td><td>opacity, fill-opacity and stroke-opacity accept values from 0 to 1.</td></tr>
+<tr><td>Stroke</td><td>stroke-width is a positive pixel value; stroke-linecap and stroke-linejoin use SVG values.</td></tr>
+<tr><td>Geometry</td><td>x, y, width, height, cx, cy, r, rx, ry, x1, y1, x2 and y2 are finite pixel values. Sizes and radii must be positive.</td></tr>
+<tr><td>Path</td><td>d contains path data; points contains numeric coordinate pairs.</td></tr>
+<tr><td>Text</td><td>font-family, font-size, font-weight and text-anchor control text presentation. Anchors are start, middle or end.</td></tr>
+<tr><td>Transform</td><td>transform accepts the renderer's supported SVG transform syntax.</td></tr>
+<tr><td>Image</td><td>href accepts embedded PNG data URIs only. File and network references are refused.</td></tr>
+</tbody>
+</table>
+<h2>Text and gradients</h2>
+<p>Noto Sans Regular and Bold are embedded. Text uses UTF-8 and supports basic measurement; complex-script shaping and bidirectional layout are not implemented. scene.measure_text(text, size, bold) returns a width in pixels. Custom TrueType fonts can be loaded from assets/fonts/.</p>
+<p>scene.linear_gradient creates a linear gradient, then Gradient.stop adds color stops. Script-created gradient coordinates are fractions of the painted object's bounds from 0 to 1. Assign a gradient with a local url(#id) fill or stroke.</p>
+<h2>SVG input subset</h2>
+<p>SVG input files must be direct children of assets/ and no larger than 2 MiB. Loading a document returns the requested id as a retained handle; another call for the same document can return another id without replacing the scene.</p>
+<table>
+<thead><tr><th>SVG elements</th><th>Mapped scene content</th></tr></thead>
+<tbody>
+<tr><td>svg</td><td>Canvas dimensions and viewBox.</td></tr>
+<tr><td>g</td><td>Retained group with child order.</td></tr>
+<tr><td>rect, circle, ellipse, line</td><td>Matching geometry node.</td></tr>
+<tr><td>polyline, polygon, path</td><td>Path geometry; polygon closes its outline.</td></tr>
+<tr><td>text, tspan</td><td>Text node and ordered text runs.</td></tr>
+<tr><td>defs, linearGradient, radialGradient, stop</td><td>Definitions referenced by local fragment URLs.</td></tr>
+<tr><td>clipPath, mask</td><td>Static clipping definitions.</td></tr>
+<tr><td>use</td><td>Same-document reference by fragment id.</td></tr>
+<tr><td>title, desc</td><td>Document metadata, not painted.</td></tr>
+</tbody>
+</table>
+<p>The host refuses CSS classes and stylesheets, script and event handlers, DTDs and entities, SMIL animation, foreignObject, filters, and external URLs or files. Renderer support for uncommon SVG forms can vary; inspect imported output. Embedded data images are not accepted from SVG input.</p>
+<h2>Frames and animation</h2>
+<p>Use ordinary lmscript loops to update retained attributes and write numbered PNG files. Convert numeric values to strings before passing them to set_attr. A fixed ffmpeg frame rate, codec and pixel format make the video encoding repeatable within the same toolchain.</p>
+<pre><code>for (i in range(0, 24)) {
+  let t = float(i) / 23.0;
+  marker.set_attr("cx", str(lerp(140.0, 500.0, ease(t))));
+  scene.render_png("build/rendered/frame-" + str(i) + ".png", 640, 360, 1);
+}</code></pre>
+<h2>Limits and errors</h2>
+<ul>
+<li>At most 10,000 nodes and 1,024 gradients, with at most 128 stops per gradient.</li>
+<li>SVG input is at most 2 MiB; custom font input is a TrueType file below assets/fonts/ and at most 8 MiB.</li>
+<li>Bytecode files are at most 16 MiB. Every file passed to one --dsl call is verified before any script runs.</li>
+<li>Image dimensions are limited to 4,096 per side and 8,000,000 total pixels. Render scale is from 1 to 4 within that total.</li>
+<li>PNG output must be a direct child of build/rendered/. Symlink escapes and traversal are rejected; writes are atomic and respect the process umask.</li>
+<li>Exit 2 indicates invalid arguments, exit 3 a bytecode or host error, and exit 4 another application failure.</li>
+</ul>
+<p>The host performs no network access and imposes no VM instruction budget. Bytecode should be trusted. Fix host errors by using valid dimensions, supported SVG features and output paths within the allowed directory.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmdraw">github.com/lmctl-ai/lmdraw</a>.</p>
+</footer>
+</body>
+</html>
