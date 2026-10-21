@@ -1,2 +1,0 @@
-record = {name: "Ada"};
-println(record.email);

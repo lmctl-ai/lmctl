@@ -1,7 +1,0 @@
-// autorun-role: Lead provider=claude model=claude-sonnet-5-5
-lead_provider = "@role(Lead.provider)";
-lead_model = "@role(Lead.model)";
-team = path_join(Directory, "portable-team.lmctl");
-contents = f"# Portable tutorial team\n_MEMBER_ alias=Lead provider={lead_provider} model={lead_model}\n";
-write_file(team, contents);
-println("Wrote portable-team.lmctl");
