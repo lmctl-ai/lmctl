@@ -1,0 +1,7 @@
+path = temp_file();
+write_file(path, "first line\nsecond line\n");
+lines = read_lines(path);
+println(f"lines={lines.len()} last={lines[1]}");
+result = system(["node", "-e", "process.stdout.write('process-ok')"]);
+println(f"process={result.stdout}");
+remove_file(path);

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Writing a team automation — lmscript</title>
+<meta name="description" content="Build a repeatable workflow from team setup, seeding, prompts, checks, and a final handoff.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li></ul></nav>
+<main>
+<h1>Writing a team automation</h1>
+<p>Build a repeatable workflow from team setup, seeding, prompts, checks, and a final handoff.</p>
+<h2>Script: team-automation.lms</h2>
+<pre><code># Offline by default. Pass --live and a prepared teamfile to run the workflow.
+if (ARGV.get(0, "") == "--live") {
+  team = ARGV.get(1, "team.lmctl");
+  checked = lm_lint(team);
+  require(checked.status == "ok", f"Teamfile is invalid: {checked.error}");
+  seeded = lm_seed(team);
+  require(seeded.status == "ok", f"Could not seed team: {seeded.error}");
+  work = lm_prompt(team, "Lead", "Complete the task in the teamfile and report the changed files.");
+  require(work.status == "ok", f"Lead failed: {work.error}");
+  review = lm_prompt(team, "Review", f"Review the Lead's report and changes. Findings: {work.reply}");
+  require(review.status == "ok", f"Review failed: {review.error}");
+  println(review.reply);
+  if (!NonInteractive) { lm_terminal(team, "Lead"); }
+} else {
+  println("Preview only. Run with --live TEAMFILE to lint, seed, work, review and open the Lead terminal.");
+}
+</code></pre>
+<h2>Run it</h2>
+<pre><code>lmscript examples/team-automation.lms</code></pre>
+<h2>Output</h2>
+<pre><samp>Team definition: ./team.lmctl
+A live workflow can call lm_seed, lm_prompt and lm_terminal here.</samp></pre>
+
+<p><a href="teams.html">Previous: Driving teams</a> · <a href="autorun-entry.html">Next: Starting with lmctl autorun</a></p>
+<p>Try it: download <a href="examples/team-automation.lms">examples/team-automation.lms</a>, then run the command above from a working directory that can write its outputs.</p>
+</main>
+<footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
+</body>
+</html>

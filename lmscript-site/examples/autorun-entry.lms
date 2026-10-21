@@ -1,0 +1,5 @@
+// autorun-role: Lead provider=claude model=claude-sonnet-5-5
+provider = "@role(Lead.provider)";
+model = "@role(Lead.model)";
+println(f"Autorun role: {provider} / {model}");
+println("Add your task here, then run this file with lmctl autorun.");

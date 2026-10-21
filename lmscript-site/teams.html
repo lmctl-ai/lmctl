@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driving teams — lmscript</title>
+<meta name="description" content="The default path is offline. Add --live to seed a configured Lead, prompt once, then open its terminal in interactive mode.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li></ul></nav>
+<main>
+<h1>Driving teams</h1>
+<p>The default path is offline. Add --live to seed a configured Lead, prompt once, then open its terminal in interactive mode.</p>
+<p>The live branch can create provider sessions and send a real prompt. Test the offline path first; use --live only when you intend to contact the configured provider. lm_terminal opens the provider interface only when the run is interactive.</p>
+<h2>Script: teams.lms</h2>
+<pre><code># This offline default is safe to run. Pass --live to seed and prompt a provider.
+team = path_join(Directory, "tutorial-team.lmctl");
+if (ARGV.get(0, "") == "--live") {
+  write_file_exclusive(team, "# Tutorial team\n_MEMBER_ alias=Lead provider=claude\n");
+  seeded = lm_seed(team);
+  require(seeded.status == "ok", f"Could not seed team: {seeded.error}");
+  reply = lm_prompt(team, "Lead", "Reply with one sentence describing your task.");
+  require(reply.status == "ok", f"Prompt failed: {reply.error}");
+  println(reply.reply);
+  if (!NonInteractive) { lm_terminal(team, "Lead"); }
+} else {
+  println("Preview only. Run with --live to seed a provider session.");
+}
+</code></pre>
+<h2>Run it</h2>
+<pre><code>lmscript examples/teams.lms</code></pre>
+<h2>Output</h2>
+<pre><samp>Preview only. Run with --live to seed a provider session.</samp></pre>
+
+<p><a href="dsl-hosts.html">Previous: Typed host blocks</a> · <a href="team-automation.html">Next: Writing a team automation</a></p>
+<p>Try it: download <a href="examples/teams.lms">examples/teams.lms</a>, then run the command above from a working directory that can write its outputs.</p>
+</main>
+<footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
+</body>
+</html>

@@ -23,7 +23,8 @@ TYPES = {'.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
          '.md': 'text/plain; charset=utf-8', '.xml': 'application/xml; charset=utf-8',
          '.mp4': 'video/mp4', '.webm': 'video/webm', '.ico': 'image/x-icon'}
 MANIFESTS = {'tools': 'tools/deploy-manifest.json', 'skills': 'skills/deploy-manifest.json',
-             'homepage': 'assets/deploy-manifest.json'}
+             'homepage': 'assets/deploy-manifest.json',
+             'lmscript': 'lmscript/site-deploy-manifest.json'}
 AREAS = (*MANIFESTS, 'helloexample')
 
 
@@ -35,6 +36,8 @@ def changed_areas(paths):
         for area in MANIFESTS:
             if path.startswith(area + '/') or (area == 'skills' and path.startswith('skills-moved/')):
                 areas.add(area)
+        if path.startswith('lmscript-site/') or path == 'scripts/deploy-lmscript.sh':
+            areas.add('lmscript')
         if path.startswith('helloexample/') or path == 'scripts/deploy-helloexample.sh':
             areas.add('helloexample')
     return areas
@@ -52,7 +55,7 @@ def inventory(area, root=ROOT):
         data = path.read_bytes()
         result[key] = dict(data=data, sha256=digest(data), content_type=TYPES[path.suffix],
                            cache_control=DAY if path.suffix in ('.css', '.png', '.svg', '.ico', '.mp4', '.webm') else NO_CACHE)
-    source = root / area
+    source = root / ('lmscript-site' if area == 'lmscript' else area)
     for path in sorted(source.rglob('*')):
         rel = path.relative_to(source)
         if any(p.startswith('.') or p == '_template' for p in rel.parts) or path.name == 'README.md':
@@ -61,10 +64,15 @@ def inventory(area, root=ROOT):
             raise ValueError(f'refusing symlink: {path}')
         if not path.is_file():
             continue
-        allowed = {'.html', '.css', '.png', '.svg', '.txt', '.lms'} if area == 'tools' else ({'.html'} if area == 'skills' else set(TYPES) - {'.md', '.lms'} if area == 'homepage' else set(TYPES) - {'.md'})
+        allowed = ({'.html', '.lms'} if area == 'lmscript' else
+                   {'.html', '.css', '.png', '.svg', '.txt', '.lms'} if area == 'tools' else
+                   {'.html'} if area == 'skills' else
+                   set(TYPES) - {'.md', '.lms'} if area == 'homepage' else
+                   set(TYPES) - {'.md'})
         if path.suffix not in allowed:
             raise ValueError(f'unexpected publication file: {path}')
-        key = rel.as_posix() if area == 'homepage' else f'{area}/{rel.as_posix()}'
+        key = (f'lmscript/{rel.as_posix()}' if area == 'lmscript' else
+               rel.as_posix() if area == 'homepage' else f'{area}/{rel.as_posix()}')
         add(key, path)
         if path.name == 'index.html' and '/' in key:
             prefix = key[:-len('/index.html')]
@@ -123,6 +131,8 @@ def deploy(area):
         for key in deletions:
             if area == 'homepage':
                 valid = key.startswith(('assets/', 'levels/')) or key in ('levels', 'index.html', '404.html', 'robots.txt', 'sitemap.xml')
+            elif area == 'lmscript':
+                valid = key.startswith(('lmscript/',))
             else:
                 valid = key == area or key.startswith(area + '/')
             if not valid:
@@ -345,7 +355,7 @@ def verify(areas, repair_cdn=False):
                     continue
                 address = paths[row['file']]
                 location = urllib.parse.urlsplit(address).path
-                if not (location == '/' or location == '/index.html' or location.startswith(('/tools', '/skills', '/levels'))):
+                if not (location == '/' or location == '/index.html' or location.startswith(('/tools', '/skills', '/levels', '/lmscript'))):
                     continue
                 selector, href = row['message'].split('\t', 1)
                 resolved = urllib.parse.urlsplit(urllib.parse.urljoin(bases.get(address, address), href))
@@ -389,7 +399,7 @@ def main():
         return 0
     areas = args.areas or list(MANIFESTS)
     if any(a not in MANIFESTS for a in areas):
-        parser.error('areas must be tools, skills or homepage')
+        parser.error('areas must be tools, skills, homepage or lmscript')
     if args.mode == 'verify':
         return verify(areas, repair_cdn=args.repair_cdn)
     for area in areas:

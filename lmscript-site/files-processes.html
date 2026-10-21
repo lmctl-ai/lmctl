@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Files and processes — lmscript</title>
+<meta name="description" content="Write and read a temporary file, then run a process as an argument array without a shell.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li></ul></nav>
+<main>
+<h1>Files and processes</h1>
+<p>Write and read a temporary file, then run a process as an argument array without a shell.</p>
+<h2>Script: files-processes.lms</h2>
+<pre><code>path = temp_file();
+write_file(path, "first line\nsecond line\n");
+lines = read_lines(path);
+println(f"lines={lines.len()} last={lines[1]}");
+result = system(["node", "-e", "process.stdout.write('process-ok')"]);
+println(f"process={result.stdout}");
+remove_file(path);
+</code></pre>
+<h2>Run it</h2>
+<pre><code>lmscript examples/files-processes.lms</code></pre>
+<h2>Output</h2>
+<pre><samp>lines=2 last=second line
+process=process-ok</samp></pre>
+
+<p><a href="strings-data.html">Previous: Strings and data</a> · <a href="errors-require.html">Next: Errors and require</a></p>
+<p>Try it: download <a href="examples/files-processes.lms">examples/files-processes.lms</a>, then run the command above from a working directory that can write its outputs.</p>
+</main>
+<footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
+</body>
+</html>

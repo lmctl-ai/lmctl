@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strings and data — lmscript</title>
+<meta name="description" content="Read JSON data, update a list, build a map, and format the result.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li></ul></nav>
+<main>
+<h1>Strings and data</h1>
+<p>Read JSON data, update a list, build a map, and format the result.</p>
+<h2>Script: strings-data.lms</h2>
+<pre><code>raw = _json_;
+{"team":"draw","members":["Ada","Lin"]}
+end _json_
+names = raw.members;
+names = push(names, "Mina");
+record = {team: raw.team, count: names.len()};
+println(f"{upper(raw.team)} has {record.count} members: {join(names, ", ")}");
+println(json_stringify(record));
+</code></pre>
+<h2>Run it</h2>
+<pre><code>lmscript examples/strings-data.lms</code></pre>
+<h2>Output</h2>
+<pre><samp>DRAW has 3 members: Ada, Lin, Mina
+{"team":"draw","count":3}</samp></pre>
+
+<p><a href="control-flow-functions.html">Previous: Control flow and functions</a> · <a href="files-processes.html">Next: Files and processes</a></p>
+<p>Try it: download <a href="examples/strings-data.lms">examples/strings-data.lms</a>, then run the command above from a working directory that can write its outputs.</p>
+</main>
+<footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
+</body>
+</html>

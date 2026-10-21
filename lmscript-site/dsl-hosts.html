@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typed host blocks — lmscript</title>
+<meta name="description" content="Compile native host calls with install declarations for lmdraw, lmcad, and lmhtml.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li></ul></nav>
+<main>
+<h1>Typed host blocks</h1>
+<p>Compile native host calls with install declarations for lmdraw, lmcad, and lmhtml.</p>
+<p>The declarations select release binaries and obtain their schema from each host. The sample saves bytecode beside the working directory; running the saved bytecode is the step that renders or audits files.</p>
+<h2>Script: dsl-hosts.lms</h2>
+<pre><code>if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+draw = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(480, 270, "#152438");
+scene.text(32.0, 76.0, 32.0, "Hello from lmscript", "#f5c16c");
+scene.render_png("build/rendered/hello.png", 480, 270, 1);
+end _dsl_
+savedsl(draw, path_join(Directory, "hello.dslb"));
+
+cad = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
+let mat = material();
+let block = scene.box(2.0, 2.0, 2.0, mat);
+scene.fit_camera(1.2, 1.0);
+scene.render_png("build/rendered/block.png", 320, 240);
+end _dsl_
+savedsl(cad, path_join(Directory, "block.dslb"));
+
+html = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+let doc = html.parse("&lt;!doctype html>&lt;title>Example&lt;/title>&lt;p>Checked&lt;/p>");
+report.add("example.html", doc.source(), 0, "tutorial example");
+end _dsl_
+savedsl(html, path_join(Directory, "audit.dslb"));
+println("compiled lmdraw, lmcad and lmhtml bytecode");
+</code></pre>
+<h2>Run it</h2>
+<pre><code>lmscript examples/dsl-hosts.lms</code></pre>
+<h2>Output</h2>
+<pre><samp>compiled lmdraw, lmcad and lmhtml bytecode</samp></pre>
+
+<p><a href="errors-require.html">Previous: Errors and require</a> · <a href="teams.html">Next: Driving teams</a></p>
+<p>Try it: download <a href="examples/dsl-hosts.lms">examples/dsl-hosts.lms</a>, then run the command above from a working directory that can write its outputs.</p>
+</main>
+<footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
+</body>
+</html>

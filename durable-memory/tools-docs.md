@@ -107,6 +107,8 @@ Ask a visual reviewer model that can see browser rendering and images (Gemini fa
 
 ## Checks and CI
 
+The lmscript language tutorials are published from lmscript-site/ to the separate lmscript/ object prefix. scripts/tools/static-site.py owns a dedicated manifest only for those new pages and examples; it does not claim the existing lmscript/commands objects. Run npm run check:lmscript-site before publication. The source and reading order are documented in [the lmscript site note](<lmscript-site.md>).
+
 | Command | Verifies |
 | --- | --- |
 | npm run check:tools | decorate --check (no stale/missing generated parts), then the contract: elements, attributes, head, nav/main/footer, roles and headings, links and anchors, images and PNG sizes |

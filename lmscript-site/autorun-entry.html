@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Starting with lmctl autorun — lmscript</title>
+<meta name="description" content="Declare a provider role in comments and let lmctl autorun prepare a local script before starting the session.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li></ul></nav>
+<main>
+<h1>Starting with lmctl autorun</h1>
+<p>Declare a provider role in comments and let lmctl autorun prepare a local script before starting the session.</p>
+<p>The role comment is machine-readable. The script uses @role(Lead.provider) and @role(Lead.model) placeholders, which autorun resolves from the installed provider mapping before checking and running the script.</p>
+<p>lmctl autorun is available in the next lmctl release.</p>
+<h2>Script: autorun-entry.lms</h2>
+<pre><code>// autorun-role: Lead provider=claude model=claude-sonnet-5-5
+provider = "@role(Lead.provider)";
+model = "@role(Lead.model)";
+println(f"Autorun role: {provider} / {model}");
+println("Add your task here, then run this file with lmctl autorun.");
+</code></pre>
+<h2>Run it</h2>
+<pre><code>lmctl autorun https://lmctl.com/lmscript/examples/autorun-entry.lms</code></pre>
+<h2>Output</h2>
+<pre><samp>Autorun role: @role(Lead.provider) / @role(Lead.model)
+Add your task here, then run this file with lmctl autorun.</samp></pre>
+
+<p><a href="team-automation.html">Previous: Writing a team automation</a></p>
+<p>Try it: download <a href="examples/autorun-entry.lms">examples/autorun-entry.lms</a>, then run the command above from a working directory that can write its outputs.</p>
+</main>
+<footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
+</body>
+</html>

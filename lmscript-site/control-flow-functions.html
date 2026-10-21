@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control flow and functions — lmscript</title>
+<meta name="description" content="Use a function and a loop to compute a result; continue skips one iteration.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li></ul></nav>
+<main>
+<h1>Control flow and functions</h1>
+<p>Use a function and a loop to compute a result; continue skips one iteration.</p>
+<h2>Script: control-flow-functions.lms</h2>
+<pre><code>fn square(n) { return n * n; }
+total = 0;
+for (n in range(1, 6)) {
+  if (n == 3) { continue; }
+  total = total + square(n);
+}
+println(f"sum={total}");
+</code></pre>
+<h2>Run it</h2>
+<pre><code>lmscript examples/control-flow-functions.lms</code></pre>
+<h2>Output</h2>
+<pre><samp>sum=46</samp></pre>
+
+<p><a href="hello-vars.html">Previous: Hello and variables</a> · <a href="strings-data.html">Next: Strings and data</a></p>
+<p>Try it: download <a href="examples/control-flow-functions.lms">examples/control-flow-functions.lms</a>, then run the command above from a working directory that can write its outputs.</p>
+</main>
+<footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
+</body>
+</html>

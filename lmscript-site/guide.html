@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmscript user guide</title>
+<meta name="description" content="Reference for lmscript commands, values, properties, native blocks, built-in lmctl functions, errors and exit codes.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li></ul></nav>
+<main>
+<h1>lmscript user guide</h1>
+<p>This reference follows lmscript 0.2.373, the published compiler used to check the examples. lmscript is in the @lmctl-ai/lmctl package and requires Node.js 24.15 or later.</p>
+<h2 id="overview">Overview</h2>
+<p>A script is a UTF-8 .lms file. lmscript checks the whole file before running it, then normally performs a short dry preflight before the real run. The dry pass records planned writes, deletes and child processes; it is useful for review but it is not a security sandbox. Scripts run with the invoking user's local authority.</p>
+<p>Use lmscript directly for a standalone script. Use lmctl script FILE when a script needs lmctl's installed provider configuration and agent services. lmctl autorun URL is the onboarding path for a published script with provider role declarations; it is available in the next lmctl release.</p>
+<h2 id="install">Install and first checks</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmscript --version
+lmscript --check examples/hello-vars.lms Ada
+lmscript --dry-run examples/hello-vars.lms Ada
+lmctl script examples/hello-vars.lms Ada</code></pre>
+<p>--check checks syntax, names, calls and embedded blocks without running the script. --dry-run executes only the simulated pass and prints its plan. A normal run checks first, performs the preflight, then executes for real. --no-preflight skips only the dry pass. --dsl-signatures SCHEMA prints canonical signatures for a schema v2 native host.</p>
+<h2 id="values">Values and syntax</h2>
+<p>Values are null, booleans, numbers, strings, lists and maps. Statements end in semicolons. if, for, while and function bodies use braces. Lists and maps are mutable references; use clone when you need a shallow copy. A missing map key or list index is an error; use has or get with a default when absence is expected.</p>
+<pre><code>for (name in ["Ada", "Lin"]) {
+  println(f"Hello, {name}");
+}
+
+fn area(width, height) {
+  return width * height;
+}
+require(area(3, 4) == 12, "area calculation failed");</code></pre>
+<h2 id="invocation">Invocation values and properties</h2>
+<table><thead><tr><th>Name</th><th>Meaning</th></tr></thead><tbody>
+<tr><td>ARGV</td><td>List of arguments after the script name. ARGV.get(0, fallback) safely reads the first value.</td></tr>
+<tr><td>Directory</td><td>Current working directory for this invocation.</td></tr>
+<tr><td>NonInteractive</td><td>Boolean invocation fact used to avoid opening an interactive terminal when the run is non-interactive.</td></tr>
+<tr><td>PROPS</td><td>Read-only view of lmctl properties loaded from init.toml and an optional --pref file. Property keys are case-insensitive; use set_property for in-memory overrides.</td></tr>
+</tbody></table>
+<p>Directory and NonInteractive are read-only and cannot be set in init.toml. Standalone lmscript and lmctl script can both read the configured init.toml properties; use --pref FILE before the script to overlay one explicit properties file. lmctl script also connects the lmctl automation functions to provider sessions and team services.</p>
+<h2 id="blocks">Data and native blocks</h2>
+<p>_json_, _csv_, _toml_ and _props_ blocks parse embedded data. _cmd_ and _graphql_ have their own checked forms. Experimental _dsl_ blocks compile typed code against a host schema. They can select a release host with install="github:lmctl-ai/NAME@latest"; the host provides the schema and runs saved bytecode. The schema, compiler and host must agree.</p>
+<pre><code>p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(480, 270, "#152438");
+scene.text(32.0, 76.0, 32.0, "Hello", "#f5c16c");
+scene.render_png("build/rendered/hello.png", 480, 270, 1);
+end _dsl_
+savedsl(p, "build/hello.dslb");</code></pre>
+<h2 id="lm-functions">Built-in lmctl functions</h2>
+<p>The following names are the lmctl automation functions listed by lmscript 0.2.373. Provider calls can create sessions or send messages; review the script before running it.</p>
+<pre><code>lm_agent(member, prompt, options)
+lm_agent_message(member, prompt, options)
+lm_batch_close(handle, status, error)
+lm_batch_open(teamfile, alias, batchfile, options) or lm_batch_open(member, options)
+lm_batch_turn(handle, prompt, index, total)
+lm_classify_failure(text, options)
+lm_error(value, ...values)
+lm_exit(code)
+lm_fanout(participants, prompts, options)
+lm_lint(teamfile)
+lm_log(value, ...values)
+lm_member(teamfile, alias)
+lm_members(teamfile)
+lm_prompt(teamfile, alias, prompt, options)
+lm_ratelimit_readings(options)
+lm_read_paragraphs(file)
+lm_read_prompts(batchfile, single)
+lm_running(options)
+lm_seed(teamfile, options)
+lm_session_close(member)
+lm_session_delete(member, options)
+lm_session_get(target)
+lm_session_list(options)
+lm_session_turn(member, prompt, options)
+lm_terminal(teamfile, alias)
+prompt_human(question)</code></pre>
+<p>lm_seed creates missing provider sessions in a teamfile. lm_prompt sends one turn to a named member. lm_terminal opens the provider's interactive interface. lm_agent and lm_agent_message address a provider directly. The remaining calls inspect or control sessions, batches, usage, teamfiles and recorded errors. Exact optional arguments are listed by lmscript help.</p>
+<h2 id="cli">Command-line reference</h2>
+<table><thead><tr><th>Form</th><th>Use</th></tr></thead><tbody>
+<tr><td>lmscript FILE [ARGS...]</td><td>Run a standalone script; remaining words become ARGV.</td></tr>
+<tr><td>lmscript --check FILE [ARGS...]</td><td>Static check only; exit 0 or 2.</td></tr>
+<tr><td>lmscript --dry-run FILE [ARGS...]</td><td>Run the simulation and print its plan; exit 0 or 2.</td></tr>
+<tr><td>lmscript --dsl-signatures SCHEMA</td><td>Print canonical DSL signatures from a schema file.</td></tr>
+<tr><td>lmctl script FILE [ARGS...]</td><td>Run with lmctl provider configuration and automation services.</td></tr>
+<tr><td>lmctl autorun URL</td><td>Fetch, configure, check and run a published script that declares provider roles. Available in the next lmctl release.</td></tr>
+</tbody></table>
+<p>Other useful options include --no-preflight, --plan-format text|json, --dry-loop-limit N, --dryrun-timeout MS, --pref FILE, --module SPEC=FILE, --trace FILE, --base-dir DIR and --source-name LABEL. Run lmscript --help for the installed compiler's full option list.</p>
+<h2 id="errors">Common errors and fixes</h2>
+<table><thead><tr><th>Message pattern</th><th>Fix</th></tr></thead><tbody>
+<tr><td>Undeclared variable</td><td>Assign the name before a block if it is needed afterward; block-created names stay in that block.</td></tr>
+<tr><td>Wrong argument count or unknown function</td><td>Check spelling and arity with lmscript help NAME or lmscript help.</td></tr>
+<tr><td>Missing map key or list index</td><td>Use has(key) or get(key, default) before reading optional data.</td></tr>
+<tr><td>Check error in _dsl_ block</td><td>Compare the call and types with the host's --schema output; use --schema --json for the compiler schema and match the pinned host release.</td></tr>
+<tr><td>require failed or run-time error</td><td>Read the located diagnostic, correct the input or condition, then rerun --check before the script.</td></tr>
+<tr><td>Provider unavailable</td><td>Run lmctl init, choose an installed provider and model, then rerun the team workflow.</td></tr>
+</tbody></table>
+<h2 id="exit-codes">Exit codes</h2>
+<ul><li>0: success, including successful check or dry run.</li><li>1: run-time failure, failed require/assert, or usage error.</li><li>2: static/check failure or failed explicit dry run.</li><li>Other values may be requested by exit(code); signals use 130 or 143.</li></ul>
+<h2 id="limits">Limits and trust</h2>
+<p>lmscript is not a sandbox. File, process and network functions use the invoking user's authority. Dry run is an effect preview and does not make untrusted code safe. Read scripts before running them, especially scripts that seed or prompt providers, write files, or launch processes.</p>
+<p>lmscript collections are native lists and maps. In _dsl_ bytecode, collections are host-defined objects with methods such as len and at; the bytecode has no general list or map value type.</p>
+</main>
+<footer><p>See the <a href="/lmscript/">tutorial index</a>, <a href="/tools/lmscript/">tool overview</a>, and <a href="/skills/lmscript-workflow-skill.html">workflow skill</a>.</p></footer>
+</body>
+</html>

@@ -26,7 +26,22 @@ class LiveTests(unittest.TestCase):
 
     def test_helloexample_paths_select_incremental_deploy(self):
         self.assertEqual(site.changed_areas(["helloexample/hello.lms"]), {"helloexample"})
-        self.assertEqual(site.changed_areas(["scripts/deploy-helloexample.sh"]), {"helloexample", "tools", "skills", "homepage"})
+        self.assertEqual(site.changed_areas(["scripts/deploy-helloexample.sh"]), {"helloexample", "tools", "skills", "homepage", "lmscript"})
+
+    def test_lmscript_site_is_incremental_and_preserves_commands(self):
+        self.assertEqual(site.changed_areas(["lmscript-site/examples/hello-vars.lms"]), {"lmscript"})
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "lmscript-site/examples").mkdir(parents=True)
+            (root / "lmscript-site/index.html").write_text("index")
+            (root / "lmscript-site/examples/hello.lms").write_text("script")
+            entries = site.inventory("lmscript", root)
+        self.assertEqual(entries["lmscript/index.html"]["data"], b"index")
+        self.assertEqual(entries["lmscript/examples/hello.lms"]["content_type"], "text/plain; charset=utf-8")
+        self.assertEqual(entries["lmscript/examples/hello.lms"]["cache_control"], site.NO_CACHE)
+        self.assertEqual(entries["lmscript"]["data"], b"index")
+        self.assertEqual(entries["lmscript/"]["data"], b"index")
+        self.assertNotIn("lmscript/commands/index.html", entries)
 
     def test_missing_and_extra_inventory(self):
         self.assertEqual(site.inventory_diff({'a', 'b'}, {'b', 'c'}), ['missing inventory entry a', 'extra inventory entry c'])

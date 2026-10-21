@@ -1,0 +1,2 @@
+name = ARGV.get(0, "world");
+println(f"Hello, {name}!");

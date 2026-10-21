@@ -1,0 +1,23 @@
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+draw = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(480, 270, "#152438");
+scene.text(32.0, 76.0, 32.0, "Hello from lmscript", "#f5c16c");
+scene.render_png("build/rendered/hello.png", 480, 270, 1);
+end _dsl_
+savedsl(draw, path_join(Directory, "hello.dslb"));
+
+cad = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
+let mat = material();
+let block = scene.box(2.0, 2.0, 2.0, mat);
+scene.fit_camera(1.2, 1.0);
+scene.render_png("build/rendered/block.png", 320, 240);
+end _dsl_
+savedsl(cad, path_join(Directory, "block.dslb"));
+
+html = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+let doc = html.parse("<!doctype html><title>Example</title><p>Checked</p>");
+report.add("example.html", doc.source(), 0, "tutorial example");
+end _dsl_
+savedsl(html, path_join(Directory, "audit.dslb"));
+println("compiled lmdraw, lmcad and lmhtml bytecode");

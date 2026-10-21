@@ -1,0 +1,16 @@
+# Offline by default. Pass --live and a prepared teamfile to run the workflow.
+if (ARGV.get(0, "") == "--live") {
+  team = ARGV.get(1, "team.lmctl");
+  checked = lm_lint(team);
+  require(checked.status == "ok", f"Teamfile is invalid: {checked.error}");
+  seeded = lm_seed(team);
+  require(seeded.status == "ok", f"Could not seed team: {seeded.error}");
+  work = lm_prompt(team, "Lead", "Complete the task in the teamfile and report the changed files.");
+  require(work.status == "ok", f"Lead failed: {work.error}");
+  review = lm_prompt(team, "Review", f"Review the Lead's report and changes. Findings: {work.reply}");
+  require(review.status == "ok", f"Review failed: {review.error}");
+  println(review.reply);
+  if (!NonInteractive) { lm_terminal(team, "Lead"); }
+} else {
+  println("Preview only. Run with --live TEAMFILE to lint, seed, work, review and open the Lead terminal.");
+}

@@ -1,12 +1,12 @@
 # Publishing lmctl.com
 
-Static homepage, tools and skills changes publish automatically from main after the path-filtered workflow checks them, uploads changed objects, invalidates their exact URLs and verifies the live site.
+Homepage, tools, skills and lmscript tutorial changes publish automatically from main after the path-filtered workflow checks them, uploads changed objects, invalidates their exact URLs and verifies the live site.
 
 ## Automatic static publishing
 
-1. Commit a change and push it to main. The .github/workflows/deploy-static.yml workflow runs for changes under homepage/, tools/, skills/, skills-moved/, helloexample/, deployment scripts, the tools scripts, or the workflow itself. A manual workflow dispatch selects all four areas.
-2. The workflow checks tools, skills, homepage media and durable memory, then runs their self-tests. A failing check stops publication.
-3. The changed-area selector chooses homepage, tools and/or skills from the push range. Changes under scripts/ select all three.
+1. Commit a change and push it to main. The .github/workflows/deploy-static.yml workflow runs for changes under homepage/, tools/, skills/, skills-moved/, helloexample/, lmscript-site/, deployment scripts, site scripts, or the workflow itself. A manual workflow dispatch selects all manifest-backed areas and helloexample.
+2. The workflow checks tools, lmscript tutorials and examples, skills, homepage media and durable memory, then runs their self-tests. A failing check stops publication.
+3. The changed-area selector chooses homepage, tools, skills and/or lmscript from the push range, plus helloexample when its scripts change. Changes under scripts/ select all manifest-backed areas.
 4. For each selected area, the publisher compares its manifest with S3 and uploads only missing or changed objects. It deletes only obsolete keys recorded in that area's previous manifest.
 5. Uploaded/deleted paths and stale live CDN copies are invalidated even if S3 is already current. The workflow polls only mismatches for about five minutes and re-invalidates remaining paths once, then runs full link verification.
 
@@ -21,6 +21,7 @@ The production defaults are S3 bucket lmctl-website-prod and CloudFront distribu
 | Homepage root and assets/ | homepage/; scripts/deploy-homepage.sh | Static workflow on changed paths; manual script available |
 | /tools/ and tools/ | tools/; scripts/deploy-tools.sh | Static workflow on changed paths; manual script available |
 | /skills/ and skills/ | skills/ and skills-moved/; scripts/deploy-skills.sh | Static workflow on changed paths; manual script available |
+| /lmscript/ | lmscript-site/; scripts/deploy-lmscript.sh | Dedicated manifest and incremental page/example upload; existing /lmscript/commands objects are outside its ownership |
 | /lmctl/ | Docusaurus build/; scripts/deploy.sh | Separate full deployment; not an area published by deploy-static.yml |
 | /lmprobe/ | lmprobe site bundle; scripts/deploy-lmprobe.sh | Standalone deployment script |
 | /examples/ and /workflows/ | Mirrored catalogs; scripts/deploy-examples.sh and scripts/deploy-workflows.sh | Standalone mirror scripts |
@@ -28,7 +29,7 @@ The production defaults are S3 bucket lmctl-website-prod and CloudFront distribu
 | /helloexample/ | helloexample/; scripts/deploy-helloexample.sh | Incremental text-script and catalog upload with byte/content-type verification |
 | /templates/ and /lmscript/commands/ | Repository sources; scripts/deploy.sh | Included in the separate full deployment |
 
-The static-area publisher sets MIME and cache headers, writes a deterministic ownership manifest, preserves untracked S3 objects and invalidates only changed or deleted paths. HTML is revalidated without caching; CSS and images use a one-day cache. The Docusaurus deployment gives hashed assets long-lived immutable caching and revalidates HTML and the sitemap.
+The static-area publisher sets MIME and cache headers, writes a deterministic ownership manifest, preserves untracked S3 objects and invalidates only changed or deleted paths. HTML and .lms source use revalidation without caching; CSS and images use a one-day cache. The Docusaurus deployment gives hashed assets long-lived immutable caching and revalidates HTML and the sitemap.
 
 ## AWS identity and permissions
 
@@ -46,13 +47,13 @@ DRY_RUN=1 bash scripts/deploy-tools.sh
 bash scripts/deploy-tools.sh
 ```
 
-Use scripts/deploy-skills.sh or scripts/deploy-homepage.sh for their respective areas. The first performs its skills check, and the tools publisher runs its tools check. The Docusaurus scripts/deploy.sh is a separate full deployment and does not implement the static-area DRY_RUN=1 preview; build it with npm run build and follow DEPLOY.md.
+Use scripts/deploy-skills.sh, scripts/deploy-homepage.sh or scripts/deploy-lmscript.sh for their respective areas. The lmscript publisher runs the HTML lint and all example checks. The Docusaurus scripts/deploy.sh is a separate full deployment and does not implement the static-area DRY_RUN=1 preview; build it with npm run build and follow DEPLOY.md.
 
 ## Verify the published site
 
 The workflow runs scripts/tools/verify-live.sh --repair-cdn after publishing. It compares every managed object and index alias against the repository byte-for-byte, checks SHA-256 inventories plus content type and cache headers, then uses the release-installed lmhtml parser and checker to crawl managed HTML, follow internal links and images, and validate anchors. Referenced pages outside the owned areas are checked but are not recursively crawled.
 
-Run the same verifier against production or any HTTP(S) origin without AWS credentials. It defaults to tools, skills and homepage; optional area names narrow the check.
+Run the same verifier against production or any HTTP(S) origin without AWS credentials. It defaults to tools, skills, homepage and lmscript; optional area names narrow the check.
 
 ```
 bash scripts/tools/verify-live.sh

@@ -8,6 +8,10 @@ for (directory in glob("tools/*/")) {
 }
 case_paths = join(sort(glob("tools/*/*.[hH][tT][mM][lL]")), "|") + "|";
 png_paths = join(sort(glob("tools/**/*.png")), "|") + "|";
+lmscript_urls = "|/lmscript|/lmscript/|/lmscript/index.html|";
+for (path in glob("lmscript-site/**/*.html")) {
+  lmscript_urls = lmscript_urls + "/lmscript/" + substr(path, len("lmscript-site/"), len(path)) + "|";
+}
 p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 # Source-preserving pre formatting (kept identical in check/decorate).
 # Locate the nth real element with the host tokenizer, not a text match alone:
@@ -261,7 +265,8 @@ fn check_page(page: Doc) -> void {
           if (kind == "special" || kind == "outside-root") { finding(file, path, "unsupported link scheme or outside root: " + url); }
           else {
             if (!str_starts_with(url, "/") && !str_starts_with(url, "#")) { finding(file, path, "internal links must be site-rooted: " + url); }
-            if (!html.link_exists(page, url) && !(url == "/" && html.link_exists(page, "/homepage/index.html"))) {
+            let is_lmscript_page = str_contains(${lmscript_urls}, "|" + url + "|");
+            if (!html.link_exists(page, url) && !is_lmscript_page && !(url == "/" && html.link_exists(page, "/homepage/index.html"))) {
               if (str_starts_with(url, "#")) { finding(file, path, "no id \"" + str_substr(url, 1, str_len(url)) + "\" on this page"); }
               else { finding(file, path, "broken link " + url + " (" + html.resolve(page, url) + ")"); }
             }

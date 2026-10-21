@@ -9,6 +9,7 @@
     "serve": "docusaurus serve",
     "start": "docusaurus start",
     "check:tools": "bash scripts/tools/run.sh check",
+    "check:lmscript-site": "bash scripts/lmscript-site/check.sh",
   "check:homepage": "bash scripts/homepage/video/test-hash-files.sh && bash scripts/tools/run.sh homepage-videos",
     "check:tools:selftest": "bash scripts/tools/selftest.sh",
     "decorate:tools": "bash scripts/tools/run.sh decorate",

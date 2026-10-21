@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hello and variables — lmscript</title>
+<meta name="description" content="Start with a variable, an argument, and an f-string.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li></ul></nav>
+<main>
+<h1>Hello and variables</h1>
+<p>Start with a variable, an argument, and an f-string.</p>
+<h2>Script: hello-vars.lms</h2>
+<pre><code>name = ARGV.get(0, "world");
+println(f"Hello, {name}!");
+</code></pre>
+<h2>Run it</h2>
+<pre><code>lmscript examples/hello-vars.lms Ada</code></pre>
+<h2>Output</h2>
+<pre><samp>Hello, Ada!</samp></pre>
+
+<p><a href="control-flow-functions.html">Next: Control flow and functions</a></p>
+<p>Try it: download <a href="examples/hello-vars.lms">examples/hello-vars.lms</a>, then run the command above from a working directory that can write its outputs.</p>
+</main>
+<footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
+</body>
+</html>

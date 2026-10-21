@@ -1,0 +1,13 @@
+# This offline default is safe to run. Pass --live to seed and prompt a provider.
+team = path_join(Directory, "tutorial-team.lmctl");
+if (ARGV.get(0, "") == "--live") {
+  write_file_exclusive(team, "# Tutorial team\n_MEMBER_ alias=Lead provider=claude\n");
+  seeded = lm_seed(team);
+  require(seeded.status == "ok", f"Could not seed team: {seeded.error}");
+  reply = lm_prompt(team, "Lead", "Reply with one sentence describing your task.");
+  require(reply.status == "ok", f"Prompt failed: {reply.error}");
+  println(reply.reply);
+  if (!NonInteractive) { lm_terminal(team, "Lead"); }
+} else {
+  println("Preview only. Run with --live to seed a provider session.");
+}

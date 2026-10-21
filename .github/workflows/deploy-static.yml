@@ -12,6 +12,8 @@ on:
       - 'scripts/deploy*.sh'
       - 'scripts/tools/**'
       - 'helloexample/**'
+      - 'lmscript-site/**'
+      - 'scripts/lmscript-site/**'
       - '.github/workflows/deploy-static.yml'
   workflow_dispatch:
 permissions:
@@ -37,6 +39,8 @@ jobs:
       - name: Install published DSL compiler
         run: npm i -g @lmctl-ai/lmctl@0.2.369
       - name: Resolve lmhtml from the lmscript tool cache
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: echo "LMHTML=$(bash scripts/tools/run.sh host-path)" >> "$GITHUB_ENV"
       - name: Check pages, memory and fixtures (release-installed hosts)
         run: |
@@ -48,6 +52,9 @@ jobs:
           npm run check:tools:selftest
           npm run check:skills:selftest
           npm run check:memory:selftest
+          npm run check:lmscript-site
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - name: Select changed static areas
         id: areas
         env:
@@ -62,6 +69,7 @@ jobs:
       - name: Publish changed areas and wait for exact-path invalidations
         env:
           AREAS: ${{ steps.areas.outputs.areas }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           for area in $AREAS; do
             bash "scripts/deploy-$area.sh"

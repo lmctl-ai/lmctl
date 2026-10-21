@@ -4,10 +4,10 @@ name: tools-check
 # read-only token, no deploy.
 on:
   pull_request:
-    paths: ["skills/**", "skills-moved/**", "tests/skills/**", "tools/**", "scripts/tools/**", "package.json", "homepage/**", "scripts/homepage/video/**", "tests/tools/**", ".github/workflows/tools-check.yml"]
+    paths: ["skills/**", "skills-moved/**", "tests/skills/**", "tools/**", "scripts/tools/**", "lmscript-site/**", "scripts/lmscript-site/**", "package.json", "homepage/**", "scripts/homepage/video/**", "tests/tools/**", ".github/workflows/tools-check.yml"]
   push:
     branches: [main]
-    paths: ["skills/**", "skills-moved/**", "tests/skills/**", "tools/**", "scripts/tools/**", "package.json", "homepage/**", "scripts/homepage/video/**", "tests/tools/**", ".github/workflows/tools-check.yml"]
+    paths: ["skills/**", "skills-moved/**", "tests/skills/**", "tools/**", "scripts/tools/**", "lmscript-site/**", "scripts/lmscript-site/**", "package.json", "homepage/**", "scripts/homepage/video/**", "tests/tools/**", ".github/workflows/tools-check.yml"]
 
 permissions:
   contents: read
@@ -19,6 +19,8 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-24.04
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -32,6 +34,8 @@ jobs:
         run: echo "LMHTML=$(bash scripts/tools/run.sh host-path)" >> "$GITHUB_ENV"
       - name: check tools pages
         run: npm run check:tools
+      - name: check lmscript tutorials and runnable examples
+        run: npm run check:lmscript-site
       - name: check homepage video pages and media
         run: npm run check:homepage
       - name: checker self-test
