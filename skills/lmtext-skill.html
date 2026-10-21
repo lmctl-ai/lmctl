@@ -18,15 +18,15 @@
 </nav>
 <main>
 <h1>lmtext — speech → text for LLM agents</h1>
-<p>What this is. lmtext turns an audio file into a transcript using AWS Transcribe — the reverse of lmsound. You upload an audio file (mp3/wav/flac/ogg/webm/amr/m4a/mp4) directly to S3 with a presigned POST, kick off transcription, then poll for the transcript. Plain HTTP, one opaque API key — exactly like calling an LLM API. No SDK, no websocket.</p>
+<p>What this is. lmtext turns an audio file into a transcript using AWS Transcribe — the reverse of lmsound. You upload an audio file (mp3/wav/flac/ogg/webm/amr/m4a/mp4) with a signed upload form, kick off transcription, then poll for the transcript. Plain HTTP, one opaque API key — exactly like calling an LLM API. No SDK, no websocket.</p>
 <p>Use it to give any agent ears: transcribe a voice memo, a meeting snippet, a podcast clip.</p>
 <hr>
 <h2 id="what-you-need">What you need</h2>
 <ul>
-<li>API base URL — the lmtext execute-api URL (see deployment outputs; set it as API below)</li>
+<li>API base URL — https://lmctl.ai/lmtext</li>
 <li>An API key — one opaque token, sent on every request:<pre><code>Authorization: Bearer API_KEY</code></pre> A human creates and revokes keys on the lmctl.ai website; an LLM just receives the key. The same credential format is used by these companion services; access depends on the deployment.</li>
 </ul>
-<pre><code>export API="API_URL"   # e.g. https://ID.execute-api.us-east-1.amazonaws.com/prod
+<pre><code>export API="https://lmctl.ai/lmtext"
 export KEY="API_KEY"</code></pre>
 <hr>
 <h2 id="the-flow-4-steps">The flow (4 steps)</h2>
@@ -41,8 +41,8 @@ upload_url="$(jq -r '.upload_url' &lt;&lt;&lt;"$resp")"</code></pre>
 <p>Response:</p>
 <pre><code>{
   "transcription_id": "3f9a…-uuid",
-  "upload_url": "https://lmtext-audio-….s3.amazonaws.com/",
-  "upload_fields": {"key":"audio/USER/ID/memo.mp3","Content-Type":"audio/mpeg","X-Amz-…":"…"},
+  "upload_url": "https://lmctl.ai/lmtext/_blob/upload?…",
+  "upload_fields": {"key":"…","Content-Type":"audio/mpeg","expires":"…","signature":"…"},
   "expires_in": 300
 }</code></pre>
 <p>Body fields:</p>
@@ -62,7 +62,7 @@ upload_url="$(jq -r '.upload_url' &lt;&lt;&lt;"$resp")"</code></pre>
 <tr>
 <td>content_type</td>
 <td>from extension</td>
-<td>Must match the upload's Content-Type (presign condition).</td>
+<td>Must match the upload's Content-Type (signed into the upload form).</td>
 </tr>
 <tr>
 <td>language_code</td>
@@ -70,14 +70,14 @@ upload_url="$(jq -r '.upload_url' &lt;&lt;&lt;"$resp")"</code></pre>
 <td>e.g. es-US, fr-FR, de-DE. Invalid shape → 400; unsupported by Transcribe → fails at finalize.</td>
 </tr>
 </tbody></table>
-<h3 id="2-upload-the-audio--presigned-post-to-s3">2. Upload the audio — presigned POST to S3</h3>
+<h3 id="2-upload-the-audio--signed-form-upload">2. Upload the audio — signed form upload</h3>
 <pre><code>mapfile -t form_fields &lt; &lt;(
   jq -r '.upload_fields | to_entries[] | "-F\n\(.key)=\(.value)"' &lt;&lt;&lt;"$resp"
 )
 curl -s -X POST "$upload_url" \
   "${form_fields[@]}" \
   -F "file=@memo.mp3"</code></pre>
-<p>(Every upload_fields entry must be a form field, then the file last.) Max size 25 MB, link valid 300 s. Over 25 MB → S3 rejects the POST.</p>
+<p>(Every upload_fields entry must be a form field, then the file last.) Max size 25 MB, link valid 300 s. Over 25 MB → 413 audio_too_large. The upload needs no Authorization header; the signed URL is the credential.</p>
 <h3 id="3-start-transcription--post-transcriptionsidfinalize">3. Start transcription — POST /transcriptions/{id}/finalize</h3>
 <pre><code>curl -s -X POST "$API/transcriptions/$id/finalize" -H "Authorization: Bearer $KEY"</code></pre>
 <p>Verifies the upload exists, probes duration, starts the AWS Transcribe job. Errors: 409 not_uploaded (step 2 not done), 400 audio_invalid (unparseable audio), 413 audio_too_large. Idempotent — calling it again returns current status.</p>
@@ -98,8 +98,8 @@ curl -s -X POST "$upload_url" \
 <hr>
 <h2 id="list-and-delete">List and delete</h2>
 <ul>
-<li>GET /transcriptions?status=completed&amp;limit=20&amp;after=CURSOR — your transcriptions, newest first. status: uploading|in_progress|completed|failed (omit for all). Response: {transcriptions:[…], next_after, has_more, truncated} — pass next_after as after for the next page. truncated is true when the service reaches its 1,000-object scan ceiling, so the response may omit older matching records even after following next_after.</li>
-<li>DELETE /transcriptions/{id} — removes audio, meta, and transcript objects and makes a best-effort attempt to delete the Transcribe job record. A running job is not cancelled and may write transcript output afterwards; that late output is left behind in v1.</li>
+<li>GET /transcriptions?status=completed&amp;limit=20&amp;after=CURSOR — your transcriptions, newest first. status: uploading|in_progress|completed|failed (omit for all). Response: {transcriptions:[…], next_after, has_more, truncated} — pass next_after as after for the next page. truncated is always false: the list comes from a per-user index capped at 1,000 transcriptions (413 transcription_quota_exceeded when it is full).</li>
+<li>DELETE /transcriptions/{id} — removes audio, meta, and transcript objects and makes a best-effort attempt to delete the Transcribe job record. A running job is not cancelled and may write transcript output afterwards; that late output stays in the staging bucket until its one-day expiry.</li>
 </ul>
 <p>You only ever see your own transcriptions; other users' ids return 404 transcription_not_found.</p>
 <hr>
@@ -120,11 +120,11 @@ lmtext delete 3f9a…-uuid</code></pre>
 <ul>
 <li>401/403 — missing/invalid API key.</li>
 <li>404 transcription_not_found — no such id for you.</li>
-<li>429 daily_limit_exceeded — daily usage quota hit (used_micro/limit_micro in the body).</li>
-<li>Quotas: shared lmctl daily cost limits; transcription is metered at the AWS Transcribe list price (~$0.024/minute) once duration is known at finalize.</li>
+<li>429 monthly_cap_exceeded (cap_usd and used_usd in the body) or global_cap_exceeded — the monthly spend cap was hit; finalize is refused before any transcription starts.</li>
+<li>Quotas: a monthly dollar cap per user (default $5) and one for all users (default $25). At finalize the duration is measured and the cost is reserved at the AWS Transcribe list price of $0.0001 per second, with a 15 second minimum assumed; a job that cannot be started is refunded.</li>
 </ul>
 <h2 id="verification-scope">Verification scope</h2>
-<p>The API and CLI syntax above was checked against the tool source on 2026-10-19. Live hosted availability, account permissions, deployment-specific limits and credentials were not tested. Confirm the endpoint with your operator; example API Gateway addresses are placeholders. Do not assume that access to one deployment grants access to another.</p>
+<p>The API and CLI syntax above was checked against the tool source on 2026-10-19. The upload, finalize, poll, list and delete steps were also run end to end against https://lmctl.ai on 2026-10-21 with a spoken memo. Account permissions, limits and credentials differ per deployment; confirm them with your operator. Do not assume that access to one deployment grants access to another.</p>
 </main>
 <footer>
 <p>Plain HTML skills for humans and agents. Source: <a href="https://github.com/lmctl-ai/lmctl/tree/main/skills">github.com/lmctl-ai/lmctl/skills</a>.</p>
