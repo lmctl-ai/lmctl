@@ -294,3 +294,4 @@ printf 'PASS: %s named fixtures, current tree and authoring/index lifecycle test
 
 # Live publication comparisons and native lmhtml link discovery.
 python3 "$HERE/test-live.py"
+python3 "$HERE/test-example-book.py"

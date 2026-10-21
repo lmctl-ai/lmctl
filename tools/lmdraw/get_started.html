@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Get started with lmdraw quickruns — lmdraw — lmctl.com tools</title>
+<meta name="description" content="These two downloadable lmscript programs seed a named lmdraw team, ask its Lead to make a small drawing, then leave the Lead's terminal ready for your next…">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmdraw/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmdraw/">Overview</a></li>
+<li><a href="/tools/lmdraw/skill.html">Skill</a></li>
+<li><a href="/tools/lmdraw/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmdraw/get_started.html">Guide: Get started with lmdraw quickruns</a></li>
+<li><a href="/tools/lmdraw/guide.html">Guide</a></li>
+<li><a href="/tools/lmdraw/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>Get started with lmdraw quickruns</h1>
+<p>These two downloadable lmscript programs seed a named lmdraw team, ask its Lead to make a small drawing, then leave the Lead's terminal ready for your next request.</p>
+<h2>Overview</h2>
+<p>A quickrun is a reusable lmscript file. It writes a uniquely numbered teamfile in your current directory, seeds the requested provider sessions, and then runs the drawing task.</p>
+<h2>Choose a team</h2>
+<ul>
+<li><a href="/tools/lmdraw/lmdraw_solo.lms">lmdraw_solo.lms</a> seeds one Lead using Claude Sonnet 5.5.</li>
+<li><a href="/tools/lmdraw/lmdraw_trio.lms">lmdraw_trio.lms</a> seeds a Lead, a Gemini Coder, and a Codex Reviewer. The quickrun passes the Lead's assignment to the Coder, the Coder's result to the Reviewer, then returns both to the Lead for a report.</li>
+</ul>
+<p>Install lmctl and configure the providers in your local profile before running a quickrun. Each run writes a new numbered teamfile in the current directory, seeds the sessions, and opens a terminal unless you pass the global non-interactive option.</p>
+<h2>Run a quickrun</h2>
+<p>From a terminal in a directory where you want the teamfile to live, run one of these commands:</p>
+<pre><code>lmctl quickrun https://lmctl.com/tools/lmdraw/lmdraw_solo.lms
+lmctl quickrun https://lmctl.com/tools/lmdraw/lmdraw_trio.lms</code></pre>
+<p>The Lead receives a drawing task and the reference links below. When the terminal opens, talk to the Lead as you would in a normal lmctl team session. Use the generated Prompt command to continue later or Resume to reopen the same Lead.</p>
+<h2>References given to the agents</h2>
+<ul>
+<li><a href="https://lmctl.com/tools/lmscript/skill.html">LMScript DSL documentation</a></li>
+<li><a href="https://lmctl.com/tools/lmdraw/guide.html">lmdraw API summary</a></li>
+<li><a href="https://lmctl.com/tools/lmdraw/examples/title-card.html">A rendered lmdraw example</a></li>
+</ul>
+<h2>Test without sending a task</h2>
+<p>Append --seed-only to seed the team and skip all agent prompts. This is useful for checking provider setup without asking the agents to do drawing work.</p>
+<pre><code>lmctl --non-interactive quickrun https://lmctl.com/tools/lmdraw/lmdraw_solo.lms --seed-only</code></pre>
+<p>Read <a href="/tools/lmdraw/skill.html">the lmdraw skill</a> for script-authoring rules, or browse the <a href="/tools/lmdraw/examples/">example book</a>.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmdraw">github.com/lmctl-ai/lmdraw</a>.</p>
+</footer>
+</body>
+</html>

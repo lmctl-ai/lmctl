@@ -1,0 +1,10 @@
+{
+  "display_name": "lmdraw",
+  "get_started": "/tools/lmdraw/get_started.html",
+  "images": {
+    "render-assets": "automation-ladder.png",
+    "animated-ladder": "animated-ladder-frame.png"
+  },
+  "dsl_docs": "https://lmctl.com/tools/lmscript/skill.html",
+  "tool_docs": "https://lmctl.com/tools/lmdraw/guide.html"
+}

@@ -37,6 +37,16 @@ class LiveTests(unittest.TestCase):
         self.assertNotIn('README.md', site.inventory('homepage'))
         self.assertNotIn('tools/README.md', tools)
 
+    def test_tools_quickrun_sources_are_plain_text_and_revalidate(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'tools/lmdraw').mkdir(parents=True)
+            (root / 'tools/lmdraw/lmdraw_solo.lms').write_text('p = _dsl_ cli="lmdraw";\n')
+            entries = site.inventory('tools', root)
+        obj = entries['tools/lmdraw/lmdraw_solo.lms']
+        self.assertEqual(obj['content_type'], 'text/plain; charset=utf-8')
+        self.assertEqual(obj['cache_control'], site.NO_CACHE)
+
     def test_homepage_video_inventory_types_and_cache(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

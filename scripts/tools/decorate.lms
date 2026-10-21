@@ -141,8 +141,11 @@ fn basename(path: string) -> string {
 }
 fn role(filename: string) -> string {
   let stem = str_substr(filename, 0, str_len(filename) - 5);
-  let dash = str_find(stem, "-");
-  if (dash >= 0) { stem = str_substr(stem, 0, dash); }
+  if (filename == "get_started.html") { stem = "guide"; }
+  else {
+    let dash = str_find(stem, "-");
+    if (dash >= 0) { stem = str_substr(stem, 0, dash); }
+  }
   return stem;
 }
 fn heading(page: Doc) -> string {
@@ -320,6 +323,9 @@ while (str_find(tool_dirs, "|") >= 0) {
       links = links + "<li><a href=\"/tools/" + escape(tool) + "/" + escape(filename) + "\">" + escape(text) + "</a></li>\n";
     }
   }
+  if (html.load_dir(directory, "*/*.html", "").len() > 0) {
+    links = links + "<li><a href=\"/tools/" + escape(tool) + "/examples/\">Examples</a></li>\n";
+  }
   let nav = str_replace(region(template_source, "tool-nav"), "{{TOOL}}", escape(tool));
   nav = str_replace(nav, "{{PAGE_LINKS}}", links);
   # Authored indexes are overviews. A marked generated index remains a fallback
@@ -334,6 +340,10 @@ while (str_find(tool_dirs, "|") >= 0) {
   for (page in pages) {
     if (basename(page.path()) == "index.html") { continue; }
     if (tool_title == "") { tool_title = heading(page); tool_summary = summary(page); }
+    let result = render(tool_layout, nav, footer, content(page), page_title(heading(page), tool), page_description(page));
+    store(page.path(), result, page.source(), check, differences(page, result));
+  }
+  for (page in html.load_dir(directory, "*/*.html", "")) {
     let result = render(tool_layout, nav, footer, content(page), page_title(heading(page), tool), page_description(page));
     store(page.path(), result, page.source(), check, differences(page, result));
   }

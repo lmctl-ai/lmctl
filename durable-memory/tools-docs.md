@@ -37,6 +37,8 @@ Prerequisite once: lmscript 0.2.369 or newer on PATH (or set LMSCRIPT for icon r
 
 A page is \<role\>.html or \<role\>-\<topic\>.html (lowercase letters, digits, single hyphens). Unknown roles and names with uppercase, spaces or underscores are errors. skill.html is the only required page; add other roles only when they help the tool's readers.
 
+The exact filename get_started.html is also accepted for a tool's quickrun landing page. Generated example books may live under tools/TOOL/examples/; their page names use the lowercase source example slug rather than a page role.
+
 | Role | Must contain |
 | --- | --- |
 | skill | h2 headings in exactly this order: Purpose, When to use it, Install, Commands, Inputs and outputs, Safety rules, Worked examples, Errors and exit codes, How to verify |
@@ -169,3 +171,9 @@ Author headings, paragraphs, lists, tables, links and pre/code or pre/kbd/samp b
 Before: a paragraph containing an inline code wrapper around lmctl status. After: the same paragraph with lmctl status as plain text. A copyable command instead belongs in a pre/code block. This change preserves the paragraph's words.
 
 lmhtml clean FILE --base [https://lmctl.com/tools/lmhtml/](<https://lmctl.com/tools/lmhtml/>) extracts main content for agents and resolves URLs. clean --check verifies that extraction drops no content-bearing main elements. lint --stats --json supplies counts, density per 100 words and byte/4 token estimates; --compare SNAPSHOT_DIR compares two trees. These are deterministic offline operations on local files. clean URL additionally uses curl to fetch the page; no browser or model is involved.
+
+## Generated example books and quickrun samples
+
+An examples book can live below tools/TOOL/examples/. Keep its generator in scripts/tools/ and make the source repository and ref explicit. For lmdraw, run TOOL=lmdraw REF=main npm run sync:tool-examples; set SOURCE_DIR to a local checkout for development. The generator reads examples/*.lms, their descriptions in examples/README.md and their compact previews in examples/renders/, then writes the pages, quickrun-ready .lms files, and images under tools/lmdraw/examples/. New source examples need a README entry and a matching preview render, unless the per-tool image map selects another render.
+
+Quickrun team scripts use scripts/tools/quickrun-template.lms with TOOL selecting scripts/tools/quickrun-data/TOOL.json. Run TOOL=lmdraw python3 scripts/tools/generate-quickruns.py to regenerate the solo and trio files. A generated script's --seed-only argument seeds its numbered teamfile but sends no agent prompts; NonInteractive skips the terminal. Public .lms sources are deployed as text/plain with revalidation, so edits become live promptly. The tools checker handles the HTML book pages and the static publisher includes both HTML and source files in its manifest and live byte checks.

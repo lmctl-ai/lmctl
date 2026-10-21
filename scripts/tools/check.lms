@@ -116,6 +116,7 @@ fn page_role(file: string) -> string {
   let stem = str_substr(name, 0, str_len(name) - 5);
   let dash = str_find(stem, "-");
   if (dash >= 0) { stem = str_substr(stem, 0, dash); }
+  if (name == "get_started.html") { stem = "guide"; }
   # Existing named bad fixtures use x.role.html to select role checks.
   if (${ARGV[2]} != "") {
     if (str_ends_with(file, ".skill.html")) { stem = "skill"; }
@@ -221,13 +222,15 @@ fn check_page(page: Doc) -> void {
         else { if (!landing_logo && node.parent().select("figcaption").len() != 1) { finding(file, path, "<figure> needs one <figcaption>"); } }
       }
       let image_path_ok = str_starts_with(src, "/tools/");
+      let example_image = str_contains(src, "/examples/img/");
       let component = "";
       let component_index = 0;
       for (i in range(7, str_len(src))) {
         let ch = str_substr(src, i, 1);
         if (ch == "/") {
           if (component_index == 0 && component == "") { image_path_ok = false; }
-          if (component_index == 1 && component != "img") { image_path_ok = false; }
+          if (component_index == 1 && component != "img" && component != "examples") { image_path_ok = false; }
+          if (component_index == 2 && component != "img") { image_path_ok = false; }
           component_index = component_index + 1;
           component = "";
         } else {
@@ -236,8 +239,8 @@ fn check_page(page: Doc) -> void {
         }
       }
       let site_image = str_starts_with(src, "/tools/img/") && component_index == 1;
-      if ((!image_path_ok && !site_image) || (component_index != 2 && !site_image) || component == "" || str_contains(src, "..") || str_contains(src, "?") || str_contains(src, "#") || str_contains(src, "%") || str_contains(src, "\\")) {
-        finding(file, path, "image must be local under /tools/<tool>/img/: " + src);
+      if ((!image_path_ok && !site_image) || (component_index != 2 && !site_image && !(example_image && component_index == 3)) || component == "" || str_contains(src, "..") || str_contains(src, "?") || str_contains(src, "#") || str_contains(src, "%") || str_contains(src, "\\")) {
+        finding(file, path, "image must be local under /tools/<tool>/img/ or /tools/<tool>/examples/img/: " + src);
       } else {
         if (!html.link_exists(page, src)) { finding(file, path, "image not found: " + src); }
         else {
@@ -303,12 +306,16 @@ fn check_page(page: Doc) -> void {
   if (name != "index.html" && !(file == "tools/" + name || file == "./tools/" + name)) {
     let stem = str_substr(name, 0, str_len(name) - 5);
     let valid_name = str_ends_with(name, ".html") && str_len(stem) > 0;
+    let example_book_page = str_contains(file, "/examples/");
+    if (name == "get_started.html") { valid_name = true; }
     for (i in range(0, str_len(stem))) {
-      if (!str_contains("abcdefghijklmnopqrstuvwxyz0123456789-", str_substr(stem, i, 1))) { valid_name = false; }
+      if (!str_contains("abcdefghijklmnopqrstuvwxyz0123456789-", str_substr(stem, i, 1)) && name != "get_started.html") { valid_name = false; }
     }
     if (str_starts_with(stem, "-") || str_ends_with(stem, "-") || str_contains(stem, "--")) { valid_name = false; }
     if (!valid_name) { finding(file, "document", "bad page name: use <role>.html or <role>-<topic>.html (lowercase letters, digits, hyphens)"); }
     let role_name = page_role(file);
+    if (name == "get_started.html") { role_name = "guide"; }
+    if (example_book_page) { role_name = "changelog"; }
     let table = ${role_table};
     let known = false;
     let valid_roles = "";

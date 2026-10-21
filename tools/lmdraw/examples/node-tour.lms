@@ -1,0 +1,34 @@
+out = ARGV.len() > 0 ? ARGV[0] : "build/rendered/node-tour";
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(640, 360, "#152438");
+let gradient = scene.linear_gradient("panel-fill", 0.0, 0.0, 1.0, 1.0);
+gradient.stop(0.0, "#294c62");
+gradient.stop(1.0, "#1f344b");
+let panel = scene.rect(40.0, 40.0, 560.0, 280.0, "url(#panel-fill)");
+panel.set_attr("stroke", "#6fbdb4");
+panel.set_attr("stroke-width", "2");
+let group = scene.group();
+let inner = scene.group();
+let orbit = scene.circle(494.0, 166.0, 70.0, "#38677a");
+let core = scene.ellipse(494.0, 166.0, 38.0, 52.0, "#6fbdb4");
+inner.add(orbit);
+inner.add(core);
+inner.set_attr("opacity", "0.96");
+group.add(inner);
+let track = scene.polyline("100,235 175,195 245,235 315,195", "#f5c16c", 4.0);
+let image = scene.image("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAF0lEQVR4nGP4ejDnv6iKxX+G/L1bwAwAU9EI4ZelYEcAAAAASUVORK5CYII=", 530.0, 60.0, 24.0, 24.0);
+let mark = scene.path("M 100 275 L 125 250 L 150 275 Z", "#f5c16c", "none", 1.0);
+let measured = scene.measure_text("Retained scenes", 32.0, true);
+let title = scene.text(80.0, 130.0, 32.0, "Retained scenes", "#f5f8fb");
+title.set_attr("font-weight", "700");
+let subtitle = scene.text(80.0, 174.0, 18.0, "Nodes stay addressable between frames.", "#dce7f0");
+subtitle.set_attr("font-family", "Noto Sans");
+scene.render_png("build/rendered/node-tour.png", 640, 360, 1);
+end _dsl_
+savedsl(p, out);
+println(f"wrote {out}");
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

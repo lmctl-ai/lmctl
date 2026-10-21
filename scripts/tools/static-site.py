@@ -19,6 +19,7 @@ NO_CACHE = 'no-cache, max-age=0, must-revalidate'
 DAY = 'public, max-age=86400'
 TYPES = {'.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
          '.png': 'image/png', '.svg': 'image/svg+xml', '.txt': 'text/plain; charset=utf-8',
+         '.lms': 'text/plain; charset=utf-8',
          '.md': 'text/plain; charset=utf-8', '.xml': 'application/xml; charset=utf-8',
          '.mp4': 'video/mp4', '.webm': 'video/webm', '.ico': 'image/x-icon'}
 MANIFESTS = {'tools': 'tools/deploy-manifest.json', 'skills': 'skills/deploy-manifest.json',
@@ -46,7 +47,7 @@ def inventory(area, root=ROOT):
             raise ValueError(f'refusing symlink: {path}')
         if not path.is_file():
             continue
-        allowed = {'.html', '.css', '.png', '.svg', '.txt'} if area == 'tools' else ({'.html'} if area == 'skills' else set(TYPES) - {'.md'})
+        allowed = {'.html', '.css', '.png', '.svg', '.txt', '.lms'} if area == 'tools' else ({'.html'} if area == 'skills' else set(TYPES) - {'.md', '.lms'} if area == 'homepage' else set(TYPES) - {'.md'})
         if path.suffix not in allowed:
             raise ValueError(f'unexpected publication file: {path}')
         key = rel.as_posix() if area == 'homepage' else f'{area}/{rel.as_posix()}'
