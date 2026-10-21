@@ -9,9 +9,39 @@ LMHTML="${LMHTML:-$(LMSCRIPT_BIN="$LMSCRIPT_BIN" bash scripts/tools/run.sh host-
 python3 - <<'PY'
 from pathlib import Path
 from html import unescape
+from html.parser import HTMLParser
+from urllib.parse import urljoin, urlsplit
 import re
+class Links(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.links = []
+        self.ids = set()
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if 'id' in attrs:
+            self.ids.add(attrs['id'])
+        if tag in ('a', 'img'):
+            self.links.append(attrs.get('href' if tag == 'a' else 'src', ''))
+
 for path in Path('lmscript-site').glob('*.html'):
     text = path.read_text()
+    links = Links()
+    links.feed(text)
+    for href in links.links:
+        url = urlsplit(urljoin('https://lmctl.com/lmscript/', href))
+        if url.netloc != 'lmctl.com' or not url.path.startswith('/lmscript/'):
+            continue
+        target = Path('lmscript-site') / url.path.removeprefix('/lmscript/')
+        if target.is_dir():
+            target /= 'index.html'
+        if not target.is_file():
+            raise SystemExit(f'{path}: broken tutorial link {href}')
+        if url.fragment:
+            destination = Links()
+            destination.feed(target.read_text())
+            if url.fragment not in destination.ids:
+                raise SystemExit(f'{path}: missing tutorial anchor {href}')
     if re.search(r'<(?:strong|em)(?:\s|>)', text, re.I):
         raise SystemExit(f'{path}: emphasis markup is not allowed')
     outside = re.sub(r'<pre\b[^>]*>.*?</pre>', '', text, flags=re.I | re.S)
@@ -34,6 +64,16 @@ run_expect() {
     printf 'FAIL %s\nexpected:\n%s\nactual:\n%s\n' "$file" "$expected" "$actual" >&2
     exit 1
   fi
+  python3 - "$ROOT/lmscript-site/${file%.lms}.html" "$actual" <<'PY'
+from pathlib import Path
+from html import unescape
+import re, sys
+page = Path(sys.argv[1])
+if page.is_file():
+    outputs = re.findall(r'<pre><samp>(.*?)</samp></pre>', page.read_text(), re.S)
+    if sys.argv[2] not in [unescape(output) for output in outputs]:
+        raise SystemExit(f'{page}: displayed output differs from compiler output')
+PY
   printf 'PASS %s\n' "$file"
 }
 # Run native hosts in the temporary working directory so their rendered files
@@ -79,6 +119,14 @@ run_error() {
     printf 'FAIL %s (exit %s)\nexpected (exit %s):\n%s\nactual:\n%s\n' "$file" "$code" "$expected_code" "$expected" "$actual" >&2
     exit 1
   fi
+  python3 - "$ROOT/lmscript-site/troubleshooting.html" "$actual" <<'PY'
+from pathlib import Path
+from html import unescape
+import re, sys
+outputs = re.findall(r'<pre><samp>(.*?)</samp></pre>', Path(sys.argv[1]).read_text(), re.S)
+if sys.argv[2] not in [unescape(output) for output in outputs]:
+    raise SystemExit('troubleshooting.html: reproduced diagnostic is missing from the page')
+PY
   printf 'PASS expected error %s (exit %s)\n' "$file" "$code"
 }
 run_error undeclared-name.lms "error:undeclared-name.lms:1:9: Undeclared variable 'greet'" 2

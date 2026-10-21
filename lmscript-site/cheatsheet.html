@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base href="/lmscript/">
+<title>lmscript quick cheat sheet</title>
+<meta name="description" content="A concise lmscript syntax and built-in reference for new users.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li></ul></nav>
+<main>
+<h1>Quick cheat sheet</h1>
+<p>Keep this page open while learning. A semicolon ends each statement; braces group statements. Names are created by assignment. Values include null (no value), booleans (true or false), numbers, strings (text), lists (ordered values), and maps (values stored under named keys).</p>
+<h2>Everyday syntax</h2>
+<pre><code>name = ARGV.get(0, "world");
+println(f"Hello, {name}!");
+
+fn square(n) { return n * n; }
+total = 0;
+for (n in range(1, 4)) {
+  if (n == 2) { continue; }
+  total = total + square(n);
+}
+require(total == 10, "unexpected total");
+
+person = {name: "Ada", age: 36};
+names = [person.name, "Lin"];
+println(join(names, ", "));</code></pre>
+<h2>Common built-ins</h2>
+<table><thead><tr><th>Need</th><th>Use</th></tr></thead><tbody>
+<tr><td>Print a value</td><td>println(value); f"value={value}"</td></tr>
+<tr><td>Read an optional command-line argument</td><td>ARGV.get(index, fallback)</td></tr>
+<tr><td>Loop over a sequence</td><td>for (item in range(start, end)) { ... }</td></tr>
+<tr><td>Work with a list</td><td>len(list), push(list, item), sort(list), join(list, separator)</td></tr>
+<tr><td>Read optional map data</td><td>record.get("key", fallback), record.has("key")</td></tr>
+<tr><td>Convert structured data</td><td>json_parse(text), json_stringify(value)</td></tr>
+<tr><td>Check an assumption</td><td>require(condition, "what should be true")</td></tr>
+<tr><td>Read and write files</td><td>read_file(path), write_file(path, text), read_lines(path)</td></tr>
+<tr><td>Run a process without a shell</td><td>system(["program", "argument"])</td></tr>
+</tbody></table>
+<p>List indexes start at zero. A missing map key or list index is an error; use get with a fallback when data may be absent. system receives an argument list, so shell quoting and shell expansion do not apply.</p>
+<p>For the full command list and native host blocks, see the <a href="guide.html">user guide</a>. For common mistakes with actual error text, see <a href="troubleshooting.html">Troubleshooting</a>.</p>
+<p><a href="hello-vars.html">Back to the first lesson</a> · <a href="control-flow-functions.html">Continue to control flow</a></p>
+</main>
+<footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
+</body>
+</html>

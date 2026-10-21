@@ -14,7 +14,7 @@
 <main>
 <h1>Driving teams</h1>
 <p>The default path is offline. Add --live to seed a configured Lead, prompt once, then open its terminal in interactive mode.</p>
-<p>A teamfile is the .lmctl text file that names provider members and their settings. Seeding creates missing provider sessions from that file. Prompting sends the named member one real turn; the returned map includes a status and reply.</p>
+<p>A provider is an AI service accessed through its command-line program; a model selects which AI model it uses. A teamfile is the .lmctl text file that names members and their settings. An alias such as Lead names a member, and a session is its ongoing provider conversation. Seeding creates missing provider sessions from that file. Prompting sends the named member one real turn; the returned map includes a status and reply.</p>
 <p>The live branch can create provider sessions and send a real prompt. Test the offline path first; use --live only when you intend to contact the configured provider. lm_terminal opens the provider interface only when the run is interactive.</p>
 <h2>Script: teams.lms</h2>
 <pre><code># This offline default is safe to run. Pass --live to seed and prompt a provider.
@@ -37,7 +37,7 @@ if (ARGV.get(0, "") == "--live") {
 <pre><samp>Preview only. Run with --live to seed a provider session.</samp></pre>
 
 <p><a href="dsl-hosts.html">Previous: Typed host blocks</a> · <a href="team-automation.html">Next: Writing a team automation</a></p>
-<p>Try it: download <a href="examples/teams.lms">examples/teams.lms</a>, then run the command above from a working directory that can write its outputs.</p>
+<p>Try it: download <a href="examples/teams.lms">examples/teams.lms</a>, save it under examples/ in a writable working directory, then run the command above from that directory.</p>
 </main>
 <footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
 </body>

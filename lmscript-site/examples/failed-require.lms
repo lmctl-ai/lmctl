@@ -1,0 +1,2 @@
+score = -1;
+require(score > 0, "score must be positive");

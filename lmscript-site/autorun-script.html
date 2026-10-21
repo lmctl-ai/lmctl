@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base href="/lmscript/">
+<title>Writing an autorun script — lmscript</title>
+<meta name="description" content="Write a portable LMScript that declares provider roles for lmctl autorun.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li></ul></nav>
+<main>
+<h1>Writing an autorun script</h1>
+<p>Use lmctl autorun when a script needs named provider roles but should still be shareable with someone whose provider or model differs from yours. Put one machine-readable role declaration in the leading comments, then use both role markers in executable code.</p>
+<p>This example writes a teamfile from the resolved Lead provider and model, then prints the generated path. It does not seed a provider session. Review the generated teamfile before using it with a live team workflow.</p>
+<h2>Script: autorun-script.lms</h2>
+<pre><code>// autorun-role: Lead provider=claude model=claude-sonnet-5-5
+lead_provider = "@role(Lead.provider)";
+lead_model = "@role(Lead.model)";
+team = path_join(Directory, "portable-team.lmctl");
+contents = f"# Portable tutorial team\n_MEMBER_ alias=Lead provider={lead_provider} model={lead_model}\n";
+write_file(team, contents);
+println("Wrote portable-team.lmctl");
+</code></pre>
+<h2>Run it</h2>
+<p>This command requires a build with lmctl autorun support; it is not included in @lmctl-ai/lmctl 0.2.373. Check lmctl --help before trying it.</p>
+<pre><code>lmctl autorun ./examples/autorun-script.lms</code></pre>
+<h2>Script output when autorun executes it</h2>
+<pre><samp>Wrote portable-team.lmctl</samp></pre>
+<p>Autorun checks whether the declared provider command is installed. If it is missing, lmctl can offer an installed provider and model mapping. In interactive mode, accept, edit, or save a proposed mapping. Non-interactive runs save proposed mappings, but the current implementation can execute when all declared providers are installed. Use --save-only before the script path to guarantee saving without execution. The saved filename receives a numeric suffix only when needed to avoid an existing file. Run that saved file with lmscript after reviewing it. Autorun also prints launcher or mapping messages; the output above is from the script itself.</p>
+<p>The role header must use this form:</p>
+<pre><code>// autorun-role: Lead provider=claude model=claude-sonnet-5-5</code></pre>
+<p>Use one line per role. Quote a model value in the header when it contains spaces. Autorun requires both @role(Lead.provider) and @role(Lead.model) in executable source. It substitutes these values before standalone lmscript runs and updates the saved header and markers together. This preflight confirms that a provider CLI runs; it does not validate credentials. The session seed call is where authentication is tested.</p>
+<p>If no provider is installed, autorun saves the script with the original role values and reports the missing providers. Headerless scripts keep their existing init-profile behavior and are not role-mapped. See also the <a href="autorun-entry.html">marker-only example</a>.</p>
+<p><a href="multi-agent-workflow.html">Previous: A small multi-agent workflow</a> · <a href="troubleshooting.html">Next: Troubleshooting</a></p>
+<p>Try it: download <a href="examples/autorun-script.lms">examples/autorun-script.lms</a>, save it under examples/ in your working directory, then run the command above from that directory with an autorun-capable build. This sample writes portable-team.lmctl in the current directory.</p>
+</main>
+<footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
+</body>
+</html>

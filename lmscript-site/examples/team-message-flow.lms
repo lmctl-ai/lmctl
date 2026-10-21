@@ -1,0 +1,26 @@
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(960, 360, "#101820");
+scene.rect(70.0, 100.0, 180.0, 90.0, "#1e3247");
+scene.rect(390.0, 100.0, 180.0, 90.0, "#1e3247");
+scene.rect(710.0, 100.0, 180.0, 90.0, "#1e3247");
+scene.text(160.0, 150.0, 22.0, "Lead", "#dbe7f3").set_attr("text-anchor", "middle");
+scene.text(480.0, 150.0, 22.0, "Coder", "#dbe7f3").set_attr("text-anchor", "middle");
+scene.text(800.0, 150.0, 22.0, "Reviewer", "#dbe7f3").set_attr("text-anchor", "middle");
+let assign = scene.line(250.0, 124.0, 382.0, 124.0, "#f5c16c", 2.5);
+scene.path("M 390.0 124.0 L 378.0 117.0 L 378.0 131.0 Z", "#f5c16c", "none", 1.0);
+scene.text(316.0, 112.0, 13.0, "assign task", "#f5c16c").set_attr("text-anchor", "middle");
+let review = scene.line(570.0, 150.0, 702.0, 150.0, "#f5c16c", 2.5);
+scene.path("M 710.0 150.0 L 698.0 143.0 L 698.0 157.0 Z", "#f5c16c", "none", 1.0);
+scene.text(636.0, 138.0, 13.0, "send work report", "#f5c16c").set_attr("text-anchor", "middle");
+scene.path("M 800.0 190.0 C 800.0 300.0 160.0 300.0 160.0 190.0", "none", "#8fb4d9", 2.0);
+scene.path("M 160.0 182.0 L 153.0 194.0 L 167.0 194.0 Z", "#8fb4d9", "none", 1.0);
+scene.text(480.0, 292.0, 14.0, "findings return to Lead; revisions start a new assignment", "#9db4c8").set_attr("text-anchor", "middle");
+scene.text(70.0, 58.0, 25.0, "Team message flow", "#dbe7f3");
+scene.render_png("build/rendered/team-message-flow.png", 960, 360, 1);
+end _dsl_
+savedsl(p, "build/rendered/team-message-flow.dslb");
+run = system ${dsl_cli(p)} --dsl build/rendered/team-message-flow.dslb;
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }
+println("compiled team message flow diagram");

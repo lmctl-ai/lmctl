@@ -14,6 +14,7 @@
 <main>
 <h1>Starting with lmctl autorun</h1>
 <p>This small example prints the two provider-role markers as ordinary strings. Running it directly with lmscript does not contact a provider or create a session. When lmctl autorun runs a role-declaring script, it substitutes the marker values before checking and executing the script.</p>
+<p>The autorun command requires a newer build than @lmctl-ai/lmctl 0.2.373. The direct lmscript command below works with the tutorial compiler.</p>
 <h2>Script: autorun-entry.lms</h2>
 <pre><code>// autorun-role: Lead provider=claude model=claude-sonnet-5-5
 provider = "@role(Lead.provider)";
@@ -28,7 +29,7 @@ println("Add your task here, then run this file with lmctl autorun.");
 Add your task here, then run this file with lmctl autorun.</samp></pre>
 
 <p><a href="autorun-script.html">Next: Writing an autorun script</a></p>
-<p>Try it: download <a href="examples/autorun-entry.lms">examples/autorun-entry.lms</a>, then run the command above from a working directory that can write its outputs.</p>
+<p>Try it: download <a href="examples/autorun-entry.lms">examples/autorun-entry.lms</a>, save it under examples/ in a writable working directory, then run the command above from that directory.</p>
 </main>
 <footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
 </body>

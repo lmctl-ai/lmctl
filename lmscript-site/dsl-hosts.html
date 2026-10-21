@@ -15,7 +15,7 @@
 <h1>Typed host blocks</h1>
 <p>Compile native host calls with install declarations for lmdraw, lmcad, and lmhtml.</p>
 <p>A host is a separate program that provides extra operations. Its schema describes the calls and types that lmscript can check. A host block is compiled to bytecode, a file of instructions for that host. The install declaration tells lmscript where to get a missing host release; it does not install a general-purpose command on PATH.</p>
-<p>The declarations select release binaries and obtain their schemas. The first compile needs an internet connection to fetch an uncached release; later compiles can use the local cache. Compilation saves bytecode in the working directory. The example then runs each bytecode file with the exact host binary used to check that block, and writes any generated assets under build/rendered.</p>
+<p>The declarations select release binaries and obtain their schemas. The first compile needs an internet connection to fetch an uncached release; later compiles can use the local cache. During script execution, savedsl writes the compiled bytecode in the working directory. The example then runs each bytecode file with the exact host binary used to check that block, and writes any generated assets under build/rendered.</p>
 <h2>Script: dsl-hosts.lms</h2>
 <pre><code>if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
@@ -50,14 +50,14 @@ println("compiled and ran lmdraw, lmcad and lmhtml");
 <h2>Run it</h2>
 <pre><code>lmscript examples/dsl-hosts.lms</code></pre>
 <p>The command above compiles and runs all three host blocks. lmdraw writes build/rendered/hello.png, lmcad writes build/rendered/block.png, and lmhtml processes its report entry. lmscript uses the installed host path associated with each compiled block, so you do not need to put downloaded hosts on PATH.</p>
-<h2>Compiler output</h2>
+<h2>Script output</h2>
 <pre><samp>compiled and ran lmdraw, lmcad and lmhtml</samp></pre>
 <h2>Generated files</h2>
 <pre><samp>build/rendered/hello.png
 build/rendered/block.png</samp></pre>
 
 <p><a href="errors-require.html">Previous: Errors and require</a> · <a href="teams.html">Next: Driving teams</a></p>
-<p>Try it: download <a href="examples/dsl-hosts.lms">examples/dsl-hosts.lms</a>, then run the command above from a working directory that can write its outputs.</p>
+<p>Try it: download <a href="examples/dsl-hosts.lms">examples/dsl-hosts.lms</a>, save it under examples/ in a writable working directory, then run the command above from that directory.</p>
 </main>
 <footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
 </body>
