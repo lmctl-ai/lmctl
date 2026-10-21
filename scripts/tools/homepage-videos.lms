@@ -24,19 +24,19 @@ while (str_find(names, "|") >= 0) {
   else {
     let video = videos.at(0);
     if (!video.has_attr("controls") || !video.has_attr("muted") || !video.has_attr("playsinline") || video.attr("preload") != "metadata") { finding(file, "video needs controls, muted, playsinline and preload=metadata"); }
-    if (video.attr("width") != "480" || video.attr("height") != "270") { finding(file, "video dimensions must be 480x270"); }
+    if (video.attr("width") != "1280" || video.attr("height") != "720") { finding(file, "video dimensions must be 1280x720"); }
     if (video.attr("poster") != "/assets/videos/" + media_name + "-poster.png") { finding(file, "poster path must match its level video"); }
     let poster_file = "homepage/assets/videos/" + media_name + "-poster.png";
     if (!html.link_exists(root_probe, "/" + poster_file)) { finding(file, "missing poster: " + poster_file); }
-    else if (html.load(poster_file).byte_size() > 60000) { finding(poster_file, "poster exceeds 60 KB"); }
+    else if (html.load(poster_file).byte_size() > 300000) { finding(poster_file, "poster exceeds 300 KB"); }
     let mp4_file = "homepage/assets/videos/" + media_name + ".mp4";
     let webm_file = "homepage/assets/videos/" + media_name + ".webm";
     if (video.select("source[src='/assets/videos/" + media_name + ".mp4'][type='video/mp4']").len() != 1) { finding(file, "missing H.264 MP4 source"); }
     if (video.select("source[src='/assets/videos/" + media_name + ".webm'][type='video/webm']").len() != 1) { finding(file, "missing VP9 WebM source"); }
     if (!html.link_exists(root_probe, "/" + mp4_file)) { finding(file, "missing MP4: " + mp4_file); }
-    else if (html.load(mp4_file).byte_size() > 1572864) { finding(mp4_file, "MP4 exceeds 1.5 MiB"); }
+    else if (html.load(mp4_file).byte_size() > 10485760) { finding(mp4_file, "MP4 exceeds 10 MB"); }
     if (!html.link_exists(root_probe, "/" + webm_file)) { finding(file, "missing WebM: " + webm_file); }
-    else if (html.load(webm_file).byte_size() > 1572864) { finding(webm_file, "WebM exceeds 1.5 MiB"); }
+    else if (html.load(webm_file).byte_size() > 10485760) { finding(webm_file, "WebM exceeds 10 MB"); }
     if (page.select(".transcript").len() != 1) { finding(file, "video needs a transcript paragraph"); }
     if (page.select("a[href='/levels/index.html']").len() != 1) { finding(file, "missing link to the level index"); }
   }
