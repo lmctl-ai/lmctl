@@ -14,11 +14,11 @@ let row2 = scene.rect(64.0, 610.0, 288.0, 60.0, "#0a1828E8"); row2.set_attr("rx"
 let lead = scene.text(84.0, 294.0, 40.0, "LEAD TEAM", "#74d8cf");
 let coder = scene.text(84.0, 482.0, 40.0, "CODER TEAM", gold);
 let review = scene.text(84.0, 654.0, 40.0, "REVIEW TEAM", "#c4a6ff");
-let running_box = scene.rect(980.0, 526.0, 264.0, 62.0, "#0a1828E8"); running_box.set_attr("rx", "14");
-let running = scene.text(998.0, 570.0, 42.0, "RUNNING", "#74d8cf"); running.set_attr("font-weight", "700");
-let usage_label = scene.text(1000.0, 634.0, 38.0, "USAGE", paper); usage_label.set_attr("font-weight", "700");
-let usage_back = scene.rect(1150.0, 612.0, 70.0, 26.0, "#31475c"); usage_back.set_attr("rx", "8");
-let usage = scene.rect(1150.0, 612.0, 2.0, 26.0, gold); usage.set_attr("rx", "8");
+let running_box = scene.rect(980.0, 460.0, 264.0, 138.0, "#0a1828E8"); running_box.set_attr("rx", "14");
+let running = scene.text(1000.0, 507.0, 40.0, "RUNNING", "#74d8cf"); running.set_attr("font-weight", "700");
+let usage_label = scene.text(1000.0, 551.0, 32.0, "USAGE", paper); usage_label.set_attr("font-weight", "700");
+let usage_back = scene.rect(1000.0, 565.0, 214.0, 22.0, "#31475c"); usage_back.set_attr("rx", "8");
+let usage = scene.rect(1000.0, 565.0, 8.0, 22.0, gold); usage.set_attr("rx", "8");
 for (i in range(0, 240)) {
   let show = "0";
   if (i >= 62) { show = "1"; }
@@ -28,8 +28,8 @@ for (i in range(0, 240)) {
   if (i >= 95) { running_show = "1"; }
   running_box.set_attr("opacity", running_show); running.set_attr("opacity", running_show);
   usage_label.set_attr("opacity", running_show); usage_back.set_attr("opacity", running_show); usage.set_attr("opacity", running_show);
-  let width = 104.0;
-  if (i < 95) { width = 2.0; } else if (i < 180) { width = 2.0 + float(i - 95) * 1.20; }
+  let width = 214.0;
+  if (i < 95) { width = 8.0; } else if (i < 180) { width = 8.0 + float(i - 95) * 2.42; }
   usage.set_attr("width", str(width));
   scene.render_png("build/rendered/overlay-" + str(i) + ".png", 1280, 720, 1);
 }

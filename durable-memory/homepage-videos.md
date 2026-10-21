@@ -16,7 +16,7 @@ The production sequence is 240 frames at 24 fps. A draft mode argument on each l
 
 ## Published story and visual checks
 
-The videos show teams gathering and a usage bar rising; provider-labeled agents exchanging messages through a Lead; a requirement and checklist entering and a result returning for review; and a brainstorm becoming a labeled work, review, QA and acceptance pipeline. Each clip has a navy background, a title strip, a level badge, and large labels with safe margins.
+The videos show teams gathering and a usage bar rising; provider-labeled agents exchanging messages through a Lead; a requirement and checklist entering and a result returning for review; and a brainstorm becoming a labeled work, review, QA and acceptance pipeline. Each clip has a navy background, a title strip, a level badge, and large labels with safe margins. Level 1 keeps its running and usage panel clear of the review rail, and the usage bar fills during the running beat. Level 3 places the requirement card above the figures. Level 4 tightens the camera as the pipeline appears and eases back for the final handoff; its stage labels track the projected block positions.
 
 The previous lmcad storyboards remain under scripts/homepage/video/ and can be selected with render.sh --engine lmcad. The current lmblender pipeline is the published default. Review representative full-size frames and contact sheets before publishing, then inspect the level pages at desktop and mobile widths. The website check verifies page links, video attributes, sources, posters and media budgets. MP4 and WebM use the site's existing video content types and byte-range delivery through S3 and CloudFront.
 

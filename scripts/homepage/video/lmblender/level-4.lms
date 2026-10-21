@@ -137,16 +137,17 @@ check.set_material(green);
 check.keyframe_visible(0, false, "linear");
 check.keyframe_visible(214, true, "linear");
 
-scene.camera_look_at(-3.0, -15.0, 5.6, -3.0, 0.0, 1.0, 50.0);
+scene.camera_look_at(-3.0, -15.0, 5.6, -3.0, 0.0, 1.0, 55.0);
 scene.camera_keyframe(0, -5.0, -15.0, 5.8, -5.0, 0.0, 1.0, "linear");
 scene.camera_keyframe(80, -3.0, -14.5, 5.5, -3.0, 0.0, 1.0, "ease");
 scene.camera_keyframe(160, -1.0, -14.5, 5.4, -1.0, 0.0, 1.0, "ease");
 scene.camera_keyframe(214, -1.5, -15.0, 5.8, -1.5, 0.0, 1.0, "ease");
 scene.camera_keyframe(239, -1.5, -15.0, 5.8, -1.5, 0.0, 1.0, "linear");
-scene.camera_optics_keyframe(0, 50.0, 10.0, "linear");
-scene.camera_optics_keyframe(80, 50.0, 10.0, "ease");
-scene.camera_optics_keyframe(160, 50.0, 10.0, "ease");
-scene.camera_optics_keyframe(214, 50.0, 10.0, "ease");
+scene.camera_optics_keyframe(0, 55.0, 10.0, "linear");
+scene.camera_optics_keyframe(80, 55.0, 10.0, "ease");
+scene.camera_optics_keyframe(104, 42.0, 10.0, "ease");
+scene.camera_optics_keyframe(208, 42.0, 10.0, "ease");
+scene.camera_optics_keyframe(218, 50.0, 10.0, "ease");
 scene.camera_optics_keyframe(239, 50.0, 10.0, "linear");
 
 if (${final}) {
