@@ -81,51 +81,8 @@ done
 bash scripts/deploy-skills.sh
 bash scripts/tools/verify-live.sh skills
 
-# --- helloexample: publish per-provider connectivity-check teamfiles to lmctl.com/helloexample/
-# (source of truth = this repo's helloexample/). Mirrors the skills/ pattern above exactly.
-# No --delete: never wipe files published out-of-band; this only adds/updates repo-tracked ones.
-aws s3 sync helloexample/ "s3://${S3_BUCKET}/helloexample/" \
-  --exclude '.*' \
-  --content-type 'text/plain; charset=utf-8' \
-  --exclude 'index.html' \
-  --cache-control 'no-cache, max-age=0, must-revalidate'
-for key in 'helloexample/index.html' 'helloexample/'; do
-  aws s3api put-object \
-    --bucket "${S3_BUCKET}" \
-    --key "${key}" \
-    --body helloexample/index.html \
-    --content-type 'text/html; charset=utf-8' \
-    --cache-control 'no-cache, max-age=0, must-revalidate' > /dev/null
-done
-aws s3api put-object \
-  --bucket "${S3_BUCKET}" \
-  --key 'helloexample' \
-  --body helloexample/index.html \
-  --content-type 'text/html; charset=utf-8' \
-  --cache-control 'no-cache, max-age=0, must-revalidate' > /dev/null
-HELLOEXAMPLE_INVALIDATION_ID="$(
-  aws cloudfront create-invalidation \
-    --distribution-id "${CF_DISTRIBUTION_ID}" \
-    --paths '/helloexample' '/helloexample/' '/helloexample/*' \
-    --query 'Invalidation.Id' \
-    --output text
-)"
-aws cloudfront wait invalidation-completed \
-  --distribution-id "${CF_DISTRIBUTION_ID}" \
-  --id "${HELLOEXAMPLE_INVALIDATION_ID}"
-
-for path in '/helloexample' '/helloexample/' '/helloexample/index.html'; do
-  headers="$(curl -fsSI "${SITE_ORIGIN}${path}")"
-  if ! grep -qi '^content-type: text/html' <<<"${headers}"; then
-    echo "helloexample smoke failed content-type for ${SITE_ORIGIN}${path}" >&2
-    exit 1
-  fi
-  body="$(curl -fsS "${SITE_ORIGIN}${path}")"
-  if ! grep -q '<title>lmctl hello examples</title>' <<<"${body}"; then
-    echo "helloexample smoke failed for ${SITE_ORIGIN}${path}" >&2
-    exit 1
-  fi
-done
+# Publish the standalone hello/autorun catalog and scripts.
+bash scripts/deploy-helloexample.sh
 
 # --- templates: publish the ${Provider1..3}/${Model1..3}-slotted team-composition library to
 # lmctl.com/templates/ (source of truth = this repo's templates/). Mirrors the skills/ pattern above.
