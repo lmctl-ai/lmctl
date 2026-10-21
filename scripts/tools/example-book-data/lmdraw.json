@@ -5,6 +5,12 @@
     "render-assets": "automation-ladder.png",
     "animated-ladder": "animated-ladder-frame.png"
   },
+  "rendered": {
+    "title-card": "build/rendered/title-card.png",
+    "node-tour": "build/rendered/node-tour.png",
+    "render-assets": "build/rendered/svg-automation-ladder.png",
+    "animated-ladder": "build/rendered/ladder-12.png"
+  },
   "dsl_docs": "https://lmctl.com/tools/lmscript/skill.html",
   "tool_docs": "https://lmctl.com/tools/lmdraw/guide.html"
 }

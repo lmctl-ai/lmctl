@@ -3,11 +3,13 @@
 import hashlib
 import html
 import json
+import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
 import struct
 import sys
+import textwrap
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -84,6 +86,71 @@ def quickrun_source(tool, script, examples_root, repo_root):
     return source
 
 
+def rendered_preview(tool, slug, script_path, data):
+    """Prefer a fresh host render when lmctl is available; otherwise use repo art."""
+    outputs = data.get("rendered", {}).get(slug, [])
+    if isinstance(outputs, str):
+        outputs = [outputs]
+    if not outputs:
+        return None
+    lmctl = os.environ.get("LMCTL_BIN") or shutil.which("lmctl")
+    if not lmctl:
+        return None
+    import subprocess
+    import tempfile
+
+    with tempfile.TemporaryDirectory(prefix=f"lmctl-{tool}-{slug}-") as work:
+        try:
+            subprocess.run(
+                [lmctl, "--non-interactive", "quickrun", str(script_path)],
+                cwd=work,
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=180,
+            )
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+            detail = getattr(error, "stderr", "")
+            print(f"Preview render unavailable for {slug}; using repository preview. {detail}", file=sys.stderr)
+            return None
+        for relative in outputs:
+            candidate = Path(work) / relative
+            if candidate.is_file():
+                return candidate.read_bytes()
+    return None
+
+
+def compact_png(path):
+    """Quantize full renderer output to the site's small-preview budget."""
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        return False
+    import subprocess
+    import tempfile
+
+    with tempfile.TemporaryDirectory(prefix="lmctl-preview-palette-") as work:
+        palette = Path(work) / "palette.png"
+        compact = Path(work) / "compact.png"
+        try:
+            subprocess.run(
+                [ffmpeg, "-y", "-v", "error", "-i", str(path), "-vf",
+                 "palettegen=max_colors=96:stats_mode=diff", str(palette)],
+                check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=30,
+            )
+            subprocess.run(
+                [ffmpeg, "-y", "-v", "error", "-i", str(path), "-i", str(palette),
+                 "-lavfi", "paletteuse=dither=none", str(compact)],
+                check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=30,
+            )
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            return False
+        if compact.stat().st_size < path.stat().st_size:
+            shutil.copyfile(compact, path)
+            return True
+    return False
+
+
 def main():
     if len(sys.argv) != 4:
         raise SystemExit("usage: generate-example-book.py TOOL SOURCE_DIR SOURCE_REF")
@@ -92,6 +159,7 @@ def main():
     examples_root = repo_root / "examples"
     data = json.loads((ROOT / f"scripts/tools/example-book-data/{tool}.json").read_text())
     display_name = data.get("display_name", tool)
+    short_ref = source_ref[:10]
     output = ROOT / "tools" / tool / "examples"
     output.mkdir(parents=True, exist_ok=True)
     manifest = output / ".generated-files"
@@ -122,12 +190,18 @@ def main():
         image_name = f"{slug}.png"
         image_path = output / "img" / image_name
         image_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(preview, image_path)
-        image_href = f"/tools/{tool}/examples/img/{image_name}"
         source = quickrun_source(tool, script, examples_root, repo_root)
         source_name = f"{slug}.lms"
         source_path = output / source_name
         source_path.write_text(source)
+        rendered = rendered_preview(tool, slug, source_path, data)
+        if rendered is not None:
+            image_path.write_bytes(rendered)
+            compact_png(image_path)
+            width, height = png_size(image_path)
+        else:
+            shutil.copyfile(preview, image_path)
+        image_href = f"/tools/{tool}/examples/img/{image_name}"
         page_name = f"{slug}.html"
         title = slug.replace("-", " ").title()
         description_text = re.sub(r"`([^`]*)`", r"\1", entries[slug])
@@ -139,9 +213,18 @@ def main():
             f"Create a drawing inspired by the {title} example. Use the {display_name} API and source "
             "links below, compile and render a PNG, and report the source and verification."
         )
+        prompt = textwrap.fill(prompt, width=72)
+        quickrun_command = textwrap.fill(
+            f"lmctl quickrun https://lmctl.com/tools/{tool}/examples/{slug}.lms",
+            width=72,
+            subsequent_indent="  ",
+            break_long_words=False,
+            break_on_hyphens=False,
+        )
+        quickrun_command = quickrun_command.replace("\n  ", " \\\n  ")
         body = f'''<h1>{html.escape(title)}</h1>
 <p>{description} This page includes the render and a quickrun-ready lmscript source file.</p>
-<figure><img src="{image_href}" alt="Rendered {html.escape(title)} example." width="{width}" height="{height}"><figcaption>Preview generated from the source repository at {html.escape(source_ref)}.</figcaption></figure>
+<figure><img src="{image_href}" alt="Rendered {html.escape(title)} example." width="{width}" height="{height}"><figcaption>Preview generated from the source repository at {html.escape(short_ref)}.</figcaption></figure>
 <h2>Let an agent build from this example</h2>
 <p>Copy this prompt into your Lead's terminal to ask an agent to make a related drawing:</p>
 <pre><code>{html.escape(prompt)}
@@ -149,10 +232,10 @@ LMScript DSL: {html.escape(data['dsl_docs'])}
 {html.escape(display_name)} API: {html.escape(data['tool_docs'])}
 Example book: https://lmctl.com/tools/{tool}/examples/{slug}.html</code></pre>
 <h2>Run the example</h2>
-<pre><code>lmctl quickrun https://lmctl.com/tools/{tool}/examples/{slug}.lms</code></pre>
+<pre><code>{html.escape(quickrun_command)}</code></pre>
 <p><a href="/tools/{tool}/examples/{source_name}">Read the quickrun source</a>. See <a href="/tools/{tool}/get_started.html">get started with quickrun teams</a>.</p>
 <h2>Source from the project</h2>
-<p>The original example is <a href="https://github.com/lmctl-ai/{tool}/blob/{html.escape(source_ref)}/examples/{slug}.lms">{slug}.lms at {html.escape(source_ref)}</a>. The published quickrun source adds release installation, local SVG fixtures, or the bundled font needed to run it from a new directory.</p>'''
+<p>The original example is <a href="https://github.com/lmctl-ai/{tool}/blob/{html.escape(source_ref)}/examples/{slug}.lms">{slug}.lms at {html.escape(short_ref)}</a>. The published quickrun source adds release installation, local SVG fixtures, or the bundled font needed to run it from a new directory.</p>'''
         page_path = output / page_name
         page_path.write_text(body + "\n")
         created.extend([str(source_path.relative_to(ROOT)), str(page_path.relative_to(ROOT)), str(image_path.relative_to(ROOT))])
@@ -163,7 +246,7 @@ Example book: https://lmctl.com/tools/{tool}/examples/{slug}.html</code></pre>
         for title, description, page, *_ in pages
     )
     index = f'''<h1>{html.escape(display_name)} examples</h1>
-<p>Browse rendered examples and run each source as a quickrun script. These pages are regenerated from the public {html.escape(display_name)} repository at {html.escape(source_ref)}.</p>
+<p>Browse rendered examples and run each source as a quickrun script. These pages are regenerated from the public {html.escape(display_name)} repository at {html.escape(short_ref)}.</p>
 <p>Start with <a href="{html.escape(data['get_started'])}">get started</a> to learn how solo and trio quickruns work.</p>
 <ul>
 {list_items}

@@ -316,6 +316,7 @@ while (str_find(tool_dirs, "|") >= 0) {
       if (filename == "index.html" || role(filename) != name) { continue; }
       let text = label;
       if (filename != name + ".html") { text = label + ": " + excerpt(heading(page), 80, false); }
+      if (filename == "get_started.html") { text = "Quickruns"; }
       while (str_contains(used_labels, "\n" + text + "\n")) {
         text = text + " (" + str_substr(filename, 0, str_len(filename) - 5) + ")";
       }

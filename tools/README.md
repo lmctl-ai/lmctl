@@ -14,7 +14,7 @@ Install Node supported by the published compiler and npm i -g @lmctl-ai/lmctl@0.
 
 Names are \<role\>.html or \<role\>-\<topic\>.html, using lowercase letters, digits and single hyphens. Unknown roles and uppercase/space/underscore names are errors. There is no fixed page set. skill.html is the sole required content page.
 
-The exact filename get_started.html is also accepted for a tool's quickrun landing page. Generated example books may live under tools/TOOL/examples/; their page names use the lowercase source example slug rather than a page role.
+The exact filename get_started.html is also accepted for a tool's quickrun landing page; its navigation label is Quickruns. Generated example books may live under tools/TOOL/examples/; their page names use the lowercase source example slug rather than a page role.
 
 | Role | Content rule |
 | --- | --- |
