@@ -2,6 +2,9 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 SCRIPT_DIR="$ROOT/scripts/homepage/video"
+# The sourced path is derived from SCRIPT_DIR at runtime.
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/hash-files.sh"
 PUBLISHED_DIR="$ROOT/homepage/assets/videos"
 ENGINE=lmblender MODE=render ONLY_LEVEL='' PUBLISH=0 AUDIO_DIR=''
 FRAME_COUNT=240 FRAME_RATE=24
@@ -19,7 +22,7 @@ while (($#)); do
 done
 LMCAD_BIN="${LMCAD_BIN:-$(command -v lmcad || true)}"
 LMBLENDER_BIN="${LMBLENDER_BIN:-$(command -v lmblender || echo /home/ubuntu/lmblender-release/current/bin/lmblender)}"
-LMDRAW_BIN="${LMDRAW_BIN:-$(command -v lmdraw || echo /home/ubuntu/lmdraw-release/current/bin/lmdraw)}"
+LMDRAW_BIN="${LMDRAW_BIN:-$(command -v lmdraw || true)}"
 LMSCRIPT_BIN="${LMSCRIPT_BIN:-$(command -v lmscript || true)}"
 [[ -x $LMSCRIPT_BIN ]] || { echo 'Install @lmctl-ai/lmctl@0.2.369 or newer and put lmscript on PATH.' >&2; exit 2; }
 compiler_version=$($LMSCRIPT_BIN --version 2>&1 | awk '{print $NF}')
@@ -33,7 +36,6 @@ if [[ $ENGINE == lmcad ]]; then
   OUTPUT_DIR="${LMCAD_OUTPUT_DIR:-$PUBLISHED_DIR}"; SOURCE_DIR=$SCRIPT_DIR; HASH_FILE="${LMCAD_HASH_FILE:-$SCRIPT_DIR/frames.sha256}"; WIDTH=$LMCAD_WIDTH; HEIGHT=$LMCAD_HEIGHT
 else
   [[ -x $LMBLENDER_BIN ]] || { echo 'Install lmblender 0.3.1 and set LMBLENDER_BIN.' >&2; exit 2; }
-  [[ -x $LMDRAW_BIN ]] || { echo 'Install lmdraw 0.1.0 and set LMDRAW_BIN.' >&2; exit 2; }
   OUTPUT_DIR="${LMBLENDER_OUTPUT_DIR:-$ROOT/build/homepage-video/lmblender}"; [[ $PUBLISH == 0 ]] || OUTPUT_DIR=$PUBLISHED_DIR
   SOURCE_DIR=$SCRIPT_DIR/lmblender; HASH_FILE=$SCRIPT_DIR/lmblender/frames.sha256; WIDTH=$BLENDER_WIDTH; HEIGHT=$BLENDER_HEIGHT
 fi
@@ -50,21 +52,23 @@ if [[ $ENGINE == lmcad ]]; then
   export PATH
 fi
 if [[ $ENGINE == lmblender ]]; then
+  if [[ -z $LMDRAW_BIN ]]; then
+    "$LMSCRIPT_BIN" "$SCRIPT_DIR/overlay/lmdraw-path.lms" "$work/lmdraw-path.txt"
+    LMDRAW_BIN=$(cat "$work/lmdraw-path.txt")
+  fi
+  [[ -x $LMDRAW_BIN ]] || { echo "lmdraw is not executable: $LMDRAW_BIN" >&2; exit 2; }
+  PATH="$(dirname "$LMDRAW_BIN"):$PATH"
+  export PATH
   # The cache key excludes overlays, so title/layout edits do not rerender Cycles.
   cache_root="${LMBLENDER_FRAME_CACHE:-$ROOT/build/homepage-video/lmblender-cycles}"
   mkdir -p "$cache_root"
   blender_version=$("$LMBLENDER_BIN" --version | tr '\n' ';' | sed 's/;$//')
   blender_hash=$(sha256_file "$LMBLENDER_BIN"); blender_hash=${blender_hash%% *}
-  draw_version=0.1.0
+  draw_version=$($LMDRAW_BIN --version | awk '{print $NF}')
   draw_hash=$(sha256_file "$LMDRAW_BIN"); draw_hash=${draw_hash%% *}
   compiler_version=$("$LMSCRIPT_BIN" --version 2>&1 | head -1)
   printf '{\n  "lmblender": "%s",\n  "lmblender_binary_sha256": "%s",\n  "preset": "diagram-dark-16x9-final",\n  "samples": %s,\n  "resolution": "%sx%s",\n  "frames": %s,\n  "fps": %s,\n  "background": "lmdraw navy gradient",\n  "lmdraw": "%s",\n  "lmdraw_binary_sha256": "%s",\n  "lmscript": "%s"\n}\n' "$blender_version" "$blender_hash" "$BLENDER_SAMPLES" "$WIDTH" "$HEIGHT" "$FRAME_COUNT" "$FRAME_RATE" "$draw_version" "$draw_hash" "$compiler_version" > "$work/manifest.json"
   if [[ $MODE == check ]]; then cmp "$work/manifest.json" "$SCRIPT_DIR/lmblender/manifest.json"; fi
-  "$LMDRAW_BIN" --schema --json > "$work/lmdraw-schema.json"
-  cmp "$work/lmdraw-schema.json" "$SCRIPT_DIR/overlay/schema/lmdraw.dsl.json"
-  "$LMSCRIPT_BIN" --dsl-signatures "$SCRIPT_DIR/overlay/schema/lmdraw.dsl.json" > "$work/compiler-signatures"
-  "$LMDRAW_BIN" --dsl-signatures > "$work/host-signatures"
-  diff -u "$work/compiler-signatures" "$work/host-signatures"
   mkdir -p "$work/backdrop/build/rendered"
   (cd "$work/backdrop" && "$LMSCRIPT_BIN" "$SCRIPT_DIR/overlay/background.lms" background.dslb)
   (cd "$work/backdrop" && nice -n 10 "$LMDRAW_BIN" --dsl background.dslb)
@@ -140,13 +144,18 @@ for n in 1 2 3 4; do
 done
 if [[ $MODE == check ]]; then
   expected_hashes=$HASH_FILE
-  if [[ -n $ONLY_LEVEL ]]; then expected_hashes="$work/expected.sha256"; grep "level-$ONLY_LEVEL/" "$HASH_FILE" > "$expected_hashes"; fi
+  if [[ -n $ONLY_LEVEL ]]; then
+    expected_hashes="$work/expected.sha256"
+    select_frame_hashes "$HASH_FILE" "$ONLY_LEVEL" "$FRAME_COUNT" "$expected_hashes"
+  fi
   diff -u "$expected_hashes" "$actual_hashes"
   echo 'frame hashes: match (local renderer check; encoder output hashes are intentionally not used)'
 else
   if [[ -z $ONLY_LEVEL ]]; then cp "$actual_hashes" "$HASH_FILE"; else
-    combined="$work/combined.sha256"; : > "$combined"
-    for n in 1 2 3 4; do source_hashes=$HASH_FILE; [[ $ONLY_LEVEL != "$n" ]] || source_hashes=$actual_hashes; grep "level-$n/" "$source_hashes" >> "$combined"; done
+    combined="$work/combined.sha256"
+    baseline=$HASH_FILE
+    [[ -f $baseline ]] || baseline="$SOURCE_DIR/frames.sha256"
+    merge_frame_hashes "$baseline" "$actual_hashes" "$ONLY_LEVEL" "$FRAME_COUNT" "$combined"
     cp "$combined" "$HASH_FILE"
   fi
   if [[ $ENGINE == lmblender ]]; then cp "$work/manifest.json" "$SCRIPT_DIR/lmblender/manifest.json"; fi

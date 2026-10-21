@@ -1,5 +1,5 @@
 out = ARGV[0];
-p = _dsl_ schema="schema/lmdraw.dsl.json";
+p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(1280, 720, "#152438");
 let navy = scene.linear_gradient("navy", 0.0, 0.0, 1.0, 1.0);
 navy.stop(0.0, "#111f32");

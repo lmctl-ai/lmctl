@@ -13,7 +13,7 @@ tools/ is the source of [https://lmctl.com/tools/](<https://lmctl.com/tools/>): 
 3. npm run check:tools (must print check: OK).
 4. Commit the content and the generated HTML together, including repo.txt when needed.
 
-Prerequisite once: lmscript 0.2.369 or newer on PATH (or set LMSCRIPT for icon rendering). Each script declares its host with cli and install; lmscript reads that release binary's embedded schema and downloads a missing asset into its tool cache with SHA-256 verification. CI installs the matching compiler release and works from an empty host cache. lmhtml and lmcad scripts use @latest. lmdraw v0.1.0 has platform-named assets but no --version output, which install requires; lmblender releases are still drafts. Keep local schemas for those two until their release binaries satisfy the install contract.
+Prerequisite once: lmscript 0.2.369 or newer on PATH (or set LMSCRIPT for icon rendering). Each script declares its host with cli and install; lmscript reads that release binary's embedded schema and downloads a missing asset into its tool cache with SHA-256 verification. CI installs the matching compiler release and works from an empty host cache. lmhtml, lmcad and lmdraw scripts use @latest. lmdraw 0.1.2 exposes --version and the compiler's --dsl-schema protocol; lmblender releases are still drafts, so its scenes keep a local schema until a release supports the install contract.
 
 ## Layout
 
