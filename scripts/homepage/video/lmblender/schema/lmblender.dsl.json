@@ -346,6 +346,22 @@
             "returns": "void"
           }
         ],
+        "denoise_quality": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "void"
+          }
+        ],
+        "render_preset": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "void"
+          }
+        ],
         "set_view_transform": [
           {
             "params": [
@@ -417,6 +433,99 @@
               "int",
               "int",
               "bool"
+            ],
+            "returns": "Mesh"
+          }
+        ],
+        "capsule": [
+          {
+            "params": [
+              "float",
+              "float",
+              "int",
+              "int"
+            ],
+            "returns": "Mesh"
+          }
+        ],
+        "glow_orb": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "Mesh"
+          }
+        ],
+        "tube_between": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "Mesh"
+          }
+        ],
+        "arrow_between": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "Mesh"
+          }
+        ],
+        "ring_arc": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "float",
+              "int"
+            ],
+            "returns": "Mesh"
+          }
+        ],
+        "checkmark": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "Mesh"
+          }
+        ],
+        "label": [
+          {
+            "params": [
+              "string",
+              "float",
+              "float",
+              "float",
+              "float"
             ],
             "returns": "Mesh"
           }
@@ -523,6 +632,69 @@
               "string"
             ],
             "returns": "void"
+          }
+        ],
+        "camera_optics_keyframe": [
+          {
+            "params": [
+              "int",
+              "float",
+              "float",
+              "string"
+            ],
+            "returns": "void"
+          }
+        ],
+        "point_light_keyframe": [
+          {
+            "params": [
+              "int",
+              "int",
+              "float",
+              "string"
+            ],
+            "returns": "void"
+          }
+        ],
+        "set_threads": [
+          {
+            "params": [
+              "int"
+            ],
+            "returns": "void"
+          }
+        ],
+        "use_preset": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "void"
+          }
+        ],
+        "load_preset": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "void"
+          }
+        ],
+        "preset_param": [
+          {
+            "params": [
+              "string",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "material_from_palette": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "Material"
           }
         ]
       }
@@ -632,6 +804,16 @@
             ],
             "returns": "void"
           }
+        ],
+        "keyframe_visible": [
+          {
+            "params": [
+              "int",
+              "bool",
+              "string"
+            ],
+            "returns": "void"
+          }
         ]
       }
     },
@@ -716,6 +898,16 @@
           {
             "params": [
               "bool"
+            ],
+            "returns": "void"
+          }
+        ],
+        "keyframe_emission_strength": [
+          {
+            "params": [
+              "int",
+              "float",
+              "string"
             ],
             "returns": "void"
           }

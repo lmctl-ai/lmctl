@@ -1,69 +1,96 @@
 out = ARGV[0];
+final = ARGV.len() > 1 ? ARGV[1] == "final" : true;
+fw = final ? 1280 : 960;
+fh = final ? 720 : 540;
 p = _dsl_ schema="schema/lmblender.dsl.json";
-# lmblender 0.2.1 currently projects one scene unit differently on X and Z for 16:9 outputs.
-# These wrappers compensate so spheres remain round and scene layouts retain their intended proportions.
-fn screen_z(value: float) -> float { return value * 1.78; }
-fn round_sphere(radius: float, segments: int, rings: int) -> Mesh {
-  let mesh = scene.uv_sphere(radius, segments, rings, true);
-  mesh.scale(1.0, 1.0, 1.78);
-  return mesh;
-}
-fn tall_cylinder(radius: float, height: float, segments: int) -> Mesh {
-  return scene.cylinder(radius, screen_z(height), segments, true);
+
+# lmblender 0.3.1. No aspect compensation (fixed in 0.2.2). Named preset for
+# the render profile; samples raised to 64 spp per the quality-first note.
+if (${final}) {
+  scene.use_preset("diagram-dark-16x9-final");
+  scene.preset_param("samples", 64.0);
+} else {
+  scene.use_preset("diagram-dark-16x9-draft");
 }
 
-let samples = 16;
-let frame_width = 960;
-let frame_height = 540;
 let teal = scene.material(0.04, 0.62, 0.53, 0.24, 0.23, 0.0, 0.02, 0.22, 0.18, 0.65);
 let gold = scene.material(0.83, 0.48, 0.10, 0.28, 0.20, 0.0, 0.30, 0.12, 0.01, 1.2);
 let blue = scene.material(0.04, 0.28, 0.74, 0.22, 0.25, 0.0, 0.01, 0.08, 0.30, 0.55);
 let violet = scene.material(0.34, 0.18, 0.72, 0.24, 0.22, 0.0, 0.11, 0.03, 0.30, 0.55);
 let green = scene.material(0.08, 0.48, 0.20, 0.22, 0.24, 0.0, 0.04, 0.28, 0.08, 0.8);
-let packet = scene.material(0.95, 0.86, 0.58, 0.12, 0.17, 0.0, 0.65, 0.36, 0.06, 1.8);
 
 # Shared look: dark navy world, gold key, blue fill, glossy provider colors.
 scene.world_color(0.008, 0.016, 0.040, 0.55);
 scene.set_view_transform("AgX");
 scene.render_settings(6, 17, true);
 scene.render_timeout(3600);
-scene.area_light(-8.0, -10.0, screen_z(12.0), 0.0, 0.0, screen_z(0.0), 1.0, 0.78, 0.48, 1400.0, 8.0);
-scene.area_light(8.0, -6.0, screen_z(5.0), 0.0, 0.0, screen_z(0.0), 0.20, 0.52, 1.0, 500.0, 10.0);
+scene.area_light(-8.0, -10.0, 12.0, 0.0, 0.0, 0.0, 1.0, 0.78, 0.48, 1400.0, 8.0);
+scene.area_light(8.0, -6.0, 5.0, 0.0, 0.0, 0.0, 0.20, 0.52, 1.0, 500.0, 10.0);
 
-# A person sets the goal and acceptance rules on the left.
-let person = round_sphere(0.62, 40, 24); person.set_material(teal);
-let body = tall_cylinder(0.42, 1.3, 40); body.set_material(teal);
-person.keyframe_transform(0, -9.0, 0.0, screen_z(1.1), "linear"); person.keyframe_transform(118, -9.0, 0.0, screen_z(1.1), "ease"); person.keyframe_transform(138, -17.0, 0.0, screen_z(1.1), "ease"); person.keyframe_transform(239, -17.0, 0.0, screen_z(1.1), "linear");
-body.keyframe_transform(0, -9.0, 0.0, screen_z(-0.1), "linear"); body.keyframe_transform(118, -9.0, 0.0, screen_z(-0.1), "ease"); body.keyframe_transform(138, -17.0, 0.0, screen_z(-0.1), "ease"); body.keyframe_transform(239, -17.0, 0.0, screen_z(-0.1), "linear");
-let checklist = scene.cube(1.0); checklist.scale(1.35, 0.34, screen_z(1.65)); checklist.set_material(gold);
-checklist.keyframe_transform(0, -6.5, 0.0, screen_z(0.0), "linear"); checklist.keyframe_transform(65, -6.5, 0.0, screen_z(0.0), "ease"); checklist.keyframe_transform(88, -2.6, 0.0, screen_z(0.0), "ease"); checklist.keyframe_transform(104, -2.6, 0.0, screen_z(0.0), "linear"); checklist.keyframe_transform(120, -20.0, 0.0, screen_z(0.0), "ease"); checklist.keyframe_transform(239, -20.0, 0.0, screen_z(0.0), "linear");
-let rule0 = scene.cube(1.0); rule0.scale(0.82, 0.16, screen_z(0.10)); rule0.set_material(blue); rule0.translate(-6.5, -0.22, screen_z(0.52));
-let rule1 = scene.cube(1.0); rule1.scale(0.82, 0.16, screen_z(0.10)); rule1.set_material(blue); rule1.translate(-6.5, -0.22, screen_z(0.0));
-let rule2 = scene.cube(1.0); rule2.scale(0.82, 0.16, screen_z(0.10)); rule2.set_material(blue); rule2.translate(-6.5, -0.22, screen_z(-0.52));
-rule0.keyframe_transform(0, -6.5, -0.52, screen_z(0.52), "linear"); rule0.keyframe_transform(88, -2.6, -0.52, screen_z(0.52), "ease"); rule0.keyframe_transform(120, -20.0, -0.52, screen_z(0.52), "ease"); rule0.keyframe_transform(239, -20.0, -0.52, screen_z(0.52), "linear");
-rule1.keyframe_transform(0, -6.5, -0.52, screen_z(0.0), "linear"); rule1.keyframe_transform(88, -2.6, -0.52, screen_z(0.0), "ease"); rule1.keyframe_transform(120, -20.0, -0.52, screen_z(0.0), "ease"); rule1.keyframe_transform(239, -20.0, -0.52, screen_z(0.0), "linear");
-rule2.keyframe_transform(0, -6.5, -0.52, screen_z(-0.52), "linear"); rule2.keyframe_transform(88, -2.6, -0.52, screen_z(-0.52), "ease"); rule2.keyframe_transform(120, -20.0, -0.52, screen_z(-0.52), "ease"); rule2.keyframe_transform(239, -20.0, -0.52, screen_z(-0.52), "linear");
+# A person sets the goal and acceptance rules on the left, then steps away.
+let person = scene.uv_sphere(0.62, 40, 24, true); person.set_material(teal);
+let body = scene.cylinder(0.42, 1.3, 40, true); body.set_material(teal);
+person.keyframe_transform(0, -9.0, 0.0, 1.1, "linear"); person.keyframe_transform(118, -9.0, 0.0, 1.1, "ease"); person.keyframe_transform(138, -17.0, 0.0, 1.1, "ease"); person.keyframe_transform(239, -17.0, 0.0, 1.1, "linear");
+body.keyframe_transform(0, -9.0, 0.0, -0.1, "linear"); body.keyframe_transform(118, -9.0, 0.0, -0.1, "ease"); body.keyframe_transform(138, -17.0, 0.0, -0.1, "ease"); body.keyframe_transform(239, -17.0, 0.0, -0.1, "linear");
+let checklist = scene.cube(1.0); checklist.scale(1.35, 0.34, 1.65); checklist.set_material(gold);
+checklist.keyframe_transform(0, -6.5, 0.0, 0.0, "linear"); checklist.keyframe_transform(65, -6.5, 0.0, 0.0, "ease"); checklist.keyframe_transform(88, -2.6, 0.0, 0.0, "ease"); checklist.keyframe_transform(104, -2.6, 0.0, 0.0, "linear"); checklist.keyframe_transform(120, -20.0, 0.0, 0.0, "ease"); checklist.keyframe_transform(239, -20.0, 0.0, 0.0, "linear");
+let rule0 = scene.cube(1.0); rule0.scale(0.70, 0.16, 0.10); rule0.set_material(blue);
+let rule1 = scene.cube(1.0); rule1.scale(0.70, 0.16, 0.10); rule1.set_material(blue);
+let rule2 = scene.cube(1.0); rule2.scale(0.70, 0.16, 0.10); rule2.set_material(blue);
+rule0.keyframe_transform(0, -6.5, -0.52, 0.52, "linear"); rule0.keyframe_transform(88, -2.6, -0.52, 0.52, "ease"); rule0.keyframe_transform(120, -20.0, -0.52, 0.52, "ease"); rule0.keyframe_transform(239, -20.0, -0.52, 0.52, "linear");
+rule1.keyframe_transform(0, -6.5, -0.52, 0.0, "linear"); rule1.keyframe_transform(88, -2.6, -0.52, 0.0, "ease"); rule1.keyframe_transform(120, -20.0, -0.52, 0.0, "ease"); rule1.keyframe_transform(239, -20.0, -0.52, 0.0, "linear");
+rule2.keyframe_transform(0, -6.5, -0.52, -0.52, "linear"); rule2.keyframe_transform(88, -2.6, -0.52, -0.52, "ease"); rule2.keyframe_transform(120, -20.0, -0.52, -0.52, "ease"); rule2.keyframe_transform(239, -20.0, -0.52, -0.52, "linear");
 
 # The Lead coordinates two provider agents while the person is away.
-let team_rail = scene.cube(1.0); team_rail.scale(5.8, 0.12, screen_z(0.10)); team_rail.set_material(gold); team_rail.translate(0.0, 0.10, screen_z(-1.5));
-let lead = round_sphere(0.78, 44, 26); lead.set_material(gold); lead.translate(0.0, 0.0, screen_z(0.4));
-let coder = round_sphere(0.55, 36, 20); coder.set_material(blue); coder.translate(-2.8, 0.0, screen_z(-1.5));
-let reviewer = round_sphere(0.55, 36, 20); reviewer.set_material(violet); reviewer.translate(2.8, 0.0, screen_z(-1.5));
-let m0 = round_sphere(0.18, 20, 12); m0.set_material(packet);
-let m1 = round_sphere(0.18, 20, 12); m1.set_material(packet);
-m0.keyframe_transform(0, -2.8, -0.35, screen_z(-1.5), "linear"); m0.keyframe_transform(42, 0.0, -0.35, screen_z(0.4), "ease"); m0.keyframe_transform(82, 2.8, -0.35, screen_z(-1.5), "ease"); m0.keyframe_transform(128, 0.0, -0.35, screen_z(0.4), "ease"); m0.keyframe_transform(165, 7.5, -0.35, screen_z(0.2), "ease"); m0.keyframe_transform(239, 7.5, -0.35, screen_z(0.2), "linear");
-m1.keyframe_transform(0, 2.8, -0.4, screen_z(-1.5), "linear"); m1.keyframe_transform(42, 0.0, -0.4, screen_z(0.4), "ease"); m1.keyframe_transform(82, -2.8, -0.4, screen_z(-1.5), "ease"); m1.keyframe_transform(128, 0.0, -0.4, screen_z(0.4), "ease"); m1.keyframe_transform(165, 7.5, -0.4, screen_z(0.2), "ease"); m1.keyframe_transform(239, 7.5, -0.4, screen_z(0.2), "linear");
+let team_rail = scene.cube(1.0); team_rail.scale(5.8, 0.12, 0.10); team_rail.set_material(gold); team_rail.translate(0.0, 0.10, -1.5);
+let lead = scene.uv_sphere(0.78, 44, 26, true); lead.set_material(gold); lead.translate(0.0, 0.0, 0.4);
+let coder = scene.uv_sphere(0.55, 36, 20, true); coder.set_material(blue); coder.translate(-2.8, 0.0, -1.5);
+let reviewer = scene.uv_sphere(0.55, 36, 20, true); reviewer.set_material(violet); reviewer.translate(2.8, 0.0, -1.5);
+
+# Message traffic is unmissable: bigger cream glow-orbs on their own lane in
+# front of the rail, never embedded in the spheres (origin-built, keyframed
+# absolute positions only).
+let m0 = scene.glow_orb(0.0, 0.0, 0.0, 0.26, 0.95, 0.86, 0.58, 3.2);
+let m1 = scene.glow_orb(0.0, 0.0, 0.0, 0.26, 0.95, 0.86, 0.58, 3.2);
+m0.keyframe_transform(0, -2.8, -0.55, -2.3, "linear"); m0.keyframe_transform(42, 0.0, -0.55, -0.6, "ease"); m0.keyframe_transform(82, 2.8, -0.55, -2.3, "ease"); m0.keyframe_transform(128, 0.0, -0.55, -0.6, "ease"); m0.keyframe_transform(165, 7.5, -0.55, -0.9, "ease"); m0.keyframe_transform(239, 11.5, -0.55, -1.8, "linear");
+m1.keyframe_transform(0, 2.8, -0.65, -2.3, "linear"); m1.keyframe_transform(42, 0.0, -0.65, -0.6, "ease"); m1.keyframe_transform(82, -2.8, -0.65, -2.3, "ease"); m1.keyframe_transform(128, 0.0, -0.65, -0.6, "ease"); m1.keyframe_transform(165, 7.5, -0.65, -0.9, "ease"); m1.keyframe_transform(239, 11.5, -0.65, -1.8, "linear");
+
+# The completed result exists only once the work beat ends (nothing early).
+let result = scene.cube(1.0); result.scale(0.72, 0.48, 0.72); result.set_material(green);
+result.keyframe_visible(0, false, "linear");
+result.keyframe_transform(0, 0.0, -0.3, 0.4, "linear");
+result.keyframe_visible(130, true, "linear");
+result.keyframe_transform(178, 7.5, -0.3, 0.2, "ease"); result.keyframe_transform(239, 7.5, -0.3, 0.2, "linear");
 
 # The human returns at the far right to inspect the completed result.
-let person_right = round_sphere(0.62, 40, 24); person_right.set_material(teal);
-let body_right = tall_cylinder(0.42, 1.3, 40); body_right.set_material(teal);
-person_right.keyframe_transform(0, 16.0, 0.0, screen_z(1.1), "linear"); person_right.keyframe_transform(175, 16.0, 0.0, screen_z(1.1), "ease"); person_right.keyframe_transform(206, 9.5, 0.0, screen_z(1.1), "ease"); person_right.keyframe_transform(239, 9.5, 0.0, screen_z(1.1), "linear");
-body_right.keyframe_transform(0, 16.0, 0.0, screen_z(-0.1), "linear"); body_right.keyframe_transform(175, 16.0, 0.0, screen_z(-0.1), "ease"); body_right.keyframe_transform(206, 9.5, 0.0, screen_z(-0.1), "ease"); body_right.keyframe_transform(239, 9.5, 0.0, screen_z(-0.1), "linear");
-let result = scene.cube(1.0); result.scale(0.72, 0.48, screen_z(0.72)); result.set_material(green);
-result.keyframe_transform(0, 0.0, -0.3, screen_z(0.4), "linear"); result.keyframe_transform(130, 0.0, -0.3, screen_z(0.4), "ease"); result.keyframe_transform(178, 7.5, -0.3, screen_z(0.2), "ease"); result.keyframe_transform(239, 7.5, -0.3, screen_z(0.2), "linear");
+let person_right = scene.uv_sphere(0.62, 40, 24, true); person_right.set_material(teal);
+let body_right = scene.cylinder(0.42, 1.3, 40, true); body_right.set_material(teal);
+person_right.keyframe_visible(0, false, "linear");
+person_right.keyframe_transform(0, 16.0, 0.0, 1.1, "linear");
+person_right.keyframe_visible(170, true, "linear");
+person_right.keyframe_transform(175, 16.0, 0.0, 1.1, "ease"); person_right.keyframe_transform(206, 8.4, 0.0, 1.1, "ease"); person_right.keyframe_transform(239, 8.4, 0.0, 1.1, "linear");
+body_right.keyframe_visible(0, false, "linear");
+body_right.keyframe_transform(0, 16.0, 0.0, -0.65, "linear");
+body_right.keyframe_visible(170, true, "linear");
+body_right.keyframe_transform(175, 16.0, 0.0, -0.65, "ease"); body_right.keyframe_transform(206, 8.4, 0.0, -0.65, "ease"); body_right.keyframe_transform(239, 8.4, 0.0, -0.65, "linear");
 
-scene.camera_look_at(0.0, -30.0, screen_z(9.0), 0.0, 0.0, screen_z(0.0), 39.0);
-scene.render_sequence("frames/level-3/frame-{frame}.png", 0, 119, samples, frame_width, frame_height);
-scene.render_sequence("frames/level-3/frame-{frame}.png", 120, 239, samples, frame_width, frame_height);
+scene.camera_look_at(0.0, -16.5, 6.2, -1.0, 0.0, 0.2, 38.0);
+# Static keys pin the camera: without them the preset auto_frame owns it.
+scene.camera_keyframe(0, 0.0, -16.5, 6.2, -1.0, 0.0, 0.2, "linear");
+scene.camera_keyframe(239, 0.0, -16.5, 6.2, -1.0, 0.0, 0.2, "linear");
+
+if (${final}) {
+  scene.render_sequence("frames/level-3/frame-{frame}.png", 0, 59, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-3/frame-{frame}.png", 60, 119, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-3/frame-{frame}.png", 120, 179, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-3/frame-{frame}.png", 180, 239, 0, ${fw}, ${fh});
+} else {
+  scene.render_sequence("frames/level-3/draft-{frame}.png", 0, 0, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-3/draft-{frame}.png", 80, 80, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-3/draft-{frame}.png", 120, 120, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-3/draft-{frame}.png", 170, 170, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-3/draft-{frame}.png", 180, 180, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-3/draft-{frame}.png", 239, 239, 0, ${fw}, ${fh});
+}
 end _dsl_
 savedsl(p, out);

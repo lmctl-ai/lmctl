@@ -1,16 +1,17 @@
 {
   "engine": "lmblender",
   "version": [
-    "lmblender 0.2.1 (DSL bytecode v5)",
+    "lmblender 0.3.1 (DSL bytecode v5)",
     "Cycles 4.5.0",
     "OpenImageDenoise 2.5.0"
   ],
-  "binary_sha256": "4b360aceda736f400fb2b911c0b99084bb343d9cff0d9a683f892fd0dad8b6d9",
-  "status": "preview-only; lmcad remains the published engine",
-  "preview_samples": 16,
-  "preview_resolution": "960x540",
-  "contact_sheets": "qa/; four representative frames per storyboard, not complete video renders",
+  "binary_sha256": "bd757bd756dad013e7dbad1fcbd252caed2ef36717d19e74042683065e8774a8",
+  "status": "published; lmblender 0.3.1 is the default engine (render.sh), lmcad v0.1.1 remains the fallback",
+  "preset": "diagram-dark-16x9-final with samples raised to 64 (operator quality-first)",
+  "resolution": "1280x720",
+  "contact_sheets": "qa/; four representative frames per storyboard against the previous lmcad renders",
   "contact_sheet_hashes": "qa-contact-sheets.sha256",
-  "full_sequences_rendered": false,
-  "reason": "A 26-frame 16-sample level-1 trial took 6m28s; the estimated full sequence exceeds an hour per level on this host."
+  "full_sequences_rendered": true,
+  "full_sequence_frame_hashes": "frames.sha256",
+  "qa_verdict": "SWITCH; all four levels read better after two fix rounds on Levels 3 and 4"
 }

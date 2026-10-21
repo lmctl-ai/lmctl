@@ -1,0 +1,10 @@
+{
+  "engine": "lmblender",
+  "version": "lmblender 0.3.1 (DSL bytecode v5);Cycles 4.5.0;OpenImageDenoise 2.5.0",
+  "binary_sha256": "bd757bd756dad013e7dbad1fcbd252caed2ef36717d19e74042683065e8774a8",
+  "preset": "diagram-dark-16x9-final",
+  "samples": 64,
+  "resolution": "1280x720",
+  "frames": 240,
+  "fps": 24
+}

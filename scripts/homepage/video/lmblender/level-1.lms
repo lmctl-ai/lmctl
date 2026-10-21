@@ -1,20 +1,19 @@
 out = ARGV[0];
+final = ARGV.len() > 1 ? ARGV[1] == "final" : true;
+fw = final ? 1280 : 960;
+fh = final ? 720 : 540;
 p = _dsl_ schema="schema/lmblender.dsl.json";
-# lmblender 0.2.1 currently projects one scene unit differently on X and Z for 16:9 outputs.
-# These wrappers compensate so spheres remain round and scene layouts retain their intended proportions.
-fn screen_z(value: float) -> float { return value * 1.78; }
-fn round_sphere(radius: float, segments: int, rings: int) -> Mesh {
-  let mesh = scene.uv_sphere(radius, segments, rings, true);
-  mesh.scale(1.0, 1.0, 1.78);
-  return mesh;
-}
-fn tall_cylinder(radius: float, height: float, segments: int) -> Mesh {
-  return scene.cylinder(radius, screen_z(height), segments, true);
+
+# lmblender 0.3.1. The 16:9 camera aspect bug was fixed in 0.2.2: no screen_z
+# compensation anywhere. The named preset carries the render profile; the
+# operator's quality-first note raises samples to 64 spp (fast OIDN stays).
+if (${final}) {
+  scene.use_preset("diagram-dark-16x9-final");
+  scene.preset_param("samples", 64.0);
+} else {
+  scene.use_preset("diagram-dark-16x9-draft");
 }
 
-let samples = 16;
-let frame_width = 960;
-let frame_height = 540;
 let teal = scene.material(0.04, 0.62, 0.53, 0.24, 0.23, 0.0, 0.02, 0.22, 0.18, 0.65);
 let gold = scene.material(0.83, 0.48, 0.10, 0.28, 0.20, 0.0, 0.30, 0.12, 0.01, 1.2);
 let blue = scene.material(0.04, 0.28, 0.74, 0.22, 0.25, 0.0, 0.01, 0.08, 0.30, 0.55);
@@ -25,50 +24,84 @@ scene.world_color(0.008, 0.016, 0.040, 0.55);
 scene.set_view_transform("AgX");
 scene.render_settings(6, 17, true);
 scene.render_timeout(3600);
-scene.area_light(-8.0, -10.0, screen_z(12.0), 0.0, 0.0, screen_z(0.0), 1.0, 0.78, 0.48, 1400.0, 8.0);
-scene.area_light(8.0, -6.0, screen_z(5.0), 0.0, 0.0, screen_z(0.0), 0.20, 0.52, 1.0, 500.0, 10.0);
+scene.area_light(-8.0, -10.0, 12.0, 0.0, 0.0, 0.0, 1.0, 0.78, 0.48, 1400.0, 8.0);
+scene.area_light(8.0, -6.0, 5.0, 0.0, 0.0, 0.0, 0.20, 0.52, 1.0, 500.0, 10.0);
 
 # Anonymous provider-colored sessions gather into three named team bands.
-let s0 = round_sphere(0.48, 40, 24); s0.set_material(teal);
-let s1 = round_sphere(0.48, 40, 24); s1.set_material(teal);
-let s2 = round_sphere(0.48, 40, 24); s2.set_material(gold);
-let s3 = round_sphere(0.48, 40, 24); s3.set_material(gold);
-let s4 = round_sphere(0.48, 40, 24); s4.set_material(violet);
-let s5 = round_sphere(0.48, 40, 24); s5.set_material(violet);
-let band0 = scene.cube(1.0); band0.scale(5.0, 0.16, screen_z(0.12)); band0.set_material(teal); band0.translate(-4.5, 0.0, screen_z(2.0));
-let band1 = scene.cube(1.0); band1.scale(5.0, 0.16, screen_z(0.12)); band1.set_material(gold); band1.translate(-4.5, 0.0, screen_z(0.0));
-let band2 = scene.cube(1.0); band2.scale(5.0, 0.16, screen_z(0.12)); band2.set_material(violet); band2.translate(-4.5, 0.0, screen_z(-2.0));
-s0.keyframe_transform(0, -10.0, 0.0, screen_z(4.0), "ease"); s0.keyframe_transform(100, -5.8, 0.0, screen_z(2.0), "ease"); s0.keyframe_transform(239, -5.8, 0.0, screen_z(2.0), "linear");
-s1.keyframe_transform(0, -2.0, 0.0, screen_z(3.8), "ease"); s1.keyframe_transform(100, -3.2, 0.0, screen_z(2.0), "ease"); s1.keyframe_transform(239, -3.2, 0.0, screen_z(2.0), "linear");
-s2.keyframe_transform(0, -9.0, 0.0, screen_z(0.2), "ease"); s2.keyframe_transform(100, -5.8, 0.0, screen_z(0.0), "ease"); s2.keyframe_transform(239, -5.8, 0.0, screen_z(0.0), "linear");
-s3.keyframe_transform(0, -1.4, 0.0, screen_z(-1.2), "ease"); s3.keyframe_transform(100, -3.2, 0.0, screen_z(0.0), "ease"); s3.keyframe_transform(239, -3.2, 0.0, screen_z(0.0), "linear");
-s4.keyframe_transform(0, -10.0, 0.0, screen_z(-4.0), "ease"); s4.keyframe_transform(100, -5.8, 0.0, screen_z(-2.0), "ease"); s4.keyframe_transform(239, -5.8, 0.0, screen_z(-2.0), "linear");
-s5.keyframe_transform(0, -1.5, 0.0, screen_z(-3.4), "ease"); s5.keyframe_transform(100, -3.2, 0.0, screen_z(-2.0), "ease"); s5.keyframe_transform(239, -3.2, 0.0, screen_z(-2.0), "linear");
+let s0 = scene.uv_sphere(0.48, 40, 24, true); s0.set_material(teal);
+let s1 = scene.uv_sphere(0.48, 40, 24, true); s1.set_material(teal);
+let s2 = scene.uv_sphere(0.48, 40, 24, true); s2.set_material(gold);
+let s3 = scene.uv_sphere(0.48, 40, 24, true); s3.set_material(gold);
+let s4 = scene.uv_sphere(0.48, 40, 24, true); s4.set_material(violet);
+let s5 = scene.uv_sphere(0.48, 40, 24, true); s5.set_material(violet);
+let band0 = scene.cube(1.0); band0.scale(5.0, 0.16, 0.12); band0.set_material(teal); band0.translate(-4.5, 0.0, 2.0);
+let band1 = scene.cube(1.0); band1.scale(5.0, 0.16, 0.12); band1.set_material(gold); band1.translate(-4.5, 0.0, 0.0);
+let band2 = scene.cube(1.0); band2.scale(5.0, 0.16, 0.12); band2.set_material(violet); band2.translate(-4.5, 0.0, -2.0);
+s0.keyframe_transform(0, -10.0, 0.0, 4.0, "ease"); s0.keyframe_transform(100, -5.8, 0.0, 2.0, "ease"); s0.keyframe_transform(239, -5.8, 0.0, 2.0, "linear");
+s1.keyframe_transform(0, -2.0, 0.0, 3.8, "ease"); s1.keyframe_transform(100, -3.2, 0.0, 2.0, "ease"); s1.keyframe_transform(239, -3.2, 0.0, 2.0, "linear");
+s2.keyframe_transform(0, -9.0, 0.0, 0.2, "ease"); s2.keyframe_transform(100, -5.8, 0.0, 0.0, "ease"); s2.keyframe_transform(239, -5.8, 0.0, 0.0, "linear");
+s3.keyframe_transform(0, -1.4, 0.0, -1.2, "ease"); s3.keyframe_transform(100, -3.2, 0.0, 0.0, "ease"); s3.keyframe_transform(239, -3.2, 0.0, 0.0, "linear");
+s4.keyframe_transform(0, -10.0, 0.0, -4.0, "ease"); s4.keyframe_transform(100, -5.8, 0.0, -2.0, "ease"); s4.keyframe_transform(239, -5.8, 0.0, -2.0, "linear");
+s5.keyframe_transform(0, -1.5, 0.0, -3.4, "ease"); s5.keyframe_transform(100, -3.2, 0.0, -2.0, "ease"); s5.keyframe_transform(239, -3.2, 0.0, -2.0, "linear");
 
-# A torus creates one continuous gold inspection lens instead of loose beads.
+# A torus inspection lens frames the teal band's first sphere; the camera
+# retargets and zooms onto it (the optics track is the magnifier beat).
 let lens = scene.torus(0.86, 0.11, 48, 16, true);
 lens.set_material(gold);
-lens.scale(1.0, 1.78, 1.0);
 lens.rotate_x(90.0);
-lens.keyframe_transform(0, 0.0, 0.0, screen_z(-40.0), "linear");
-lens.keyframe_transform(110, -5.8, 0.0, screen_z(2.0), "ease");
-lens.keyframe_transform(170, -5.8, 0.0, screen_z(2.0), "ease");
-lens.keyframe_transform(180, 0.0, 0.0, screen_z(-40.0), "ease");
-lens.keyframe_transform(239, 0.0, 0.0, screen_z(-40.0), "linear");
+lens.keyframe_visible(0, false, "linear");
+lens.keyframe_transform(0, 0.0, 0.0, -40.0, "linear");
+lens.keyframe_visible(104, true, "linear");
+lens.keyframe_transform(110, -5.8, 0.0, 2.0, "ease");
+lens.keyframe_transform(170, -5.8, 0.0, 2.0, "ease");
+lens.keyframe_transform(180, 0.0, 0.0, -40.0, "ease");
+lens.keyframe_visible(181, false, "linear");
+lens.keyframe_transform(239, 0.0, 0.0, -40.0, "linear");
 
-# Four bottom-aligned columns rise one at a time, with heights increasing left to right.
-let b0 = scene.cube(1.0); b0.scale(0.42, 0.24, screen_z(0.80)); b0.set_material(gold); b0.keyframe_transform(0, 18.0, 0.0, screen_z(-1.7), "linear"); b0.keyframe_transform(148, 18.0, 0.0, screen_z(-1.7), "linear"); b0.keyframe_transform(162, 2.8, 0.0, screen_z(-1.8), "ease"); b0.keyframe_transform(239, 2.8, 0.0, screen_z(-1.8), "linear");
-let b1 = scene.cube(1.0); b1.scale(0.42, 0.24, screen_z(1.30)); b1.set_material(teal); b1.keyframe_transform(0, 18.0, 0.0, screen_z(-1.7), "linear"); b1.keyframe_transform(154, 18.0, 0.0, screen_z(-1.7), "linear"); b1.keyframe_transform(168, 3.7, 0.0, screen_z(-1.55), "ease"); b1.keyframe_transform(239, 3.7, 0.0, screen_z(-1.55), "linear");
-let b2 = scene.cube(1.0); b2.scale(0.42, 0.24, screen_z(1.80)); b2.set_material(blue); b2.keyframe_transform(0, 18.0, 0.0, screen_z(-1.7), "linear"); b2.keyframe_transform(160, 18.0, 0.0, screen_z(-1.7), "linear"); b2.keyframe_transform(174, 4.6, 0.0, screen_z(-1.3), "ease"); b2.keyframe_transform(239, 4.6, 0.0, screen_z(-1.3), "linear");
-let b3 = scene.cube(1.0); b3.scale(0.42, 0.24, screen_z(2.30)); b3.set_material(violet); b3.keyframe_transform(0, 18.0, 0.0, screen_z(-1.7), "linear"); b3.keyframe_transform(166, 18.0, 0.0, screen_z(-1.7), "linear"); b3.keyframe_transform(180, 5.5, 0.0, screen_z(-1.05), "ease"); b3.keyframe_transform(239, 5.5, 0.0, screen_z(-1.05), "linear");
-scene.camera_look_at(0.0, -32.0, screen_z(10.0), 0.0, 0.0, screen_z(0.0), 39.0);
-scene.camera_keyframe(0, 0.0, -32.0, screen_z(10.0), 0.0, 0.0, screen_z(0.0), "linear");
-scene.camera_keyframe(70, 0.0, -32.0, screen_z(10.0), 0.0, 0.0, screen_z(0.0), "ease");
-scene.camera_keyframe(94, 0.0, -32.0, screen_z(10.0), 0.0, 0.0, screen_z(0.0), "ease");
-scene.camera_keyframe(150, 0.0, -32.0, screen_z(10.0), 0.0, 0.0, screen_z(0.0), "ease");
-scene.camera_keyframe(180, 0.0, -32.0, screen_z(10.0), 0.0, 0.0, screen_z(0.0), "ease");
-scene.camera_keyframe(239, 0.0, -32.0, screen_z(10.0), 0.0, 0.0, screen_z(0.0), "linear");
-scene.render_sequence("frames/level-1/frame-{frame}.png", 0, 119, samples, frame_width, frame_height);
-scene.render_sequence("frames/level-1/frame-{frame}.png", 120, 239, samples, frame_width, frame_height);
+# Camera: static, then retarget to the framed sphere and zoom the vertical
+# FOV 39 -> 27 degrees (about 1.4x), then back. Gentle: the band row stays.
+scene.camera_look_at(0.0, -15.0, 4.5, -0.5, 0.0, 1.5, 40.0);
+scene.camera_keyframe(0, 0.0, -15.0, 4.5, -0.5, 0.0, 1.5, "linear");
+scene.camera_keyframe(110, 0.0, -15.0, 4.5, -4.5, 0.0, 1.2, "ease");
+scene.camera_keyframe(170, 0.0, -15.0, 4.5, -4.5, 0.0, 1.2, "ease");
+scene.camera_keyframe(190, 0.0, -15.0, 4.5, -0.5, 0.0, 1.5, "ease");
+scene.camera_keyframe(239, 0.0, -15.0, 4.5, -0.5, 0.0, 1.5, "linear");
+scene.camera_optics_keyframe(0, 40.0, 10.0, "linear");
+scene.camera_optics_keyframe(110, 40.0, 10.0, "linear");
+scene.camera_optics_keyframe(130, 30.0, 10.0, "ease");
+scene.camera_optics_keyframe(170, 30.0, 10.0, "linear");
+scene.camera_optics_keyframe(190, 40.0, 10.0, "ease");
+scene.camera_optics_keyframe(239, 40.0, 10.0, "linear");
+
+# Four bottom-aligned columns rise one at a time, heights increasing; each is
+# invisible until its own beat starts (nothing appears early).
+let b0 = scene.cube(1.0); b0.scale(0.42, 0.24, 0.80); b0.set_material(gold);
+b0.keyframe_visible(0, false, "linear"); b0.keyframe_visible(148, true, "linear");
+b0.keyframe_transform(0, 18.0, 0.0, -1.7, "linear"); b0.keyframe_transform(148, 18.0, 0.0, -1.7, "linear"); b0.keyframe_transform(162, 2.8, 0.0, -1.8, "ease"); b0.keyframe_transform(239, 2.8, 0.0, -1.8, "linear");
+let b1 = scene.cube(1.0); b1.scale(0.42, 0.24, 1.30); b1.set_material(teal);
+b1.keyframe_visible(0, false, "linear"); b1.keyframe_visible(154, true, "linear");
+b1.keyframe_transform(0, 18.0, 0.0, -1.7, "linear"); b1.keyframe_transform(154, 18.0, 0.0, -1.7, "linear"); b1.keyframe_transform(168, 3.7, 0.0, -1.55, "ease"); b1.keyframe_transform(239, 3.7, 0.0, -1.55, "linear");
+let b2 = scene.cube(1.0); b2.scale(0.42, 0.24, 1.80); b2.set_material(blue);
+b2.keyframe_visible(0, false, "linear"); b2.keyframe_visible(160, true, "linear");
+b2.keyframe_transform(0, 18.0, 0.0, -1.7, "linear"); b2.keyframe_transform(160, 18.0, 0.0, -1.7, "linear"); b2.keyframe_transform(174, 4.6, 0.0, -1.3, "ease"); b2.keyframe_transform(239, 4.6, 0.0, -1.3, "linear");
+let b3 = scene.cube(1.0); b3.scale(0.42, 0.24, 2.30); b3.set_material(violet);
+b3.keyframe_visible(0, false, "linear"); b3.keyframe_visible(166, true, "linear");
+b3.keyframe_transform(0, 18.0, 0.0, -1.7, "linear"); b3.keyframe_transform(166, 18.0, 0.0, -1.7, "linear"); b3.keyframe_transform(180, 5.5, 0.0, -1.05, "ease"); b3.keyframe_transform(239, 5.5, 0.0, -1.05, "linear");
+
+if (${final}) {
+  # 240 frames at 1280x720 exceed the 64M total-pixel sequence budget; the
+  # host's exact error says <=69 frames per call, so render four 60s.
+  scene.render_sequence("frames/level-1/frame-{frame}.png", 0, 59, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-1/frame-{frame}.png", 60, 119, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-1/frame-{frame}.png", 120, 179, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-1/frame-{frame}.png", 180, 239, 0, ${fw}, ${fh});
+} else {
+  scene.render_sequence("frames/level-1/draft-{frame}.png", 0, 0, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-1/draft-{frame}.png", 60, 60, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-1/draft-{frame}.png", 120, 120, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-1/draft-{frame}.png", 150, 150, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-1/draft-{frame}.png", 180, 180, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-1/draft-{frame}.png", 239, 239, 0, ${fw}, ${fh});
+}
 end _dsl_
 savedsl(p, out);

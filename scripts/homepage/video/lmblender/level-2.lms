@@ -1,63 +1,57 @@
 out = ARGV[0];
+final = ARGV.len() > 1 ? ARGV[1] == "final" : true;
+fw = final ? 1280 : 960;
+fh = final ? 720 : 540;
 p = _dsl_ schema="schema/lmblender.dsl.json";
-# lmblender 0.2.1 currently projects one scene unit differently on X and Z for 16:9 outputs.
-# These wrappers compensate so spheres remain round and scene layouts retain their intended proportions.
-fn screen_z(value: float) -> float { return value * 1.78; }
-fn round_sphere(radius: float, segments: int, rings: int) -> Mesh {
-  let mesh = scene.uv_sphere(radius, segments, rings, true);
-  mesh.scale(1.0, 1.0, 1.78);
-  return mesh;
-}
-fn tall_cylinder(radius: float, height: float, segments: int) -> Mesh {
-  return scene.cylinder(radius, screen_z(height), segments, true);
+
+# lmblender 0.3.1. No aspect compensation (fixed in 0.2.2). Named preset for
+# the render profile; samples raised to 64 spp per the quality-first note.
+if (${final}) {
+  scene.use_preset("diagram-dark-16x9-final");
+  scene.preset_param("samples", 64.0);
+} else {
+  scene.use_preset("diagram-dark-16x9-draft");
 }
 
-let samples = 16;
-let frame_width = 960;
-let frame_height = 540;
 let teal = scene.material(0.04, 0.62, 0.53, 0.24, 0.23, 0.0, 0.02, 0.22, 0.18, 0.65);
 let gold = scene.material(0.83, 0.48, 0.10, 0.28, 0.20, 0.0, 0.30, 0.12, 0.01, 1.2);
 let blue = scene.material(0.04, 0.28, 0.74, 0.22, 0.25, 0.0, 0.01, 0.08, 0.30, 0.55);
 let violet = scene.material(0.34, 0.18, 0.72, 0.24, 0.22, 0.0, 0.11, 0.03, 0.30, 0.55);
 let coral = scene.material(0.75, 0.16, 0.10, 0.25, 0.24, 0.0, 0.24, 0.035, 0.01, 0.7);
-let packet = scene.material(0.95, 0.86, 0.58, 0.12, 0.17, 0.0, 0.65, 0.36, 0.06, 1.8);
 
 # Shared look: dark navy world, gold key, blue fill, glossy provider colors.
 scene.world_color(0.008, 0.016, 0.040, 0.55);
 scene.set_view_transform("AgX");
 scene.render_settings(6, 17, true);
 scene.render_timeout(3600);
-scene.area_light(-8.0, -10.0, screen_z(12.0), 0.0, 0.0, screen_z(0.0), 1.0, 0.78, 0.48, 1400.0, 8.0);
-scene.area_light(8.0, -6.0, screen_z(5.0), 0.0, 0.0, screen_z(0.0), 0.20, 0.52, 1.0, 500.0, 10.0);
+scene.area_light(-8.0, -10.0, 12.0, 0.0, 0.0, 0.0, 1.0, 0.78, 0.48, 1400.0, 8.0);
+scene.area_light(8.0, -6.0, 5.0, 0.0, 0.0, 0.0, 0.20, 0.52, 1.0, 500.0, 10.0);
 
-# Six provider-colored agents surround a larger golden Lead.
-let lead = round_sphere(0.9, 48, 28); lead.set_material(gold);
-let a0 = round_sphere(0.58, 36, 20); a0.set_material(blue); a0.translate(-5.6, 0.0, screen_z(0.0));
-let a1 = round_sphere(0.58, 36, 20); a1.set_material(teal); a1.translate(-3.4, 0.0, screen_z(3.0));
-let a2 = round_sphere(0.58, 36, 20); a2.set_material(violet); a2.translate(3.4, 0.0, screen_z(3.0));
-let a3 = round_sphere(0.58, 36, 20); a3.set_material(coral); a3.translate(5.6, 0.0, screen_z(0.0));
-let a4 = round_sphere(0.58, 36, 20); a4.set_material(blue); a4.translate(3.4, 0.0, screen_z(-3.0));
-let a5 = round_sphere(0.58, 36, 20); a5.set_material(teal); a5.translate(-3.4, 0.0, screen_z(-3.0));
+# Six provider-colored agents surround a larger golden Lead. Tube spokes run
+# from each agent through the Lead's center (they visibly pass through it).
+let lead = scene.uv_sphere(0.9, 48, 28, true); lead.set_material(gold);
+let a0 = scene.uv_sphere(0.58, 36, 20, true); a0.set_material(blue); a0.translate(-5.6, 0.0, 0.0);
+let a1 = scene.uv_sphere(0.58, 36, 20, true); a1.set_material(teal); a1.translate(-3.4, 0.0, 3.0);
+let a2 = scene.uv_sphere(0.58, 36, 20, true); a2.set_material(violet); a2.translate(3.4, 0.0, 3.0);
+let a3 = scene.uv_sphere(0.58, 36, 20, true); a3.set_material(coral); a3.translate(5.6, 0.0, 0.0);
+let a4 = scene.uv_sphere(0.58, 36, 20, true); a4.set_material(blue); a4.translate(3.4, 0.0, -3.0);
+let a5 = scene.uv_sphere(0.58, 36, 20, true); a5.set_material(teal); a5.translate(-3.4, 0.0, -3.0);
+let r0 = scene.tube_between(-5.6, 0.0, 0.0, 0.0, 0.0, 0.0, 0.10); r0.set_material(blue);
+let r1 = scene.tube_between(-3.4, 0.0, 3.0, 0.0, 0.0, 0.0, 0.10); r1.set_material(teal);
+let r2 = scene.tube_between(3.4, 0.0, 3.0, 0.0, 0.0, 0.0, 0.10); r2.set_material(violet);
+let r3 = scene.tube_between(5.6, 0.0, 0.0, 0.0, 0.0, 0.0, 0.10); r3.set_material(coral);
+let r4 = scene.tube_between(3.4, 0.0, -3.0, 0.0, 0.0, 0.0, 0.10); r4.set_material(blue);
+let r5 = scene.tube_between(-3.4, 0.0, -3.0, 0.0, 0.0, 0.0, 0.10); r5.set_material(teal);
 
-# Thin, emissive cuboids connect the Lead to agents in the horizontal and vertical axes.
-let spoke_left = scene.cube(1.0); spoke_left.scale(4.7, 0.12, screen_z(0.12)); spoke_left.set_material(blue); spoke_left.translate(-2.8, -0.55, screen_z(0.0));
-let spoke_right = scene.cube(1.0); spoke_right.scale(4.7, 0.12, screen_z(0.12)); spoke_right.set_material(coral); spoke_right.translate(2.8, -0.55, screen_z(0.0));
-# Short sphere chains trace the four diagonal links, because this API has no Y-axis mesh rotation.
-for (i in range(1, 4)) {
-  let t = float(i) / 4.0;
-  let ul = round_sphere(0.12, 16, 10); ul.set_material(teal); ul.translate(-3.4 * t, -0.62, screen_z(3.0 * t));
-  let ur = round_sphere(0.12, 16, 10); ur.set_material(violet); ur.translate(3.4 * t, -0.62, screen_z(3.0 * t));
-  let dl = round_sphere(0.12, 16, 10); dl.set_material(teal); dl.translate(-3.4 * t, -0.62, screen_z(-3.0 * t));
-  let dr = round_sphere(0.12, 16, 10); dr.set_material(blue); dr.translate(3.4 * t, -0.62, screen_z(-3.0 * t));
-}
-
-# Routed message particles make the Lead visibly relay, rather than copy, turns.
-let m0 = round_sphere(0.25, 24, 16); m0.set_material(packet);
-let m1 = round_sphere(0.22, 20, 12); m1.set_material(packet);
-let m2 = round_sphere(0.22, 20, 12); m2.set_material(packet);
-m0.keyframe_transform(0, -4.9, -1.0, screen_z(0.0), "linear"); m0.keyframe_transform(26, 0.0, -1.0, screen_z(0.0), "ease"); m0.keyframe_transform(53, 4.9, -1.0, screen_z(0.0), "ease"); m0.keyframe_transform(78, 4.9, -1.0, screen_z(0.0), "linear"); m0.keyframe_transform(105, 0.0, -1.0, screen_z(0.0), "ease"); m0.keyframe_transform(132, -3.4, -1.0, screen_z(2.2), "ease"); m0.keyframe_transform(158, -3.4, -1.0, screen_z(2.2), "linear"); m0.keyframe_transform(185, 0.0, -1.0, screen_z(0.0), "ease"); m0.keyframe_transform(212, 3.4, -1.0, screen_z(-2.2), "ease"); m0.keyframe_transform(239, 3.4, -1.0, screen_z(-2.2), "linear");
-m1.keyframe_transform(0, 3.4, -1.1, screen_z(2.2), "linear"); m1.keyframe_transform(26, 0.0, -1.1, screen_z(0.0), "ease"); m1.keyframe_transform(53, -4.9, -1.1, screen_z(0.0), "ease"); m1.keyframe_transform(78, -4.9, -1.1, screen_z(0.0), "linear"); m1.keyframe_transform(105, 0.0, -1.1, screen_z(0.0), "ease"); m1.keyframe_transform(132, 4.9, -1.1, screen_z(0.0), "ease"); m1.keyframe_transform(158, 4.9, -1.1, screen_z(0.0), "linear"); m1.keyframe_transform(185, 0.0, -1.1, screen_z(0.0), "ease"); m1.keyframe_transform(212, -3.4, -1.1, screen_z(-2.2), "ease"); m1.keyframe_transform(239, -3.4, -1.1, screen_z(-2.2), "linear");
-m2.keyframe_transform(0, -3.4, -1.2, screen_z(-2.2), "linear"); m2.keyframe_transform(40, 0.0, -1.2, screen_z(0.0), "ease"); m2.keyframe_transform(80, 3.4, -1.2, screen_z(2.2), "ease"); m2.keyframe_transform(120, 3.4, -1.2, screen_z(2.2), "linear"); m2.keyframe_transform(160, 0.0, -1.2, screen_z(0.0), "ease"); m2.keyframe_transform(200, -4.9, -1.2, screen_z(0.0), "ease"); m2.keyframe_transform(239, -4.9, -1.2, screen_z(0.0), "linear");
+# Routed message glow-orbs make the Lead visibly relay, rather than copy,
+# turns. Meshes are created at the origin and only keyframed (no translate),
+# so the absolute track is predictable and nothing embeds in the spheres.
+let m0 = scene.glow_orb(0.0, 0.0, 0.0, 0.24, 0.95, 0.86, 0.58, 3.0);
+let m1 = scene.glow_orb(0.0, 0.0, 0.0, 0.22, 0.95, 0.86, 0.58, 3.0);
+let m2 = scene.glow_orb(0.0, 0.0, 0.0, 0.22, 0.95, 0.86, 0.58, 3.0);
+m0.keyframe_transform(0, -4.9, -0.4, 0.0, "linear"); m0.keyframe_transform(26, 0.0, -0.4, 0.0, "ease"); m0.keyframe_transform(53, 4.9, -0.4, 0.0, "ease"); m0.keyframe_transform(78, 4.9, -0.4, 0.0, "linear"); m0.keyframe_transform(105, 0.0, -0.4, 0.0, "ease"); m0.keyframe_transform(132, -3.4, -0.4, 2.2, "ease"); m0.keyframe_transform(158, -3.4, -0.4, 2.2, "linear"); m0.keyframe_transform(185, 0.0, -0.4, 0.0, "ease"); m0.keyframe_transform(212, 3.4, -0.4, -2.2, "ease"); m0.keyframe_transform(239, 3.4, -0.4, -2.2, "linear");
+m1.keyframe_transform(0, 3.4, -0.5, 2.2, "linear"); m1.keyframe_transform(26, 0.0, -0.5, 0.0, "ease"); m1.keyframe_transform(53, -4.9, -0.5, 0.0, "ease"); m1.keyframe_transform(78, -4.9, -0.5, 0.0, "linear"); m1.keyframe_transform(105, 0.0, -0.5, 0.0, "ease"); m1.keyframe_transform(132, 4.9, -0.5, 0.0, "ease"); m1.keyframe_transform(158, 4.9, -0.5, 0.0, "linear"); m1.keyframe_transform(185, 0.0, -0.5, 0.0, "ease"); m1.keyframe_transform(212, -3.4, -0.5, -2.2, "ease"); m1.keyframe_transform(239, -3.4, -0.5, -2.2, "linear");
+m2.keyframe_transform(0, -3.4, -0.6, -2.2, "linear"); m2.keyframe_transform(40, 0.0, -0.6, 0.0, "ease"); m2.keyframe_transform(80, 3.4, -0.6, 2.2, "ease"); m2.keyframe_transform(120, 3.4, -0.6, 2.2, "linear"); m2.keyframe_transform(160, 0.0, -0.6, 0.0, "ease"); m2.keyframe_transform(200, -4.9, -0.6, 0.0, "ease"); m2.keyframe_transform(239, -4.9, -0.6, 0.0, "linear");
 gold.keyframe_color(0, 0.83, 0.48, 0.10, "linear");
 gold.keyframe_color(25, 1.0, 0.76, 0.24, "ease");
 gold.keyframe_color(53, 0.83, 0.48, 0.10, "ease");
@@ -67,8 +61,19 @@ gold.keyframe_color(184, 1.0, 0.76, 0.24, "ease");
 gold.keyframe_color(212, 0.83, 0.48, 0.10, "ease");
 gold.keyframe_color(239, 0.83, 0.48, 0.10, "linear");
 
-scene.camera_look_at(0.0, -24.0, screen_z(7.5), 0.0, 0.0, screen_z(0.0), 40.0);
-scene.render_sequence("frames/level-2/frame-{frame}.png", 0, 119, samples, frame_width, frame_height);
-scene.render_sequence("frames/level-2/frame-{frame}.png", 120, 239, samples, frame_width, frame_height);
+scene.camera_look_at(0.0, -16.0, 6.5, 0.0, 0.0, 0.0, 38.0);
+
+if (${final}) {
+  scene.render_sequence("frames/level-2/frame-{frame}.png", 0, 59, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-2/frame-{frame}.png", 60, 119, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-2/frame-{frame}.png", 120, 179, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-2/frame-{frame}.png", 180, 239, 0, ${fw}, ${fh});
+} else {
+  scene.render_sequence("frames/level-2/draft-{frame}.png", 0, 0, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-2/draft-{frame}.png", 40, 40, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-2/draft-{frame}.png", 120, 120, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-2/draft-{frame}.png", 200, 200, 0, ${fw}, ${fh});
+  scene.render_sequence("frames/level-2/draft-{frame}.png", 239, 239, 0, ${fw}, ${fh});
+}
 end _dsl_
 savedsl(p, out);

@@ -3,7 +3,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 SCRIPT_DIR="$ROOT/scripts/homepage/video"
 PUBLISHED_DIR="$ROOT/homepage/assets/videos"
-ENGINE=lmcad
+ENGINE=lmblender
 MODE=render
 ONLY_LEVEL=
 PUBLISH=0
@@ -12,9 +12,9 @@ FRAME_COUNT=240
 FRAME_RATE=24
 LMCAD_WIDTH=480
 LMCAD_HEIGHT=270
-BLENDER_WIDTH=960
-BLENDER_HEIGHT=540
-BLENDER_SAMPLES=16
+BLENDER_WIDTH=1280
+BLENDER_HEIGHT=720
+BLENDER_SAMPLES=64
 while (($#)); do
   case "$1" in
     --engine) shift; (($#)) || { echo '--engine requires lmcad or lmblender' >&2; exit 2; }; ENGINE=$1; [[ $ENGINE == lmcad || $ENGINE == lmblender ]] || { echo '--engine requires lmcad or lmblender' >&2; exit 2; } ;;
@@ -27,7 +27,7 @@ while (($#)); do
   shift
 done
 LMCAD_BIN="${LMCAD_BIN:-$(command -v lmcad || true)}"
-LMBLENDER_BIN="${LMBLENDER_BIN:-$(command -v lmblender || true)}"
+LMBLENDER_BIN="${LMBLENDER_BIN:-$(command -v lmblender || echo /home/ubuntu/lmblender-release/current/bin/lmblender)}"
 LMSCRIPT_BIN="${LMSCRIPT_BIN:-$(command -v lmscript || true)}"
 [[ -x $LMSCRIPT_BIN ]] || { echo 'Install lmscript >= 0.2.347 and put it on PATH.' >&2; exit 2; }
 command -v ffmpeg >/dev/null || { echo 'ffmpeg is required to encode homepage video.' >&2; exit 2; }
@@ -51,7 +51,7 @@ if [[ $ENGINE == lmcad ]]; then
   HASH_FILE=$SCRIPT_DIR/frames.sha256
   WIDTH=$LMCAD_WIDTH; HEIGHT=$LMCAD_HEIGHT
 else
-  [[ -x $LMBLENDER_BIN ]] || { echo "Install local lmblender v0.2.1 or set LMBLENDER_BIN (not available in CI)." >&2; exit 2; }
+  [[ -x $LMBLENDER_BIN ]] || { echo "Install local lmblender v0.3.1 or set LMBLENDER_BIN (not available in CI)." >&2; exit 2; }
   OUTPUT_DIR="${LMBLENDER_OUTPUT_DIR:-$ROOT/build/homepage-video/lmblender}"
   [[ $PUBLISH == 0 ]] || OUTPUT_DIR=$PUBLISHED_DIR
   SOURCE_DIR=$SCRIPT_DIR/lmblender
@@ -67,7 +67,7 @@ if [[ $ENGINE == lmblender ]]; then
   version_output=$("$LMBLENDER_BIN" --version | tr '\n' ';' | sed 's/;$//')
   binary_hash=$(sha256_file "$LMBLENDER_BIN"); binary_hash=${binary_hash%% *}
   manifest_expected="$work/manifest.json"
-  printf '{\n  "engine": "lmblender",\n  "version": "%s",\n  "binary_sha256": "%s",\n  "samples": %s,\n  "resolution": "%sx%s",\n  "frames": %s,\n  "fps": %s\n}\n' "$version_output" "$binary_hash" "$BLENDER_SAMPLES" "$WIDTH" "$HEIGHT" "$FRAME_COUNT" "$FRAME_RATE" > "$manifest_expected"
+  printf '{\n  "engine": "lmblender",\n  "version": "%s",\n  "binary_sha256": "%s",\n  "preset": "diagram-dark-16x9-final",\n  "samples": %s,\n  "resolution": "%sx%s",\n  "frames": %s,\n  "fps": %s\n}\n' "$version_output" "$binary_hash" "$BLENDER_SAMPLES" "$WIDTH" "$HEIGHT" "$FRAME_COUNT" "$FRAME_RATE" > "$manifest_expected"
   if [[ $MODE == check ]]; then
     cmp "$manifest_expected" "$SCRIPT_DIR/lmblender/manifest.json"
   fi
@@ -91,8 +91,8 @@ for n in 1 2 3 4; do
     (cd "$work" && "$LMSCRIPT_BIN" "$name.lms" "$name.dslb")
     (cd "$work" && "$LMCAD_BIN" --dsl "$name.dslb")
   else
-    (cd "$work" && "$LMSCRIPT_BIN" "$SOURCE_DIR/$name.lms" "$name.dslb")
-    (cd "$work" && "$LMBLENDER_BIN" --dsl "$name.dslb")
+    (cd "$work" && "$LMSCRIPT_BIN" "$SOURCE_DIR/$name.lms" "$name.dslb" final)
+    (cd "$work" && nice -n 19 "$LMBLENDER_BIN" --dsl "$name.dslb")
   fi
   rendered_count=$(find "$work/frames/$name" -maxdepth 1 -type f -name 'frame-*.png' | wc -l | tr -d ' ')
   [[ $rendered_count == "$FRAME_COUNT" ]] || { echo "$name rendered $rendered_count frames; expected $FRAME_COUNT" >&2; exit 1; }
@@ -111,20 +111,20 @@ for n in 1 2 3 4; do
     track=
     [[ -z $AUDIO_DIR || ! -f $AUDIO_DIR/$name.wav ]] || track="$AUDIO_DIR/$name.wav"
     if [[ -n $track ]]; then
-      ffmpeg -hide_banner -loglevel error -y -framerate "$FRAME_RATE" -start_number 0 -i "$work/frames/$name/frame-%d.png" -i "$track" -shortest -c:v libx264 -preset slow -crf 29 -pix_fmt yuv420p -r "$FRAME_RATE" -g 48 -keyint_min 48 -sc_threshold 0 -threads 1 -c:a aac -b:a 96k -movflags +faststart "$mp4"
-      ffmpeg -hide_banner -loglevel error -y -framerate "$FRAME_RATE" -start_number 0 -i "$work/frames/$name/frame-%d.png" -i "$track" -shortest -c:v libvpx-vp9 -deadline good -cpu-used 4 -crf 34 -b:v 0 -pix_fmt yuv420p -r "$FRAME_RATE" -g 48 -row-mt 0 -threads 1 -c:a libopus -b:a 64k "$webm"
+      ffmpeg -hide_banner -loglevel error -y -framerate "$FRAME_RATE" -start_number 0 -i "$work/frames/$name/frame-%d.png" -i "$track" -shortest -c:v libx264 -preset slow -crf 16 -pix_fmt yuv420p -r "$FRAME_RATE" -g 48 -keyint_min 48 -sc_threshold 0 -threads 1 -c:a aac -b:a 96k -movflags +faststart "$mp4"
+      ffmpeg -hide_banner -loglevel error -y -framerate "$FRAME_RATE" -start_number 0 -i "$work/frames/$name/frame-%d.png" -i "$track" -shortest -c:v libvpx-vp9 -deadline good -cpu-used 2 -crf 24 -b:v 0 -pix_fmt yuv420p -r "$FRAME_RATE" -g 48 -row-mt 0 -threads 1 -c:a libopus -b:a 64k "$webm"
     else
-      ffmpeg -hide_banner -loglevel error -y -framerate "$FRAME_RATE" -start_number 0 -i "$work/frames/$name/frame-%d.png" -an -c:v libx264 -preset slow -crf 29 -pix_fmt yuv420p -r "$FRAME_RATE" -g 48 -keyint_min 48 -sc_threshold 0 -threads 1 -movflags +faststart "$mp4"
-      ffmpeg -hide_banner -loglevel error -y -framerate "$FRAME_RATE" -start_number 0 -i "$work/frames/$name/frame-%d.png" -an -c:v libvpx-vp9 -deadline good -cpu-used 4 -crf 34 -b:v 0 -pix_fmt yuv420p -r "$FRAME_RATE" -g 48 -row-mt 0 -threads 1 "$webm"
+      ffmpeg -hide_banner -loglevel error -y -framerate "$FRAME_RATE" -start_number 0 -i "$work/frames/$name/frame-%d.png" -an -c:v libx264 -preset slow -crf 16 -pix_fmt yuv420p -r "$FRAME_RATE" -g 48 -keyint_min 48 -sc_threshold 0 -threads 1 -movflags +faststart "$mp4"
+      ffmpeg -hide_banner -loglevel error -y -framerate "$FRAME_RATE" -start_number 0 -i "$work/frames/$name/frame-%d.png" -an -c:v libvpx-vp9 -deadline good -cpu-used 2 -crf 24 -b:v 0 -pix_fmt yuv420p -r "$FRAME_RATE" -g 48 -row-mt 0 -threads 1 "$webm"
     fi
   else
     cmp "$work/frames/$name/frame-$poster_frame.png" "$poster"
-    (( $(file_size "$poster") <= 60000 )) || { echo "poster exceeds 60 KB: $poster" >&2; exit 1; }
+    (( $(file_size "$poster") <= 300000 )) || { echo "poster exceeds 300 KB: $poster" >&2; exit 1; }
   fi
   for video in "$mp4" "$webm"; do
     [[ -f $video ]] || { echo "missing encoded video: $video" >&2; exit 1; }
     bytes=$(file_size "$video")
-    ((bytes <= 1572864)) || { echo "video exceeds 1.5 MiB: $video ($bytes bytes)" >&2; exit 1; }
+    ((bytes <= 10485760)) || { echo "video exceeds 10 MB: $video ($bytes bytes)" >&2; exit 1; }
   done
   mp4_info=$(ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -show_entries format=duration -of default=noprint_wrappers=1 "$mp4")
   webm_info=$(ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height -show_entries format=duration -of default=noprint_wrappers=1 "$webm")
