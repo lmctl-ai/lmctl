@@ -22,7 +22,9 @@ while (($#)); do
     --only) shift; (($#)) || { echo '--only requires a level number 1-4' >&2; exit 2; }; [[ $1 =~ ^[1-4]$ ]] || { echo '--only requires a level number 1-4' >&2; exit 2; }; ONLY_LEVEL=$1 ;;
     --publish) PUBLISH=1 ;;
     --audio) shift; (($#)) || { echo '--audio requires a directory' >&2; exit 2; }; AUDIO_DIR=$1 ;;
-    *) echo 'usage: render.sh [--engine lmcad|lmblender] [--check] [--only 1-4] [--publish] [--audio DIR]' >&2; exit 2 ;;
+    *) echo 'usage: render.sh [--engine lmcad|lmblender] [--check] [--only 1-4] [--publish] [--audio DIR]' >&2
+       echo 'lmblender is the default engine; its storyboards take a final|draft mode argument when run by hand (draft renders a few 960x540 frames).' >&2
+       exit 2 ;;
   esac
   shift
 done
