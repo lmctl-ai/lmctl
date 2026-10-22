@@ -2,7 +2,7 @@
 
 ## Added workflow skill: publish a tool docs book — 2026-10-21
 
-The HTML-only page skills/publish-tool-book-skill.html is now in the coordination group in scripts/tools/skills.lms and generated in skills/index.html. Its first-line summary begins with Use when and its body covers release/tag/schema prerequisites, examples, per-tool book data, shared book and autorun generators, the curated autorun and hello catalogs, scratch checks, real provider runs, desktop/mobile review, live verification and the feedback loop. Plain-text checks passed; the source page uses no strong/em or inline code.
+The HTML-only page skills/publish-tool-book-skill.html is now in the coordination group in scripts/tools/skills.lms and generated in skills/index.html. Its first-line summary begins with Use when and its body covers release/tag/schema prerequisites, examples, per-tool book data, shared book and autorun generators, the curated autorun and hello catalogs, scratch checks, real provider runs, GitHub README artwork and four-mode QA, live verification and the feedback loop. Plain-text checks passed; the source page uses no strong/em or inline code.
 
 Dogfood used public lmctl-ai/lmcad at commit 3ec7c9626561a8393821c4d1643c5a2333223b4a. The released lmcad 0.1.3 binary passed --version and --dsl-schema --json byte comparison with schema/lmcad.dsl.json. An isolated LMSCRIPT_TOOL_CACHE installed the release and rendered a 640 by 480 still-life preview. The website scratch tree generated the example page and solo/trio scripts; the shared decorator and full tools checker passed after the scratch root included homepage/index.html, skills and lmscript-site.
 

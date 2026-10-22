@@ -2,6 +2,10 @@
   "display_name": "lmdraw",
   "repository": "https://github.com/lmctl-ai/lmdraw.git",
   "description": "lmdraw is a native host for retained 2D vector scenes and local SVG input.",
+  "readme": {
+    "hero_idea": "A polished, data-driven vector scene that shows retained paths, labels and repeatable rendering in both dark and light palettes.",
+    "gallery_examples": ["title-card", "flow-pipeline", "chart-bars-lines", "tree-org"]
+  },
   "get_started": "/tools/lmdraw/get_started.html",
   "task": "Create a small, clearly labeled lmdraw diagram on a dark navy canvas. Use the lmdraw native host, installed by the LMScript _dsl_ declaration, to compile and render a PNG locally. There is no public HTTP rendering service. Report the source path and how you verified the output.",
   "links": {

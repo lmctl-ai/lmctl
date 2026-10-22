@@ -2,6 +2,10 @@
   "display_name": "lmcad",
   "repository": "https://github.com/lmctl-ai/lmcad.git",
   "description": "lmcad is a native solid-modeling host for lmscript with rendering and CAD export.",
+  "readme": {
+    "hero_idea": "A compact mounting plate with clean boolean holes, a visible bevel and a contrasting material, rendered from a checked lmscript.",
+    "gallery_examples": ["still-life"]
+  },
   "get_started": "/tools/lmcad/get_started.html",
   "task": "Create a compact 3D mounting plate with two clean through-holes, a visible bevel or rim, and a contrasting material. Render a PNG and export an STL. Add a volume check or another concrete geometry check, then report the source, outputs, and verification.",
   "links": {
