@@ -1,5 +1,15 @@
 [
   {
+    "name": "lmtorch_solo",
+    "description": "Seed one lmtorch Lead to compute and verify a small tensor result.",
+    "url": "https://lmctl.com/tools/lmtorch/lmtorch_solo.lms"
+  },
+  {
+    "name": "lmtorch_trio",
+    "description": "Seed a Lead, Coder, and Reviewer to compute and assess a small tensor result.",
+    "url": "https://lmctl.com/tools/lmtorch/lmtorch_trio.lms"
+  },
+  {
     "name": "lmdraw_solo",
     "description": "Seed one lmdraw Lead to make a small drawing and leave its terminal ready.",
     "url": "https://lmctl.com/tools/lmdraw/lmdraw_solo.lms"

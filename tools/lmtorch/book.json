@@ -1,0 +1,30 @@
+{
+  "display_name": "lmtorch",
+  "repository": "https://github.com/lmctl-ai/lmtorch.git",
+  "description": "lmtorch runs CPU tensor operations, automatic differentiation, and small neural networks from LMScript.",
+  "get_started": "/tools/lmtorch/get_started.html",
+  "task": "Use lmtorch to compute and verify a small tensor result. Run the example with the released host, report the source and output, and confirm its expected value.",
+  "links": {
+    "dsl_docs": {"label": "LMScript DSL", "url": "https://lmctl.com/tools/lmscript/skill.html"},
+    "tool_api": {"label": "lmtorch API", "url": "https://lmctl.com/tools/lmtorch/guide.html"},
+    "example": {"label": "Tensor sum example", "url": "https://lmctl.com/tools/lmtorch/examples/tensor-sum.html"}
+  },
+  "members": {
+    "solo": [
+      {"alias": "Lead", "provider": "codex", "model": "gpt-6-luna"}
+    ],
+    "trio": [
+      {"alias": "Lead", "provider": "codex", "model": "gpt-6-luna"},
+      {"alias": "Coder", "provider": "agy", "model": "gemini-4-argon-medium"},
+      {"alias": "Reviewer", "provider": "codex", "model": "gpt-6-astra"}
+    ]
+  },
+  "examples": [
+    {"slug": "tensor-sum", "file": "tensor-sum-dsl.lms", "description": "Create a two-by-two tensor and reduce its elements to one scalar."},
+    {"slug": "autograd-gradient", "file": "autograd-gradient-dsl.lms", "description": "Backpropagate through a sum of squares and check the gradient against 2x."}
+  ],
+  "images": {
+    "tensor-sum": "tensor-sum.png",
+    "autograd-gradient": "autograd-gradient.png"
+  }
+}

@@ -89,11 +89,13 @@ def quickrun_source(tool, script, examples_root, repo_root):
                 f"{{ write_file_exclusive({json.dumps(target)}, {json.dumps(payload)}); }}"
             )
     source = source[:dsl_line.start()] + "\n".join(bootstrap) + "\n" + source[dsl_line.start():]
-    if not re.search(rf"(?m)^[ \t]*\w+\s*=\s*system\s+\$\{{dsl_cli\({re.escape(host_var)}\)\}}\s+--dsl\b", source):
-        source += (
-            f"\nrun = system ${{dsl_cli({host_var})}} --dsl ${{out}};\n"
-            'if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }\n'
-        )
+    # Complete source examples already execute their saved block.
+    if re.search(rf"(?m)^\s*\w+\s*=\s*system\s+\$\{{dsl_cli\({re.escape(host_var)}\)\}}\s+--dsl\s", source):
+        return source
+    source += (
+        f"\nrun = system ${{dsl_cli({host_var})}} --dsl ${{out}};\n"
+        'if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }\n'
+    )
     return source
 
 
@@ -217,7 +219,7 @@ def main():
             script = examples_root / Path(*rel.parts)
             if not script.is_file() or script.is_symlink():
                 raise SystemExit(f"missing or unsafe example script: {script}")
-            scripts.append(script)
+            scripts.append((script, slug))
             entries[slug] = item.get("description", "")
     else:
         readme_path = examples_root / "README.md"
@@ -226,13 +228,12 @@ def main():
         readme = readme_path.read_text()
         for match in re.finditer(r"^- `([a-z0-9-]+)\.lms` (.+?)\.?$", readme, re.M):
             entries[match.group(1)] = match.group(2).rstrip(".")
-        scripts = sorted(examples_root.glob("*.lms"))
+        scripts = [(script, script.stem) for script in sorted(examples_root.glob("*.lms"))]
     if not scripts:
         raise SystemExit(f"no lmscript examples found in {examples_root}")
     created = []
     pages = []
-    for script in scripts:
-        slug = script.stem
+    for script, slug in scripts:
         if slug not in entries:
             raise SystemExit(f"add {slug}.lms to examples/README.md before syncing the book")
         example_config = next((item for item in configured_examples or [] if item.get("slug") == slug), {})
@@ -244,6 +245,7 @@ def main():
             raise SystemExit(f"{slug} needs a rendered output or examples/renders/{preview_name}")
         width, height = png_size(preview) if preview.is_file() else (0, 0)
         source = quickrun_source(tool, script, examples_root, repo_root)
+        original_name = script.relative_to(examples_root).as_posix()
         source_name = f"{slug}.lms"
         source_path = output / source_name
         source_path.write_text(source)
@@ -298,6 +300,13 @@ def main():
         description = html.escape(description_text, quote=False)
         prompt = f"{data['task']} Use the {display_name} API and the {title} example below. Report the source, output, and verification."
         prompt = textwrap.fill(prompt, width=72)
+        example_url = f"https://lmctl.com/tools/{tool}/examples/{slug}.html"
+        simple_example_reference = ""
+        if links["example"]["url"] != example_url:
+            simple_example_reference = (
+                f" Also see <a href=\"{html.escape(links['example']['url'], quote=True)}\">"
+                f"{html.escape(links['example']['label'])}</a>."
+            )
         quickrun_command = textwrap.fill(
             f"lmctl autorun https://lmctl.com/tools/{tool}/examples/{slug}.lms",
             width=72,
@@ -307,19 +316,19 @@ def main():
         )
         quickrun_command = quickrun_command.replace("\n  ", " \\\n  ")
         body = f'''<h1>{html.escape(title)}</h1>
-<p>{description} This page includes the result and a quickrun-ready lmscript source file.</p>
+<p>{description} This page includes a preview and a quickrun-ready lmscript source file.</p>
 {presentation}
 <h2>Let an agent build from this example</h2>
-<p>Copy this prompt into your Lead's terminal to ask an agent to make a related example:</p>
+<p>Copy this prompt into your Lead's terminal to ask an agent to complete a related task:</p>
 <pre><code>{html.escape(prompt)}
 {html.escape(links['dsl_docs']['label'])}: {html.escape(links['dsl_docs']['url'])}
 {html.escape(links['tool_api']['label'])}: {html.escape(links['tool_api']['url'])}
-{html.escape(links['example']['label'])}: {html.escape(links['example']['url'])}</code></pre>
+Example: {html.escape(example_url)}</code></pre>
 <h2>Run the example</h2>
 <pre><code>{html.escape(quickrun_command)}</code></pre>
-<p><a href="/tools/{tool}/examples/{source_name}">Read the quickrun source</a>. See <a href="{html.escape(data.get('get_started', f'/tools/{tool}/tutorial.html'))}">get started with quickrun teams</a>.</p>
+<p><a href="/tools/{tool}/examples/{source_name}">Read the quickrun source</a>.{simple_example_reference} See <a href="{html.escape(data.get('get_started', f'/tools/{tool}/tutorial.html'))}">get started with quickrun teams</a>.</p>
 <h2>Source from the project</h2>
-<p>The original example is <a href="https://github.com/lmctl-ai/{tool}/blob/{html.escape(source_ref)}/examples/{slug}.lms">{slug}.lms at {html.escape(short_ref)}</a>. The published quickrun source adds release installation and any bundled inputs needed to run it from a new directory.</p>'''
+<p>The original example is <a href="https://github.com/lmctl-ai/{tool}/blob/{html.escape(source_ref)}/examples/{html.escape(original_name, quote=True)}">{html.escape(original_name)} at {html.escape(short_ref)}</a>. The published quickrun source includes the host declaration and any setup needed to run it from a new directory.</p>'''
         page_path = output / page_name
         page_path.write_text(body + "\n")
         created.extend([source_path.name, page_path.name])
@@ -332,7 +341,7 @@ def main():
         for title, description, page, *_ in pages
     )
     index = f'''<h1>{html.escape(display_name)} examples</h1>
-<p>{html.escape(data['description'])} Browse example results and run each source as an autorun script. These pages are regenerated from the public {html.escape(display_name)} repository at {html.escape(short_ref)}.</p>
+<p>{html.escape(data['description'])} Browse example previews and run each source as an autorun script. These pages are regenerated from the public {html.escape(display_name)} repository at {html.escape(short_ref)}.</p>
 <p>Start with <a href="{html.escape(data.get('get_started', f'/tools/{tool}/tutorial.html'))}">get started</a> to learn how solo and trio quickruns work.</p>
 <ul>
 {list_items}

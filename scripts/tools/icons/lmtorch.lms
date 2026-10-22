@@ -1,0 +1,37 @@
+# lmtorch icon: a fused two-by-two tensor grid with shallow channels.
+# Usage (see README.md): lmscript lmtorch.lms OUT_DIR OUT.dslb, then lmcad --dsl OUT.dslb
+out = ARGV.get(0, "build");
+p = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
+# --- shared icon look: identical in every icon script (render.sh --check verifies) ---
+scene.background(0.17, 0.20, 0.27);
+scene.directional_light(-0.5, -1.0, -0.6, 0.85);
+scene.fill_light(0.8, -0.2, 0.9, 0.40);
+scene.ambient(0.32);
+scene.supersample(4);
+let view_x = 0.36;
+let view_y = 0.38;
+let view_z = 0.85;
+# --- end shared icon look ---
+let tensor = scene.box(2.0, 0.62, 2.0, material().color(0.57, 0.42, 0.94).roughness(0.46));
+tensor.fillet(0.10);
+let vertical = scene.box(0.15, 0.42, 2.12, material()).position(0.0, 0.12, 0.0);
+let horizontal = scene.box(2.12, 0.42, 0.15, material()).position(0.0, 0.12, 0.0);
+tensor.cut(vertical);
+tensor.cut(horizontal);
+vertical.visible(false);
+horizontal.visible(false);
+let aim_x = -0.04;
+let dist = 9.53;
+let icon_zoom = 0.845;
+let aim_y = 0.28;
+# Logo: comfortable margins. Favicon sizes: the same view moved closer
+# (icon_zoom) so the symbol fills the 64/32/16 px tile.
+scene.camera(28.0, aim_x + view_x * dist, aim_y + view_y * dist, view_z * dist, aim_x, aim_y, 0.0);
+scene.render_png(${out} + "/logo.png", 256, 256);
+let near = dist * icon_zoom;
+scene.camera(28.0, aim_x + view_x * near, aim_y + view_y * near, view_z * near, aim_x, aim_y, 0.0);
+scene.render_png(${out} + "/icon.png", 64, 64);
+scene.render_png(${out} + "/icon-32.png", 32, 32);
+scene.render_png(${out} + "/icon-16.png", 16, 16);
+end _dsl_
+savedsl(p, ARGV.get(1, "icon.dslb"));

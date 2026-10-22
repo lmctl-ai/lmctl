@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Get started with lmtorch — lmtorch — lmctl.com tools</title>
+<meta name="description" content="Run a small tensor program with LMScript and the latest lmtorch release. The compiler downloads the matching native host when it is missing.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmtorch/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmtorch/">Overview</a></li>
+<li><a href="/tools/lmtorch/skill.html">Skill</a></li>
+<li><a href="/tools/lmtorch/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmtorch/guide.html">Guide</a></li>
+<li><a href="/tools/lmtorch/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>Get started with lmtorch</h1>
+<p>Run a small tensor program with LMScript and the latest lmtorch release. The compiler downloads the matching native host when it is missing.</p>
+<h2>Overview</h2>
+<p>First install the compiler, then run the self-contained tensor sum program below.</p>
+<h2>Install the compiler</h2>
+<p>Install Node.js 24.15 or newer, then install the LMScript compiler from npm.</p>
+<pre><code>npm install -g @lmctl-ai/lmctl</code></pre>
+<h2>Run a checked example</h2>
+<p>Save this program as tensor-sum.lms in an empty working directory. It creates a two-by-two tensor, checks its sum, and prints the result.</p>
+<pre><code>p = _dsl_ cli="lmtorch" install="github:lmctl-ai/lmtorch@latest";
+let values = torch.tensor("[[1.0, 2.0], [3.0, 4.0]]");
+let total = values.sum().item();
+out.check(total == 10.0, "sum must be 10");
+out.set("shape", values.shape()).set("sum", total);
+end _dsl_
+savedsl(p, "tensor-sum.dslb");
+run = system ${dsl_cli(p)} --dsl tensor-sum.dslb;
+if (run.code != 0) { println(str(run.stderr)); exit(run.code); }
+result = json_parse(run.stdout).result;
+println(f"shape {result.shape}, sum {result.sum}");</code></pre>
+<p>Run it with lmscript tensor-sum.lms. A successful run prints the shape and sum. The out.check call stops the run if the expected value is wrong.</p>
+<h2>Run with an agent team</h2>
+<p>The solo quickrun seeds one Lead and asks it to compute and verify a tensor result. The trio seeds a Lead, Coder, and Reviewer, then passes the assignment, implementation, and review through those members in order.</p>
+<pre><code>lmctl quickrun https://lmctl.com/tools/lmtorch/lmtorch_solo.lms
+lmctl quickrun https://lmctl.com/tools/lmtorch/lmtorch_trio.lms</code></pre>
+<p>These team scripts require configured provider accounts. The defaults are Codex for Lead and Reviewer, and Antigravity for Coder. Review the <a href="/tools/lmtorch/lmtorch_solo.lms">solo source</a> or <a href="/tools/lmtorch/lmtorch_trio.lms">trio source</a> before running. Each run creates a new teamfile and prints commands for resuming its Lead terminal. Add --seed-only to seed the team without sending the task prompt.</p>
+<h2>Learn more</h2>
+<p>Browse the <a href="/tools/lmtorch/examples/">examples book</a>, read the <a href="/tools/lmtorch/guide.html">API guide</a>, or see the <a href="https://github.com/lmctl-ai/lmtorch/blob/main/docs/dsl-api.md">full API reference</a>.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmtorch">github.com/lmctl-ai/lmtorch</a>.</p>
+</footer>
+</body>
+</html>

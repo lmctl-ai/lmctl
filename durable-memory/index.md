@@ -18,4 +18,5 @@ Read the relevant chapter before changing this repository.
 - [lmdraw README dogfood feedback — 2026-10-21](tool-book-feedback/lmdraw.md)
 - [lmhtml tool-book dogfood feedback — 2026-10-21](tool-book-feedback/lmhtml.md)
 - [lmr tool-book dogfood feedback — 2026-10-21](tool-book-feedback/lmr.md) — Review findings from publishing the lmr example book, including native-host release checks, text results, shared quickrun generation, and site validation. The proposals below record changes needed in the publishing workflow and its guidance.
+- [lmtorch publish-tool-book dogfood feedback](tool-book-feedback/lmtorch.md)
 - [/tools/ documentation: how to create and improve a tool's pages](tools-docs.md) — A guide for an LLM (or a person) adding or improving a tool's documentation in the static /tools/ section. tools/README.md is the short contract; this file explains how the pieces fit, how to gather facts, and what has gone wrong before.

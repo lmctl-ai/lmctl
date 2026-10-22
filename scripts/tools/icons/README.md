@@ -9,6 +9,7 @@ Shapes, not text, carry each tool's identity; booleans and loops build them.
 | --- | --- | --- |
 | `lmscript.lms` | `{ ≡ }`: two braces and three code lines | `tools/lmscript/img/` |
 | `lmcad.lms` | cube with a cylindrical hole, ball on top | `tools/lmcad/img/` |
+| `lmtorch.lms` | fused two-by-two tensor grid | `tools/lmtorch/img/` |
 | `lmhtml.lms` | `</>` from rotated boxes | `tools/lmhtml/img/` |
 | `cpp-dsl-sdk.lms` | two meshing gears | `tools/cpp-dsl-sdk/img/` |
 | `tools.lms` | 2x2 blocks in the tool colours (site icon) | `tools/img/` |

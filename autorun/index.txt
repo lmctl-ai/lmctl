@@ -1,3 +1,5 @@
+lmtorch_solo	Seed one lmtorch Lead to compute and verify a small tensor result.	https://lmctl.com/tools/lmtorch/lmtorch_solo.lms
+lmtorch_trio	Seed a Lead, Coder, and Reviewer to compute and assess a small tensor result.	https://lmctl.com/tools/lmtorch/lmtorch_trio.lms
 lmdraw_solo	Seed one lmdraw Lead to make a small drawing and leave its terminal ready.	https://lmctl.com/tools/lmdraw/lmdraw_solo.lms
 lmdraw_trio	Seed a Lead, Coder, and Reviewer to make and assess a small drawing.	https://lmctl.com/tools/lmdraw/lmdraw_trio.lms
 lmcad_solo	Seed one lmcad Lead to create and verify a small CAD model.	https://lmctl.com/tools/lmcad/lmcad_solo.lms

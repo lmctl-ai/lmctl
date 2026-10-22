@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Autograd Gradient — lmtorch — lmctl.com tools</title>
+<meta name="description" content="Backpropagate through a sum of squares and check the gradient against 2x. This page includes a preview and a quickrun-ready lmscript source file.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmtorch/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmtorch/">Overview</a></li>
+<li><a href="/tools/lmtorch/skill.html">Skill</a></li>
+<li><a href="/tools/lmtorch/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmtorch/guide.html">Guide</a></li>
+<li><a href="/tools/lmtorch/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>Autograd Gradient</h1>
+<p>Backpropagate through a sum of squares and check the gradient against 2x. This page includes a preview and a quickrun-ready lmscript source file.</p>
+<figure><img src="/tools/lmtorch/examples/img/autograd-gradient.png" alt="Rendered Autograd Gradient example." width="320" height="220"><figcaption>Preview generated from the source repository at c5774b100d.</figcaption></figure>
+<h2>Let an agent build from this example</h2>
+<p>Copy this prompt into your Lead's terminal to ask an agent to complete a related task:</p>
+<pre><code>Use lmtorch to compute and verify a small tensor result. Run the example
+with the released host, report the source and output, and confirm its
+expected value. Use the lmtorch API and the Autograd Gradient example
+below. Report the source, output, and verification.
+LMScript DSL: https://lmctl.com/tools/lmscript/skill.html
+lmtorch API: https://lmctl.com/tools/lmtorch/guide.html
+Example: https://lmctl.com/tools/lmtorch/examples/autograd-gradient.html</code></pre>
+<h2>Run the example</h2>
+<pre><code>lmctl autorun \
+  https://lmctl.com/tools/lmtorch/examples/autograd-gradient.lms</code></pre>
+<p><a href="/tools/lmtorch/examples/autograd-gradient.lms">Read the quickrun source</a>. Also see <a href="https://lmctl.com/tools/lmtorch/examples/tensor-sum.html">Tensor sum example</a>. See <a href="/tools/lmtorch/get_started.html">get started with quickrun teams</a>.</p>
+<h2>Source from the project</h2>
+<p>The original example is <a href="https://github.com/lmctl-ai/lmtorch/blob/c5774b100d2067ec131563045b72aca038110ca9/examples/autograd-gradient-dsl.lms">autograd-gradient-dsl.lms at c5774b100d</a>. The published quickrun source includes the host declaration and any setup needed to run it from a new directory.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmtorch">github.com/lmctl-ai/lmtorch</a>.</p>
+</footer>
+</body>
+</html>

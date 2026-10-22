@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Use lmtorch from LMScript — lmtorch — lmctl.com tools</title>
+<meta name="description" content="lmtorch is a CPU tensor and neural network host for LMScript.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmtorch/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmtorch/">Overview</a></li>
+<li><a href="/tools/lmtorch/skill.html">Skill</a></li>
+<li><a href="/tools/lmtorch/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmtorch/guide.html">Guide</a></li>
+<li><a href="/tools/lmtorch/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>Use lmtorch from LMScript</h1>
+<p>lmtorch is a CPU tensor and neural network host for LMScript. It runs compiled DSL blocks with native tensor operations, automatic differentiation, model layers, optimizers, and local tensor files.</p>
+<h2>Purpose</h2>
+<p>Use lmtorch when a local LMScript program needs tensor math, gradients, model training, or safetensors and CSV input or output. A DSL block runs in one process, so intermediate tensors stay in memory.</p>
+<h2>When to use it</h2>
+<p>Use lmtorch for deterministic CPU tensor workflows and small models. Choose another host when the task requires a GPU, remote training service, or Python package ecosystem.</p>
+<h2>Install</h2>
+<p>Install Node.js 24.15 or newer and LMScript with npm install -g @lmctl-ai/lmctl. A host declaration with cli="lmtorch" install="github:lmctl-ai/lmtorch@latest" downloads the matching release binary when lmtorch is not on PATH and verifies its GitHub SHA-256 digest.</p>
+<p>The lmtorch release embeds its DSL schema. LMScript uses the schema reported by the same binary that executes the compiled bytecode. The latest release supports Linux x64 and arm64, macOS x64 and arm64, and Windows x64.</p>
+<h2>Commands</h2>
+<p>Save a DSL block to bytecode and run it through the host command prefix.</p>
+<pre><code>p = _dsl_ cli="lmtorch" install="github:lmctl-ai/lmtorch@latest";
+let x = torch.tensor("[1.0, 2.0, 3.0]");
+out.set("sum", x.sum().item());
+end _dsl_
+savedsl(p, "program.dslb");
+run = system ${dsl_cli(p)} --dsl program.dslb;</code></pre>
+<p>Check run.code before using run.stdout. The host prints a JSON result for values set through out.</p>
+<h2>Inputs and outputs</h2>
+<p>Create tensors from JSON arrays or Torch constructors. Tensor operations return tensors; methods such as item, item_int, shape, and to_text return scalar or textual values. Set output fields with out.set and check expectations with out.check.</p>
+<p>Tensor.save and Torch.load use safetensors. Torch.read_csv loads numeric data, and Tensor.write_csv writes numeric results. Keep artifact paths inside the current working directory.</p>
+<h2>Safety rules</h2>
+<p>The host and LMScript run with the local user's permissions. Review scripts before running them. The install declaration downloads a native executable from the public lmtorch release. Keep generated artifacts in a dedicated working directory.</p>
+<h2>Worked examples</h2>
+<p>The <a href="/tools/lmtorch/examples/tensor-sum.html">tensor sum</a> example reduces a two-by-two tensor and checks the result. The <a href="/tools/lmtorch/examples/autograd-gradient.html">autograd example</a> differentiates a sum of squares and verifies that the gradient is 2x.</p>
+<p>For a training workflow, see <a href="https://github.com/lmctl-ai/lmtorch/blob/main/examples/classify-moons-dsl.lms">classify-moons-dsl.lms</a> in the public repository.</p>
+<h2>Errors and exit codes</h2>
+<p>A compiler schema error usually means LMScript is too old or its host declaration is invalid. Upgrade @lmctl-ai/lmctl and check the cli and install values. A nonzero host exit means compilation or execution failed; read stderr before using the output.</p>
+<p>Invalid tensor shapes and unsupported dtypes are rejected by the host. Check the shape and dtype at the operation that failed. File operations also fail when a path is missing, outside the working directory, or already exists when an exclusive output is required.</p>
+<h2>How to verify</h2>
+<p>Run the <a href="/tools/lmtorch/examples/tensor-sum.html">tensor sum quickrun</a> and confirm its result is 10. For gradients, run the <a href="/tools/lmtorch/examples/autograd-gradient.html">autograd quickrun</a> and confirm the derivative is [2, -4, 6]. The repository test.sh runs the host API checks and examples.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmtorch">github.com/lmctl-ai/lmtorch</a>.</p>
+</footer>
+</body>
+</html>
