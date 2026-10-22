@@ -7,7 +7,7 @@
   "frames": 240,
   "fps": 24,
   "background": "lmdraw navy gradient",
-  "lmdraw": "0.1.2",
-  "lmdraw_binary_sha256": "35a41122b6ed14c5592668176ecdfcf45df6c49b31a3386f7b60284dce5c4592",
-  "lmscript": "lmscript 0.2.369"
+  "lmdraw": "0.2.0",
+  "lmdraw_binary_sha256": "1f3493cac7f220a68a7cc2be7c16cea2e8c65aba08b25252c96d68a04de2ada1",
+  "lmscript": "lmscript 0.2.378"
 }

@@ -1,47 +1,118 @@
 out = ARGV[0];
 p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(1280, 720, "#00000000");
+let cover_navy = scene.linear_gradient("cover_navy", 0.0, 0.0, 1.0, 1.0);
+cover_navy.stop(0.0, "#111f32"); cover_navy.stop(0.55, "#152438"); cover_navy.stop(1.0, "#203750");
+let cover = scene.rect(0.0, 0.0, 1280.0, 720.0, "url(#cover_navy)");
+let cover_edge_gradient = scene.linear_gradient("cover_edge", 0.0, 0.0, 1.0, 0.0);
+cover_edge_gradient.stop(0.0, "#08132170"); cover_edge_gradient.stop(0.22, "#08132100");
+cover_edge_gradient.stop(0.78, "#08132100"); cover_edge_gradient.stop(1.0, "#08132170");
+let cover_edge = scene.rect(0.0, 0.0, 1280.0, 720.0, "url(#cover_edge)");
+let cover_vertical_gradient = scene.linear_gradient("cover_vertical", 0.0, 0.0, 0.0, 1.0);
+cover_vertical_gradient.stop(0.0, "#08132160"); cover_vertical_gradient.stop(0.2, "#08132100");
+cover_vertical_gradient.stop(0.8, "#08132100"); cover_vertical_gradient.stop(1.0, "#08132160");
+let cover_vertical = scene.rect(0.0, 0.0, 1280.0, 720.0, "url(#cover_vertical)");
 let gold = "#f5c16c";
 let paper = "#f5f8fb";
-let bar = scene.rect(36.0, 28.0, 1208.0, 112.0, "#091625E8");
+let dim = "#b9c8d8";
+let navy = "#091625";
+let blue = "#75a9ff";
+let teal = "#74d8cf";
+let violet = "#c4a6ff";
+let coral = "#ff997c";
+let green = "#82d48d";
+
+# Keep the same title treatment as the other homepage levels.
+scene.rect(36.0, 28.0, 1208.0, 112.0, "#091625E8");
 scene.rect(36.0, 28.0, 9.0, 112.0, gold);
 scene.text(72.0, 106.0, 42.0, "Turn a repeatable job into automation", paper);
 let badge = scene.rect(1050.0, 54.0, 160.0, 56.0, "#263d54E8"); badge.set_attr("rx", "14");
 let badge_text = scene.text(1068.0, 94.0, 34.0, "LEVEL 4", gold); badge_text.set_attr("font-weight", "700");
-let brainstorm = scene.rect(62.0, 184.0, 310.0, 64.0, "#091625E8"); brainstorm.set_attr("rx", "14");
-let brain_text = scene.text(92.0, 228.0, 42.0, "BRAINSTORM", "#74d8cf"); brain_text.set_attr("font-weight", "700");
-let script = scene.rect(462.0, 184.0, 240.0, 64.0, "#091625E8"); script.set_attr("rx", "14");
-let script_text = scene.text(514.0, 228.0, 42.0, "SCRIPT", gold); script_text.set_attr("font-weight", "700");
-let chips = scene.rect(362.0, 560.0, 130.0, 64.0, "#0b1929E8"); chips.set_attr("rx", "14");
-let c0 = scene.text(367.0, 604.0, 40.0, "WORK", "#75a9ff"); c0.set_attr("font-weight", "700");
-let ch1 = scene.rect(529.0, 560.0, 160.0, 64.0, "#0b1929E8"); ch1.set_attr("rx", "14");
-let c1 = scene.text(530.0, 604.0, 40.0, "REVIEW", "#c4a6ff"); c1.set_attr("font-weight", "700");
-let ch2 = scene.rect(766.0, 560.0, 72.0, 64.0, "#0b1929E8"); ch2.set_attr("rx", "14");
-let c2 = scene.text(769.0, 604.0, 40.0, "QA", "#ff997c"); c2.set_attr("font-weight", "700");
-let ch3 = scene.rect(864.0, 560.0, 232.0, 64.0, "#0b1929E8"); ch3.set_attr("rx", "14");
-let c3 = scene.text(866.0, 604.0, 38.0, "ACCEPTANCE", "#82d48d"); c3.set_attr("font-weight", "700");
+
+# Upper row: a human and two architects turn the plan into a script, then teams.
+let brain = scene.rect(54.0, 164.0, 368.0, 208.0, navy); brain.set_attr("rx", "18");
+scene.rect(54.0, 164.0, 8.0, 208.0, teal);
+let brain_title = scene.text(78.0, 207.0, 34.0, "BRAINSTORM", teal); brain_title.set_attr("font-weight", "700");
+scene.text(78.0, 246.0, 30.0, "YOU + ARCHITECTS", paper);
+let you = scene.rect(76.0, 278.0, 96.0, 58.0, "#173344"); you.set_attr("rx", "12");
+scene.text(94.0, 317.0, 28.0, "YOU", paper);
+let arch1 = scene.rect(180.0, 278.0, 108.0, 58.0, "#173344"); arch1.set_attr("rx", "12");
+scene.text(188.0, 317.0, 26.0, "ARCH A", paper);
+let arch2 = scene.rect(296.0, 278.0, 108.0, 58.0, "#173344"); arch2.set_attr("rx", "12");
+scene.text(304.0, 317.0, 26.0, "ARCH B", paper);
+let script = scene.rect(462.0, 164.0, 282.0, 208.0, navy); script.set_attr("rx", "18");
+scene.rect(462.0, 164.0, 8.0, 208.0, gold);
+scene.text(434.0, 278.0, 42.0, ">", gold);
+let script_title = scene.text(488.0, 207.0, 36.0, "SCRIPT", gold); script_title.set_attr("font-weight", "700");
+scene.text(488.0, 246.0, 28.0, "AUTOMATION", paper);
+scene.rect(492.0, 270.0, 222.0, 74.0, "#12283b");
+scene.rect(514.0, 286.0, 132.0, 7.0, blue);
+scene.rect(514.0, 302.0, 174.0, 7.0, violet);
+scene.rect(514.0, 318.0, 102.0, 7.0, teal);
+
+let teams = scene.rect(788.0, 164.0, 438.0, 208.0, navy); teams.set_attr("rx", "18");
+scene.rect(788.0, 164.0, 8.0, 208.0, blue);
+scene.text(750.0, 278.0, 42.0, ">", gold);
+let teams_title = scene.text(814.0, 207.0, 34.0, "SPAWN TEAMS", blue); teams_title.set_attr("font-weight", "700");
+let coder = scene.rect(812.0, 254.0, 118.0, 82.0, "#142b43"); coder.set_attr("rx", "12");
+scene.text(827.0, 288.0, 30.0, "CODER", blue);
+scene.text(827.0, 320.0, 27.0, "WORK", paper);
+let reviewer = scene.rect(938.0, 254.0, 142.0, 82.0, "#282342"); reviewer.set_attr("rx", "12");
+scene.text(948.0, 288.0, 27.0, "REVIEWER", violet);
+scene.text(963.0, 320.0, 27.0, "REVIEW", paper);
+let qa_team = scene.rect(1090.0, 254.0, 112.0, 82.0, "#39271f"); qa_team.set_attr("rx", "12");
+scene.text(1118.0, 288.0, 30.0, "QA", coral);
+scene.text(1110.0, 320.0, 27.0, "CHECK", paper);
+
+# Large pipeline rail. The coral return lane points from review to work.
+scene.text(54.0, 420.0, 30.0, "WORKFLOW", dim);
+scene.rect(164.0, 445.0, 244.0, 8.0, coral);
+scene.rect(164.0, 445.0, 8.0, 26.0, coral);
+scene.rect(400.0, 445.0, 8.0, 26.0, coral);
+scene.text(220.0, 438.0, 28.0, "FAIL / FIX", coral);
+scene.text(151.0, 465.0, 32.0, "<", coral);
+
+let rail = scene.rect(54.0, 548.0, 1172.0, 10.0, "#38516a");
+let work_box = scene.rect(54.0, 472.0, 224.0, 156.0, "#0d2034"); work_box.set_attr("rx", "16");
+scene.rect(54.0, 472.0, 224.0, 8.0, blue);
+let work_text = scene.text(78.0, 525.0, 36.0, "WORK", blue); work_text.set_attr("font-weight", "700");
+scene.text(78.0, 600.0, 30.0, "Build", paper);
+
+let review_box = scene.rect(291.0, 472.0, 224.0, 156.0, "#171a32"); review_box.set_attr("rx", "16");
+scene.rect(291.0, 472.0, 224.0, 8.0, violet);
+let review_text = scene.text(315.0, 525.0, 36.0, "REVIEW", violet); review_text.set_attr("font-weight", "700");
+scene.text(315.0, 600.0, 30.0, "Revise", paper);
+
+let qa_box = scene.rect(528.0, 472.0, 224.0, 156.0, "#30231f"); qa_box.set_attr("rx", "16");
+scene.rect(528.0, 472.0, 224.0, 8.0, coral);
+let qa_text = scene.text(552.0, 525.0, 36.0, "QA", coral); qa_text.set_attr("font-weight", "700");
+scene.text(552.0, 600.0, 30.0, "Check", paper);
+
+let accept_box = scene.rect(765.0, 472.0, 224.0, 156.0, "#142a29"); accept_box.set_attr("rx", "16");
+scene.rect(765.0, 472.0, 224.0, 8.0, green);
+let accept_text = scene.text(789.0, 525.0, 36.0, "ACCEPT", green); accept_text.set_attr("font-weight", "700");
+scene.text(789.0, 600.0, 30.0, "Pass", paper);
+let check_light = scene.rect(918.0, 577.0, 52.0, 38.0, green); check_light.set_attr("rx", "19");
+let check_mark = scene.text(929.0, 603.0, 24.0, "OK", "#091625"); check_mark.set_attr("font-weight", "700");
+
+let deliver_box = scene.rect(1002.0, 472.0, 224.0, 156.0, "#142a29"); deliver_box.set_attr("rx", "16");
+scene.rect(1002.0, 472.0, 224.0, 8.0, green);
+let deliver_text = scene.text(1026.0, 525.0, 36.0, "DELIVER", green); deliver_text.set_attr("font-weight", "700");
+scene.text(1026.0, 600.0, 30.0, "Artifact", paper);
+
+# A small gold marker travels the rail, returns for one fix, then reaches delivery.
+let marker = scene.rect(0.0, 541.0, 24.0, 24.0, gold); marker.set_attr("rx", "6");
 for (i in range(0, 240)) {
-  let pan = 0.0;
-  if (i > 208) { pan = float(i - 208) / 31.0; }
-  chips.set_attr("x", str(lerp(362.0, 410.0, pan)));
-  c0.set_attr("x", str(lerp(367.0, 415.0, pan)));
-  ch1.set_attr("x", str(lerp(529.0, 550.0, pan)));
-  c1.set_attr("x", str(lerp(530.0, 551.0, pan)));
-  ch2.set_attr("x", str(lerp(766.0, 754.0, pan)));
-  c2.set_attr("x", str(lerp(769.0, 757.0, pan)));
-  ch3.set_attr("x", str(lerp(864.0, 884.0, pan)));
-  ch3.set_attr("width", str(lerp(232.0, 267.0, pan)));
-  c3.set_attr("x", str(lerp(866.0, 890.0, pan)));
-  let brain_opacity = "0";
-  if (i < 68) { brain_opacity = "1"; }
-  brainstorm.set_attr("opacity", brain_opacity); brain_text.set_attr("opacity", brain_opacity);
-  let script_opacity = "0";
-  if (i >= 45 && i < 105) { script_opacity = "1"; }
-  script.set_attr("opacity", script_opacity); script_text.set_attr("opacity", script_opacity);
-  let op0 = "0"; if (i >= 96) { op0 = "1"; } chips.set_attr("opacity", op0); c0.set_attr("opacity", op0);
-  let op1 = "0"; if (i >= 110) { op1 = "1"; } ch1.set_attr("opacity", op1); c1.set_attr("opacity", op1);
-  let op2 = "0"; if (i >= 124) { op2 = "1"; } ch2.set_attr("opacity", op2); c2.set_attr("opacity", op2);
-  let op3 = "0"; if (i >= 154) { op3 = "1"; } ch3.set_attr("opacity", op3); c3.set_attr("opacity", op3);
+  let show_marker = "0";
+  let marker_x = 166.0;
+  if (i >= 36 && i < 62) { show_marker = "1"; marker_x = lerp(166.0, 403.0, float(i - 36) / 26.0); }
+  if (i >= 62 && i < 82) { show_marker = "1"; marker_x = lerp(403.0, 166.0, float(i - 62) / 20.0); }
+  if (i >= 82 && i < 202) { show_marker = "1"; marker_x = lerp(166.0, 1114.0, float(i - 82) / 120.0); }
+  marker.set_attr("x", str(marker_x - 12.0)); marker.set_attr("opacity", show_marker);
+  let pass_opacity = "0.55";
+  if (i >= 174 && i < 216) { pass_opacity = "1"; }
+  if (i < 24 || i >= 216) { pass_opacity = "1"; }
+  check_light.set_attr("opacity", pass_opacity); check_mark.set_attr("opacity", pass_opacity);
   scene.render_png("build/rendered/overlay-" + str(i) + ".png", 1280, 720, 1);
 }
 end _dsl_

@@ -119,7 +119,7 @@ for n in 1 2 3 4; do
   rendered_count=$(find "$work/frames/$name" -maxdepth 1 -type f -name 'frame-*.png' | wc -l | tr -d ' ')
   [[ $rendered_count == "$FRAME_COUNT" ]] || { echo "$name rendered $rendered_count frames; expected $FRAME_COUNT" >&2; exit 1; }
   if command -v sha256sum >/dev/null; then (cd "$work/frames" && sha256sum "$name"/frame-*.png) >> "$actual_hashes"; else (cd "$work/frames" && shasum -a 256 "$name"/frame-*.png) >> "$actual_hashes"; fi
-  poster_frame=216; case "$name" in level-1) poster_frame=190 ;; level-2) poster_frame=120 ;; level-3) poster_frame=220 ;; level-4) poster_frame=239 ;; esac
+  poster_frame=216; case "$name" in level-1) poster_frame=190 ;; level-2) poster_frame=120 ;; level-3) poster_frame=220 ;; level-4) poster_frame=0 ;; esac
   poster="$OUTPUT_DIR/$name-poster.png"; mp4="$OUTPUT_DIR/$name.mp4"; webm="$OUTPUT_DIR/$name.webm"
   if [[ $MODE == render ]]; then
     cp "$work/frames/$name/frame-$poster_frame.png" "$poster"
