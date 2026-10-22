@@ -32,7 +32,7 @@ host="$(cd "$(dirname "$host")" && pwd)/$(basename "$host")"
 PATH="$(dirname "$host"):$PATH"
 export PATH
 if [[ $command_name == host-path ]]; then printf '%s\n' "$host"; exit 0; fi
-if [[ $command_name == check && $# == 0 ]]; then
+if [[ $command_name == check && ( $# == 0 || -d ${1:-} ) ]]; then
   if ! "$HERE/run.sh" decorate --check; then
     "$host" lint --stats --config "$HERE/plain.conf" tools || true
     exit 1
@@ -45,6 +45,11 @@ cp "$HERE/roles.lms" "$work/roles.lms"
 cp "$HERE/lmctl-subcommands.lms" "$work/lmctl-subcommands.lms"
 host_args=()
 argument=${1:-}
+if [[ $command_name == check && -n $argument && -d $argument ]]; then
+  # check.lms accepts one HTML fixture or an empty argument for the full tools tree.
+  # A tool directory is therefore an alias for the full catalog check.
+  argument=""
+fi
 if [[ $command_name == decorate ]]; then
   [[ -z $argument || $argument == --check ]] || { echo 'decorate accepts only --check' >&2; exit 2; }
 fi

@@ -1,0 +1,69 @@
+{
+  "display_name": "lmr",
+  "repository": "https://github.com/lmctl-ai/lmr.git",
+  "description": "lmr is a native statistics host for LMScript, with regression, distributions, time series, tests, and optimization.",
+  "get_started": "/tools/lmr/get_started.html",
+  "task": "Analyze a small seeded data set with lmr, verify a concrete statistical result, and report the LMScript source and checks.",
+  "links": {
+    "dsl_docs": {
+      "label": "LMScript DSL",
+      "url": "https://lmctl.com/tools/lmscript/skill.html"
+    },
+    "tool_api": {
+      "label": "lmr API",
+      "url": "https://lmctl.com/tools/lmr/guide.html"
+    },
+    "example": {
+      "label": "Normal quantile example",
+      "url": "https://lmctl.com/tools/lmr/examples/normal-quantile.html"
+    }
+  },
+  "members": {
+    "solo": [
+      {
+        "alias": "Lead",
+        "provider": "claude",
+        "model": "claude-sonnet-5-5"
+      }
+    ],
+    "trio": [
+      {
+        "alias": "Lead",
+        "provider": "claude",
+        "model": "claude-sonnet-5-5"
+      },
+      {
+        "alias": "Coder",
+        "provider": "agy",
+        "model": "gemini-3.8-flash-high"
+      },
+      {
+        "alias": "Reviewer",
+        "provider": "codex",
+        "model": "gpt-6.1-sol"
+      }
+    ]
+  },
+  "examples": [
+    {
+      "slug": "normal-quantile",
+      "file": "normal-quantile.lms",
+      "description": "Find the standard-normal 97.5% quantile and check the known textbook result."
+    },
+    {
+      "slug": "linear-fit",
+      "file": "linear-fit.lms",
+      "description": "Fit an exact straight line and check its intercept and slope."
+    },
+    {
+      "slug": "rosenbrock-minimum",
+      "file": "rosenbrock-minimum.lms",
+      "description": "Minimize Rosenbrock's function with BFGS and check the known minimum."
+    }
+  ],
+  "rendered": {
+    "normal-quantile": "build/rendered/normal-quantile.txt",
+    "linear-fit": "build/rendered/linear-fit.txt",
+    "rosenbrock-minimum": "build/rendered/rosenbrock-minimum.txt"
+  }
+}

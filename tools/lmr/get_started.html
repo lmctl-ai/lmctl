@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Get started with lmr quickruns — lmr — lmctl.com tools</title>
+<meta name="description" content="These two LMScript programs seed provider sessions and ask an agent team to run a small statistical analysis with lmr.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmr/">Overview</a></li>
+<li><a href="/tools/lmr/skill.html">Skill</a></li>
+<li><a href="/tools/lmr/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmr/guide.html">Guide</a></li>
+<li><a href="/tools/lmr/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>Get started with lmr quickruns</h1>
+<p>These two LMScript programs seed provider sessions and ask an agent team to run a small statistical analysis with lmr.</p>
+<h2>Overview</h2>
+<p>A quickrun is an LMScript file that creates a teamfile in the current working directory, seeds the requested provider sessions, and sends a task to the team.</p>
+<h2>Choose a team</h2>
+<ul>
+<li><a href="/tools/lmr/lmr_solo.lms">lmr_solo.lms</a> seeds one Lead using Claude Sonnet 5.5.</li>
+<li><a href="/tools/lmr/lmr_trio.lms">lmr_trio.lms</a> seeds a Lead, a Gemini Coder, and a Codex Reviewer. The Lead passes its assignment to the Coder, the Coder's result to the Reviewer, then returns both to the Lead for a report.</li>
+</ul>
+<p>Install lmctl and configure each provider before running a quickrun. Each run writes a new numbered teamfile in the current directory and seeds its sessions.</p>
+<h2>Run a quickrun</h2>
+<pre><code>lmctl autorun https://lmctl.com/tools/lmr/lmr_solo.lms
+lmctl autorun https://lmctl.com/tools/lmr/lmr_trio.lms</code></pre>
+<p>The task asks the team to analyze a small data set, verify the result with lmr, and report the source and checks.</p>
+<h2>References given to the agents</h2>
+<ul>
+<li><a href="https://lmctl.com/tools/lmscript/skill.html">LMScript DSL documentation</a></li>
+<li><a href="https://lmctl.com/tools/lmr/guide.html">lmr API guide</a></li>
+<li><a href="https://lmctl.com/tools/lmr/examples/normal-quantile.html">Normal quantile example</a></li>
+</ul>
+<h2>Seed without sending a task</h2>
+<p>Append --seed-only to check team creation and provider setup without asking the agents to do the analysis.</p>
+<pre><code>lmctl --non-interactive autorun \
+  https://lmctl.com/tools/lmr/lmr_solo.lms \
+  --seed-only</code></pre>
+<p>Read <a href="/tools/lmr/skill.html">the lmr skill</a> for usage and verification details, or browse the <a href="/tools/lmr/examples/">lmr example book</a>.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmr">github.com/lmctl-ai/lmr</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Use lmr from LMScript — lmr — lmctl.com tools</title>
+<meta name="description" content="lmr is a native statistics host for LMScript.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmr/">Overview</a></li>
+<li><a href="/tools/lmr/skill.html">Skill</a></li>
+<li><a href="/tools/lmr/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmr/guide.html">Guide</a></li>
+<li><a href="/tools/lmr/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>Use lmr from LMScript</h1>
+<p>lmr is a native statistics host for LMScript. It runs a fixed set of statistical operations in a C++17 runtime with no R runtime, package installation, or network access required after the binary is installed.</p>
+<h2>Purpose</h2>
+<p>Use lmr to calculate distributions, seeded random draws, hypothesis tests, regression and generalized linear models, time-series analyses, clustering, smoothing, and numerical optimization from an LMScript program.</p>
+<h2>When to use it</h2>
+<p>Use lmr when a task needs the supported statistical operations and benefits from reproducible numeric checks in a native LMScript host. Use an R environment when the task depends on arbitrary R code, packages, callbacks, or operations outside lmr's published schema.</p>
+<h2>Install</h2>
+<p>Install the LMScript compiler with npm install -g @lmctl-ai/lmctl. A released lmr binary supports Linux x64 and arm64, macOS x64 and arm64, and Windows x64. The compiler can download the matching release asset and verify its SHA-256 when the host declaration includes install.</p>
+<pre><code>lmscript --version
+lmr --version
+lmr --dsl-schema --json</code></pre>
+<p>The embedded schema is also available in the source repository at native/schema/lmr.dsl.json. Compare the released binary's JSON bytes with that file when validating a release.</p>
+<h2>Commands</h2>
+<p>Declare the released host in an LMScript program. Then compile and run the saved bytecode through that same binary.</p>
+<pre><code>p = _dsl_ cli="lmr" install="github:lmctl-ai/lmr@latest";
+let q = norm().q_vec(parse_vec("0.975"));
+out.check_close(q.at(0), 1.959963984540054, 0.00000000000001, "normal quantile");
+end _dsl_
+
+if (!file_exists("build")) { mkdir("build"); }
+out = "build/analysis.dslb";
+savedsl(p, out);
+r = system ${dsl_cli(p)} --dsl ${out};
+if (r.code != 0) { println(str(r.stderr)); lm_exit(r.code); }
+println(r.stdout);</code></pre>
+<p>Run the <a href="/tools/lmr/examples/normal-quantile.html">normal quantile example</a> for a complete program with an expected-value check.</p>
+<h2>Inputs and outputs</h2>
+<p>The host accepts typed LMScript values, such as numeric vectors, frames, formulas, and operation options. Results use typed objects with status, estimates, diagnostics, metadata, warnings, and output vectors appropriate to each operation.</p>
+<p>Use parse_vec to read numeric text, including NA, NaN, Inf, and -Inf. The DSL uses floating-point NaN for missing values. Values exported through out.set appear in the stdout JSON result; non-finite numbers serialize as JSON null. Random operations require a seed when deterministic output is needed.</p>
+<p>Input limits depend on the native operation; see the <a href="/tools/lmr/guide.html">API guide</a> for operation-specific limits and result fields.</p>
+<h2>Safety rules</h2>
+<p>lmr exposes a fixed operation catalog. Optimization, integration, root finding, and nonlinear models use reverse communication: write the objective or model in the DSL and supply values through the solver object. Formula text uses the supported native formula parser; it is not evaluated as R code. The host does not run arbitrary R scripts or load user packages.</p>
+<p>Review an LMScript file before running it. The compiler and native host execute with your local file permissions, and an LMScript program can invoke other local programs through system.</p>
+<h2>Worked examples</h2>
+<ul>
+<li><a href="/tools/lmr/examples/normal-quantile.html">Normal quantile</a> checks a standard-normal quantile.</li>
+<li><a href="/tools/lmr/examples/linear-fit.html">Linear fit</a> recovers the intercept and slope from exact points.</li>
+<li><a href="/tools/lmr/examples/rosenbrock-minimum.html">Rosenbrock minimum</a> checks BFGS convergence against the known optimum.</li>
+</ul>
+<p>The <a href="https://github.com/lmctl-ai/lmr/tree/main/examples/dsl">lmr repository</a> includes longer tutorials and analysis flows.</p>
+<h2>Errors and exit codes</h2>
+<p>The host exits with code 0 when execution succeeds and all out.check assertions pass. Code 2 indicates command-line usage errors, code 3 indicates a load or execution error, and code 4 indicates an application failure such as a failed check.</p>
+<p>When installation fails, verify the platform has a published release asset and that the tool cache can be written. When a schema mismatch appears, compare the embedded JSON and canonical signatures against the released schema using the compiler version required by the project.</p>
+<h2>How to verify</h2>
+<p>Check the version, schema bytes, and canonical signatures. Then run a fresh-cache example so lmscript downloads the released host and validates its checksum.</p>
+<pre><code>lmr --version
+lmr --dsl-schema --json > /tmp/lmr-schema.json
+cmp /tmp/lmr-schema.json native/schema/lmr.dsl.json
+lmr --dsl-signatures > /tmp/lmr-host-signatures.txt
+lmscript --dsl-signatures native/schema/lmr.dsl.json > /tmp/lmr-compiler-signatures.txt
+diff -u /tmp/lmr-compiler-signatures.txt /tmp/lmr-host-signatures.txt</code></pre>
+<p>For an end-to-end install check, run one of the <a href="/tools/lmr/examples/">lmr book examples</a> with LMSCRIPT_TOOL_CACHE set to a new temporary directory and lmr absent from PATH. A host already on PATH bypasses installation.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmr">github.com/lmctl-ai/lmr</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,25 @@
+// One concept: minimize Rosenbrock's function with BFGS.
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmr" install="github:lmctl-ai/lmr@latest";
+fn rosen(a: float, b: float) -> float {
+  return 100.0 * pow(b - a * a, 2.0) + pow(1.0 - a, 2.0);
+}
+let o = minimize(parse_vec("-1.2 1"), "BFGS").maxit(1000).reltol(0.00000001);
+while (o.next()) { o.tell(rosen(o.x(0), o.x(1))); }
+out.check(o.convergence() == 0, "BFGS converges");
+out.check(abs(o.par(0) - 1.0) <= 0.005, "a within 0.005 of 1");
+out.check(abs(o.par(1) - 1.0) <= 0.005, "b within 0.005 of 1");
+out.check(o.value() <= 0.000001, "objective below 1e-6");
+out.set("a", o.par(0));
+out.set("b", o.par(1));
+out.set("value", o.value());
+end _dsl_
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+savedsl(p, "build/rendered/rosenbrock-minimum.dslb");
+r = system ${dsl_cli(p)} --dsl build/rendered/rosenbrock-minimum.dslb;
+if (r.code != 0) { println("lmr optimization check failed:", str(r.stderr)); lm_exit(r.code); }
+result = json_parse(r.stdout).result;
+println(sprintf("BFGS minimum: a %.6f, b %.6f, value %.8f", result.values.a, result.values.b, result.values.value));
+write_file("build/rendered/rosenbrock-minimum.txt", sprintf("BFGS minimum: a %.6f, b %.6f, value %.8f\n", result.values.a, result.values.b, result.values.value));

@@ -41,6 +41,65 @@ savedsl(p, out);
         self.assertIn('out = "build/loop-row.dslb";', result)
         self.assertIn("system ${dsl_cli(p)} --dsl ${out}", result)
 
+    def test_quickrun_does_not_append_a_second_host_run(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            script = root / "example.lms"
+            script.write_text('''out = "build/example.dslb";
+p = _dsl_ cli="lmr" install="github:lmctl-ai/lmr@latest";
+end _dsl_
+savedsl(p, out);
+  r = system ${dsl_cli(p)} --dsl ${out};
+''')
+            result = module.quickrun_source("lmr", script, root, root)
+        self.assertEqual(result.count("system ${dsl_cli(p)} --dsl ${out}"), 1)
+
+    def test_text_output_is_written_and_rendered_as_plain_text(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            repo = root / "repo"
+            (repo / "examples").mkdir(parents=True)
+            script = repo / "examples" / "sample.lms"
+            script.write_text('''out = "build/sample.dslb";
+p = _dsl_ cli="sampletool" install="github:lmctl-ai/sampletool@latest";
+end _dsl_
+savedsl(p, out);
+r = system ${dsl_cli(p)} --dsl ${out};
+''')
+            data_path = root / "book.json"
+            data_path.write_text(json.dumps({
+                "display_name": "sampletool", "description": "A sample tool.", "task": "Make a sample.",
+                "links": {
+                    "dsl_docs": {"label": "DSL", "url": "https://lmctl.com/tools/lmscript/skill.html"},
+                    "tool_api": {"label": "API", "url": "https://lmctl.com/tools/sampletool/guide.html"},
+                    "example": {"label": "Example", "url": "https://lmctl.com/tools/sampletool/examples/sample.html"},
+                },
+                "examples": [{"slug": "sample", "description": "A sample output.", "rendered": "build/sample.txt"}],
+            }))
+            output = root / "scratch" / "tools" / "sampletool" / "examples"
+            argv = ["generate-example-book.py", "--tool", "sampletool", "--source", str(repo), "--ref", "1" * 40, "--data", str(data_path), "--output", str(output)]
+            with patch.object(sys, "argv", argv), patch.object(module, "rendered_preview", return_value=b"Stable output\n"):
+                module.main()
+            self.assertEqual((output / "sample.txt").read_text(), "Stable output\n")
+            page = (output / "sample.html").read_text()
+            self.assertIn("<pre><samp>Stable output\n</samp></pre>", page)
+            self.assertIn("/tools/sampletool/examples/sample.txt", page)
+            # Output alternatives were supported before text previews; preserve
+            # that contract for both text and image books.
+            data = json.loads(data_path.read_text())
+            data["examples"][0]["rendered"] = ["build/missing.txt", "build/sample.txt"]
+            data_path.write_text(json.dumps(data))
+            with patch.object(sys, "argv", argv), patch.object(module, "rendered_preview", return_value=b"<value> & result\r\n"):
+                module.main()
+            self.assertEqual((output / "sample.txt").read_bytes(), b"<value> & result\r\n")
+            self.assertIn("&lt;value&gt; &amp; result", (output / "sample.html").read_text())
+            data["examples"][0]["rendered"] = ["build/first.png", "build/second.png"]
+            data_path.write_text(json.dumps(data))
+            png = b"\x89PNG\r\n\x1a\n" + b"\0\0\0\rIHDR" + struct.pack(">II", 2, 3)
+            with patch.object(sys, "argv", argv), patch.object(module, "rendered_preview", return_value=png), patch.object(module, "compact_png"):
+                module.main()
+            self.assertEqual((output / "img/sample.png").read_bytes(), png)
+
     def test_per_tool_data_drives_a_scratch_book_without_repo_readme_or_preview(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

@@ -34,12 +34,12 @@ if (seed_only) {
       + "then return both results to you for a final report.\n\n" + resources, {});
     require(lead.status == "ok", "Lead assignment failed: " + str(lead.error));
     coder = lm_prompt(file, "Coder", "Lead's assignment:\n" + str(lead.reply)
-      + "\n\nComplete the drawing task and report the source, rendered PNG, and verification.\n\n"
+      + "\n\nComplete the task and report the source, output, and verification.\n\n"
       + resources, {});
     require(coder.status == "ok", "Coder task failed: " + str(coder.error));
     reviewer = lm_prompt(file, "Reviewer", "Review the Coder's result using this checklist from Lead:\n"
       + str(lead.reply) + "\n\nCoder's result:\n" + str(coder.reply)
-      + "\n\nReport concrete findings and whether the drawing and verification meet the task.\n\n"
+      + "\n\nReport concrete findings and whether the result and verification meet the task.\n\n"
       + resources, {});
     require(reviewer.status == "ok", "Reviewer task failed: " + str(reviewer.error));
     report = lm_prompt(file, "Lead", "Report the task outcome to the user. Include the Coder's result, "

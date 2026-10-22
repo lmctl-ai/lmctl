@@ -33,6 +33,7 @@ expect_failure(){
   [[ $output == *"$expected"* ]] || { echo "FAIL: expected $expected: $output" >&2; exit 1; }
 }
 expect_failure 'run npm run decorate:tools' decorate --check
+expect_failure 'run npm run decorate:tools' check tools/zeta
 cmp "$work/original.fragment" "$work/tools/zeta/skill.html"
 [[ ! -e "$work/tools/index.html" && ! -e "$work/tools/zeta/index.html" ]]
 printf '<h1>About tools</h1><p>A site-level page.</p>\n' > "$work/tools/about.html"

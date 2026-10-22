@@ -1,0 +1,59 @@
+// Generated from one template for each tool's solo and trio samples.
+// --seed-only seeds the team without dispatching model turns.
+// autorun-role: Lead provider=claude model=claude-sonnet-5-5
+// autorun-role: Coder provider=agy model=gemini-3.8-flash-high
+// autorun-role: Reviewer provider=codex model=gpt-6.1-sol
+tool = "lmr";
+mode = "trio";
+members = "_MEMBER_ alias=Lead provider=@role(Lead.provider) model=@role(Lead.model)\n_MEMBER_ alias=Coder provider=@role(Coder.provider) model=@role(Coder.model)\n_MEMBER_ alias=Reviewer provider=@role(Reviewer.provider) model=@role(Reviewer.model)\n";
+task = "Analyze a small seeded data set with lmr, verify a concrete statistical result, and report the LMScript source and checks.";
+resources = "Read and follow these references:\nLMScript DSL: https://lmctl.com/tools/lmscript/skill.html\nlmr API: https://lmctl.com/tools/lmr/guide.html\nNormal quantile example: https://lmctl.com/tools/lmr/examples/normal-quantile.html\n";
+seed_only = false;
+for (arg in ARGV) { if (str(arg) == "--seed-only") { seed_only = true; } }
+
+file = path_join(Directory, tool + "_" + mode + ".lmctl");
+for (n = 2; file_exists(file); n = n + 1) {
+  file = path_join(Directory, tool + "_" + mode + str(n) + ".lmctl");
+}
+write_file_exclusive(file, "# " + tool + " " + mode + "\n\n" + members);
+println("Wrote " + file);
+r = lm_seed(file);
+require(r.status == "ok", "Could not seed " + file);
+println("Resume: " + cmd_render(["lmctl", "terminal", file, "Lead"], "posix"));
+println("Prompt: " + cmd_render(["lmctl", "prompt", file, "Lead", "your next prompt"], "posix"));
+
+if (seed_only) {
+  println("Seed-only mode: no agent prompt was sent.");
+} else {
+  if (mode == "solo") {
+    r = lm_prompt(file, "Lead", task + "\n\n" + resources, {});
+    require(r.status == "ok", "Lead task failed: " + str(r.error));
+    println("Lead result:\n" + str(r.reply));
+  } else {
+    lead = lm_prompt(file, "Lead", "You coordinate this " + tool + " task. " + task
+      + "\nPrepare the Coder's assignment and a short Reviewer checklist. "
+      + "This quickrun will pass your assignment to Coder, pass Coder's result to Reviewer, "
+      + "then return both results to you for a final report.\n\n" + resources, {});
+    require(lead.status == "ok", "Lead assignment failed: " + str(lead.error));
+    coder = lm_prompt(file, "Coder", "Lead's assignment:\n" + str(lead.reply)
+      + "\n\nComplete the task and report the source, output, and verification.\n\n"
+      + resources, {});
+    require(coder.status == "ok", "Coder task failed: " + str(coder.error));
+    reviewer = lm_prompt(file, "Reviewer", "Review the Coder's result using this checklist from Lead:\n"
+      + str(lead.reply) + "\n\nCoder's result:\n" + str(coder.reply)
+      + "\n\nReport concrete findings and whether the result and verification meet the task.\n\n"
+      + resources, {});
+    require(reviewer.status == "ok", "Reviewer task failed: " + str(reviewer.error));
+    report = lm_prompt(file, "Lead", "Report the task outcome to the user. Include the Coder's result, "
+      + "the Reviewer's findings, and any unresolved issue. Do not claim correctness beyond the evidence.\n\n"
+      + "Coder:\n" + str(coder.reply) + "\n\nReviewer:\n" + str(reviewer.reply)
+      + "\n\n" + resources, {});
+    require(report.status == "ok", "Lead report failed: " + str(report.error));
+    println("Lead report:\n" + str(report.reply));
+  }
+}
+
+if (!NonInteractive) {
+  r = lm_terminal(file, "Lead");
+  if (r.exit_code != 0) { lm_exit(r.exit_code); }
+}

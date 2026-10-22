@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmr API guide — lmr — lmctl.com tools</title>
+<meta name="description" content="lmr is a native LMScript host that implements a fixed catalog of statistical operations. The C++17 runtime does not require an R installation.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmr/">Overview</a></li>
+<li><a href="/tools/lmr/skill.html">Skill</a></li>
+<li><a href="/tools/lmr/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmr/guide.html">Guide</a></li>
+<li><a href="/tools/lmr/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>lmr API guide</h1>
+<h2>Overview</h2>
+<p>lmr is a native LMScript host that implements a fixed catalog of statistical operations. The C++17 runtime does not require an R installation. Its public schema and operation signatures are embedded in each release binary.</p>
+<h2>Check the host</h2>
+<pre><code>lmr --version
+lmr --dsl-schema
+lmr --dsl-schema --json
+lmr --dsl-signatures
+lmr --dsl FILE.dslb</code></pre>
+<p>Use cli="lmr" to compile against the embedded schema and install="github:lmctl-ai/lmr@latest" to let lmscript fetch the release binary when it is not on PATH.</p>
+<h2>Operation catalog</h2>
+<table>
+<thead><tr><th>Area</th><th>Operations</th></tr></thead>
+<tbody>
+<tr><td>Distributions and random values</td><td>Dist.q, Dist.d, Dist.p, Rng.draw, Rng.sample, Vec.quantiles</td></tr>
+<tr><td>Tests and models</td><td>test(kind).run(), lm, glm, nls</td></tr>
+<tr><td>Time series</td><td>fft, arima, arima_sim, Vec.acf, Vec.pacf, stl</td></tr>
+<tr><td>Smoothing and interpolation</td><td>smooth_spline, loess, spline_fun, approx_fun</td></tr>
+<tr><td>Clustering</td><td>kmeans, hclust</td></tr>
+<tr><td>Numerical methods</td><td>minimize, optimize, uniroot, integrate</td></tr>
+</tbody>
+</table>
+<h2>Results and errors</h2>
+<p>The DSL exposes typed result objects. Use out.set to include selected values in the single stdout JSON result, alongside check and failure counts. Non-finite numeric values serialize as JSON null. out.print writes to stderr. Load and execution errors produce a JSON error with a phase, code, and message.</p>
+<p>In the native host, process exit codes are 0 for success, 2 for usage errors, 3 for bytecode loading or execution errors, and 4 for failed application checks.</p>
+<h2>Limits</h2>
+<p>Limits depend on the native operation; the old R-backed API limits do not describe this host. Keep examples small and check operation-specific errors when increasing input sizes. Read the operation descriptions in <a href="https://github.com/lmctl-ai/lmr/blob/main/docs/dsl-api.md">the lmr API source</a> for additional limits and supported options.</p>
+<h2>Examples</h2>
+<p>Start with the <a href="/tools/lmr/examples/">generated example book</a>. The repository also provides longer <a href="https://github.com/lmctl-ai/lmr/tree/main/examples/dsl">LMScript tutorials</a> and <a href="https://github.com/lmctl-ai/lmr/tree/main/examples/r-vs-dsl">R comparison recipes</a>.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmr">github.com/lmctl-ai/lmr</a>.</p>
+</footer>
+</body>
+</html>

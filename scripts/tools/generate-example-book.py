@@ -89,10 +89,11 @@ def quickrun_source(tool, script, examples_root, repo_root):
                 f"{{ write_file_exclusive({json.dumps(target)}, {json.dumps(payload)}); }}"
             )
     source = source[:dsl_line.start()] + "\n".join(bootstrap) + "\n" + source[dsl_line.start():]
-    source += (
-        f"\nrun = system ${{dsl_cli({host_var})}} --dsl ${{out}};\n"
-        'if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }\n'
-    )
+    if not re.search(rf"(?m)^[ \t]*\w+\s*=\s*system\s+\$\{{dsl_cli\({re.escape(host_var)}\)\}}\s+--dsl\b", source):
+        source += (
+            f"\nrun = system ${{dsl_cli({host_var})}} --dsl ${{out}};\n"
+            'if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }\n'
+        )
     return source
 
 
@@ -237,39 +238,68 @@ def main():
         example_config = next((item for item in configured_examples or [] if item.get("slug") == slug), {})
         rendered_output = example_config.get("rendered") or data.get("rendered", {}).get(slug)
         preview_name = data.get("images", {}).get(slug, f"{slug}.png")
+        title = slug.replace("-", " ").title()
         preview = examples_root / "renders" / preview_name
         if not rendered_output and not preview.is_file():
             raise SystemExit(f"{slug} needs a rendered output or examples/renders/{preview_name}")
         width, height = png_size(preview) if preview.is_file() else (0, 0)
-        image_name = f"{slug}.png"
-        image_path = output / "img" / image_name
-        image_path.parent.mkdir(parents=True, exist_ok=True)
         source = quickrun_source(tool, script, examples_root, repo_root)
         source_name = f"{slug}.lms"
         source_path = output / source_name
         source_path.write_text(source)
         render_data = {**data, "rendered": {slug: rendered_output} if rendered_output else {}}
         rendered = rendered_preview(tool, slug, source_path, render_data)
-        if rendered is not None:
-            image_path.write_bytes(rendered)
-            compact_png(image_path)
-            width, height = png_size(image_path)
-        elif preview.is_file():
-            shutil.copyfile(preview, image_path)
+        output_candidates = rendered_output if isinstance(rendered_output, list) else [rendered_output]
+        output_suffixes = {Path(path).suffix.lower() for path in output_candidates if path}
+        text_output = bool(output_suffixes & {".txt", ".csv"})
+        if text_output and len(output_suffixes) != 1:
+            raise SystemExit(f"{slug} output alternatives must use the same text format")
+        if text_output:
+            if rendered is None:
+                raise SystemExit(f"could not render text output for {slug}")
+            try:
+                rendered_text = rendered.decode("utf-8")
+            except UnicodeDecodeError as error:
+                raise SystemExit(f"text output for {slug} is not UTF-8: {error}")
+            output_name = f"{slug}{next(iter(output_suffixes))}"
+            output_path = output / output_name
+            output_path.write_bytes(rendered)
+            presentation = (
+                f'<pre><samp>{html.escape(rendered_text)}</samp></pre>\n'
+                f'<p>Output generated from source revision {html.escape(short_ref)}. '
+                f'<a href="/tools/{tool}/examples/{output_name}">Download the output</a>.</p>'
+            )
+            image_href = ""
+            width = height = 0
+            created.append(output_name)
         else:
-            raise SystemExit(f"could not render {slug} and no checked-in preview exists")
-        image_href = f"/tools/{tool}/examples/img/{image_name}"
+            image_name = f"{slug}.png"
+            image_path = output / "img" / image_name
+            image_path.parent.mkdir(parents=True, exist_ok=True)
+            if rendered is not None:
+                image_path.write_bytes(rendered)
+                compact_png(image_path)
+                width, height = png_size(image_path)
+            elif preview.is_file():
+                shutil.copyfile(preview, image_path)
+            else:
+                raise SystemExit(f"could not render {slug} and no checked-in preview exists")
+            image_href = f"/tools/{tool}/examples/img/{image_name}"
+            presentation = (
+                f'<figure><img src="{image_href}" alt="Rendered {html.escape(title)} example." '
+                f'width="{width}" height="{height}"><figcaption>Preview generated from the source repository '
+                f'at {html.escape(short_ref)}.</figcaption></figure>'
+            )
         page_name = f"{slug}.html"
-        title = slug.replace("-", " ").title()
         description_text = re.sub(r"`([^`]*)`", r"\1", entries[slug])
         description_text = description_text[:1].upper() + description_text[1:]
         if not description_text.endswith((".", "!", "?")):
             description_text += "."
         description = html.escape(description_text, quote=False)
-        prompt = f"{data['task']} Use the {display_name} API and the {title} example below. Report the source, output artifacts, and verification."
+        prompt = f"{data['task']} Use the {display_name} API and the {title} example below. Report the source, output, and verification."
         prompt = textwrap.fill(prompt, width=72)
         quickrun_command = textwrap.fill(
-            f"lmctl quickrun https://lmctl.com/tools/{tool}/examples/{slug}.lms",
+            f"lmctl autorun https://lmctl.com/tools/{tool}/examples/{slug}.lms",
             width=72,
             subsequent_indent="  ",
             break_long_words=False,
@@ -277,10 +307,10 @@ def main():
         )
         quickrun_command = quickrun_command.replace("\n  ", " \\\n  ")
         body = f'''<h1>{html.escape(title)}</h1>
-<p>{description} This page includes the render and a quickrun-ready lmscript source file.</p>
-<figure><img src="{image_href}" alt="Rendered {html.escape(title)} example." width="{width}" height="{height}"><figcaption>Preview generated from the source repository at {html.escape(short_ref)}.</figcaption></figure>
+<p>{description} This page includes the result and a quickrun-ready lmscript source file.</p>
+{presentation}
 <h2>Let an agent build from this example</h2>
-<p>Copy this prompt into your Lead's terminal to ask an agent to make a related drawing:</p>
+<p>Copy this prompt into your Lead's terminal to ask an agent to make a related example:</p>
 <pre><code>{html.escape(prompt)}
 {html.escape(links['dsl_docs']['label'])}: {html.escape(links['dsl_docs']['url'])}
 {html.escape(links['tool_api']['label'])}: {html.escape(links['tool_api']['url'])}
@@ -289,10 +319,12 @@ def main():
 <pre><code>{html.escape(quickrun_command)}</code></pre>
 <p><a href="/tools/{tool}/examples/{source_name}">Read the quickrun source</a>. See <a href="{html.escape(data.get('get_started', f'/tools/{tool}/tutorial.html'))}">get started with quickrun teams</a>.</p>
 <h2>Source from the project</h2>
-<p>The original example is <a href="https://github.com/lmctl-ai/{tool}/blob/{html.escape(source_ref)}/examples/{slug}.lms">{slug}.lms at {html.escape(short_ref)}</a>. The published quickrun source adds release installation, local SVG fixtures, or the bundled font needed to run it from a new directory.</p>'''
+<p>The original example is <a href="https://github.com/lmctl-ai/{tool}/blob/{html.escape(source_ref)}/examples/{slug}.lms">{slug}.lms at {html.escape(short_ref)}</a>. The published quickrun source adds release installation and any bundled inputs needed to run it from a new directory.</p>'''
         page_path = output / page_name
         page_path.write_text(body + "\n")
-        created.extend([source_path.name, page_path.name, str(Path("img") / image_name)])
+        created.extend([source_path.name, page_path.name])
+        if not text_output:
+            created.append(str(Path("img") / image_name))
         pages.append((title, description, page_name, image_href, width, height))
 
     list_items = "\n".join(
@@ -300,7 +332,7 @@ def main():
         for title, description, page, *_ in pages
     )
     index = f'''<h1>{html.escape(display_name)} examples</h1>
-<p>{html.escape(data['description'])} Browse rendered examples and run each source as a quickrun script. These pages are regenerated from the public {html.escape(display_name)} repository at {html.escape(short_ref)}.</p>
+<p>{html.escape(data['description'])} Browse example results and run each source as an autorun script. These pages are regenerated from the public {html.escape(display_name)} repository at {html.escape(short_ref)}.</p>
 <p>Start with <a href="{html.escape(data.get('get_started', f'/tools/{tool}/tutorial.html'))}">get started</a> to learn how solo and trio quickruns work.</p>
 <ul>
 {list_items}
