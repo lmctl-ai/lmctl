@@ -2,12 +2,12 @@
   "display_name": "lmcad",
   "repository": "https://github.com/lmctl-ai/lmcad.git",
   "description": "lmcad is a native solid-modeling host for lmscript with rendering and CAD export.",
-  "get_started": "/tools/lmcad/tutorial.html",
+  "get_started": "/tools/lmcad/get_started.html",
   "task": "Create a compact 3D mounting plate with two clean through-holes, a visible bevel or rim, and a contrasting material. Render a PNG and export an STL. Add a volume check or another concrete geometry check, then report the source, outputs, and verification.",
   "links": {
     "dsl_docs": {"label": "LMScript DSL", "url": "https://lmctl.com/tools/lmscript/skill.html"},
     "tool_api": {"label": "lmcad API", "url": "https://lmctl.com/tools/lmcad/guide.html"},
-    "example": {"label": "Still-life example", "url": "https://lmctl.com/tools/lmcad/examples/still-life.html"}
+    "example": {"label": "Box volume example", "url": "https://lmctl.com/tools/lmcad/examples/box-volume.html"}
   },
   "members": {
     "solo": [
@@ -21,10 +21,14 @@
   },
   "examples": [
     {
-      "slug": "still-life",
-      "file": "still-life.lms",
-      "description": "Build a lit still life from a box, sphere, and cylinder; render PNG and PPM files, then export OBJ.",
-      "rendered": "build/still-life.png"
+      "slug": "box-volume",
+      "description": "Build one box, assert its volume, and render a 320 × 240 PNG.",
+      "rendered": "build/box-volume.png"
+    },
+    {
+      "slug": "loop-row",
+      "description": "Use a range loop to place seven boxes and render the result.",
+      "rendered": "build/loop-row.png"
     }
   ]
 }

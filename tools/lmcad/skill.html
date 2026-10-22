@@ -17,7 +17,9 @@
 <li><a href="/tools/lmcad/">Overview</a></li>
 <li><a href="/tools/lmcad/skill.html">Skill</a></li>
 <li><a href="/tools/lmcad/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmcad/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmcad/guide.html">Guide</a></li>
+<li><a href="/tools/lmcad/examples/">Examples</a></li>
 </ul>
 </nav>
 <main>
@@ -27,12 +29,13 @@
 <h2>When to use it</h2>
 <p>Use this guide when a task needs a parametric solid, a still render, a mesh export, a looped field of parts, or a keyframed APNG from lmcad.</p>
 <h2>Install</h2>
-<p>Use the latest lmcad binary from <a href="https://github.com/lmctl-ai/lmcad/releases/latest">Releases</a> and lmscript from the published npm package. Source builds need the OpenCASCADE prefix documented in the <a href="https://github.com/lmctl-ai/lmcad#build-opencascade-once">project README</a>.</p>
+<p>Install lmcad from <a href="https://github.com/lmctl-ai/lmcad/releases/latest">Releases</a> and install the published lmscript package. Confirm the host prints lmcad X.Y.Z with --version and emits its schema with --dsl-schema --json. The schema bytes must match schema/lmcad.dsl.json. For generated examples and quickruns, use the released host with install="github:lmctl-ai/lmcad@latest". Source builds need the OpenCASCADE prefix documented in the <a href="https://github.com/lmctl-ai/lmcad#build-opencascade-once">project README</a>.</p>
 <h2>Commands</h2>
 <pre><code>npx --yes --package=@lmctl-ai/lmctl -- lmscript model.lms build/model.dslb
 lmcad --dsl build/model.dslb
-lmcad --schema
-lmcad --schema --json
+lmcad --version
+lmcad --dsl-schema
+lmcad --dsl-schema --json
 lmcad --dsl-signatures</code></pre>
 <h2>Inputs and outputs</h2>
 <ul><li>Inputs are DSL source files, JSON schemas for compilation, and optional CSV keyframes.</li><li>Bytecode is compiled for the lmcad schema and run by the lmcad host.</li><li>Outputs include PNG, APNG, PPM, STL and OBJ. Host methods can also export numeric volumes and bounding-box coordinates through the DSL.</li></ul>

@@ -40,6 +40,12 @@ def quickrun_source(tool, script, examples_root, repo_root):
     host_var = host_var_match.group(1) if host_var_match else None
     if not host_var:
         raise ValueError(f"could not find host variable in {script}")
+    has_output = re.search(r"(?m)^out\s*=", source)
+    if not has_output:
+        savedsl = re.search(rf"(?m)^\s*savedsl\(\s*{re.escape(host_var)}\s*,\s*([^,)]+)\s*\);", source)
+        if not savedsl:
+            raise ValueError(f"{script.name} must save its {host_var} bytecode with savedsl()")
+        source = source[:savedsl.start()] + f"out = {savedsl.group(1).strip()};\n" + source[savedsl.start():]
 
     font_load = re.compile(
         r'(?m)^\s*scene\.load_font\("([^"]+)"\s*,\s*"assets/fonts/[^"\n]+"\s*,\s*(?:true|false)\s*\);\s*\n?'

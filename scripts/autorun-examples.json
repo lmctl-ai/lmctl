@@ -8,5 +8,15 @@
     "name": "lmdraw_trio",
     "description": "Seed a Lead, Coder, and Reviewer to make and assess a small drawing.",
     "url": "https://lmctl.com/tools/lmdraw/lmdraw_trio.lms"
+  },
+  {
+    "name": "lmcad_solo",
+    "description": "Seed one lmcad Lead to create and verify a small CAD model.",
+    "url": "https://lmctl.com/tools/lmcad/lmcad_solo.lms"
+  },
+  {
+    "name": "lmcad_trio",
+    "description": "Seed a Lead, Coder, and Reviewer to create and assess a CAD model.",
+    "url": "https://lmctl.com/tools/lmcad/lmcad_trio.lms"
   }
 ]

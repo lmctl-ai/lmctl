@@ -32,6 +32,15 @@ savedsl(p, out);
         self.assertIn('cli="lmdraw" install="github:lmctl-ai/lmdraw@latest"', result)
         self.assertEqual(result.count('install="github:lmctl-ai/lmdraw@latest"'), 1)
 
+    def test_quickrun_derives_run_path_when_source_saves_a_literal_path(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            script = root / "loop-row.lms"
+            script.write_text('''p = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";\nscene.assert_close(1.0, 1.0, 0.001);\nend _dsl_\nsavedsl(p, "build/loop-row.dslb");\n''')
+            result = module.quickrun_source("lmcad", script, root, root)
+        self.assertIn('out = "build/loop-row.dslb";', result)
+        self.assertIn("system ${dsl_cli(p)} --dsl ${out}", result)
+
     def test_per_tool_data_drives_a_scratch_book_without_repo_readme_or_preview(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

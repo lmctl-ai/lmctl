@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Get started with lmcad quickruns — lmcad — lmctl.com tools</title>
+<meta name="description" content="Run a solo or trio lmcad quickrun with configured provider sessions and a released native host.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmcad/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcad/">Overview</a></li>
+<li><a href="/tools/lmcad/skill.html">Skill</a></li>
+<li><a href="/tools/lmcad/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmcad/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmcad/guide.html">Guide</a></li>
+<li><a href="/tools/lmcad/examples/">Examples</a></li>
+</ul>
+</nav>
+<main>
+<h1>Get started with lmcad quickruns</h1>
+<p>These LMScript files seed a provider team, ask it to create a small CAD model, and leave the Lead's final report in your terminal.</p>
+<h2>Overview</h2>
+<p>A quickrun writes a numbered teamfile in your working directory, seeds its provider sessions and runs a task that uses the released lmcad host.</p>
+<h2>Choose a team</h2>
+<ul>
+<li><a href="/tools/lmcad/lmcad_solo.lms">lmcad_solo.lms</a> runs one Lead using Claude Sonnet 5.5.</li>
+<li><a href="/tools/lmcad/lmcad_trio.lms">lmcad_trio.lms</a> runs a Claude Lead, Gemini Coder and Codex Reviewer. The Lead assigns work to the Coder, passes the result to the Reviewer, then reports their findings.</li>
+</ul>
+<p>Install lmctl and configure the listed providers in your local profile. Run these from a working directory where the generated teamfile and CAD files should be saved.</p>
+<h2>Run a quickrun</h2>
+<pre><code>lmctl autorun https://lmctl.com/tools/lmcad/lmcad_solo.lms
+lmctl autorun https://lmctl.com/tools/lmcad/lmcad_trio.lms</code></pre>
+<p>Both scripts ask the agents to render a PNG, export an STL and verify the geometry. Follow the linked lmcad skill to use the released host through the LMScript install declaration, and check the final report for outputs and unresolved findings.</p>
+<h2>References</h2>
+<ul>
+<li><a href="https://lmctl.com/tools/lmscript/skill.html">LMScript DSL documentation</a></li>
+<li><a href="/tools/lmcad/guide.html">lmcad API summary</a></li>
+<li><a href="/tools/lmcad/examples/box-volume.html">Box volume example</a></li>
+</ul>
+<p>Read the <a href="/tools/lmcad/skill.html">lmcad skill</a> for modeling, rendering and verification guidance.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcad">github.com/lmctl-ai/lmcad</a>.</p>
+</footer>
+</body>
+</html>
