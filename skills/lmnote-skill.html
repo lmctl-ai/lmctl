@@ -107,11 +107,11 @@ curl -fsS -X PUT "$LMNOTE_API_URL/notes/research.md" \
 <h2 id="error-handling">Error handling</h2>
 <p>Treat these responses as expected application outcomes:</p>
 <ul>
-<li>400: invalid name, content type, size, cursor, limit, or request body.</li>
+<li>400: invalid name (letters, digits, . _ - ; it must start with a letter or digit, be at most 128 characters, and contain no /, no .. and no trailing .), content type, size, cursor, limit, or request body; 400 operation_token_invalid when finalize has no usable token (missing, blank or malformed).</li>
 <li>401: missing or invalid shared appkey.</li>
 <li>404 note_not_found: note does not exist in this authenticated user's space.</li>
 <li>409 note_exists: create used an existing name.</li>
-<li>409 note_busy: another update/delete is in progress.</li>
+<li>409 note_busy: another update/delete is in progress. An update that was allocated but never finished keeps the note busy for about three minutes (150 to 180 seconds from the code: 120 s plus a 30 s grace and a 30 s sweep; one measurement gave 162 seconds), longer than the 120 second upload URL.</li>
 <li>409 not_uploaded: finalize ran before the uploaded object was available.</li>
 <li>409 finalize_mismatch: the finalize token is stale or wrong.</li>
 </ul>

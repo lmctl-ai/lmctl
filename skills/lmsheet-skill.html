@@ -31,7 +31,7 @@
 <p>lmsheet login configures the shared default file. lmsheet whoami reports the target and credential source without revealing the key. Never send an owner ID: the API derives ownership from the verified appkey.</p>
 <h2 id="addressing-and-semantics">Addressing and semantics</h2>
 <ul>
-<li>Sheet names are flat ASCII-safe names.</li>
+<li>Sheet names are flat ASCII-safe names: letters, digits, . _ - ; they must start with a letter or digit, be at most 128 characters, and contain no /, no .. and no trailing .</li>
 <li>Columns are ordered and addressed A-Z, AA, AB, and onward.</li>
 <li>Row 1 is the first data row; headers are metadata, not row 1.</li>
 <li>Cells use A1 notation, such as B3.</li>
@@ -79,7 +79,7 @@ json=(-H 'Content-Type: application/json')</code></pre>
 <pre><code>curl -fsS -X POST "$LMSHEET_API_URL/sheets/contacts/rows" \
   "${auth[@]}" "${json[@]}" \
   --data '{"cells":{"A":"Ada","B":"ada@example.com","C":"30"}}'</code></pre>
-<p>Use "row_num":10 in that body for explicit placement. An occupied row returns 409 row_exists.</p>
+<p>Use "row_num":10 in that body for explicit placement. An occupied row returns 409 row_exists. Later appends continue after the highest row number in use, explicit rows included.</p>
 <p>Read:</p>
 <pre><code>curl -fsS "$LMSHEET_API_URL/sheets/contacts/rows?after=0&amp;limit=100" "${auth[@]}"</code></pre>
 <p>The response includes sheet metadata, rows, next_after, and has_more. Raw-HTTP clients must continue with after=next_after while has_more is true and tolerate an empty final page: a full page can be followed by a page with no rows. Treat next_after as an opaque position.</p>
@@ -98,7 +98,7 @@ curl -fsS -X DELETE "$LMSHEET_API_URL/sheets/contacts" "${auth[@]}"</code></pre>
 <p>Large sheet deletion is resumable. A response with "deleted":false means the server completed its bounded batch and the same DELETE should be repeated. The CLI performs these retries automatically.</p>
 <h2 id="errors">Errors</h2>
 <ul>
-<li>400: invalid name, columns, row number, cell address, cell value, or page.</li>
+<li>400: invalid name, columns, row number, cell address, cell value, or page; 400 column_not_found when a cell address names a column the sheet does not have.</li>
 <li>400 value_too_long: at least one supplied cell exceeds 100 characters; no cells from that request were written.</li>
 <li>401: missing or invalid shared appkey.</li>
 <li>404 sheet_not_found: sheet is missing or deletion is in progress.</li>

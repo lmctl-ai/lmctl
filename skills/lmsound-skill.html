@@ -92,7 +92,7 @@ curl --fail --location "$AUDIO_URL" -o hello.mp3</code></pre>
 <tr>
 <td>ttl</td>
 <td>300</td>
-<td>Lifetime (seconds) of the returned download_url, 60–3600. Out of range → 400 invalid_ttl. Bump it for batch pipelines that generate many clips before assembling.</td>
+<td>Lifetime (seconds) of the returned download_url: a number, not a string, from 60 to 3600. Out of range → 400 invalid_ttl. Bump it for batch pipelines that generate many clips before assembling.</td>
 </tr>
 </tbody></table>
 <h3 id="ssml--fine-grained-control">SSML — fine-grained control</h3>
@@ -132,7 +132,7 @@ curl -sL "$API/speak/3f9a…-uuid?ttl=1800" -H "Authorization: Bearer $KEY" -o h
 <li>Limits: text is 1–3000 characters per call (no auto-chunking — split longer text yourself and synthesize per block). Pick voice_id from GET /voices; engine∈standard|neural|long-form|generative; format∈mp3|ogg_vorbis|pcm. Authorization depends on the deployment’s appkey store.</li>
 <li>Audio is disposable — objects expire after 7 days. Re-synthesize or re-download before then.</li>
 <li>Never returns raw bytes through the API — always a short-lived signed URL on lmctl.ai that serves the audio, so large audio is fine.</li>
-<li>One key = one user's scope. char_count counts Unicode codepoints (what Polly bills).</li>
+<li>One key = one user's scope. char_count counts every Unicode code point you send, SSML tags included (Polly's own bill may differ for SSML).</li>
 </ul>
 <p>That's the whole skill: POST /speak to synthesize (text or SSML), GET /voices to choose a narrator, GET /speak/{id} for a fresh link, GET /speak to list — all with one Authorization: Bearer API_KEY.</p>
 <h2 id="verification-scope">Verification scope</h2>

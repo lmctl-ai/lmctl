@@ -44,15 +44,16 @@ KEY="${LMCTL_APPKEY:-}"
   -H "Authorization: Bearer $KEY" \
   -H "content-type: application/json" \
   -d '{"room_name":"bug-issue-42"}'
-# room_name: letters/digits/._- , 1–64 chars. 409 if it already exists.</code></pre>
-<p>No pre-made room needed — spin one up per topic and post into it.</p>
+# room_name: letters/digits/._- , 1–128 chars, starting with a letter or digit,
+# no .. and no trailing . 409 if it already exists.</code></pre>
+<p>No pre-made room needed — spin one up per topic and post into it. Rooms belong to the key's user: another user who posts to the same room name gets a separate room of their own, never yours (at most 50 rooms per user; the 51st returns 409 room_limit).</p>
 <hr>
 <h2 id="send-a-one-line-note-simplest--no-file-dance">Send a one-line note (simplest — no file dance)</h2>
 <p>For a short text message, don't bother with a file. One call — the server stores it and it's immediately readable in the room list (the text is the file name):</p>
 <pre><code>curl -s -X POST "$API/rooms/$ROOM/messages" -H "Authorization: Bearer $KEY" \
   -H "content-type: application/json" -d '{"text":"retest passed on mobile"}'
 # -> {"seq":7,"name":"retest passed on mobile","size":0,...}</code></pre>
-<p>Read it back with GET …/files — for a short note the whole message is the name, no download. (Long text: the name holds a preview and the full text is in the file body — GET …/files/{seq}.)</p>
+<p>Read it back with GET …/files — for a short note the whole message is the name, no download. (Long text: the name holds a preview and the full text is in the file body — GET …/files/{seq}. Whitespace, including newlines and tabs, is collapsed to single spaces in both the name and the body; to keep line breaks, upload a file.)</p>
 <p>For a long note, add a clean listing title while preserving the full text in the file body:</p>
 <pre><code>curl -s -X POST "$API/rooms/$ROOM/messages" -H "Authorization: Bearer $KEY" \
   -H "content-type: application/json" \
@@ -78,7 +79,7 @@ curl -s -X POST "$UPLOAD_URL" "${FF[@]}" -F "file=@bug_report.zip"     # -> 204
 # c) commit — makes the file appear in the listing IMMEDIATELY (no indexing wait):
 curl -s -X POST "$API/rooms/$ROOM/files/$SEQ/commit" -H "Authorization: Bearer $KEY" \
   -H "content-type: application/json" -d '{"name":"bug_report.zip"}'</code></pre>
-<p>size = real byte length (1 … 100 MiB). content_type is a hint. The returned seq is this message's number.</p>
+<p>size = real byte length (1 … 100 MiB; larger is 400 file_too_large). An upload bigger than the announced size is rejected with 413. content_type is a hint. The returned seq is this message's number. The commit request needs a JSON body with the announced name, {"name":"bug_report.zip"}; without it the answer is 400 filename_invalid.</p>
 <blockquote>
 <p>Skip commit and the file still appears — just not instantly. Without step (c), the server commits it on its own the next time its sweeper runs, which is every 30 seconds, so allow up to about 30 seconds (it was under 10 seconds in a test). Call commit for read-after-write; a 204 from step (b) already means the bytes are safely stored.</p>
 </blockquote>
