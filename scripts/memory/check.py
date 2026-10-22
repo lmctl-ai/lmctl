@@ -20,6 +20,19 @@ def check(root):
         except UnicodeDecodeError:
             if path.suffix == '.md': findings.append(f'{path}: Markdown must be UTF-8')
             continue
+        if path.suffix.lower() == '.md' and 'tool-book-feedback' in path.parts:
+            fence = None
+            for number, line in enumerate(text.splitlines(), 1):
+                stripped = line.lstrip()
+                marker = stripped[:3]
+                if marker in ('```', '~~~'):
+                    if fence is None:
+                        fence = marker
+                    elif marker == fence:
+                        fence = None
+                    continue
+                if fence is None and '`' in line:
+                    findings.append(f'{path}:{number}: feedback Markdown must not use inline code; use plain text or a fenced block')
         for number, line in enumerate(text.splitlines(), 1):
             for char in line:
                 if pictographic(ord(char)):
