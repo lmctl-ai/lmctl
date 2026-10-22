@@ -1,5 +1,7 @@
 # lmcad tool-book dogfood feedback — 2026-10-21
 
+Merged into the skill on 2026-10-22.
+
 ## Findings
 
 - The skill says to add catalog entries in autorun/examples.json, but this checkout has no such file; the input is scripts/autorun-examples.json. Proposal: correct the path in the skill and its worked example.

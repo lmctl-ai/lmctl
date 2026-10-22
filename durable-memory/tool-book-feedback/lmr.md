@@ -1,5 +1,7 @@
 # lmr tool-book dogfood feedback — 2026-10-21
 
+Merged into the skill on 2026-10-22.
+
 Review findings from publishing the lmr example book, including native-host release checks, text results, shared quickrun generation, and site validation. The proposals below record changes needed in the publishing workflow and its guidance.
 
 ## Findings

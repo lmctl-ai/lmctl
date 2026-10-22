@@ -1,5 +1,7 @@
 # lmpy publish workflow feedback
 
+Merged into the skill on 2026-10-22.
+
 Dogfood notes for the publish-tool-book skill, based on the lmpy release and book run.
 
 ## Steps and proposed corrections

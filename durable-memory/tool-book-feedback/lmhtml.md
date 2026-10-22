@@ -1,5 +1,7 @@
 # lmhtml tool-book dogfood feedback — 2026-10-21
 
+Merged into the skill on 2026-10-22.
+
 ## Findings
 
 - The publish skill says to add curated entries to autorun/examples.json. The current repository reads scripts/autorun-examples.json and generates the catalogs with node scripts/build-onboarding-catalogs.mjs. Proposal: name the actual source file and generated outputs in the skill before telling teams to edit the catalog.

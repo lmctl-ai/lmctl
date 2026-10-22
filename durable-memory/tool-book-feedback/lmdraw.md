@@ -1,5 +1,7 @@
 # lmdraw README dogfood feedback — 2026-10-21
 
+Merged into the skill on 2026-10-22.
+
 ## Findings
 
 - A four-column README gallery overflowed the 390-pixel GitHub mobile viewport by 100 pixels and reduced thumbnails to about 87 pixels wide. Proposal: recommend two columns for three-to-six examples; the two-column gallery now fits the content width and keeps thumbnails around 128 to 141 pixels wide.

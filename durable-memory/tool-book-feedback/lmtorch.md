@@ -1,5 +1,7 @@
 # lmtorch publish-tool-book dogfood feedback
 
+Merged into the skill on 2026-10-22.
+
 ## Prerequisites
 
 - Step: Release prerequisite check and release instructions. The skill says to stop and ask the tool owner to cut a guarded release, while this assigned run explicitly permits adding missing release support and cutting after CI. Proposed wording: If the assigned scope authorizes release work, add the missing host protocol and tag guard, wait for all platform CI jobs to pass, then cut the release. Otherwise stop and ask the owner.
