@@ -2,6 +2,10 @@
   "display_name": "lmtorch",
   "repository": "https://github.com/lmctl-ai/lmtorch.git",
   "description": "lmtorch runs CPU tensor operations, automatic differentiation, and small neural networks from LMScript.",
+  "readme": {
+    "hero_idea": "A real lmtorch two-moons classifier run, showing its predicted grid and measured held-out accuracy in light and dark themes.",
+    "gallery_examples": ["tensor-sum", "autograd-gradient", "classify-moons"]
+  },
   "get_started": "/tools/lmtorch/get_started.html",
   "task": "Use lmtorch to compute and verify a small tensor result. Run the example with the released host, report the source and output, and confirm its expected value.",
   "links": {
