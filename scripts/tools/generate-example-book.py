@@ -287,8 +287,8 @@ def main():
             image_href = f"/tools/{tool}/examples/img/{image_name}"
             presentation = (
                 f'<figure><img src="{image_href}" alt="Rendered {html.escape(title)} example." '
-                f'width="{width}" height="{height}"><figcaption>Preview generated from the source repository '
-                f'at {html.escape(short_ref)}.</figcaption></figure>'
+                f'width="{width}" height="{height}"><figcaption>'
+                f'{html.escape(example_config.get("preview_caption", data.get("preview_caption", "Preview generated from the source repository")))} at {html.escape(short_ref)}.</figcaption></figure>'
             )
         page_name = f"{slug}.html"
         description_text = re.sub(r"`([^`]*)`", r"\1", entries[slug])

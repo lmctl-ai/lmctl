@@ -17,8 +17,10 @@
 <li><a href="/tools/lmhtml/">Overview</a></li>
 <li><a href="/tools/lmhtml/skill.html">Skill</a></li>
 <li><a href="/tools/lmhtml/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmhtml/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmhtml/guide.html">Guide</a></li>
 <li><a href="/tools/lmhtml/recipes.html">Recipes</a></li>
+<li><a href="/tools/lmhtml/examples/">Examples</a></li>
 </ul>
 </nav>
 <main>
@@ -28,13 +30,14 @@
 <h2>When to use it</h2>
 <p>Use lmhtml for checking internal links, auditing CSS classes and IDs, comparing page structure, finding shared markup, or applying consistent edits across pages.</p>
 <h2>Install</h2>
-<p>Download the latest lmhtml binary from <a href="https://github.com/lmctl-ai/lmhtml/releases">Releases</a>. For DSL scripts, install Node.js 24.15 or newer, then use the published compiler package with npx --yes --package=@lmctl-ai/lmctl -- lmscript. Source builds need C++17, CMake, Ninja and the project setup described in the <a href="https://github.com/lmctl-ai/lmhtml#build">README</a>.</p>
+<p>For an LMScript program, install Node.js 24.15 or newer and compile with the published compiler. Declare the released host with cli="lmhtml" install="github:lmctl-ai/lmhtml@latest"; lmscript downloads the matching platform binary and verifies its release checksum. The binary prints lmhtml X.Y.Z with --version and exposes its schema with --dsl-schema --json. Source builds need C++17, CMake, Ninja and the project setup described in the <a href="https://github.com/lmctl-ai/lmhtml#build">README</a>.</p>
 <h2>Commands</h2>
 <pre><code>lmhtml --dsl-schema
 lmhtml --dsl-schema --json
 lmhtml --dsl-signatures
 npx --yes --package=@lmctl-ai/lmctl -- lmscript check.lms build/check.dslb
 lmhtml --dsl build/check.dslb</code></pre>
+<p>Start from the <a href="/tools/lmhtml/examples/">runnable examples</a> or use the <a href="/tools/lmhtml/get_started.html">provider-session quickstart</a>.</p>
 <p>Markdown notes use the same document tree. Native commands need only the host:</p>
 <pre><kbd>lmhtml md2html notes/chapter.md build/chapter.html</kbd>
 <kbd>lmhtml index notes</kbd>

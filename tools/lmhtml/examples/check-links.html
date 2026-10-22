@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Check Links — lmhtml — lmctl.com tools</title>
+<meta name="description" content="Classify links and report broken local destinations in a synthetic site. This page includes the result and a quickrun-ready lmscript source file.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmhtml/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmhtml/">Overview</a></li>
+<li><a href="/tools/lmhtml/skill.html">Skill</a></li>
+<li><a href="/tools/lmhtml/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmhtml/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmhtml/guide.html">Guide</a></li>
+<li><a href="/tools/lmhtml/recipes.html">Recipes</a></li>
+<li><a href="/tools/lmhtml/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>Check Links</h1>
+<p>Classify links and report broken local destinations in a synthetic site. This page includes the result and a quickrun-ready lmscript source file.</p>
+<figure><img src="/tools/lmhtml/examples/img/check-links.png" alt="Rendered Check Links example." width="960" height="540"><figcaption>Illustrative preview: each of the two report findings is shown twice in this upstream image at 186d5108b8.</figcaption></figure>
+<h2>Let an agent build from this example</h2>
+<p>Copy this prompt into your Lead's terminal to ask an agent to make a related example:</p>
+<pre><code>Audit a small synthetic website for broken internal links, compare two
+page revisions, and extract or apply one shared-page change. Use lmhtml
+examples as a starting point, save the source and reports, and state the
+checks that passed. Use the lmhtml API and the Check Links example
+below. Report the source, output, and verification.
+LMScript DSL: https://lmctl.com/tools/lmscript/skill.html
+lmhtml API: https://lmctl.com/tools/lmhtml/guide.html
+Broken-link audit example: https://lmctl.com/tools/lmhtml/examples/check-links.html</code></pre>
+<h2>Run the example</h2>
+<pre><code>lmctl autorun https://lmctl.com/tools/lmhtml/examples/check-links.lms</code></pre>
+<p><a href="/tools/lmhtml/examples/check-links.lms">Read the quickrun source</a>. See <a href="/tools/lmhtml/get_started.html">get started with quickrun teams</a>.</p>
+<h2>Source from the project</h2>
+<p>The original example is <a href="https://github.com/lmctl-ai/lmhtml/blob/186d5108b830319e9ca9cc65a93c51df0e332b2e/examples/check-links.lms">check-links.lms at 186d5108b8</a>. The published quickrun source adds release installation and any bundled inputs needed to run it from a new directory.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmhtml">github.com/lmctl-ai/lmhtml</a>.</p>
+</footer>
+</body>
+</html>

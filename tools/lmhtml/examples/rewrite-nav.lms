@@ -1,0 +1,29 @@
+mkdir("build/example-rewrite");
+out = ARGV.len() > 0 ? ARGV[0] : "build/rewrite-nav.dslb";
+for (i in range(0, 5)) {
+  let n = str(i + 1);
+  write_file("build/example-rewrite/p" + n + ".html", "<!doctype html><html><head><title>Example</title></head><body><header><h1>Example site</h1></header><nav class=\"old-nav\"><a href=\"old.html\">Old navigation</a></nav><main><h2>Page " + n + "</h2><p>Body " + n + "</p></main><footer><p>Old footer</p></footer></body></html>");
+}
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+let pages = html.load_dir("build/example-rewrite");
+let nav_html = "<nav class=\"site-nav\"><a href=\"index.html\">Home</a><a href=\"about.html\">About</a></nav>";
+let footer_html = "<footer class=\"site-footer\"><p>Example footer</p></footer>";
+for (i in range(0, pages.len())) {
+  let page = pages.at(i);
+  page.select("nav").at(0).replace_with(nav_html);
+  page.select("footer").at(0).replace_with(footer_html);
+  html.save(page, "build/rewritten/p" + str(i + 1) + ".html");
+}
+let first = html.load("build/rewritten/p1.html");
+let n3 = html.diff(first, html.load("build/rewritten/p4.html"));
+let n4 = html.diff(first, html.load("build/rewritten/p5.html"));
+report.add("converged", "p1-vs-p4", 0, str(n3) + " differences after rewrite");
+report.add("converged", "p1-vs-p5", 0, str(n4) + " differences after rewrite");
+report.write_text("build/rewrite-report.txt");
+end _dsl_
+savedsl(p, out);
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

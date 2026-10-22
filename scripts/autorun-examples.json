@@ -28,5 +28,15 @@
     "name": "lmr_trio",
     "description": "Seed a Lead, Coder, and Reviewer to analyze a data set and verify the result.",
     "url": "https://lmctl.com/tools/lmr/lmr_trio.lms"
+  },
+  {
+    "name": "lmhtml_solo",
+    "description": "Seed one lmhtml Lead to audit a small HTML site and verify the report.",
+    "url": "https://lmctl.com/tools/lmhtml/lmhtml_solo.lms"
+  },
+  {
+    "name": "lmhtml_trio",
+    "description": "Seed an lmhtml Lead, Coder, and Reviewer to audit and review an HTML task.",
+    "url": "https://lmctl.com/tools/lmhtml/lmhtml_trio.lms"
   }
 ]

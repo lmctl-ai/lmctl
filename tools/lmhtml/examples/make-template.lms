@@ -1,0 +1,18 @@
+mkdir("build/example-template");
+out = ARGV.len() > 0 ? ARGV[0] : "build/make-template.dslb";
+for (i in range(0, 5)) {
+  let n = str(i + 1);
+  write_file("build/example-template/p" + n + ".html", "<!doctype html><html><head><title>Example</title></head><body><header><h1>Example site</h1></header><nav><a href=\"index.html\">Home</a><a href=\"about.html\">About</a></nav><main><h2>Page " + n + "</h2><p>Body " + n + "</p></main><footer><p>Example footer</p></footer></body></html>");
+}
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+let pages = html.load_dir("build/example-template");
+let slots = html.write_template(pages, 4, "build/template.html");
+report.add("summary", "template", 0, str(slots) + " slots for " + str(pages.len()) + " pages");
+report.write_text("build/template-report.txt");
+end _dsl_
+savedsl(p, out);
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

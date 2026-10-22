@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Get started with lmhtml — lmhtml — lmctl.com tools</title>
+<meta name="description" content="Use lmctl 0.2.378 or newer to run a provider-session task, inspect the generated files, and report the checks that passed.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmhtml/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmhtml/">Overview</a></li>
+<li><a href="/tools/lmhtml/skill.html">Skill</a></li>
+<li><a href="/tools/lmhtml/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmhtml/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmhtml/guide.html">Guide</a></li>
+<li><a href="/tools/lmhtml/recipes.html">Recipes</a></li>
+<li><a href="/tools/lmhtml/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>Get started with lmhtml</h1>
+<p>Use lmctl 0.2.378 or newer to run a provider-session task, inspect the generated files, and report the checks that passed. Confirm that lmctl help autorun is available before running the team scripts.</p>
+<h2>Getting started</h2>
+<p>The solo script asks one Lead to audit a small HTML site. It starts a tracked provider session; the assigned agent uses lmscript to install and run the released lmhtml host.</p>
+<pre><code>lmctl autorun https://lmctl.com/tools/lmhtml/lmhtml_solo.lms</code></pre>
+<h2>Run with a Coder and Reviewer</h2>
+<p>The trio script passes the Lead's assignment to a Coder, sends the Coder's result to a Reviewer, and returns both responses to the Lead for a final report.</p>
+<pre><code>lmctl autorun https://lmctl.com/tools/lmhtml/lmhtml_trio.lms</code></pre>
+<h2>Try one example</h2>
+<p>Run the broken-link audit directly to see one task and its expected report.</p>
+<pre><code>lmctl quickrun https://lmctl.com/tools/lmhtml/examples/check-links.lms</code></pre>
+<p>See the <a href="/tools/lmhtml/examples/">example book</a> for the other lmhtml tasks and their quickrun sources.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmhtml">github.com/lmctl-ai/lmhtml</a>.</p>
+</footer>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Check a small site with lmhtml — lmhtml — lmctl.com tools</title>
+<title>Audit and compare HTML with lmhtml — lmhtml — lmctl.com tools</title>
 <meta name="description" content="Compile and run lmhtml checks against a small synthetic website.">
 <link rel="stylesheet" href="/tools/style.css">
 <link rel="icon" type="image/png" href="/tools/lmhtml/img/icon.png">
@@ -17,44 +17,50 @@
 <li><a href="/tools/lmhtml/">Overview</a></li>
 <li><a href="/tools/lmhtml/skill.html">Skill</a></li>
 <li><a href="/tools/lmhtml/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmhtml/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmhtml/guide.html">Guide</a></li>
 <li><a href="/tools/lmhtml/recipes.html">Recipes</a></li>
+<li><a href="/tools/lmhtml/examples/">Examples</a></li>
 </ul>
 </nav>
 <main>
-<h1>Check a small site with lmhtml</h1>
-<p>These commands were run with lmhtml v0.2.0 and lmscript 0.2.348 against a synthetic site. The sample has one missing internal link, an external link, and a generated link ignored by policy.</p>
-<h2>1. Compile the link check</h2>
-<p>Compile the `_dsl_` script against the lmhtml schema. In this example, build/check-links.lms uses html.load_dir, foreach loops and link_kind to apply an explicit skip policy.</p>
-<pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript build/check-links.lms</kbd>
-<samp>(no output; exit 0)</samp></pre>
-<h2>2. Run it and inspect the finding</h2>
-<p>The bytecode runs in lmhtml; the report lists only the broken internal destination.</p>
-<pre><kbd>lmhtml --dsl build/check-links.dslb</kbd>
-<samp>{"ok": true, "result": null}</samp>
+<h1>Audit and compare HTML with lmhtml</h1>
+<p>Use these steps with the released lmhtml host and lmscript compiler. Each example creates a small synthetic input tree and writes its outputs under build/.</p>
+<h2>1. Run the link audit</h2>
+<p>Start in an empty working directory. The example downloads the release, checks local destinations across three pages, and writes a deterministic text and JSON report.</p>
+<pre><kbd>mkdir lmhtml-demo</kbd>
+<kbd>cd lmhtml-demo</kbd>
+<kbd>lmctl quickrun https://lmctl.com/tools/lmhtml/examples/check-links.lms</kbd>
 <kbd>cat build/links.txt</kbd>
-<samp>broken-link site/index.html:0: missing.html not found</samp></pre>
-<h2>3. Find a class typo with a loop</h2>
-<p>The class audit compares classes used by the pages with selectors in the local stylesheet. A typo gets a suggestion.</p>
-<pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript build/check-classes.lms</kbd>
-<samp>(no output; exit 0)</samp>
-<kbd>lmhtml --dsl build/check-classes.dslb</kbd>
-<samp>{"ok": true, "result": null}</samp>
+<samp>broken-link build/example-links/about.html:0: #missing not found
+broken-link build/example-links/index.html:0: missing.html not found</samp></pre>
+<h2>2. Check class and ID names</h2>
+<p>The class audit compares names used in markup with CSS selectors and reports near matches and unused definitions.</p>
+<pre><kbd>lmctl quickrun https://lmctl.com/tools/lmhtml/examples/class-typos.lms</kbd>
 <kbd>cat build/classes.txt</kbd>
-<samp>class-undefined site:0: heding (did you mean heading?)
-id-unused site:0: teem (did you mean team?)</samp></pre>
-<h2>4. Compare two page versions</h2>
-<p>Structural diff reports meaningful changes while normalizing incidental markup noise.</p>
-<pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript build/diff.lms</kbd>
-<samp>(no output; exit 0)</samp>
-<kbd>lmhtml --dsl build/diff.dslb</kbd>
-<samp>{"ok": true, "result": null}</samp>
+<samp>class-undefined site:0: usde (did you mean used?)
+class-unused site:0: footer
+id-unused site:0: team (did you mean teem?)
+id-unused site:0: unused-id</samp></pre>
+<h2>3. Compare and extract markup</h2>
+<p>Run the page diff and shared-template examples to see how lmhtml reports structural changes and finds repeated page sections.</p>
+<pre><kbd>lmctl quickrun https://lmctl.com/tools/lmhtml/examples/diff-pages.lms</kbd>
 <kbd>cat build/diff.txt</kbd>
-<samp>diff-changed compare/before/page.html:0: html > body:nth-child(2) > p.intro:nth-child(2): text differs
-diff-added compare/after/page.html:0: html > body:nth-child(2) > p:nth-child(3)
-summary page:0: 2 differences</samp></pre>
+<samp>diff-added build/example-diff/b.html:0: html > body:nth-child(2) > ul:nth-child(1) > li:nth-child(2)
+diff-changed build/example-diff/a.html:0: html > body:nth-child(2) > p.intro:nth-child(2): attributes differ: class
+diff-changed build/example-diff/a.html:0: html > body:nth-child(2) > p.intro:nth-child(2): text differs
+summary a-vs-b:0: 3 differences
+summary a-vs-noise:0: 0 differences</samp>
+<kbd>lmctl quickrun https://lmctl.com/tools/lmhtml/examples/make-template.lms</kbd>
+<kbd>cat build/template-report.txt</kbd>
+<samp>common-part build/template.html:0: html > body:nth-child(2) > nav:nth-child(2) shared by 5 of 5 pages
+summary template:0: 4 slots for 5 pages</samp></pre>
+<h2>4. Run a provider-session task</h2>
+<p>The solo script gives one Lead a task. The trio script passes the Lead's assignment to a Coder, asks a Reviewer to inspect the result, then returns both responses to the Lead.</p>
+<pre><kbd>lmctl autorun https://lmctl.com/tools/lmhtml/lmhtml_solo.lms</kbd>
+<kbd>lmctl autorun https://lmctl.com/tools/lmhtml/lmhtml_trio.lms</kbd></pre>
 <h2>What you learned</h2>
-<p>Compile against the host's embedded JSON schema, let the host inspect a synthetic site, and read its report before applying any changes. Host collections work with foreach, while link policy stays explicit in the script.</p>
+<p>Each example uses the released host, creates its own fixture pages, and writes reports or rewritten copies under build/. The tool repository test script checks the expected output for every example.</p>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmhtml">github.com/lmctl-ai/lmhtml</a>.</p>

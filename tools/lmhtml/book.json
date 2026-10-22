@@ -1,0 +1,37 @@
+{
+  "display_name": "lmhtml",
+  "repository": "https://github.com/lmctl-ai/lmhtml.git",
+  "description": "lmhtml audits HTML links and CSS names, compares page structure, extracts shared templates, and applies verified edits.",
+  "get_started": "/tools/lmhtml/get_started.html",
+  "task": "Audit a small synthetic website for broken internal links, compare two page revisions, and extract or apply one shared-page change. Use lmhtml examples as a starting point, save the source and reports, and state the checks that passed.",
+  "links": {
+    "dsl_docs": {"label": "LMScript DSL", "url": "https://lmctl.com/tools/lmscript/skill.html"},
+    "tool_api": {"label": "lmhtml API", "url": "https://lmctl.com/tools/lmhtml/guide.html"},
+    "example": {"label": "Broken-link audit example", "url": "https://lmctl.com/tools/lmhtml/examples/check-links.html"}
+  },
+  "members": {
+    "solo": [
+      {"alias": "Lead", "provider": "codex", "model": "gpt-6-luna"}
+    ],
+    "trio": [
+      {"alias": "Lead", "provider": "codex", "model": "gpt-6-luna"},
+      {"alias": "Coder", "provider": "agy", "model": "gemini-4-argon-medium"},
+      {"alias": "Reviewer", "provider": "codex", "model": "gpt-6-astra"}
+    ]
+  },
+  "examples": [
+    {"slug": "check-links", "file": "check-links.lms", "description": "Classify links and report broken local destinations in a synthetic site.", "preview_caption": "Illustrative preview: each of the two report findings is shown twice in this upstream image"},
+    {"slug": "class-typos", "file": "class-typos.lms", "description": "Find undefined and unused CSS classes and IDs across a site."},
+    {"slug": "diff-pages", "file": "diff-pages.lms", "description": "Compare two pages and report structural changes while ignoring formatting noise."},
+    {"slug": "make-template", "file": "make-template.lms", "description": "Extract a reusable template from markup shared by five pages."},
+    {"slug": "rewrite-nav", "file": "rewrite-nav.lms", "description": "Replace shared navigation and footer markup, then verify convergence."}
+  ],
+  "preview_caption": "Illustration of expected text or HTML output from the source repository",
+  "images": {
+    "check-links": "check-links.png",
+    "class-typos": "class-typos.png",
+    "diff-pages": "diff-pages.png",
+    "make-template": "make-template.png",
+    "rewrite-nav": "rewrite-nav.png"
+  }
+}

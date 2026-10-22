@@ -1,0 +1,30 @@
+mkdir("build/example-links/sub");
+out = ARGV.len() > 0 ? ARGV[0] : "build/check-links.dslb";
+write_file("build/example-links/index.html", "<!doctype html><html><body><a href=\"about.html\">About</a><a href=\"missing.html\">Missing</a></body></html>");
+write_file("build/example-links/about.html", "<!doctype html><html><body><h1 id=\"team\">Team</h1><a href=\"sub/page.html\">Sub page</a><a href=\"#missing\">Missing anchor</a></body></html>");
+write_file("build/example-links/sub/page.html", "<!doctype html><html><body><a href=\"../index.html\">Home</a></body></html>");
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+let pages = html.load_dir("build/example-links");
+for (i in range(0, pages.len())) {
+  let page = pages.at(i);
+  let links = page.links();
+  for (j in range(0, links.len())) {
+    let url = links.at(j);
+    let kind = html.link_kind(page, url);
+    # policy: external and non-web schemes are unchecked by design;
+    # links escaping the site root are out of scope for this check
+    if (kind == "external" || kind == "special" || kind == "outside-root") { continue; }
+    if (!html.link_exists(page, url)) {
+      report.add("broken-link", page.path(), 0, url + " not found");
+    }
+  }
+}
+report.write_text("build/links.txt");
+report.write_json("build/links.json");
+end _dsl_
+savedsl(p, out);
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

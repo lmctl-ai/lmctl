@@ -4,6 +4,8 @@ lmcad_solo	Seed one lmcad Lead to create and verify a small CAD model.	https://l
 lmcad_trio	Seed a Lead, Coder, and Reviewer to create and assess a CAD model.	https://lmctl.com/tools/lmcad/lmcad_trio.lms
 lmr_solo	Seed one lmr Lead to analyze a small data set and verify the result.	https://lmctl.com/tools/lmr/lmr_solo.lms
 lmr_trio	Seed a Lead, Coder, and Reviewer to analyze a data set and verify the result.	https://lmctl.com/tools/lmr/lmr_trio.lms
+lmhtml_solo	Seed one lmhtml Lead to audit a small HTML site and verify the report.	https://lmctl.com/tools/lmhtml/lmhtml_solo.lms
+lmhtml_trio	Seed an lmhtml Lead, Coder, and Reviewer to audit and review an HTML task.	https://lmctl.com/tools/lmhtml/lmhtml_trio.lms
 agy	Send a short greeting through Antigravity.	https://lmctl.com/helloexample/agy.lms
 claude	Send a short greeting through Claude Code.	https://lmctl.com/helloexample/claude.lms
 codex	Send a short greeting through Codex.	https://lmctl.com/helloexample/codex.lms

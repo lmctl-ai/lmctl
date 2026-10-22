@@ -1,0 +1,38 @@
+mkdir("build/example-classes");
+out = ARGV.len() > 0 ? ARGV[0] : "build/class-typos.dslb";
+write_file("build/example-classes/index.html", "<!doctype html><html><head><style>.nav {} .used {} .footer {} #team {} #unused-id {}</style></head><body><nav class=\"nav\">Menu</nav><p class=\"used usde\" id=\"teem\">Text</p></body></html>");
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+# site-wide sets in one call each; policy: JS-hook class patterns are ignored
+let pages = html.load_dir("build/example-classes");
+let used_all = pages.classes_used();
+let defined_all = pages.css_classes();
+let missing = str_difference(used_all, defined_all);
+for (j in range(0, missing.len())) {
+  let name = missing.at(j);
+  if (str_match(name, "language-*") || str_match(name, "fa-*")) { continue; }
+  let near = suggest(name, defined_all);
+  let hint = "";
+  if (near.len() > 0) { hint = " (did you mean " + near.at(0) + "?)"; }
+  report.add("class-undefined", "site", 0, name + hint);
+}
+let unused = str_difference(defined_all, used_all);
+for (k in range(0, unused.len())) {
+  report.add("class-unused", "site", 0, unused.at(k));
+}
+let ids_unused = str_difference(pages.css_ids(), pages.ids());
+for (m in range(0, ids_unused.len())) {
+  let name = ids_unused.at(m);
+  let near = suggest(name, pages.ids());
+  let hint = "";
+  if (near.len() > 0) { hint = " (did you mean " + near.at(0) + "?)"; }
+  report.add("id-unused", "site", 0, name + hint);
+}
+report.write_text("build/classes.txt");
+report.write_json("build/classes.json");
+end _dsl_
+savedsl(p, out);
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

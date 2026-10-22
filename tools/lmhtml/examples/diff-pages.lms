@@ -1,0 +1,25 @@
+mkdir("build/example-diff");
+out = ARGV.len() > 0 ? ARGV[0] : "build/diff-pages.dslb";
+write_file("build/example-diff/a.html", "<!doctype html><html><body><ul><li>one</li></ul><p class=\"intro\">Hello world</p></body></html>");
+write_file("build/example-diff/b.html", "<!doctype html><html><body><ul><li>one</li><li>two</li></ul><p class=\"intro wide\">Hello brave world</p></body></html>");
+write_file("build/example-diff/a-noise.html", "<!doctype html>\n<!-- comment -->\n<html><body><ul><li>one</li></ul><p   class=\"intro\">Hello   world</p></body></html>");
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+let a = html.load("build/example-diff/a.html");
+let b = html.load("build/example-diff/b.html");
+let n = html.diff(a, b);
+report.add("summary", "a-vs-b", 0, str(n) + " differences");
+let noise = html.load("build/example-diff/a-noise.html");
+let nn = html.diff(a, noise);
+report.add("summary", "a-vs-noise", 0, str(nn) + " differences");
+let h1 = a.select("p").at(0).hash();
+let h2 = noise.select("p").at(0).hash();
+if (h1 != h2) { report.add("bug", "hash", 0, "whitespace noise changed hash"); }
+report.write_text("build/diff.txt");
+report.write_json("build/diff.json");
+end _dsl_
+savedsl(p, out);
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }
