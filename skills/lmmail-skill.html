@@ -25,6 +25,7 @@
 <li>a subject, server-derived sender, mailbox-local sequence number, timestamp, and read/unread state.</li>
 </ul>
 <p>Any authenticated lmctl appkey may send to an existing mailbox. Only the mailbox owner may list, read, or delete its mail. Listing never marks messages read; fetching one message does.</p>
+<p>A mailbox named lmexec-replies-USER_ID-console may appear in your mailbox list. The web console's command runner creates it to receive command results; each result is deleted once it has been read, and anything left after an hour is removed. Do not use it for mail.</p>
 <h2 id="fastest-path-cli">Fastest path: CLI</h2>
 <pre><code>lmmail login
 lmmail whoami
