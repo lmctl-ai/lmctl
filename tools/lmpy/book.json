@@ -1,0 +1,44 @@
+{
+  "display_name": "lmpy",
+  "repository": "https://github.com/lmctl-ai/lmpy.git",
+  "description": "lmpy is a native numerical host for LMScript with linear algebra, statistics, optimisation, signal processing, tables, and machine learning.",
+  "get_started": "/tools/lmpy/get_started.html",
+  "task": "Fit a straight line to a small deterministic dataset with lmpy. Check the coefficients against their known values and report the source and verified output.",
+  "links": {
+    "dsl_docs": {"label": "LMScript DSL", "url": "https://lmctl.com/tools/lmscript/skill.html"},
+    "tool_api": {"label": "lmpy API", "url": "https://lmctl.com/tools/lmpy/guide.html"},
+    "example": {"label": "Normal quantile example", "url": "https://lmctl.com/tools/lmpy/examples/normal-quantile.html"}
+  },
+  "members": {
+    "solo": [
+      {"alias": "Lead", "provider": "claude", "model": "claude-sonnet-5-5"}
+    ],
+    "trio": [
+      {"alias": "Lead", "provider": "claude", "model": "claude-sonnet-5-5"},
+      {"alias": "Coder", "provider": "codex", "model": "gpt-6-luna"},
+      {"alias": "Reviewer", "provider": "codex", "model": "gpt-6-astra"}
+    ]
+  },
+  "examples": [
+    {
+      "slug": "normal-quantile",
+      "file": "book/normal-quantile.lms",
+      "description": "Compute and check the 97.5th percentile of a standard normal distribution."
+    },
+    {
+      "slug": "least-squares-line",
+      "file": "book/least-squares-line.lms",
+      "description": "Fit a straight line and check its intercept and slope."
+    },
+    {
+      "slug": "matrix-solve",
+      "file": "book/matrix-solve.lms",
+      "description": "Solve a small linear system and check its known solution."
+    }
+  ],
+  "images": {
+    "normal-quantile": "normal-quantile.png",
+    "least-squares-line": "least-squares-line.png",
+    "matrix-solve": "matrix-solve.png"
+  }
+}

@@ -23,7 +23,8 @@ class ExampleBookTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             script = root / "example.lms"
-            script.write_text('''out = "build/example.dslb";
+            script.write_text('''if (!file_exists("build")) { mkdir("build"); }
+out = "build/example.dslb";
 p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 end _dsl_
 savedsl(p, out);
@@ -45,13 +46,15 @@ savedsl(p, out);
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             script = root / "example.lms"
-            script.write_text('''out = "build/example.dslb";
+            script.write_text('''if (!file_exists("build")) { mkdir("build"); }
+out = "build/example.dslb";
 p = _dsl_ cli="lmr" install="github:lmctl-ai/lmr@latest";
 end _dsl_
 savedsl(p, out);
   r = system ${dsl_cli(p)} --dsl ${out};
 ''')
             result = module.quickrun_source("lmr", script, root, root)
+        self.assertEqual(result.count('if (!file_exists("build"))'), 1)
         self.assertEqual(result.count("system ${dsl_cli(p)} --dsl ${out}"), 1)
 
     def test_text_output_is_written_and_rendered_as_plain_text(self):
@@ -72,7 +75,7 @@ r = system ${dsl_cli(p)} --dsl ${out};
                 "links": {
                     "dsl_docs": {"label": "DSL", "url": "https://lmctl.com/tools/lmscript/skill.html"},
                     "tool_api": {"label": "API", "url": "https://lmctl.com/tools/sampletool/guide.html"},
-                    "example": {"label": "Example", "url": "https://lmctl.com/tools/sampletool/examples/sample.html"},
+                    "example": {"label": "Example", "url": "https://lmctl.com/tools/sampletool/examples/different.html"},
                 },
                 "examples": [{"slug": "sample", "description": "A sample output.", "rendered": "build/sample.txt"}],
             }))
@@ -104,9 +107,9 @@ r = system ${dsl_cli(p)} --dsl ${out};
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             repo = root / "repo"
-            (repo / "examples").mkdir(parents=True)
+            (repo / "examples" / "book").mkdir(parents=True)
             (repo / "schema").mkdir()
-            script = repo / "examples" / "sample.lms"
+            script = repo / "examples" / "book" / "sample.lms"
             script.write_text('''out = "build/sample.dslb";
 p = _dsl_ schema="../schema/tool.json";
 end _dsl_
@@ -120,9 +123,9 @@ savedsl(p, out);
                 "links": {
                     "dsl_docs": {"label": "DSL", "url": "https://lmctl.com/tools/lmscript/skill.html"},
                     "tool_api": {"label": "API", "url": "https://lmctl.com/tools/sampletool/guide.html"},
-                    "example": {"label": "Example", "url": "https://lmctl.com/tools/sampletool/examples/sample.html"},
+                    "example": {"label": "Example", "url": "https://lmctl.com/tools/sampletool/examples/different.html"},
                 },
-                "examples": [{"slug": "sample", "description": "A sample preview.", "rendered": "build/sample.png"}],
+                "examples": [{"slug": "sample", "file": "book/sample.lms", "description": "A sample preview.", "rendered": "build/sample.png"}],
             }))
             output = root / "scratch" / "tools" / "sampletool" / "examples"
             def chunk(name, payload):
@@ -140,6 +143,10 @@ savedsl(p, out);
             self.assertIn("https://lmctl.com/tools/lmscript/skill.html", page)
             self.assertIn("https://lmctl.com/tools/sampletool/guide.html", page)
             self.assertIn("https://lmctl.com/tools/sampletool/examples/sample.html", page)
+            self.assertIn("/examples/book/sample.lms", page)
+            prompt = page.split("<pre><code>", 1)[1].split("</code>", 1)[0]
+            self.assertLessEqual(max(map(len, prompt.splitlines())), 72)
+            self.assertNotIn("/examples/different.html", prompt)
 
     def test_quickrun_installs_host_and_bootstraps_svg_and_bundled_font(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -148,7 +155,8 @@ savedsl(p, out);
             (root / "assets/diagram.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg"/>')
             (root / "assets/fonts/font.ttf").write_bytes(b"font fixture")
             script = root / "example.lms"
-            script.write_text('''out = "build/rendered/example.dslb";
+            script.write_text('''if (!file_exists("build")) { mkdir("build"); }
+out = "build/rendered/example.dslb";
 p = _dsl_ schema="../schema/tool.json";
 scene.load_font("Extra", "assets/fonts/font.ttf", false);
 let imported = scene.load_svg("assets/diagram.svg", "root");
@@ -158,6 +166,9 @@ savedsl(p, out);
 ''')
             result = module.quickrun_source("lmdraw", script, root / "examples", root)
         self.assertIn('install="github:lmctl-ai/lmdraw@latest"', result)
+        self.assertEqual(result.count('if (!file_exists("build"))'), 1)
+        self.assertIn('mkdir("build/rendered")', result)
+        self.assertIn('mkdir("assets")', result)
         self.assertIn('write_file_exclusive("assets/quickrun-', result)
         self.assertIn('scene.load_svg("assets/quickrun-', result)
         self.assertIn('set_attr("font-family", "Noto Sans")', result)

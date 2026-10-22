@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmpy API guide — lmpy — lmctl.com tools</title>
+<meta name="description" content="This page summarizes how LMScript programs call the lmpy host.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmpy/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmpy/">Overview</a></li>
+<li><a href="/tools/lmpy/skill.html">Skill</a></li>
+<li><a href="/tools/lmpy/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmpy/guide.html">Guide</a></li>
+<li><a href="/tools/lmpy/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>lmpy API guide</h1>
+<p>This page summarizes how LMScript programs call the lmpy host. The checked-in schema and API reference are the complete source of operation names, options and result fields.</p>
+<h2>Overview</h2>
+<p>lmpy runs compiled LMScript _dsl_ bytecode in a native executable. Use cli="lmpy" and install="github:lmctl-ai/lmpy@latest" to bind compilation and execution to the same released schema.</p>
+<h2>Host declaration</h2>
+<pre><code>p = _dsl_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";
+let x = mat("1 2; 3 4").solve(vec(5.0, 11.0));
+out.close("known solution", x, vec(1.0, 2.0), 0.000000000001);
+out.put("solution", x);
+end _dsl_</code></pre>
+<h2>Numerical operations</h2>
+<p>The host includes dense and sparse linear algebra, probability distributions, random sampling, optimisation, least squares, roots, quadrature, differential equations, interpolation and special functions.</p>
+<h2>Data and models</h2>
+<p>Operations cover typed frames and arrays, regression and time series, signal analysis, spatial neighbours and graphs, and machine-learning estimators. File inputs are read by the native executable using the documented formats.</p>
+<h2>Errors and checks</h2>
+<p>Use out.check for boolean conditions and out.close for numeric comparisons. A failed assertion exits unsuccessfully; successful output includes the result values and check summary.</p>
+<p>See the <a href="https://github.com/lmctl-ai/lmpy/blob/main/native/API.md">complete API reference</a> and the <a href="/tools/lmpy/skill.html">lmpy skill</a>.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmpy">github.com/lmctl-ai/lmpy</a>.</p>
+</footer>
+</body>
+</html>

@@ -97,6 +97,7 @@ figure img { display: block; border: 1px solid var(--rule); border-radius: 6px; 
 /* list entries with an icon: the icon hangs in the left margin so wrapped text stays aligned */
 ul:has(> li > img) { padding-left: 0; }
 li:has(> img) { list-style: none; position: relative; padding-left: 4.75rem; min-height: 4.25rem; }
+ul:has(> li > img) > li:not(:has(> img)) { list-style: none; padding-left: 4.75rem; min-height: 4.25rem; }
 li > img { position: absolute; left: 0; top: 0.15rem; border: 1px solid var(--rule); border-radius: 6px; }
 figcaption { color: var(--muted); font-size: 0.9em; }
 

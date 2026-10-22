@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmpy — lmctl.com tools</title>
+<meta name="description" content="lmpy is a native numerical host for LMScript programs.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmpy/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmpy/">Overview</a></li>
+<li><a href="/tools/lmpy/skill.html">Skill</a></li>
+<li><a href="/tools/lmpy/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmpy/guide.html">Guide</a></li>
+<li><a href="/tools/lmpy/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>lmpy</h1>
+<figure><img src="/tools/lmpy/img/logo.png" alt="lmpy logo" width="256" height="256"></figure>
+<p>lmpy is a native numerical host for LMScript programs. It provides linear algebra, statistics, optimisation, signal processing, tables, time series and machine learning in one executable.</p>
+<p>Start with the <a href="/tools/lmpy/get_started.html">quickstart</a>, browse the <a href="/tools/lmpy/examples/">example book</a>, or read the <a href="/tools/lmpy/guide.html">API guide</a>.</p>
+<h2>Install from LMScript</h2>
+<p>Declare lmpy with cli and install in an LMScript _dsl_ block. The compiler downloads the matching release binary when it is not already installed, verifies the release asset digest, and compiles against that binary's embedded schema.</p>
+<pre><code>p = _dsl_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";</code></pre>
+<h2>What it can do</h2>
+<ul>
+<li>Fit and solve linear systems, least-squares models and sparse problems.</li>
+<li>Run distributions, optimisation, root finding, quadrature and differential equations.</li>
+<li>Analyze tables, time series, signals, spatial data, graphs and machine-learning models.</li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmpy">github.com/lmctl-ai/lmpy</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Use lmpy from LMScript — lmpy — lmctl.com tools</title>
+<meta name="description" content="lmpy is a native numerical host for LMScript programs. This guide explains how to install a release, run checked computations, and verify their results.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmpy/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmpy/">Overview</a></li>
+<li><a href="/tools/lmpy/skill.html">Skill</a></li>
+<li><a href="/tools/lmpy/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmpy/guide.html">Guide</a></li>
+<li><a href="/tools/lmpy/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>Use lmpy from LMScript</h1>
+<p>lmpy is a native numerical host for LMScript programs. This guide explains how to install a release, run checked computations, and verify their results.</p>
+<h2>Purpose</h2>
+<p>Use lmpy for native numerical analysis from LMScript, including arrays, tables, statistics, optimisation, signal processing, graphs and machine learning.</p>
+<h2>When to use it</h2>
+<p>Choose lmpy when a task needs deterministic numerical operations available through its API and schema. Use a separate tool when the task requires capabilities outside that API.</p>
+<h2>Install</h2>
+<p>Install Node.js and the LMScript compiler. Declare the released host in the program so compilation uses the matching embedded schema.</p>
+<pre><code>p = _dsl_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";</code></pre>
+<h2>Commands</h2>
+<p>Run an LMScript source file with lmscript. The declaration downloads the matching lmpy release binary when needed.</p>
+<pre><code>lmscript normal-quantile.lms</code></pre>
+<p>For direct host diagnostics, run lmpy --version, lmpy --dsl-schema --json, or lmpy --dsl-signatures.</p>
+<h2>Inputs and outputs</h2>
+<p>Values are passed through the typed LMScript DSL. Host results are JSON values exposed through the program's result object; file operations use the formats and working-directory rules documented by the API.</p>
+<h2>Safety rules</h2>
+<p>Read an example's inputs and output paths before running it. Keep generated files in a temporary working directory and use out.check or out.close to validate important results.</p>
+<h2>Worked examples</h2>
+<p>The <a href="/tools/lmpy/examples/">example book</a> includes standalone release-installed scripts for a normal quantile, a least-squares fit, and a matrix solve.</p>
+<h2>Errors and exit codes</h2>
+<p>A compile error means the source does not match the installed schema or DSL syntax. A host error reports an operation failure. A failed output assertion exits unsuccessfully and names the failed check; correct the inputs or tolerance, then rerun.</p>
+<h2>How to verify</h2>
+<p>Check the host version and schema, compare canonical signatures with the compiler, run an example in a clean directory, and confirm its printed values and assertion summary.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmpy">github.com/lmctl-ai/lmpy</a>.</p>
+</footer>
+</body>
+</html>

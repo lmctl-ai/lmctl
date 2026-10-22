@@ -1,0 +1,15 @@
+// One concept: solve a 3 by 3 linear system with a known solution.
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";
+let solution = mat("1 2 3; 0 1 4; 5 6 0").solve(vec(14.0, 14.0, 17.0));
+out.close("known linear-system solution", solution, vec(1.0, 2.0, 3.0), 0.000000000001);
+out.put("solution", solution);
+end _dsl_
+
+out = ARGV.len() > 0 ? ARGV[0] : "build/matrix-solve.dslb";
+savedsl(p, out);
+r = system ${dsl_cli(p)} --dsl ${out};
+if (r.code != 0) { println("lmpy failed: " + trim(r.stderr)); exit(r.code); }
+result = json_parse(r.stdout).result.values;
+println("Solution: " + str(result.solution));

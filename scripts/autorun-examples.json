@@ -48,5 +48,15 @@
     "name": "lmhtml_trio",
     "description": "Seed an lmhtml Lead, Coder, and Reviewer to audit and review an HTML task.",
     "url": "https://lmctl.com/tools/lmhtml/lmhtml_trio.lms"
+  },
+  {
+    "name": "lmpy_solo",
+    "description": "Seed one lmpy Lead to fit and verify a small numerical model.",
+    "url": "https://lmctl.com/tools/lmpy/lmpy_solo.lms"
+  },
+  {
+    "name": "lmpy_trio",
+    "description": "Seed an lmpy Lead, Coder, and Reviewer to fit and review a small numerical model.",
+    "url": "https://lmctl.com/tools/lmpy/lmpy_trio.lms"
   }
 ]

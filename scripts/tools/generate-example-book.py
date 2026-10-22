@@ -88,7 +88,10 @@ def quickrun_source(tool, script, examples_root, repo_root):
                 f"if (!file_exists({json.dumps(target)})) "
                 f"{{ write_file_exclusive({json.dumps(target)}, {json.dumps(payload)}); }}"
             )
-    source = source[:dsl_line.start()] + "\n".join(bootstrap) + "\n" + source[dsl_line.start():]
+    # Existing examples may already create build/ or assets; retain only missing setup.
+    bootstrap = [line for line in bootstrap if line not in source]
+    if bootstrap:
+        source = source[:dsl_line.start()] + "\n".join(bootstrap) + "\n" + source[dsl_line.start():]
     # Complete source examples already execute their saved block.
     if re.search(rf"(?m)^\s*\w+\s*=\s*system\s+\$\{{dsl_cli\({re.escape(host_var)}\)\}}\s+--dsl\s", source):
         return source
@@ -315,20 +318,22 @@ def main():
             break_on_hyphens=False,
         )
         quickrun_command = quickrun_command.replace("\n  ", " \\\n  ")
+        example_label = f"{title} example"
         body = f'''<h1>{html.escape(title)}</h1>
-<p>{description} This page includes a preview and a quickrun-ready lmscript source file.</p>
+<p>{description} This page includes a preview and an autorun-ready lmscript source file.</p>
 {presentation}
 <h2>Let an agent build from this example</h2>
 <p>Copy this prompt into your Lead's terminal to ask an agent to complete a related task:</p>
 <pre><code>{html.escape(prompt)}
 {html.escape(links['dsl_docs']['label'])}: {html.escape(links['dsl_docs']['url'])}
 {html.escape(links['tool_api']['label'])}: {html.escape(links['tool_api']['url'])}
-Example: {html.escape(example_url)}</code></pre>
+{html.escape(example_label)}:
+{html.escape(example_url)}</code></pre>
 <h2>Run the example</h2>
 <pre><code>{html.escape(quickrun_command)}</code></pre>
-<p><a href="/tools/{tool}/examples/{source_name}">Read the quickrun source</a>.{simple_example_reference} See <a href="{html.escape(data.get('get_started', f'/tools/{tool}/tutorial.html'))}">get started with quickrun teams</a>.</p>
+<p><a href="/tools/{tool}/examples/{source_name}">Read the autorun source</a>.{simple_example_reference} See <a href="{html.escape(data.get('get_started', f'/tools/{tool}/tutorial.html'))}">get started with provider runs</a>.</p>
 <h2>Source from the project</h2>
-<p>The original example is <a href="https://github.com/lmctl-ai/{tool}/blob/{html.escape(source_ref)}/examples/{html.escape(original_name, quote=True)}">{html.escape(original_name)} at {html.escape(short_ref)}</a>. The published quickrun source includes the host declaration and any setup needed to run it from a new directory.</p>'''
+<p>The original example is <a href="https://github.com/lmctl-ai/{tool}/blob/{html.escape(source_ref)}/examples/{html.escape(original_name, quote=True)}">{html.escape(original_name)} at {html.escape(short_ref)}</a>. The published autorun source includes the host declaration and any setup needed to run it from a new directory.</p>'''
         page_path = output / page_name
         page_path.write_text(body + "\n")
         created.extend([source_path.name, page_path.name])
@@ -337,12 +342,12 @@ Example: {html.escape(example_url)}</code></pre>
         pages.append((title, description, page_name, image_href, width, height))
 
     list_items = "\n".join(
-        f'<li><a href="/tools/{tool}/examples/{page}">{html.escape(title)}</a>: {description} <a href="/tools/{tool}/examples/{page[:-5]}.lms">Quickrun source</a></li>'
+        f'<li><a href="/tools/{tool}/examples/{page}">{html.escape(title)}</a>: {description} <a href="/tools/{tool}/examples/{page[:-5]}.lms">Autorun source</a></li>'
         for title, description, page, *_ in pages
     )
     index = f'''<h1>{html.escape(display_name)} examples</h1>
 <p>{html.escape(data['description'])} Browse example previews and run each source as an autorun script. These pages are regenerated from the public {html.escape(display_name)} repository at {html.escape(short_ref)}.</p>
-<p>Start with <a href="{html.escape(data.get('get_started', f'/tools/{tool}/tutorial.html'))}">get started</a> to learn how solo and trio quickruns work.</p>
+<p>Start with <a href="{html.escape(data.get('get_started', f'/tools/{tool}/tutorial.html'))}">get started</a> to learn how solo and trio provider runs work.</p>
 <ul>
 {list_items}
 </ul>'''
