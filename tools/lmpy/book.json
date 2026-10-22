@@ -40,5 +40,9 @@
     "normal-quantile": "normal-quantile.png",
     "least-squares-line": "least-squares-line.png",
     "matrix-solve": "matrix-solve.png"
+  },
+  "readme": {
+    "hero_idea": "A native numerical host computes and checks a standard-normal quantile and a least-squares fit; the hero graphs show those actual lmpy outputs.",
+    "gallery_examples": ["normal-quantile", "least-squares-line", "matrix-solve"]
   }
 }
