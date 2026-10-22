@@ -26,6 +26,10 @@
     {"slug": "make-template", "file": "make-template.lms", "description": "Extract a reusable template from markup shared by five pages."},
     {"slug": "rewrite-nav", "file": "rewrite-nav.lms", "description": "Replace shared navigation and footer markup, then verify convergence."}
   ],
+  "readme": {
+    "hero_idea": "Show repeated stale navigation across three HTML pages changing once into a consistent, verified shared navigation.",
+    "gallery_examples": ["check-links", "class-typos", "diff-pages", "make-template", "rewrite-nav"]
+  },
   "preview_caption": "Illustration of expected text or HTML output from the source repository",
   "images": {
     "check-links": "check-links.png",

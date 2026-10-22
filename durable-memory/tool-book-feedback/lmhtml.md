@@ -27,3 +27,9 @@
 - Verified that installed lmctl 0.2.378 supports autorun and retains quickrun as a deprecated alias. The quickstart now names that version and uses hosted script URLs, so it works outside a website checkout.
 - Replaced drawing-specific instructions in the shared generators with task/output wording and regenerated only lmhtml artifacts. The book identifies preview cards as illustrations of expected text or HTML output, and no longer claims lmhtml examples require SVG fixtures or fonts.
 - The pinned upstream check-links PNG repeats both findings. Its page caption now explicitly identifies the duplication; the executable report and tutorial correctly contain two findings.
+
+## README workflow feedback — 2026-10-22
+
+- The README section says to record the hero idea and gallery in the tool's book.json, but the book.json used by the fan-out workflow lives in the separate lmctl website repository at tools/NAME/book.json, not in the public tool repository. Proposal: name that path and tell the operator to update their own website clone.
+- The section says to regenerate three-to-six "actual rendered examples" from examples/*.lms, but text-oriented tools do not naturally produce image files. We regenerated each lmhtml report with the released host, then used an lmscript/lmdraw card renderer to turn the actual report text into the gallery PNG. Proposal: explicitly allow report cards generated from real text/HTML output and require the render script to run the source examples first.
+- The recipe does not define how render.sh finds versioned release binaries or diagnose a fresh-cache GitHub API limit. This run needed GITHUB_TOKEN after the unauthenticated release lookup returned 403. Proposal: document the lmscript cache layout or a supported host-resolution command and include the authenticated-cache setup for CI/README rendering.
