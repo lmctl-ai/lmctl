@@ -1,0 +1,38 @@
+out = ARGV.len() > 0 ? ARGV[0] : "build/mug.dslb";
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
+scene.background(0.16, 0.20, 0.27);
+let ceramic = material().color(0.34, 0.67, 0.82).roughness(0.30).specular(0.72).shininess(22.0);
+let handle_material = material().color(0.20, 0.50, 0.66).roughness(0.36).specular(0.38).shininess(30.0);
+let profile = scene.sketch();
+profile.point(0.0, -7.0).point(4.0, -7.0).point(4.8, -6.2).point(4.6, 7.0).point(0.0, 7.0).close();
+let mug = scene.revolve_y(profile, ceramic).name("ceramic mug");
+mug.hollow_top(0.8);
+mug.fillet(0.35);
+let handle_profile = scene.sketch();
+for (i in range(0, 25)) {
+  let angle = -1.57079632679 + float(i) * 3.14159265359 / 24.0;
+  handle_profile.point(4.4 + 4.6 * cos(angle), 4.6 * sin(angle));
+}
+for (i in range(0, 25)) {
+  let angle = 1.57079632679 - float(i) * 3.14159265359 / 24.0;
+  handle_profile.point(4.4 + 3.7 * cos(angle), 3.7 * sin(angle));
+}
+handle_profile.close();
+let handle = scene.extrude(handle_profile, 0.9, handle_material).position(0.0, 0.0, -0.45);
+mug.union(handle);
+handle.visible(false);
+scene.assert_close(mug.volume(), 344.08933973285542, 0.000001);
+scene.fit_camera(38.0, 1.2);
+scene.directional_light(-0.25, -1.0, -0.45, 1.0);
+scene.fill_light(0.8, -0.2, 0.9, 0.18);
+scene.ambient(0.18);
+scene.render_png("build/mug.png", 500, 375);
+scene.export_stl("build/mug.stl");
+end _dsl_
+savedsl(p, out);
+println(f"wrote {out}");
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

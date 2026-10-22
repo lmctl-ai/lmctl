@@ -33,6 +33,16 @@
       "slug": "loop-row",
       "description": "Use a range loop to place seven boxes and render the result.",
       "rendered": "build/loop-row.png"
+    },
+    {
+      "slug": "still-life",
+      "description": "Render a box, sphere, and cylinder together in one lit scene.",
+      "rendered": "build/still-life.png"
+    },
+    {
+      "slug": "mug",
+      "description": "Revolve a profile into a hollow mug and join a curved handle.",
+      "rendered": "build/mug.png"
     }
   ]
 }
