@@ -63,7 +63,9 @@ def inventory(area, root=ROOT):
     source = root / ('lmscript-site' if area == 'lmscript' else area)
     for path in sorted(source.rglob('*')):
         rel = path.relative_to(source)
-        if any(p.startswith('.') or p == '_template' for p in rel.parts) or path.name == 'README.md':
+        if (any(p.startswith('.') or p == '_template' for p in rel.parts)
+                or path.name == 'README.md'
+                or (area == 'tools' and path.name == 'book.json')):
             continue
         if path.is_symlink():
             raise ValueError(f'refusing symlink: {path}')

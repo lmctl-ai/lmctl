@@ -14,11 +14,18 @@ def main():
     if not re.fullmatch(r"[a-z][a-z0-9-]*", tool):
         raise SystemExit("Set TOOL to a lowercase tool name")
     template = (ROOT / "scripts/tools/quickrun-template.lms").read_text()
-    data_path = ROOT / "scripts/tools/quickrun-data" / f"{tool}.json"
+    data_path = ROOT / "tools" / tool / "book.json"
     if not data_path.is_file():
         raise SystemExit(f"No quickrun data: {data_path.relative_to(ROOT)}")
     data = json.loads(data_path.read_text())
-    destination = ROOT / "tools" / tool
+    required_links = {"dsl_docs", "tool_api", "example"}
+    if not isinstance(data.get("description"), str) or not data["description"].strip():
+        raise SystemExit(f"{data_path} needs a nonempty description")
+    if not isinstance(data.get("task"), str) or not data["task"].strip():
+        raise SystemExit(f"{data_path} needs a nonempty task")
+    if not isinstance(data.get("links"), dict) or not required_links.issubset(data["links"]):
+        raise SystemExit(f"{data_path} needs links.dsl_docs, links.tool_api, and links.example")
+    destination = Path(os.environ.get("OUTPUT_ROOT", ROOT / "tools")).resolve() / tool
     destination.mkdir(parents=True, exist_ok=True)
     for mode in ("solo", "trio"):
         members = data["members"][mode]
@@ -31,7 +38,7 @@ def main():
             for member in members
         )
         resources = "Read and follow these references:\n" + "".join(
-            f"{link['label']}: {link['url']}\n" for link in data["links"]
+            f"{link['label']}: {link['url']}\n" for link in data["links"].values()
         )
         replacements = {
             "@@TOOL@@": json.dumps(tool),
@@ -48,7 +55,10 @@ def main():
             raise SystemExit(f"Unexpanded template marker in {tool} {mode}")
         target = destination / f"{tool}_{mode}.lms"
         target.write_text(output)
-        print(target.relative_to(ROOT))
+        try:
+            print(target.relative_to(ROOT))
+        except ValueError:
+            print(target)
 
 
 if __name__ == "__main__":

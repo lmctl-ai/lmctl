@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Publish a tool docs book — lmctl skills</title>
+<meta name="description" content="Use when an agent team needs to publish a tool book, solo and trio autorun scripts, and pages under lmctl.com/tools/NAME.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+</ul>
+</nav>
+<main>
+<h1>Publish a tool docs book</h1>
+<p>Use when an agent team needs to publish a tool book, solo and trio autorun scripts, and pages under lmctl.com/tools/NAME.</p>
+<h2>Purpose</h2>
+<p>This workflow takes one tool repository and builds its public book under https://lmctl.com/tools/NAME/. It also generates NAME_solo.lms and NAME_trio.lms so a reader can try the tool with provider sessions. The book pages, runnable scripts, catalog entries and deployment checks must describe the same released tool.</p>
+<h2>When to use it</h2>
+<p>Use this skill for a tool in the lmctl family, such as lmcad, lmhtml, lmpy, lmr, lmtorch, lmblender or lmsql. The tool must expose its host schema through the released command-line program. For a tool without a usable release, stop before generating a public book and ask its owner or team to cut one.</p>
+<p>This is a publish workflow. Confirm the target tool, its public GitHub repository, supported release tag, examples and task before changing public pages. A main-branch push deploys changed static pages automatically.</p>
+<h2>Install</h2>
+<p>Start in the lmctl website repository. Read tools/README.md and durable-memory/tools-docs.md, then inspect the target tool's public README, release workflow, schema, examples and tests. Confirm the current site build and deployment commands from package.json and the static deploy workflow before using older instructions. The <a href="https://lmctl.com/tools/">published tools catalog</a> shows the current page structure.</p>
+<p>Install Node.js supported by the current package.json, @lmctl-ai/lmctl with lmscript, and the pinned lmhtml host. Run lmscript --version and lmhtml --version. The tool page checker needs the current lmscript version specified in scripts/tools/run.sh; do not use a version that rejects cli=install.</p>
+<p>Verify release prerequisites from the actual released binary, not just source code. The binary must print NAME X.Y.Z for --version, provide --dsl-schema --json, and match the repository's schema bytes. Compare its canonical signatures with the published lmscript compiler when the host supports --dsl-signatures.</p>
+<pre><code>NAME_BIN=/path/to/NAME
+"$NAME_BIN" --version
+"$NAME_BIN" --dsl-schema --json > /tmp/NAME-schema.json
+cmp /tmp/NAME-schema.json schema/NAME.dsl.json
+"$NAME_BIN" --dsl-signatures > /tmp/NAME-host-signatures.txt
+lmscript --dsl-signatures schema/NAME.dsl.json > /tmp/NAME-compiler-signatures.txt
+diff -u /tmp/NAME-compiler-signatures.txt /tmp/NAME-host-signatures.txt</code></pre>
+<p>Confirm that lmscript can fetch and run the release through install= from an empty tool cache. Set LMSCRIPT_TOOL_CACHE to a new temporary directory and generate or run one example containing cli="NAME" install="github:lmctl-ai/NAME@latest". Check that the command downloads the correct platform asset, verifies its published SHA-256 and renders the expected artifact.</p>
+<p>The release tag guard is mandatory. A vX.Y.Z tag must build a binary whose --version output is exactly NAME X.Y.Z; the release workflow must refuse to publish when the tag and binary version differ. @latest only works when the newest successful release and the cached binary versions agree. If a release, host protocol, checksum or tag guard is missing, do not invent a workaround or cut a release yourself. Ask the tool's owner or team to cut a release with the guard and rerun this checklist.</p>
+<h2>Commands</h2>
+<p>Keep each tool's publishing inputs in tools/NAME/book.json. This file is excluded from the public tools manifest. It contains display_name, repository, description, task, links, member defaults, and optional example metadata. Do not edit the shared generator to add a tool. Copy the shape of tools/lmdraw/book.json or tools/lmcad/book.json, then replace every tool-specific value. A minimal record has this shape:</p>
+<pre><code>{
+  "display_name": "NAME",
+  "repository": "https://github.com/lmctl-ai/NAME.git",
+  "description": "One sentence describing the tool.",
+  "task": "One concrete task for the Lead or Coder.",
+  "links": {
+    "dsl_docs": {"label": "LMScript DSL", "url": "https://lmctl.com/tools/lmscript/skill.html"},
+    "tool_api": {"label": "NAME API", "url": "https://lmctl.com/tools/NAME/guide.html"},
+    "example": {"label": "Simple example", "url": "https://lmctl.com/tools/NAME/examples/SIMPLE.html"}
+  },
+  "members": {"solo": [], "trio": []}
+}</code></pre>
+<p>The links object has exactly three required references: dsl_docs for the LMScript _dsl_ documentation, tool_api for a concise API summary, and example for one simple example page. Each value has a human-readable label and an absolute https://lmctl.com URL. The task is a short, concrete work or drawing request that fits both a solo Lead and a Coder with an independent Reviewer.</p>
+<p>Run the book generator against the public source repository. By default it clones the repository URL in book.json at REF and writes the pages, quickrun source and rendered preview under tools/NAME/examples/.</p>
+<pre><code>TOOL=NAME REF=main npm run sync:tool-examples</code></pre>
+<p>For a local checkout or a dry build, set SOURCE_DIR and SOURCE_REF. Set OUTPUT_DIR to place the pages in a scratch build rather than the site tree. Set DATA_FILE only when testing an alternate book.json.</p>
+<pre><code>scratch=$(mktemp -d)
+SOURCE_DIR=/path/to/NAME SOURCE_REF=$(git -C /path/to/NAME rev-parse HEAD) \
+  OUTPUT_DIR="$scratch/tools/NAME/examples" TOOL=NAME npm run sync:tool-examples</code></pre>
+<p>Generate the provider-session scripts from the same per-tool data. The default output is tools/NAME/NAME_solo.lms and tools/NAME/NAME_trio.lms. OUTPUT_ROOT can redirect both files into a scratch tools tree.</p>
+<pre><code>TOOL=NAME python3 scripts/tools/generate-quickruns.py
+OUTPUT_ROOT="$scratch/tools" TOOL=NAME python3 scripts/tools/generate-quickruns.py</code></pre>
+<p>The shared template is scripts/tools/quickrun-template.lms. Each generated file begins with one autorun-role header per member. The header gives the alias, provider and model; the body teamfile uses @role(Alias.provider) and @role(Alias.model) so overrides and role metadata stay aligned. Solo has one Lead. Trio has a Lead, Coder and Reviewer. The template sends the Lead's assignment to Coder, Coder's result to Reviewer, then returns both to Lead for the final report. Run npm run build:onboarding-catalogs after approving scripts for the curated autorun catalog.</p>
+<p>Add two unique entries to autorun/examples.json, one for NAME_solo and one for NAME_trio, using absolute script URLs and descriptions ending in punctuation. Run node scripts/build-onboarding-catalogs.mjs. It generates autorun/index.txt and autorun/index.html. The same command regenerates helloexample/index.txt and helloexample/index.html from the provider hello scripts; do not add a tool demo to that hello-only list. The generated autorun catalog merges curated tool demos with the hello list.</p>
+<h2>Inputs and outputs</h2>
+<p>In the tool repository, keep examples small, deterministic and runnable from a clean temporary directory. Each LMScript example teaches one concept, uses the released host with cli="NAME" install="github:lmctl-ai/NAME@latest", and writes a rendered or printed result to a predictable path. Include one example per useful concept rather than a single large showcase.</p>
+<p>List each example in examples/README.md with its file name and a short sentence. Check in a compact preview under examples/renders/ or provide the rendered output path in book.json. If the repository already has no README or checked-in previews, list the selected examples explicitly in book.json with slug, file, description and rendered output. Every example must include an expected-output check in the repository test script, such as a numeric assertion, exact printed output, image dimensions, mesh count or stable export signature. The generator runs the selected LMScript through lmscript, checks the rendered output exists, copies it into the book and keeps the source beside the page.</p>
+<p>Use the tool's API summary as the guide or reference page. Keep the simple example link pointed at a page generated by this book. Keep generated screenshots small enough for the tools checker, and use a caption that says which source revision produced the preview.</p>
+<p>Book outputs go under tools/NAME/examples/: index.html, one page and source file per example, and img/SLUG.png previews. The generated standalone sources replace a local schema declaration with cli plus install when necessary. Already install-enabled declarations are retained. All generated book pages and scripts are derived from the checked-out repository and tools/NAME/book.json.</p>
+<h2>Safety rules</h2>
+<p>Run examples only from the public repository you inspected. The lmscript host runs with the operator's local authority and install= may download a native executable. Review source before running it. Use a fresh temporary directory for examples, set LMSCRIPT_TOOL_CACHE to an isolated directory when proving a release install, and never publish a guessed artifact as a verified render.</p>
+<p>Do not change release tags, binaries or tool-repository source as part of a website documentation task. If the release prerequisite fails, ask the tool owner to fix it. Do not publish a tool's scripts by placing them in helloexample; put the curated entries in autorun/examples.json.</p>
+<p>Get an independent live seat to review the website diff before pushing to main. Do not self-approve. Pull with rebase before pushing because tool teams may update the shared site concurrently. A push to main starts the static deployment workflow.</p>
+<h2>Worked examples</h2>
+<p>For lmdraw, use tools/lmdraw/book.json and the generator output at tools/lmdraw/examples/. The current generator conventions are described in durable-memory/tools-docs.md. For lmcad, use tools/lmcad/book.json as the explicit-example form: its source currently has no examples README or checked-in render, so the JSON names the selected still-life example and the generator renders it from the released host.</p>
+<p>Dry-run a new tool without writing under tools/NAME by setting SOURCE_DIR, SOURCE_REF, OUTPUT_DIR and OUTPUT_ROOT to a temporary tree. Copy the existing tools tree into that scratch site, overlay the generated directory, run the shared decorator and checker against the scratch root, and inspect the resulting overview and examples index in a browser at desktop and mobile widths.</p>
+<pre><code>scratch=$(mktemp -d)
+mkdir -p "$scratch/site"
+cp -a tools "$scratch/site/tools"
+mkdir -p "$scratch/site/scripts"
+cp -a scripts/tools "$scratch/site/scripts/tools"
+cp -a skills "$scratch/site/skills"
+cp homepage/index.html "$scratch/site/index.html"
+SOURCE_DIR=/path/to/NAME SOURCE_REF=$(git -C /path/to/NAME rev-parse HEAD) \
+  OUTPUT_DIR="$scratch/site/tools/NAME/examples" TOOL=NAME npm run sync:tool-examples
+OUTPUT_ROOT="$scratch/site/tools" TOOL=NAME python3 scripts/tools/generate-quickruns.py
+cd "$scratch/site"
+LMSCRIPT_BIN=$(command -v lmscript) scripts/tools/run.sh decorate
+LMSCRIPT_BIN=$(command -v lmscript) LMHTML=/path/to/lmhtml scripts/tools/run.sh check tools/NAME</code></pre>
+<p>Because the copied runner derives its root from its own location, these commands decorate and check the scratch tree without changing the website checkout. Keep the scratch build until the visual review and checks are complete.</p>
+<h2>Errors and exit codes</h2>
+<p>A missing release, mismatch between --version and the tag, invalid schema JSON or missing --dsl-schema support means the host is not ready. Stop and ask the owner team to cut a guarded release.</p>
+<p>A failed install= probe can mean a wrong release asset name, absent SHA-256 metadata, unsupported operating system or architecture, a mismatched binary version, or a schema/signature difference. Read the complete lmscript diagnostic and report it to the owner; do not switch to an unverified local binary.</p>
+<p>A missing README entry, example file or preview means the source conventions or book.json are incomplete. Add the source description and expected-output check in the tool repository, or use the explicit examples list and rendered output field for a repository that has no README/render collection. A failed PNG-size or link check is fixed in the generated input or tool page source, then the generator is run again.</p>
+<p>A provider or model unavailable on the operator machine blocks the real autorun gate. Record which provider role could not run, validate generation and host installation separately, and ask the Lead to arrange a provider-capable operator. A save-only run is not evidence that model turns worked.</p>
+<h2>How to verify</h2>
+<p>Run a real solo and trio autorun from a temporary working directory using provider sessions. Confirm lmctl help autorun is available before starting; use the current autorun-enabled lmctl build if the installed CLI is older. Prefix the command with the global --non-interactive option when all required values are known; otherwise answer its prompts. Let it spend the required model turns.</p>
+<pre><code>cd "$scratch"
+lmctl autorun ./tools/NAME/NAME_solo.lms
+lmctl autorun ./tools/NAME/NAME_trio.lms</code></pre>
+<p>Verify the Lead's final report, confirm that trio passed the Lead's assignment to Coder and the Coder's result to Reviewer through the Lead, and inspect the produced image, geometry or printed output and expected-output checks. Record artifact paths and any missing provider honestly.</p>
+<p>Run the page and memory gates before review. The HTML linter must use the plain-text profile. Verify the generated tools index is current, the curated catalogs match their sources, and memory indexes are rebuilt.</p>
+<pre><code>lmhtml lint --config scripts/tools/plain.conf tools/NAME
+npm run check:tools
+npm run check:onboarding-catalogs
+npm run check:skills
+npm run check:memory</code></pre>
+<p>For visual QA, open tools/NAME/index.html and tools/NAME/examples/index.html at a wide desktop viewport and a narrow mobile viewport. Check readable headings and code blocks, responsive images, no clipping, working links and captions that match the output. Fix content, regenerate and repeat.</p>
+<p>Before publishing, get an independent review of the exact staged diff. Then commit with the site team's identity, run git pull --rebase origin main, and push main. The deploy-static workflow publishes changed tools, skills and catalog paths. Wait for the deployment to finish, then run scripts/tools/verify-live.sh tools and require zero findings. Report its finding count. Keep the lmcad or other tool's own book un-published if this work is only a dry run.</p>
+<p>For every dogfood run, append each confusing, missing or wrong instruction to durable-memory/tool-book-feedback/NAME.md in the lmctl website checkout. Record the step, file or command, observed problem and proposed correction. Do not silently repair this skill in parallel. The Lead reads feedback, improves this page, rebuilds the skills index, and asks the next tool team to repeat the dogfood loop.</p>
+<p>Exact prompt for each new tool team: Follow <a href="https://lmctl.com/skills/publish-tool-book-skill.html">the publish-tool-book skill</a> for NAME in the lmctl website repository. Verify release and schema prerequisites, create tools/NAME/book.json, build the book and solo/trio scripts in a scratch tree, run every documented quality gate including real provider sessions, visual review desktop and mobile, and live verification if you publish. Do not publish the tool's pages during this dogfood. Append every point that was unclear or wrong to durable-memory/tool-book-feedback/NAME.md and send the Lead the feedback path, test evidence, guesses and any blocked prerequisite.</p>
+</main>
+<footer>
+<p>Plain HTML skills for humans and agents. Source: <a href="https://github.com/lmctl-ai/lmctl/tree/main/skills">github.com/lmctl-ai/lmctl/skills</a>.</p>
+</footer>
+</body>
+</html>

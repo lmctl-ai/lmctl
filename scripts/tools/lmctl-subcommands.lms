@@ -1,2 +1,2 @@
 # Refreshed from lmctl --help; run python3 scripts/tools/update-lmctl-subcommands.py
-lmctl_subcommands = "|init|quickrun|hello|status|running|models|prices|ratelimit|prompt|batch|script|terminal|tail|export|usage|cost|ls|plan|lint|seed|db|";
+lmctl_subcommands = "|init|autorun|quickrun|hello|status|running|models|prices|ratelimit|prompt|batch|script|terminal|tail|export|usage|cost|ls|plan|lint|seed|db|";

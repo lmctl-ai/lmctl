@@ -1,0 +1,33 @@
+{
+  "display_name": "lmdraw",
+  "repository": "https://github.com/lmctl-ai/lmdraw.git",
+  "description": "lmdraw is a native host for retained 2D vector scenes and local SVG input.",
+  "get_started": "/tools/lmdraw/get_started.html",
+  "task": "Create a small, clearly labeled lmdraw diagram on a dark navy canvas. Use the lmdraw native host, installed by the LMScript _dsl_ declaration, to compile and render a PNG locally. There is no public HTTP rendering service. Report the source path and how you verified the output.",
+  "links": {
+    "dsl_docs": {"label": "LMScript DSL", "url": "https://lmctl.com/tools/lmscript/skill.html"},
+    "tool_api": {"label": "lmdraw API", "url": "https://lmctl.com/tools/lmdraw/guide.html"},
+    "example": {"label": "Example book", "url": "https://lmctl.com/tools/lmdraw/examples/title-card.html"}
+  },
+  "members": {
+    "solo": [
+      {"alias": "Lead", "provider": "claude", "model": "claude-sonnet-5-5"}
+    ],
+    "trio": [
+      {"alias": "Lead", "provider": "claude", "model": "claude-sonnet-5-5"},
+      {"alias": "Coder", "provider": "agy", "model": "gemini-3.8-flash-high"},
+      {"alias": "Reviewer", "provider": "codex", "model": "gpt-6.1-sol"}
+    ]
+  },
+  "images": {
+    "render-assets": "automation-ladder.png",
+    "animated-ladder": "animated-ladder-frame.png",
+    "tween-morph": "tween-morph-frame.png"
+  },
+  "rendered": {
+    "title-card": "build/rendered/title-card.png",
+    "node-tour": "build/rendered/node-tour.png",
+    "render-assets": "build/rendered/svg-automation-ladder.png",
+    "animated-ladder": "build/rendered/ladder-12.png"
+  }
+}

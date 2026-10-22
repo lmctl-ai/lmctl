@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """Focused checks for the generated quickrun form of source examples."""
 import importlib.util
+import json
 from pathlib import Path
+import struct
+import sys
 import tempfile
 import unittest
-import sys
+from unittest.mock import patch
+import zlib
 
 sys.dont_write_bytecode = True
 
@@ -15,6 +19,60 @@ spec.loader.exec_module(module)
 
 
 class ExampleBookTests(unittest.TestCase):
+    def test_quickrun_preserves_release_install_declaration(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            script = root / "example.lms"
+            script.write_text('''out = "build/example.dslb";
+p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+end _dsl_
+savedsl(p, out);
+''')
+            result = module.quickrun_source("lmdraw", script, root, root)
+        self.assertIn('cli="lmdraw" install="github:lmctl-ai/lmdraw@latest"', result)
+        self.assertEqual(result.count('install="github:lmctl-ai/lmdraw@latest"'), 1)
+
+    def test_per_tool_data_drives_a_scratch_book_without_repo_readme_or_preview(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            repo = root / "repo"
+            (repo / "examples").mkdir(parents=True)
+            (repo / "schema").mkdir()
+            script = repo / "examples" / "sample.lms"
+            script.write_text('''out = "build/sample.dslb";
+p = _dsl_ schema="../schema/tool.json";
+end _dsl_
+savedsl(p, out);
+''')
+            data_path = root / "book.json"
+            data_path.write_text(json.dumps({
+                "display_name": "sampletool",
+                "description": "A sample tool.",
+                "task": "Build one small sample.",
+                "links": {
+                    "dsl_docs": {"label": "DSL", "url": "https://lmctl.com/tools/lmscript/skill.html"},
+                    "tool_api": {"label": "API", "url": "https://lmctl.com/tools/sampletool/guide.html"},
+                    "example": {"label": "Example", "url": "https://lmctl.com/tools/sampletool/examples/sample.html"},
+                },
+                "examples": [{"slug": "sample", "description": "A sample preview.", "rendered": "build/sample.png"}],
+            }))
+            output = root / "scratch" / "tools" / "sampletool" / "examples"
+            def chunk(name, payload):
+                body = name + payload
+                return struct.pack(">I", len(payload)) + body + struct.pack(">I", zlib.crc32(body) & 0xffffffff)
+            png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">II5B", 1, 1, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(b"\x00\xff\x00\x00")) + chunk(b"IEND", b"")
+            with patch.object(sys, "argv", ["generate-example-book.py", "--tool", "sampletool", "--source", str(repo), "--ref", "1" * 40, "--data", str(data_path), "--output", str(output)]), patch.object(module, "rendered_preview", return_value=png):
+                module.main()
+            self.assertTrue((output / "sample.html").is_file())
+            self.assertTrue((output / "sample.lms").is_file())
+            self.assertTrue((output / "img/sample.png").is_file())
+            generated = (output / "sample.lms").read_text()
+            self.assertIn('install="github:lmctl-ai/sampletool@latest"', generated)
+            page = (output / "sample.html").read_text()
+            self.assertIn("https://lmctl.com/tools/lmscript/skill.html", page)
+            self.assertIn("https://lmctl.com/tools/sampletool/guide.html", page)
+            self.assertIn("https://lmctl.com/tools/sampletool/examples/sample.html", page)
+
     def test_quickrun_installs_host_and_bootstraps_svg_and_bundled_font(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Generate a tool examples book from its checked-out examples/ directory."""
 import hashlib
+import argparse
 import html
 import json
 import os
@@ -30,8 +31,11 @@ def quickrun_source(tool, script, examples_root, repo_root):
         source,
         count=1,
     )
-    if count != 1:
-        raise ValueError(f"{script.name} must declare one schema-based _dsl_ block")
+    if count != 1 and not re.search(
+        rf'(?m)^\w+\s*=\s*_dsl_\s+cli="{re.escape(tool)}"\s+install="github:lmctl-ai/{re.escape(tool)}@(?:latest|[^"]+)"\s*;',
+        source,
+    ):
+        raise ValueError(f"{script.name} must declare a {tool} _dsl_ host or one schema-based _dsl_ block")
     host_var_match = re.search(r"(?m)^(\w+)\s*=\s*_dsl_", source)
     host_var = host_var_match.group(1) if host_var_match else None
     if not host_var:
@@ -87,14 +91,14 @@ def quickrun_source(tool, script, examples_root, repo_root):
 
 
 def rendered_preview(tool, slug, script_path, data):
-    """Prefer a fresh host render when lmctl is available; otherwise use repo art."""
+    """Run the generated script with lmscript, or use its checked-in preview."""
     outputs = data.get("rendered", {}).get(slug, [])
     if isinstance(outputs, str):
         outputs = [outputs]
     if not outputs:
         return None
-    lmctl = os.environ.get("LMCTL_BIN") or shutil.which("lmctl")
-    if not lmctl:
+    compiler = os.environ.get("LMSCRIPT_BIN") or shutil.which("lmscript")
+    if not compiler:
         return None
     import subprocess
     import tempfile
@@ -102,7 +106,7 @@ def rendered_preview(tool, slug, script_path, data):
     with tempfile.TemporaryDirectory(prefix=f"lmctl-{tool}-{slug}-") as work:
         try:
             subprocess.run(
-                [lmctl, "--non-interactive", "quickrun", str(script_path)],
+                [compiler, str(script_path)],
                 cwd=work,
                 check=True,
                 stdout=subprocess.DEVNULL,
@@ -152,28 +156,70 @@ def compact_png(path):
 
 
 def main():
-    if len(sys.argv) != 4:
-        raise SystemExit("usage: generate-example-book.py TOOL SOURCE_DIR SOURCE_REF")
-    tool, source_arg, source_ref = sys.argv[1:]
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--tool", required=True, help="lowercase tool name")
+    parser.add_argument("--source", required=True, help="checked-out public tool repository")
+    parser.add_argument("--ref", required=True, help="source commit or tag for page attribution")
+    parser.add_argument("--data", help="per-tool JSON data; defaults to tools/TOOL/book.json")
+    parser.add_argument("--output", help="output directory; defaults to tools/TOOL/examples")
+    args = parser.parse_args()
+    tool, source_ref = args.tool, args.ref
+    if not re.fullmatch(r"[a-z][a-z0-9-]*", tool):
+        raise SystemExit("--tool must be a lowercase tool name")
+    if not re.fullmatch(r"[0-9a-fA-F]{40}", source_ref):
+        raise SystemExit("--ref must be the full checked-out Git commit SHA")
+    source_arg = args.source
     repo_root = Path(source_arg).resolve()
     examples_root = repo_root / "examples"
-    data = json.loads((ROOT / f"scripts/tools/example-book-data/{tool}.json").read_text())
+    data_path = Path(args.data).resolve() if args.data else ROOT / "tools" / tool / "book.json"
+    if not data_path.is_file():
+        raise SystemExit(f"missing per-tool data file: {data_path}")
+    data = json.loads(data_path.read_text())
+    for field in ("description", "task"):
+        if not isinstance(data.get(field), str) or not data[field].strip():
+            raise SystemExit(f"{data_path} needs a nonempty {field!r}")
+    links = data.get("links")
+    if not isinstance(links, dict) or not {"dsl_docs", "tool_api", "example"}.issubset(links):
+        raise SystemExit(f"{data_path} needs links.dsl_docs, links.tool_api, and links.example")
+    for name, link in links.items():
+        if not isinstance(link, dict) or not link.get("label") or not re.fullmatch(r"https://[^\s]+", str(link.get("url", ""))):
+            raise SystemExit(f"{data_path} has an invalid HTTPS link: {name}")
     display_name = data.get("display_name", tool)
     short_ref = source_ref[:10]
-    output = ROOT / "tools" / tool / "examples"
+    output = Path(args.output).resolve() if args.output else ROOT / "tools" / tool / "examples"
     output.mkdir(parents=True, exist_ok=True)
     manifest = output / ".generated-files"
     if manifest.exists():
         for relative in manifest.read_text().splitlines():
-            target = (ROOT / relative).resolve()
-            if target.is_relative_to(output.resolve()) and target.is_file():
+            target = (output / relative).resolve()
+            if target.is_relative_to(output) and target.is_file():
                 target.unlink()
 
     entries = {}
-    readme = (examples_root / "README.md").read_text()
-    for match in re.finditer(r"^- `([a-z0-9-]+)\.lms` (.+?)\.?$", readme, re.M):
-        entries[match.group(1)] = match.group(2).rstrip(".")
-    scripts = sorted(examples_root.glob("*.lms"))
+    configured_examples = data.get("examples")
+    if configured_examples:
+        scripts = []
+        for item in configured_examples:
+            slug = item.get("slug", "")
+            source_name = item.get("file", f"{slug}.lms")
+            if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", slug):
+                raise SystemExit(f"invalid example slug in {data_path}: {slug!r}")
+            rel = PurePosixPath(source_name)
+            if rel.is_absolute() or ".." in rel.parts or rel.suffix != ".lms":
+                raise SystemExit(f"unsafe example path in {data_path}: {source_name}")
+            script = examples_root / Path(*rel.parts)
+            if not script.is_file() or script.is_symlink():
+                raise SystemExit(f"missing or unsafe example script: {script}")
+            scripts.append(script)
+            entries[slug] = item.get("description", "")
+    else:
+        readme_path = examples_root / "README.md"
+        if not readme_path.is_file():
+            raise SystemExit(f"add an examples list to {data_path} or provide {readme_path}")
+        readme = readme_path.read_text()
+        for match in re.finditer(r"^- `([a-z0-9-]+)\.lms` (.+?)\.?$", readme, re.M):
+            entries[match.group(1)] = match.group(2).rstrip(".")
+        scripts = sorted(examples_root.glob("*.lms"))
     if not scripts:
         raise SystemExit(f"no lmscript examples found in {examples_root}")
     created = []
@@ -182,11 +228,13 @@ def main():
         slug = script.stem
         if slug not in entries:
             raise SystemExit(f"add {slug}.lms to examples/README.md before syncing the book")
+        example_config = next((item for item in configured_examples or [] if item.get("slug") == slug), {})
+        rendered_output = example_config.get("rendered") or data.get("rendered", {}).get(slug)
         preview_name = data.get("images", {}).get(slug, f"{slug}.png")
         preview = examples_root / "renders" / preview_name
-        if not preview.is_file():
-            raise SystemExit(f"add examples/renders/{preview_name} to render the {slug} page")
-        width, height = png_size(preview)
+        if not rendered_output and not preview.is_file():
+            raise SystemExit(f"{slug} needs a rendered output or examples/renders/{preview_name}")
+        width, height = png_size(preview) if preview.is_file() else (0, 0)
         image_name = f"{slug}.png"
         image_path = output / "img" / image_name
         image_path.parent.mkdir(parents=True, exist_ok=True)
@@ -194,13 +242,16 @@ def main():
         source_name = f"{slug}.lms"
         source_path = output / source_name
         source_path.write_text(source)
-        rendered = rendered_preview(tool, slug, source_path, data)
+        render_data = {**data, "rendered": {slug: rendered_output} if rendered_output else {}}
+        rendered = rendered_preview(tool, slug, source_path, render_data)
         if rendered is not None:
             image_path.write_bytes(rendered)
             compact_png(image_path)
             width, height = png_size(image_path)
-        else:
+        elif preview.is_file():
             shutil.copyfile(preview, image_path)
+        else:
+            raise SystemExit(f"could not render {slug} and no checked-in preview exists")
         image_href = f"/tools/{tool}/examples/img/{image_name}"
         page_name = f"{slug}.html"
         title = slug.replace("-", " ").title()
@@ -209,10 +260,7 @@ def main():
         if not description_text.endswith((".", "!", "?")):
             description_text += "."
         description = html.escape(description_text, quote=False)
-        prompt = (
-            f"Create a drawing inspired by the {title} example. Use the {display_name} API and source "
-            "links below, compile and render a PNG, and report the source and verification."
-        )
+        prompt = f"{data['task']} Use the {display_name} API and the {title} example below. Report the source, output artifacts, and verification."
         prompt = textwrap.fill(prompt, width=72)
         quickrun_command = textwrap.fill(
             f"lmctl quickrun https://lmctl.com/tools/{tool}/examples/{slug}.lms",
@@ -228,17 +276,17 @@ def main():
 <h2>Let an agent build from this example</h2>
 <p>Copy this prompt into your Lead's terminal to ask an agent to make a related drawing:</p>
 <pre><code>{html.escape(prompt)}
-LMScript DSL: {html.escape(data['dsl_docs'])}
-{html.escape(display_name)} API: {html.escape(data['tool_docs'])}
-Example book: https://lmctl.com/tools/{tool}/examples/{slug}.html</code></pre>
+{html.escape(links['dsl_docs']['label'])}: {html.escape(links['dsl_docs']['url'])}
+{html.escape(links['tool_api']['label'])}: {html.escape(links['tool_api']['url'])}
+{html.escape(links['example']['label'])}: {html.escape(links['example']['url'])}</code></pre>
 <h2>Run the example</h2>
 <pre><code>{html.escape(quickrun_command)}</code></pre>
-<p><a href="/tools/{tool}/examples/{source_name}">Read the quickrun source</a>. See <a href="/tools/{tool}/get_started.html">get started with quickrun teams</a>.</p>
+<p><a href="/tools/{tool}/examples/{source_name}">Read the quickrun source</a>. See <a href="{html.escape(data.get('get_started', f'/tools/{tool}/tutorial.html'))}">get started with quickrun teams</a>.</p>
 <h2>Source from the project</h2>
 <p>The original example is <a href="https://github.com/lmctl-ai/{tool}/blob/{html.escape(source_ref)}/examples/{slug}.lms">{slug}.lms at {html.escape(short_ref)}</a>. The published quickrun source adds release installation, local SVG fixtures, or the bundled font needed to run it from a new directory.</p>'''
         page_path = output / page_name
         page_path.write_text(body + "\n")
-        created.extend([str(source_path.relative_to(ROOT)), str(page_path.relative_to(ROOT)), str(image_path.relative_to(ROOT))])
+        created.extend([source_path.name, page_path.name, str(Path("img") / image_name)])
         pages.append((title, description, page_name, image_href, width, height))
 
     list_items = "\n".join(
@@ -246,16 +294,16 @@ Example book: https://lmctl.com/tools/{tool}/examples/{slug}.html</code></pre>
         for title, description, page, *_ in pages
     )
     index = f'''<h1>{html.escape(display_name)} examples</h1>
-<p>Browse rendered examples and run each source as a quickrun script. These pages are regenerated from the public {html.escape(display_name)} repository at {html.escape(short_ref)}.</p>
-<p>Start with <a href="{html.escape(data['get_started'])}">get started</a> to learn how solo and trio quickruns work.</p>
+<p>{html.escape(data['description'])} Browse rendered examples and run each source as a quickrun script. These pages are regenerated from the public {html.escape(display_name)} repository at {html.escape(short_ref)}.</p>
+<p>Start with <a href="{html.escape(data.get('get_started', f'/tools/{tool}/tutorial.html'))}">get started</a> to learn how solo and trio quickruns work.</p>
 <ul>
 {list_items}
 </ul>'''
     index_path = output / "index.html"
     index_path.write_text(index + "\n")
-    created.append(str(index_path.relative_to(ROOT)))
+    created.append(index_path.name)
     manifest.write_text("\n".join(created) + "\n")
-    print(f"Generated {len(pages)} example pages from {tool} at {source_ref}")
+    print(f"Generated {len(pages)} example pages from {tool} at {source_ref} in {output}")
 
 
 if __name__ == "__main__":

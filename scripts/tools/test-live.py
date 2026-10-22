@@ -62,6 +62,7 @@ class LiveTests(unittest.TestCase):
 
     def test_aliases_and_notices(self):
         tools = site.inventory('tools')
+        self.assertNotIn('tools/lmcad/book.json', tools)
         self.assertEqual(tools['tools']['data'], tools['tools/']['data'])
         self.assertEqual(tools['tools']['data'], tools['tools/index.html']['data'])
         skills = site.inventory('skills')
