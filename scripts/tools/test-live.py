@@ -24,9 +24,19 @@ class LiveTests(unittest.TestCase):
                 response = (fixture.get('body', '').encode(), {'content-type': fixture.get('type'), 'cache-control': fixture.get('cache')}, fixture.get('error'))
                 self.assertEqual(len(site.compare('page.html', obj, response)), fixture['findings'])
 
-    def test_helloexample_paths_select_incremental_deploy(self):
+    def test_onboarding_catalog_paths_select_their_managed_deploys(self):
         self.assertEqual(site.changed_areas(["helloexample/hello.lms"]), {"helloexample"})
-        self.assertEqual(site.changed_areas(["scripts/deploy-helloexample.sh"]), {"helloexample", "tools", "skills", "homepage", "lmscript"})
+        self.assertEqual(site.changed_areas(["autorun/index.txt"]), {"autorun"})
+        self.assertEqual(site.changed_areas(["scripts/deploy-helloexample.sh"]), set(site.MANIFESTS))
+
+    def test_onboarding_catalog_inventory_types(self):
+        hello = site.inventory("helloexample")
+        self.assertEqual(hello["helloexample/index.txt"]["content_type"], "text/plain; charset=utf-8")
+        self.assertEqual(hello["helloexample/claude.lms"]["cache_control"], site.NO_CACHE)
+        self.assertEqual(hello["helloexample/claude.lmctl"]["content_type"], "text/plain; charset=utf-8")
+        autorun = site.inventory("autorun")
+        self.assertEqual(autorun["autorun/index.txt"]["content_type"], "text/plain; charset=utf-8")
+        self.assertEqual(autorun["autorun/index.html"]["content_type"], "text/html; charset=utf-8")
 
     def test_lmscript_site_is_incremental_and_preserves_commands(self):
         self.assertEqual(site.changed_areas(["lmscript-site/examples/hello-vars.lms"]), {"lmscript"})

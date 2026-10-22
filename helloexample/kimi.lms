@@ -1,0 +1,15 @@
+// description: Send a short greeting through Kimi Code.
+// autorun-role: Lead provider=kimi model=kimi-code/k3
+file = path_join(Directory, "hello-kimi.lmctl");
+for (n in range(2, 1000)) {
+  if (!file_exists(file)) { break; }
+  file = path_join(Directory, f"hello-kimi{n}.lmctl");
+}
+provider = "@role(Lead.provider)";
+model = "@role(Lead.model)";
+write_file_exclusive(file, f"# Hello\n\n_MEMBER_ alias=Lead provider={json_stringify(provider)} model={json_stringify(model)}\n");
+seed = lm_seed(file);
+require(seed.status == "ok", f"Could not seed {file}");
+reply = lm_prompt(file, "Lead", "Say hello in one friendly sentence, under 20 words.");
+require(reply.status == "ok", "The greeting prompt failed");
+println(reply.reply);

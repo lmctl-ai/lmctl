@@ -20,12 +20,15 @@ DAY = 'public, max-age=86400'
 TYPES = {'.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
          '.png': 'image/png', '.svg': 'image/svg+xml', '.txt': 'text/plain; charset=utf-8',
          '.lms': 'text/plain; charset=utf-8',
+         '.lmctl': 'text/plain; charset=utf-8',
          '.md': 'text/plain; charset=utf-8', '.xml': 'application/xml; charset=utf-8',
          '.mp4': 'video/mp4', '.webm': 'video/webm', '.ico': 'image/x-icon'}
 MANIFESTS = {'tools': 'tools/deploy-manifest.json', 'skills': 'skills/deploy-manifest.json',
              'homepage': 'assets/deploy-manifest.json',
-             'lmscript': 'lmscript/site-deploy-manifest.json'}
-AREAS = (*MANIFESTS, 'helloexample')
+             'lmscript': 'lmscript/site-deploy-manifest.json',
+             'helloexample': 'helloexample/deploy-manifest.json',
+             'autorun': 'autorun/deploy-manifest.json'}
+AREAS = tuple(MANIFESTS)
 
 
 def changed_areas(paths):
@@ -40,6 +43,8 @@ def changed_areas(paths):
             areas.add('lmscript')
         if path.startswith('helloexample/') or path == 'scripts/deploy-helloexample.sh':
             areas.add('helloexample')
+        if path.startswith('autorun/') or path == 'scripts/deploy-autorun.sh':
+            areas.add('autorun')
     return areas
 
 
@@ -67,6 +72,8 @@ def inventory(area, root=ROOT):
         allowed = ({'.html', '.lms', '.png'} if area == 'lmscript' else
                    {'.html', '.css', '.png', '.svg', '.txt', '.lms'} if area == 'tools' else
                    {'.html'} if area == 'skills' else
+                   {'.html', '.txt', '.lms', '.lmctl'} if area == 'helloexample' else
+                   {'.html', '.txt'} if area == 'autorun' else
                    set(TYPES) - {'.md', '.lms'} if area == 'homepage' else
                    set(TYPES) - {'.md'})
         if path.suffix not in allowed:
@@ -133,6 +140,8 @@ def deploy(area):
                 valid = key.startswith(('assets/', 'levels/')) or key in ('levels', 'index.html', '404.html', 'robots.txt', 'sitemap.xml')
             elif area == 'lmscript':
                 valid = key.startswith(('lmscript/',))
+            elif area in ('helloexample', 'autorun'):
+                valid = key.startswith((area + '/',))
             else:
                 valid = key == area or key.startswith(area + '/')
             if not valid:
@@ -399,7 +408,7 @@ def main():
         return 0
     areas = args.areas or list(MANIFESTS)
     if any(a not in MANIFESTS for a in areas):
-        parser.error('areas must be tools, skills, homepage or lmscript')
+        parser.error('unknown static area: ' + ', '.join(sorted(set(areas) - set(MANIFESTS))))
     if args.mode == 'verify':
         return verify(areas, repair_cdn=args.repair_cdn)
     for area in areas:

@@ -83,6 +83,7 @@ bash scripts/tools/verify-live.sh skills
 
 # Publish the standalone hello/autorun catalog and scripts.
 bash scripts/deploy-helloexample.sh
+bash scripts/deploy-autorun.sh
 
 # --- templates: publish the ${Provider1..3}/${Model1..3}-slotted team-composition library to
 # lmctl.com/templates/ (source of truth = this repo's templates/). Mirrors the skills/ pattern above.

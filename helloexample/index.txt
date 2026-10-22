@@ -1,0 +1,4 @@
+agy	Send a short greeting through Antigravity.
+claude	Send a short greeting through Claude Code.
+codex	Send a short greeting through Codex.
+kimi	Send a short greeting through Kimi Code.

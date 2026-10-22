@@ -1,0 +1,12 @@
+[
+  {
+    "name": "lmdraw_solo",
+    "description": "Seed one lmdraw Lead to make a small drawing and leave its terminal ready.",
+    "url": "https://lmctl.com/tools/lmdraw/lmdraw_solo.lms"
+  },
+  {
+    "name": "lmdraw_trio",
+    "description": "Seed a Lead, Coder, and Reviewer to make and assess a small drawing.",
+    "url": "https://lmctl.com/tools/lmdraw/lmdraw_trio.lms"
+  }
+]

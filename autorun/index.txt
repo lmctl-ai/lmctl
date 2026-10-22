@@ -1,0 +1,6 @@
+lmdraw_solo	Seed one lmdraw Lead to make a small drawing and leave its terminal ready.	https://lmctl.com/tools/lmdraw/lmdraw_solo.lms
+lmdraw_trio	Seed a Lead, Coder, and Reviewer to make and assess a small drawing.	https://lmctl.com/tools/lmdraw/lmdraw_trio.lms
+agy	Send a short greeting through Antigravity.	https://lmctl.com/helloexample/agy.lms
+claude	Send a short greeting through Claude Code.	https://lmctl.com/helloexample/claude.lms
+codex	Send a short greeting through Codex.	https://lmctl.com/helloexample/codex.lms
+kimi	Send a short greeting through Kimi Code.	https://lmctl.com/helloexample/kimi.lms

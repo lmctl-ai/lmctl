@@ -12,6 +12,8 @@ on:
       - 'scripts/deploy*.sh'
       - 'scripts/tools/**'
       - 'helloexample/**'
+      - 'autorun/**'
+      - 'scripts/build-onboarding-catalogs.mjs'
       - 'lmscript-site/**'
       - 'scripts/lmscript-site/**'
       - '.github/workflows/deploy-static.yml'
@@ -44,6 +46,7 @@ jobs:
         run: echo "LMHTML=$(bash scripts/tools/run.sh host-path)" >> "$GITHUB_ENV"
       - name: Check pages, memory and fixtures (release-installed hosts)
         run: |
+          npm run check:onboarding-catalogs
           npm run check:tools
           npm run check:homepage
           python3 scripts/tools/test-live.py
