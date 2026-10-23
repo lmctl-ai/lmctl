@@ -2,7 +2,7 @@
 import "lmctl-subcommands.lms";
 # Ordered catalog preserves the two historical group names. Retired pages keep
 # URLs but are intentionally absent from the active index. Add new entries here.
-utilities = "lmchat-skill|lmsound-skill|lmprobe-skill|lmmail-skill|lmfeedback-skill|lmnote-skill|lmsheet-skill|lmtext-skill|lmfin-skill|lmbio-skill|";
+utilities = "lmchat-skill|device-login|lmsound-skill|lmprobe-skill|lmmail-skill|lmfeedback-skill|lmnote-skill|lmsheet-skill|lmtext-skill|lmfin-skill|lmbio-skill|";
 coordination = "lmctl-lead-skill|claudecode-lead-skill|opencode-lead-skill|lmctl-team-lead-basic-skill|lmctl-team-lead-advanced-skill|lmscript-workflow-skill|lmctl-meta-lead-skill|team-lead-workflow|durable-memory|publish-tool-book-skill|";
 retired = "background-wakeup|communicating-with-mail-skill|lmctl-admin-skill|lmctl-recover-skill|";
 non_html_skills = join(sort(glob("skills/*.md")), "|");
