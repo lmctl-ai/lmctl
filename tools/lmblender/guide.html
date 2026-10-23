@@ -79,7 +79,7 @@ if (r.code != 0) { println(trim(r.stdout)); println(trim(r.stderr)); exit(1); }<
 <ul>
 <li>scene.import_obj(path), scene.import_ply(path), scene.import_stl(path), and scene.import_gltf(path) load mesh files.</li>
 <li>scene.export_obj(path) and scene.export_stl(path) write meshes from the scene.</li>
-<li>mesh.vertex_count(), mesh.triangle_count(), bounds methods, and mesh.material_count() help verify imported or generated geometry.</li>
+<li>mesh.vertex_count(), mesh.triangle_count(), and bounds methods help verify imported or generated geometry. mesh.material_count() reports stored slots on imported mesh data; it does not count materials assigned to procedural scene objects.</li>
 <li>scene.expect_int(actual, expected) checks an integer result. Use scene.assert_close(actual, expected, tolerance) for numeric values.</li>
 </ul>
 <h2>Limits</h2>
