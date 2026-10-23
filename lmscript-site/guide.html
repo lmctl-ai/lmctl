@@ -53,6 +53,9 @@ scene.text(32.0, 76.0, 32.0, "Hello", "#f5c16c");
 scene.render_png("build/rendered/hello.png", 480, 270, 1);
 end _dsl_
 savedsl(p, "build/hello.dslb");</code></pre>
+<h3 id="install-cache">Native host install cache</h3>
+<p>A declaration using install with @latest checks for a newer release at most once every six hours per exact install string. The verified binary and the last successful release check are stored in the lmscript tool cache. A fresh check uses the cached binary when GitHub is temporarily unavailable and prints a warning. An exact release tag needs no release lookup after its binary is cached and SHA-256 verified.</p>
+<p>Set LMSCRIPT_INSTALL_CACHE_TTL_MS to a non-negative number of milliseconds to change the @latest check interval. Set it to 0 to check on every real run. Leave it unset for the six-hour default. CI jobs with fresh runners should pin an exact release tag so every run uses a deliberate release and does not depend on the mutable latest endpoint.</p>
 <h2 id="lm-functions">Built-in lmctl functions</h2>
 <p>The following names are the lmctl automation functions listed by lmscript 0.2.373. Provider calls can create sessions or send messages; review the script before running it.</p>
 <pre><code>lm_agent(member, prompt, options)

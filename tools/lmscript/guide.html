@@ -330,6 +330,9 @@ savedsl(check, "links.dslb");</code></pre></li>
 <li>lmscript --dsl-signatures SCHEMA prints the schema's functions and methods, one per line.</li>
 </ul>
 <p>The bytecode records the SHA-256 of the exact schema bytes; a host refuses a file compiled against a different schema. Note: the built-in lmscript help dsl text in 0.2.348 still describes the previous version (no while, bytecode v4); the released compiler supports while/break/continue and writes bytecode v5, which current hosts require.</p>
+<h3 id="install-cache">Native host install cache</h3>
+<p>A declaration using install with @latest checks for a newer release at most once every six hours per exact install string. The verified binary and the last successful release check are stored in the lmscript tool cache. A fresh check uses the cached binary when GitHub is temporarily unavailable and prints a warning. An exact release tag needs no release lookup after its binary is cached and SHA-256 verified.</p>
+<p>Set LMSCRIPT_INSTALL_CACHE_TTL_MS to a non-negative number of milliseconds to change the @latest check interval. Set it to 0 to check on every real run. Leave it unset for the six-hour default. CI jobs with fresh runners should pin an exact release tag so every run uses a deliberate release and does not depend on the mutable latest endpoint.</p>
 
 <h2 id="tasks">Tasks</h2>
 <h3 id="task-csv-report">Summarize a CSV file</h3>

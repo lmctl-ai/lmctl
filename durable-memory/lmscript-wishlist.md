@@ -21,3 +21,9 @@ The quickrun task said “public lmdraw host” while the linked API guide says 
 The getting-started page also used lmctl quickrun, which current lmctl help identifies as a deprecated alias for autorun. That means an example can still work while teaching a command that the CLI asks users to leave behind.
 
 Proposed fix: keep generated task text aligned with the linked guide and use current command names in examples. The lmdraw task now directs agents to use the native host in their authored drawing script; the getting-started page distinguishes the orchestration scripts run with autorun from the agent-authored drawing script, which uses the native DSL declaration to render locally.
+
+## Repeated GitHub release checks
+
+Repeated real runs of scripts using install with @latest queried the GitHub releases API every time. A few hundred runs exhausted the unauthenticated per-IP request limit and prevented scripts from starting, even though the verified host binary was already cached.
+
+Proposed fix: keep the last successful release check, resolved tag and verified binary SHA-256 in an atomic install-state cache. Reuse it for six hours by default, allow LMSCRIPT_INSTALL_CACHE_TTL_MS to override the interval, and use a verified stale binary with a warning if a refresh fails. CI with fresh runners should pin an exact release tag.
