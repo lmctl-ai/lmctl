@@ -56,7 +56,9 @@ if (r.code != 0) { println(trim(r.stdout)); println(trim(r.stderr)); exit(1); }<
 <li>scene.camera_orthographic(px, py, pz, tx, ty, tz, vertical_span) sets an orthographic view.</li>
 <li>scene.fit_camera(margin) frames visible geometry. Set a camera explicitly for stable composition.</li>
 <li>scene.studio_setup() adds an automatic camera, floor, and soft lights around the scene.</li>
-<li>scene.area_light(...), scene.point_light(...), scene.sun_light(...), and scene.world_color(...) create light sources and world illumination.</li>
+<li>scene.area_light(px, py, pz, tx, ty, tz, r, g, b, power, size) places a square light at a position and aims it at a target; r, g, and b are its linear color.</li>
+<li>scene.point_light(x, y, z, r, g, b, power) creates a point source. scene.sun_light(dx, dy, dz, r, g, b, power, angle_degrees) takes a direction vector, color, strength, and angular diameter in degrees.</li>
+<li>scene.world_color(r, g, b, strength) sets linear world color and illumination.</li>
 <li>scene.sky_texture(elevation, rotation, intensity) and scene.environment_texture(path, rotation, strength) use environment lighting.</li>
 </ul>
 <h2>Rendering and animation</h2>
