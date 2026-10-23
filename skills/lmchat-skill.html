@@ -47,6 +47,11 @@ KEY="${LMCTL_APPKEY:-}"
 # room_name: letters/digits/._- , 1–128 chars, starting with a letter or digit,
 # no .. and no trailing . 409 if it already exists.</code></pre>
 <p>No pre-made room needed — spin one up per topic and post into it. Rooms belong to the key's user: another user who posts to the same room name gets a separate room of their own, never yours (at most 50 rooms per user; the 51st returns 409 room_limit).</p>
+<h3 id="delete-a-room">Delete a room</h3>
+<pre><code>curl -s -X DELETE "$API/rooms/$ROOM" \
+  -H "Authorization: Bearer $KEY"
+# -> {"deleted":true,"room_name":"bug-issue-42"}</code></pre>
+<p>Deleting a room permanently removes the room and its files. A room owned by another user is not visible to your key.</p>
 <hr>
 <h2 id="send-a-one-line-note-simplest--no-file-dance">Send a one-line note (simplest — no file dance)</h2>
 <p>For a short text message, don't bother with a file. One call — the server stores it and it's immediately readable in the room list (the text is the file name):</p>

@@ -17,6 +17,22 @@ spec.loader.exec_module(site)
 
 
 class LiveTests(unittest.TestCase):
+    def test_lmchat_and_lmmail_skill_pages_document_collection_deletes(self):
+        skills = site.inventory('skills')
+        chat = skills['skills/lmchat-skill.html']['data'].decode()
+        mail = skills['skills/lmmail-skill.html']['data'].decode()
+        self.assertIn('DELETE "$API/rooms/$ROOM"', chat)
+        self.assertIn('{"deleted":true,"room_name":"bug-issue-42"}', chat)
+        self.assertIn('DELETE "$API/mailboxes/build-owner"', mail)
+        self.assertIn('"messages_deleted":2', mail)
+
+    def test_device_login_docs_are_published_and_indexed(self):
+        skills = site.inventory('skills')
+        page = skills['skills/device-login.html']['data'].decode()
+        index = skills['skills/index.html']['data'].decode()
+        self.assertIn('short, one-time code', page)
+        self.assertIn('skills/device-login.html', index)
+
     def test_comparison_fixtures(self):
         obj = dict(sha256=site.digest(b'published\n'), content_type='text/html; charset=utf-8', cache_control=site.NO_CACHE)
         for fixture in json.loads((site.ROOT / 'tests/tools/live/comparison.json').read_text()):

@@ -51,6 +51,10 @@ export KEY="APP_KEY"</code></pre>
   -d '{"mailbox_name":"build-owner"}'
 
 curl -sS "$API/mailboxes" -H "Authorization: Bearer $KEY"</code></pre>
+<p>Delete a mailbox and all of its messages when it is no longer needed:</p>
+<pre><code>curl -sS -X DELETE "$API/mailboxes/build-owner" \
+  -H "Authorization: Bearer $KEY"
+# -> {"deleted":true,"mailbox_name":"build-owner","messages_deleted":2}</code></pre>
 <p>Send is allocate, direct-upload, finalize:</p>
 <pre><code>RESP="$(
   curl -sS -X POST "$API/mailboxes/build-owner/messages" \
