@@ -124,10 +124,11 @@ println(f"{len(changed)} changed file(s)");</code></pre>
 <h3 id="example-dsl">Experimental: compile a _dsl_ program for a native host</h3>
 <p>Experimental; the syntax may change. A _dsl_ block holds code in a separate, statically typed language that a native host program (for example lmhtml or lmcad) runs. lmscript compiles it at check time against the host's schema and savedsl writes the bytecode; the host runs it.</p>
 <ol>
-<li>Get the schema from the host: lmhtml --schema --json > lmhtml.dsl.json. Read lmhtml --schema (or lmscript --dsl-signatures lmhtml.dsl.json) for the available context objects, functions and methods. Use only those.</li>
+<li>With lmscript 0.2.369 or newer, tool users can let lmscript obtain the host schema automatically. For lmhtml use cli="lmhtml" and install="github:lmctl-ai/lmhtml@latest" on the _dsl_ declaration. Use the host documentation for available contexts, functions and methods.</li>
+<li>Schema-file input remains available for SDK authors and compatibility testing.</li>
 <li>Write the block; the statement ends with ; on the marker line and the block closes with a line exactly end _dsl_:</li>
 </ol>
-<pre><code>check = _dsl_ schema="lmhtml.dsl.json";
+<pre><code>check = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 let pages = html.load_dir("site");
 for (i in range(0, pages.len())) {
   let page = pages.at(i);

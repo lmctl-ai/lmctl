@@ -24,9 +24,9 @@
 </nav>
 <main>
 <h1>lmcad tutorial</h1>
-<p>Run these examples from the lmcad source directory after installing the latest lmscript compiler and building lmcad. The first script source below is saved as hello.lms in a text editor.</p>
+<p>Run these examples from the lmcad source directory after installing lmscript 0.2.369 or newer and building lmcad. The first script source below is saved as hello.lms in a text editor.</p>
 <h2>1. Write a DSL block and compile it</h2>
-<pre><code>p = _dsl_ schema="schema/lmcad.dsl.json";
+<pre><code>p = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
 scene.background(0.04, 0.06, 0.1);
 let blue = material().color(0.18, 0.62, 0.88);
 scene.box(2.0, 1.2, 0.8, blue);

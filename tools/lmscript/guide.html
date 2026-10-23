@@ -296,11 +296,11 @@ r = system(argv, 10000);            # computed argv, 10 s timeout</code></pre>
 </dl>
 
 <h3 id="dsl">Experimental: _dsl_ blocks for native hosts</h3>
-<p>Experimental. The syntax and the bytecode format may change without compatibility. A _dsl_ block is not lmscript: its body is code in a small, statically typed language, compiled at check time against a schema that a native host program publishes. lmscript only compiles and saves the program; the host loads and runs it. Hosts include <a href="/tools/lmhtml/skill.html">lmhtml</a> (HTML checking) and <a href="/tools/lmcad/index.html">lmcad</a> (3D shapes and images); hosts are built with the C++ runtime <a href="/tools/cpp-dsl-sdk/index.html">cpp-dsl-sdk</a>.</p>
-<p>The workflow, verified with lmscript 0.2.348 and lmhtml v0.1.0:</p>
+<p>Experimental. The syntax and the bytecode format may change without compatibility. A _dsl_ block is not lmscript: its body is code in a small, statically typed language that lmscript compiles for a native host. For tool users, cli and install on the _dsl_ declaration let lmscript obtain the host schema automatically. Schema-file input remains available for SDK authors. lmscript saves the program; the host loads and runs it. Hosts include <a href="/tools/lmhtml/skill.html">lmhtml</a> (HTML checking) and <a href="/tools/lmcad/index.html">lmcad</a> (3D shapes and images); hosts are built with the C++ runtime <a href="/tools/cpp-dsl-sdk/index.html">cpp-dsl-sdk</a>.</p>
+<p>The automatic tool workflow requires lmscript 0.2.369 or newer:</p>
 <ol>
-<li>Get the host's schema: lmhtml --schema --json > lmhtml.dsl.json (lmhtml --schema prints a short summary).</li>
-<li>Write a script with a _dsl_ block and savedsl: <pre><code>check = _dsl_ schema="lmhtml.dsl.json";
+<li>For lmhtml, use the automatic tool declaration shown below. To inspect its contexts and methods, consult the lmhtml documentation.</li>
+<li>Write a script with a _dsl_ block and savedsl: <pre><code>check = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 let pages = html.load_dir("site");
 for (i in range(0, pages.len())) {
   let page = pages.at(i);
