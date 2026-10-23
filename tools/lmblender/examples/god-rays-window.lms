@@ -1,0 +1,77 @@
+// SPDX-FileCopyrightText: 2025-2026 lmblender contributors
+// SPDX-License-Identifier: MIT
+// Sunbeams in a dusty room. Light itself is invisible: the shafts appear only
+// because haze in the air (here a scattering coefficient of 0.06 per metre,
+// a mean free path of 17 m) bounces a little of each beam toward the camera.
+// The Sun is effectively at infinity, so the six beams from the window panes
+// stay parallel and land as six bright, sharp-edged patches on the floor; the
+// rest of the room is lit only by light scattered out of the beams.
+// Writes images/god-rays-window.png.
+out = ARGV.len() > 0 ? ARGV[0] : "build/god-rays-window.dslb";
+mkdir("images");
+mkdir("build");
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+let plaster = scene.material(0.45, 0.42, 0.38, 0.0, 0.9, 0.0, 0.0, 0.0, 0.0, 0.0);
+let frame = scene.material(0.10, 0.08, 0.07, 0.0, 0.6, 0.0, 0.0, 0.0, 0.0, 0.0);
+let wall_low = scene.cube(1.0);
+wall_low.scale(14.0, 0.3, 1.6);
+wall_low.translate(0.0, 4.0, 0.8);
+wall_low.set_material(plaster);
+let wall_high = scene.cube(1.0);
+wall_high.scale(14.0, 0.3, 1.4);
+wall_high.translate(0.0, 4.0, 4.9);
+wall_high.set_material(plaster);
+let wall_left = scene.cube(1.0);
+wall_left.scale(5.5, 0.3, 2.6);
+wall_left.translate(-4.25, 4.0, 2.9);
+wall_left.set_material(plaster);
+let wall_right = scene.cube(1.0);
+wall_right.scale(5.5, 0.3, 2.6);
+wall_right.translate(4.25, 4.0, 2.9);
+wall_right.set_material(plaster);
+for (i in range(0, 4)) {
+  let bar = scene.cube(1.0);
+  bar.scale(0.12, 0.2, 2.6);
+  bar.translate(-1.5 + float(i), 4.0, 2.9);
+  bar.set_material(frame);
+}
+let rail = scene.cube(1.0);
+rail.scale(3.0, 0.2, 0.12);
+rail.translate(0.0, 4.0, 2.9);
+rail.set_material(frame);
+let side = scene.cube(1.0);
+side.scale(0.3, 12.0, 5.6);
+side.translate(-7.0, -2.0, 2.8);
+side.set_material(plaster);
+let ceiling = scene.cube(1.0);
+ceiling.scale(14.0, 12.0, 0.3);
+ceiling.translate(0.0, -2.0, 5.7);
+ceiling.set_material(plaster);
+let haze = scene.cube(1.0);
+haze.scale(13.6, 11.6, 5.5);
+haze.translate(0.0, -2.0, 2.8);
+let air = scene.material(1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+air.volume("scatter", 0.06, 1.0, 0.97, 0.92);
+haze.set_material(air);
+scene.ground_plane(0.0, 60.0, 0.36, 0.26, 0.18);
+scene.world_color(0.0, 0.0, 0.0, 0.0);
+scene.sun_light(0.45, -0.72, -0.53, 1.0, 0.9, 0.75, 16.0, 0.53);
+scene.camera_look_at(4.6, -6.5, 1.6, -0.4, 1.5, 2.0, 50.0);
+scene.light_clamp(0.0, 4.0);
+scene.render_settings(8, 12, true);
+scene.denoise_quality("high");
+scene.render_png("images/god-rays-window.png", 32, 800, 500);
+end _dsl_
+savedsl(p, out);
+argv = dsl_cli(p);
+push(argv, "--dsl");
+push(argv, out);
+r = system(argv, 240000);
+if (r.code != 0) { println(trim(r.stdout)); println(trim(r.stderr)); }
+assert(r.code == 0);
+println("wrote images/god-rays-window.png");
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

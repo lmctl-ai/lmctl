@@ -1,0 +1,79 @@
+// SPDX-FileCopyrightText: 2025-2026 lmblender contributors
+// SPDX-License-Identifier: MIT
+// Kepler's second law, animated. A planet on an orbit with eccentricity 0.6
+// (semi-major axis 3) is placed at 36 equal time steps by solving Kepler's
+// equation E - e sin E = M with Newton's method. The twelve white beads mark
+// equal time intervals and the spokes join them to the Sun: every wedge between
+// neighbouring spokes sweeps the same area, so the beads spread out where the
+// planet races through perihelion (near the Sun) and bunch up where it crawls
+// at aphelion; the speed ratio is (1 + e) / (1 - e) = 4.
+// Writes images/kepler-orbit.png (first frame) and, when ffmpeg is on PATH,
+// images/kepler-orbit.gif from the frames in build/kepler-orbit/.
+out = ARGV.len() > 0 ? ARGV[0] : "build/kepler-orbit.dslb";
+mkdir("images");
+mkdir("build/kepler-orbit");
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+let e = 0.6;
+let a = 3.0;
+let b = a * sqrt(1.0 - e * e);
+let focus = a * e;
+let frames = 36;
+let path = "";
+for (s in range(0, 241)) {
+  let t = float(s) * 2.0 * 3.14159265 / 240.0;
+  if (s > 0) { path = path + ";"; }
+  path = path + str(a * cos(t) - focus) + "," + str(b * sin(t)) + ",0.0";
+}
+let orbit = scene.strand(path, 0.018, 0.018, 8);
+orbit.set_material(scene.material(0.3, 0.45, 0.8, 0.0, 0.5, 0.0, 0.3, 0.45, 0.8, 1.5));
+let bead_glow = scene.material(1.0, 1.0, 1.0, 0.0, 0.5, 0.0, 1.0, 1.0, 1.0, 2.0);
+let spoke_glow = scene.material(0.9, 0.75, 0.3, 0.0, 0.5, 0.0, 0.9, 0.75, 0.3, 0.6);
+let planet = scene.uv_sphere(0.17, 48, 32, true);
+planet.set_material(scene.material(0.15, 0.4, 0.95, 0.0, 0.35, 0.0, 0.1, 0.35, 1.0, 1.2));
+planet.translate(a - focus, 0.0, 0.0);
+for (k in range(0, frames)) {
+  let m = 2.0 * 3.14159265 * float(k) / float(frames);
+  let ecc = m;
+  for (n in range(0, 8)) {
+    ecc = ecc - (ecc - e * sin(ecc) - m) / (1.0 - e * cos(ecc));
+  }
+  let x = a * cos(ecc) - focus;
+  let y = b * sin(ecc);
+  planet.keyframe_transform(k, x, y, 0.0, "linear");
+  if (k - 3 * int(float(k) / 3.0) == 0) {
+    let bead = scene.uv_sphere(0.06, 16, 12, true);
+    bead.translate(x, y, 0.0);
+    bead.set_material(bead_glow);
+    let spoke = scene.tube_between(0.0, 0.0, 0.0, x, y, 0.0, 0.012);
+    spoke.set_material(spoke_glow);
+  }
+}
+let sun = scene.glow_orb(0.0, 0.0, 0.0, 0.25, 1.0, 0.8, 0.3, 3.0);
+scene.point_light(0.0, 0.0, 0.0, 1.0, 0.92, 0.8, 120.0);
+scene.world_color(0.0, 0.0, 0.0, 0.0);
+scene.camera_look_at(-1.8, -5.4, 6.0, -1.8, -0.1, 0.0, 40.0);
+scene.render_settings(4, 3, true);
+scene.render_png("images/kepler-orbit.png", 16, 720, 450);
+scene.render_sequence("build/kepler-orbit/frame-{frame}.png", 0, frames - 1, 6, 560, 350);
+end _dsl_
+savedsl(p, out);
+argv = dsl_cli(p);
+push(argv, "--dsl");
+push(argv, out);
+r = system(argv, 240000);
+if (r.code != 0) { println(trim(r.stdout)); println(trim(r.stderr)); }
+assert(r.code == 0);
+println("wrote images/kepler-orbit.png");
+probe = system ffmpeg -version;
+if (probe.code == 0) {
+  g = system ffmpeg -y -loglevel error -framerate 12 -start_number 0 -i build/kepler-orbit/frame-%d.png -vf "split[s0][s1];[s0]palettegen=max_colors=96[p];[s1][p]paletteuse=dither=bayer" images/kepler-orbit.gif;
+  assert(g.code == 0);
+  println("wrote images/kepler-orbit.gif");
+} else {
+  println("ffmpeg not found: skipped images/kepler-orbit.gif (frames are in build/kepler-orbit/)");
+}
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

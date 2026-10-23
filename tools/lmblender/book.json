@@ -1,0 +1,109 @@
+{
+  "display_name": "lmblender",
+  "repository": "https://github.com/lmctl-ai/lmblender.git",
+  "description": "lmblender runs lmscript scenes through a standalone CPU Cycles renderer and writes stills, sequences, and exports.",
+  "get_started": "/tools/lmblender/get_started.html",
+  "task": "Create a polished 3D scene from an empty directory using lmblender v0.3.6. Include a camera, materials, lighting, and a rendered PNG. Add a concrete result check, run the source, and report the files and verification.",
+  "links": {
+    "dsl_docs": {
+      "label": "LMScript DSL",
+      "url": "https://lmctl.com/tools/lmscript/skill.html"
+    },
+    "tool_api": {
+      "label": "lmblender API guide",
+      "url": "https://lmctl.com/tools/lmblender/guide.html"
+    },
+    "example": {
+      "label": "Cornell box example",
+      "url": "https://lmctl.com/tools/lmblender/examples/cornell-box.html"
+    }
+  },
+  "members": {
+    "solo": [
+      {
+        "alias": "Lead",
+        "provider": "claude",
+        "model": "claude-sonnet-5-5"
+      }
+    ],
+    "trio": [
+      {
+        "alias": "Lead",
+        "provider": "claude",
+        "model": "claude-sonnet-5-5"
+      },
+      {
+        "alias": "Coder",
+        "provider": "agy",
+        "model": "gemini-3.8-flash-high"
+      },
+      {
+        "alias": "Reviewer",
+        "provider": "codex",
+        "model": "gpt-6.1-sol"
+      }
+    ]
+  },
+  "examples": [
+    {
+      "slug": "backlit-skin",
+      "description": "Layer skin-like translucent shading, a rim light, and a dark studio backdrop.",
+      "rendered": "images/backlit-skin.png"
+    },
+    {
+      "slug": "bouncing-ball-strobe",
+      "description": "Show a bouncing sphere at successive positions in a single strobe-style scene.",
+      "rendered": "images/bouncing-ball-strobe.png"
+    },
+    {
+      "slug": "caffeine-molecule",
+      "description": "Build and label a caffeine molecule from spheres, bonds, and color-coded atoms.",
+      "rendered": "images/caffeine-molecule.png"
+    },
+    {
+      "slug": "caustic-ball-lens",
+      "description": "Render a glass sphere and lens with reflected caustic light on a floor.",
+      "rendered": "images/caustic-ball-lens.png"
+    },
+    {
+      "slug": "cornell-box",
+      "description": "Compare colored walls, a ceiling light, and two objects in a Cornell box.",
+      "rendered": "images/cornell-box.png"
+    },
+    {
+      "slug": "dna-double-helix",
+      "description": "Build a paired DNA helix with colored rails, rungs, and atom-like details.",
+      "rendered": "images/dna-double-helix.png"
+    },
+    {
+      "slug": "gear-pair-render",
+      "description": "Render interlocking gears with a machined metal finish and studio lighting.",
+      "rendered": "images/gear-pair-render.png"
+    },
+    {
+      "slug": "god-rays-window",
+      "description": "Use a window, volumetric haze, and a directional light to reveal visible rays.",
+      "rendered": "images/god-rays-window.png"
+    },
+    {
+      "slug": "kepler-orbit",
+      "description": "Stage a miniature planetary orbit and render one frame of its animation.",
+      "rendered": "images/kepler-orbit.png"
+    },
+    {
+      "slug": "salt-crystal",
+      "description": "Create a translucent salt crystal with faceted geometry and controlled highlights.",
+      "rendered": "images/salt-crystal.png"
+    },
+    {
+      "slug": "saturn-rings",
+      "description": "Build a ringed planet with layered bands and a dark space background.",
+      "rendered": "images/saturn-rings.png"
+    },
+    {
+      "slug": "sunset-long-shadows",
+      "description": "Use a low warm sun to cast long shadows across a simple landscape.",
+      "rendered": "images/sunset-long-shadows.png"
+    }
+  ]
+}

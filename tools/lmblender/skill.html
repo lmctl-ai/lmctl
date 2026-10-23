@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Use lmblender to build and check a rendered scene — lmblender — lmctl.com tools</title>
+<meta name="description" content="Use lmblender when a task needs a procedural 3D scene, a CPU-rendered image, an animation, or a mesh export from LMScript.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmblender/">Overview</a></li>
+<li><a href="/tools/lmblender/skill.html">Skill</a></li>
+<li><a href="/tools/lmblender/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmblender/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmblender/guide.html">Guide</a></li>
+<li><a href="/tools/lmblender/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>Use lmblender to build and check a rendered scene</h1>
+<p>Use lmblender when a task needs a procedural 3D scene, a CPU-rendered image, an animation, or a mesh export from LMScript. The host uses Cycles and executes compiled DSL bytecode directly. It does not start Blender or run Python.</p>
+<h2>Purpose</h2>
+<p>Translate a concrete visual or geometry request into a small, reproducible LMScript program. The program should create the geometry, assign materials, set the camera and lights, render to a path inside the working directory, and check a measurable property such as triangle count or volume when applicable.</p>
+<h2>When to use it</h2>
+<ul>
+<li>Use lmblender for a 3D still image, a frame sequence, APNG output, or an OBJ, STL, or image-based mesh workflow.</li>
+<li>Use it for scripted variations, repeatable product scenes, technical diagrams, and visual checks of imported geometry.</li>
+<li>Use Blender itself when the task depends on a Blender UI, Python add-ons, simulation systems, or a feature not exposed by the lmblender API.</li>
+</ul>
+<h2>Install</h2>
+<p>Install lmscript through the lmctl package. The host is fetched automatically the first time the script runs. Pin the exact version when reproducible output matters. This book uses lmblender v0.3.6.</p>
+<pre><kbd>npm install -g @lmctl-ai/lmctl</kbd></pre>
+<pre><kbd>lmscript --version</kbd></pre>
+<pre><samp>lmscript 0.2.388</samp></pre>
+<p>Declare the released host in the scene block and save bytecode before running it:</p>
+<pre><code>p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+let ball = scene.uv_sphere(1.0, 48, 24, true);
+scene.studio_setup();
+scene.render_png("build/ball.png", 16, 640, 480);
+end _dsl_
+savedsl(p, "build/ball.dslb");
+r = system ${dsl_cli(p)} --dsl build/ball.dslb;
+if (r.code != 0) { println(trim(r.stdout)); exit(1); }</code></pre>
+<h2>Commands</h2>
+<p>Run a complete lmscript file from an empty working directory. Output paths are relative to that directory. Make each output directory before calling the host.</p>
+<pre><kbd>lmscript scene.lms</kbd></pre>
+<p>Useful host commands are:</p>
+<ul>
+<li>lmblender --version prints the host and linked renderer versions.</li>
+<li>lmblender --dsl-schema prints a compact API summary.</li>
+<li>lmblender --dsl-schema --json prints the embedded schema.</li>
+<li>lmblender --dsl-signatures prints the registered DSL signatures.</li>
+<li>lmblender --presets lists embedded scene presets.</li>
+</ul>
+<p>For renders that can take longer than sixty seconds, use an argument list and pass an explicit timeout in milliseconds to system. Keep the render within the example-book limit of 180 seconds.</p>
+<pre><code>argv = dsl_cli(p);
+push(argv, "--dsl");
+push(argv, "build/scene.dslb");
+r = system(argv, 240000);</code></pre>
+<h2>Inputs and outputs</h2>
+<p>Scene code lives inside an LMScript _dsl_ block. Values such as sample counts, dimensions, mesh sizes, and colors are supplied as positional arguments. Coordinates are right-handed and Z-up; distances are scene units and RGB color channels are linear values between zero and one.</p>
+<ul>
+<li>PNG is the display-transformed still image format. EXR preserves scene-linear image data.</li>
+<li>Image sequences and APNG use inclusive first and last frame numbers.</li>
+<li>OBJ, PLY, STL, and glTF are supported mesh inputs. OBJ and STL are supported mesh exports.</li>
+<li>Mesh methods expose vertex count, triangle count, material count, and axis-aligned bounds.</li>
+<li>Host failures print a JSON object with the error code, a message, and a source line and column when available.</li>
+</ul>
+<h2>Safety rules</h2>
+<ul>
+<li>Work in a fresh directory and write outputs only to paths created for the task.</li>
+<li>Treat scene scripts and imported files as trusted input. Do not run an unknown LMScript file without reviewing its filesystem and system calls.</li>
+<li>Keep image and mesh inputs within documented size and geometry limits. Do not claim a mesh is ready to manufacture based only on a successful export.</li>
+<li>Set a camera explicitly for predictable composition. Check that the render file exists and has the requested dimensions.</li>
+<li>On Linux arm64, use v0.3.6 or newer for denoising on CPUs without SVE, including AWS Graviton2. The v0.3.4 and earlier arm64 releases can fault with an illegal instruction when denoising is enabled.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>Start with one sphere and the automatic studio setup. The source should create the output directory before rendering:</p>
+<pre><code>if (!file_exists("build")) { mkdir("build"); }
+p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+let ball = scene.uv_sphere(1.0, 48, 24, true);
+scene.studio_setup();
+scene.render_png("build/ball.png", 16, 640, 480);
+end _dsl_
+savedsl(p, "build/ball.dslb");
+r = system ${dsl_cli(p)} --dsl build/ball.dslb;
+if (r.code != 0) { println(trim(r.stdout)); exit(1); }</code></pre>
+<p>For a geometric model, inspect the result before adding presentation details:</p>
+<pre><code>let box = scene.cube(2.0);
+scene.expect_int(box.triangle_count(), 12);
+scene.assert_close(box.volume(), 8.0, 0.000001);</code></pre>
+<p>The <a href="/tools/lmblender/examples/cornell-box.html">Cornell box</a> shows indirect lighting. The <a href="/tools/lmblender/examples/gear-pair-render.html">gear pair</a> combines a mesh generator with lmblender's renderer. Browse the <a href="/tools/lmblender/examples/">example book</a> for twelve complete scenes and their runnable source.</p>
+<h2>Errors and exit codes</h2>
+<ul>
+<li>LOAD_BAD_BYTECODE or LOAD_SCHEMA_MISMATCH: compile the source again with the schema that matches the installed host.</li>
+<li>RUN_HOST: a call used an invalid range, missing input, or unsupported combination. Follow the JSON message and correct that argument.</li>
+<li>RENDER_TIMEOUT: lower the image size or sample count, or set a higher per-render limit when appropriate.</li>
+<li>RUN_TIMEOUT or RUN_BUDGET: the full program exceeded its time or instruction budget. Reduce the workload before retrying.</li>
+<li>OUTPUT_PATH: create the output directory and use a path inside the allowed output root.</li>
+<li>On Linux arm64, an illegal instruction during denoising indicates an older or incompatible binary. Upgrade to v0.3.6 or newer.</li>
+</ul>
+<h2>How to verify</h2>
+<ol>
+<li>Run lmscript from a clean directory and read the full host output.</li>
+<li>Confirm the requested image or mesh file exists and is nonempty.</li>
+<li>Check image dimensions and inspect the composition at the target size.</li>
+<li>Assert mesh counts or numeric properties in the scene when the task has measurable geometry requirements.</li>
+<li>For a release check, compare --version with the pinned release tag, compare --dsl-schema --json byte-for-byte with the repository schema, and compare --dsl-signatures with the generated schema signatures.</li>
+</ol>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmblender">github.com/lmctl-ai/lmblender</a>.</p>
+</footer>
+</body>
+</html>

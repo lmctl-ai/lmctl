@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmblender — lmctl.com tools</title>
+<meta name="description" content="lmblender runs lmscript scene descriptions through a standalone CPU renderer based on Blender's Cycles engine.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmblender/">Overview</a></li>
+<li><a href="/tools/lmblender/skill.html">Skill</a></li>
+<li><a href="/tools/lmblender/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmblender/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmblender/guide.html">Guide</a></li>
+<li><a href="/tools/lmblender/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>lmblender</h1>
+<figure><img src="/tools/lmblender/img/logo.png" alt="lmblender logo: a ringed planet rendered with CPU Cycles" width="256" height="256"><figcaption>A compact scene rendered with lmblender v0.3.6.</figcaption></figure>
+<h2>Overview</h2>
+<p>lmblender runs lmscript scene descriptions through a standalone CPU renderer based on Blender's Cycles engine. It builds the scene directly in C++; it does not launch Blender or execute Python. Render still images, image sequences and APNG animations, inspect mesh properties, and export common mesh formats.</p>
+<p>The book pins lmblender v0.3.6, which includes the rendering fixes described in the current release notes. Linux arm64 preview renders on this page were produced with the v0.3.6 release binary on an AWS Graviton2 host. Denoising was enabled; the SVE denoiser crash in v0.3.4 and earlier is fixed in this release.</p>
+<ul>
+<li><a href="https://github.com/lmctl-ai/lmblender">Source repository</a></li>
+<li><a href="https://github.com/lmctl-ai/lmblender/releases/tag/v0.3.6">v0.3.6 release</a></li>
+<li><a href="/tools/lmblender/tutorial.html">Tutorial</a>: grow one scene from a sphere to imported geometry, animation, and view transforms.</li>
+<li><a href="/tools/lmblender/guide.html">API guide</a>: host setup, core methods, file formats, and limits.</li>
+<li><a href="/tools/lmblender/get_started.html">Quickruns</a>: task scripts for a solo Lead or a Lead, Coder, and Reviewer.</li>
+<li><a href="/tools/lmblender/examples/">Examples</a>: twelve rendered scenes with runnable sources and Blender comparison notes.</li>
+</ul>
+<figure><img src="/tools/lmblender/examples/img/cornell-box.png" alt="Two white blocks inside a Cornell box with red and green walls" width="240" height="240"><figcaption><a href="/tools/lmblender/examples/cornell-box.html">Cornell box</a>: indirect light carries color from the walls onto the white blocks.</figcaption></figure>
+<figure><img src="/tools/lmblender/examples/img/caustic-ball-lens.png" alt="Glass spheres focus bright caustic patterns onto a floor" width="320" height="198"><figcaption><a href="/tools/lmblender/examples/caustic-ball-lens.html">Ball lens</a>: refracted light makes a focused caustic.</figcaption></figure>
+<figure><img src="/tools/lmblender/examples/img/saturn-rings.png" alt="A ringed planet against a dark background" width="480" height="298"><figcaption><a href="/tools/lmblender/examples/saturn-rings.html">Saturn rings</a>: layer a planet, rings, and directional light.</figcaption></figure>
+<p>Start with <a href="/tools/lmblender/tutorial.html">the first render</a> or ask an agent to build a scene from the <a href="/tools/lmblender/get_started.html">quickrun scripts</a>.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmblender">github.com/lmctl-ai/lmblender</a>.</p>
+</footer>
+</body>
+</html>

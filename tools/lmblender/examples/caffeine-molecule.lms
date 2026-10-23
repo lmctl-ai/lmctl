@@ -1,0 +1,91 @@
+// SPDX-FileCopyrightText: 2025-2026 lmblender contributors
+// SPDX-License-Identifier: MIT
+// Caffeine (1,3,7-trimethylxanthine, C8H10N4O2) as a ball-and-stick model in
+// CPK colours: grey carbon, blue nitrogen, red oxygen, white hydrogen.
+// The flat purine core (a 6-ring fused to a 5-ring, ring bonds ~1.39 A) carries
+// two C=O groups and three N-methyls; one scene unit is one angstrom.
+// 24 atoms and 25 bonds, coordinates inline (idealised planar rings).
+// Writes images/caffeine-molecule.png.
+out = ARGV.len() > 0 ? ARGV[0] : "build/caffeine-molecule.dslb";
+mkdir("images");
+mkdir("build");
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+let cpk_c = scene.material(0.16, 0.17, 0.19, 0.0, 0.28, 0.0, 0.0, 0.0, 0.0, 0.0);
+let cpk_n = scene.material(0.10, 0.25, 0.85, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0);
+let cpk_o = scene.material(0.85, 0.07, 0.05, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0);
+let cpk_h = scene.material(0.92, 0.92, 0.90, 0.0, 0.30, 0.0, 0.0, 0.0, 0.0, 0.0);
+let stick = scene.material(0.62, 0.62, 0.64, 0.6, 0.30, 0.0, 0.0, 0.0, 0.0, 0.0);
+let a_n1 = scene.uv_sphere(0.36, 48, 32, true); a_n1.translate(-1.797, 0.735, 2.000); a_n1.set_material(cpk_n);
+let a_c2 = scene.uv_sphere(0.38, 48, 32, true); a_c2.translate(-1.797, -0.655, 2.000); a_c2.set_material(cpk_c);
+let a_n3 = scene.uv_sphere(0.36, 48, 32, true); a_n3.translate(-0.593, -1.350, 2.000); a_n3.set_material(cpk_n);
+let a_c4 = scene.uv_sphere(0.38, 48, 32, true); a_c4.translate(0.611, -0.655, 2.000); a_c4.set_material(cpk_c);
+let a_c5 = scene.uv_sphere(0.38, 48, 32, true); a_c5.translate(0.611, 0.735, 2.000); a_c5.set_material(cpk_c);
+let a_c6 = scene.uv_sphere(0.38, 48, 32, true); a_c6.translate(-0.593, 1.430, 2.000); a_c6.set_material(cpk_c);
+let a_n7 = scene.uv_sphere(0.36, 48, 32, true); a_n7.translate(1.933, 1.165, 2.000); a_n7.set_material(cpk_n);
+let a_c8 = scene.uv_sphere(0.38, 48, 32, true); a_c8.translate(2.750, 0.040, 2.000); a_c8.set_material(cpk_c);
+let a_n9 = scene.uv_sphere(0.36, 48, 32, true); a_n9.translate(1.933, -1.084, 2.000); a_n9.set_material(cpk_n);
+let a_o2 = scene.uv_sphere(0.36, 48, 32, true); a_o2.translate(-2.862, -1.270, 2.000); a_o2.set_material(cpk_o);
+let a_o6 = scene.uv_sphere(0.36, 48, 32, true); a_o6.translate(-0.593, 2.660, 2.000); a_o6.set_material(cpk_o);
+let a_cm1 = scene.uv_sphere(0.38, 48, 32, true); a_cm1.translate(-3.070, 1.470, 2.000); a_cm1.set_material(cpk_c);
+let a_cm3 = scene.uv_sphere(0.38, 48, 32, true); a_cm3.translate(-0.593, -2.820, 2.000); a_cm3.set_material(cpk_c);
+let a_cm7 = scene.uv_sphere(0.38, 48, 32, true); a_cm7.translate(2.387, 2.563, 2.000); a_cm7.set_material(cpk_c);
+let a_h8 = scene.uv_sphere(0.24, 48, 32, true); a_h8.translate(3.830, 0.040, 2.000); a_h8.set_material(cpk_h);
+let a_hcm10 = scene.uv_sphere(0.24, 48, 32, true); a_hcm10.translate(-3.385, 1.652, 3.028); a_hcm10.set_material(cpk_h);
+let a_hcm11 = scene.uv_sphere(0.24, 48, 32, true); a_hcm11.translate(-2.940, 2.423, 1.486); a_hcm11.set_material(cpk_h);
+let a_hcm12 = scene.uv_sphere(0.24, 48, 32, true); a_hcm12.translate(-3.830, 0.881, 1.486); a_hcm12.set_material(cpk_h);
+let a_hcm30 = scene.uv_sphere(0.24, 48, 32, true); a_hcm30.translate(-0.593, -3.184, 3.028); a_hcm30.set_material(cpk_h);
+let a_hcm31 = scene.uv_sphere(0.24, 48, 32, true); a_hcm31.translate(-1.483, -3.184, 1.486); a_hcm31.set_material(cpk_h);
+let a_hcm32 = scene.uv_sphere(0.24, 48, 32, true); a_hcm32.translate(0.297, -3.184, 1.486); a_hcm32.set_material(cpk_h);
+let a_hcm70 = scene.uv_sphere(0.24, 48, 32, true); a_hcm70.translate(2.500, 2.909, 3.028); a_hcm70.set_material(cpk_h);
+let a_hcm71 = scene.uv_sphere(0.24, 48, 32, true); a_hcm71.translate(3.346, 2.634, 1.486); a_hcm71.set_material(cpk_h);
+let a_hcm72 = scene.uv_sphere(0.24, 48, 32, true); a_hcm72.translate(1.653, 3.184, 1.486); a_hcm72.set_material(cpk_h);
+scene.tube_between(-1.797, 0.735, 2.000, -1.797, -0.655, 2.000, 0.11).set_material(stick);
+scene.tube_between(-1.797, -0.655, 2.000, -0.593, -1.350, 2.000, 0.11).set_material(stick);
+scene.tube_between(-0.593, -1.350, 2.000, 0.611, -0.655, 2.000, 0.11).set_material(stick);
+scene.tube_between(0.611, 0.735, 2.000, -0.593, 1.430, 2.000, 0.11).set_material(stick);
+scene.tube_between(-0.593, 1.430, 2.000, -1.797, 0.735, 2.000, 0.11).set_material(stick);
+scene.tube_between(0.611, 0.735, 2.000, 1.933, 1.165, 2.000, 0.11).set_material(stick);
+scene.tube_between(1.933, 1.165, 2.000, 2.750, 0.040, 2.000, 0.11).set_material(stick);
+scene.tube_between(1.933, -1.084, 2.000, 0.611, -0.655, 2.000, 0.11).set_material(stick);
+scene.tube_between(-1.732, -0.768, 2.000, -2.797, -1.383, 2.000, 0.075).set_material(stick);
+scene.tube_between(-1.862, -0.542, 2.000, -2.927, -1.157, 2.000, 0.075).set_material(stick);
+scene.tube_between(-0.723, 1.430, 2.000, -0.723, 2.660, 2.000, 0.075).set_material(stick);
+scene.tube_between(-0.463, 1.430, 2.000, -0.463, 2.660, 2.000, 0.075).set_material(stick);
+scene.tube_between(-1.797, 0.735, 2.000, -3.070, 1.470, 2.000, 0.11).set_material(stick);
+scene.tube_between(-0.593, -1.350, 2.000, -0.593, -2.820, 2.000, 0.11).set_material(stick);
+scene.tube_between(1.933, 1.165, 2.000, 2.387, 2.563, 2.000, 0.11).set_material(stick);
+scene.tube_between(2.750, 0.040, 2.000, 3.830, 0.040, 2.000, 0.11).set_material(stick);
+scene.tube_between(2.855, -0.036, 2.000, 2.038, -1.161, 2.000, 0.075).set_material(stick);
+scene.tube_between(2.645, 0.116, 2.000, 1.828, -1.008, 2.000, 0.075).set_material(stick);
+scene.tube_between(0.481, -0.655, 2.000, 0.481, 0.735, 2.000, 0.075).set_material(stick);
+scene.tube_between(0.741, -0.655, 2.000, 0.741, 0.735, 2.000, 0.075).set_material(stick);
+scene.tube_between(-3.070, 1.470, 2.000, -3.385, 1.652, 3.028, 0.11).set_material(stick);
+scene.tube_between(-3.070, 1.470, 2.000, -2.940, 2.423, 1.486, 0.11).set_material(stick);
+scene.tube_between(-3.070, 1.470, 2.000, -3.830, 0.881, 1.486, 0.11).set_material(stick);
+scene.tube_between(-0.593, -2.820, 2.000, -0.593, -3.184, 3.028, 0.11).set_material(stick);
+scene.tube_between(-0.593, -2.820, 2.000, -1.483, -3.184, 1.486, 0.11).set_material(stick);
+scene.tube_between(-0.593, -2.820, 2.000, 0.297, -3.184, 1.486, 0.11).set_material(stick);
+scene.tube_between(2.387, 2.563, 2.000, 2.500, 2.909, 3.028, 0.11).set_material(stick);
+scene.tube_between(2.387, 2.563, 2.000, 3.346, 2.634, 1.486, 0.11).set_material(stick);
+scene.tube_between(2.387, 2.563, 2.000, 1.653, 3.184, 1.486, 0.11).set_material(stick);
+scene.ground_plane(0.0, 80.0, 0.20, 0.23, 0.28);
+scene.world_color(0.35, 0.42, 0.55, 0.5);
+scene.area_light(-6.0, -7.0, 10.0, 0.0, 0.0, 2.0, 1.0, 0.92, 0.82, 1500.0, 6.0);
+scene.area_light(8.0, -2.0, 6.0, 0.0, 0.0, 2.0, 0.6, 0.75, 1.0, 700.0, 5.0);
+scene.camera_look_at(0.6, -9.5, 9.0, 0.3, -0.2, 1.8, 40.0);
+scene.render_settings(8, 1, true);
+scene.render_png("images/caffeine-molecule.png", 32, 900, 600);
+end _dsl_
+savedsl(p, out);
+argv = dsl_cli(p);
+push(argv, "--dsl");
+push(argv, out);
+r = system(argv, 240000);
+if (r.code != 0) { println(trim(r.stdout)); println(trim(r.stderr)); }
+assert(r.code == 0);
+println("wrote images/caffeine-molecule.png");
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

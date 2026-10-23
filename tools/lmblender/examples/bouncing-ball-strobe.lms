@@ -1,0 +1,68 @@
+// SPDX-FileCopyrightText: 2025-2026 lmblender contributors
+// SPDX-License-Identifier: MIT
+// A stroboscopic photograph of a bouncing ball, computed rather than shot.
+// The ball leaves 2 m with 0.9 m/s sideways; g = 9.81 m/s^2 and each bounce
+// keeps a fraction e = 0.8 of the vertical speed. The script integrates the
+// motion (1 ms steps) and places a ball every 1/25 s. Two things to read off:
+// images crowd together near each peak (slow) and spread out near the floor
+// (fast), and each peak reaches e^2 = 0.64 of the one before. The thin red
+// bars are the predicted peaks 2.00, 1.28, 0.82, 0.52 and 0.34 m.
+// Writes images/bouncing-ball-strobe.png.
+out = ARGV.len() > 0 ? ARGV[0] : "build/bouncing-ball-strobe.dslb";
+mkdir("images");
+mkdir("build");
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+let g = 9.81;
+let e = 0.8;
+let r = 0.05;
+let x = -1.7;
+let z = 2.0;
+let vx = 0.9;
+let vz = 0.0;
+let dt = 0.001;
+let ball = scene.material(0.92, 0.92, 0.9, 0.0, 0.3, 0.0, 0.25, 0.25, 0.25, 0.6);
+let shots = 0;
+for (step in range(0, 3800)) {
+  if (step - 40 * int(float(step) / 40.0) == 0) {
+    let s = scene.uv_sphere(r, 24, 16, true);
+    s.translate(x, 0.0, z + r);
+    s.set_material(ball);
+    shots = shots + 1;
+  }
+  vz = vz - g * dt;
+  x = x + vx * dt;
+  z = z + vz * dt;
+  if (z < 0.0) {
+    z = -z * e;
+    vz = -vz * e;
+  }
+}
+scene.expect_int(shots, 95);
+let marker = scene.material(0.85, 0.1, 0.08, 0.0, 0.5, 0.0, 0.85, 0.1, 0.08, 1.0);
+let peak = 2.0;
+for (n in range(0, 5)) {
+  let bar = scene.tube_between(-2.0, 0.25, peak + 2.0 * r, 2.0, 0.25, peak + 2.0 * r, 0.006);
+  bar.set_material(marker);
+  peak = peak * e * e;
+}
+scene.ground_plane(0.0, 40.0, 0.06, 0.06, 0.07);
+scene.wall_plane_y(0.6, 40.0, 0.03, 0.03, 0.035);
+scene.world_color(0.0, 0.0, 0.0, 0.0);
+scene.area_light(-1.5, -4.0, 4.0, 0.0, 0.0, 1.0, 1.0, 0.97, 0.92, 500.0, 3.0);
+scene.camera_look_at(0.0, -6.4, 1.15, 0.0, 0.0, 1.05, 30.0);
+scene.render_settings(6, 25, true);
+scene.render_png("images/bouncing-ball-strobe.png", 24, 900, 520);
+end _dsl_
+savedsl(p, out);
+argv = dsl_cli(p);
+push(argv, "--dsl");
+push(argv, out);
+r = system(argv, 240000);
+if (r.code != 0) { println(trim(r.stdout)); println(trim(r.stderr)); }
+assert(r.code == 0);
+println("wrote images/bouncing-ball-strobe.png");
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

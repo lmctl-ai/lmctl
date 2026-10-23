@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmblender API guide — lmblender — lmctl.com tools</title>
+<meta name="description" content="lmblender executes lmscript DSL v5 bytecode and builds a Cycles CPU scene.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmblender/">Overview</a></li>
+<li><a href="/tools/lmblender/skill.html">Skill</a></li>
+<li><a href="/tools/lmblender/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmblender/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmblender/guide.html">Guide</a></li>
+<li><a href="/tools/lmblender/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>lmblender API guide</h1>
+<h2>Overview</h2>
+<p>lmblender executes lmscript DSL v5 bytecode and builds a Cycles CPU scene. Use it when a task needs procedural geometry, materials, lighting, image rendering, animation, or mesh export from a script. It is a standalone renderer, not a Python interface to Blender.</p>
+<h2>Install and run</h2>
+<p>Declare the host in an lmscript block. This book pins v0.3.6 so every example uses the same released binary:</p>
+<pre><code>p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+let ball = scene.uv_sphere(1.0, 48, 24, true);
+scene.studio_setup();
+scene.render_png("build/ball.png", 16, 640, 480);
+end _dsl_
+savedsl(p, "build/ball.dslb");
+r = system ${dsl_cli(p)} --dsl build/ball.dslb;
+if (r.code != 0) { println(trim(r.stdout)); println(trim(r.stderr)); exit(1); }</code></pre>
+<p>Run the source from an empty working directory with lmscript. Create every output directory before the host writes into it. For a render that may take longer than lmscript's default 60-second system timeout, build an argument list and set an explicit timeout in milliseconds.</p>
+<h2>Scene coordinates</h2>
+<p>Coordinates are right-handed and Z-up. Units are scene units. Colors passed as float channels are linear RGB values in the range 0 to 1. API methods use positional arguments; there are no implicit unit conversions.</p>
+<h2>Geometry and materials</h2>
+<table>
+<thead><tr><th>Call</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>scene.cube(size), scene.uv_sphere(radius, segments, rings, smooth), scene.cylinder(radius, depth, segments, capped)</td><td>Create primitive meshes centered around their origin.</td></tr>
+<tr><td>scene.plane(size), scene.torus(major, minor, segments, rings, smooth), scene.cone(radius, depth, segments, capped)</td><td>Create additional primitives. The torus major radius must be greater than its minor radius.</td></tr>
+<tr><td>mesh.translate(x, y, z), mesh.rotate_x(angle), mesh.rotate_y(angle), mesh.rotate_z(angle), mesh.scale(x, y, z)</td><td>Place or resize a mesh. Rotations use radians.</td></tr>
+<tr><td>scene.material(r, g, b, metallic, roughness, transmission, er, eg, eb, emission_strength)</td><td>Create a Principled surface material.</td></tr>
+<tr><td>material.texture_maps(normal, roughness, metallic, ao), material.bump(strength, distance, scale)</td><td>Add image maps or procedural bump to a material.</td></tr>
+<tr><td>mesh.set_material(material), mesh.set_smooth(enabled)</td><td>Assign a material or smooth shading to a mesh.</td></tr>
+</tbody>
+</table>
+<h2>Camera and lighting</h2>
+<ul>
+<li>scene.camera_look_at(px, py, pz, tx, ty, tz, fov) sets a perspective camera with vertical field of view in degrees.</li>
+<li>scene.camera_orthographic(px, py, pz, tx, ty, tz, vertical_span) sets an orthographic view.</li>
+<li>scene.fit_camera(margin) frames visible geometry. Set a camera explicitly for stable composition.</li>
+<li>scene.studio_setup() adds an automatic camera, floor, and soft lights around the scene.</li>
+<li>scene.area_light(...), scene.point_light(...), scene.sun_light(...), and scene.world_color(...) create light sources and world illumination.</li>
+<li>scene.sky_texture(elevation, rotation, intensity) and scene.environment_texture(path, rotation, strength) use environment lighting.</li>
+</ul>
+<h2>Rendering and animation</h2>
+<table>
+<thead><tr><th>Call</th><th>Output</th></tr></thead>
+<tbody>
+<tr><td>scene.render_png(path, samples, width, height)</td><td>One display-transformed PNG. A sample count of zero selects the active preset.</td></tr>
+<tr><td>scene.render_exr(path, samples, width, height)</td><td>One scene-linear OpenEXR image.</td></tr>
+<tr><td>scene.render_passes(prefix, samples, width, height)</td><td>Combined, depth, normal, and albedo passes.</td></tr>
+<tr><td>scene.render_sequence(pattern, first, last, samples, width, height)</td><td>Numbered images for each inclusive animation frame.</td></tr>
+<tr><td>scene.render_apng(path, first, last, samples, width, height, fps)</td><td>An animated PNG.</td></tr>
+<tr><td>mesh.keyframe_transform(frame, x, y, z, interpolation)</td><td>Set absolute position keys with linear or ease interpolation.</td></tr>
+<tr><td>scene.set_view_transform(name), scene.render_settings(bounces, seed, denoise)</td><td>Choose Standard, Filmic, or AgX display mapping and render behavior.</td></tr>
+</tbody>
+</table>
+<p>Still renders use the authored object state. Keyframes are evaluated by sequence and animation render methods. For a loop, make the first and last keyframes match.</p>
+<h2>Import and export</h2>
+<ul>
+<li>scene.import_obj(path), scene.import_ply(path), scene.import_stl(path), and scene.import_gltf(path) load mesh files.</li>
+<li>scene.export_obj(path) and scene.export_stl(path) write meshes from the scene.</li>
+<li>mesh.vertex_count(), mesh.triangle_count(), bounds methods, and mesh.material_count() help verify imported or generated geometry.</li>
+<li>scene.expect_int(actual, expected) checks an integer result. Use scene.assert_close(actual, expected, tolerance) for numeric values.</li>
+</ul>
+<h2>Limits</h2>
+<p>Render dimensions are limited to 4096 per side and 16 million pixels. A scene is limited to 4096 meshes and materials, 10 million vertices, and 20 million triangles. Input images are limited to 64 MiB each and 64 megapixels decoded. APNG output is limited to 240 frames and 64 million total frame-pixels. CPU rendering uses four worker threads by default, capped by available cores; set a different count with scene.set_threads(n).</p>
+<h2>Errors and recovery</h2>
+<p>Host errors are printed as a JSON object with a phase, code, message, and, for DSL errors, a line and column. A load error usually means bytecode was compiled against a different schema; rerun the lmscript source to compile it again. A host validation error names the method and accepted values. Reduce scene size or samples for a budget or timeout error, and fix invalid input paths rather than retrying them unchanged.</p>
+<p>The CLI reports its release and renderer versions with lmblender --version, prints the human-readable API with lmblender --dsl-schema, prints embedded schema JSON with lmblender --dsl-schema --json, and prints canonical method signatures with lmblender --dsl-signatures.</p>
+<h2>Known differences from Blender</h2>
+<p>The tutorial compares matched scenes rendered with lmblender and Blender 5.2.2. The median image difference across the tested examples was 0.52 of 255 after renderer fixes. Remaining differences include sun-disc sparkles in sky-texture, distinct motion-blur sampling, OBJ material interpretation, and differing glTF vertex splitting. See the <a href="/tools/lmblender/tutorial.html#compared-with-blender">comparison section</a> for details.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmblender">github.com/lmctl-ai/lmblender</a>.</p>
+</footer>
+</body>
+</html>

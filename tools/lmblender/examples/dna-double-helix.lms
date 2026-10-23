@@ -1,0 +1,85 @@
+// SPDX-FileCopyrightText: 2025-2026 lmblender contributors
+// SPDX-License-Identifier: MIT
+// B-DNA built from its textbook numbers (one scene unit = 1 nm): 10.5 base
+// pairs per turn (34.3 degrees of twist per pair), 0.338 nm rise, 3.55 nm pitch,
+// phosphate backbone at radius 0.89 nm (helix ~2 nm wide). The two backbones
+// sit 144 degrees apart around the axis rather than 180, which is what opens a
+// wide major groove and a narrow minor groove. 28 base pairs, axis along x.
+// Base colours: A green, T red, G yellow, C blue; A pairs with T, G with C.
+// Writes images/dna-double-helix.png.
+out = ARGV.len() > 0 ? ARGV[0] : "build/dna-double-helix.dslb";
+mkdir("images");
+mkdir("build");
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+let pairs = 28;
+let rise = 0.338;
+let twist = 34.3 * 3.14159265 / 180.0;
+let groove = 144.0 * 3.14159265 / 180.0;
+let radius = 0.89;
+let half = float(pairs - 1) * rise * 0.5;
+let lift = 1.6;
+let base_a = scene.material(0.20, 0.72, 0.30, 0.0, 0.35, 0.0, 0.0, 0.0, 0.0, 0.0);
+let base_t = scene.material(0.85, 0.16, 0.14, 0.0, 0.35, 0.0, 0.0, 0.0, 0.0, 0.0);
+let base_g = scene.material(0.95, 0.66, 0.10, 0.0, 0.35, 0.0, 0.0, 0.0, 0.0, 0.0);
+let base_c = scene.material(0.15, 0.36, 0.90, 0.0, 0.35, 0.0, 0.0, 0.0, 0.0, 0.0);
+let back1 = scene.material(0.92, 0.90, 0.86, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0);
+let back2 = scene.material(0.55, 0.60, 0.70, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0);
+let path1 = "";
+let path2 = "";
+let steps = (pairs - 1) * 4;
+for (s in range(0, steps + 1)) {
+  let t = float(s) / 4.0;
+  let x = t * rise - half;
+  let a = t * twist;
+  if (s > 0) { path1 = path1 + ";"; path2 = path2 + ";"; }
+  path1 = path1 + str(x) + "," + str(radius * cos(a)) + "," + str(lift + radius * sin(a));
+  path2 = path2 + str(x) + "," + str(radius * cos(a + groove)) + "," + str(lift + radius * sin(a + groove));
+}
+let strand1 = scene.strand(path1, 0.11, 0.11, 16);
+strand1.set_material(back1);
+let strand2 = scene.strand(path2, 0.11, 0.11, 16);
+strand2.set_material(back2);
+for (i in range(0, pairs)) {
+  let x = float(i) * rise - half;
+  let a = float(i) * twist;
+  let y1 = radius * cos(a);
+  let z1 = lift + radius * sin(a);
+  let y2 = radius * cos(a + groove);
+  let z2 = lift + radius * sin(a + groove);
+  let ym = (y1 + y2) * 0.5;
+  let zm = (z1 + z2) * 0.5;
+  let p1 = scene.uv_sphere(0.17, 24, 16, true);
+  p1.translate(x, y1, z1);
+  p1.set_material(back1);
+  let p2 = scene.uv_sphere(0.17, 24, 16, true);
+  p2.translate(x, y2, z2);
+  p2.set_material(back2);
+  let code = (i * 7 + i * i * 3 + 1) - 4 * int(float(i * 7 + i * i * 3 + 1) / 4.0);
+  let left = scene.tube_between(x, y1, z1, x, ym, zm, 0.075);
+  let right = scene.tube_between(x, ym, zm, x, y2, z2, 0.075);
+  if (code == 0) { left.set_material(base_a); right.set_material(base_t); }
+  if (code == 1) { left.set_material(base_t); right.set_material(base_a); }
+  if (code == 2) { left.set_material(base_g); right.set_material(base_c); }
+  if (code == 3) { left.set_material(base_c); right.set_material(base_g); }
+}
+scene.ground_plane(0.0, 60.0, 0.10, 0.11, 0.14);
+scene.world_color(0.25, 0.30, 0.42, 0.45);
+scene.area_light(-3.0, -6.0, 7.0, 0.0, 0.0, 1.6, 1.0, 0.93, 0.85, 900.0, 5.0);
+scene.area_light(5.0, 3.0, 4.0, 0.0, 0.0, 1.6, 0.55, 0.70, 1.0, 400.0, 4.0);
+scene.camera_look_at(0.0, -11.0, 6.2, 0.0, 0.0, 1.35, 31.0);
+scene.render_settings(8, 2, true);
+scene.render_png("images/dna-double-helix.png", 32, 900, 500);
+end _dsl_
+savedsl(p, out);
+argv = dsl_cli(p);
+push(argv, "--dsl");
+push(argv, out);
+r = system(argv, 240000);
+if (r.code != 0) { println(trim(r.stdout)); println(trim(r.stderr)); }
+assert(r.code == 0);
+println("wrote images/dna-double-helix.png");
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

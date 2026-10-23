@@ -1,0 +1,68 @@
+// SPDX-FileCopyrightText: 2025-2026 lmblender contributors
+// SPDX-License-Identifier: MIT
+// The Cornell box (Cornell University, 1984), the standard test of global
+// illumination: a 5.5 m white room with a red left wall, a green right wall,
+// a ceiling lamp and two white blocks (short one turned -18 degrees, tall one
+// 3.3 m turned 17 degrees). Nothing in the scene is red or green except the
+// walls, yet the blocks' sides facing them pick up red and green light that
+// bounced once: colour bleeding, which only a renderer that follows indirect
+// light paths produces. Camera FOV 39.3 degrees as in the original setup.
+// Writes images/cornell-box.png.
+out = ARGV.len() > 0 ? ARGV[0] : "build/cornell-box.dslb";
+mkdir("images");
+mkdir("build");
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+let white = scene.material(0.725, 0.71, 0.68, 0.0, 0.9, 0.0, 0.0, 0.0, 0.0, 0.0);
+let red = scene.material(0.63, 0.065, 0.05, 0.0, 0.9, 0.0, 0.0, 0.0, 0.0, 0.0);
+let green = scene.material(0.14, 0.45, 0.091, 0.0, 0.9, 0.0, 0.0, 0.0, 0.0, 0.0);
+let floor = scene.cube(1.0);
+floor.scale(5.7, 5.7, 0.1);
+floor.translate(0.0, 0.0, -0.05);
+floor.set_material(white);
+let ceiling = scene.cube(1.0);
+ceiling.scale(5.7, 5.7, 0.1);
+ceiling.translate(0.0, 0.0, 5.55);
+ceiling.set_material(white);
+let back = scene.cube(1.0);
+back.scale(5.7, 0.1, 5.7);
+back.translate(0.0, 2.8, 2.75);
+back.set_material(white);
+let left = scene.cube(1.0);
+left.scale(0.1, 5.7, 5.7);
+left.translate(-2.8, 0.0, 2.75);
+left.set_material(red);
+let right = scene.cube(1.0);
+right.scale(0.1, 5.7, 5.7);
+right.translate(2.8, 0.0, 2.75);
+right.set_material(green);
+let lamp = scene.cube(1.0);
+lamp.scale(1.3, 1.05, 0.02);
+lamp.translate(0.0, 0.0, 5.49);
+lamp.set_material(scene.material(0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.75, 0.38, 34.0));
+let short_block = scene.cube(1.65);
+short_block.rotate_z(-18.0);
+short_block.translate(0.95, -0.75, 0.825);
+short_block.set_material(white);
+let tall_block = scene.cube(1.65);
+tall_block.rotate_z(17.0);
+tall_block.scale(1.0, 1.0, 2.0);
+tall_block.translate(-0.9, 0.75, 1.65);
+tall_block.set_material(white);
+scene.world_color(0.0, 0.0, 0.0, 0.0);
+scene.camera_look_at(0.0, -10.4, 2.75, 0.0, 0.0, 2.75, 39.3);
+scene.render_settings(8, 1984, true);
+scene.render_png("images/cornell-box.png", 32, 640, 640);
+end _dsl_
+savedsl(p, out);
+argv = dsl_cli(p);
+push(argv, "--dsl");
+push(argv, out);
+r = system(argv, 240000);
+if (r.code != 0) { println(trim(r.stdout)); println(trim(r.stderr)); }
+assert(r.code == 0);
+println("wrote images/cornell-box.png");
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

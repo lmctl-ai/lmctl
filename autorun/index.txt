@@ -10,6 +10,8 @@ lmhtml_solo	Seed one lmhtml Lead to audit a small HTML site and verify the repor
 lmhtml_trio	Seed an lmhtml Lead, Coder, and Reviewer to audit and review an HTML task.	https://lmctl.com/tools/lmhtml/lmhtml_trio.lms
 lmpy_solo	Seed one lmpy Lead to fit and verify a small numerical model.	https://lmctl.com/tools/lmpy/lmpy_solo.lms
 lmpy_trio	Seed an lmpy Lead, Coder, and Reviewer to fit and review a small numerical model.	https://lmctl.com/tools/lmpy/lmpy_trio.lms
+lmblender_solo	Seed one lmblender Lead to build and verify a rendered 3D scene.	https://lmctl.com/tools/lmblender/lmblender_solo.lms
+lmblender_trio	Seed a Lead, Coder, and Reviewer to build and assess a rendered lmblender scene.	https://lmctl.com/tools/lmblender/lmblender_trio.lms
 agy	Send a short greeting through Antigravity.	https://lmctl.com/helloexample/agy.lms
 claude	Send a short greeting through Claude Code.	https://lmctl.com/helloexample/claude.lms
 codex	Send a short greeting through Codex.	https://lmctl.com/helloexample/codex.lms

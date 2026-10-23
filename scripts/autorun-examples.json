@@ -58,5 +58,15 @@
     "name": "lmpy_trio",
     "description": "Seed an lmpy Lead, Coder, and Reviewer to fit and review a small numerical model.",
     "url": "https://lmctl.com/tools/lmpy/lmpy_trio.lms"
+  },
+  {
+    "name": "lmblender_solo",
+    "description": "Seed one lmblender Lead to build and verify a rendered 3D scene.",
+    "url": "https://lmctl.com/tools/lmblender/lmblender_solo.lms"
+  },
+  {
+    "name": "lmblender_trio",
+    "description": "Seed a Lead, Coder, and Reviewer to build and assess a rendered lmblender scene.",
+    "url": "https://lmctl.com/tools/lmblender/lmblender_trio.lms"
   }
 ]

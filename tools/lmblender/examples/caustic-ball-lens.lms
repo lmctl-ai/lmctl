@@ -1,0 +1,47 @@
+// SPDX-FileCopyrightText: 2025-2026 lmblender contributors
+// SPDX-License-Identifier: MIT
+// Ball-lens caustic: a glass sphere (n = 1.5) focuses a small overhead lamp.
+// Paraxial optics puts the focus f = nR / (2(n - 1)) = 1.5 R from the centre,
+// i.e. 0.5 R below the bottom of the ball. The left ball sits exactly that high
+// above the floor and paints a tight bright spot; the right ball sits on a
+// tall stand, the floor is far past focus and the light spreads into a ring.
+// The lamp is an emissive disc so refracted rays can reach it.
+// Writes images/caustic-ball-lens.png.
+out = ARGV.len() > 0 ? ARGV[0] : "build/caustic-ball-lens.dslb";
+mkdir("images");
+mkdir("build");
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+let radius = 0.8;
+let focus = 1.5 * radius;
+let glass = scene.material(1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0);
+let a = scene.uv_sphere(radius, 96, 64, true);
+a.translate(-1.5, 0.0, focus);
+a.set_material(glass);
+let b = scene.uv_sphere(radius, 96, 64, true);
+b.translate(1.5, 0.0, focus + 1.6);
+b.set_material(glass);
+let rod = scene.cylinder(0.04, focus + 1.6 - radius + 0.02, 24, true);
+rod.translate(1.5, 0.9, (focus + 1.6 - radius) * 0.5);
+rod.set_material(scene.material(0.6, 0.6, 0.62, 1.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0));
+scene.ground_plane(0.0, 30.0, 0.62, 0.6, 0.56);
+scene.world_color(0.02, 0.025, 0.035, 1.0);
+let lamp = scene.cylinder(0.45, 0.05, 48, true);
+lamp.translate(0.0, 0.0, 9.0);
+lamp.set_material(scene.material(0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.93, 0.82, 400.0));
+scene.camera_look_at(0.0, -8.6, 3.9, 0.0, 0.0, 1.25, 36.0);
+scene.render_settings(12, 7, true);
+scene.render_png("images/caustic-ball-lens.png", 64, 900, 560);
+end _dsl_
+savedsl(p, out);
+argv = dsl_cli(p);
+push(argv, "--dsl");
+push(argv, out);
+r = system(argv, 240000);
+if (r.code != 0) { println(trim(r.stdout)); println(trim(r.stderr)); }
+assert(r.code == 0);
+println("wrote images/caustic-ball-lens.png");
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

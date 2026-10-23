@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Get started with lmblender quickruns — lmblender — lmctl.com tools</title>
+<meta name="description" content="These lmscript files create a teamfile, seed provider sessions, and ask a Lead to make a rendered scene with lmblender.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmblender/">Overview</a></li>
+<li><a href="/tools/lmblender/skill.html">Skill</a></li>
+<li><a href="/tools/lmblender/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmblender/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmblender/guide.html">Guide</a></li>
+<li><a href="/tools/lmblender/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>Get started with lmblender quickruns</h1>
+<figure><img src="/tools/lmblender/img/logo.png" alt="lmblender logo: a ringed planet rendered with CPU Cycles" width="256" height="256"><figcaption>lmblender v0.3.6 is pinned in the scripts and examples.</figcaption></figure>
+<h2>Overview</h2>
+<p>These lmscript files create a teamfile, seed provider sessions, and ask a Lead to make a rendered scene with lmblender. The trio script passes the Lead's task to a Coder, asks a Reviewer to check the result, then returns the findings to the Lead.</p>
+<h2>Choose a team</h2>
+<ul>
+<li><a href="/tools/lmblender/lmblender_solo.lms">lmblender_solo.lms</a> runs one Lead using Claude Sonnet 5.5.</li>
+<li><a href="/tools/lmblender/lmblender_trio.lms">lmblender_trio.lms</a> runs a Claude Lead, Gemini Coder, and Codex Reviewer.</li>
+</ul>
+<p>Install lmctl and configure the providers named in the selected script. Run the script from the working directory where you want the scene source and output files.</p>
+<h2>Run a quickrun</h2>
+<pre><code>lmctl autorun https://lmctl.com/tools/lmblender/lmblender_solo.lms
+lmctl autorun https://lmctl.com/tools/lmblender/lmblender_trio.lms</code></pre>
+<p>The examples ask for a camera, materials, lighting, a PNG render, and a concrete check. The installation is pinned to lmblender v0.3.6. Read the final report and inspect the generated files before using them in a project.</p>
+<h2>References</h2>
+<ul>
+<li><a href="https://lmctl.com/tools/lmscript/skill.html">LMScript DSL documentation</a></li>
+<li><a href="/tools/lmblender/guide.html">lmblender API summary</a></li>
+<li><a href="/tools/lmblender/examples/cornell-box.html">Cornell box example</a></li>
+</ul>
+<p>See the <a href="/tools/lmblender/tutorial.html">tutorial</a> to build the scene yourself, or browse the complete <a href="/tools/lmblender/examples/">example book</a>.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmblender">github.com/lmctl-ai/lmblender</a>.</p>
+</footer>
+</body>
+</html>

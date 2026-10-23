@@ -1,0 +1,145 @@
+// SPDX-FileCopyrightText: 2025-2026 lmblender contributors
+// SPDX-License-Identifier: MIT
+// CAD to path-traced product shot, two hosts in one script. lmcad builds a
+// spur gear pair with true involute flanks (module 2 mm, 20 degree pressure
+// angle, 18 and 36 teeth, so a 2:1 reduction at the centre distance
+// a = m (z1 + z2) / 2 = 54 mm) and exports each gear as STL. lmblender
+// imports both, gives them steel and brass, and renders them on a slate desk
+// under two soft boxes (emissive panels, so the metal can reflect them).
+// Needs lmcad and lmblender (both installed automatically).
+// Writes images/gear-pair-render.png.
+out = ARGV.len() > 0 ? ARGV[0] : "build/gear-pair-render.dslb";
+mkdir("images");
+mkdir("build");
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+cad = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
+let steel = material().color(0.55, 0.62, 0.70);
+let brass = material().color(0.86, 0.62, 0.22);
+let module = 2.0;
+let z1 = 18;
+let z2 = 36;
+let width = 10.0;
+let pi = 3.14159265358979;
+let cos_alpha = 0.93969262078591;
+let inv_alpha = 0.01490438386;
+let center_distance = module * float(z1 + z2) / 2.0;
+let r1 = module * float(z1) / 2.0;
+let rb1 = r1 * cos_alpha;
+let ra1 = r1 + module;
+let rf1 = r1 - 1.25 * module;
+let ta1 = sqrt((ra1 / rb1) * (ra1 / rb1) - 1.0);
+let hb1 = pi / (2.0 * float(z1)) + inv_alpha;
+let s1 = scene.sketch();
+for (k in range(0, z1)) {
+  let c = 2.0 * pi * float(k) / float(z1);
+  let a0 = c - hb1;
+  s1.point(rf1 * cos(a0), rf1 * sin(a0));
+  for (i in range(0, 9)) {
+    let t = ta1 * float(i) / 8.0;
+    let x = rb1 * (cos(t) + t * sin(t));
+    let y = rb1 * (sin(t) - t * cos(t));
+    s1.point(x * cos(a0) - y * sin(a0), x * sin(a0) + y * cos(a0));
+  }
+  let a1 = c + hb1;
+  for (i in range(0, 9)) {
+    let t = ta1 * float(8 - i) / 8.0;
+    let x = rb1 * (cos(t) + t * sin(t));
+    let y = 0.0 - rb1 * (sin(t) - t * cos(t));
+    s1.point(x * cos(a1) - y * sin(a1), x * sin(a1) + y * cos(a1));
+  }
+  s1.point(rf1 * cos(a1), rf1 * sin(a1));
+  let am = c + pi / float(z1);
+  s1.point(rf1 * cos(am), rf1 * sin(am));
+}
+s1.close();
+let pinion = scene.extrude(s1, width, steel).translate(0.0, 0.0, 0.0 - width / 2.0);
+let bore1 = scene.cylinder(4.0, width * 2.0, steel).rotate(pi / 2.0, 0.0, 0.0);
+pinion.cut(bore1);
+bore1.visible(false);
+let r2 = module * float(z2) / 2.0;
+let rb2 = r2 * cos_alpha;
+let ra2 = r2 + module;
+let rf2 = r2 - 1.25 * module;
+let ta2 = sqrt((ra2 / rb2) * (ra2 / rb2) - 1.0);
+let hb2 = pi / (2.0 * float(z2)) + inv_alpha;
+let s2 = scene.sketch();
+for (k in range(0, z2)) {
+  let c = 2.0 * pi * float(k) / float(z2);
+  let a0 = c - hb2;
+  s2.point(rf2 * cos(a0), rf2 * sin(a0));
+  for (i in range(0, 9)) {
+    let t = ta2 * float(i) / 8.0;
+    let x = rb2 * (cos(t) + t * sin(t));
+    let y = rb2 * (sin(t) - t * cos(t));
+    s2.point(x * cos(a0) - y * sin(a0), x * sin(a0) + y * cos(a0));
+  }
+  let a1 = c + hb2;
+  for (i in range(0, 9)) {
+    let t = ta2 * float(8 - i) / 8.0;
+    let x = rb2 * (cos(t) + t * sin(t));
+    let y = 0.0 - rb2 * (sin(t) - t * cos(t));
+    s2.point(x * cos(a1) - y * sin(a1), x * sin(a1) + y * cos(a1));
+  }
+  s2.point(rf2 * cos(a1), rf2 * sin(a1));
+  let am = c + pi / float(z2);
+  s2.point(rf2 * cos(am), rf2 * sin(am));
+}
+s2.close();
+let gear = scene.extrude(s2, width, brass).translate(0.0, 0.0, 0.0 - width / 2.0);
+let bore2 = scene.cylinder(6.0, width * 2.0, brass).rotate(pi / 2.0, 0.0, 0.0);
+gear.cut(bore2);
+bore2.visible(false);
+for (h in range(0, 6)) {
+  let ah = 2.0 * pi * float(h) / 6.0;
+  let hole = scene.cylinder(5.0, width * 2.0, brass).rotate(pi / 2.0, 0.0, 0.0).translate(19.0 * cos(ah), 19.0 * sin(ah), 0.0);
+  gear.cut(hole);
+  hole.visible(false);
+}
+scene.assert_close(center_distance, 54.0, 0.000001);
+scene.assert_close(r1 + r2, center_distance, 0.000001);
+
+gear.position(center_distance, 0.0, 0.0).rotate(0.0, 0.0, pi / float(z2));
+pinion.rotate(0.0, 0.0, 0.0);
+gear.visible(false);
+scene.export_stl("build/gear-pinion.stl");
+gear.visible(true);
+pinion.visible(false);
+scene.export_stl("build/gear-wheel.stl");
+end _dsl_
+cad_out = "build/gear-pair-cad.dslb";
+savedsl(cad, cad_out);
+c = system ${dsl_cli(cad)} --dsl ${cad_out};
+if (c.code != 0) { println(trim(c.stdout)); println(trim(c.stderr)); }
+assert(c.code == 0);
+p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+let pinion = scene.import_stl("build/gear-pinion.stl");
+pinion.scale(0.1, 0.1, 0.1);
+pinion.translate(0.0, 0.0, 0.5);
+pinion.set_material(scene.material(0.62, 0.64, 0.68, 1.0, 0.28, 0.0, 0.0, 0.0, 0.0, 0.0));
+let wheel = scene.import_stl("build/gear-wheel.stl");
+wheel.scale(0.1, 0.1, 0.1);
+wheel.translate(0.0, 0.0, 0.5);
+wheel.set_material(scene.material(0.90, 0.64, 0.24, 1.0, 0.24, 0.0, 0.0, 0.0, 0.0, 0.0));
+let box_a = scene.cube(1.0);
+box_a.scale(6.0, 6.0, 0.05);
+box_a.translate(1.5, -1.0, 9.0);
+box_a.set_material(scene.material(0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.95, 0.9, 10.0));
+let box_b = scene.cube(1.0);
+box_b.scale(0.05, 6.0, 4.0);
+box_b.translate(-6.0, -3.0, 4.0);
+box_b.set_material(scene.material(0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.8, 0.88, 1.0, 3.0));
+scene.ground_plane(0.0, 100.0, 0.08, 0.085, 0.09);
+scene.world_color(0.20, 0.22, 0.26, 0.6);
+scene.camera_look_at(-2.5, -10.0, 7.5, 2.6, 0.0, 0.3, 36.0);
+scene.render_settings(8, 54, true);
+scene.render_png("images/gear-pair-render.png", 32, 900, 560);
+end _dsl_
+savedsl(p, out);
+argv = dsl_cli(p);
+push(argv, "--dsl");
+push(argv, out);
+r = system(argv, 240000);
+if (r.code != 0) { println(trim(r.stdout)); println(trim(r.stderr)); }
+assert(r.code == 0);
+println("wrote images/gear-pair-render.png");

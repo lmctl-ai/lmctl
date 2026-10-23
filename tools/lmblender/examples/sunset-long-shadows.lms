@@ -1,0 +1,52 @@
+// SPDX-FileCopyrightText: 2025-2026 lmblender contributors
+// SPDX-License-Identifier: MIT
+// Why sunsets are red and shadows are long. The only light is Cycles'
+// multiple-scattering sky with the Sun 6 degrees above the horizon. At that
+// height sunlight crosses about 9 air masses (Kasten-Young), and Rayleigh
+// scattering, which grows as 1/wavelength^4, strips blue first, so the disc and
+// the light on the ground turn orange while the sky overhead stays blue.
+// Shadow length is h / tan(6 deg) = 9.5 h: each 1 m post throws a 9.5 m shadow,
+// marked by the flat white disc at the tip of the centre post's shadow.
+// Writes images/sunset-long-shadows.png.
+out = ARGV.len() > 0 ? ARGV[0] : "build/sunset-long-shadows.dslb";
+mkdir("images");
+mkdir("build");
+if (!file_exists("build")) { mkdir("build"); }
+if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+let elevation = 6.0;
+let rad = elevation * 3.14159265 / 180.0;
+let shadow = cos(rad) / sin(rad);
+let airmass = 1.0 / (sin(rad) + 0.50572 * pow(elevation + 6.07995, -1.6364));
+let sun_r = pow(2.718281828, -0.050 * airmass);
+let sun_g = pow(2.718281828, -0.098 * airmass);
+let sun_b = pow(2.718281828, -0.219 * airmass);
+let wood = scene.material(0.42, 0.30, 0.20, 0.0, 0.7, 0.0, 0.0, 0.0, 0.0, 0.0);
+for (i in range(0, 5)) {
+  let post = scene.cylinder(0.07, 1.0, 24, true);
+  post.translate(float(i - 2) * 1.6, 0.0, 0.5);
+  post.set_material(wood);
+}
+let marker = scene.cylinder(0.16, 0.01, 32, true);
+marker.translate(0.0, shadow, 0.005);
+marker.set_material(scene.material(0.9, 0.9, 0.9, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0));
+scene.ground_plane(0.0, 400.0, 0.50, 0.50, 0.50);
+scene.sky_texture(elevation, 180.0, 0.12);
+scene.sun_light(0.0, cos(rad), -sin(rad), sun_r, sun_g, sun_b, 9.0, 0.53);
+scene.light_clamp(0.0, 2.0);
+scene.set_view_transform("Filmic");
+scene.camera_look_at(2.2, 17.0, 2.4, 0.0, 3.5, 0.6, 38.0);
+scene.render_settings(8, 6, true);
+scene.render_png("images/sunset-long-shadows.png", 48, 900, 560);
+end _dsl_
+savedsl(p, out);
+argv = dsl_cli(p);
+push(argv, "--dsl");
+push(argv, out);
+r = system(argv, 240000);
+if (r.code != 0) { println(trim(r.stdout)); println(trim(r.stderr)); }
+assert(r.code == 0);
+println("wrote images/sunset-long-shadows.png");
+
+run = system ${dsl_cli(p)} --dsl ${out};
+if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }
