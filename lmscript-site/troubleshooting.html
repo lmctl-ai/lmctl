@@ -14,6 +14,18 @@
 <main>
 <h1>Troubleshooting</h1>
 <p>These messages were reproduced with the lmscript compiler used by the documentation checks. Save the linked failure scripts under examples/ first. The commands below set --source-name to reproduce these exact labels; without it, the diagnostic uses the supplied path. Source names and line numbers are part of each diagnostic.</p>
+<h2 id="install">GitHub tool installation failures</h2>
+<p>An _dsl_ block with cli and install may need to download a host binary from a GitHub release. The first diagnostic line keeps the located _dsl_ install prefix; the indented lines explain the failure and possible remedies.</p>
+<pre><samp>_dsl_: install github:lmctl-ai/lmmagnum@latest: GitHub API rate limit exceeded (HTTP 403)
+  Unauthenticated GitHub API calls are limited to 60 requests per hour per IP.
+  Rate limit resets at the local time shown by your host (in about N minutes).
+  x-ratelimit-remaining: 0; resource: core
+  Remedies: set GITHUB_TOKEN to any token; pin an exact tag; or retry after the reset.
+  Verified cached binary: not available; the install cannot continue without a usable cached binary</samp></pre>
+<p>When the GitHub API reports a rate limit, set GITHUB_TOKEN to any valid token; no scopes are needed, and gh auth token prints a token for an authenticated GitHub CLI. Or pin the install source to an exact release tag such as github:lmctl-ai/lmmagnum@v0.1.0. A pinned host already in the verified tool cache needs no release lookup. Retrying after the displayed reset also works. A verified cached binary is used after a transient lookup failure; the diagnostic says whether one was available.</p>
+<p>A 403 that is not a rate limit includes GitHub's response text, for example abuse detection or organization access restrictions. For 404, check the public owner and repository spelling and that a release exists; private repositories also return 404 without GITHUB_TOKEN. For 401, replace an invalid or expired GITHUB_TOKEN. Never share the token value.</p>
+<p>Download errors name the asset and URL. A checksum error reports the expected and downloaded SHA-256 values; ask the tool owner to verify the published asset and digest, and do not bypass the check. Network errors name the URL and suggest checking network access, DNS, proxy and firewall. Release assets are downloaded as binaries directly; archive extraction is not part of install=.</p>
+<p>If the platform is unsupported, use a Linux, macOS or Windows x64 or arm64 host, or ask the tool owner to publish the expected platform asset.</p>
 <h2>Unknown name: check spelling or assign it first</h2>
 <pre><code>lmscript --source-name undeclared-name.lms examples/undeclared-name.lms</code></pre>
 <p>This command prints this exact compiler error and exits with code 2:</p>

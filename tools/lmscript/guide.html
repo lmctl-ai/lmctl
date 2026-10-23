@@ -39,6 +39,12 @@
 <pre><kbd>lmscript --version</kbd>
 <samp>lmscript 0.2.348</samp></pre>
 <p>Update with the same command; npm view @lmctl-ai/lmctl version shows the latest published version.</p>
+<p>For GitHub host installation failures from _dsl_ install=, see <a href="#install-troubleshooting">Troubleshooting GitHub host installation</a>.</p>
+
+<h2 id="install-troubleshooting">Troubleshooting GitHub host installation</h2>
+<p>A rate-limit error means the unauthenticated GitHub API allowance of 60 requests per hour per IP is exhausted. The message includes the reset time in local time, minutes remaining, GitHub rate-limit headers and whether a verified cached binary could be used. Set GITHUB_TOKEN to any valid token; no scopes are needed, and gh auth token prints one. Or pin an exact release tag such as github:lmctl-ai/lmmagnum@v0.1.0; a pinned host already in the verified cache needs no release lookup. You can also retry after the displayed reset.</p>
+<p>A 403 that is not a rate limit includes GitHub's own message, such as abuse detection or organization access restrictions. A 404 can mean a typo in the public owner or repository, no published release, or a private repository; use GITHUB_TOKEN for private access. A 401 means GITHUB_TOKEN is invalid or expired. Never share the token value.</p>
+<p>Download failures identify the asset and URL. Checksum failures show the expected and downloaded SHA-256 values; ask the tool owner to verify the asset and digest, and do not bypass verification. Network errors identify the URL and suggest checking network access, DNS, proxy and firewall. install= downloads a binary directly and does not extract archives. Unsupported platforms need a Linux, macOS or Windows x64 or arm64 host, or a matching release asset from the tool owner.</p>
 
 <h2 id="concepts">Concepts</h2>
 <dl>
