@@ -43,6 +43,7 @@ lmscript --dsl-signatures schema.json
 <p>Catch dslvm::Error around load and run. Standard CLI conventions use exit 2 for compilation/argument errors, 3 for bytecode load or run errors, and 4 for application failures. Include the error code and source location when present.</p>
 <h2>How to verify</h2>
 <ol><li>Compile a tiny DSL chunk against the host schema.</li><li>Diff the compiler's canonical signatures against Registry::signatures().</li><li>Test a valid run and representative load/runtime failures.</li><li>Confirm the host passes the exact schema bytes used by the compiler.</li><li>Test object ownership and collection access over the complete script run.</li></ol>
+<p>lmcode-cpp is the C++ member of a five-language SDK family with <a href="https://github.com/lmctl-ai/lmcode-rust">Rust</a>, <a href="https://github.com/lmctl-ai/lmcode-go">Go</a>, <a href="https://github.com/lmctl-ai/lmcode-csharp">C#</a>, and <a href="https://github.com/lmctl-ai/lmcode-java">Java</a> siblings.</p>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-cpp">github.com/lmctl-ai/lmcode-cpp</a>.</p>

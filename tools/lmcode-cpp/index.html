@@ -26,7 +26,16 @@
 <h2>Overview</h2>
 <p>Experimental. lmcode-cpp is a C++17, standard-library-only header for loading, verifying and executing lmscript bytecode inside a host application.</p>
 <p>Start with the <a href="/tools/lmcode-cpp/tutorial.html">tutorial</a>, use the <a href="/tools/lmcode-cpp/guide.html">user guide</a> for API and format details, or give the <a href="/tools/lmcode-cpp/skill.html">skill page</a> to an assistant writing host bindings.</p>
-<p>Install by copying include/dslvm.hpp into your project or pinning the SDK source commit. There is no compiled library or third-party dependency. The standard function schema is included by each Registry, so hosts do not register standard functions.</p>
+<p>Install by copying include/dslvm.hpp into your project or pinning the SDK source commit. There is no compiled library or third-party dependency. Each default Registry provides the 72 standard signatures, so hosts do not register those functions. See the guide for the standard schema and compiler input.</p>
+<h2>LMCode SDK family</h2>
+<p>lmcode-cpp is the C++ entry in a five-language SDK family. Each runtime provides the same schema-bound bytecode model and its language's host API.</p>
+<table><thead><tr><th>Language</th><th>SDK</th></tr></thead><tbody>
+<tr><td>C++</td><td><a href="https://github.com/lmctl-ai/lmcode-cpp">lmcode-cpp</a></td></tr>
+<tr><td>Rust</td><td><a href="https://github.com/lmctl-ai/lmcode-rust">lmcode-rust</a></td></tr>
+<tr><td>Go</td><td><a href="https://github.com/lmctl-ai/lmcode-go">lmcode-go</a></td></tr>
+<tr><td>C#</td><td><a href="https://github.com/lmctl-ai/lmcode-csharp">lmcode-csharp</a></td></tr>
+<tr><td>Java</td><td><a href="https://github.com/lmctl-ai/lmcode-java">lmcode-java</a></td></tr>
+</tbody></table>
 <ul><li><a href="https://github.com/lmctl-ai/lmcode-cpp">Source repository</a></li><li><a href="https://github.com/lmctl-ai/lmcode-cpp/releases/latest">Latest release</a></li><li><a href="https://github.com/lmctl-ai/lmcode-cpp/issues">Report an issue</a></li><li><a href="https://github.com/lmctl-ai/lmcode-cpp/blob/main/README.md">README and API example</a></li><li><a href="https://github.com/lmctl-ai/lmcode-cpp/blob/main/LICENSE">MIT license</a></li></ul>
 </main>
 <footer>

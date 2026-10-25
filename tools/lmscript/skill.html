@@ -122,9 +122,10 @@ println(f"{len(changed)} changed file(s)");</code></pre>
 2. /home/me/cleanup.lms:2:1 dummy delete_file ["out/notes.txt"]
 3. /home/me/cleanup.lms:3:1 handled println ["cleaned up"]</samp></pre>
 <h3 id="example-dsl">Experimental: compile a native program for a native host</h3>
-<p>Experimental; the syntax may change. An LMCode block holds code in a separate, statically typed language that a native host program (for example lmhtml or lmcad) runs. lmscript compiles it at check time against the host's schema and savedsl writes the bytecode; the host runs it.</p><p>Use lmscript 0.2.420 or newer for the current block spelling. The former spelling remains accepted as a compatibility alias.</p>
+<p>Experimental; the syntax may change. An LMCode block holds code in a separate, statically typed language that a native host program (for example lmhtml or lmcad) runs. lmscript compiles it at check time against the host's schema and savedsl writes the bytecode; the host runs it.</p><p>The marker _lmcode_ replaces _dsl_; the earlier _dsl_ marker remains accepted. Use lmctl 0.2.420 or newer for the current spelling.</p>
+<p>Native hosts can use the five-language LMCode SDK family: <a href="https://github.com/lmctl-ai/lmcode-cpp">C++</a>, <a href="https://github.com/lmctl-ai/lmcode-rust">Rust</a>, <a href="https://github.com/lmctl-ai/lmcode-go">Go</a>, <a href="https://github.com/lmctl-ai/lmcode-csharp">C#</a>, or <a href="https://github.com/lmctl-ai/lmcode-java">Java</a>. Default registries provide standard functions; host callbacks should cover only host-specific operations.</p>
 <ol>
-<li>With lmscript 0.2.420 or newer, tool users can let lmscript obtain the host schema automatically. For lmhtml use cli="lmhtml" and install="github:lmctl-ai/lmhtml@latest" on the native host declaration. Use the host documentation for available contexts, functions and methods.</li>
+<li>With lmctl 0.2.420 or newer, tool users can let lmscript obtain the host schema automatically. For lmhtml use cli="lmhtml" and install="github:lmctl-ai/lmhtml@latest" on the native host declaration. Use the host documentation for available contexts, functions and methods.</li>
 <li>Schema-file input remains available for SDK authors and compatibility testing.</li>
 <li>Write the block using the opening and closing marker lines shown below.</li>
 </ol>

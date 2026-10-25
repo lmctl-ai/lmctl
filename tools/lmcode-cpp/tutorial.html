@@ -49,7 +49,7 @@ savedsl(p, "demo.dslb");</code></pre>
 <pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript demo.lms demo.dslb</kbd>
 <samp>exit status: 0</samp></pre>
 <h2>3. Implement and build the host</h2>
-<p>The SDK Registry includes standard functions by default. This host binds only Greeter.say, loads bytecode against the exact schema bytes, supplies a live object through Context, and reports a standard JSON result line.</p>
+<p>The default SDK Registry includes standard functions automatically, so this host binds only Greeter.say. Keep standard declarations out of the host-owned schema, but include them in the effective compiler schema as directed by the SDK README. Then load bytecode against those exact schema bytes, supply a live object through Context, and report a standard JSON result line.</p>
 <pre><code>#include "dslvm.hpp"
 #include &lt;iostream>
 struct Greeter { std::string last; };
@@ -81,6 +81,7 @@ method Greeter.say(string) -> void</samp></pre>
 <samp>{"ok": true, "result": "Hello from the DSL"}</samp></pre>
 <h2>What you learned</h2>
 <p>The compiler binds imports to the schema bytes; the host registers matching signatures, loads the program, provides owned objects through a context and executes the verified bytecode.</p>
+<p>lmcode-cpp is the C++ member of a five-language family with <a href="https://github.com/lmctl-ai/lmcode-rust">Rust</a>, <a href="https://github.com/lmctl-ai/lmcode-go">Go</a>, <a href="https://github.com/lmctl-ai/lmcode-csharp">C#</a>, and <a href="https://github.com/lmctl-ai/lmcode-java">Java</a> siblings.</p>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-cpp">github.com/lmctl-ai/lmcode-cpp</a>.</p>
