@@ -1,11 +1,11 @@
 // One concept: compute the 97.5th percentile of a standard normal distribution.
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";
+p = _lmcode_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";
 let q = dist("norm").ppf(0.975);
 out.close("normal 97.5% quantile", q, 1.959963984540054, 0.00000000000001);
 out.put("quantile", q);
-end _dsl_
+end _lmcode_
 
 out = ARGV.len() > 0 ? ARGV[0] : "build/normal-quantile.dslb";
 savedsl(p, out);

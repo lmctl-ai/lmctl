@@ -1,14 +1,14 @@
 # One concept: backpropagate through the sum of squared values.
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmtorch" install="github:lmctl-ai/lmtorch@latest";
+p = _lmcode_ cli="lmtorch" install="github:lmctl-ai/lmtorch@latest";
 let x = torch.tensor("[1.0, -2.0, 3.0]").requires_grad(true);
 let loss = x.square().sum();
 loss.backward();
 let gradient = x.grad();
 out.check(gradient.allclose(x.detach() * 2.0, 0.0, 0.0), "gradient must equal 2x");
 out.set("loss", loss.item()).set("gradient", gradient);
-end _dsl_
+end _lmcode_
 out = "autograd-gradient.dslb";
 
 savedsl(p, "autograd-gradient.dslb");

@@ -1,7 +1,7 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/rendered/title-card";
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(960, 540, "#152438");
 let panel = scene.rect(58.0, 56.0, 844.0, 428.0, "#1f344b");
 panel.set_attr("stroke", "#38536c");
@@ -15,7 +15,7 @@ scene.text(104.0, 328.0, 23.0, "Readable vectors,\nreal type and predictable out
 scene.line(104.0, 388.0, 772.0, 388.0, "#6fbdb4", 3.0);
 scene.text(104.0, 436.0, 17.0, "lmdraw / retained vector scene / 2026", "#b8c8d6");
 scene.render_png("build/rendered/title-card.png", 960, 540, 1);
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 println(f"wrote {out}");
 

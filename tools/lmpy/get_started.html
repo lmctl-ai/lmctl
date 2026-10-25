@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Get started with lmpy — lmpy — lmctl.com tools</title>
-<meta name="description" content="Use lmpy from LMScript without a separate Python, R or Docker installation. The compiler resolves the released host and its schema from the _dsl_ declaration.">
+<meta name="description" content="Use lmpy from LMScript without a separate Python, R or Docker installation. The compiler resolves the released host and its schema from the native host declaration.">
 <link rel="stylesheet" href="/tools/style.css">
 <link rel="icon" type="image/png" href="/tools/lmpy/img/icon.png">
 </head>
@@ -22,17 +22,17 @@
 </ul>
 </nav>
 <main><h1>Get started with lmpy</h1>
-<p>Use lmpy from LMScript without a separate Python, R or Docker installation. The compiler resolves the released host and its schema from the _dsl_ declaration.</p>
+<p>Use lmpy from LMScript without a separate Python, R or Docker installation. The compiler resolves the released host and its schema from the native host declaration.</p>
 <h2>Overview</h2>
 <p>A complete lmpy program declares a host, checks its numerical answer, and prints selected result values.</p>
 <h2>1. Create a checked program</h2>
 <p>Declare the host, calculate a value, and check it against a known answer.</p>
 <pre><code>if (!file_exists("build")) { mkdir("build"); }
-p = _dsl_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";
+p = _lmcode_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";
 let q = dist("norm").ppf(0.975);
 out.close("normal quantile", q, 1.959963984540054, 0.00000000000001);
 out.put("quantile", q);
-end _dsl_
+end _lmcode_
 savedsl(p, "build/normal-quantile.dslb");
 r = system ${dsl_cli(p)} --dsl build/normal-quantile.dslb;
 if (r.code != 0) { println(r.stderr); exit(r.code); }

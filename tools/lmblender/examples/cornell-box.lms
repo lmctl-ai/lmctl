@@ -13,7 +13,7 @@ mkdir("images");
 mkdir("build");
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
 let white = scene.material(0.725, 0.71, 0.68, 0.0, 0.9, 0.0, 0.0, 0.0, 0.0, 0.0);
 let red = scene.material(0.63, 0.065, 0.05, 0.0, 0.9, 0.0, 0.0, 0.0, 0.0, 0.0);
 let green = scene.material(0.14, 0.45, 0.091, 0.0, 0.9, 0.0, 0.0, 0.0, 0.0, 0.0);
@@ -54,7 +54,7 @@ scene.world_color(0.0, 0.0, 0.0, 0.0);
 scene.camera_look_at(0.0, -10.4, 2.75, 0.0, 0.0, 2.75, 39.3);
 scene.render_settings(8, 1984, true);
 scene.render_png("images/cornell-box.png", 32, 640, 640);
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 argv = dsl_cli(p);
 push(argv, "--dsl");

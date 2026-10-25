@@ -45,7 +45,7 @@ for (r in range(0, 4)) {
 out = ARGV.len() > 0 ? ARGV[0] : "build/table-metrics.dslb";
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(960, 430, "#101820");
 
 scene.path(${zebra_a_d}, "#16222f", "#3a556e", 1.0);
@@ -97,7 +97,7 @@ for (c in range(0, 2)) {
 }
 scene.text(242.0, 338.0, 15.0, "error count falling across quarters", "#9db4c8");
 scene.render_png("build/rendered/table-metrics.png", 960, 430, 1);
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 println(f"wrote {out}");
 

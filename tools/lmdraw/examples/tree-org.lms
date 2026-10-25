@@ -35,7 +35,7 @@ for (i in range(0, 3)) {
 out = ARGV.len() > 0 ? ARGV[0] : "build/tree-org.dslb";
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(960, 520, "#101820");
 
 for (i in range(0, 3)) {
@@ -75,7 +75,7 @@ scene.text(890.0, 395.0, 14.0, ${leaf_titles[2][2]}, "#dbe7f3").set_attr("text-a
 
 scene.text(60.0, 470.0, 15.0, "straight-edge layered tree, one highlighted path", "#9db4c8");
 scene.render_png("build/rendered/tree-org.png", 960, 520, 1);
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 println(f"wrote {out}");
 

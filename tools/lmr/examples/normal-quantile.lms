@@ -1,11 +1,11 @@
 // One concept: ask lmr for the standard-normal 97.5% quantile.
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmr" install="github:lmctl-ai/lmr@latest";
+p = _lmcode_ cli="lmr" install="github:lmctl-ai/lmr@latest";
 let z = norm().q_vec(parse_vec("0.975")).at(0);
 out.check_close(z, 1.959963984540054, 0.00000000000001, "normal 97.5% quantile");
 out.set("z", z);
-end _dsl_
+end _lmcode_
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
 savedsl(p, "build/rendered/normal-quantile.dslb");

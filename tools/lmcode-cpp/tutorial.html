@@ -39,11 +39,11 @@
   "functions": {},
   "context": { "g": "Greeter" }
 }</code></pre>
-<p>This schema= declaration is the SDK-author flow; tool users should use cli and install on the _dsl_ declaration.</p>
+<p>This schema= declaration is the SDK-author flow; tool users should use cli and install on the LMCode declaration.</p>
 <h2>2. Compile a DSL call</h2>
-<pre><code>p = _dsl_ schema="schema.json";
+<pre><code>p = _lmcode_ schema="schema.json";
 g.say("Hello from the DSL");
-end _dsl_
+end _lmcode_
 savedsl(p, "demo.dslb");</code></pre>
 <p>Run the compiler:</p>
 <pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript demo.lms demo.dslb</kbd>

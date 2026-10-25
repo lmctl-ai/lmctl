@@ -2,14 +2,14 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/box-volume.dslb";
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
+p = _lmcode_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
 let shape = scene.box(2.0, 3.0, 4.0, material().color(0.2, 0.55, 0.85));
 scene.assert_close(shape.volume(), 24.0, 0.000001);
 scene.fit_camera(42.0, 1.2);
 scene.directional_light(-0.5, -1.0, -0.4, 0.8);
 scene.ambient(0.2);
 scene.render_png("build/box-volume.png", 320, 240);
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 println(f"wrote {out}");
 

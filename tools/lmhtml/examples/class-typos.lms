@@ -3,7 +3,7 @@ out = ARGV.len() > 0 ? ARGV[0] : "build/class-typos.dslb";
 write_file("build/example-classes/index.html", "<!doctype html><html><head><style>.nav {} .used {} .footer {} #team {} #unused-id {}</style></head><body><nav class=\"nav\">Menu</nav><p class=\"used usde\" id=\"teem\">Text</p></body></html>");
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 # site-wide sets in one call each; policy: JS-hook class patterns are ignored
 let pages = html.load_dir("build/example-classes");
 let used_all = pages.classes_used();
@@ -31,7 +31,7 @@ for (m in range(0, ids_unused.len())) {
 }
 report.write_text("build/classes.txt");
 report.write_json("build/classes.json");
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 
 run = system ${dsl_cli(p)} --dsl ${out};

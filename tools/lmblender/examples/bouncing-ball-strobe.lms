@@ -13,7 +13,7 @@ mkdir("images");
 mkdir("build");
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
 let g = 9.81;
 let e = 0.8;
 let r = 0.05;
@@ -54,7 +54,7 @@ scene.area_light(-1.5, -4.0, 4.0, 0.0, 0.0, 1.0, 1.0, 0.97, 0.92, 500.0, 3.0);
 scene.camera_look_at(0.0, -6.4, 1.15, 0.0, 0.0, 1.05, 30.0);
 scene.render_settings(6, 25, true);
 scene.render_png("images/bouncing-ball-strobe.png", 24, 900, 520);
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 argv = dsl_cli(p);
 push(argv, "--dsl");

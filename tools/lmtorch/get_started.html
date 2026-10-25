@@ -30,12 +30,12 @@
 <pre><code>npm install -g @lmctl-ai/lmctl</code></pre>
 <h2>Run a checked example</h2>
 <p>Save this program as tensor-sum.lms in an empty working directory. It creates a two-by-two tensor, checks its sum, and prints the result.</p>
-<pre><code>p = _dsl_ cli="lmtorch" install="github:lmctl-ai/lmtorch@latest";
+<pre><code>p = _lmcode_ cli="lmtorch" install="github:lmctl-ai/lmtorch@latest";
 let values = torch.tensor("[[1.0, 2.0], [3.0, 4.0]]");
 let total = values.sum().item();
 out.check(total == 10.0, "sum must be 10");
 out.set("shape", values.shape()).set("sum", total);
-end _dsl_
+end _lmcode_
 savedsl(p, "tensor-sum.dslb");
 run = system ${dsl_cli(p)} --dsl tensor-sum.dslb;
 if (run.code != 0) { println(str(run.stderr)); exit(run.code); }

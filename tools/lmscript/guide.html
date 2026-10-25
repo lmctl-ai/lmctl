@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>lmscript user guide — lmscript — lmctl.com tools</title>
-<meta name="description" content="lmscript reference: syntax, values, control flow, functions, modules, data blocks, commands, the standard library, the CLI, and the experimental _dsl_ blocks.">
+<meta name="description" content="lmscript reference: syntax, values, control flow, functions, modules, data blocks, commands, the standard library, the CLI, and the experimental LMCode blocks.">
 <link rel="stylesheet" href="/tools/style.css">
 <link rel="icon" type="image/png" href="/tools/lmscript/img/icon.png">
 </head>
@@ -39,7 +39,7 @@
 <pre><kbd>lmscript --version</kbd>
 <samp>lmscript 0.2.348</samp></pre>
 <p>Update with the same command; npm view @lmctl-ai/lmctl version shows the latest published version.</p>
-<p>For GitHub host installation failures from _dsl_ install=, see <a href="#install-troubleshooting">Troubleshooting GitHub host installation</a>.</p>
+<p>For GitHub host installation failures when installing a native host, see <a href="#install-troubleshooting">Troubleshooting GitHub host installation</a>.</p>
 
 <h2 id="install-troubleshooting">Troubleshooting GitHub host installation</h2>
 <p>A rate-limit error means the unauthenticated GitHub API allowance of 60 requests per hour per IP is exhausted. The message includes the reset time in local time, minutes remaining, GitHub rate-limit headers and whether a verified cached binary could be used. Set GITHUB_TOKEN to any valid token; no scopes are needed, and gh auth token prints one. Or pin an exact release tag such as github:lmctl-ai/lmmagnum@v0.1.0; a pinned host already in the verified cache needs no release lookup. You can also retry after the displayed reset.</p>
@@ -223,7 +223,7 @@ end _toml_</code></pre>
 <tr><td>_props_</td><td>A flat map of strings (Java properties).</td></tr>
 <tr><td>_cmd_</td><td>An argument list for system, one command spread over several lines.</td></tr>
 <tr><td>_graphql_</td><td>A GraphQL document as a string, syntax-checked.</td></tr>
-<tr><td>_dsl_</td><td>Experimental: a compiled program for a native host (<a href="#dsl">below</a>).</td></tr>
+<tr><td>Native block</td><td>Experimental: a compiled program for a native host (<a href="#dsl">below</a>).</td></tr>
 </tbody>
 </table>
 <p>Rules: the statement ends with ; on the marker line; the body starts on the next line; the block closes with a line that is exactly end _csv_ (matching marker, column 1). Blank lines and lines starting with # are dropped. ${expr} inserts a value safely: it can never add rows, cells or quotes. All blocks are validated by the check, before anything runs.</p>
@@ -301,12 +301,12 @@ r = system(argv, 10000);            # computed argv, 10 s timeout</code></pre>
 <dd>Returns value or stops with message (exit 1) when it is null or empty.</dd>
 </dl>
 
-<h3 id="dsl">Experimental: _dsl_ blocks for native hosts</h3>
-<p>Experimental. The syntax and the bytecode format may change without compatibility. A _dsl_ block is not lmscript: its body is code in a small, statically typed language that lmscript compiles for a native host. For tool users, cli and install on the _dsl_ declaration let lmscript obtain the host schema automatically. Schema-file input remains available for SDK authors. lmscript saves the program; the host loads and runs it. Hosts include <a href="/tools/lmhtml/skill.html">lmhtml</a> (HTML checking) and <a href="/tools/lmcad/index.html">lmcad</a> (3D shapes and images); hosts are built with the C++ runtime <a href="/tools/lmcode-cpp/index.html">lmcode-cpp</a>.</p>
-<p>The automatic tool workflow requires lmscript 0.2.369 or newer:</p>
+<h3 id="dsl">Experimental: native code blocks for native hosts</h3>
+<p>Experimental. The syntax and the bytecode format may change without compatibility. An LMCode block is not lmscript: its body is code in a small, statically typed language that lmscript compiles for a native host. For tool users, cli and install on the native host declaration let lmscript obtain the host schema automatically. Schema-file input remains available for SDK authors. lmscript saves the program; the host loads and runs it. Hosts include <a href="/tools/lmhtml/skill.html">lmhtml</a> (HTML checking) and <a href="/tools/lmcad/index.html">lmcad</a> (3D shapes and images); hosts are built with the C++ runtime <a href="/tools/lmcode-cpp/index.html">lmcode-cpp</a>.</p>
+<p>Use lmscript 0.2.420 or newer for the current block spelling. The former spelling remains accepted as a compatibility alias.</p><p>The automatic tool workflow requires lmscript 0.2.420 or newer:</p>
 <ol>
 <li>For lmhtml, use the automatic tool declaration shown below. To inspect its contexts and methods, consult the lmhtml documentation.</li>
-<li>Write a script with a _dsl_ block and savedsl: <pre><code>check = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+<li>Write a script with an LMCode block and savedsl: <pre><code>check = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 let pages = html.load_dir("site");
 for (i in range(0, pages.len())) {
   let page = pages.at(i);
@@ -319,7 +319,7 @@ for (i in range(0, pages.len())) {
   }
 }
 report.write_text("broken.txt");
-end _dsl_
+end _lmcode_
 savedsl(check, "links.dslb");</code></pre></li>
 <li>Compile by running the script: lmscript links.lms writes links.dslb.</li>
 <li>Run it in the host: lmhtml --dsl links.dslb prints one JSON result line, {"ok": true, "result": null}, and writes broken.txt.</li>
@@ -365,7 +365,7 @@ println(f"commit {trim(r.stdout)}");</code></pre>
 <li>No classes, closures, anonymous functions, nested function declarations, ++ or compound assignment.</li>
 <li>Numbers are 64-bit floats (exact integers up to 2^53).</li>
 <li>The dry pass simulates at most 10 iterations per loop and 100 ms by default; it cannot predict data that only exists at run time.</li>
-<li>_dsl_ blocks are experimental.</li>
+<li>LMCode blocks are experimental.</li>
 </ul>
 
 <h2 id="troubleshooting">Troubleshooting</h2>
@@ -384,7 +384,7 @@ println(f"commit {trim(r.stdout)}");</code></pre>
 <dd>The input file is missing relative to the working directory; this check runs before any effect.</dd>
 <dt>The real run did not start after a failure</dt>
 <dd>The dry pass hit a fatal error first. Run lmscript --dry-run script.lms to see where.</dd>
-<dt>_dsl_ error, or the host says LOAD_SCHEMA_MISMATCH</dt>
+<dt>LMCode error, or the host says LOAD_SCHEMA_MISMATCH</dt>
 <dd>Recompile against the exact schema the host prints with --schema --json; the bytecode embeds the schema hash.</dd>
 </dl>
 </main>

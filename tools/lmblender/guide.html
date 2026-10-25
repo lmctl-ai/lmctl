@@ -27,11 +27,11 @@
 <p>lmblender executes lmscript DSL v5 bytecode and builds a Cycles CPU scene. Use it when a task needs procedural geometry, materials, lighting, image rendering, animation, or mesh export from a script. It is a standalone renderer, not a Python interface to Blender.</p>
 <h2>Install and run</h2>
 <p>Declare the host in an lmscript block. This book pins v0.3.6 so every example uses the same released binary:</p>
-<pre><code>p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+<pre><code>p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
 let ball = scene.uv_sphere(1.0, 48, 24, true);
 scene.studio_setup();
 scene.render_png("build/ball.png", 16, 640, 480);
-end _dsl_
+end _lmcode_
 savedsl(p, "build/ball.dslb");
 r = system ${dsl_cli(p)} --dsl build/ball.dslb;
 if (r.code != 0) { println(trim(r.stdout)); println(trim(r.stderr)); exit(1); }</code></pre>

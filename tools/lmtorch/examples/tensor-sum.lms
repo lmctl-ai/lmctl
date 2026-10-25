@@ -1,12 +1,12 @@
 # One concept: create a tensor and reduce all its elements to one scalar.
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmtorch" install="github:lmctl-ai/lmtorch@latest";
+p = _lmcode_ cli="lmtorch" install="github:lmctl-ai/lmtorch@latest";
 let values = torch.tensor("[[1.0, 2.0], [3.0, 4.0]]");
 let total = values.sum().item();
 out.check(total == 10.0, "sum must be 10");
 out.set("shape", values.shape()).set("sum", total);
-end _dsl_
+end _lmcode_
 out = "tensor-sum.dslb";
 
 savedsl(p, "tensor-sum.dslb");

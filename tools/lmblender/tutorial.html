@@ -31,11 +31,11 @@
 <p>It should print a version line such as lmscript 0.2.388.</p>
 <p>Save this as 01-first-render.lms in an empty directory, or download it:</p>
 <pre><kbd>curl -O https://raw.githubusercontent.com/lmctl-ai/lmblender/main/docs/tutorial/code/01-first-render.lms</kbd></pre>
-<pre><code>p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+<pre><code>p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
 let ball = scene.uv_sphere(1.0, 48, 24, true);
 scene.studio_setup();
 scene.render_png("first-render.png", 16, 640, 480);
-end _dsl_
+end _lmcode_
 file = "first-render.dslb";
 savedsl(p, file);
 r = system ${dsl_cli(p)} --dsl ${file};
@@ -47,14 +47,14 @@ println("wrote first-render.png");</code></pre>
 <p>Expected output (the first run also downloads the lmblender release, so it takes longer):</p>
 <pre><samp>wrote first-render.png</samp></pre>
 <p>What each part does:</p>
-<ul><li>p = _dsl_ cli="lmblender" install="..." opens a block of scene code for the lmblender host. The install= value tells lmscript where to fetch the executable if it is not on your PATH; @v0.3.6 pins the released host used by this book.</li><li>scene.uv_sphere(1.0, 48, 24, true) adds a sphere of radius 1 with 48 segments and 24 rings, smooth shaded. Units are scene units and Z points up.</li><li>scene.studio_setup() frames the camera on the geometry and adds a floor and three soft lights.</li><li>scene.render_png(path, samples, width, height) renders with CPU Cycles. More samples means less grain and more time.</li><li>After end _dsl_, savedsl writes the compiled bytecode, system ${dsl_cli(p)} --dsl ${file} runs lmblender on it, and the script prints the host's error and exits 1 if the render failed.</li></ul>
+<ul><li>The declaration selects the lmblender host and opens a block of scene code. The install= value tells lmscript where to fetch the executable if it is not on your PATH; @v0.3.6 pins the released host used by this book.</li><li>scene.uv_sphere(1.0, 48, 24, true) adds a sphere of radius 1 with 48 segments and 24 rings, smooth shaded. Units are scene units and Z points up.</li><li>scene.studio_setup() frames the camera on the geometry and adds a floor and three soft lights.</li><li>scene.render_png(path, samples, width, height) renders with CPU Cycles. More samples means less grain and more time.</li><li>After the block closes, savedsl writes the compiled bytecode, system ${dsl_cli(p)} --dsl ${file} runs lmblender on it, and the script prints the host's error and exits 1 if the render failed.</li></ul>
 <p>The sphere looks flat white because it has no material yet; meshes without one get a plain unlit surface. Page 4 adds materials.</p>
 <h2 id="02-place-objects">2. Place objects</h2>
 <p>Goal: put several objects in the scene where you want them.</p>
 <p>Page 1 had one sphere at the origin. This page adds a cube and a torus and moves each object with translate so that it rests on the ground at Z = 0.</p>
 <p>Download the full script, or copy it from below:</p>
 <pre><kbd>curl -O https://raw.githubusercontent.com/lmctl-ai/lmblender/main/docs/tutorial/code/02-place-objects.lms</kbd></pre>
-<pre><code>p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+<pre><code>p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
 let ball = scene.uv_sphere(1.0, 48, 24, true);
 ball.translate(0.0, 0.0, 1.0);
 let box = scene.cube(1.6);
@@ -63,7 +63,7 @@ let ring = scene.torus(0.8, 0.25, 48, 16, true);
 ring.translate(2.8, 0.0, 0.25);
 scene.studio_setup();
 scene.render_png("place-objects.png", 16, 640, 480);
-end _dsl_
+end _lmcode_
 file = "place-objects.dslb";
 savedsl(p, file);
 r = system ${dsl_cli(p)} --dsl ${file};
@@ -81,7 +81,7 @@ println("wrote place-objects.png");</code></pre>
 <p>The script is page 2 plus one line: camera_look_at after studio_setup.</p>
 <p>Download the full script, or copy it from below:</p>
 <pre><kbd>curl -O https://raw.githubusercontent.com/lmctl-ai/lmblender/main/docs/tutorial/code/03-camera.lms</kbd></pre>
-<pre><code>p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+<pre><code>p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
 let ball = scene.uv_sphere(1.0, 48, 24, true);
 ball.translate(0.0, 0.0, 1.0);
 let box = scene.cube(1.6);
@@ -91,7 +91,7 @@ ring.translate(2.8, 0.0, 0.25);
 scene.studio_setup();
 scene.camera_look_at(0.0, -9.0, 3.5, 0.0, 0.0, 0.8, 40.0);
 scene.render_png("camera.png", 16, 640, 480);
-end _dsl_
+end _lmcode_
 file = "camera.dslb";
 savedsl(p, file);
 r = system ${dsl_cli(p)} --dsl ${file};
@@ -109,7 +109,7 @@ println("wrote camera.png");</code></pre>
 <p>The script is page 3 plus three set_material lines, with the samples raised from 16 to 32 because shiny surfaces need more samples to look smooth.</p>
 <p>Download the full script, or copy it from below:</p>
 <pre><kbd>curl -O https://raw.githubusercontent.com/lmctl-ai/lmblender/main/docs/tutorial/code/04-materials.lms</kbd></pre>
-<pre><code>p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+<pre><code>p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
 let ball = scene.uv_sphere(1.0, 48, 24, true);
 ball.translate(0.0, 0.0, 1.0);
 let box = scene.cube(1.6);
@@ -122,7 +122,7 @@ ring.set_material(scene.material(0.95, 0.7, 0.2, 1.0, 0.25, 0.0, 0.0, 0.0, 0.0, 
 scene.studio_setup();
 scene.camera_look_at(0.0, -9.0, 3.5, 0.0, 0.0, 0.8, 40.0);
 scene.render_png("materials.png", 32, 640, 480);
-end _dsl_
+end _lmcode_
 file = "materials.dslb";
 savedsl(p, file);
 r = system ${dsl_cli(p)} --dsl ${file};
@@ -141,7 +141,7 @@ println("wrote materials.png");</code></pre>
 <p>The script is page 4 with studio_setup() replaced by three calls: a ground plane, a world color, and an area light. The camera from page 3 keeps the framing.</p>
 <p>Download the full script, or copy it from below:</p>
 <pre><kbd>curl -O https://raw.githubusercontent.com/lmctl-ai/lmblender/main/docs/tutorial/code/05-lights.lms</kbd></pre>
-<pre><code>p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+<pre><code>p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
 let ball = scene.uv_sphere(1.0, 48, 24, true);
 ball.translate(0.0, 0.0, 1.0);
 let box = scene.cube(1.6);
@@ -156,7 +156,7 @@ scene.world_color(0.6, 0.7, 0.9, 0.3);
 scene.area_light(-3.0, -4.0, 5.0, 0.0, 0.0, 1.0, 1.0, 0.92, 0.82, 600.0, 3.0);
 scene.camera_look_at(0.0, -9.0, 3.5, 0.0, 0.0, 0.8, 40.0);
 scene.render_png("lights.png", 32, 640, 480);
-end _dsl_
+end _lmcode_
 file = "lights.dslb";
 savedsl(p, file);
 r = system ${dsl_cli(p)} --dsl ${file};
@@ -174,7 +174,7 @@ println("wrote lights.png");</code></pre>
 <p>The script is page 5 with two materials changed: the sphere becomes a checker, and the cube becomes noise with bump. The ground plane becomes a checker floor.</p>
 <p>Download the full script, or copy it from below:</p>
 <pre><kbd>curl -O https://raw.githubusercontent.com/lmctl-ai/lmblender/main/docs/tutorial/code/06-textures.lms</kbd></pre>
-<pre><code>p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+<pre><code>p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
 let ball = scene.uv_sphere(1.0, 48, 24, true);
 ball.translate(0.0, 0.0, 1.0);
 let box = scene.cube(1.6);
@@ -191,7 +191,7 @@ scene.world_color(0.6, 0.7, 0.9, 0.3);
 scene.area_light(-3.0, -4.0, 5.0, 0.0, 0.0, 1.0, 1.0, 0.92, 0.82, 600.0, 3.0);
 scene.camera_look_at(0.0, -9.0, 3.5, 0.0, 0.0, 0.8, 40.0);
 scene.render_png("textures.png", 32, 640, 480);
-end _dsl_
+end _lmcode_
 file = "textures.dslb";
 savedsl(p, file);
 r = system ${dsl_cli(p)} --dsl ${file};
@@ -206,7 +206,7 @@ println("wrote textures.png");</code></pre>
 <p>To use an image file instead, call scene.image_material("file.png", roughness). PNG and JPEG color images use sRGB decoding in v0.3.6, matching Blender more closely.</p>
 <h2 id="07-import-a-mesh">7. Import a mesh</h2>
 <p>Goal: render geometry from a file next to the built-in shapes.</p>
-<p>The script is page 6 plus a small OBJ pyramid. Before the _dsl_ block, lmscript writes pyramid.obj with write_file, so nothing needs downloading. Inside the block, four lines import it, check it, move it behind the sphere, and give it a material.</p>
+<p>The script is page 6 plus a small OBJ pyramid. Before the LMCode block, lmscript writes pyramid.obj with write_file, so nothing needs downloading. Inside the block, four lines import it, check it, move it behind the sphere, and give it a material.</p>
 <p>Download the full script, or copy it from below:</p>
 <pre><kbd>curl -O https://raw.githubusercontent.com/lmctl-ai/lmblender/main/docs/tutorial/code/07-import-a-mesh.lms</kbd></pre>
 <pre><code>obj = """o pyramid
@@ -223,7 +223,7 @@ f 3 4 5
 f 4 1 5
 """;
 write_file("pyramid.obj", obj);
-p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
 let ball = scene.uv_sphere(1.0, 48, 24, true);
 ball.translate(0.0, 0.0, 1.0);
 let box = scene.cube(1.6);
@@ -244,7 +244,7 @@ scene.world_color(0.6, 0.7, 0.9, 0.3);
 scene.area_light(-3.0, -4.0, 5.0, 0.0, 0.0, 1.0, 1.0, 0.92, 0.82, 600.0, 3.0);
 scene.camera_look_at(0.0, -9.0, 3.5, 0.0, 0.0, 0.8, 40.0);
 scene.render_png("import-a-mesh.png", 32, 640, 480);
-end _dsl_
+end _lmcode_
 file = "import-a-mesh.dslb";
 savedsl(p, file);
 r = system ${dsl_cli(p)} --dsl ${file};
@@ -276,7 +276,7 @@ f 3 4 5
 f 4 1 5
 """;
 write_file("pyramid.obj", obj);
-p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
 let ball = scene.uv_sphere(1.0, 48, 24, true);
 ball.translate(0.0, 0.0, 1.0);
 let box = scene.cube(1.6);
@@ -299,7 +299,7 @@ scene.world_color(0.6, 0.7, 0.9, 0.3);
 scene.area_light(-3.0, -4.0, 5.0, 0.0, 0.0, 1.0, 1.0, 0.92, 0.82, 600.0, 3.0);
 scene.camera_look_at(0.0, -9.0, 3.5, 0.0, 0.0, 0.8, 40.0);
 scene.render_sequence("animation-{frame}.png", 0, 2, 16, 320, 240);
-end _dsl_
+end _lmcode_
 file = "animation.dslb";
 savedsl(p, file);
 r = system ${dsl_cli(p)} --dsl ${file};
@@ -330,7 +330,7 @@ f 3 4 5
 f 4 1 5
 """;
 write_file("pyramid.obj", obj);
-p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
 let ball = scene.uv_sphere(1.0, 48, 24, true);
 ball.translate(0.0, 0.0, 1.0);
 let box = scene.cube(1.6);
@@ -357,7 +357,7 @@ scene.set_view_transform("Standard");
 scene.render_png("view-standard.png", 32, 320, 240);
 scene.set_view_transform("AgX");
 scene.render_png("view-agx.png", 32, 320, 240);
-end _dsl_
+end _lmcode_
 file = "view-transforms.dslb";
 savedsl(p, file);
 r = system ${dsl_cli(p)} --dsl ${file};
@@ -388,7 +388,7 @@ f 3 4 5
 f 4 1 5
 """;
 write_file("pyramid.obj", obj);
-p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
 let ball = scene.uv_sphere(1.0, 48, 24, true);
 ball.translate(0.0, 0.0, 1.0);
 let box = scene.cube(1.6);
@@ -413,7 +413,7 @@ scene.area_light(-3.0, -4.0, 5.0, 0.0, 0.0, 1.0, 1.0, 0.92, 0.82, 600.0, 3.0);
 scene.camera_look_at(0.0, -9.0, 3.5, 0.0, 0.0, 0.8, 40.0);
 scene.set_view_transform("AgX");
 scene.render_png("when-it-fails.png", 32, 640, 480);
-end _dsl_
+end _lmcode_
 file = "when-it-fails.dslb";
 savedsl(p, file);
 r = system ${dsl_cli(p)} --dsl ${file};

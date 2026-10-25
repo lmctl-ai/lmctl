@@ -1,14 +1,14 @@
 // One concept: fit a straight line to six exact points.
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmr" install="github:lmctl-ai/lmr@latest";
+p = _lmcode_ cli="lmr" install="github:lmctl-ai/lmr@latest";
 let x = seq(0.0, 5.0, 1.0);
 let fit = lm(frame().set("x", x).set("y", 2.0 * x + 1.0), "y ~ x");
 out.check_close(fit.estimates().at(0), 1.0, 0.000000000001, "intercept is 1");
 out.check_close(fit.estimates().at(1), 2.0, 0.000000000001, "slope is 2");
 out.set("intercept", fit.estimates().at(0));
 out.set("slope", fit.estimates().at(1));
-end _dsl_
+end _lmcode_
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
 savedsl(p, "build/rendered/linear-fit.dslb");

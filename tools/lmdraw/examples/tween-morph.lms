@@ -42,7 +42,7 @@ for (k in range(0, xs.len())) {
 out = ARGV.len() > 0 ? ARGV[0] : "build/tween-morph.dslb";
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 
 # Part 1: morph. One path node, six frames.
 scene.canvas(800, 460, "#101820");
@@ -75,7 +75,7 @@ for (i in range(0, 14)) {
   ink.set_attr("stroke-dashoffset", str(offset));
   scene.render_png("build/rendered/drawon-" + str(i) + ".png", 800, 460, 1);
 }
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 println(f"wrote {out}");
 

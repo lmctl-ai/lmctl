@@ -6,12 +6,12 @@ for (i in range(0, 5)) {
 }
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 let pages = html.load_dir("build/example-template");
 let slots = html.write_template(pages, 4, "build/template.html");
 report.add("summary", "template", 0, str(slots) + " slots for " + str(pages.len()) + " pages");
 report.write_text("build/template-report.txt");
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 
 run = system ${dsl_cli(p)} --dsl ${out};

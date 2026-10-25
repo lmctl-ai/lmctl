@@ -27,7 +27,7 @@ for (i in range(0, xs.len())) {
 out = ARGV.len() > 0 ? ARGV[0] : "build/flow-pipeline.dslb";
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(960, 420, "#101820");
 
 scene.path(${boxes_d}, "#1e3247", "#4a6a88", 2.0);
@@ -51,7 +51,7 @@ scene.text(480.0, 368.0, 15.0, "revision feedback", "#8fb4d9").set_attr("text-an
 scene.text(60.0, 70.0, 26.0, "Document pipeline", "#dbe7f3").set_attr("font-weight", "700");
 scene.text(60.0, 100.0, 15.0, "sequential stages, one feedback loop", "#9db4c8", 245.0);
 scene.render_png("build/rendered/flow-pipeline.png", 960, 420, 1);
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 println(f"wrote {out}");
 

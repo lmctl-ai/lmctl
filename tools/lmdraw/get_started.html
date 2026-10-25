@@ -32,7 +32,7 @@
 <li><a href="/tools/lmdraw/lmdraw_trio.lms">lmdraw_trio.lms</a> seeds a Lead, a Gemini Coder, and a Codex Reviewer. The quickrun passes the Lead's assignment to the Coder, the Coder's result to the Reviewer, then returns both to the Lead for a report.</li>
 </ul>
 <p>Install lmctl and configure the providers in your local profile before running a quickrun. Each run writes a new numbered teamfile in the current directory, seeds the sessions, and opens a terminal unless you pass the global non-interactive option.</p>
-<p>The agent-created drawing script uses an LMScript _dsl_ declaration to install and run the lmdraw native host. Rendering happens locally; lmdraw has no public HTTP rendering service.</p>
+<p>The agent-created drawing script uses an LMScript LMCode declaration to install and run the lmdraw native host. Rendering happens locally; lmdraw has no public HTTP rendering service.</p>
 <h2>Run a quickrun</h2>
 <p>From a terminal in a directory where you want the teamfile to live, run one of these commands:</p>
 <pre><code>lmctl autorun https://lmctl.com/tools/lmdraw/lmdraw_solo.lms

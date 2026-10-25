@@ -14,7 +14,7 @@ mkdir("images");
 mkdir("build/kepler-orbit");
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
 let e = 0.6;
 let a = 3.0;
 let b = a * sqrt(1.0 - e * e);
@@ -57,7 +57,7 @@ scene.camera_look_at(-1.8, -5.4, 6.0, -1.8, -0.1, 0.0, 40.0);
 scene.render_settings(4, 3, true);
 scene.render_png("images/kepler-orbit.png", 16, 720, 450);
 scene.render_sequence("build/kepler-orbit/frame-{frame}.png", 0, frames - 1, 6, 560, 350);
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 argv = dsl_cli(p);
 push(argv, "--dsl");

@@ -4,7 +4,7 @@
 tool = "lmdraw";
 mode = "solo";
 members = "_MEMBER_ alias=Lead provider=@role(Lead.provider) model=@role(Lead.model)\n";
-task = "Create a small, clearly labeled lmdraw diagram on a dark navy canvas. Use the lmdraw native host, installed by the LMScript _dsl_ declaration, to compile and render a PNG locally. There is no public HTTP rendering service. Report the source path and how you verified the output.";
+task = "Create a small, clearly labeled lmdraw diagram on a dark navy canvas. Use the lmdraw native host, installed by the LMScript native host declaration, to compile and render a PNG locally. There is no public HTTP rendering service. Report the source path and how you verified the output.";
 resources = "Read and follow these references:\nLMScript DSL: https://lmctl.com/tools/lmscript/skill.html\nlmdraw API: https://lmctl.com/tools/lmdraw/guide.html\nExample book: https://lmctl.com/tools/lmdraw/examples/title-card.html\n";
 seed_only = false;
 for (arg in ARGV) { if (str(arg) == "--seed-only") { seed_only = true; } }

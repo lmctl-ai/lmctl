@@ -13,7 +13,7 @@ mkdir("images");
 mkdir("build");
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-cad = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
+cad = _lmcode_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
 let steel = material().color(0.55, 0.62, 0.70);
 let brass = material().color(0.86, 0.62, 0.22);
 let module = 2.0;
@@ -106,13 +106,13 @@ scene.export_stl("build/gear-pinion.stl");
 gear.visible(true);
 pinion.visible(false);
 scene.export_stl("build/gear-wheel.stl");
-end _dsl_
+end _lmcode_
 cad_out = "build/gear-pair-cad.dslb";
 savedsl(cad, cad_out);
 c = system ${dsl_cli(cad)} --dsl ${cad_out};
 if (c.code != 0) { println(trim(c.stdout)); println(trim(c.stderr)); }
 assert(c.code == 0);
-p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
 let pinion = scene.import_stl("build/gear-pinion.stl");
 pinion.scale(0.1, 0.1, 0.1);
 pinion.translate(0.0, 0.0, 0.5);
@@ -134,7 +134,7 @@ scene.world_color(0.20, 0.22, 0.26, 0.6);
 scene.camera_look_at(-2.5, -10.0, 7.5, 2.6, 0.0, 0.3, 36.0);
 scene.render_settings(8, 54, true);
 scene.render_png("images/gear-pair-render.png", 32, 900, 560);
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 argv = dsl_cli(p);
 push(argv, "--dsl");

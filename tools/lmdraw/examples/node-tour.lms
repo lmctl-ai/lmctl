@@ -1,7 +1,7 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/rendered/node-tour";
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(640, 360, "#152438");
 let gradient = scene.linear_gradient("panel-fill", 0.0, 0.0, 1.0, 1.0);
 gradient.stop(0.0, "#294c62");
@@ -26,7 +26,7 @@ title.set_attr("font-weight", "700");
 let subtitle = scene.text(80.0, 174.0, 18.0, "Nodes stay addressable between frames.", "#dce7f0");
 subtitle.set_attr("font-family", "Noto Sans");
 scene.render_png("build/rendered/node-tour.png", 640, 360, 1);
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 println(f"wrote {out}");
 

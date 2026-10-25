@@ -5,7 +5,7 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/geometry-ellipse.dslb";
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(800, 460, "#101820");
 
 # ---- left: circle, radius, tangent at 45 degrees ----
@@ -42,7 +42,7 @@ scene.text(440.0, 424.0, 13.0, "PF1 + PF2 = 2a (constant)", "#9db4c8");
 
 scene.text(40.0, 44.0, 20.0, "circle and ellipse facts", "#dbe7f3").set_attr("font-weight", "700");
 scene.render_png("build/rendered/geometry-ellipse.png", 800, 460, 1);
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 println(f"wrote {out}");
 

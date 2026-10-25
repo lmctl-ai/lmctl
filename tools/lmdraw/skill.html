@@ -39,7 +39,7 @@ lmdraw --dsl-signatures</code></pre>
 <p>Compile against the exact JSON printed by lmdraw --schema --json. The short --schema summary is for people; the JSON is the compiler input.</p>
 <h2>Inputs and outputs</h2>
 <ul>
-<li>Programs use an _dsl_ block and schema version 2. The host reads bytecode version 5.</li>
+<li>Programs use an LMCode block and schema version 2. The host reads bytecode version 5.</li>
 <li>scene.canvas(width, height, background) starts a scene. Its coordinates are CSS pixels, with x increasing right and y increasing down.</li>
 <li>Nodes are returned as handles. node.set_attr(name, value) uses SVG-style attribute names such as fill, stroke, opacity, transform, font-size and text-anchor.</li>
 <li>scene.load_svg(path, id) reads a supported SVG from assets/ and returns the node with that id. Repeated loads of the same file can obtain additional handles.</li>

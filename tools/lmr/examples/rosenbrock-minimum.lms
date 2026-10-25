@@ -1,7 +1,7 @@
 // One concept: minimize Rosenbrock's function with BFGS.
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmr" install="github:lmctl-ai/lmr@latest";
+p = _lmcode_ cli="lmr" install="github:lmctl-ai/lmr@latest";
 fn rosen(a: float, b: float) -> float {
   return 100.0 * pow(b - a * a, 2.0) + pow(1.0 - a, 2.0);
 }
@@ -14,7 +14,7 @@ out.check(o.value() <= 0.000001, "objective below 1e-6");
 out.set("a", o.par(0));
 out.set("b", o.par(1));
 out.set("value", o.value());
-end _dsl_
+end _lmcode_
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
 savedsl(p, "build/rendered/rosenbrock-minimum.dslb");

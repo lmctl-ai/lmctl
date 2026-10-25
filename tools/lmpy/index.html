@@ -26,8 +26,8 @@
 <p>lmpy is a native numerical host for LMScript programs. It provides linear algebra, statistics, optimisation, signal processing, tables, time series and machine learning in one executable.</p>
 <p>Start with the <a href="/tools/lmpy/get_started.html">quickstart</a>, browse the <a href="/tools/lmpy/examples/">example book</a>, or read the <a href="/tools/lmpy/guide.html">API guide</a>.</p>
 <h2>Install from LMScript</h2>
-<p>Declare lmpy with cli and install in an LMScript _dsl_ block. The compiler downloads the matching release binary when it is not already installed, verifies the release asset digest, and compiles against that binary's embedded schema.</p>
-<pre><code>p = _dsl_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";</code></pre>
+<p>Declare lmpy with cli and install in an LMScript LMCode block. The compiler downloads the matching release binary when it is not already installed, verifies the release asset digest, and compiles against that binary's embedded schema.</p>
+<pre><code>p = _lmcode_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";</code></pre>
 <h2>What it can do</h2>
 <ul>
 <li>Fit and solve linear systems, least-squares models and sparse problems.</li>

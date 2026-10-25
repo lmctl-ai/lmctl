@@ -2,7 +2,7 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/still-life.dslb";
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
+p = _lmcode_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
 scene.background(0.08, 0.10, 0.16);
 let red = material().color(0.86, 0.22, 0.16).roughness(0.8);
 let blue = material().color(0.14, 0.40, 0.88);
@@ -22,7 +22,7 @@ light.intensity(0.72);
 scene.render_png("build/still-life.png", 640, 480);
 scene.render_ppm("build/still-life.ppm", 64, 48);
 scene.export_obj("build/still-life.obj");
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 println(f"wrote {out}");
 

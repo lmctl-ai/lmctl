@@ -1,14 +1,14 @@
 // One concept: fit y = 3 + 2x by ordinary least squares.
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";
+p = _lmcode_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";
 let x = arange(5);
 let fit = cols(ones(5), x).lstsq(x.mul(2.0).add(3.0));
 let coefficients = fit.vec("x");
 out.check("fit succeeded", fit.ok());
 out.close("intercept and slope", coefficients, vec(3.0, 2.0), 0.000000000001);
 out.put("coefficients", coefficients);
-end _dsl_
+end _lmcode_
 
 out = ARGV.len() > 0 ? ARGV[0] : "build/least-squares-line.dslb";
 savedsl(p, out);

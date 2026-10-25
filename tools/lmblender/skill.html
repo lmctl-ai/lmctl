@@ -38,11 +38,11 @@
 <pre><kbd>lmscript --version</kbd></pre>
 <pre><samp>lmscript 0.2.388</samp></pre>
 <p>Declare the released host in the scene block and save bytecode before running it:</p>
-<pre><code>p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+<pre><code>p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
 let ball = scene.uv_sphere(1.0, 48, 24, true);
 scene.studio_setup();
 scene.render_png("build/ball.png", 16, 640, 480);
-end _dsl_
+end _lmcode_
 savedsl(p, "build/ball.dslb");
 r = system ${dsl_cli(p)} --dsl build/ball.dslb;
 if (r.code != 0) { println(trim(r.stdout)); exit(1); }</code></pre>
@@ -63,7 +63,7 @@ push(argv, "--dsl");
 push(argv, "build/scene.dslb");
 r = system(argv, 240000);</code></pre>
 <h2>Inputs and outputs</h2>
-<p>Scene code lives inside an LMScript _dsl_ block. Values such as sample counts, dimensions, mesh sizes, and colors are supplied as positional arguments. Coordinates are right-handed and Z-up; distances are scene units and RGB color channels are linear values between zero and one.</p>
+<p>Scene code lives inside an LMScript LMCode block. Values such as sample counts, dimensions, mesh sizes, and colors are supplied as positional arguments. Coordinates are right-handed and Z-up; distances are scene units and RGB color channels are linear values between zero and one.</p>
 <ul>
 <li>PNG is the display-transformed still image format. EXR preserves scene-linear image data.</li>
 <li>Image sequences and APNG use inclusive first and last frame numbers.</li>
@@ -82,11 +82,11 @@ r = system(argv, 240000);</code></pre>
 <h2>Worked examples</h2>
 <p>Start with one sphere and the automatic studio setup. The source should create the output directory before rendering:</p>
 <pre><code>if (!file_exists("build")) { mkdir("build"); }
-p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
 let ball = scene.uv_sphere(1.0, 48, 24, true);
 scene.studio_setup();
 scene.render_png("build/ball.png", 16, 640, 480);
-end _dsl_
+end _lmcode_
 savedsl(p, "build/ball.dslb");
 r = system ${dsl_cli(p)} --dsl build/ball.dslb;
 if (r.code != 0) { println(trim(r.stdout)); exit(1); }</code></pre>

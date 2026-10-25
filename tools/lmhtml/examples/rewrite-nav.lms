@@ -6,7 +6,7 @@ for (i in range(0, 5)) {
 }
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 let pages = html.load_dir("build/example-rewrite");
 let nav_html = "<nav class=\"site-nav\"><a href=\"index.html\">Home</a><a href=\"about.html\">About</a></nav>";
 let footer_html = "<footer class=\"site-footer\"><p>Example footer</p></footer>";
@@ -22,7 +22,7 @@ let n4 = html.diff(first, html.load("build/rewritten/p5.html"));
 report.add("converged", "p1-vs-p4", 0, str(n3) + " differences after rewrite");
 report.add("converged", "p1-vs-p5", 0, str(n4) + " differences after rewrite");
 report.write_text("build/rewrite-report.txt");
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 
 run = system ${dsl_cli(p)} --dsl ${out};

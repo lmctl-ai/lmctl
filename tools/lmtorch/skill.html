@@ -32,10 +32,10 @@
 <p>The lmtorch release embeds its DSL schema. LMScript uses the schema reported by the same binary that executes the compiled bytecode. The latest release supports Linux x64 and arm64, macOS x64 and arm64, and Windows x64.</p>
 <h2>Commands</h2>
 <p>Save a DSL block to bytecode and run it through the host command prefix.</p>
-<pre><code>p = _dsl_ cli="lmtorch" install="github:lmctl-ai/lmtorch@latest";
+<pre><code>p = _lmcode_ cli="lmtorch" install="github:lmctl-ai/lmtorch@latest";
 let x = torch.tensor("[1.0, 2.0, 3.0]");
 out.set("sum", x.sum().item());
-end _dsl_
+end _lmcode_
 savedsl(p, "program.dslb");
 run = system ${dsl_cli(p)} --dsl program.dslb;</code></pre>
 <p>Check run.code before using run.stdout. The host prints a JSON result for values set through out.</p>

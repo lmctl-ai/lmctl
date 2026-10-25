@@ -6,7 +6,7 @@
 out = ARGV.len() > 0 ? ARGV[0] : "build/decision-flowchart.dslb";
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(960, 560, "#101820");
 
 fn stadium(x: float, y: float, w: float, h: float, title: string) -> void {
@@ -67,7 +67,7 @@ let finish_edge = scene.line(640.0, 460.0, 640.0, 490.0, "#6fbdb4", 2.5);
 finish_edge.set_attr("marker-end", "arrow");
 stadium(640.0, 518.0, 140.0, 44.0, "done");
 scene.render_png("build/rendered/decision-flowchart.png", 960, 560, 1);
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 println(f"wrote {out}");
 

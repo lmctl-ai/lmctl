@@ -24,13 +24,13 @@
 <main><h1>lmpy API guide</h1>
 <p>This page summarizes how LMScript programs call the lmpy host. The checked-in schema and API reference are the complete source of operation names, options and result fields.</p>
 <h2>Overview</h2>
-<p>lmpy runs compiled LMScript _dsl_ bytecode in a native executable. Use cli="lmpy" and install="github:lmctl-ai/lmpy@latest" to bind compilation and execution to the same released schema.</p>
+<p>lmpy runs compiled LMScript LMCode bytecode in a native executable. Use cli="lmpy" and install="github:lmctl-ai/lmpy@latest" to bind compilation and execution to the same released schema.</p>
 <h2>Host declaration</h2>
-<pre><code>p = _dsl_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";
+<pre><code>p = _lmcode_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";
 let x = mat("1 2; 3 4").solve(vec(5.0, 11.0));
 out.close("known solution", x, vec(1.0, 2.0), 0.000000000001);
 out.put("solution", x);
-end _dsl_</code></pre>
+end _lmcode_</code></pre>
 <h2>Numerical operations</h2>
 <p>The host includes dense and sparse linear algebra, probability distributions, random sampling, optimisation, least squares, roots, quadrature, differential equations, interpolation and special functions.</p>
 <h2>Data and models</h2>

@@ -51,7 +51,7 @@
 <tr><td>lmscript FILE [ARGS]</td><td>Check, silent dry pass, then the real run.</td></tr>
 <tr><td>lmscript -e 'CODE'</td><td>Run a one-line program (quote it for the shell).</td></tr>
 <tr><td>lmscript help NAME</td><td>Signature, description and example of a function; lmscript help lists all; help topics lists topics (csv, json, cmd, dsl, path, methods, …).</td></tr>
-<tr><td>lmscript --dsl-signatures SCHEMA</td><td>List a DSL schema's functions and methods (experimental _dsl_ blocks).</td></tr>
+<tr><td>lmscript --dsl-signatures SCHEMA</td><td>List a DSL schema's functions and methods (experimental LMCode blocks).</td></tr>
 </tbody>
 </table>
 <p>Options go before the file; every word after the file is script data in ARGV.</p>
@@ -121,14 +121,14 @@ println(f"{len(changed)} changed file(s)");</code></pre>
 1. /home/me/cleanup.lms:1:1 dummy write_file ["out/report.txt","done\n"]
 2. /home/me/cleanup.lms:2:1 dummy delete_file ["out/notes.txt"]
 3. /home/me/cleanup.lms:3:1 handled println ["cleaned up"]</samp></pre>
-<h3 id="example-dsl">Experimental: compile a _dsl_ program for a native host</h3>
-<p>Experimental; the syntax may change. A _dsl_ block holds code in a separate, statically typed language that a native host program (for example lmhtml or lmcad) runs. lmscript compiles it at check time against the host's schema and savedsl writes the bytecode; the host runs it.</p>
+<h3 id="example-dsl">Experimental: compile a native program for a native host</h3>
+<p>Experimental; the syntax may change. An LMCode block holds code in a separate, statically typed language that a native host program (for example lmhtml or lmcad) runs. lmscript compiles it at check time against the host's schema and savedsl writes the bytecode; the host runs it.</p><p>Use lmscript 0.2.420 or newer for the current block spelling. The former spelling remains accepted as a compatibility alias.</p>
 <ol>
-<li>With lmscript 0.2.369 or newer, tool users can let lmscript obtain the host schema automatically. For lmhtml use cli="lmhtml" and install="github:lmctl-ai/lmhtml@latest" on the _dsl_ declaration. Use the host documentation for available contexts, functions and methods.</li>
+<li>With lmscript 0.2.420 or newer, tool users can let lmscript obtain the host schema automatically. For lmhtml use cli="lmhtml" and install="github:lmctl-ai/lmhtml@latest" on the native host declaration. Use the host documentation for available contexts, functions and methods.</li>
 <li>Schema-file input remains available for SDK authors and compatibility testing.</li>
-<li>Write the block; the statement ends with ; on the marker line and the block closes with a line exactly end _dsl_:</li>
+<li>Write the block using the opening and closing marker lines shown below.</li>
 </ol>
-<pre><code>check = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+<pre><code>check = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 let pages = html.load_dir("site");
 for (i in range(0, pages.len())) {
   let page = pages.at(i);
@@ -141,14 +141,14 @@ for (i in range(0, pages.len())) {
   }
 }
 report.write_text("broken.txt");
-end _dsl_
+end _lmcode_
 savedsl(check, "links.dslb");</code></pre>
 <pre><kbd>lmscript links.lms</kbd>
 <kbd>lmhtml --dsl links.dslb</kbd>
 <samp>{"ok": true, "result": null}</samp>
 <kbd>cat broken.txt</kbd>
 <samp>broken-link site/index.html:0: missing.html not found</samp></pre>
-<p>Rules inside _dsl_: let x = expr; with inferred types, if/else, for (i in range(a, b)), while with break/continue; types int, float (write 1.0), string, bool and the schema's object types; int and float never mix (float(i) converts); strings join with + and str(x); host lists via xs.len() and xs.at(i). No lmscript functions, lists, maps or user functions inside the block. The compiled value is opaque: only savedsl(value, "file.dslb") accepts it. The host refuses bytecode compiled against a different schema (it checks a SHA-256 of the schema bytes), so recompile when the host changes. The built-in lmscript help dsl text in 0.2.348 is older than the compiler: while/break/continue do work.</p>
+<p>Rules inside LMCode: let x = expr; with inferred types, if/else, for (i in range(a, b)), while with break/continue; types int, float (write 1.0), string, bool and the schema's object types; int and float never mix (float(i) converts); strings join with + and str(x); host lists via xs.len() and xs.at(i). No lmscript functions, lists, maps or user functions inside the block. The compiled value is opaque: only savedsl(value, "file.dslb") accepts it. The host refuses bytecode compiled against a different schema (it checks a SHA-256 of the schema bytes), so recompile when the host changes. The built-in lmscript help dsl text in 0.2.348 is older than the compiler: while/break/continue do work.</p>
 
 <h2 id="errors-and-exit-codes">Errors and exit codes</h2>
 <table>
@@ -156,7 +156,7 @@ savedsl(check, "links.dslb");</code></pre>
 <tbody>
 <tr><td>0</td><td>Success</td><td>Verify the outputs (below).</td></tr>
 <tr><td>1</td><td>Run-time failure, failed require/assert, recorded error(), usage error</td><td>Read the error:FILE:LINE:COL line; fix the data handling or the guard.</td></tr>
-<tr><td>2</td><td>Check error: syntax, undeclared name, wrong arity, unknown function or method, bad data or _dsl_ block, missing i"…" path</td><td>Nothing ran. Fix the reported position and run --check again.</td></tr>
+<tr><td>2</td><td>Check error: syntax, undeclared name, wrong arity, unknown function or method, bad data or LMCode block, missing i"…" path</td><td>Nothing ran. Fix the reported position and run --check again.</td></tr>
 <tr><td>N</td><td>exit(N)</td><td>Script-defined.</td></tr>
 </tbody>
 </table>
@@ -171,7 +171,7 @@ savedsl(check, "links.dslb");</code></pre>
 <tr><td>Function declarations are only allowed at top level</td><td>Move the fn out of the other function.</td></tr>
 <tr><td>map m has no key "k"</td><td>m.has("k") or m.get("k", default).</td></tr>
 <tr><td>Division by zero</td><td>Guard the divisor.</td></tr>
-<tr><td>_dsl_: method T.m expects …</td><td>Match the schema signature (--dsl-signatures).</td></tr>
+<tr><td>Compiler reports a method signature mismatch</td><td>Match the schema signature (--dsl-signatures).</td></tr>
 </tbody>
 </table>
 
@@ -181,7 +181,7 @@ savedsl(check, "links.dslb");</code></pre>
 <li>lmscript --check-files script.lms when the script uses path literals.</li>
 <li>lmscript --dry-run script.lms ARGS: the plan lists exactly the writes, deletes and program runs you intend, with the right arguments.</li>
 <li>Run it; confirm exit code 0 (or the documented code) and that the expected files or output exist, for example by reading them back with read_file/read_json or ls.</li>
-<li>For _dsl_: the script exits 0 and writes the .dslb; HOST --dsl file.dslb prints {"ok": true, …} with exit 0; check the files the host program wrote.</li>
+<li>For LMCode: the script exits 0 and writes the .dslb; HOST --dsl file.dslb prints {"ok": true, …} with exit 0; check the files the host program wrote.</li>
 <li>Report what you ran and what you checked; never claim success from exit code 0 alone when files were supposed to change.</li>
 </ol>
 </main>

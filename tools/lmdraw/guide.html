@@ -64,7 +64,7 @@ Scene.polyline(string, string, float) -> Node
 Scene.rect(float, float, float, float, string) -> Node
 Scene.render_png(string, int, int, int) -> void
 Scene.text(float, float, float, string, string) -> Node</code></pre>
-<p>For the exact compiler input, save lmdraw --schema --json to a file and use that JSON in the _dsl_ declaration. lmdraw --dsl-signatures prints the registry side of the compiler parity check.</p>
+<p>For the exact compiler input, save lmdraw --schema --json to a file and use that JSON in the LMCode declaration. lmdraw --dsl-signatures prints the registry side of the compiler parity check.</p>
 <h2>Retained nodes and attributes</h2>
 <p>Constructors return Node, Group or Gradient handles. Node.set_attr(name, value) updates a node using SVG attribute names. Group.add attaches a node or group. A node or group may have only one parent, and group cycles are rejected.</p>
 <table>

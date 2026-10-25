@@ -12,7 +12,7 @@ mkdir("images");
 mkdir("build");
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
 let pairs = 28;
 let rise = 0.338;
 let twist = 34.3 * 3.14159265 / 180.0;
@@ -71,7 +71,7 @@ scene.area_light(5.0, 3.0, 4.0, 0.0, 0.0, 1.6, 0.55, 0.70, 1.0, 400.0, 4.0);
 scene.camera_look_at(0.0, -11.0, 6.2, 0.0, 0.0, 1.35, 31.0);
 scene.render_settings(8, 2, true);
 scene.render_png("images/dna-double-helix.png", 32, 900, 500);
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 argv = dsl_cli(p);
 push(argv, "--dsl");

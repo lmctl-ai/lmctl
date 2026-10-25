@@ -41,7 +41,7 @@ for (i in range(0, 7)) {
 out = ARGV.len() > 0 ? ARGV[0] : "build/heatmap-grid.dslb";
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(620, 560, "#101820");
 
 scene.path(${lvl0}, "#1a2a3a", "#101820", 1.0);
@@ -75,7 +75,7 @@ scene.text(float(${x0 + 4.0 * (cell + gap) + 10.0}), 524.0, 12.0, "score from lo
 
 scene.text(float(${x0}), 40.0, 18.0, "activity heat map", "#dbe7f3").set_attr("font-weight", "700");
 scene.render_png("build/rendered/heatmap-grid.png", 620, 560, 1);
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 println(f"wrote {out}");
 

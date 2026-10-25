@@ -12,7 +12,7 @@ mkdir("images");
 mkdir("build");
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
+p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
 let radius = 0.8;
 let focus = 1.5 * radius;
 let glass = scene.material(1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0);
@@ -33,7 +33,7 @@ lamp.set_material(scene.material(0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.93, 0.82, 
 scene.camera_look_at(0.0, -8.6, 3.9, 0.0, 0.0, 1.25, 36.0);
 scene.render_settings(12, 7, true);
 scene.render_png("images/caustic-ball-lens.png", 64, 900, 560);
-end _dsl_
+end _lmcode_
 savedsl(p, out);
 argv = dsl_cli(p);
 push(argv, "--dsl");
