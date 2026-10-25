@@ -12,7 +12,7 @@ let view_x = 0.36;
 let view_y = 0.38;
 let view_z = 0.85;
 # --- end shared icon look ---
-# Tool colors in grid order: lmcad, lmscript, lmhtml, cpp-dsl-sdk.
+# Tool colors in grid order: lmcad, lmscript, lmhtml, lmcode-cpp.
 for (i in range(0, 4)) {
   let m = material().color(0.30, 0.62, 1.00).roughness(0.5);
   if (i == 1) {

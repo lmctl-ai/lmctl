@@ -3,49 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>cpp-dsl-sdk host authoring skill — cpp-dsl-sdk — lmctl.com tools</title>
-<meta name="description" content="Guidance for designing and checking a C++ host that embeds the dslvm runtime.">
-<link rel="stylesheet" href="/tools/style.css">
-<link rel="icon" type="image/png" href="/tools/cpp-dsl-sdk/img/icon.png">
+<meta http-equiv="refresh" content="0; url=/tools/lmcode-cpp/skill.html">
+<link rel="canonical" href="/tools/lmcode-cpp/skill.html">
+<title>Page moved — lmctl.com tools</title>
 </head>
 <body>
-<nav>
-<ul>
-<li><a href="/">lmctl.com</a></li>
-<li><a href="/tools/">Tools</a></li>
-<li><a href="/skills/">Skills</a></li>
-<li><a href="/tools/cpp-dsl-sdk/">Overview</a></li>
-<li><a href="/tools/cpp-dsl-sdk/skill.html">Skill</a></li>
-<li><a href="/tools/cpp-dsl-sdk/tutorial.html">Tutorial</a></li>
-<li><a href="/tools/cpp-dsl-sdk/guide.html">Guide</a></li>
-</ul>
-</nav>
-<main>
-<h1>cpp-dsl-sdk host authoring skill</h1>
-<h2>Purpose</h2>
-<p>Guide the creation of a small C++ host that exposes a typed schema to lmscript and loads and runs bytecode with cpp-dsl-sdk.</p>
-<h2>When to use it</h2>
-<p>Use this when implementing a native application that should expose a controlled set of host objects, methods and functions to DSL scripts.</p>
-<h2>Install</h2>
-<p>Include dslvm.hpp from the SDK and compile as C++17. Add stdlib/string.hpp only if you want the optional string catalog. Use a compiler that emits the SDK's current bytecode version.</p>
-<h2>Commands</h2>
-<pre><code>g++ -std=c++17 -Iinclude host.cpp -o host
-lmscript --dsl-signatures schema.json
-./host --dsl-signatures
-./host --dsl scene.dslb</code></pre>
-<h2>Inputs and outputs</h2>
-<ul><li>Input: binary bytecode and the exact JSON schema bytes used to compile it.</li><li>Host setup: registry callbacks plus context pointers to host-owned objects.</li><li>Output: host-defined effects and, for command-line programs, one standard JSON result line.</li></ul>
-<h2>Safety rules</h2>
-<ul><li>Treat bytecode as trusted: the VM does not impose runtime limits or dynamic call checks.</li><li>Pass exact schema bytes and bind every declared context, function and method signature.</li><li>Keep objects and references returned by methods alive for all subsequent script calls.</li><li>Check signature parity during development. Matching arity and return type are part of the schema contract.</li><li>Expose collections as host object types with len() and at(i); DSL list/map value kinds do not exist.</li></ul>
-<h2>Worked examples</h2>
-<ol><li>Create one Registry and register a context object type.</li><li>Bind each method callback with argument and return type strings that exactly match the schema.</li><li>Load bytecode and schema bytes with Program::load.</li><li>Create host objects before Context::set; keep owners in scope through Program::run.</li><li>For the string catalog, add the fragment's functions declarations and call register_string(registry).</li><li>For collections, return typed object values and implement the indexed access behavior in the host.</li></ol>
-<h2>Errors and exit codes</h2>
-<p>Catch dslvm::Error around load and run. Standard CLI conventions use exit 2 for compilation/argument errors, 3 for bytecode load or run errors, and 4 for application failures. Include the error code and source location when present.</p>
-<h2>How to verify</h2>
-<ol><li>Compile a tiny DSL chunk against the host schema.</li><li>Diff the compiler's canonical signatures against Registry::signatures().</li><li>Test a valid run and representative load/runtime failures.</li><li>Confirm the host passes the exact schema bytes used by the compiler.</li><li>Test object ownership and collection access over the complete script run.</li></ol>
-</main>
-<footer>
-<p>Source and releases: <a href="https://github.com/lmctl-ai/cpp-dsl-sdk">github.com/lmctl-ai/cpp-dsl-sdk</a>.</p>
-</footer>
+<p>This page has moved to <a href="/tools/lmcode-cpp/skill.html">lmcode-cpp</a>. The old address remains available for existing links.</p>
 </body>
 </html>

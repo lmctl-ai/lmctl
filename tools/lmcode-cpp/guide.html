@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-cpp user guide — lmcode-cpp — lmctl.com tools</title>
+<meta name="description" content="The C++ host API, bytecode contract, optional string catalog, result reporting and practical host design notes.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmcode-cpp/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-cpp/">Overview</a></li>
+<li><a href="/tools/lmcode-cpp/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-cpp/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmcode-cpp/guide.html">Guide</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-cpp user guide</h1>
+<h2>Overview</h2>
+<p>The SDK is a header-only C++17 loader, structural verifier, registry and VM. lmscript compiles source against a JSON schema; the host implements that schema in C++ and supplies its exact bytes to Program::load. The SDK does not parse or interpret schema JSON.</p>
+<h2>Install</h2>
+<p>Copy include/dslvm.hpp into your source tree and include it, or pin a repository revision and verify the header hash. Compile as C++17. No separate library is built and the header has no third-party dependencies. Use the matching published lmscript compiler.</p>
+<h2>Concepts</h2>
+<dl><dt>Registry</dt><dd>Declares context types, functions and methods with exact argument and return types, and stores the C++ callbacks.</dd><dt>Program::load</dt><dd>Loads a bytecode byte string and exact schema byte string, verifies format, schema binding and imports against a registry, then returns a runnable program.</dd><dt>Context</dt><dd>Maps schema context variable names to live host-owned object pointers.</dd><dt>Value</dt><dd>Carries INT (int64), FLOAT (binary64), STR, BOOL, VOID or OBJ (a host pointer and schema type name).</dd><dt>Ownership</dt><dd>The host owns objects referenced by context and object values. Keep them alive and stable throughout every call that can use them.</dd></dl>
+<h2>Reference</h2>
+<p>Typical embedding sequence:</p>
+<pre><code>dslvm::Registry registry;
+registry.context("scene", "Scene");
+registry.method("Scene", "render", {"string"}, "void", callback);
+auto schema = dslvm::read_file("schema.json");
+auto program = dslvm::Program::load(dslvm::read_file("scene.dslb"), schema, registry);
+dslvm::Context context;
+context.set("scene", &amp;scene);
+program.run(context, registry);</code></pre>
+<p>Callbacks receive dslvm::Args&amp; and return a dslvm::Value. Void callbacks return Value::none(). Throw dslvm::Error for a host run failure. The standard command-line result helpers print one JSON line: report_ok exits 0, report_error exits 3 for load/run errors, and report_app_failure exits 4. Compiler failures normally exit 2.</p>
+<p>Format compatibility is one-version-only. The current loader accepts bytecode v5 and refuses any other version; compiler, SDK and host must move together when the format changes.</p>
+<p>The standard function schema and signatures are included by each Registry. Standard functions need no host registration. Declare and bind only functions and methods that belong to your host.</p>
+<table><thead><tr><th>Function</th><th>Signature</th><th>Behavior</th></tr></thead><tbody>
+<tr><td>str_starts_with</td><td>string, string → bool</td><td>Byte prefix test.</td></tr><tr><td>str_ends_with</td><td>string, string → bool</td><td>Byte suffix test.</td></tr><tr><td>str_contains</td><td>string, string → bool</td><td>Byte substring test.</td></tr><tr><td>str_lower</td><td>string → string</td><td>ASCII lowercase.</td></tr><tr><td>str_upper</td><td>string → string</td><td>ASCII uppercase.</td></tr><tr><td>str_substr</td><td>string, int, int → string</td><td>Clamped byte slice.</td></tr><tr><td>str_len</td><td>string → int</td><td>Byte length, including NUL.</td></tr><tr><td>str_match</td><td>string, string → bool</td><td>Whole-string byte glob.</td></tr><tr><td>str_find</td><td>string, string → int</td><td>Byte offset or −1.</td></tr><tr><td>str_replace</td><td>string, string, string → string</td><td>Non-overlapping replacement.</td></tr><tr><td>str_trim</td><td>string → string</td><td>Trim ASCII whitespace.</td></tr><tr><td>str_repeat</td><td>string, int → string</td><td>Repeat with a 64 MiB catalog bound.</td></tr><tr><td>str_to_int</td><td>string → int</td><td>Parse signed decimal; invalid input returns 0.</td></tr><tr><td>str_is_int</td><td>string → bool</td><td>Reports parse validity.</td></tr><tr><td>str_to_float</td><td>string → float</td><td>Parse finite decimal; invalid input returns 0.</td></tr><tr><td>str_is_float</td><td>string → bool</td><td>Reports parse validity.</td></tr>
+</tbody></table>
+<p>String lengths and indexes are bytes; UTF-8 is not decoded. Case conversion is ASCII-only. The catalog documents bounded replacement/repetition and glob work.</p>
+<p>CLI hosts commonly embed one schema and implement --schema (compact summary), --schema --json (exact JSON bytes), and --dsl-signatures (registry list). A host can accept multiple --dsl bytecode files and run them in order against that same schema. The SDK itself does not define a CLI.</p>
+<h2>Tasks</h2>
+<ul><li>Register an object: call registry.context(name, type), then bind the type's methods with registry.method.</li><li>Check parity: compare registry.signatures() with lmscript --dsl-signatures schema.json.</li><li>Load safely: read binary files without text conversion and pass exact schema bytes to Program::load.</li><li>Support collections: expose a host object with len() -> int and at(int) -> T; the compiler lowers foreach to those methods.</li><li>Use standard functions directly; add registry callbacks only for host-specific functions and methods.</li></ul>
+<h2>Limits</h2>
+<p>Bytecode is trusted input. The VM adds no execution budget, recursion limit, stack cap, local cap or string cap; max_stack is only a reservation hint. Hosts should decide whether and where to impose their own input and process limits. Defensive value-kind checks remain in the VM. String catalog helper bounds are library policy, not VM resource limits.</p>
+<h2>Troubleshooting</h2>
+<ul><li>Schema hash mismatch: use the same exact JSON bytes for compilation and loading; whitespace changes the binding.</li><li>Unbound import: compare the compiler signature list with Registry::signatures(); check name, argument order, and result type.</li><li>Object method failure: ensure context pointers and returned host objects remain alive while bytecode can use them.</li><li>Unexpected version refusal: build with the compiler matching the SDK's single supported format version.</li><li>Standard function not found: check that the compiler and SDK versions match and that the script uses the standard signature.</li></ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-cpp">github.com/lmctl-ai/lmcode-cpp</a>.</p>
+</footer>
+</body>
+</html>

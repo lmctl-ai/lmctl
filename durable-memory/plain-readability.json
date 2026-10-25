@@ -989,7 +989,7 @@
       }
     },
     {
-      "path": "tools/cpp-dsl-sdk/guide.html",
+      "path": "tools/lmcode-cpp/guide.html",
       "bytes": 7766,
       "words": 678,
       "estimated_tokens": 1942,
@@ -1158,7 +1158,7 @@
       }
     },
     {
-      "path": "tools/cpp-dsl-sdk/skill.html",
+      "path": "tools/lmcode-cpp/skill.html",
       "bytes": 3984,
       "words": 378,
       "estimated_tokens": 996,
@@ -1186,7 +1186,7 @@
       }
     },
     {
-      "path": "tools/cpp-dsl-sdk/index.html",
+      "path": "tools/lmcode-cpp/index.html",
       "bytes": 2323,
       "words": 101,
       "estimated_tokens": 581,
@@ -1214,7 +1214,7 @@
       }
     },
     {
-      "path": "tools/cpp-dsl-sdk/tutorial.html",
+      "path": "tools/lmcode-cpp/tutorial.html",
       "bytes": 3764,
       "words": 317,
       "estimated_tokens": 941,
@@ -2811,7 +2811,7 @@
       }
     },
     {
-      "path": "tools/cpp-dsl-sdk/guide.html",
+      "path": "tools/lmcode-cpp/guide.html",
       "bytes": 7285,
       "words": 678,
       "estimated_tokens": 1822,
@@ -2844,7 +2844,7 @@
       }
     },
     {
-      "path": "tools/cpp-dsl-sdk/index.html",
+      "path": "tools/lmcode-cpp/index.html",
       "bytes": 2280,
       "words": 101,
       "estimated_tokens": 570,
@@ -2877,7 +2877,7 @@
       }
     },
     {
-      "path": "tools/cpp-dsl-sdk/skill.html",
+      "path": "tools/lmcode-cpp/skill.html",
       "bytes": 3828,
       "words": 378,
       "estimated_tokens": 957,
@@ -2910,7 +2910,7 @@
       }
     },
     {
-      "path": "tools/cpp-dsl-sdk/tutorial.html",
+      "path": "tools/lmcode-cpp/tutorial.html",
       "bytes": 3700,
       "words": 317,
       "estimated_tokens": 925,

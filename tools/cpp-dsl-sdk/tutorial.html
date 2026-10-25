@@ -3,87 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>cpp-dsl-sdk tutorial — cpp-dsl-sdk — lmctl.com tools</title>
-<meta name="description" content="Build a small C++ host, compile a schema-bound DSL block and run it through the SDK.">
-<link rel="stylesheet" href="/tools/style.css">
-<link rel="icon" type="image/png" href="/tools/cpp-dsl-sdk/img/icon.png">
+<meta http-equiv="refresh" content="0; url=/tools/lmcode-cpp/tutorial.html">
+<link rel="canonical" href="/tools/lmcode-cpp/tutorial.html">
+<title>Page moved — lmctl.com tools</title>
 </head>
 <body>
-<nav>
-<ul>
-<li><a href="/">lmctl.com</a></li>
-<li><a href="/tools/">Tools</a></li>
-<li><a href="/skills/">Skills</a></li>
-<li><a href="/tools/cpp-dsl-sdk/">Overview</a></li>
-<li><a href="/tools/cpp-dsl-sdk/skill.html">Skill</a></li>
-<li><a href="/tools/cpp-dsl-sdk/tutorial.html">Tutorial</a></li>
-<li><a href="/tools/cpp-dsl-sdk/guide.html">Guide</a></li>
-</ul>
-</nav>
-<main>
-<h1>cpp-dsl-sdk tutorial</h1>
-<p>This walkthrough uses a small host with one object method. Save the schema, DSL and C++ source below in one directory. Copy include/dslvm.hpp from the SDK into a local include/ directory.</p>
-<h2>1. Declare the host schema</h2>
-<pre><code>{
-  "dsl.schema": 2,
-  "name": "greeter",
-  "types": {
-    "Greeter": {
-      "methods": {
-        "say": [
-          { "params": ["string"], "returns": "void" }
-        ]
-      }
-    }
-  },
-  "functions": {},
-  "context": { "g": "Greeter" }
-}</code></pre>
-<p>This schema= declaration is the SDK-author flow; tool users should use cli and install on the _dsl_ declaration.</p>
-<h2>2. Compile a DSL call</h2>
-<pre><code>p = _dsl_ schema="schema.json";
-g.say("Hello from the DSL");
-end _dsl_
-savedsl(p, "demo.dslb");</code></pre>
-<p>Run the compiler:</p>
-<pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript demo.lms demo.dslb</kbd>
-<samp>exit status: 0</samp></pre>
-<h2>3. Implement and build the host</h2>
-<p>This host binds Greeter.say, loads bytecode against the exact schema bytes, supplies a live object through Context, and reports a standard JSON result line.</p>
-<pre><code>#include "dslvm.hpp"
-#include &lt;iostream>
-struct Greeter { std::string last; };
-int main(int argc, char** argv) {
-  dslvm::Registry reg;
-  reg.context("g", "Greeter");
-  reg.method("Greeter", "say", {"string"}, "void", [](void* self, dslvm::Args&amp; a) {
-    static_cast&lt;Greeter*>(self)->last = a[0].s; return dslvm::Value::none();
-  });
-  if (argc == 2 &amp;&amp; std::string(argv[1]) == "--signatures") {
-    for (const auto&amp; s : reg.signatures()) std::cout &lt;&lt; s &lt;&lt; '\n'; return 0;
-  }
-  auto schema = dslvm::read_file(argv[2]);
-  auto program = dslvm::Program::load(dslvm::read_file(argv[1]), schema, reg);
-  Greeter greeter; dslvm::Context context; context.set("g", &amp;greeter);
-  program.run(context, reg);
-  return dslvm::report_ok(dslvm::json_escape(greeter.last));
-}</code></pre>
-<pre><kbd>g++ -std=c++17 -Iinclude greeter.cpp -o greeter</kbd>
-<samp>host build: 0</samp></pre>
-<h2>4. Check signatures and run</h2>
-<p>Compare the compiler's canonical signature list with the registry, then run the compiled chunk:</p>
-<pre><kbd>./greeter --signatures</kbd>
-<samp>context g: Greeter
-method Greeter.say(string) -> void</samp></pre>
-<pre><kbd>diff -u &lt;(npx --yes --package=@lmctl-ai/lmctl -- lmscript --dsl-signatures schema.json) &lt;(./greeter --signatures)</kbd>
-<samp>signature parity: 0</samp></pre>
-<pre><kbd>./greeter demo.dslb schema.json</kbd>
-<samp>{"ok": true, "result": "Hello from the DSL"}</samp></pre>
-<h2>What you learned</h2>
-<p>The compiler binds imports to the schema bytes; the host registers matching signatures, loads the program, provides owned objects through a context and executes the verified bytecode.</p>
-</main>
-<footer>
-<p>Source and releases: <a href="https://github.com/lmctl-ai/cpp-dsl-sdk">github.com/lmctl-ai/cpp-dsl-sdk</a>.</p>
-</footer>
+<p>This page has moved to <a href="/tools/lmcode-cpp/tutorial.html">lmcode-cpp</a>. The old address remains available for existing links.</p>
 </body>
 </html>
