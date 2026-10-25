@@ -1,5 +1,5 @@
 out = ARGV[0];
-p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(1280, 720, "#00000000");
 let cover_navy = scene.linear_gradient("cover_navy", 0.0, 0.0, 1.0, 1.0);
 cover_navy.stop(0.0, "#111f32"); cover_navy.stop(0.55, "#152438"); cover_navy.stop(1.0, "#203750");
@@ -184,5 +184,5 @@ for (i in range(0, 240)) {
   artifact_line1.set_attr("opacity", artifact_opacity); artifact_line2.set_attr("opacity", artifact_opacity); artifact_line3.set_attr("opacity", artifact_opacity);
   scene.render_png("build/rendered/overlay-" + str(i) + ".png", 1280, 720, 1);
 }
-end _dsl_
+end _lmcode_
 savedsl(p, out);

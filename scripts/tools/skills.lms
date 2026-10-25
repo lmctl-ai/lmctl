@@ -7,7 +7,7 @@ coordination = "lmctl-lead-skill|claudecode-lead-skill|opencode-lead-skill|lmctl
 retired = "background-wakeup|communicating-with-mail-skill|lmctl-admin-skill|lmctl-recover-skill|";
 non_html_skills = join(sort(glob("skills/*.md")), "|");
 all_html = join(sort(glob("skills/*.html")), "|") + "|";
-p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 fn element_offset(source: string, tag: string, raw: string, ordinal: int) -> int {
   let start = 0;
   let found = -1;
@@ -487,5 +487,5 @@ if (mode != "" && !check) {
 }
 report.write_text(${ARGV[1]});
 report.fail_if_any();
-end _dsl_
+end _lmcode_
 savedsl(p, ARGV[0]);

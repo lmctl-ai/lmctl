@@ -26,17 +26,17 @@ def quickrun_source(tool, script, examples_root, repo_root):
     source = script.read_text()
     host_var = None
     source, count = re.subn(
-        r'(?m)^(\w+)\s*=\s*_dsl_\s+schema="[^"]+"\s*;',
-        lambda match: f'{match.group(1)} = _dsl_ cli="{tool}" install="github:lmctl-ai/{tool}@latest";',
+        r'(?m)^(\w+)\s*=\s*_(?:dsl|lmcode)_\s+schema="[^"]+"\s*;',
+        lambda match: f'{match.group(1)} = _lmcode_ cli="{tool}" install="github:lmctl-ai/{tool}@latest";',
         source,
         count=1,
     )
     if count != 1 and not re.search(
-        rf'(?m)^\w+\s*=\s*_dsl_\s+cli="{re.escape(tool)}"\s+install="github:lmctl-ai/{re.escape(tool)}@(?:latest|[^"]+)"\s*;',
+        rf'(?m)^\w+\s*=\s*_(?:dsl|lmcode)_\s+cli="{re.escape(tool)}"\s+install="github:lmctl-ai/{re.escape(tool)}@(?:latest|[^"]+)"\s*;',
         source,
     ):
-        raise ValueError(f"{script.name} must declare a {tool} _dsl_ host or one schema-based _dsl_ block")
-    host_var_match = re.search(r"(?m)^(\w+)\s*=\s*_dsl_", source)
+        raise ValueError(f"{script.name} must declare a {tool} LMCode host or one schema-based LMCode block")
+    host_var_match = re.search(r"(?m)^(\w+)\s*=\s*_(?:dsl|lmcode)_", source)
     host_var = host_var_match.group(1) if host_var_match else None
     if not host_var:
         raise ValueError(f"could not find host variable in {script}")
@@ -74,9 +74,9 @@ def quickrun_source(tool, script, examples_root, repo_root):
         assets[target] = payload
         source = source.replace(quoted, json.dumps(target))
 
-    dsl_line = re.search(r"(?m)^\w+\s*=\s*_dsl_", source)
+    dsl_line = re.search(r"(?m)^\w+\s*=\s*_(?:dsl|lmcode)_", source)
     if not dsl_line:
-        raise ValueError(f"could not locate DSL block in {script.name}")
+        raise ValueError(f"could not locate LMCode block in {script.name}")
     bootstrap = [
         'if (!file_exists("build")) { mkdir("build"); }',
         'if (!file_exists("build/rendered")) { mkdir("build/rendered"); }',

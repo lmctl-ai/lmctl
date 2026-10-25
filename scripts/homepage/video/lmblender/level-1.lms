@@ -2,7 +2,7 @@ out = ARGV[0];
 final = ARGV.len() > 1 ? ARGV[1] == "final" : true;
 fw = final ? 1280 : 960;
 fh = final ? 720 : 540;
-p = _dsl_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.4";
+p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.4";
 
 # lmblender 0.3.1. The 16:9 camera aspect bug was fixed in 0.2.2: no screen_z
 # compensation anywhere. The named preset carries the render profile; the
@@ -91,5 +91,5 @@ if (${final}) {
   scene.render_sequence("frames/level-1/draft-{frame}.png", 180, 180, 0, ${fw}, ${fh});
   scene.render_sequence("frames/level-1/draft-{frame}.png", 239, 239, 0, ${fw}, ${fh});
 }
-end _dsl_
+end _lmcode_
 savedsl(p, out);

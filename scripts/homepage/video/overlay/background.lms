@@ -1,5 +1,5 @@
 out = ARGV[0];
-p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(1280, 720, "#152438");
 let navy = scene.linear_gradient("navy", 0.0, 0.0, 1.0, 1.0);
 navy.stop(0.0, "#111f32");
@@ -19,5 +19,5 @@ vertical.stop(0.8, "#08132100");
 vertical.stop(1.0, "#08132160");
 scene.rect(0.0, 0.0, 1280.0, 720.0, "url(#vertical)");
 scene.render_png("build/rendered/backdrop.png", 1280, 720, 1);
-end _dsl_
+end _lmcode_
 savedsl(p, out);

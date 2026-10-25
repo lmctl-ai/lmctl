@@ -1,5 +1,5 @@
 out = ARGV[0];
-p = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
+p = _lmcode_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
 let frame_count = 240;
 let render_width = 480;
 let render_height = 270;
@@ -85,5 +85,5 @@ for (frame in range(0, frame_count)) {
   }
   scene.render_png("frames/level-4/frame-" + str(frame) + ".png", render_width, render_height);
 }
-end _dsl_
+end _lmcode_
 savedsl(p, out);

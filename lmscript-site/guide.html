@@ -47,11 +47,11 @@ require(area(3, 4) == 12, "area calculation failed");</code></pre>
 <p>Directory and NonInteractive are read-only and cannot be set in init.toml. Standalone lmscript and lmctl script can both read the configured init.toml properties; use --pref FILE before the script to overlay one explicit properties file. lmctl script also connects the lmctl automation functions to provider sessions and team services.</p>
 <h2 id="blocks">Data and native blocks</h2>
 <p>JSON, CSV, TOML and properties blocks parse embedded data. Command and GraphQL blocks have their own checked forms. Experimental typed native blocks compile code against a host schema. They can select a release host with an install declaration; the host provides the schema and runs saved bytecode. The schema, compiler and host must agree.</p>
-<pre><code>p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+<pre><code>p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(480, 270, "#152438");
 scene.text(32.0, 76.0, 32.0, "Hello", "#f5c16c");
 scene.render_png("build/rendered/hello.png", 480, 270, 1);
-end _dsl_
+end _lmcode_
 savedsl(p, "build/hello.dslb");</code></pre>
 <h3 id="install-cache">Native host install cache</h3>
 <p>A declaration using install with @latest checks for a newer release at most once every six hours per exact install string. The verified binary and the last successful release check are stored in the lmscript tool cache. A fresh check uses the cached binary when GitHub is temporarily unavailable and prints a warning. An exact release tag needs no release lookup after its binary is cached and SHA-256 verified.</p>
@@ -109,7 +109,7 @@ prompt_human(question)</code></pre>
 <ul><li>0: success, including successful check or dry run.</li><li>1: run-time failure, failed require/assert, or usage error.</li><li>2: static/check failure or failed explicit dry run.</li><li>Other values may be requested by exit(code); signals use 130 or 143.</li></ul>
 <h2 id="limits">Limits and trust</h2>
 <p>lmscript is not a sandbox. File, process and network functions use the invoking user's authority. Dry run is an effect preview and does not make untrusted code safe. Read scripts before running them, especially scripts that seed or prompt providers, write files, or launch processes.</p>
-<p>lmscript collections are native lists and maps. In _dsl_ bytecode, collections are host-defined objects with methods such as len and at; the bytecode has no general list or map value type.</p>
+<p>lmscript collections are native lists and maps. In LMCode bytecode, collections are host-defined objects with methods such as len and at; the bytecode has no general list or map value type.</p>
 </main>
 <footer><p>See the <a href="/lmscript/">tutorial index</a>, <a href="/tools/lmscript/">tool overview</a>, and <a href="/skills/lmscript-workflow-skill.html">workflow skill</a>.</p></footer>
 </body>

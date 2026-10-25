@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Render the /tools/ icons with lmcad from the lmscript _dsl_ scripts here.
+# Render the /tools/ icons with lmcad from the lmscript _lmcode_ scripts here.
 #
 #   scripts/tools/icons/render.sh            render and write the PNGs into tools/
 #   scripts/tools/icons/render.sh --check    render to a temp dir; fail unless the

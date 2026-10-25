@@ -1,6 +1,6 @@
 import "roles.lms";
 directories = join(sort(glob("tools/*/")), "|") + "|";
-p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 # Source-preserving pre formatting (kept identical in check/decorate).
 # Locate the nth real element with the host tokenizer, not a text match alone:
 # a comment or script may contain an identical-looking HTML snippet.
@@ -383,5 +383,5 @@ if (html.link_exists(probe, "/tools/index.html")) { old_index = html.load("tools
 store("tools/index.html", render(site_layout, region(template_source, "site-nav"), region(template_source, "site-footer"), site_content, "Tools — lmctl.com", "Small command-line tools from lmctl, with skill pages for LLM agents and task-specific documentation."), old_index, check, "missing or stale generated tools index");
 report.write_text(${ARGV[1]});
 if (check) { report.fail_if_any(); }
-end _dsl_
+end _lmcode_
 savedsl(p, ARGV[0]);

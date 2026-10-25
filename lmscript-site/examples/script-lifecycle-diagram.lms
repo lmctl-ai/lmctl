@@ -1,6 +1,6 @@
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(960, 300, "#101820");
 scene.rect(60.0, 100.0, 220.0, 100.0, "#1e3247");
 scene.rect(370.0, 100.0, 220.0, 100.0, "#1e3247");
@@ -18,7 +18,7 @@ scene.path("M 680.0 150.0 L 668.0 143.0 L 668.0 157.0 Z", "#f5c16c", "none", 1.0
 scene.text(60.0, 60.0, 25.0, "One script, three passes", "#dbe7f3");
 scene.text(60.0, 250.0, 14.0, "A dry preflight previews effects; it is not a security sandbox.", "#9db4c8");
 scene.render_png("build/rendered/script-lifecycle.png", 960, 300, 1);
-end _dsl_
+end _lmcode_
 savedsl(p, "build/rendered/script-lifecycle.dslb");
 run = system ${dsl_cli(p)} --dsl build/rendered/script-lifecycle.dslb;
 if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

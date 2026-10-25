@@ -1,5 +1,5 @@
 # Check the published homepage explainers and their media with lmhtml's parser.
-p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 fn finding(file: string, detail: string) -> void {
   report.add("homepage-video", file, 0, detail);
 }
@@ -45,5 +45,5 @@ if (html.load("homepage/levels/index.html").select("main h1").len() != 1) { find
 report.write_text(${ARGV[1]});
 report.fail_if_any();
 report.write_text(${ARGV[1]});
-end _dsl_
+end _lmcode_
 savedsl(p, ARGV[0]);

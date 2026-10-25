@@ -1,5 +1,5 @@
 out = ARGV[0];
-p = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(1280, 720, "#00000000");
 let gold = "#f5c16c";
 let paper = "#f5f8fb";
@@ -30,5 +30,5 @@ for (i in range(0, 240)) {
   relay_box.set_attr("opacity", opacity); relay.set_attr("opacity", opacity);
   scene.render_png("build/rendered/overlay-" + str(i) + ".png", 1280, 720, 1);
 }
-end _dsl_
+end _lmcode_
 savedsl(p, out);

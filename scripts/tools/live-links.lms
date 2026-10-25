@@ -1,5 +1,5 @@
 # files is supplied by the HTTP transport; all HTML interpretation uses lmhtml.
-p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 let remaining = ${files};
 while (str_find(remaining, "|") >= 0) {
   let end = str_find(remaining, "|");
@@ -20,5 +20,5 @@ while (str_find(remaining, "|") >= 0) {
   }
 }
 report.write_json(${ARGV[1]});
-end _dsl_
+end _lmcode_
 savedsl(p, ARGV[0]);

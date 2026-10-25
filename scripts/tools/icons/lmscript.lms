@@ -1,7 +1,7 @@
 # lmscript icon: curly braces built from boxes around three lines of code.
 # Usage (see README.md): lmscript lmscript.lms OUT_DIR OUT.dslb, then lmcad --dsl OUT.dslb
 out = ARGV.get(0, "build");
-p = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
+p = _lmcode_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
 # --- shared icon look: identical in every icon script (render.sh --check verifies) ---
 scene.background(0.17, 0.20, 0.27);
 scene.directional_light(-0.5, -1.0, -0.6, 0.85);
@@ -67,5 +67,5 @@ scene.camera(28.0, aim_x + view_x * near, aim_y + view_y * near, view_z * near, 
 scene.render_png(${out} + "/icon.png", 64, 64);
 scene.render_png(${out} + "/icon-32.png", 32, 32);
 scene.render_png(${out} + "/icon-16.png", 16, 16);
-end _dsl_
+end _lmcode_
 savedsl(p, ARGV.get(1, "icon.dslb"));
