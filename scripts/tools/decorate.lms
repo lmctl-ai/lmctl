@@ -289,7 +289,7 @@ while (str_find(tool_dirs, "|") >= 0) {
   let separator = str_find(tool_dirs, "|");
   let directory = str_substr(tool_dirs, 0, separator);
   tool_dirs = str_substr(tool_dirs, separator + 1, str_len(tool_dirs));
-  if (directory == "") { continue; }
+  if (directory == "" || basename(directory) == "cpp-dsl-sdk") { continue; }
   let pages = html.load_dir(directory, "*.html", "");
   let count = 0;
   for (page in pages) { if (basename(page.path()) != "index.html") { count = count + 1; } }
