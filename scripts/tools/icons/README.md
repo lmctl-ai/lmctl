@@ -1,7 +1,7 @@
 # /tools/ icons
 
 The tool icons are rendered by [lmcad](https://github.com/lmctl-ai/lmcad)
-from lmscript `_dsl_` scripts. Each script names the lmcad release whose
+from lmscript `_lmcode_` scripts. Each script names the lmcad release whose
 embedded schema compiles it; the resulting bytecode runs on that same host.
 Shapes, not text, carry each tool's identity; booleans and loops build them.
 
