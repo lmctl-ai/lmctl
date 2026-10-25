@@ -78,7 +78,7 @@ pre {
 }
 
 pre code, pre kbd, pre samp { background: none; padding: 0; border: 0; font-size: 1em; }
-pre code, pre kbd { white-space: pre-wrap; overflow-wrap: anywhere; }
+pre code, pre kbd { white-space: pre; overflow-wrap: normal; }
 pre kbd { font-weight: 600; }
 pre samp { color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
 
