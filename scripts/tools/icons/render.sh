@@ -15,7 +15,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../.." && pwd)"
 LMCAD="${LMCAD:-}"
-LMSCRIPT_VERSION="${LMSCRIPT_VERSION:-0.2.369}"
+LMSCRIPT_VERSION="${LMSCRIPT_VERSION:-0.2.420}"
 MAX_BYTES=20480
 MODE="write"
 PREVIEW=""

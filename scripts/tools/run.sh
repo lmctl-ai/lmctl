@@ -8,13 +8,13 @@ command_name=${1:-check}
 if (($#)); then shift; fi
 case "$command_name" in check|contract|decorate|links|skills|host-path|homepage-videos) ;; *) echo 'usage: run.sh check [file] | decorate [--check] | links [site-root] | homepage-videos' >&2; exit 2;; esac
 compiler=${LMSCRIPT_BIN:-$(command -v lmscript || true)}
-[[ -n $compiler ]] || { echo 'Install @lmctl-ai/lmctl@0.2.369 or newer and put lmscript on PATH.' >&2; exit 2; }
+[[ -n $compiler ]] || { echo 'Install @lmctl-ai/lmctl@0.2.420 or newer and put lmscript on PATH.' >&2; exit 2; }
 compiler="$(cd "$(dirname "$compiler")" && pwd)/$(basename "$compiler")"
 version_text=$("$compiler" --version)
 version=${version_text##* }
 IFS=. read -r major minor patch <<< "$version"
 [[ $major =~ ^[0-9]+$ && $minor =~ ^[0-9]+$ && $patch =~ ^[0-9]+$ ]] || { echo "unrecognized compiler version: $version_text" >&2; exit 2; }
-((major > 0 || minor > 2 || (minor == 2 && patch >= 369))) || { echo 'lmscript >= 0.2.369 required for cli=install.' >&2; exit 2; }
+((major > 0 || minor > 2 || (minor == 2 && patch >= 420))) || { echo 'lmscript >= 0.2.420 required for cli=install.' >&2; exit 2; }
 work=$(mktemp -d "${TMPDIR:-/tmp}/lmctl-tools.XXXXXX")
 trap 'rm -rf "$work"' EXIT
 if [[ -n "${LMHTML:-}" ]]; then

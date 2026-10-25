@@ -24,11 +24,11 @@ LMCAD_BIN="${LMCAD_BIN:-$(command -v lmcad || true)}"
 LMBLENDER_BIN="${LMBLENDER_BIN:-$(command -v lmblender || echo /home/ubuntu/lmblender-release/current/bin/lmblender)}"
 LMDRAW_BIN="${LMDRAW_BIN:-$(command -v lmdraw || true)}"
 LMSCRIPT_BIN="${LMSCRIPT_BIN:-$(command -v lmscript || true)}"
-[[ -x $LMSCRIPT_BIN ]] || { echo 'Install @lmctl-ai/lmctl@0.2.369 or newer and put lmscript on PATH.' >&2; exit 2; }
+[[ -x $LMSCRIPT_BIN ]] || { echo 'Install @lmctl-ai/lmctl@0.2.420 or newer and put lmscript on PATH.' >&2; exit 2; }
 compiler_version=$($LMSCRIPT_BIN --version 2>&1 | awk '{print $NF}')
 IFS=. read -r compiler_major compiler_minor compiler_patch <<< "$compiler_version"
 [[ $compiler_major =~ ^[0-9]+$ && $compiler_minor =~ ^[0-9]+$ && $compiler_patch =~ ^[0-9]+$ ]] || { echo "unrecognized lmscript version: $compiler_version" >&2; exit 2; }
-((compiler_major > 0 || compiler_minor > 2 || (compiler_minor == 2 && compiler_patch >= 369))) || { echo 'lmscript >= 0.2.369 required for cli=install.' >&2; exit 2; }
+((compiler_major > 0 || compiler_minor > 2 || (compiler_minor == 2 && compiler_patch >= 420))) || { echo 'lmscript >= 0.2.420 required for cli=install.' >&2; exit 2; }
 for tool in ffmpeg ffprobe; do command -v "$tool" >/dev/null || { echo "$tool is required." >&2; exit 2; }; done
 sha256_file() { if command -v sha256sum >/dev/null; then sha256sum "$1"; else shasum -a 256 "$1"; fi; }
 file_size() { if stat -c '%s' "$1" >/dev/null 2>&1; then stat -c '%s' "$1"; else stat -f '%z' "$1"; fi; }
