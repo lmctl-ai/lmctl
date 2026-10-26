@@ -48,12 +48,13 @@ savedsl(p, out);
             script = root / "example.lms"
             script.write_text('''if (!file_exists("build")) { mkdir("build"); }
 out = "build/example.dslb";
-p = _dsl_ cli="lmr" install="github:lmctl-ai/lmr@latest";
+p = _dsl_ cli="lmr" install="github:lmctl-ai/lmr@v0.5.1";
 end _dsl_
 savedsl(p, out);
   r = system ${dsl_cli(p)} --dsl ${out};
 ''')
-            result = module.quickrun_source("lmr", script, root, root)
+            result = module.quickrun_source("lmr", script, root, root, "v0.5.1")
+        self.assertIn('install="github:lmctl-ai/lmr@v0.5.1"', result)
         self.assertEqual(result.count('if (!file_exists("build"))'), 1)
         self.assertEqual(result.count("system ${dsl_cli(p)} --dsl ${out}"), 1)
 

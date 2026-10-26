@@ -1,7 +1,5 @@
 // One concept: fit a straight line to six exact points.
-if (!file_exists("build")) { mkdir("build"); }
-if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _lmcode_ cli="lmr" install="github:lmctl-ai/lmr@latest";
+p = _lmcode_ cli="lmr" install="github:lmctl-ai/lmr@v0.5.1";
 let x = seq(0.0, 5.0, 1.0);
 let fit = lm(frame().set("x", x).set("y", 2.0 * x + 1.0), "y ~ x");
 out.check_close(fit.estimates().at(0), 1.0, 0.000000000001, "intercept is 1");
@@ -11,6 +9,7 @@ out.set("slope", fit.estimates().at(1));
 end _lmcode_
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
+out = "build/rendered/linear-fit.dslb";
 savedsl(p, "build/rendered/linear-fit.dslb");
 r = system ${dsl_cli(p)} --dsl build/rendered/linear-fit.dslb;
 if (r.code != 0) { println("lmr regression check failed:", str(r.stderr)); lm_exit(r.code); }

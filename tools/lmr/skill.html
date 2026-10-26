@@ -32,10 +32,10 @@
 <pre><code>lmscript --version
 lmr --version
 lmr --dsl-schema --json</code></pre>
-<p>The embedded schema is also available in the source repository at native/schema/lmr.dsl.json. Compare the released binary's JSON bytes with that file when validating a release.</p>
+<p>The v0.5.1 release embeds the lmr-specific schema from native/schema/lmr.dsl.json. The standard StrList methods come from the LMScript standard library and are not repeated in the host schema. Compare the released binary's JSON bytes with that file when validating a release.</p>
 <h2>Commands</h2>
 <p>Declare the released host in an LMScript program. Then compile and run the saved bytecode through that same binary.</p>
-<pre><code>p = _lmcode_ cli="lmr" install="github:lmctl-ai/lmr@latest";
+<pre><code>p = _lmcode_ cli="lmr" install="github:lmctl-ai/lmr@v0.5.1";
 let q = norm().q_vec(parse_vec("0.975"));
 out.check_close(q.at(0), 1.959963984540054, 0.00000000000001, "normal quantile");
 end _lmcode_

@@ -1,6 +1,7 @@
 {
   "display_name": "lmr",
   "repository": "https://github.com/lmctl-ai/lmr.git",
+  "release_version": "v0.5.1",
   "description": "lmr is a native statistics host for LMScript, with regression, distributions, time series, tests, and optimization.",
   "get_started": "/tools/lmr/get_started.html",
   "task": "Analyze a small seeded data set with lmr, verify a concrete statistical result, and report the LMScript source and checks.",

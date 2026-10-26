@@ -22,14 +22,19 @@ def png_size(path):
     return struct.unpack(">II", data[16:24])
 
 
-def quickrun_source(tool, script, examples_root, repo_root):
+def quickrun_source(tool, script, examples_root, repo_root, release_version="latest"):
     source = script.read_text()
     host_var = None
     source, count = re.subn(
         r'(?m)^(\w+)\s*=\s*_(?:dsl|lmcode)_\s+schema="[^"]+"\s*;',
-        lambda match: f'{match.group(1)} = _lmcode_ cli="{tool}" install="github:lmctl-ai/{tool}@latest";',
+        lambda match: f'{match.group(1)} = _lmcode_ cli="{tool}" install="github:lmctl-ai/{tool}@{release_version}";',
         source,
         count=1,
+    )
+    source = re.sub(
+        rf'(\binstall="github:lmctl-ai/{re.escape(tool)}@)[^"]+(";)',
+        rf'\g<1>{release_version}\g<2>',
+        source,
     )
     if count != 1 and not re.search(
         rf'(?m)^\w+\s*=\s*_(?:dsl|lmcode)_\s+cli="{re.escape(tool)}"\s+install="github:lmctl-ai/{re.escape(tool)}@(?:latest|[^"]+)"\s*;',
@@ -247,7 +252,7 @@ def main():
         if not rendered_output and not preview.is_file():
             raise SystemExit(f"{slug} needs a rendered output or examples/renders/{preview_name}")
         width, height = png_size(preview) if preview.is_file() else (0, 0)
-        source = quickrun_source(tool, script, examples_root, repo_root)
+        source = quickrun_source(tool, script, examples_root, repo_root, data.get("release_version", "latest"))
         original_name = script.relative_to(examples_root).as_posix()
         source_name = f"{slug}.lms"
         source_path = output / source_name
