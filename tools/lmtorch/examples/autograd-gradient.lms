@@ -1,7 +1,7 @@
 # One concept: backpropagate through the sum of squared values.
 if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
-p = _lmcode_ cli="lmtorch" install="github:lmctl-ai/lmtorch@latest";
+p = _lmcode_ cli="lmtorch" install="github:lmctl-ai/lmtorch@v0.5.1";
 let x = torch.tensor("[1.0, -2.0, 3.0]").requires_grad(true);
 let loss = x.square().sum();
 loss.backward();

@@ -32,7 +32,7 @@ if (seed_only) {
   } else {
     lead = lm_prompt(file, "Lead", "You coordinate this " + tool + " task. " + task
       + "\nPrepare the Coder's assignment and a short Reviewer checklist. "
-      + "This quickrun will pass your assignment to Coder, pass Coder's result to Reviewer, "
+      + "This provider run will pass your assignment to Coder, pass Coder's result to Reviewer, "
       + "then return both results to you for a final report.\n\n" + resources, {});
     require(lead.status == "ok", "Lead assignment failed: " + str(lead.error));
     coder = lm_prompt(file, "Coder", "Lead's assignment:\n" + str(lead.reply)

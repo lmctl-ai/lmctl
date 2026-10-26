@@ -1,6 +1,7 @@
 {
   "display_name": "lmtorch",
   "repository": "https://github.com/lmctl-ai/lmtorch.git",
+  "release_version": "v0.5.1",
   "description": "lmtorch runs CPU tensor operations, automatic differentiation, and small neural networks from LMScript.",
   "readme": {
     "hero_idea": "A real lmtorch two-moons classifier run, showing its point clouds and decision boundary in desktop and mobile light and dark variants.",

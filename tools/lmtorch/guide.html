@@ -27,7 +27,7 @@
 <p>Start with a host block that declares the released executable and the operation to run.</p>
 <h2>Start a host block</h2>
 <p>Declare the released host with cli and install. LMScript asks that binary for its embedded DSL schema and uses the same executable to run the compiled block.</p>
-<pre><code>p = _lmcode_ cli="lmtorch" install="github:lmctl-ai/lmtorch@latest";
+<pre><code>p = _lmcode_ cli="lmtorch" install="github:lmctl-ai/lmtorch@v0.5.1";
 let x = torch.tensor("[1.0, 2.0, 3.0]");
 out.set("sum", x.sum().item());
 end _lmcode_</code></pre>

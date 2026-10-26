@@ -28,11 +28,11 @@
 <h2>When to use it</h2>
 <p>Use lmtorch for deterministic CPU tensor workflows and small models. Choose another host when the task requires a GPU, remote training service, or Python package ecosystem.</p>
 <h2>Install</h2>
-<p>Install Node.js 24.15 or newer and LMScript with npm install -g @lmctl-ai/lmctl. A host declaration with cli="lmtorch" install="github:lmctl-ai/lmtorch@latest" downloads the matching release binary when lmtorch is not on PATH and verifies its GitHub SHA-256 digest.</p>
-<p>The lmtorch release embeds its DSL schema. LMScript uses the schema reported by the same binary that executes the compiled bytecode. The latest release supports Linux x64 and arm64, macOS x64 and arm64, and Windows x64.</p>
+<p>Install Node.js 24.15 or newer and LMScript with npm install -g @lmctl-ai/lmctl. A host declaration with cli="lmtorch" install="github:lmctl-ai/lmtorch@v0.5.1" downloads the matching release binary when lmtorch is not on PATH and verifies its SHA256SUMS checksum.</p>
+<p>The lmtorch v0.5.1 release embeds its host-specific DSL schema. Standard functions come from the LMScript standard library and are not repeated in the host schema. LMScript uses the schema reported by the same binary that executes the compiled bytecode. This release supports Linux x64 and arm64, macOS x64 and arm64, and Windows x64.</p>
 <h2>Commands</h2>
 <p>Save a DSL block to bytecode and run it through the host command prefix.</p>
-<pre><code>p = _lmcode_ cli="lmtorch" install="github:lmctl-ai/lmtorch@latest";
+<pre><code>p = _lmcode_ cli="lmtorch" install="github:lmctl-ai/lmtorch@v0.5.1";
 let x = torch.tensor("[1.0, 2.0, 3.0]");
 out.set("sum", x.sum().item());
 end _lmcode_
