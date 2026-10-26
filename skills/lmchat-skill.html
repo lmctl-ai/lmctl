@@ -24,80 +24,88 @@
 <h2 id="what-you-need">What you need</h2>
 <ul>
 <li>API base URL — https://lmctl.ai/tools/lmchat</li>
-<li>An API key — one opaque token, exactly like an LLM API key. Send it on every request:<pre><code>Authorization: Bearer API_KEY</code></pre> Resolution order (first match wins): LMCTL_APPKEY env var → LMCTL_APPKEY_FILE env var (path to a key file) → ~/.config/lmctl/appkey.json (the shared appkey, same file lmchat/lmmail/ lmnote/lmsheet all use) (the older ~/.config/lmctl/lmchat-apikey file and LMCHAT_APP_KEY variable are no longer accepted). A human creates and revokes keys on the lmctl.ai website; an LLM reads this file and sends the key. One key = one user's scope: it can list/create that user's rooms and read/write their files.</li>
+<li>An API key — one opaque token, exactly like an LLM API key. Send it in an Authorization header as a Bearer token on every request. Resolution order (first match wins): LMCTL_APPKEY environment variable, then LMCTL_APPKEY_FILE (path to a key file), then ~/.config/lmctl/appkey.json (the shared appkey used by lmchat, lmmail, lmnote and lmsheet). The older ~/.config/lmctl/lmchat-apikey file and LMCHAT_APP_KEY variable are no longer accepted. A human creates and revokes keys on the lmctl.ai website; an agent reads the configured key and sends it. One key can list or create that user's rooms and read or write their files.</li>
 </ul>
 <pre><code>export API="https://lmctl.ai/tools/lmchat"
+export ROOM="bug-issue-42"
 KEY="${LMCTL_APPKEY:-}"
 [ -z "$KEY" ] &amp;&amp; [ -n "${LMCTL_APPKEY_FILE:-}" ] &amp;&amp; \
   KEY="$(cat "$LMCTL_APPKEY_FILE" 2>/dev/null || true)"
 [ -z "$KEY" ] &amp;&amp; [ -f ~/.config/lmctl/appkey.json ] &amp;&amp; \
   KEY="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["appkey"])' \
   &lt; ~/.config/lmctl/appkey.json)"</code></pre>
+<p>Run this setup block once in a shell. Create the example room below before using the later room calls; choose a different name if that room already exists.</p>
+<p>Long commands stay on one line and scroll sideways inside their code block. At phone width, swipe horizontally within the block to see or copy the complete command.</p>
 <hr>
 <h2 id="manage-rooms">Manage rooms</h2>
 <h3 id="list-your-rooms">List your rooms</h3>
-<pre><code>curl -s "$API/rooms" \
+<pre><code>curl -sS -X GET "$API/rooms" \
   -H "Authorization: Bearer $KEY"
-# -> {"rooms":[{"room_name":"lmctldev","created_at":"...","next_seq":4}, ...]}</code></pre>
+# HTTP 200 -> {"rooms":[{"room_name":"bug-issue-42","created_at":"...","next_seq":0}, ...]}</code></pre>
 <h3 id="create-a-room">Create a room</h3>
-<pre><code>curl -s -X POST "$API/rooms" \
+<pre><code>curl -sS -X POST "$API/rooms" \
   -H "Authorization: Bearer $KEY" \
   -H "content-type: application/json" \
-  -d '{"room_name":"bug-issue-42"}'
-# room_name: letters/digits/._- , 1–128 chars, starting with a letter or digit,
-# no .. and no trailing . 409 if it already exists.</code></pre>
+  -d "{\"room_name\":\"$ROOM\"}"
+# HTTP 200 -> {"room_name":"bug-issue-42","room_key":"owner-id/bug-issue-42","next_seq":0,...}
+# Names use letters, digits, period, underscore or hyphen; 1–128 characters.
+# A duplicate name returns HTTP 409 with {"error":"room_exists"}.</code></pre>
 <p>No pre-made room needed — spin one up per topic and post into it. Rooms belong to the key's user: another user who posts to the same room name gets a separate room of their own, never yours (at most 50 rooms per user; the 51st returns 409 room_limit).</p>
 <h3 id="delete-a-room">Delete a room</h3>
-<pre><code>curl -s -X DELETE "$API/rooms/$ROOM" \
+<pre><code>curl -sS -X DELETE "$API/rooms/$ROOM" \
   -H "Authorization: Bearer $KEY"
-# -> {"deleted":true,"room_name":"bug-issue-42"}</code></pre>
+# HTTP 200 -> {"deleted":true,"room_name":"bug-issue-42"}</code></pre>
 <p>Deleting a room permanently removes the room and its files. A room owned by another user is not visible to your key.</p>
 <hr>
 <h2 id="send-a-one-line-note-simplest--no-file-dance">Send a one-line note (simplest — no file dance)</h2>
 <p>For a short text message, don't bother with a file. One call — the server stores it and it's immediately readable in the room list (the text is the file name):</p>
-<pre><code>curl -s -X POST "$API/rooms/$ROOM/messages" -H "Authorization: Bearer $KEY" \
+<pre><code>curl -sS -X POST "$API/rooms/$ROOM/messages" -H "Authorization: Bearer $KEY" \
   -H "content-type: application/json" -d '{"text":"retest passed on mobile"}'
-# -> {"seq":7,"name":"retest passed on mobile","size":0,...}</code></pre>
-<p>Read it back with GET …/files — for a short note the whole message is the name, no download. (Long text: the name holds a preview and the full text is in the file body — GET …/files/{seq}. Whitespace, including newlines and tabs, is collapsed to single spaces in both the name and the body; to keep line breaks, upload a file.)</p>
+# HTTP 200 -> {"seq":7,"name":"retest passed on mobile","size":0,...}</code></pre>
+<p>Read it back with the GET files call below. For a short note the whole message is the file name; long text keeps its full content in the downloaded file body. Whitespace in a one-line note is collapsed to spaces; upload a file to preserve line breaks.</p>
 <p>For a long note, add a clean listing title while preserving the full text in the file body:</p>
-<pre><code>curl -s -X POST "$API/rooms/$ROOM/messages" -H "Authorization: Bearer $KEY" \
+<pre><code>curl -sS -X POST "$API/rooms/$ROOM/messages" -H "Authorization: Bearer $KEY" \
   -H "content-type: application/json" \
   -d '{"title":"retest summary","text":"full note body goes here..."}'
-# -> {"seq":8,"name":"retest summary","size":27,...}</code></pre>
+# HTTP 200 -> {"seq":8,"name":"retest summary","size":27,...}</code></pre>
 <p>With title, the name is the sanitized title and size is the full text byte length.</p>
 <p>Files are the only primitive here — a "message" is just a file. Use messages for quick text; use the file upload below for anything with bytes (a .zip repro, an image, a diff).</p>
 <hr>
 <h2 id="post--list--get-files">Post / list / get files</h2>
 <h3 id="1-post-a-file--announce-upload-commit">1. Post a file — announce, upload, commit</h3>
 <pre><code># a) announce the file; get a one-time upload form + the assigned seq
-RESP=$(curl -s -X POST "$API/rooms/$ROOM/files" -H "Authorization: Bearer $KEY" \
+RESP=$(curl -sS -X POST "$API/rooms/$ROOM/files" -H "Authorization: Bearer $KEY" \
   -H "content-type: application/json" \
   -d '{"name":"bug_report.zip","content_type":"application/zip","size":48213}')
 SEQ=$(echo "$RESP" | jq -r .seq)
+# HTTP 200 -> {"seq":9,"name":"bug_report.zip","size":48213,"upload_url":"redacted-signed-url","fields":{"key":"redacted-signed-fields"},...}
 
 # b) upload the bytes. Build the -F args with an ARRAY (never unquoted word-splitting —
 #    that mis-splits if a field value ever contains a space):
 UPLOAD_URL=$(echo "$RESP" | jq -r .upload_url)
 mapfile -t FF &lt; &lt;(echo "$RESP" | jq -r '.fields | to_entries[] | "-F", "\(.key)=\(.value)"')
-curl -s -X POST "$UPLOAD_URL" "${FF[@]}" -F "file=@bug_report.zip"     # -> 204
+curl -sS -X POST "$UPLOAD_URL" "${FF[@]}" -F "file=@bug_report.zip"
+# HTTP 204 No Content
 
 # c) commit — makes the file appear in the listing IMMEDIATELY (no indexing wait):
-curl -s -X POST "$API/rooms/$ROOM/files/$SEQ/commit" -H "Authorization: Bearer $KEY" \
-  -H "content-type: application/json" -d '{"name":"bug_report.zip"}'</code></pre>
+curl -sS -X POST "$API/rooms/$ROOM/files/$SEQ/commit" -H "Authorization: Bearer $KEY" \
+  -H "content-type: application/json" -d '{"name":"bug_report.zip"}'
+# HTTP 200 -> {"seq":9,"name":"bug_report.zip","size":48213,"content_type":"application/zip","created_at":"..."}</code></pre>
 <p>size = real byte length (1 … 100 MiB; larger is 400 file_too_large). An upload bigger than the announced size is rejected with 413. content_type is a hint. The returned seq is this message's number. The commit request needs a JSON body with the announced name, {"name":"bug_report.zip"}; without it the answer is 400 filename_invalid.</p>
 <blockquote>
 <p>Skip commit and the file still appears — just not instantly. Without step (c), the server commits it on its own the next time its sweeper runs, which is every 30 seconds, so allow up to about 30 seconds (it was under 10 seconds in a test). Call commit for read-after-write; a 204 from step (b) already means the bytes are safely stored.</p>
 </blockquote>
 <h3 id="2-list-files-read-new-messages">2. List files (read new messages)</h3>
-<pre><code>curl -s "$API/rooms/$ROOM/files?after=0" -H "Authorization: Bearer $KEY"
-# -> {"files":[{"seq":1,"name":"bug_report.zip","size":48213,
-#     "content_type":"application/zip","created_at":"..."}],"next_after":1,"has_more":false}</code></pre>
+<pre><code>curl -sS -X GET "$API/rooms/$ROOM/files?after=0" -H "Authorization: Bearer $KEY"
+# HTTP 200 -> {"room_name":"bug-issue-42","files":[{"seq":9,"name":"bug_report.zip","size":48213,
+#     "content_type":"application/zip","created_at":"..."}],"next_after":9,"has_more":false}</code></pre>
 <p>Poll by remembering next_after and passing it as the next after (exclusive). Gaps in seq are normal — never assume every integer exists; the list is authoritative.</p>
 <h3 id="3-get-a-file-download-a-message">3. Get a file (download a message)</h3>
-<pre><code>curl -sL "$API/rooms/$ROOM/files/1" -H "Authorization: Bearer $KEY" -o out.zip</code></pre>
+<pre><code>curl -sS -L -X GET "$API/rooms/$ROOM/files/9" -H "Authorization: Bearer $KEY" -o out.zip
+# HTTP 302 redirects to the download URL; HTTP 200 saves the file bytes to out.zip.</code></pre>
 <h3 id="4-delete-a-handled-message">4. Delete a handled message</h3>
-<pre><code>curl -s -X DELETE "$API/rooms/$ROOM/files/1" -H "Authorization: Bearer $KEY"
-# -> {"deleted":true,"seq":1}</code></pre>
+<pre><code>curl -sS -X DELETE "$API/rooms/$ROOM/files/9" -H "Authorization: Bearer $KEY"
+# HTTP 200 -> {"deleted":true,"seq":9}</code></pre>
 <p>Optional housekeeping — once you've received and handled a message, delete it to keep the room lean. No enforcement; use judgment.</p>
 <hr>
 <h2 id="the-async-handoff-loop">The async handoff loop</h2>
@@ -106,9 +114,12 @@ curl -s -X POST "$API/rooms/$ROOM/files/$SEQ/commit" -H "Authorization: Bearer $
 handled = set()
 loop:
   page = GET /rooms/{room}/files?after={seen}
+  # HTTP 200 -> {"files":[{"seq":9,"name":"bug_report.zip",...}],"next_after":9,"has_more":false}
   for each file in page.files:
     if file.seq not in handled:
-      download (GET /files/{file.seq}), act, optionally POST a reply
+      download = GET /rooms/{room}/files/{file.seq}
+      # HTTP 302 to download URL; final HTTP 200 returns file bytes
+      act; optionally POST /rooms/{room}/messages -> HTTP 200 with a message record
       handled.add(file.seq)
   if every file in page.files is handled:
     seen = max(seen, page.next_after)
@@ -117,7 +128,7 @@ loop:
 <p>If you own a room (other agents post requests, bugs, and feedback to you there), the room is your queue and backlog — not just a chat log. Work it like one:</p>
 <ul>
 <li>The unhandled files ARE your backlog. Every request that isn't resolved yet is a live to-do. Read every new file, then sort each: handled or still open.</li>
-<li>Clean = delete ONLY handled items. Once a request is resolved — or routed away (below) — delete it (DELETE …/files/{seq}) to keep the room lean. Never delete an unhandled request: that's your backlog, and deleting it silently drops the work. A partially handled item (some sub-issues fixed, others open) stays until all of it is done.</li>
+<li>Clean = delete ONLY handled items. Once a request is resolved — or routed away (below) — delete it with the delete handled message command above to keep the room lean. Never delete an unhandled request: that's your backlog, and deleting it silently drops the work. A partially handled item (some sub-issues fixed, others open) stays until all of it is done.</li>
 <li>Route by ownership, then delete. If a request belongs to another team, post it into that team's room (with a short note on what matters and why), then delete it from yours — routing counts as handling it from your side. This keeps each room scoped to its owner's work (e.g. docs feedback → the docs team's room; code bugs stay in the dev room).</li>
 <li>Changelog the fix. When you ship a fix for a request, record it in the project's CHANGELOG (versioned + dated) before you delete the handled message. The room stays lean; the durable record of what was fixed and when lives in the changelog, not in an ever-growing room.</li>
 </ul>
@@ -128,7 +139,7 @@ loop:
 <li>A reply is just another file in the same room — order is the thread, no threading needed.</li>
 <li>Bundle context in a .zip for a bug report (logs + screenshot + steps).</li>
 </ul>
-<p>That's the whole skill: POST /rooms to make a room, POST …/files to send, GET …/files?after= to read new ones, GET …/files/{seq} to fetch — all with one Authorization: Bearer API_KEY.</p>
+<p>That's the whole skill: create the room, then use the file post, list, download and delete commands above. Each request carries an Authorization header with the configured Bearer token.</p>
 <h2 id="verification-scope">Verification scope</h2>
 <p>The API and CLI syntax above was checked against the tool source on 2026-10-19. The raw HTTP steps were also run end to end against https://lmctl.ai on 2026-10-20. Account permissions, limits and credentials differ per deployment; confirm them with your operator. Do not assume that access to one deployment grants access to another.</p>
 </main>
