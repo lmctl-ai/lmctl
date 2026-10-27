@@ -2,12 +2,9 @@ name: tools-check
 
 # Validates the static /tools/ pages (scripts/tools/**). No secrets,
 # read-only token, no deploy.
+# Owner policy: checks/publication run only on explicit dispatch.
 on:
-  pull_request:
-    paths: ["skills/**", "skills-moved/**", "tests/skills/**", "tools/**", "scripts/tools/**", "lmscript-site/**", "scripts/lmscript-site/**", "package.json", "homepage/**", "scripts/homepage/video/**", "tests/tools/**", ".github/workflows/tools-check.yml"]
-  push:
-    branches: [main]
-    paths: ["skills/**", "skills-moved/**", "tests/skills/**", "tools/**", "scripts/tools/**", "lmscript-site/**", "scripts/lmscript-site/**", "package.json", "homepage/**", "scripts/homepage/video/**", "tests/tools/**", ".github/workflows/tools-check.yml"]
+  workflow_dispatch:
 
 permissions:
   contents: read

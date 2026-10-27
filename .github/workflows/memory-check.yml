@@ -2,12 +2,9 @@ name: memory-check
 
 # Validates Markdown index drift, links/anchors and the no-emoji policy
 # (scripts/memory/**). No secrets, read-only token, no deploy.
+# Owner policy: checks/publication run only on explicit dispatch.
 on:
-  pull_request:
-    paths: ["durable-memory/**", "scripts/memory/**", "scripts/tools/**", "tests/memory/**", ".github/workflows/memory-check.yml"]
-  push:
-    branches: [main]
-    paths: ["durable-memory/**", "scripts/memory/**", "scripts/tools/**", "tests/memory/**", ".github/workflows/memory-check.yml"]
+  workflow_dispatch:
 
 permissions:
   contents: read

@@ -1,23 +1,8 @@
 name: deploy-static
+# Owner policy: checks/publication run only on explicit dispatch.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'tools/**'
-      - 'skills/**'
-      - 'skills-moved/**'
-      - 'homepage/**'
-      - 'scripts/homepage/video/**'
-      - 'scripts/tools/homepage-videos.lms'
-      - 'scripts/deploy*.sh'
-      - 'scripts/tools/**'
-      - 'helloexample/**'
-      - 'autorun/**'
-      - 'scripts/build-onboarding-catalogs.mjs'
-      - 'lmscript-site/**'
-      - 'scripts/lmscript-site/**'
-      - '.github/workflows/deploy-static.yml'
   workflow_dispatch:
+
 permissions:
   contents: read
   id-token: write
