@@ -128,9 +128,51 @@ Add showcase=Showcase to roles.lms. Rich permissions apply only to that role and
 
 Checker fixtures must prove ordinary roles still reject video/rich media, a forged ownership comment cannot enable it, unsupported attributes/URLs fail, and valid side-by-side/video/scoreboard pages pass. Decorate/check must validate a complete local media index offline. They never execute scene scripts, download a renderer or contact the asset store.
 
+### Books are ordered mixed-media chapters
+
+A book combines explanation, runnable code, pictures and video within each chapter. An example listing is one useful view of its inputs, not the book's content model. The proposed version-2 content manifest adds an ordered chapters array; each chapter has a stable lowercase id, title, optional summary and an ordered blocks array. Chapter and block order is authored array order, never alphabetical directory enumeration. Each block has a unique chapter-local id and exactly one of the four kinds below. The existing version-1 example inventory remains supported as the pilot input; the version-2 renderer and schema are planned, not implemented by this docs amendment.
+
+| Block kind | Manifest fields | Consistent lmhtml rendering |
+| --- | --- | --- |
+| text | format is text or markdown; exactly one inline content string or bounded repository source path plus sha256. | Plain text becomes escaped paragraphs; Markdown goes through lmhtml's reviewed Markdown parser and then the page allow-list. No raw HTML escape hatch, embedded script or arbitrary resource loading. Chapter title is h1 and authored section headings start at h2. |
+| code | language; exactly one inline source or pinned repository source path plus sha256; run contains literal argv tokens and a working-directory policy; expected contains stdout, stderr and exit_code, with optional output-file/media digest references. | Escaped source in pre/code, followed by the exact displayed run command in pre/kbd and expected output in adjacent samp with a newline separator. The shared copy button copies only kbd. Empty stdout is explicitly labelled as no stdout; stderr and nonzero expected exits are identified, not presented as successful stdout. |
+| image | media reference to the full-digest media inventory; nonempty alt and caption; intrinsic dimensions are locked on the referenced media object. | A figure with img and figcaption, using verified dimensions and alt. A comparison is two ordered image blocks grouped by an explicit presentation field into a two-image figure with one combined caption; content order remains intact. |
+| video | media references for supported MP4/WebM sources; required poster image reference; duration_seconds; nonempty descriptive caption; captions metadata describing timed tracks or an explicit no-audio declaration. | A figure with video, required poster and controls, preload=metadata, no autoplay; source children and verified duration/dimensions. Timed captions render as track children; a figcaption explains the clip and duration. Include a fallback link and readable transcript when speech or meaningful sound requires one. |
+
+Example manifest fragment, with symbolic media identifiers resolved through the verified media inventory:
+
+```json
+{
+  "version": 2,
+  "tool": "lmvideo",
+  "chapters": [
+    {
+      "id": "diagram-to-animation",
+      "title": "From a diagram to an animation",
+      "blocks": [
+        {"id": "explain", "kind": "text", "format": "markdown", "content": "## Draw the first frame\nStart with anchored boxes."},
+        {"id": "run", "kind": "code", "language": "lmscript", "source": "examples/org-chart-grid.lms", "sha256": "FULL_SOURCE_SHA256", "run": {"argv": ["lmctl", "autorun", "PINNED_RAW_SOURCE_URL"], "working_directory": "empty"}, "expected": {"stdout": "wrote build/org-chart-grid.dslb (images/org-chart-grid.png)\n", "stderr": "", "exit_code": 0}},
+        {"id": "still", "kind": "image", "media": "diagram-still", "alt": "Seven organization-chart boxes joined by elbow connectors", "caption": "The initial frame."},
+        {"id": "motion", "kind": "video", "sources": ["diagram-mp4", "diagram-webm"], "poster": "diagram-poster", "duration_seconds": 8, "caption": "The same diagram reveals its connections over eight seconds.", "captions": {"no_audio": true, "tracks": []}}
+      ]
+    }
+  ]
+}
+```
+
+This is schema illustration, not an executable pilot manifest: all symbolic hashes/URLs must resolve to valid committed inputs before use. For an audible clip, captions contains tracks with media, language, label and default fields; each media object is a hash-verified UTF-8 WebVTT file with text/vtt MIME type. Require a transcript text block or verified transcript reference for meaningful speech/audio. A silent animation may declare no_audio=true and use its descriptive caption instead of fabricating a timed track. Validate caption cue times against the declared/probed duration and allow at most one default track per language. Missing required poster, alt, caption, duration or caption metadata is an import error.
+
+Extend the proposed showcase allow-list only for track inside video, with kind=captions, src, srclang, label and optional boolean default. The src must resolve to a locally verified same-origin full-digest WebVTT asset. No additional script, style or event attributes are needed. Standard prose roles keep their existing rules. A chapter containing rich media is explicitly classified by the validated book manifest/lock under the scoped showcase contract; an arbitrary path or ownership comment cannot confer that classification.
+
+Add pinned executable book-index.lms and book-chapter.lms templates. The index builds a table of contents in authored order; each chapter renders blocks in order with the same reusable lmhtml block-rendering functions as example/showcase pages, plus previous/next and table-of-contents links. Proposed output is tools/TOOL/book/index.html and tools/TOOL/book/CHAPTER.html; add deliberate nested-book discovery and link/role handling to decorate/check before enabling it. Page roles describe permission and navigation, while block kinds describe content; neither requires per-tool generator code or JavaScript templates. Existing examples can be referenced by code/media ids without duplicating their source or renderer logic.
+
+The public tool repository owns the chapter manifest and optional chapter Markdown/source files alongside examples; chapter prose is authored, not inferred from filenames. The website owns generated chapter pages and heavy media. A chapter edit invalidates that page/index through content hashes; a source/media edit invalidates referring blocks. Include ordered chapter/block records and template hashes in the build lock/cache key. Reordering blocks intentionally changes output bytes. Removing a chapter removes only importer-owned pages after a complete successful build; retain media referenced by other chapters or retained releases.
+
+Acceptance for the future extension: a two-chapter fixture containing all four block kinds, an audible captioned clip and a silent clip; stable TOC/previous/next links; escaped source and Markdown sanitization; exact kbd/samp and command-only clipboard; poster, controls, no autoplay and a working caption track; failures for unknown block kind, missing media or duration mismatch; identical bytes on repeated offline builds. Running code to produce expected output remains a separately invoked reviewed render/test job, never part of book parsing or HTML linting.
+
 ### Manifest extension and production flow
 
-Define manifest version 2 with a typed media array: kind (image, poster, mp4 or webm), full sha256, byte count, dimensions, duration/frame count where applicable, MIME type, originating render-profile digest and caption/alt. URLs derive from the allowlisted tool/slug/digest; manifests cannot provide arbitrary fetch URLs. Store expected composited-frame hash lists separately from encoded-file digests. Add a bounded input-asset inventory and licence provenance for nonprocedural scenes. Do not silently accept version 2 through today's version-1 parser.
+The version-2 content manifest pairs the ordered chapters/blocks above with a typed media array: kind (image, poster, mp4, webm, captions or transcript), full sha256, byte count, dimensions, duration/frame count where applicable, MIME type, originating render-profile digest and caption/alt. URLs derive from the allowlisted tool/slug/digest; manifests cannot provide arbitrary fetch URLs. Store expected composited-frame hash lists separately from encoded-file digests. Add a bounded input-asset inventory and licence provenance for nonprocedural scenes. Do not silently accept version 2 through today's version-1 parser.
 
 1. An explicitly invoked mono.lmctl job, manual workflow_dispatch benchmark worker or local operator checks out the pinned public source commit and renders with the pinned lmvideo binary. Heavy Cycles jobs are CPU only. Render execution is separate from website parsing/linting and runs reviewed source with bounded resources. Record the actual platform, ISA, compiler/renderer hashes, thread count, fonts, asset hashes, seeds/samples/denoiser and codec binaries, timings/RSS and feature witnesses. All 32 benchmark scenes remain PLANNED until measured.
 2. Write outputs into untracked build/tools-media/TOOL/. Hash and inspect PNG dimensions or ffprobe metadata; compare expected results before promotion. A separately authorized owner/mono uploader publishes verified content-addressed objects into the website asset-store prefix /tools/TOOL/media/SLUG-FULL_SHA256.EXT with immutable caching. Public reading needs no token; uploading requires scoped publisher credentials kept outside manifests and generated content. No upload or job is created by this docs change.
