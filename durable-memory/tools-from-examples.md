@@ -10,10 +10,12 @@ Each public tool repository owns these inputs:
 examples/manifest.json       versioned per-tool configuration and example inventory
 examples/<slug>.lms          exact runnable source, not a website rewrite
 examples/...                optional inputs, when the importer supports their packaging
-# Existing gallery outputs may remain in docs/images/ to avoid duplication.
-docs/images/<slug>.png      checked-in expected preview with documented provenance
+# Only a few small README preview pictures stay tracked.
+docs/images/<slug>.png      compact optional README picture, not a bulk render gallery
 LICENSE                     source/example licence
 ```
+
+Target ownership: the website owns demo pages and heavy render assets; the public tool repository owns source, manifests and expected-output hashes. The existing three-image pilot is a compatibility baseline, not the long-term media storage model.
 
 The lmvideo pilot adds only a manifest to the public lmctl-ai/lmvideo repository. It imports three existing scripts and their existing README gallery PNGs: org-chart-grid, confusion-matrix and symlog-outlier. The private source peer has no role in the importer. A manifest is an explicit publication inventory, not permission to scan or execute arbitrary repository files.
 
@@ -106,19 +108,42 @@ Negative fixtures cover wrong source, inline code, missing defer, extra attribut
 
 ## Showcase web pages, external render store and role allow-list
 
-For rich visual hosts such as lmvideo, the demos, examples and 32-scene Blender and three.js showcase benchmark live on web pages under lmctl.com/tools/lmvideo/ rather than as large file galleries committed inside the public GitHub repository. This keeps the public lmctl-ai/lmvideo repository lean while allowing richer presentation on pages we control:
+This is the owner-approved next design, not an already implemented importer feature. At website commit 5039fa8, version 1 reads tracked compact PNGs; external-media fetching, a showcase role, video validation, render jobs and showcase-page.lms do not yet exist. This amendment changes documentation only. Retain existing preview references until their verified web replacements are available; do not rewrite Git history or bulk-delete galleries during this amendment.
 
-1. Lean public repository layout: lmctl-ai/lmvideo tracks examples/*.lms and examples/showcase/bench-NN-SLUG.lms, examples/manifest.json and examples/showcase/manifest.json recording expected-output SHA-256 hashes, captured stdout, feature witnesses and asset licences, plus a short README.md with a few compact preview PNGs under 30000 bytes and prominent links to lmctl.com/tools/lmvideo/showcase.html and lmctl.com/tools/lmvideo/examples/. Full-resolution renders, side-by-side comparison PNGs and encoded MP4 or WebM videos are produced into the website build or its asset store rather than committed in bulk to Git.
-2. Showcase template as lmhtml code and scoped role allow-list: alongside scripts/tools/example-page.lms, the showcase generator scripts/tools/showcase-page.lms is an executable lmhtml program that builds tools/TOOL/showcase.html and optional showcase-TOPIC.html pages from examples/showcase/manifest.json. Rather than weakening the plain-tag contract globally across skill.html and prose roles, scripts/tools/roles.lms and scripts/tools/check.lms extend the contract specifically for the showcase role and importer-generated examples pages via an explicit allow-list:
-   - Copy controls: head may include the single deferred /tools/lmctl-copy.js script to hydrate per-example lmctl autorun commands in pre and kbd blocks.
-   - Embedded video: figure elements on showcase and examples pages may contain a video element with controls, loop, muted, playsinline, preload, poster, width and height attributes plus source children for video/mp4 and video/webm.
-   - Side-by-side image comparisons: figure elements on showcase and examples pages may hold two img children, such as a CPU raster preview beside a Cycles path-traced render or an AOV pass beside a final composite, paired with one descriptive figcaption and styled by child selectors in /tools/style.css without div wrappers.
-   - Scoreboard and per-scene metadata: semantic table markup renders the Tier 1 through Tier 3 showcase scoreboard, linking each scene to its reference description, feature witnesses, CPU render time and runnable script page.
-3. Render generation, asset storage, page-build fetching and cache determinism:
-   - Where renders are generated: website HTML lint and check steps never run scene scripts or renderers. Fast 2D and Tier 1 raster scenes run in mono.lmctl or local operator staging against the pinned lmvideo release binary; heavy 3D raster animations and Tier 2 or Tier 3 Cycles scenes run on mono.lmctl CPU workers, manual workflow_dispatch benchmark jobs or local staging.
-   - Where renders are stored: the render harness writes verified media to build/tools-media/TOOL/ and publishes content-addressed objects under the website S3 and CloudFront prefix /tools/TOOL/media/SLUG-HASH12.EXT with immutable cache headers, keeping multi-megabyte clips and high-resolution renders out of Git history.
-   - How the page build fetches and verifies media: pull-tools.py reads the pinned public commit and manifest, resolves each preview or video from the local build/tools-media/TOOL/ cache or the /tools/TOOL/media/ store, and verifies its exact SHA-256 digest and intrinsic dimensions or container metadata against manifest.json before running example-page.lms or showcase-page.lms. Any missing object or digest mismatch aborts the import before staging.
-   - Cache and determinism: render cache entries under build/showcase-cache/TOOL/ are keyed by the SHA-256 of the lmvideo binary hash, lmscript compiler version, script hash, asset-lock hash and render preset. CPU raster stills are byte-deterministic per architecture; Cycles renders fix the Sobol seed, sample count and denoiser configuration; encoded MP4 and WebM clips are gated on composited PNG frame hashes plus ffprobe stream checks while pinning the published media object SHA-256 in source-lock.json.
+The public lmvideo repository should contain examples/*.lms, examples/showcase/bench-NN-SLUG.lms, their manifests and expected-output hashes, plus a short README with a few small pictures and links to the website. Full-resolution stills, side-by-side comparisons, videos and the visible Tier 1–3 scoreboard belong to lmctl.com/tools/lmvideo/. Machine-readable scene status and measurement provenance remain with the public manifest so the scoreboard is reproducible, not hand-authored website text. The reference side is a written description/link, never a copied third-party render.
+
+### Executable templates and the scoped showcase contract
+
+Add scripts/tools/showcase-page.lms as a pinned lmhtml program using html.parse, Doc.select, Node.replace_with, Node.insert_before, Node.remove, Node.outer_html and html.save. It constructs showcase.html and optional showcase-TOPIC.html pages with the tier table, measured feature/status details, reference links, media and per-scene run commands. The example template gains a versioned media branch for individual showcase scenes. Python remains responsible for validated data, Git and media transport; no Python string templates or executable manifest expressions.
+
+Add showcase=Showcase to roles.lms. Rich permissions apply only to that role and nested example pages explicitly classified as showcase in a validated local manifest/lock. An HTML ownership comment alone must not grant permissions. Ordinary skill/tutorial/prose pages keep the existing contract and budgets; no broad class/style/script/div exception. Showcase additions have an explicit allow-list:
+
+| Element or feature | Permitted form and validation |
+| --- | --- |
+| Copy controls | At most the existing exact deferred /tools/lmctl-copy.js in head, no inline code or extra attributes. pre directly containing kbd is the marker; samp is excluded from copied text. No authored classes or data attributes are needed. |
+| Video | One video inside a figure; controls, loop, muted, playsinline, preload=metadata, poster, width and height only. One or two source children with src and exact video/mp4 or video/webm type; fallback text/link. No autoplay, event handlers, iframe or arbitrary embed. |
+| Side-by-side comparison | One figure with one or two images or one video, plus exactly one descriptive figcaption. Element/child selectors in the shared stylesheet provide layout; no div, inline style or per-page CSS. Each image has accurate alt/dimensions. |
+| Scoreboard | Existing semantic table markup linking scene IDs, tier/status, feature witnesses, pinned binary/source and measured CPU time/RSS. PLANNED scenes show no invented PASS or timing. |
+| Media URLs | Same-origin /tools/TOOL/media/SLUG-FULL_SHA256.EXT only, with an exact expected digest, dimensions, media type and byte budget in the lock. No arbitrary remote URL/redirect or traversal. Small README thumbnails retain the current PNG cap; larger showcase media receive a separate reviewed budget. |
+
+Checker fixtures must prove ordinary roles still reject video/rich media, a forged ownership comment cannot enable it, unsupported attributes/URLs fail, and valid side-by-side/video/scoreboard pages pass. Decorate/check must validate a complete local media index offline. They never execute scene scripts, download a renderer or contact the asset store.
+
+### Manifest extension and production flow
+
+Define manifest version 2 with a typed media array: kind (image, poster, mp4 or webm), full sha256, byte count, dimensions, duration/frame count where applicable, MIME type, originating render-profile digest and caption/alt. URLs derive from the allowlisted tool/slug/digest; manifests cannot provide arbitrary fetch URLs. Store expected composited-frame hash lists separately from encoded-file digests. Add a bounded input-asset inventory and licence provenance for nonprocedural scenes. Do not silently accept version 2 through today's version-1 parser.
+
+1. An explicitly invoked mono.lmctl job, manual workflow_dispatch benchmark worker or local operator checks out the pinned public source commit and renders with the pinned lmvideo binary. Heavy Cycles jobs are CPU only. Render execution is separate from website parsing/linting and runs reviewed source with bounded resources. Record the actual platform, ISA, compiler/renderer hashes, thread count, fonts, asset hashes, seeds/samples/denoiser and codec binaries, timings/RSS and feature witnesses. All 32 benchmark scenes remain PLANNED until measured.
+2. Write outputs into untracked build/tools-media/TOOL/. Hash and inspect PNG dimensions or ffprobe metadata; compare expected results before promotion. A separately authorized owner/mono uploader publishes verified content-addressed objects into the website asset-store prefix /tools/TOOL/media/SLUG-FULL_SHA256.EXT with immutable caching. Public reading needs no token; uploading requires scoped publisher credentials kept outside manifests and generated content. No upload or job is created by this docs change.
+3. The planned importer reads the public source/manifest at a resolved commit and obtains media from a verified local cache or the fixed same-origin HTTPS store. Enforce content length, timeout, MIME/container/dimensions and exact full SHA-256 before installing a cache entry. Refuse cross-origin redirects. Missing/corrupt objects abort staging and preserve the old pages; no silent latest fallback. A compact tracked README preview is optional compatibility input, not the source of bulk media.
+4. Run the executable page templates against the verified local inventory, followed by decorate:tools and check:tools. Page locks record source commit, renderer/compiler/template hashes, media digests and render-profile identity; exclude absolute paths/timestamps. Publish verified assets before promoting pages that reference them. The public tool README links to those pages rather than accumulating renders in Git.
+
+### Cache, determinism and retention
+
+The render cache key is SHA-256 of a canonical record of script and all input hashes, binary/compiler hashes, architecture/ISA, thread/seed/sample/denoise settings, fonts, codec binaries and render preset. A hit may reuse a verified output, but it is not a measured fresh render and earns no new timing claim. Force-repeat acceptance bypasses the render cache. The media-byte cache is separately keyed by the full output digest and reverified before use.
+
+Require equal repeated raster/frame hashes only in the pinned environment where demonstrated. Fixed Cycles seeds alone do not prove determinism; establish repeat evidence and document any justified numerical tolerance across CPUs or denoisers. Record composited PNG frame hashes and ffprobe stream checks separately from exact hashes of the published MP4/WebM objects. With fixed verified inputs and template/compiler/host binaries, repeated HTML builds must be byte-identical and their checks offline.
+
+The media store has separate ownership from the HTML deployment manifest. Existing static-site.py does not support this external-media plan: extend inventory/checking and prefix ownership together before enabling it. A routine tools page sync must never delete remote media it did not inventory. Removing a page removes references; garbage collection is a separate retention-aware operation that preserves blobs referenced by retained page/release locks. Missing media should leave the previous published pages intact. Existing PNG caps and publication allow-lists stay unchanged until the showcase-specific tests and transport extension ship.
 
 ## Stale pages, staging, caching and failure modes
 
