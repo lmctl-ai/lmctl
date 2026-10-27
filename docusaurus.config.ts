@@ -2,6 +2,7 @@ import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
+  scripts: [{src: '/js/lmctl-copy.js', defer: true}],
   title: 'lmctl',
   tagline:
     'Teamfile-driven AI-agent coordination for structured, local-first automation.',
