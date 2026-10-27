@@ -42,30 +42,78 @@ def tracked(repo, ref, path):
     return data
 
 
-def validate(m, tool):
-    if m.get('version') != 1 or m.get('tool') != tool or m.get('repository') != f'https://github.com/lmctl-ai/{tool}':
-        raise ValueError('manifest version/tool/repository mismatch')
-    if not isinstance(m.get('examples'), list) or not 1 <= len(m['examples']) <= 100:
-        raise ValueError('manifest must contain 1..100 examples')
-    seen = set()
-    for e in m['examples']:
-        slug = e.get('slug', '')
-        if not NAME.fullmatch(slug) or slug == 'index' or slug in seen:
-            raise ValueError(f'bad or duplicate slug: {slug}')
-        seen.add(slug)
-        for key in ('title', 'description', 'alt', 'stdout', 'licence'):
-            if not isinstance(e.get(key), str) or not e[key].strip() or len(e[key]) > 4000:
-                raise ValueError(f'invalid {key} for {slug}')
-        if e['licence'] != 'MIT' or m.get('licence') != 'MIT':
-            raise ValueError('pilot accepts audited MIT examples only; extend policy explicitly')
-        if e.get('script') != f'examples/{slug}.lms' or not e.get('image', '').endswith('.png'):
-            raise ValueError('scripts must match slug; previews must be PNG')
-        for key in ('script_sha256', 'image_sha256'):
-            if not SHA.fullmatch(e.get(key, '')):
-                raise ValueError(f'invalid {key}')
-    for key in ('title', 'description'):
-        if not isinstance(m.get(key), str) or not m[key].strip():
-            raise ValueError(f'missing manifest {key}')
+SCHEMA = ROOT / 'scripts/tools/content-manifest-v1.schema.json'
+FEATURED_MAX = 6
+
+
+class ManifestError(ValueError):
+    """A content-manifest problem, reported against the tool repository file that holds it."""
+
+
+def schema_errors(value, schema, root, where='$'):
+    """Validate the JSON Schema subset used by content-manifest-v1 (no third-party dependency)."""
+    if '$ref' in schema:
+        schema = root['$defs'][schema['$ref'].rsplit('/', 1)[1]]
+    if 'const' in schema and value != schema['const']:
+        return [f'{where}: must be {json.dumps(schema["const"])}']
+    if 'enum' in schema and value not in schema['enum']:
+        return [f'{where}: must be one of {", ".join(map(json.dumps, schema["enum"]))}']
+    kind = schema.get('type')
+    types = {'object': dict, 'array': list, 'string': str, 'boolean': bool}
+    if kind and not isinstance(value, types[kind]):
+        return [f'{where}: must be a JSON {kind}']
+    errors = []
+    if kind == 'string':
+        if len(value) < schema.get('minLength', 0) or len(value) > schema.get('maxLength', 10**9):
+            errors.append(f'{where}: length must be {schema.get("minLength", 0)}..{schema.get("maxLength", "any")}')
+        if 'pattern' in schema and not re.search(schema['pattern'], value):
+            errors.append(f'{where}: does not match {schema["pattern"]}')
+    if kind == 'array':
+        if not schema.get('minItems', 0) <= len(value) <= schema.get('maxItems', 10**9):
+            errors.append(f'{where}: must have {schema.get("minItems", 0)}..{schema.get("maxItems", "any")} items')
+        for n, item in enumerate(value):
+            errors += schema_errors(item, schema['items'], root, f'{where}[{n}]')
+    if kind == 'object':
+        props = schema.get('properties', {})
+        for key in schema.get('required', []):
+            if key not in value:
+                errors.append(f'{where}: missing required field "{key}"')
+        for key, item in value.items():
+            if key in props:
+                errors += schema_errors(item, props[key], root, f'{where}.{key}')
+            elif schema.get('additionalProperties') is False:
+                hint = ' (presentation belongs to lmctl-ai/lmctl, not the content manifest)' if re.search(r'html|css|class|style|layout|template|page|nav', key, re.I) else ''
+                errors.append(f'{where}: unknown field "{key}"{hint}')
+    return errors
+
+
+def validate(m, tool, origin=None):
+    """Check a parsed manifest against the versioned schema and site policy; raise one error listing every problem."""
+    origin = origin or f'lmctl-ai/{tool}:examples/manifest.json'
+    if not isinstance(m, dict) or m.get('version') != 1:
+        raise ManifestError(f'{origin}: $.version: unsupported manifest version {json.dumps(m.get("version") if isinstance(m, dict) else None)} (this importer reads version 1)')
+    schema = json.loads(SCHEMA.read_text())
+    errors = schema_errors(m, schema, schema)
+    if not errors:
+        if m['tool'] != tool:
+            errors.append(f'$.tool: "{m["tool"]}" does not match the requested tool "{tool}"')
+        if m['repository'] != f'https://github.com/lmctl-ai/{tool}':
+            errors.append(f'$.repository: must be https://github.com/lmctl-ai/{tool}')
+        seen = set()
+        for n, e in enumerate(m['examples']):
+            if e['slug'] == 'index' or e['slug'] in seen:
+                errors.append(f'$.examples[{n}].slug: "{e["slug"]}" is reserved or duplicated')
+            seen.add(e['slug'])
+            if e['script'] != f'examples/{e["slug"]}.lms':
+                errors.append(f'$.examples[{n}].script: must be examples/{e["slug"]}.lms')
+            parts = PurePosixPath(e['image']).parts
+            if '..' in parts or e['image'].startswith('/'):
+                errors.append(f'$.examples[{n}].image: must stay inside the repository')
+        featured = [e['slug'] for e in m['examples'] if e.get('featured')]
+        if len(featured) > FEATURED_MAX:
+            errors.append(f'$.examples: {len(featured)} featured examples, at most {FEATURED_MAX} (README storefront rule)')
+    if errors:
+        raise ManifestError(f'{origin}: invalid content manifest:\n  ' + '\n  '.join(errors))
 
 
 def import_tool(tool, ref, source=None):
@@ -82,8 +130,12 @@ def import_tool(tool, ref, source=None):
             ref = 'FETCH_HEAD'
         commit = subprocess.check_output(['git', '-C', str(repo), 'rev-parse', '--verify', f'{ref}^{{commit}}'], text=True).strip()
         raw = tracked(repo, commit, 'examples/manifest.json')
-        m = json.loads(raw)
-        validate(m, tool)
+        origin = f'lmctl-ai/{tool}@{commit[:12]}:examples/manifest.json'
+        try:
+            m = json.loads(raw)
+        except ValueError as error:
+            raise ManifestError(f'{origin}: not valid JSON: {error}') from None
+        validate(m, tool, origin)
         out = work / 'examples'
         (out / 'img').mkdir(parents=True)
         (out / 'source').mkdir()
@@ -95,11 +147,11 @@ def import_tool(tool, ref, source=None):
             for key in ('script', 'image'):
                 data = tracked(repo, commit, e[key])
                 if digest(data) != e[key + '_sha256']:
-                    raise ValueError(f'hash mismatch: {e[key]}')
+                    raise ManifestError(f'{origin}: $.examples[slug={e["slug"]}].{key}_sha256 does not match lmctl-ai/{tool}:{e[key]}')
                 inputs[e[key]] = digest(data)
                 if key == 'image':
                     if not data.startswith(b'\x89PNG\r\n\x1a\n') or len(data) >= 30000:
-                        raise ValueError('preview must be a PNG under 30000 bytes; prepare it upstream')
+                        raise ManifestError(f'lmctl-ai/{tool}:{e["image"]}: preview must be a PNG under 30000 bytes; prepare it upstream')
                     target = out / 'img' / (e['slug'] + '.png')
                 else:
                     data.decode('utf-8')
@@ -147,7 +199,10 @@ def main():
     p.add_argument('--ref', default='main')
     p.add_argument('--source', help='offline tracked Git checkout; reads committed blobs only')
     a = p.parse_args()
-    import_tool(a.tool, a.ref, a.source)
+    try:
+        import_tool(a.tool, a.ref, a.source)
+    except ManifestError as error:
+        sys.exit(f'pull:tools: {error}')
 
 
 if __name__ == '__main__':

@@ -36,6 +36,45 @@ class Policy(unittest.TestCase):
         self.data['repository'] = 'https://github.com/attacker/demo'
         with self.assertRaises(ValueError): m.validate(self.data, 'demo')
 
+    def test_errors_name_the_tool_repo_file_and_field(self):
+        data = copy.deepcopy(self.data)
+        data['examples'][0]['alt'] = ''
+        data['examples'][0]['css_class'] = 'hero'
+        del data['examples'][0]['stdout']
+        with self.assertRaises(m.ManifestError) as caught:
+            m.validate(data, 'demo')
+        text = str(caught.exception)
+        self.assertIn('lmctl-ai/demo:examples/manifest.json', text)
+        self.assertIn('$.examples[0].alt', text)
+        self.assertIn('missing required field "stdout"', text)
+        self.assertIn('unknown field "css_class" (presentation belongs to lmctl-ai/lmctl', text)
+
+    def test_semantic_optional_fields_and_featured_cap(self):
+        data = copy.deepcopy(self.data)
+        data['examples'][0].update({'kind': 'image', 'featured': True, 'tags': ['charts'], 'captured_with': 'lmvideo 0.1.26'})
+        m.validate(data, 'demo')
+        data['examples'][0]['kind'] = 'carousel'
+        with self.assertRaises(m.ManifestError): m.validate(data, 'demo')
+        data = copy.deepcopy(self.data)
+        data['examples'] = [dict(self.data['examples'][0], slug=f'e{n}', script=f'examples/e{n}.lms', featured=True) for n in range(7)]
+        with self.assertRaisesRegex(m.ManifestError, 'at most 6'): m.validate(data, 'demo')
+
+    def test_unsupported_version_is_named(self):
+        data = dict(self.data, version=2)
+        with self.assertRaisesRegex(m.ManifestError, r'\$\.version: unsupported manifest version 2'): m.validate(data, 'demo')
+
+    def test_schema_file_agrees_with_reference_validator(self):
+        try:
+            import jsonschema
+        except ImportError:
+            self.skipTest('jsonschema not installed; built-in subset validator still ran')
+        schema = json.loads(m.SCHEMA.read_text())
+        jsonschema.Draft202012Validator.check_schema(schema)
+        jsonschema.validate(self.data, schema)
+        bad = copy.deepcopy(self.data)
+        bad['examples'][0]['layout'] = 'grid'
+        with self.assertRaises(jsonschema.ValidationError): jsonschema.validate(bad, schema)
+
     def test_git_blobs_not_dirty_files_or_symlinks(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

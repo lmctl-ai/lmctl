@@ -2,6 +2,22 @@
 
 Public examples are the authoring source. The website imports a pinned public Git commit, renders semantic pages with an executable lmhtml program, then applies the existing decoration and validation gates. Publication is a separate owner/mono operation. This pilot changes no tool implementation and does not deploy.
 
+## Separation of concerns: content in the tool repo, presentation on the website
+
+A tool repository (for example lmctl-ai/lmvideo) owns content only: example and demo sources, their metadata (titles, descriptions, ordering, tags, captions, alt text, expected outputs and hashes) and small preview media, all described by examples/manifest.json. It contains no HTML, no styling, no site layout and no generated-page paths, and it never needs to know how pages are built.
+
+lmctl-ai/lmctl owns presentation and consistency: the lmhtml templates, navigation, styling (tools/style.css), page roles, the checks and the mapping from manifest ids to URLs. It never hand-edits tool content; to change content, change the tool repository and pull again.
+
+The contract between them is the versioned manifest schema, scripts/tools/content-manifest-v1.schema.json (JSON Schema 2020-12). pull:tools validates every manifest against it before reading any other file. Every error names the offending tool repository file at the pulled commit and the JSON path, for example:
+
+```
+pull:tools: lmctl-ai/lmvideo@b91247c3d92e:examples/manifest.json: invalid content manifest:
+  $.examples[0].title: length must be 1..4000
+  $.examples[0]: unknown field "style" (presentation belongs to lmctl-ai/lmctl, not the content manifest)
+```
+
+The only presentation-adjacent fields allowed are semantic ones: kind (image, video, text or interactive), featured (README storefront selection) and tags. The template decides how each kind looks. The only website knowledge a tool repository uses is the stable permalinks /tools/TOOL/ and /tools/TOOL/BOOK/SLUG.html for README links, which the website keeps stable as part of this contract.
+
 ## Ownership and layout
 
 Each public tool repository owns these inputs:
@@ -37,7 +53,7 @@ An examples page is a nested book page, already supported by check.lms; its lowe
 
 ## Manifest version 1
 
-The implemented schema is validated by pull-tools.py and its offline policy tests. Unknown fields are reserved for additive future metadata; unknown schema versions fail.
+The schema file scripts/tools/content-manifest-v1.schema.json is the definition; pull-tools.py validates it with a dependency-free built-in validator, and the offline tests also check the schema file with the reference jsonschema package when it is installed. Unknown fields are errors (additionalProperties false), so a presentation key such as class, style or layout is rejected with a hint, and new content fields arrive through a schema revision. Unknown schema versions fail. Optional semantic fields in version 1: kind (image, video, text or interactive), featured (boolean, at most 6 per manifest), tags (up to 12 lowercase slugs) and captured_with (the host and version used to capture stdout and preview, for example lmvideo 0.1.26).
 
 | Field | Type and rule |
 | --- | --- |
@@ -155,7 +171,7 @@ A book combines explanation, runnable code, pictures and video within each chapt
 | --- | --- | --- |
 | text | format is text or markdown; exactly one inline content string or bounded repository source path plus sha256. | Plain text becomes escaped paragraphs; Markdown goes through lmhtml's reviewed Markdown parser and then the page allow-list. No raw HTML escape hatch, embedded script or arbitrary resource loading. Chapter title is h1 and authored section headings start at h2. |
 | code | language; exactly one inline source or pinned repository source path plus sha256; run contains literal argv tokens and a working-directory policy; expected contains stdout, stderr and exit_code, with optional output-file/media digest references. | Escaped source in pre/code, followed by the exact displayed run command in pre/kbd and expected output in adjacent samp with a newline separator. The shared copy button copies only kbd. Empty stdout is explicitly labelled as no stdout; stderr and nonzero expected exits are identified, not presented as successful stdout. |
-| image | media reference to the full-digest media inventory; nonempty alt and caption; intrinsic dimensions are locked on the referenced media object. | A figure with img and figcaption, using verified dimensions and alt. A comparison is two ordered image blocks grouped by an explicit presentation field into a two-image figure with one combined caption; content order remains intact. |
+| image | media reference to the full-digest media inventory; nonempty alt and caption; intrinsic dimensions are locked on the referenced media object. | A figure with img and figcaption, using verified dimensions and alt. A comparison is content, not layout: two ordered image blocks share a compare_group id, which states that they are meant to be compared; the template decides to render them as one two-image figure with one combined caption. Content order remains intact. |
 | video | media references for supported MP4/WebM sources; required poster image reference; duration_seconds; nonempty descriptive caption; captions metadata describing timed tracks or an explicit no-audio declaration. | A figure with video, required poster and controls, preload=metadata, no autoplay; source children and verified duration/dimensions. Timed captions render as track children; a figcaption explains the clip and duration. Include a fallback link and readable transcript when speech or meaningful sound requires one. |
 
 Example manifest fragment, with symbolic media identifiers resolved through the verified media inventory:
@@ -257,7 +273,7 @@ tools/TOOL/BOOK/CHAPTER.html         generated chapter page with prev/next/conte
 tools/TOOL/media/SLUG-SHA256.EXT     media store objects, not in Git
 ```
 
-The book id is the directory, for example examples, showcase, getting-started or reference. The decorator lists books in the tool navigation in manifest order.
+The manifest names books only by id (for example examples, showcase, getting-started or reference); the website maps each id to its URL and directory. The decorator lists books in the tool navigation in manifest order.
 
 Default books per tool:
 
@@ -266,7 +282,7 @@ Default books per tool:
 - Getting started, Guide and Reference books: optional. They are authored as explicit chapters (Markdown or text blocks in the tool repo), and code blocks reference examples by id instead of copying them.
 - The existing authored pages (skill.html, tutorial.html and guide.html) stay as they are. A tool may later move them into a book, but this does not happen automatically.
 
-README storefront rule: a tool repo's README.md is the storefront, not the catalogue. It shows a few representative pictures (at most 6) and links into the books. The pictures are chosen by a boolean featured flag on examples or media in the content manifest. The importer rejects more than 6 featured items, and each featured item must have a compact preview below 30000 bytes tracked in the repo (docs/images/). A README check in the tool repo verifies that every README picture is a featured item and that each one links to its book page on lmctl.com. Everything else lives only in the books. This supersedes the earlier "README is the demo page" rule for lmvideo and the other tool repos.
+README storefront rule: a tool repo's README.md is the storefront, not the catalogue. It shows a few representative pictures (at most 6) and links into the books. The pictures are chosen by a boolean featured flag on examples or media in the content manifest. The importer rejects more than 6 featured items, and each featured item must have a compact preview below 30000 bytes tracked in the repo (docs/images/). A README check in the tool repo verifies that every README picture is a featured item and links to its stable permalink on lmctl.com; it needs no knowledge of how that page is built. Everything else lives only in the books. This supersedes the earlier "README is the demo page" rule for lmvideo and the other tool repos.
 
 Acceptance for books: a fixture with two books (examples from two groups, plus one authored guide chapter); TOC in authored order; prev/next links stopping at the first and last chapter; the featured cap enforced; identical bytes on repeated offline builds; and decorate/check passing with the book pages discovered as nested book pages.
 
