@@ -1,6 +1,6 @@
 /*! lmctl-copy.js - one reusable script that adds copy buttons to marked code blocks.
  *
- * Usage: include once (<script src="https://lmctl.com/js/lmctl-copy.js" defer></script>) and mark code:
+ * Usage: include once (<script src="/js/lmctl-copy.js" defer></script>) and mark code:
  *   <pre class="lm-copy"><code>npm install -g @lmctl-ai/lmctl</code></pre>     whole-block button
  *   <pre class="lm-copy" data-copy-lines="2-3,5"><code>...</code></pre>        button copies only these lines
  *   <pre class="lm-copy lm-copy-lines"><code>...</code></pre>                  one small button per line
@@ -63,6 +63,12 @@
       c.querySelectorAll('.lm-copy-btn').forEach(function (n) { n.remove(); });
       return c.textContent;
     };
+    var command = el.querySelector('kbd');
+    if (el.tagName === 'PRE' && command) {
+      el.classList.add('lm-copy-wrap');
+      el.appendChild(button('Copy', function () { return command.textContent; }));
+      return;
+    }
     if (el.tagName === 'PRE' && el.classList.contains('lm-copy-lines')) {
       var code = el.querySelector('code') || el;
       var lines = code.textContent.replace(/\n$/, '').split('\n');
@@ -85,7 +91,7 @@
     }
   }
   function scan(root) {
-    (root || document).querySelectorAll('pre.lm-copy, code.lm-copy, .lm-copy > pre').forEach(hydrate);
+    (root || document).querySelectorAll('pre.lm-copy, code.lm-copy, .lm-copy > pre, pre:has(> kbd)').forEach(hydrate);
   }
   function start() {
     scan(document);

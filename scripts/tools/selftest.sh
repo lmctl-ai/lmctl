@@ -40,6 +40,17 @@ printf '<h1>About tools</h1><p>A site-level page.</p>\n' > "$work/tools/about.ht
 run decorate
 run check
 echo 'ok - bare skill-only tool, missing own/site indexes, check is read-only'
+cp tests/tools/authoring/copy-script.fragment "$work/tools/zeta/tutorial-copy.html"
+run decorate
+if ! grep -q '<script src="/tools/lmctl-copy.js" defer></script>' "$work/tools/zeta/tutorial-copy.html"; then
+  echo 'FAIL: generated example page did not receive the copy script' >&2
+  exit 1
+fi
+run check
+rm "$work/tools/zeta/tutorial-copy.html"
+run decorate
+run check
+echo 'ok - generated example pages receive one deferred same-origin copy script'
 cat > "$work/assert.lms" <<'LMS'
 p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 let skill = html.load("tools/zeta/skill.html");

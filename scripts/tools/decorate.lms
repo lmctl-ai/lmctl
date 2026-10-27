@@ -26,8 +26,9 @@ fn missing_separator(gap: string) -> bool {
 }
 fn separate_commands(source: string, first: string, second: string) -> string {
   let result = source;
-  let firsts = html.parse(source).source_elements(first);
-  let seconds = html.parse(source).source_elements(second);
+  let parsed = html.parse(source);
+  let firsts = parsed.source_elements(first);
+  let seconds = parsed.source_elements(second);
   for (i in range(0, firsts.len())) {
     for (j in range(0, seconds.len())) {
       let end = element_offset(result, first, firsts.at(i), i) + str_len(firsts.at(i));
@@ -237,7 +238,11 @@ fn logo(path: string, alt: string) -> string {
 }
 fn render(layout: string, nav: string, footer: string, body: string, title: string, description: string) -> string {
   # Replace CONTENT last: author text containing template markers is literal.
-  let result = str_replace(layout, "{{TITLE}}", escape(title));
+  let shell = layout;
+  if (str_contains(body, "<!-- generated: tools-from-examples -->") && str_contains(body, "<kbd>")) {
+    shell = str_replace(shell, "</head>", "<script src=\"/tools/lmctl-copy.js\" defer></script>\n</head>");
+  }
+  let result = str_replace(shell, "{{TITLE}}", escape(title));
   result = str_replace(result, "{{DESCRIPTION}}", escape(description));
   result = str_replace(result, "{{NAV}}", nav);
   result = str_replace(result, "{{FOOTER}}", footer);

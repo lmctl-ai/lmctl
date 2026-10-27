@@ -1,10 +1,7 @@
 # lmctl-copy.js - shared copy-to-clipboard hydration
 
-`static/js/lmctl-copy.js` (served at https://lmctl.com/js/lmctl-copy.js) adds copy buttons to marked code at load time and after SPA navigation. Include once; mark code with a class:
+static/js/lmctl-copy.js adds copy buttons to marked code at load time and after SPA navigation. Docusaurus serves it at https://lmctl.com/js/lmctl-copy.js. Existing consumers use the lm-copy class on a pre or code element; data-copy-lines selects a line range, and lm-copy-lines adds per-line buttons.
 
-- `<pre class="lm-copy">` whole-block button
-- `<pre class="lm-copy" data-copy-lines="2-3,5">` button copies only those lines
-- `<pre class="lm-copy lm-copy-lines">` one small button per line
-- `<code class="lm-copy">` inline code
+A leading dollar prompt is stripped from copied text. Styles are injected by the script for light and dark color schemes. Docusaurus loads it through its scripts configuration. GitHub READMEs cannot run JavaScript; GitHub provides its own whole-block copy control. Prior Chromium localhost verification covered block, line range, per-line and inline copies.
 
-A leading `$ ` prompt is stripped from copied text. Styles are injected by the script (light/dark). Docusaurus loads it through `scripts` in `docusaurus.config.ts`. Note: GitHub READMEs cannot run JavaScript (GitHub provides its own whole-block copy button); use this script for lmctl.com, generated gallery pages and any HTML we publish. Verified headless (Chromium, localhost): block, line range, per-line and inline copies return the expected text.
+For plain tools pages, the publication inventory additionally serves the canonical source at /tools/lmctl-copy.js. The only permitted script element is deferred and same-origin in head. An existing kbd directly inside pre enables copying the command without adjacent samp output; no authored classes or data attributes are needed. Runtime buttons add their wrapper class for positioning. Chromium verification covers the command-only clipboard and positioning at narrow/wide viewports. See tools-from-examples.md for the import pipeline and tests.

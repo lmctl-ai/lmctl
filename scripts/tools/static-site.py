@@ -17,7 +17,7 @@ import urllib.request
 ROOT = Path(__file__).resolve().parents[2]
 NO_CACHE = 'no-cache, max-age=0, must-revalidate'
 DAY = 'public, max-age=86400'
-TYPES = {'.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
+TYPES = {'.js': 'text/javascript; charset=utf-8', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
          '.png': 'image/png', '.svg': 'image/svg+xml', '.txt': 'text/plain; charset=utf-8',
          '.lms': 'text/plain; charset=utf-8',
          '.lmctl': 'text/plain; charset=utf-8',
@@ -34,6 +34,8 @@ AREAS = tuple(MANIFESTS)
 def changed_areas(paths):
     areas = set()
     for path in paths:
+        if path == 'static/js/lmctl-copy.js':
+            areas.add('tools')
         if path.startswith(('scripts/', '.github/workflows/deploy-static.yml')):
             areas.update(MANIFESTS)
         for area in MANIFESTS:
@@ -61,11 +63,14 @@ def inventory(area, root=ROOT):
         result[key] = dict(data=data, sha256=digest(data), content_type=TYPES[path.suffix],
                            cache_control=DAY if path.suffix in ('.css', '.png', '.svg', '.ico', '.mp4', '.webm') else NO_CACHE)
     source = root / ('lmscript-site' if area == 'lmscript' else area)
+    if area == 'tools':
+        # One canonical progressive-enhancement script; keep publication scoped to /tools/.
+        add('tools/lmctl-copy.js', root / 'static/js/lmctl-copy.js')
     for path in sorted(source.rglob('*')):
         rel = path.relative_to(source)
         if (any(p.startswith('.') or p == '_template' for p in rel.parts)
                 or path.name == 'README.md'
-                or (area == 'tools' and path.name == 'book.json')):
+                or (area == 'tools' and path.name in ('book.json', 'source-lock.json'))):
             continue
         if path.is_symlink():
             raise ValueError(f'refusing symlink: {path}')

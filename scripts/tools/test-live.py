@@ -78,7 +78,11 @@ class LiveTests(unittest.TestCase):
 
     def test_aliases_and_notices(self):
         tools = site.inventory('tools')
+        self.assertEqual(site.changed_areas(['static/js/lmctl-copy.js']), {'tools'})
         self.assertNotIn('tools/lmcad/book.json', tools)
+        self.assertNotIn('tools/lmvideo/examples/source-lock.json', tools)
+        self.assertEqual(tools['tools/lmctl-copy.js']['content_type'], 'text/javascript; charset=utf-8')
+        self.assertEqual(tools['tools/lmctl-copy.js']['data'], (site.ROOT / 'static/js/lmctl-copy.js').read_bytes())
         self.assertEqual(tools['tools']['data'], tools['tools/']['data'])
         self.assertEqual(tools['tools']['data'], tools['tools/index.html']['data'])
         skills = site.inventory('skills')
@@ -90,6 +94,8 @@ class LiveTests(unittest.TestCase):
     def test_tools_quickrun_sources_are_plain_text_and_revalidate(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
+            (root / 'static/js').mkdir(parents=True)
+            (root / 'static/js/lmctl-copy.js').write_text('/* copy */')
             (root / 'tools/lmdraw').mkdir(parents=True)
             (root / 'tools/lmdraw/lmdraw_solo.lms').write_text('p = _dsl_ cli="lmdraw";\n')
             entries = site.inventory('tools', root)

@@ -38,8 +38,9 @@ fn missing_separator(gap: string) -> bool {
 }
 fn separate_commands(source: string, first: string, second: string) -> string {
   let result = source;
-  let firsts = html.parse(source).source_elements(first);
-  let seconds = html.parse(source).source_elements(second);
+  let parsed = html.parse(source);
+  let firsts = parsed.source_elements(first);
+  let seconds = parsed.source_elements(second);
   for (i in range(0, firsts.len())) {
     for (j in range(0, seconds.len())) {
       let end = element_offset(result, first, firsts.at(i), i) + str_len(firsts.at(i));
@@ -166,7 +167,7 @@ fn check_page(page: Doc) -> void {
       if (!found_command) { finding(file, page.select("pre").at(i).path(), "pre formatting: remove empty pre/code boundary lines"); }
     }
   }
-  let allowed = "|html|head|meta|title|link|body|header|nav|main|section|footer|h1|h2|h3|h4|p|ul|ol|li|dl|dt|dd|pre|code|kbd|samp|em|strong|a|table|thead|tbody|tr|th|td|blockquote|hr|figure|figcaption|img|";
+  let allowed = "|html|head|meta|title|link|body|header|nav|main|section|footer|h1|h2|h3|h4|p|ul|ol|li|dl|dt|dd|pre|code|kbd|samp|em|strong|a|table|thead|tbody|tr|th|td|blockquote|hr|figure|figcaption|img|script|";
   for (node in page.select("*")) {
     let tag = node.tag();
     let path = node.path();
@@ -181,11 +182,18 @@ fn check_page(page: Doc) -> void {
     if (tag == "ol") { attrs = "|start|"; }
     if (tag == "th") { attrs = "|scope|colspan|rowspan|"; }
     if (tag == "td") { attrs = "|colspan|rowspan|"; }
+    if (tag == "script") { attrs = "|src|defer|"; }
     for (attribute in node.attributes()) {
       if (!str_contains(attrs, "|" + attribute + "|")) {
         if (attribute == "id") { finding(file, path, "id is only allowed on h2/h3, not <" + tag + ">"); }
         else { finding(file, path, "forbidden attribute " + attribute + " on <" + tag + ">"); }
       }
+    }
+    if (tag == "script") {
+      if (node.parent().tag() != "head" || node.attr("src") != "/tools/lmctl-copy.js" || !node.has_attr("defer")) {
+        finding(file, path, "the only script allowed is deferred same-origin /tools/lmctl-copy.js in head");
+      }
+      if (normalized(node.text()) != "") { finding(file, path, "copy script must not contain inline code"); }
     }
     if (tag == "html" && node.attr("lang") != "en") { finding(file, path, "<html> needs lang=\"en\""); }
     if (tag == "link") {
@@ -275,6 +283,7 @@ fn check_page(page: Doc) -> void {
       }
     }
   }
+  if (page.select("script").len() > 1) { finding(file, "head", "at most one copy script is allowed"); }
   let id_nodes = page.select("[id]");
   for (i in range(0, id_nodes.len())) {
     let node = id_nodes.at(i);

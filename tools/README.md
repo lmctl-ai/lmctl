@@ -46,8 +46,8 @@ Authors do not add icon markup. When tools/\<tool\>/img/icon.png exists, decorat
 
 ## Content contract
 
-- One h1; allowed elements: html head meta title link body header nav main section footer h1 h2 h3 h4 p ul ol li dl dt dd pre code kbd samp em strong a table thead tbody tr th td blockquote hr figure figcaption img.
-- No class/style attributes, scripts, div/span, iframes, on\* handlers, external resources or unlisted attributes. IDs only on h2/h3; no duplicate IDs.
+- One h1; allowed elements: html head meta title link body header nav main section footer h1 h2 h3 h4 p ul ol li dl dt dd pre code kbd samp em strong a table thead tbody tr th td blockquote hr figure figcaption img script.
+- No class/style attributes, div/span, iframes, on\* handlers, external resources or unlisted attributes. One optional same-origin deferred script, /tools/lmctl-copy.js, may appear once in head with no inline code; it adds copy controls to pre blocks containing kbd. IDs only on h2/h3; no duplicate IDs.
 - Commands use kbd, output uses samp, both inside pre, separated by newlines. Paste real output.
 - Images are local /tools/\<tool\>/img/\<file\> or /tools/img/\<file\> and must exist. They require an alt attribute, with nonempty text except the generated catalog icons beside their tool links. PNG width/height attributes must match the actual pixel dimensions. Decoration fills missing attributes from the PNG header; incorrect existing attributes remain findings. Generated icons use 64×64 and logos 256×256. Content images stay inside a figure with a figcaption; generated landing logos need no caption. Each page is at most 153600 bytes.
 - PNG files anywhere under tools must be smaller than 30 KB (30000 bytes). Above 20 KB (20000 bytes), the checker prints a nonfatal warning. Lossless recompression can reduce file size without changing pixels.
