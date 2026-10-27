@@ -128,9 +128,28 @@ Add showcase=Showcase to roles.lms. Rich permissions apply only to that role and
 
 Checker fixtures must prove ordinary roles still reject video/rich media, a forged ownership comment cannot enable it, unsupported attributes/URLs fail, and valid side-by-side/video/scoreboard pages pass. Decorate/check must validate a complete local media index offline. They never execute scene scripts, download a renderer or contact the asset store.
 
+### Book catalogue and README storefront policy
+
+README policy: README.md is a short storefront with at most six representative pictures and links to the web books; it is not the catalogue. For lmvideo this supersedes the older README-is-the-demo-page rule. The complete teaching material lives under /tools/TOOL/ as multi-page books, with heavy media in the website build/asset store.
+
+The version-2 content manifest has an ordered groups array, one group per book. A group contains id, title, summary, book kind and ordered chapters; each chapter contains id, title and the mixed-media blocks described below. Group order determines the tool's book catalogue, chapter order determines contents and previous/next links, and block order determines the page. No sorting by title or filename may override authored order. Every book gets its own index and each chapter its own stable page; standalone showcase.html is an optional landing/compatibility link to the showcase book, not the full book.
+
+| Book | Default and authorship | Proposed web location |
+| --- | --- | --- |
+| Examples book | Required default for each onboarded tool, generated from its public examples/ manifest inventory. Groups/chapters collect related runnable examples with authored explanation and the four block kinds; existing example slugs and links are preserved. No empty catalogue masquerading as a teaching volume. | /tools/TOOL/examples/index.html and /tools/TOOL/examples/CHAPTER.html |
+| Getting started | Optional hand-written chapter text and selected runnable examples for an introductory learning path. Publish only when authored content is available; until then the overview/skill links to a first examples chapter. | /tools/TOOL/getting-started/index.html and chapter pages |
+| Showcase book | Optional for visual tools; lmvideo's benchmark scenes are grouped into tier/technique chapters with the shared scoreboard and feature evidence. Rendered scene detail links and media remain available within those chapters. | /tools/TOOL/showcase/index.html and chapter pages |
+| Guide and Reference | Optional hand-written structured groups: conceptual guides and task/API reference, respectively. Reuse source/code/media references rather than copying example scripts. Existing authored guide/reference pages remain usable until explicitly migrated. | /tools/TOOL/guide/index.html or /tools/TOOL/reference/index.html and chapter pages |
+
+Pinned book-index.lms and book-chapter.lms render every group with shared lmhtml block functions. The per-tool overview lists available books; each per-book index provides its own contents and summary. Chapter pages provide contents, previous and next links within that book; first/last chapters omit unavailable links, and a one-chapter book still has an index and contents navigation. Do not force readers through unrelated books. Nested discovery, role checks, stable cross-links and redirect/compatibility handling must be added to decorate/check before migrating current URLs. This is the planned model; today's example importer and older Python books are not silently changed by this documentation amendment.
+
+A chapter or example content entry may set featured=true and point to a verified compact featured_image media reference with alt/caption and a canonical chapter URL. Default featured is false. Select only explicitly featured entries, in manifest group/chapter order, deduplicate reused image digests, and reject more than six selected representatives rather than silently truncating. A featured entry must have a usable picture and destination book/chapter link; status or image hashes must not be invented for unimplemented scenes. If none are featured, publish textual book links without filling the README automatically. The short README may keep these few thumbnails locally or use stable website thumbnail URLs; high-resolution stills/videos stay out of its Git gallery. Generated README regions must preserve authored installation/licence text outside their markers. Feature selection changes do not remove chapters from the full books.
+
+Use the existing nested example books and durable-memory/tool-book-feedback as migration evidence. In particular, the lmdraw feedback found four-column README grids overflowed mobile: use a compact one/two-column selection, check wide/narrow light/dark rendering, and ensure captions describe the exact pinned output. The new model keeps the useful existing book URLs while replacing Python string rendering with executable lmhtml templates one book at a time. Acceptance adds two groups with two chapters each, correct per-book contents/previous/next boundaries, README selection of zero/one/six pictures, rejection of seven, and preservation of non-featured chapters in their books.
+
 ### Books are ordered mixed-media chapters
 
-A book combines explanation, runnable code, pictures and video within each chapter. An example listing is one useful view of its inputs, not the book's content model. The proposed version-2 content manifest adds an ordered chapters array; each chapter has a stable lowercase id, title, optional summary and an ordered blocks array. Chapter and block order is authored array order, never alphabetical directory enumeration. Each block has a unique chapter-local id and exactly one of the four kinds below. The existing version-1 example inventory remains supported as the pilot input; the version-2 renderer and schema are planned, not implemented by this docs amendment.
+A book combines explanation, runnable code, pictures and video within each chapter. An example listing is one useful view of its inputs, not the book's content model. Each version-2 content manifest group owns an ordered chapters array; each chapter has a stable lowercase id, title, optional summary and an ordered blocks array. Chapter and block order is authored array order, never alphabetical directory enumeration. Each block has a unique chapter-local id and exactly one of the four kinds below. The existing version-1 example inventory remains supported as the pilot input; the version-2 renderer and schema are planned, not implemented by this docs amendment.
 
 | Block kind | Manifest fields | Consistent lmhtml rendering |
 | --- | --- | --- |
@@ -145,15 +164,67 @@ Example manifest fragment, with symbolic media identifiers resolved through the 
 {
   "version": 2,
   "tool": "lmvideo",
-  "chapters": [
+  "groups": [
     {
-      "id": "diagram-to-animation",
-      "title": "From a diagram to an animation",
-      "blocks": [
-        {"id": "explain", "kind": "text", "format": "markdown", "content": "## Draw the first frame\nStart with anchored boxes."},
-        {"id": "run", "kind": "code", "language": "lmscript", "source": "examples/org-chart-grid.lms", "sha256": "FULL_SOURCE_SHA256", "run": {"argv": ["lmctl", "autorun", "PINNED_RAW_SOURCE_URL"], "working_directory": "empty"}, "expected": {"stdout": "wrote build/org-chart-grid.dslb (images/org-chart-grid.png)\n", "stderr": "", "exit_code": 0}},
-        {"id": "still", "kind": "image", "media": "diagram-still", "alt": "Seven organization-chart boxes joined by elbow connectors", "caption": "The initial frame."},
-        {"id": "motion", "kind": "video", "sources": ["diagram-mp4", "diagram-webm"], "poster": "diagram-poster", "duration_seconds": 8, "caption": "The same diagram reveals its connections over eight seconds.", "captions": {"no_audio": true, "tracks": []}}
+      "id": "examples",
+      "title": "Examples book",
+      "kind": "examples",
+      "summary": "Draw diagrams, then animate them.",
+      "chapters": [
+        {
+          "id": "diagram-to-animation",
+          "title": "From a diagram to an animation",
+          "blocks": [
+            {
+              "id": "explain",
+              "kind": "text",
+              "format": "markdown",
+              "content": "## Draw the first frame\nStart with anchored boxes."
+            },
+            {
+              "id": "run",
+              "kind": "code",
+              "language": "lmscript",
+              "source": "examples/org-chart-grid.lms",
+              "sha256": "FULL_SOURCE_SHA256",
+              "run": {
+                "argv": [
+                  "lmctl",
+                  "autorun",
+                  "PINNED_RAW_SOURCE_URL"
+                ],
+                "working_directory": "empty"
+              },
+              "expected": {
+                "stdout": "wrote build/org-chart-grid.dslb (images/org-chart-grid.png)\n",
+                "stderr": "",
+                "exit_code": 0
+              }
+            },
+            {
+              "id": "still",
+              "kind": "image",
+              "media": "diagram-still",
+              "alt": "Seven organization-chart boxes joined by elbow connectors",
+              "caption": "The initial frame."
+            },
+            {
+              "id": "motion",
+              "kind": "video",
+              "sources": [
+                "diagram-mp4",
+                "diagram-webm"
+              ],
+              "poster": "diagram-poster",
+              "duration_seconds": 8,
+              "caption": "The same diagram reveals its connections over eight seconds.",
+              "captions": {
+                "no_audio": true,
+                "tracks": []
+              }
+            }
+          ]
+        }
       ]
     }
   ]
@@ -164,7 +235,7 @@ This is schema illustration, not an executable pilot manifest: all symbolic hash
 
 Extend the proposed showcase allow-list only for track inside video, with kind=captions, src, srclang, label and optional boolean default. The src must resolve to a locally verified same-origin full-digest WebVTT asset. No additional script, style or event attributes are needed. Standard prose roles keep their existing rules. A chapter containing rich media is explicitly classified by the validated book manifest/lock under the scoped showcase contract; an arbitrary path or ownership comment cannot confer that classification.
 
-Add pinned executable book-index.lms and book-chapter.lms templates. The index builds a table of contents in authored order; each chapter renders blocks in order with the same reusable lmhtml block-rendering functions as example/showcase pages, plus previous/next and table-of-contents links. Proposed output is tools/TOOL/book/index.html and tools/TOOL/book/CHAPTER.html; add deliberate nested-book discovery and link/role handling to decorate/check before enabling it. Page roles describe permission and navigation, while block kinds describe content; neither requires per-tool generator code or JavaScript templates. Existing examples can be referenced by code/media ids without duplicating their source or renderer logic.
+Add pinned executable book-index.lms and book-chapter.lms templates. The index builds a table of contents in authored order; each chapter renders blocks in order with the same reusable lmhtml block-rendering functions as example/showcase pages, plus previous/next and table-of-contents links. Output follows each group id: tools/TOOL/GROUP/index.html and tools/TOOL/GROUP/CHAPTER.html (examples retains its established location); add deliberate nested-book discovery and link/role handling to decorate/check before enabling it. Page roles describe permission and navigation, while block kinds describe content; neither requires per-tool generator code or JavaScript templates. Existing examples can be referenced by code/media ids without duplicating their source or renderer logic.
 
 The public tool repository owns the chapter manifest and optional chapter Markdown/source files alongside examples; chapter prose is authored, not inferred from filenames. The website owns generated chapter pages and heavy media. A chapter edit invalidates that page/index through content hashes; a source/media edit invalidates referring blocks. Include ordered chapter/block records and template hashes in the build lock/cache key. Reordering blocks intentionally changes output bytes. Removing a chapter removes only importer-owned pages after a complete successful build; retain media referenced by other chapters or retained releases.
 
