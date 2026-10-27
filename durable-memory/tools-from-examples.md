@@ -210,47 +210,23 @@ Next onboarding order and engineering estimates, excluding new artwork/tool fixe
 ## Review amendments (ResearchOpus, 2026-10-26)
 
 Reproduced on a fresh clone:
-- `test:pull:tools`, `decorate:tools`, `check:tools` and `check:tools:selftest` all pass.
-- A second pinned pull (`--ref b91247c3…`) followed by decoration is byte-identical for the whole
-  lmvideo subtree.
-- `html.load_dir` returns paths sorted by name whatever the directory creation order (checked with
-  six files created in shuffled order), so the index order is deterministic across filesystems.
+
+- test:pull:tools, decorate:tools, check:tools and check:tools:selftest all pass.
+- A second pinned pull (--ref b91247c3d92e10dce15c2d5ce3ee4a0e0eedcebd) followed by decoration is byte-identical for the whole lmvideo subtree.
+- html.load_dir returns paths sorted by name whatever the directory creation order (checked with six files created in shuffled order), so the index order is deterministic across filesystems.
 
 Changes made:
-- **Attributes are set on nodes, not built as strings.** `example-page.lms` now inserts bare
-  `<img>` and `<a>` elements and sets `src`, `alt` and `href` with `Node.set_attr`, which escapes
-  `"` and `&` itself (checked). The regenerated pages are byte-identical; only `template_sha256` in
-  the lock changed.
-- Text still goes through `escaped()` into fragments, because lmhtml 0.7.4 has no text or element
-  constructors: Node offers `insert_before/after`, `replace_with` (string), `set_attr`, `remove` and
-  `select`, but no `set_text` or `append`.
 
-Upstream lmhtml request, so templates need no escaping helper at all:
-- `Node.set_text(string) -> Node` (escapes);
-- `Node.append(tag) -> Node` and `Node.prepend(tag) -> Node` (return the new element).
+- Attributes are set on nodes, not built as strings. example-page.lms now inserts bare img and a elements and sets src, alt and href with Node.set_attr, which escapes quotes and ampersands itself (checked). The regenerated pages are byte-identical; only template_sha256 in the lock changed.
+- Text still goes through escaped() into fragments, because lmhtml 0.7.4 has no text or element constructors. Node offers insert_before, insert_after, replace_with (string), set_attr, remove and select, but no set_text or append.
 
-With those, the template becomes pure node construction. Pin the new lmhtml release and regenerate.
+Upstream lmhtml request, so templates need no escaping helper: Node.set_text(string) returning Node (escapes), plus Node.append(tag) and Node.prepend(tag) returning the new element. With those, the template becomes pure node construction. Pin the new lmhtml release and regenerate.
 
 Open points (not blocking the pilot):
-- **Two generators.** `generate-example-book.py` + `sync-example-book.sh` (Python string HTML)
-  still own the existing books of lmblender, lmcad, lmdraw, lmhtml, lmpy, lmr and lmtorch
-  (`tools/*/book.json`). Each onboarding below should migrate one of them to an upstream
-  `examples/manifest.json` and delete its `book.json`. When the last one moves, remove
-  `generate-example-book.py`, `sync-example-book.sh` and `sync:tool-examples`, so one importer
-  remains.
-- **Preview drift.** `org-chart-grid.lms` installs `lmvideo@latest`, while the two others pin
-  v0.1.26. The page shows the stored preview and the stored stdout, but `lmctl autorun` on the pinned
-  raw URL still runs the newest lmvideo. Proposed additive v1 field
-  `examples[].captured_with: "lmvideo 0.1.26"` (host version used for stdout and preview), shown in
-  the figcaption. Upstream examples should pin a release where byte-stable previews matter.
-- **Outputs beyond PNG.** lmvideo also produces GIF, MP4, SVG and PDF. A later manifest revision
-  should add `outputs[]` (kind, path, sha256, size cap) and a template branch per kind:
-  - GIF: a first-frame PNG still plus a link;
-  - SVG and PDF: a link plus a PNG preview;
-  - MP4: a link only. The page contract allows no `video` element.
-- **Per-page compile.** The template is compiled once per page because ARGV is spliced at compile
-  time. That is fine at the 100-example cap. If it grows, pass one JSON job file and loop inside
-  one program.
 
-Agreed with the next-tool order (lmdraw, lmcad, lmhtml). Each is also a migration off the Python
-book, which adds about a quarter day each for ownership migration and deleting `book.json`.
+- Two generators. generate-example-book.py and sync-example-book.sh (Python string HTML) still own the existing books of lmblender, lmcad, lmdraw, lmhtml, lmpy, lmr and lmtorch (tools/TOOL/book.json). Each onboarding should migrate one of them to an upstream examples/manifest.json and delete its book.json. When the last one moves, remove generate-example-book.py, sync-example-book.sh and sync:tool-examples, so one importer remains.
+- Preview drift. org-chart-grid.lms installs lmvideo@latest, while the other two pin v0.1.26. The page shows the stored preview and stdout, but lmctl autorun on the pinned raw URL still runs the newest lmvideo. Proposed additive v1 field examples[].captured_with, for example "lmvideo 0.1.26" (the host version used for stdout and preview), shown in the figcaption. Upstream examples should pin a release where byte-stable previews matter.
+- Outputs beyond PNG. lmvideo also produces GIF, MP4, SVG and PDF. A later manifest revision should add outputs[] (kind, path, sha256, size cap) and a template branch per kind. GIF gets a first-frame PNG still plus a link; SVG and PDF get a link plus a PNG preview; MP4 gets a link only, because the page contract allows no video element.
+- Per-page compile. The template is compiled once per page because ARGV is spliced at compile time. That is fine at the 100-example cap. If it grows, pass one JSON job file and loop inside one program.
+
+Agreed with the next-tool order (lmdraw, lmcad, lmhtml). Each is also a migration off the Python book, which adds about a quarter day each for ownership migration and deleting its book.json.
