@@ -29,6 +29,41 @@ class Policy(unittest.TestCase):
             with self.subTest(key=key, value=value), self.assertRaises(ValueError):
                 m.validate(data, 'demo')
 
+    def test_schema_rejects_unknown_presentation_and_types_with_paths(self):
+        for key, value in [('layout', 'grid'), ('class', 'hero'), ('css', 'x'), ('featured', 'yes')]:
+            data = copy.deepcopy(self.data)
+            data['examples'][0][key] = value
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, r'\$\.examples\[0\]'):
+                m.validate(data, 'demo', 'lmctl-ai/demo@' + 'a'*40 + ':examples/manifest.json')
+        data = copy.deepcopy(self.data)
+        data['examples'] = 'not-a-list'
+        with self.assertRaisesRegex(ValueError, r'\$\.examples.*expected array'):
+            m.validate(data, 'demo')
+
+    def test_schema_reports_missing_root_and_malformed_json_context(self):
+        data = copy.deepcopy(self.data)
+        del data['title']
+        with self.assertRaisesRegex(ValueError, r'examples/manifest\.json:\$: missing required property .title.'):
+            m.validate(data, 'demo')
+        with self.assertRaisesRegex(ValueError, r'lmctl-ai/demo@a{40}:examples/manifest\.json: JSON syntax error at line 1, column 2'):
+            m.parse_manifest('{', 'lmctl-ai/demo@' + 'a'*40 + ':examples/manifest.json')
+
+    def test_referenced_schema_extensions_fail_closed(self):
+        schema = {'$defs': {'entry': {'type': 'string', 'unimplementedKeyword': True}}}
+        with self.assertRaisesRegex(ValueError, 'unsupported schema keyword'):
+            m.validate_schema('text', {'$ref': '#/$defs/entry'}, '$', 'fixture.json', schema)
+        with self.assertRaisesRegex(ValueError, 'reference siblings'):
+            m.validate_schema('text', {'$ref': '#/$defs/entry', 'minLength': 1}, '$', 'fixture.json', schema)
+
+    def test_semantic_metadata_and_encoding_errors(self):
+        self.data['examples'][0].update(tags=['diagram'], featured=True, captured_with='demo 1.0')
+        m.validate(self.data, 'demo')
+        with self.assertRaisesRegex(ValueError, r'lmctl-ai/demo@HEAD:examples/manifest.json: manifest must be valid UTF-8'):
+            m.parse_manifest(b'\xff', 'lmctl-ai/demo@HEAD:examples/manifest.json')
+        self.data['version'] = True
+        with self.assertRaisesRegex(ValueError, r'\$.version.*expected integer'):
+            m.validate(self.data, 'demo')
+
     def test_duplicate_and_wrong_origin(self):
         data = copy.deepcopy(self.data)
         data['examples'] *= 2

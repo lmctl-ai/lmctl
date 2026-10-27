@@ -14,6 +14,8 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[2]
 NAME = re.compile(r'[a-z][a-z0-9]*(?:-[a-z0-9]+)*\Z')
 SHA = re.compile(r'[0-9a-f]{64}\Z')
+SCHEMA = ROOT / 'scripts/tools/content-manifest-v1.schema.json'
+FEATURED_MAX = 6
 
 
 def run(*args, **kw):
@@ -29,6 +31,17 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def parse_manifest(raw, source_label):
+    try:
+        if isinstance(raw, bytes):
+            raw = raw.decode('utf-8')
+        return json.loads(raw)
+    except UnicodeDecodeError as error:
+        raise ManifestError(f'{source_label}: manifest must be valid UTF-8: {error.reason}') from error
+    except json.JSONDecodeError as error:
+        raise ManifestError(f'{source_label}: JSON syntax error at line {error.lineno}, column {error.colno}: {error.msg}') from error
+
+
 def tracked(repo, ref, path):
     p = PurePosixPath(path)
     if p.is_absolute() or '..' in p.parts or str(p) != path or '\\' in path:
@@ -42,7 +55,6 @@ def tracked(repo, ref, path):
     return data
 
 
-SCHEMA = ROOT / 'scripts/tools/content-manifest-v1.schema.json'
 FEATURED_MAX = 6
 
 
@@ -52,16 +64,29 @@ class ManifestError(ValueError):
 
 def schema_errors(value, schema, root, where='$'):
     """Validate the JSON Schema subset used by content-manifest-v1 (no third-party dependency)."""
+    allowed = {'$schema', '$id', '$defs', '$ref', 'title', 'description', 'type', 'const', 'enum',
+               'additionalProperties', 'required', 'properties', 'items', 'minLength', 'maxLength',
+               'minItems', 'maxItems', 'pattern'}
+    unknown_schema = set(schema) - allowed
+    if unknown_schema:
+        return [f'{where}: unsupported schema keyword(s): {sorted(unknown_schema)}']
     if '$ref' in schema:
-        schema = root['$defs'][schema['$ref'].rsplit('/', 1)[1]]
+        if set(schema) - {'$ref', 'title'}:
+            return [f'{where}: schema reference siblings are not supported']
+        ref = schema['$ref']
+        if not ref.startswith('#/$defs/') or ref.rsplit('/', 1)[1] not in root.get('$defs', {}):
+            return [f'{where}: unsupported schema reference {ref}']
+        return schema_errors(value, root['$defs'][ref.rsplit('/', 1)[1]], root, where)
     if 'const' in schema and value != schema['const']:
         return [f'{where}: must be {json.dumps(schema["const"])}']
     if 'enum' in schema and value not in schema['enum']:
         return [f'{where}: must be one of {", ".join(map(json.dumps, schema["enum"]))}']
     kind = schema.get('type')
-    types = {'object': dict, 'array': list, 'string': str, 'boolean': bool}
-    if kind and not isinstance(value, types[kind]):
-        return [f'{where}: must be a JSON {kind}']
+    types = {'object': dict, 'array': list, 'string': str, 'integer': int, 'boolean': bool}
+    if kind is not None and kind not in types:
+        return [f'{where}: unsupported or missing schema type {kind!r}']
+    if kind and (not isinstance(value, types[kind]) or (kind == 'integer' and isinstance(value, bool))):
+        return [f'{where}: expected {kind}; must be a JSON {kind}']
     errors = []
     if kind == 'string':
         if len(value) < schema.get('minLength', 0) or len(value) > schema.get('maxLength', 10**9):
@@ -77,7 +102,7 @@ def schema_errors(value, schema, root, where='$'):
         props = schema.get('properties', {})
         for key in schema.get('required', []):
             if key not in value:
-                errors.append(f'{where}: missing required field "{key}"')
+                errors.append(f'{where}: missing required property "{key}" (missing required field "{key}")')
         for key, item in value.items():
             if key in props:
                 errors += schema_errors(item, props[key], root, f'{where}.{key}')
@@ -85,6 +110,13 @@ def schema_errors(value, schema, root, where='$'):
                 hint = ' (presentation belongs to lmctl-ai/lmctl, not the content manifest)' if re.search(r'html|css|class|style|layout|template|page|nav', key, re.I) else ''
                 errors.append(f'{where}: unknown field "{key}"{hint}')
     return errors
+
+
+def validate_schema(value, schema, path, source_label, root):
+    """Compatibility wrapper exposing the fail-closed subset validator to tests."""
+    errors = schema_errors(value, schema, root, path)
+    if errors:
+        raise ValueError(f'{source_label}: ' + '; '.join(errors))
 
 
 def validate(m, tool, origin=None):
@@ -113,7 +145,9 @@ def validate(m, tool, origin=None):
         if len(featured) > FEATURED_MAX:
             errors.append(f'$.examples: {len(featured)} featured examples, at most {FEATURED_MAX} (README storefront rule)')
     if errors:
-        raise ManifestError(f'{origin}: invalid content manifest:\n  ' + '\n  '.join(errors))
+        manifest_path = origin.split(':', 1)[-1]
+        details = '\n  '.join(f'{manifest_path}:{error}' for error in errors)
+        raise ManifestError(f'{origin}: invalid content manifest:\n  ' + details)
 
 
 def import_tool(tool, ref, source=None):
@@ -129,12 +163,14 @@ def import_tool(tool, ref, source=None):
             run('git', '-C', str(repo), 'fetch', '--depth=1', f'https://github.com/lmctl-ai/{tool}.git', ref)
             ref = 'FETCH_HEAD'
         commit = subprocess.check_output(['git', '-C', str(repo), 'rev-parse', '--verify', f'{ref}^{{commit}}'], text=True).strip()
-        raw = tracked(repo, commit, 'examples/manifest.json')
-        origin = f'lmctl-ai/{tool}@{commit[:12]}:examples/manifest.json'
-        try:
-            m = json.loads(raw)
-        except ValueError as error:
-            raise ManifestError(f'{origin}: not valid JSON: {error}') from None
+        origin = f'lmctl-ai/{tool}@{commit}:examples/manifest.json'
+        def source_blob(path):
+            try:
+                return tracked(repo, commit, path)
+            except (ValueError, subprocess.CalledProcessError) as error:
+                raise ManifestError(f'lmctl-ai/{tool}@{commit}:{path}: {error}') from error
+        raw = source_blob('examples/manifest.json')
+        m = parse_manifest(raw, origin)
         validate(m, tool, origin)
         out = work / 'examples'
         (out / 'img').mkdir(parents=True)
@@ -145,16 +181,19 @@ def import_tool(tool, ref, source=None):
         raw_base = f'https://raw.githubusercontent.com/lmctl-ai/{tool}/{commit}/'
         for e in sorted(m['examples'], key=lambda e: e['slug']):
             for key in ('script', 'image'):
-                data = tracked(repo, commit, e[key])
+                data = source_blob(e[key])
                 if digest(data) != e[key + '_sha256']:
-                    raise ManifestError(f'{origin}: $.examples[slug={e["slug"]}].{key}_sha256 does not match lmctl-ai/{tool}:{e[key]}')
+                    raise ManifestError(f'{origin}: $.examples[slug={e["slug"]}].{key}_sha256 does not match source file {e[key]}')
                 inputs[e[key]] = digest(data)
                 if key == 'image':
                     if not data.startswith(b'\x89PNG\r\n\x1a\n') or len(data) >= 30000:
                         raise ManifestError(f'lmctl-ai/{tool}:{e["image"]}: preview must be a PNG under 30000 bytes; prepare it upstream')
                     target = out / 'img' / (e['slug'] + '.png')
                 else:
-                    data.decode('utf-8')
+                    try:
+                        data.decode('utf-8')
+                    except UnicodeDecodeError as error:
+                        raise ManifestError(f'lmctl-ai/{tool}@{commit}:{e[key]}: script must be valid UTF-8') from error
                     target = out / 'source' / (e['slug'] + '.lms')
                 target.write_bytes(data)
             args = [str(work/'page.dslb'), str(out/(e['slug']+'.html')), e['title'], e['description'], str(out/'source'/(e['slug']+'.lms')), raw_base+e['script'], f'/tools/{tool}/examples/img/{e["slug"]}.png', e['alt'], e['stdout'], '', tool]
@@ -164,7 +203,7 @@ def import_tool(tool, ref, source=None):
         args = [str(work/'page.dslb'), str(out/'index.html'), m['title'], m['description'], '', '', '', '', '', str(out), tool]
         run(compiler, str(template), *args, cwd=ROOT, stdout=subprocess.DEVNULL)
         run(host, '--dsl', args[0], cwd=work, stdout=subprocess.PIPE)
-        lock = {'version': 1, 'repository': m['repository'], 'commit': commit, 'manifest_sha256': digest(raw), 'inputs': dict(sorted(inputs.items())), 'template_sha256': digest(template.read_bytes()), 'renderer': {'version': subprocess.check_output([host, '--version'], text=True).strip(), 'sha256': digest(Path(host).read_bytes())}, 'compiler': subprocess.check_output([compiler, '--version'], text=True).strip()}
+        lock = {'version': 1, 'repository': m['repository'], 'commit': commit, 'manifest_sha256': digest(raw), 'schema_sha256': digest(SCHEMA.read_bytes()), 'inputs': dict(sorted(inputs.items())), 'template_sha256': digest(template.read_bytes()), 'renderer': {'version': subprocess.check_output([host, '--version'], text=True).strip(), 'sha256': digest(Path(host).read_bytes())}, 'compiler': subprocess.check_output([compiler, '--version'], text=True).strip()}
         (out/'source-lock.json').write_text(json.dumps(lock, indent=2)+'\n')
         destination = ROOT/'tools'/tool/'examples'
         # Never delete authored pages or an older example book without an explicit migration.

@@ -7,7 +7,7 @@
   "additionalProperties": false,
   "required": ["version", "tool", "repository", "title", "description", "licence", "examples"],
   "properties": {
-    "version": {"const": 1},
+    "version": {"type": "integer", "const": 1},
     "tool": {"type": "string", "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"},
     "repository": {"type": "string", "pattern": "^https://github\\.com/lmctl-ai/[a-z][a-z0-9-]*$"},
     "title": {"$ref": "#/$defs/text"},

@@ -18,6 +18,8 @@ pull:tools: lmctl-ai/lmvideo@b91247c3d92e:examples/manifest.json: invalid conten
 
 The only presentation-adjacent fields allowed are semantic ones: kind (image, video, text or interactive), featured (README storefront selection) and tags. The template decides how each kind looks. The only website knowledge a tool repository uses is the stable permalinks /tools/TOOL/ and /tools/TOOL/BOOK/SLUG.html for README links, which the website keeps stable as part of this contract.
 
+A repository source path identifies content, not a site layout. Code samples may contain HTML/CSS when teaching those formats; the website displays their bytes as escaped code, never as presentation. A reserved interactive kind cannot supply arbitrary HTML, JavaScript, iframe URLs or widgets; it requires a separately reviewed website renderer and schema revision. Historical website-authored chapters are explicitly migrated upstream before becoming importer-owned, rather than maintained as a second content copy.
+
 ## Ownership and layout
 
 Each public tool repository owns these inputs:
@@ -51,6 +53,21 @@ tools/<tool>/examples/source-lock.json  input commit and SHA-256 inventory
 
 An examples page is a nested book page, already supported by check.lms; its lowercase slug is not a top-level page role. The decorator adds Examples to the tool navigation. Each detail page includes the title, task, command/output pair, preview with descriptive caption, raw pinned GitHub source link, autorun caption and full escaped script. The index links every selected detail page. Existing authored skills/tutorials/reference pages remain independent and are never replaced by this importer.
 
+## Versioned schema and pull diagnostics
+
+The implemented contract is the website-owned [content-manifest-v1.schema.json](../scripts/tools/content-manifest-v1.schema.json). The pull command validates decoded JSON against it before compiling a page template or replacing any generated files. It uses a dependency-free interpreter for the schema's bounded vocabulary: object/array/string/integer/boolean types, required/properties/additionalProperties, local definition references, constants/enums, patterns and size bounds. This is not a general-purpose JSON Schema implementation; unsupported keywords or reference forms fail closed. Repository identity, unique slugs, script/slug correspondence and the audited MIT licence policy are additional semantic checks. The source lock records schema_sha256 as well as source/template/compiler/host provenance. Schema updates therefore produce a visible, reviewable lock change.
+
+Root and example objects are closed: HTML snippets as page structure, CSS/layout settings, classes, selectors, template names and output paths have no schema fields and are rejected. Existing plain-text descriptions/code remain data and are escaped. Optional example tags, featured and captured_with are semantic metadata only; accepting them does not imply that the future book/README builder has shipped. Version 2's mixed-media/group schema must be implemented and reviewed separately before any version-2 manifests are accepted.
+
+Errors name the public repository and exact source commit/file, followed by a field path, for example:
+
+```text
+lmctl-ai/lmvideo@COMMIT:examples/manifest.json:$.examples[0]: unknown field "layout"
+lmctl-ai/lmvideo@COMMIT:examples/manifest.json:$.examples[0].script_sha256: string does not match the required pattern
+```
+
+Malformed JSON includes line and column; invalid encoding identifies the source file. Missing blobs and hash/preview failures also name the offending repository input, not merely a temporary website path. These validation failures exit nonzero before publication and retain the previous imported tree. Fix the owning tool's manifest/source and repull; never patch generated website text to hide an upstream content error.
+
 ## Manifest version 1
 
 The schema file scripts/tools/content-manifest-v1.schema.json is the definition; pull-tools.py validates it with a dependency-free built-in validator, and the offline tests also check the schema file with the reference jsonschema package when it is installed. Unknown fields are errors (additionalProperties false), so a presentation key such as class, style or layout is rejected with a hint, and new content fields arrive through a schema revision. Unknown schema versions fail. Optional semantic fields in version 1: kind (image, video, text or interactive), featured (boolean, at most 6 per manifest), tags (up to 12 lowercase slugs) and captured_with (the host and version used to capture stdout and preview, for example lmvideo 0.1.26).
@@ -63,6 +80,7 @@ The schema file scripts/tools/content-manifest-v1.schema.json is the definition;
 | title, description | Nonempty text for the index |
 | licence | MIT in the initial audited pilot policy |
 | examples | Array of 1–100 example objects; output index sorted by slug |
+| kind, tags, featured, captured_with | Optional primary output kind, semantic tags, storefront selection boolean and capture environment description; no layout meaning |
 | examples[].slug | Lowercase letters/digits and single hyphens; unique; index reserved |
 | title, description, alt | Nonempty plain text, escaped by the lmhtml program |
 | script | Exactly examples/SLUG.lms |
@@ -148,7 +166,7 @@ Checker fixtures must prove ordinary roles still reject video/rich media, a forg
 
 README policy: README.md is a short storefront with at most six representative pictures and links to the web books; it is not the catalogue. For lmvideo this supersedes the older README-is-the-demo-page rule. The complete teaching material lives under /tools/TOOL/ as multi-page books, with heavy media in the website build/asset store.
 
-The version-2 content manifest has an ordered groups array, one group per book. A group contains id, title, summary, book kind and ordered chapters; each chapter contains id, title and the mixed-media blocks described below. Group order determines the tool's book catalogue, chapter order determines contents and previous/next links, and block order determines the page. No sorting by title or filename may override authored order. Every book gets its own index and each chapter its own stable page; standalone showcase.html is an optional landing/compatibility link to the showcase book, not the full book.
+The version-2 content manifest has an ordered groups array, one group per book. A group contains semantic id, title, summary, content kind and ordered chapters; each chapter contains id, title and the mixed-media blocks described below. Group order determines the tool's book catalogue, chapter order determines contents and previous/next links, and block order determines the page. No sorting by title or filename may override authored order. Every book gets its own index and each chapter its own stable page; standalone showcase.html is an optional landing/compatibility link to the showcase book, not the full book.
 
 | Book | Default and authorship | Proposed web location |
 | --- | --- | --- |
@@ -159,7 +177,7 @@ The version-2 content manifest has an ordered groups array, one group per book. 
 
 Pinned book-index.lms and book-chapter.lms render every group with shared lmhtml block functions. The per-tool overview lists available books; each per-book index provides its own contents and summary. Chapter pages provide contents, previous and next links within that book; first/last chapters omit unavailable links, and a one-chapter book still has an index and contents navigation. Do not force readers through unrelated books. Nested discovery, role checks, stable cross-links and redirect/compatibility handling must be added to decorate/check before migrating current URLs. This is the planned model; today's example importer and older Python books are not silently changed by this documentation amendment.
 
-A chapter or example content entry may set featured=true and point to a verified compact featured_image media reference with alt/caption and a canonical chapter URL. Default featured is false. Select only explicitly featured entries, in manifest group/chapter order, deduplicate reused image digests, and reject more than six selected representatives rather than silently truncating. A featured entry must have a usable picture and destination book/chapter link; status or image hashes must not be invented for unimplemented scenes. If none are featured, publish textual book links without filling the README automatically. The short README may keep these few thumbnails locally or use stable website thumbnail URLs; high-resolution stills/videos stay out of its Git gallery. Generated README regions must preserve authored installation/licence text outside their markers. Feature selection changes do not remove chapters from the full books.
+A chapter or example content entry may set featured=true and point to a verified compact featured_image media reference with alt/caption and a semantic chapter/example id, whose link the website resolves. Default featured is false. Select only explicitly featured entries, in manifest group/chapter order, deduplicate reused image digests, and reject more than six selected representatives rather than silently truncating. A featured entry must have a usable picture and resolvable content reference; status or image hashes must not be invented for unimplemented scenes. If none are featured, publish textual book links without filling the README automatically. The short README may keep these few thumbnails locally or use stable website thumbnail URLs; high-resolution stills/videos stay out of its Git gallery. Generated README regions must preserve authored installation/licence text outside their markers. Feature selection changes do not remove chapters from the full books.
 
 Use the existing nested example books and durable-memory/tool-book-feedback as migration evidence. In particular, the lmdraw feedback found four-column README grids overflowed mobile: use a compact one/two-column selection, check wide/narrow light/dark rendering, and ensure captions describe the exact pinned output. The new model keeps the useful existing book URLs while replacing Python string rendering with executable lmhtml templates one book at a time. Acceptance adds two groups with two chapters each, correct per-book contents/previous/next boundaries, README selection of zero/one/six pictures, rejection of seven, and preservation of non-featured chapters in their books.
 

@@ -3,6 +3,7 @@
   "repository": "https://github.com/lmctl-ai/lmvideo",
   "commit": "b91247c3d92e10dce15c2d5ce3ee4a0e0eedcebd",
   "manifest_sha256": "6f4b27d51c81d6850e75069e8bf46c5353665b883b3a64ebb92bb9889f5acf93",
+  "schema_sha256": "0f16fc5d819bf7950bbbe07b3544107092194918f2a80fdd8cff91c8fb5045f9",
   "inputs": {
     "docs/images/confusion-matrix.png": "133921b9650e9328609cc5ae1f369cad2999a7c336ae2efeabca4a0a36fc3767",
     "docs/images/org-chart-grid.png": "e3f87eca2ba1acb188f1e53a6b7a58111051c4099c2bba549e33ce8aa2a76a7c",
