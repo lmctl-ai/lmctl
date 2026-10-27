@@ -29,6 +29,8 @@ jobs:
         run: npm i -g @lmctl-ai/lmctl@0.2.420
       - name: Resolve lmhtml from the lmscript tool cache
         run: echo "LMHTML=$(bash scripts/tools/run.sh host-path)" >> "$GITHUB_ENV"
+      - name: check public example import policy
+        run: npm run test:pull:tools
       - name: check tools pages
         run: npm run check:tools
       - name: check lmscript tutorials and runnable examples

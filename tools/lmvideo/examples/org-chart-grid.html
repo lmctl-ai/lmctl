@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Organization chart — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Draw a hierarchy with a grid, anchored boxes and elbow connectors.">
+<link rel="stylesheet" href="/tools/style.css">
+
+<script src="/tools/lmctl-copy.js" defer></script>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><!-- generated: tools-from-examples --><h1>Organization chart</h1><p>Draw a hierarchy with a grid, anchored boxes and elbow connectors.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/b91247c3d92e10dce15c2d5ce3ee4a0e0eedcebd/examples/org-chart-grid.lms</kbd>
+<samp>wrote build/org-chart-grid.dslb (images/org-chart-grid.png)</samp></pre><figure><img src="/tools/lmvideo/examples/img/org-chart-grid.png" alt="Organization chart rendered by lmvideo" width="1000" height="640"><figcaption>Output preview from the public repository. Run with lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/b91247c3d92e10dce15c2d5ce3ee4a0e0eedcebd/examples/org-chart-grid.lms</figcaption></figure><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/b91247c3d92e10dce15c2d5ce3ee4a0e0eedcebd/examples/org-chart-grid.lms">Raw LMScript source</a></p><h2>The script</h2><pre><code># Org chart on an explicit grid: CEO on row 0, two VPs on row 1, six
+# reports on row 2. Boxes sit on host grid cell anchors; parent-child
+# links are elbow tree connectors (vertical drop, horizontal bus, arrowed
+# vertical stubs); one dotted-line report runs from Platform to the VP of
+# Product. The grid and shapes come from the host diagram API; the tree
+# connector layout stays in-script. Port of lmdraw's org-chart-grid.
+standalone = ARGV.len() == 0;
+dslout = ARGV.len() > 0 ? ARGV[0] : "build/org-chart-grid.dslb";
+png = ARGV.len() > 1 ? ARGV[1] : "images/org-chart-grid.png";
+mkdir("images");
+program = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@latest";
+video.size(1000, 640); video.fps(30); video.frames(1); video.crf(20); video.output(${png}); video.begin(); video.frame();
+canvas.clear("#101820");
+
+canvas.text("Org chart", 40.0, 44.0, font(22.0).bold(true), paint().color("#dbe7f3"));
+canvas.text("grid-placed boxes, elbow tree connectors, one dotted line", 40.0, 68.0, font(14.0), paint().color("#9db4c8"));
+
+# 7 columns x 3 rows; cell centers are the box anchors
+let slots = canvas.grid(45.0, 57.0, 910.0, 320.0, 3, 7, 0.0, 0.0);
+
+fn org_box(slot: Shape, w: float, role: string, name: string, accent: string) -> Shape {
+  let b = canvas.box(slot, "c", w, 58.0, "", "#1e3247", accent, 8.0, 14.0);
+  let rf = font(14.0).bold(true);
+  canvas.text(role, b.cx() - rf.measure(role) / 2.0, b.cy() - 3.0, rf, paint().color("#dbe7f3"));
+  let nf = font(12.0);
+  canvas.text(name, b.cx() - nf.measure(name) / 2.0, b.cy() + 16.0, nf, paint().color("#9db4c8"));
+  return b;
+}
+
+# row 0: CEO; row 1: VPs; row 2: reports
+let ceo = org_box(slots.cell(3, 0), 220.0, "Chief Executive", "A. Rivera", "#f5c16c");
+let vp_eng = org_box(slots.cell(1, 1), 180.0, "VP Engineering", "J. Chen", "#6fbdb4");
+let vp_prod = org_box(slots.cell(5, 1), 180.0, "VP Product", "L. Gomez", "#6fbdb4");
+let backend = org_box(slots.cell(0, 2), 160.0, "Backend", "M. Okafor", "#4a6a88");
+let platform = org_box(slots.cell(1, 2), 160.0, "Platform", "S. Patel", "#4a6a88");
+let qa = org_box(slots.cell(2, 2), 160.0, "QA", "R. Novak", "#4a6a88");
+let design = org_box(slots.cell(4, 2), 160.0, "Design", "T. Ali", "#4a6a88");
+let growth = org_box(slots.cell(5, 2), 160.0, "Growth", "K. Singh", "#4a6a88");
+let data = org_box(slots.cell(6, 2), 160.0, "Data", "D. Ford", "#4a6a88");
+
+# vertical drop + horizontal bus (no markers)
+fn bus(px: float, py_bottom: float, by: float, x_first: float, x_last: float) -> void {
+  canvas.line(px, py_bottom, px, by, paint().stroke().stroke_width(2.0).color("#4a6a88"));
+  canvas.line(x_first, by, x_last, by, paint().stroke().stroke_width(2.0).color("#4a6a88"));
+}
+
+# arrowed stub from the bus down into a child box
+fn stub(x: float, by: float, child_top: float, dashed: bool) -> void {
+  let dash = "none";
+  if (dashed) { dash = "5 5"; }
+  canvas.connector(x, by, x, child_top - 2.0, "straight", "none", "arrow", dash, "#4a6a88", 2.0, "", 0.5, 0.0, 0.0);
+}
+
+# CEO -> VPs
+bus(ceo.cx(), ceo.cy() + 29.0, 195.0, vp_eng.cx(), vp_prod.cx());
+stub(vp_eng.cx(), 195.0, vp_eng.cy() - 29.0, false);
+stub(vp_prod.cx(), 195.0, vp_prod.cy() - 29.0, false);
+
+# VP Engineering -> its three reports
+bus(vp_eng.cx(), vp_eng.cy() + 29.0, 340.0, backend.cx(), qa.cx());
+stub(backend.cx(), 340.0, backend.cy() - 29.0, false);
+stub(platform.cx(), 340.0, platform.cy() - 29.0, false);
+stub(qa.cx(), 340.0, qa.cy() - 29.0, false);
+
+# VP Product -> its three reports
+bus(vp_prod.cx(), vp_prod.cy() + 29.0, 340.0, design.cx(), data.cx());
+stub(design.cx(), 340.0, design.cy() - 29.0, false);
+stub(growth.cx(), 340.0, growth.cy() - 29.0, false);
+stub(data.cx(), 340.0, data.cy() - 29.0, false);
+
+# dotted-line report: Platform also reports to VP Product
+canvas.connector(platform, "e", vp_prod, "w", "elbow", "none", "arrow", "5 5", "#8fb4d9", 1.8, "", 0.5, 0.0, 0.0);
+
+canvas.draw_diagram();
+video.end();
+end _lmcode_
+mkdir(dirname(dslout)); savedsl(program, dslout);
+if (standalone) {
+  r = system(concat(dsl_cli(program), ["--dsl", dslout]), 600000); if (r.code != 0) { println(r.stderr + r.stdout); } assert(r.code == 0);
+}
+println(f"wrote {dslout} ({png})");</code></pre></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

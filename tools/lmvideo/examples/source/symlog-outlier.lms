@@ -1,0 +1,6 @@
+# Park-Miller monthly commit counts and 63,000 outlier from lmplot/examples/symlog_outlier.lms.
+mkdir("images");standalone=ARGV.len()==0;dslout=ARGV.len()>0?ARGV[0]:"build/symlog-outlier.dslb";let mp4=ARGV.len()>1?ARGV[1]:"images/symlog-outlier.mp4";let png=ARGV.len()>2?ARGV[2]:"images/symlog-outlier.png";
+program = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.26";
+video.size(960,540);video.frames(1);video.output(${mp4});video.begin();video.frame();canvas.clear("#f5f7fa");let seed=4242;let p=canvas.plot(30.0,20.0,900.0,500.0).title("Monthly commits · symmetric log keeps the outlier visible").xlabel("month").ylabel("commits · symlog threshold 100").x_range(-1.0,24.0).y_range(0.0,70000.0).y_symlog(100.0).legend("none").background("#ffffff");let bars=p.series("commits","bar","#2878b5");for(m in range(0,24)){seed=(seed*16807)%2147483647;let c=20+seed%881;if(m==15){c=63000;}bars.add(float(m),float(c));}p.draw();video.save_frame(${png});video.end();
+end _lmcode_
+mkdir(dirname(dslout));savedsl(program,dslout);if(standalone){r=system(concat(dsl_cli(program),["--dsl",dslout]),600000);if(r.code!=0){println(r.stderr+r.stdout);}assert(r.code==0);}

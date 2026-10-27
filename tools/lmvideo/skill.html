@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmvideo — lmctl.com tools</title>
+<meta name="description" content="Draw images and compose video from LMScript programs using the lmvideo host.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>lmvideo</h1>
+<p>Draw images and compose video from LMScript programs using the lmvideo host. Start with the public examples, whose source and previews are imported at a pinned commit.</p>
+<h2>Purpose</h2><p>Generate charts, diagrams, images and video from scripts.</p>
+<h2>When to use it</h2><p>Use it for reproducible visual explanations and programmatic drawing.</p>
+<h2>Install</h2><pre><kbd>npm install -g @lmctl-ai/lmctl</kbd></pre><p>The example scripts declare their lmvideo release; LMScript installs that host when needed.</p>
+<h2>Commands</h2><p>Run an example with lmctl autorun using its raw source URL. Each example page gives the pinned URL.</p>
+<h2>Inputs and outputs</h2><p>Inputs are LMScript programs. The examples below produce PNG images; some also use FFmpeg to encode video.</p>
+<h2>Safety rules</h2><p>Read downloaded programs before running them. Run in an empty working directory: output files are written relative to that directory. Autorun executes program code.</p>
+<h2>Worked examples</h2><p><a href="/tools/lmvideo/examples/">Public examples with source, commands and previews</a></p>
+<h2>Errors and exit codes</h2><p>A nonzero exit indicates failure. Read the compiler or renderer diagnostic; verify the host release, output-directory permissions and any FFmpeg requirement before retrying.</p>
+<h2>How to verify</h2><p>Check that the command exits successfully and opens the expected PNG. Preview images document upstream output; they are not a cross-platform pixel identity guarantee.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "repository": "https://github.com/lmctl-ai/lmvideo",
+  "commit": "b91247c3d92e10dce15c2d5ce3ee4a0e0eedcebd",
+  "manifest_sha256": "6f4b27d51c81d6850e75069e8bf46c5353665b883b3a64ebb92bb9889f5acf93",
+  "inputs": {
+    "docs/images/confusion-matrix.png": "133921b9650e9328609cc5ae1f369cad2999a7c336ae2efeabca4a0a36fc3767",
+    "docs/images/org-chart-grid.png": "e3f87eca2ba1acb188f1e53a6b7a58111051c4099c2bba549e33ce8aa2a76a7c",
+    "docs/images/symlog-outlier.png": "a2548a3791171d55cfb50a6d0ce7ce9819a7f65284799ca10baad1872bd5b83b",
+    "examples/confusion-matrix.lms": "0ea7cc1bb34a823df1c904722e06b0a3027428354ac36aefde8951e1d3a28b13",
+    "examples/org-chart-grid.lms": "0bd346ee34e364662ff0a8bad52b06f7f5ee44a4ea0d66d5b9b1aa5f61b3b265",
+    "examples/symlog-outlier.lms": "b0f92df2b8978893785ebfd48f7a1158d7f1feb993f7d8323ad3dc82d696d2e6"
+  },
+  "template_sha256": "a72fb84a5d0262ae42668a6eb6e50ac478a080b60485e0e31513d3e2b5d228c4",
+  "renderer": {
+    "version": "lmhtml 0.7.4",
+    "sha256": "74665de185b48d41887be476244f9a539491abaee12c8b3f4a5fd2746a09d932"
+  },
+  "compiler": "lmscript 0.2.426"
+}

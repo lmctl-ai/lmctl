@@ -1,0 +1,31 @@
+# Executable lmhtml template: argv = bytecode, destination, title, description,
+# source file (empty for index), raw URL, image URL, alt, captured stdout, input directory.
+source_text = ARGV[4] == "" ? "" : read_file(ARGV[4]);
+p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@v0.7.4";
+fn escaped(s: string) -> string {
+  return str_replace(str_replace(str_replace(str_replace(s, "&", "&amp;"), "<", "&lt;"), ">", "&gt;"), "\"", "&quot;");
+}
+let page = html.parse("<main><!-- generated: tools-from-examples --><h1></h1><p></p><hr></main>");
+page.select("h1").at(0).replace_with("<h1>" + escaped(${ARGV[2]}) + "</h1>");
+page.select("main > p").at(0).replace_with("<p>" + escaped(${ARGV[3]}) + "</p>");
+if (${ARGV[4]} != "") {
+  let anchor = page.select("hr").at(0);
+  anchor.insert_before("<h2>Run this example</h2><pre><kbd>lmctl autorun " + escaped(${ARGV[5]}) + "</kbd>\n<samp>" + escaped(${ARGV[8]}) + "</samp></pre>");
+  anchor.insert_before("<figure><img src=\"" + escaped(${ARGV[6]}) + "\" alt=\"" + escaped(${ARGV[7]}) + "\"><figcaption>Output preview from the public repository. Run with lmctl autorun " + escaped(${ARGV[5]}) + "</figcaption></figure>");
+  anchor.insert_before("<p><a href=\"" + escaped(${ARGV[5]}) + "\">Raw LMScript source</a></p><h2>The script</h2><pre><code>" + escaped(${source_text}) + "</code></pre>");
+} else {
+  for (example in html.load_dir(${ARGV[9]}, "*.html", "")) {
+    let name = example.path();
+    let pos = 0;
+    for (i in range(0, str_len(name))) { if (str_substr(name, i, 1) == "/") { pos = i + 1; } }
+    name = str_substr(name, pos, str_len(name));
+    if (name == "index.html") { continue; }
+    let url = "/tools/" + ${ARGV[10]} + "/examples/" + name;
+    page.select("hr").at(0).insert_before("<h2><a href=\"" + escaped(url) + "\">" + escaped(example.select("h1").at(0).text()) + "</a></h2><p>" + escaped(example.select("main > p").at(0).text()) + "</p>");
+  }
+}
+page.select("hr").at(0).remove();
+html.save(page.select("main").at(0).outer_html(), ${ARGV[1]});
+end _lmcode_
+savedsl(p, ARGV[0]);
+write_file(ARGV[0] + ".host", dsl_cli(p)[0]);
