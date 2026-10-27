@@ -11,7 +11,7 @@
     "examples/org-chart-grid.lms": "0bd346ee34e364662ff0a8bad52b06f7f5ee44a4ea0d66d5b9b1aa5f61b3b265",
     "examples/symlog-outlier.lms": "b0f92df2b8978893785ebfd48f7a1158d7f1feb993f7d8323ad3dc82d696d2e6"
   },
-  "template_sha256": "a72fb84a5d0262ae42668a6eb6e50ac478a080b60485e0e31513d3e2b5d228c4",
+  "template_sha256": "75485c0000b61dd168e1d6abb4713adbfb647b41a8dad9609bf89c0ce4c7c872",
   "renderer": {
     "version": "lmhtml 0.7.4",
     "sha256": "74665de185b48d41887be476244f9a539491abaee12c8b3f4a5fd2746a09d932"
