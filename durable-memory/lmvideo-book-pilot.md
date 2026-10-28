@@ -19,7 +19,7 @@ From the website root, with the isolated candidate available:
 ```sh
 npm run pull:tools -- lmvideo --books \
   --source /home/mma/repos/research-sol/lmvideo-web-content \
-  --ref 61ac53d9290df095677027e557a2db0b75d43f41 \
+  --ref 96d8b27ad95babe05b9b367f2f3d5d54c3417bda \
   --media-store build/tools-media/lmvideo
 npm run decorate:tools
 npm run check:tools
@@ -48,3 +48,16 @@ Owner publication steps, in order:
 5. Verify Getting started, Examples, Showcase/32 scoreboard links, and the Cycles chapter on lmctl.com at desktop/mobile widths, including poster/video loading, source reachability and command-only copy behavior.
 
 No deploy-tools.sh, AWS upload, release publication, public-peer promotion or Actions dispatch ran during this pilot. Local Chromium checks covered 1280/light and 390/dark views, loaded media, 32 scoreboard rows, controls/posters/no autoplay and clipboard behavior. Repeat pull/decorate checks compare final bytes using the same template/compiler/host and verified media.
+
+## Review amendments (ResearchOpus, 2026-10-28)
+
+Reproduced independently: decorate check, check:tools, test:pull:tools and a pinned rebuild are byte-identical with the 52 locked media files staged.
+
+Fixed: the four showcase clips B12, B15, B30 and B32 are 1280x720, but their poster pointed at the 900x560 still, so the player letterboxed the poster before playback. Content commit 96d8b27 (branch researchopus-poster-fix in the isolated content clone, on top of 61ac53d) points them at the existing 1280x720 poster images. The book pull now rejects a poster whose size differs from the video, with an error naming the tool repo file and block, for example showcase/b12.blocks[5]. The rebuild ref above is 96d8b27; publish that lineage, not 61ac53d. No media changed.
+
+Open content findings, for the content owner (not website changes):
+
+- In 40 of 44 image blocks, alt equals caption and both equal the chapter title. Alt text should describe what the picture shows (for example "5x5 grid of spheres, metallic left to right, roughness top to bottom"), and the caption should say what to notice.
+- 34 code blocks show the raw host JSON envelope as expected output, including wall_ms and phase timings that change on every run. That is honest captured stdout, but readers expect the stable line (for example "B12: 2500 point sprites, 120 frames, 1280x720@30"). Either the scripts print only their output line (which changes their locked hashes, so it needs a re-verification pass), or the book manifest gains a reviewed expected-output excerpt beside the full transcript.
+- The scoreboard column titled Seconds is the historical capture wall time. Rename it Capture time (s), or explain it once in the index text.
+- 47 of the 76 expected outputs listed in the private showcase ledger (non-benchmark examples such as scene3d-primitives) are not in any local render store. The four books do not use them, but they must be re-rendered before those examples get chapters.

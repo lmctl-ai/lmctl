@@ -79,6 +79,17 @@ class BookManifestTests(unittest.TestCase):
         data["groups"][0]["chapters"][0]["blocks"] = [{"kind": "video", "media": ["clip"], "poster": "poster", "caption": "C", "duration_seconds": 0, "no_audio": False}]
         self.check_bad(data, r"video needs|duration")
 
+    def test_video_poster_must_match_video_size(self):
+        data = self.valid()
+        data["media"] = [
+            {"id": "still", "file": "still-" + "a" * 64 + ".png", "sha256": "a" * 64, "bytes": 10, "kind": "png", "width": 900, "height": 560},
+            {"id": "clip", "file": "clip-" + "b" * 64 + ".mp4", "sha256": "b" * 64, "bytes": 10, "kind": "mp4", "width": 1280, "height": 720, "duration_seconds": 2, "no_audio": True},
+        ]
+        data["groups"][0]["chapters"][0]["blocks"] = [{"kind": "video", "media": ["clip"], "poster": "still", "caption": "C", "duration_seconds": 2, "no_audio": True}]
+        self.check_bad(data, r"examples/intro.blocks\[0\]: poster 900x560 must match the video size 1280x720")
+        data["media"][0].update(width=1280, height=720)
+        pull_books.validate(data, "origin")
+
     def test_scoreboard_dangling_chapter_and_bad_tier(self):
         data = self.valid()
         data["groups"][0]["scoreboard"] = [{"id": "B01", "chapter": "missing", "title": "X", "tier": 4, "status": "VERIFIED", "seconds": 1}]

@@ -6,8 +6,8 @@
     "sha256": "74665de185b48d41887be476244f9a539491abaee12c8b3f4a5fd2746a09d932"
   },
   "repository": "https://github.com/lmctl-ai/lmvideo",
-  "commit": "61ac53d9290df095677027e557a2db0b75d43f41",
-  "content_sha256": "a5d6d0754b3ef13f826e845dbe53bf57abb09a82d9a9a501e2a8fa7e7aa06fff",
+  "commit": "96d8b27ad95babe05b9b367f2f3d5d54c3417bda",
+  "content_sha256": "007a2935dd737ae0e9e0fdfc40f06abb49a18f57fdd83f5b0579d8d468171b21",
   "schema_sha256": "ddf90d10f70c6d0fce6833bb68d0b7e36b1e2b2267dca3a94e2d7a9cc890212a",
   "template_sha256": "44eca096e6e2e6eb1103f8d7cbcdb071413257c0a677014a75fc035468e9332c",
   "books": [
@@ -560,7 +560,7 @@
     "docs/book/render-cycles.capture.json": "6c84c4ca5806e9bcc7a7c178ed8b555c214628df5462f12200981cd8beab11f9",
     "examples/book/cycles-still.lms": "d5dbee38163f9cba0b9e2b8152671247958b34e3dfb7e21df8b43e2335b49b13",
     "examples/book/cycles-turntable.lms": "1a0b03a97cc9f8f34a432576b2903643b598db57e66075517d3dc9c811b83c44",
-    "examples/books.json": "a5d6d0754b3ef13f826e845dbe53bf57abb09a82d9a9a501e2a8fa7e7aa06fff",
+    "examples/books.json": "007a2935dd737ae0e9e0fdfc40f06abb49a18f57fdd83f5b0579d8d468171b21",
     "examples/confusion-matrix.lms": "0ea7cc1bb34a823df1c904722e06b0a3027428354ac36aefde8951e1d3a28b13",
     "examples/org-chart-grid.lms": "0bd346ee34e364662ff0a8bad52b06f7f5ee44a4ea0d66d5b9b1aa5f61b3b265",
     "examples/showcase/bench-01-pbr-metallic-roughness.lms": "1b5f94427b8ebf4a35cadc886947a85823982e8f00ff239bbde8b83240ed8f0a",

@@ -78,6 +78,9 @@ def validate(content, origin):
                     if not isinstance(b['duration_seconds'], (float,int)) or not math.isfinite(b['duration_seconds']) or b['duration_seconds'] <= 0: raise ValueError(label + ': invalid duration')
                     for mid in b['media']:
                         if not isinstance(mid,str) or mid not in mids or mids[mid]['kind'] not in ('mp4','webm'): raise ValueError(label + ': invalid video source')
+                    sizes = {(mids[mid]['width'], mids[mid]['height']) for mid in b['media']}
+                    poster = (mids[b['poster']]['width'], mids[b['poster']]['height'])
+                    if len(sizes) != 1 or poster not in sizes: raise ValueError(label + f': poster {poster[0]}x{poster[1]} must match the video size ' + ' / '.join(f'{w}x{h}' for w, h in sorted(sizes)) + ' (otherwise the player letterboxes before playback)')
         for row in group.get('scoreboard',[]):
             if row['chapter'] not in chapters or row['tier'] not in (1,2,3) or not isinstance(row['seconds'],(float,int)) or not math.isfinite(row['seconds']) or row['seconds'] <= 0: raise ValueError(origin + ': invalid scoreboard row')
     if not content['groups']: raise ValueError(origin + ': empty books')
