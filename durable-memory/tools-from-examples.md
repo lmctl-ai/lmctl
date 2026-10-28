@@ -20,6 +20,10 @@ The only presentation-adjacent fields allowed are semantic ones: kind (image, vi
 
 A repository source path identifies content, not a site layout. Code samples may contain HTML/CSS when teaching those formats; the website displays their bytes as escaped code, never as presentation. A reserved interactive kind cannot supply arbitrary HTML, JavaScript, iframe URLs or widgets; it requires a separately reviewed website renderer and schema revision. Historical website-authored chapters are explicitly migrated upstream before becoming importer-owned, rather than maintained as a second content copy.
 
+## Implemented mixed-media pilot update
+
+The 2026-10-28 lmvideo pilot now implements four mixed-media books through a separate content-book-v1 profile; see [lmvideo-book-pilot.md](lmvideo-book-pilot.md) for the exact input commit, rebuild command, media inventory and owner publication steps. The examples-v1 schema remains unchanged. The general version-2 design below remains future work beyond this bounded silent-video pilot. Heavy media stays in the ignored website build store; generated HTML and the website-owned media/content lock are committed.
+
 ## Ownership and layout
 
 Each public tool repository owns these inputs:

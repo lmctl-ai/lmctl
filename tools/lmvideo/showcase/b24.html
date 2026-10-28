@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Native guide/child-strand copper groom — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Contents Previous Next">
+<link rel="stylesheet" href="/tools/style.css">
+
+<script src="/tools/lmctl-copy.js" defer></script>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+</ul>
+</nav>
+<main><!-- generated: tools-book --><h1>Native guide/child-strand copper groom</h1><p><a href="/tools/lmvideo/showcase/">Contents</a> <a href="/tools/lmvideo/showcase/b23.html">Previous</a> <a href="/tools/lmvideo/showcase/b25.html">Next</a></p><p>Original 512-guide spherical groom with eight children per guide, six tapered keys per child, copper pigment, warm key and blue rim over an original scalp/floor.</p><p>Locally verified acceptance capture. This source candidate and its required renderer are not yet a public release.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-24-native-hair.lms</kbd>
+<samp>{"ok": true, "result": {"output": ["B24: 512 original guides / 4096 child strands / 24576 tapered native keys; Chiang pigment hair, warm key and cool rim"], "file": "build/bench-24-native-hair.png", "width": 900, "height": 560, "frames": 1, "fps": 30, "bytecode_bytes": 7226, "instructions": 3201719, "wall_ms": 33423, "phase_ms": {"post":0.000880,"prepare":0.407836,"render":28974.417875,"setup":38.705480,"write_media":41.865940}, "max_frame_ms": 0.000000, "max_render_ms": 28974.417875, "render_calls": 1}}</samp></pre><h2>Source</h2><pre><code># B24: original guide/child-strand groom; native Cycles curves, no swept meshes.
+mkdir("build");program=_lmcode_ cli="lmvideo";
+let scene=scene3d().threads(4).background("#101722").ambient(0.0).tonemap("aces",1.0);
+scene.camera(camera3d().look_at(1.8,1.1,3.3,0.0,0.7,0.0).perspective(32.0,0.05,30.0));
+scene.environment(environment_linear(1,1,"0.12,0.15,0.21"),1.2,0.0,false);
+scene.add(mesh_box(10.0,0.1,10.0),material("#42505c",0.0,0.8)).position(0.0,-0.05,0.0);
+scene.add(mesh_sphere(0.55,32,48),material("#493626",0.0,0.8)).position(0.0,0.7,0.0);
+let fur=material().hair(0.36,0.18,0.4,"#ffffff");
+# 512 original spherical guides, eight child strands per guide, six keys each.
+# Four bounded CSV batches keep temporary strings small; all four are true Hair.
+for(batch in range(0,4)){
+  let xyz="";let radii="";let offsets="0";
+  for(local in range(0,128)){
+    let guide=batch*128+local;
+    let gy=1.0-2.0*(float(guide)+0.5)/512.0;
+    let ring=pow(1.0-gy*gy,0.5);let az=float(guide)*2.399963229728653;
+    let gx=ring*cos(az);let gz=ring*sin(az);
+    let ux=-sin(az);let uz=cos(az);
+    let vx=gy*cos(az);let vy=-ring;let vz=gy*sin(az);
+    let phase=float(guide)*0.618033988749895;
+    for(child in range(0,8)){
+      let theta=float(child)*0.7853981633974483;
+      let a=0.04*cos(theta);let b=0.04*sin(theta);
+      let nx=gx+ux*a+vx*b;let ny=gy+vy*b;let nz=gz+uz*a+vz*b;
+      let inverse=1.0/pow(nx*nx+ny*ny+nz*nz,0.5);nx=nx*inverse;ny=ny*inverse;nz=nz*inverse;
+      let dx=nx*ny;let dy=ny*ny-1.0;let dz=nz*ny;
+      let down_inverse=1.0/pow(dx*dx+dy*dy+dz*dz,0.5);
+      dx=0.35*nx+0.94*dx*down_inverse;dy=0.35*ny+0.94*dy*down_inverse;dz=0.35*nz+0.94*dz*down_inverse;
+      let length=0.18+0.025*sin(phase);
+      for(key in range(0,6)){
+        let t=float(key)/5.0;let bend=0.035*sin(3.141592653589793*t+phase)*t;
+        let x=nx*0.55+dx*length*t+ux*bend;
+        let y=0.7+ny*0.55+dy*length*t-0.04*t*t;
+        let z=nz*0.55+dz*length*t+uz*bend;
+        if(xyz!=""){xyz=xyz+",";radii=radii+",";}
+        xyz=xyz+str(x)+","+str(y)+","+str(z);
+        radii=radii+str(0.0025*pow(1.0-t,1.2)+0.00008);
+      }
+      offsets=offsets+","+str((local*8+child+1)*6);
+    }
+  }
+  scene.add_hair(hair_curves(xyz,radii,offsets),fur);
+}
+scene.area_light(-2.0,3.0,3.0,0.4,-0.5,-0.8,2.0,3.0,"#ffe7cd",60.0,30.0);
+scene.area_light(2.0,2.0,-2.0,-0.6,-0.3,0.8,1.0,2.0,"#b9dbff",40.0,30.0);
+scene.save_job("build/bench-24-native-hair.lmjob",900,560,"cycles",64,8,20261103,true);
+let image=scene.render_image(900,560,"cycles",64,8,20261103,true);
+image_assert_true(image.width()==900&amp;&amp;image.height()==560);
+image.save("build/bench-24-native-hair.png");
+out.print("B24: 512 original guides / 4096 child strands / 24576 tapered native keys; Chiang pigment hair, warm key and cool rim");
+end _lmcode_
+savedsl(program,"build/bench-24-native-hair.dslb");r=system(concat(dsl_cli(program),["--dsl","build/bench-24-native-hair.dslb"]),900000);assert(r.code==0,r.stdout+r.stderr);println(r.stdout);</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-24-native-hair.lms">Raw LMScript source (candidate must be published first)</a></p><figure><img src="/tools/lmvideo/media/bench-24-native-hair-9fc5f74fa44efda5777afe91116697f60949338ca5cfe8766325a6c0d32c09ee.png" alt="Native guide/child-strand copper groom" width="900" height="560"><figcaption>Native guide/child-strand copper groom</figcaption></figure></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

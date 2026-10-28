@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Original Cozy Tabletop Still Life — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Contents Previous Next">
+<link rel="stylesheet" href="/tools/style.css">
+
+<script src="/tools/lmctl-copy.js" defer></script>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+</ul>
+</nav>
+<main><!-- generated: tools-book --><h1>Original Cozy Tabletop Still Life</h1><p><a href="/tools/lmvideo/showcase/">Contents</a> <a href="/tools/lmvideo/showcase/b25.html">Previous</a> <a href="/tools/lmvideo/showcase/b27.html">Next</a></p><p>Original separated ceramic mug and hollow bowl, clear closed-shell decanter, lidded beveled metal tin and emitting candle over an original wood-grain tabletop, with physical shallow focus and Image curves/vignette.</p><p>Locally verified acceptance capture. This source candidate and its required renderer are not yet a public release.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-26-cozy-still-life.lms</kbd>
+<samp>{"ok": true, "result": {"output": ["B26 original cozy still life | ceramic wood glass metal | six-blade physical DoF | curves/vignette"], "file": "build/bench-26-cozy-still-life.png", "width": 900, "height": 560, "frames": 1, "fps": 30, "bytecode_bytes": 6788, "instructions": 333, "wall_ms": 61884, "phase_ms": {"post":24.661360,"prepare":3.550677,"render":61421.862064,"setup":52.793525,"write_media":381.554541}, "max_frame_ms": 0.000000, "max_render_ms": 61421.862064, "render_calls": 1}}</samp></pre><h2>Source</h2><pre><code># B26 / G.2-G.9-G.10: original cozy tabletop still life.
+# Every object, grain texture, flame and light is procedural; no external asset is used.
+mkdir("build"); program=_lmcode_ cli="lmvideo";
+let scene=scene3d().threads(4).ambient(0.0).background("#0a0d14").tonemap("aces",0.8);
+let camera=camera3d().look_at(0.7,0.35,0.9,0.0,0.10,0.0).perspective(42.0,0.1,3.0).lens(85.0,36.0).dof(1.4,1.1,6);scene.camera(camera);scene.environment(environment_linear(1,1,"0.15,0.17,0.22"),0.45,0.0,false);
+scene.area_light(-0.5,1.8,0.8,0.2,-0.85,-0.3,1.1,0.8,"#fff0d6",40.0,6.0);
+scene.area_light(1.2,0.9,0.4,-0.4,-0.5,-0.7,0.6,0.5,"#b9d8ff",5.0,4.0);
+let grain_image=image_pattern(256,128,"0.36+0.06*sin(100*y+6*sin(5*x))","0.20+0.03*sin(100*y+6*sin(5*x))","0.10+0.015*sin(100*y+6*sin(5*x))","1");
+let grain=texture_from_image(grain_image,"srgb").filter("trilinear");
+let wood=material("#ffffff",0.0,0.58).albedo(grain);let ceramic=material("#d6bca2",0.0,0.18);let dark=material("#76818e",0.8,0.24);
+let glass=material("#ffffff",0.0,0.06).transmission(1.0).ior(1.45);
+scene.add(mesh_box(1.10,0.018,0.70),wood).position(0.0,0.0,0.0);
+let mug_profile="0,0,0,0.075,0,0,0.085,0.008,0,0.085,0.15,0,0.075,0.19,0,0.060,0.19,0,0.060,0.17,0,0.065,0.15,0,0.065,0.02,0,0,0.02,0,0,0,0";
+let mug=scene.add(mesh_lathe_closed(mug_profile,40),ceramic);mug.scale(0.65,0.65,0.65).position(-0.30,0.009,0.10);
+let handle=mesh_tube_spline("0.075,0.14,0,0.12,0.16,0,0.145,0.11,0,0.12,0.06,0,0.075,0.08,0",0.012,12,true);scene.add(handle,ceramic).scale(0.65,0.65,0.65).position(-0.30,0.009,0.10);
+let bowl_profile="0,0,0,0.065,0,0,0.075,0.01,0,0.10,0.035,0,0.13,0.075,0,0.15,0.12,0,0.15,0.14,0,0.133,0.14,0,0.132,0.12,0,0.112,0.075,0,0.08,0.04,0,0.05,0.02,0,0,0.02,0";
+scene.add(mesh_lathe_closed(bowl_profile,48),ceramic).position(0.28,0.009,-0.14);
+let decanter_profile="0,0,0,0.095,0,0,0.11,0.025,0,0.105,0.14,0,0.075,0.22,0,0.045,0.29,0,0.028,0.31,0,0.028,0.285,0,0.040,0.27,0,0.06,0.20,0,0.075,0.12,0,0.075,0.03,0,0,0.03,0,0,0,0";
+# Keep distinct glass/air/wood interfaces: the glass base clears the tabletop by0.5mm.
+scene.add(mesh_lathe_closed(decanter_profile,48),glass).position(0.0,0.0095,0.0);
+scene.add(mesh_beveled_box(0.11,0.07,0.105,0.007),dark).position(0.28,0.0445,0.18);
+scene.add(mesh_beveled_box(0.116,0.009,0.111,0.0035),dark).position(0.28,0.0842,0.18);
+let candle=scene.add(mesh_cylinder(0.018,0.07,24),ceramic);candle.position(-0.20,0.044,-0.20);
+scene.add(mesh_cylinder(0.0008,0.008,8),material("#17120d",0.0,1.0)).position(-0.20,0.083,-0.20);
+let flame=material("#fff1bd",0.0,0.15).emissive("#fff1bd",3.0);scene.add(mesh_sphere(0.012,20,10),flame).scale(0.65,1.5,0.65).position(-0.20,0.099,-0.20);
+scene.area_light(-0.20,0.12,-0.20,0.0,-1.0,0.0,0.04,0.04,"#ffd28a",0.25,1.0);
+scene.save_job("build/bench-26-cozy-still-life.lmjob",900,560,"cycles",128,8,20261103,true);
+let raw=scene.render_image(900,560,"cycles",128,8,20261103,true);
+raw.save("build/b26-raw.png");
+let tone=image_curve().point(0.0,0.0).point(0.45,0.40).point(0.78,0.67).point(1.0,0.85);
+let grade=raw.curves(tone).vignette(390.0,0.45);grade.save("build/bench-26-cozy-still-life.png");
+out.print("B26 original cozy still life | ceramic wood glass metal | six-blade physical DoF | curves/vignette");
+end _lmcode_
+savedsl(program,"build/bench-26-cozy-still-life.dslb");r=system(concat(["env","OIDN_NUM_THREADS=1"],concat(dsl_cli(program),["--dsl","build/bench-26-cozy-still-life.dslb"])),600000);assert(r.code==0,r.stderr+r.stdout);println(r.stdout);</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-26-cozy-still-life.lms">Raw LMScript source (candidate must be published first)</a></p><figure><img src="/tools/lmvideo/media/bench-26-cozy-still-life-14b2474f07e33ad97b4c4a0f9a4cbde6f833d6c96e23c3eae541b6792bbff85a.png" alt="Original Cozy Tabletop Still Life" width="900" height="560"><figcaption>Original Cozy Tabletop Still Life</figcaption></figure></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

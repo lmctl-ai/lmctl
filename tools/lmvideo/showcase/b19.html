@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Abstract Busts with Random-Walk Subsurface — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Contents Previous Next">
+<link rel="stylesheet" href="/tools/style.css">
+
+<script src="/tools/lmctl-copy.js" defer></script>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+</ul>
+</nav>
+<main><!-- generated: tools-book --><h1>Abstract Busts with Random-Walk Subsurface</h1><p><a href="/tools/lmvideo/showcase/">Contents</a> <a href="/tools/lmvideo/showcase/b18.html">Previous</a> <a href="/tools/lmvideo/showcase/b20.html">Next</a></p><p>900x560 CPU Cycles still showing original jade and warm-skin abstract bust assemblies, closed primitive parts, raw metre channel radii, thin backlit ear laminas, and visible backlight transmission.</p><p>Locally verified acceptance capture. This source candidate and its required renderer are not yet a public release.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-19-sss-abstract-bust.lms</kbd>
+<samp>{"ok": true, "result": {"output": ["B19 original abstract jade and warm-skin busts | raw metre SSS radii | thin backlit ear laminas | random-walk OIDN"], "file": "build/bench-19-sss-abstract-bust.png", "width": 900, "height": 560, "frames": 1, "fps": 30, "bytecode_bytes": 6774, "instructions": 35258, "wall_ms": 11570, "phase_ms": {"post":3.765512,"prepare":2.170066,"render":11508.106363,"setup":24.212031,"write_media":29.276582}, "max_frame_ms": 0.000000, "max_render_ms": 11508.106363, "render_calls": 1}}</samp></pre><h2>Source</h2><pre><code># B19 / G.9: original abstract busts with random-walk subsurface scattering.
+# All geometry is assembled from project-authored closed primitives.
+mkdir("build"); program=_lmcode_ cli="lmvideo";
+let studio="";for(j in range(0,16)){for(i in range(0,32)){let x=float(i)/31.0;let y=float(j)/15.0;let key=10.0*pow(2.718281828459045,-100.0*(x-0.3)*(x-0.3)-24.0*(y-0.4)*(y-0.4));if(studio!=""){studio=studio+",";}studio=studio+str(0.08+key)+","+str(0.10+key*0.9)+","+str(0.16+key*0.7);}}
+let env=environment_linear(32,16,studio);let scene=scene3d().threads(4).background("#101722").ambient(0.0).environment(env,0.25,16.0,false).tonemap("aces",1.0);
+scene.camera(camera3d().look_at(4.2,2.2,7.4,0.0,1.0,0.0).perspective(38.0,0.1,30.0));
+let floor=material("#27313d",0.0,0.8);scene.add(mesh_box(6.0,0.1,4.5),floor).position(0.0,-0.05,0.0);
+let jade=material("#76b59a",0.08,0.34).subsurface(0.62,0.055,0.035,0.025);
+let warm=material("#b9684e",0.0,0.42).subsurface(0.92,0.085,0.032,0.018);
+let neck_profile="0,0,0,0.46,0,0,0.52,0.10,0,0.48,0.30,0,0.40,0.58,0,0.34,0.78,0,0,0.78,0";
+let neck=mesh_lathe_closed(neck_profile,48);
+let jade_head=scene.add(mesh_sphere(1.05,32,48),jade).scale(0.86,1.12,0.78).position(-1.25,1.45,0.0);
+scene.add(neck,jade).position(-1.25,0.0,0.0);
+scene.add(mesh_sphere(0.66,28,40),jade).scale(1.2,0.72,0.78).position(-1.25,0.45,0.0);
+let skin_head=scene.add(mesh_sphere(1.0,32,48),warm).scale(0.86,1.12,0.78).position(1.25,1.45,0.0);
+scene.add(neck,warm).position(1.25,0.0,0.0);
+scene.add(mesh_sphere(0.64,28,40),warm).scale(1.15,0.70,0.78).position(1.25,0.44,0.0);
+# Thin ear/lamina details are separate closed ellipsoids and remain backlit.
+let ear_l=scene.add(mesh_sphere(0.34,24,32),warm).scale(0.28,0.82,0.10).position(0.35,1.58,0.0);
+let ear_r=scene.add(mesh_sphere(0.34,24,32),warm).scale(0.28,0.82,0.10).position(2.15,1.58,0.0);
+scene.area_light(0.6,2.8,1.8,-0.1,-0.6,-1.0,1.8,1.0,"#fff0dc",30.0,20.0);
+scene.area_light(0.0,1.3,-2.0,0.0,0.0,1.0,1.2,1.0,"#ffb07d",12.0,20.0);
+# Original closed facial details keep the abstract sculptures readable.
+let eye=material("#162028",0.0,0.45);
+scene.add(mesh_sphere(0.13,20,24),jade).scale(0.8,1.6,1.0).position(-1.25,1.44,0.79);
+scene.add(mesh_sphere(0.13,20,24),warm).scale(0.8,1.6,1.0).position(1.25,1.44,0.79);
+scene.add(mesh_sphere(0.065,16,24),eye).scale(1.2,0.55,0.5).position(-1.51,1.74,0.76);
+scene.add(mesh_sphere(0.065,16,24),eye).scale(1.2,0.55,0.5).position(-0.99,1.74,0.76);
+scene.add(mesh_sphere(0.065,16,24),eye).scale(1.2,0.55,0.5).position(0.99,1.74,0.76);
+scene.add(mesh_sphere(0.065,16,24),eye).scale(1.2,0.55,0.5).position(1.51,1.74,0.76);
+scene.save_job("build/sss-target.lmjob",900,560,"cycles",96,8,20261030,true);
+let image=scene.render_image(900,560,"cycles",96,8,20261030,true);
+image_assert_true(image.width()==900&amp;&amp;image.height()==560&amp;&amp;image.stddev(0)>0.03&amp;&amp;image.mean(0)>0.02);
+image.save("build/bench-19-sss-abstract-bust.png");
+out.print("B19 original abstract jade and warm-skin busts | raw metre SSS radii | thin backlit ear laminas | random-walk OIDN");
+end _lmcode_
+savedsl(program,"build/bench-19-sss-abstract-bust.dslb");r=system(concat(dsl_cli(program),["--dsl","build/bench-19-sss-abstract-bust.dslb"]),600000);assert(r.code==0,r.stderr+r.stdout);println(r.stdout);</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-19-sss-abstract-bust.lms">Raw LMScript source (candidate must be published first)</a></p><figure><img src="/tools/lmvideo/media/bench-19-sss-abstract-bust-63be0c34e3e728189bc8ce33f29a8018855b5de24809eadeef046b07415cd4b2.png" alt="Abstract Busts with Random-Walk Subsurface" width="900" height="560"><figcaption>Abstract Busts with Random-Walk Subsurface</figcaption></figure></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

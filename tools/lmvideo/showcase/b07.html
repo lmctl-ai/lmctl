@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3D Extruded Bevel Typography &amp; Logo Stage — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Contents Previous Next">
+<link rel="stylesheet" href="/tools/style.css">
+
+<script src="/tools/lmctl-copy.js" defer></script>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+</ul>
+</nav>
+<main><!-- generated: tools-book --><h1>3D Extruded Bevel Typography &amp; Logo Stage</h1><p><a href="/tools/lmvideo/showcase/">Contents</a> <a href="/tools/lmvideo/showcase/b06.html">Previous</a> <a href="/tools/lmvideo/showcase/b08.html">Next</a></p><p>Bundled DejaVu/Bitstream-Vera outlines A B O 8 &amp; retain open counters, true offset-contour chamfers and gold PBR studio reflections on a shadow-catching stage.</p><p>Locally verified acceptance capture. This source candidate and its required renderer are not yet a public release.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-07-bevel-typography.lms</kbd>
+<samp>{"ok": true, "result": {"output": ["A B O 8 &amp; open counters, true inset-contour chamfer, gold PBR with studio IBL and bundled font notices"], "file": "build/bench-07-bevel-typography.png", "width": 900, "height": 560, "frames": 1, "fps": 30, "bytecode_bytes": 3713, "instructions": 155, "wall_ms": 257, "phase_ms": {"post":1.841201,"prepare":15.056111,"render":224.573219,"setup":0.241097,"write_media":15.329015}, "max_frame_ms": 0.000000, "max_render_ms": 224.573219, "render_calls": 1}}</samp></pre><h2>Source</h2><pre><code># B07: bundled-font outlines, counters, depth and true chamfered metallic stage.
+mkdir("build"); program=_lmcode_ cli="lmvideo";
+let face=font_load("bundled:DejaVuSans"); let letters=mesh_text_bevel(face,"A B O 8 &amp;",32.0,5.0,0.25,0.28); image_assert_true(letters.triangles()>100);
+let scene=scene3d().threads(4).background("#111923").ambient(0.12).tonemap("aces",1.0); scene.environment(environment_image(image_pattern(80,40,"0.5+0.4*exp(-20*(x-0.5)^2-10*(y-0.45)^2)","0.5+0.4*exp(-20*(x-0.5)^2-10*(y-0.45)^2)","0.5+0.4*exp(-20*(x-0.5)^2-10*(y-0.45)^2)","1")),1.5,0.0,false);scene.camera(camera3d().look_at(0.0,0.0,140.0,0.0,0.0,0.0).perspective(46.0,0.1,300.0)); scene.add(mesh_plane(180.0,120.0),"#202b37").position(0.0,-(letters.bound(4)-letters.bound(1))/2.0-0.25,0.0);
+let gold=material("#d99a35",0.68,0.28).double_sided(true).emissive("#130b03",0.04); let logo=scene.add(letters,gold); logo.position(-(letters.bound(0)+letters.bound(3))/2.0,-(letters.bound(1)+letters.bound(4))/2.0,0.0); scene.directional_light(-2.0,4.0,5.0,"#fff1d4",3.0).directional_light(3.0,1.0,-2.0,"#93bde8",1.4).shadows(256,0.0004,0.001,1);
+let image=scene.render_image(900,560,2); image.save("build/bench-07-bevel-typography.png"); image_assert_true(image.stddev(0)>0.03); out.print("A B O 8 &amp; open counters, true inset-contour chamfer, gold PBR with studio IBL and bundled font notices");
+end _lmcode_
+savedsl(program,"build/bench-07-bevel-typography.dslb"); let r=system(concat(dsl_cli(program),["--dsl","build/bench-07-bevel-typography.dslb"]),600000); assert(r.code==0,r.stdout+r.stderr);println(r.stdout);</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-07-bevel-typography.lms">Raw LMScript source (candidate must be published first)</a></p><figure><img src="/tools/lmvideo/media/bench-07-bevel-typography-ecd3c1d006240c37710b3e7c98bbbc1cdb055660f6a367bbcdf1e6fcac4beb07.png" alt="3D Extruded Bevel Typography &amp; Logo Stage" width="900" height="560"><figcaption>3D Extruded Bevel Typography &amp; Logo Stage</figcaption></figure></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Original Recursive Menger Sculpture — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Contents Previous Next">
+<link rel="stylesheet" href="/tools/style.css">
+
+<script src="/tools/lmctl-copy.js" defer></script>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+</ul>
+</nav>
+<main><!-- generated: tools-book --><h1>Original Recursive Menger Sculpture</h1><p><a href="/tools/lmvideo/showcase/">Contents</a> <a href="/tools/lmvideo/showcase/b28.html">Previous</a> <a href="/tools/lmvideo/showcase/b30.html">Next</a></p><p>900x560 level-three original Menger sculpture with 8000 shared bronze cubes, true hierarchical tunnels, native self-shadowing, a separate raster preview and CPU Cycles final.</p><p>Locally verified acceptance capture. This source candidate and its required renderer are not yet a public release.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-29-recursive-menger.lms</kbd>
+<samp>{"ok": true, "result": {"output": ["B29: level3 original Menger predicate; 20^3 = 8000 shared cube instances, 6.75m bounds and 125m^3 occupied voxel volume; no boolean union or solver claim"], "file": "build/bench-29-recursive-menger.png", "width": 900, "height": 560, "frames": 1, "fps": 30, "bytecode_bytes": 4426, "instructions": 3131487, "wall_ms": 17541, "phase_ms": {"prepare":0.266717,"render":16771.832106,"setup":544.510527,"write_media":159.118545}, "max_frame_ms": 0.000000, "max_render_ms": 13313.105343, "render_calls": 2}}</samp></pre><h2>Source</h2><pre><code># B29: original level-three Menger set using one shared cube mesh, not CSG.
+mkdir("build");program=_lmcode_ cli="lmvideo";
+let scene=scene3d().threads(4).background("#182330").ambient(0.0).tonemap("aces",0.9);
+scene.camera(camera3d().look_at(10.0,7.8,12.0,0.0,-0.2,0.0).perspective(43.0,0.1,100.0));
+scene.environment(environment_linear(1,1,"0.16,0.20,0.28"),0.75,0.0,false);
+let bronze=material("#b88759",0.55,0.32);
+let sponge=scene.add_instances(mesh_box(0.25,0.25,0.25),bronze);
+for(x in range(0,27)){for(y in range(0,27)){for(z in range(0,27)){
+  let keep=true;
+  for(level in range(0,3)){
+    let divisor=pow(3.0,float(level));let middle=0;
+    if(int(float(x)/divisor)%3==1){middle=middle+1;}
+    if(int(float(y)/divisor)%3==1){middle=middle+1;}
+    if(int(float(z)/divisor)%3==1){middle=middle+1;}
+    if(middle>=2){keep=false;}
+  }
+  if(keep){sponge.add_instance((float(x)-13.0)*0.25,(float(y)-13.0)*0.25,(float(z)-13.0)*0.25,0.0,0.0,0.0,1.0,1.0,1.0,"#ffffff");}
+}}}
+image_assert_true(sponge.size()==8000);
+scene.add(mesh_box(16.0,0.15,16.0),material("#485763",0.0,0.8)).position(0.0,-3.45,0.0);
+scene.directional_light(-1.0,2.0,3.0,"#fff1db",2.0).directional_light(3.0,1.0,-2.0,"#9fc7ef",0.5);
+scene.shadows(1024,0.001,0.002,2).shadow_light(0);
+scene.save_job("build/bench-29-recursive-menger.lmjob",900,560,"cycles",64,8,20261105,true);
+scene.render_image(900,560,2).save("build/b29-preview.png");
+scene.render_image(900,560,"cycles",64,8,20261105,true).save("build/bench-29-recursive-menger.png");
+out.print("B29: level3 original Menger predicate; 20^3 = 8000 shared cube instances, 6.75m bounds and 125m^3 occupied voxel volume; no boolean union or solver claim");
+end _lmcode_
+savedsl(program,"build/bench-29-recursive-menger.dslb");r=system(concat(dsl_cli(program),["--dsl","build/bench-29-recursive-menger.dslb"]),900000);assert(r.code==0,r.stdout+r.stderr);println(r.stdout);</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-29-recursive-menger.lms">Raw LMScript source (candidate must be published first)</a></p><figure><img src="/tools/lmvideo/media/bench-29-recursive-menger-2cf2f51f3d20204da44f50f22e011827889631d6a4bd65e30bb457eb16358ede.png" alt="Original Recursive Menger Sculpture" width="900" height="560"><figcaption>Original Recursive Menger Sculpture</figcaption></figure><figure><img src="/tools/lmvideo/media/bench-29-recursive-menger-raster-af64e92de2e1c4a65a4672a04ac3a45dc3f97e618c603117f1fb7dd1cef0266c.png" alt="Original Recursive Menger Sculpture" width="900" height="560"><figcaption>Original Recursive Menger Sculpture</figcaption></figure></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

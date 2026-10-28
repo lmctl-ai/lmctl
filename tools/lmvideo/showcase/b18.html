@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analytic Area Light Caustic Ball Lens — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Contents Previous Next">
+<link rel="stylesheet" href="/tools/style.css">
+
+<script src="/tools/lmctl-copy.js" defer></script>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+</ul>
+</nav>
+<main><!-- generated: tools-book --><h1>Analytic Area Light Caustic Ball Lens</h1><p><a href="/tools/lmvideo/showcase/">Contents</a> <a href="/tools/lmvideo/showcase/b17.html">Previous</a> <a href="/tools/lmvideo/showcase/b19.html">Next</a></p><p>900x560 CPU Cycles still: original clear ball lens above a original neutral checker receiver floor, one rectangular analytic area emitter, explicit MNEE caster/receiver roles and focused floor caustic.</p><p>Locally verified acceptance capture. This source candidate and its required renderer are not yet a public release.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-18-caustic-ball-lens.lms</kbd>
+<samp>{"ok": true, "result": {"output": ["B18 analytic-area CPU MNEE lens | 512 spp | 8 bounces | seed 991 | OIDN | floor ROI/normal-mask proof in native gate"], "file": "build/bench-18-caustic-ball-lens.png", "width": 900, "height": 560, "frames": 1, "fps": 30, "bytecode_bytes": 3185, "instructions": 132, "wall_ms": 15351, "phase_ms": {"post":1.702286,"prepare":5.904158,"render":15320.850013,"setup":0.054727,"write_media":23.440824}, "max_frame_ms": 0.000000, "max_render_ms": 15320.850013, "render_calls": 1}}</samp></pre><h2>Source</h2><pre><code># B18 / G.10: analytic-area CPU MNEE caustic lens candidate.
+# All geometry, materials and lighting are original procedural content.
+mkdir("build"); program=_lmcode_ cli="lmvideo";
+let scene=scene3d().threads(4).background("#11151d").ambient(0.0);
+scene.camera(camera3d().look_at(0.0,4.5,6.0,0.0,0.0,0.0).ortho(4.2,0.1,30.0));
+let tiles=texture_checker("#9c9c9c","#bcbcbc",6).bake(256,256,"srgb");
+let floor=scene.add(mesh_box(5.0,0.1,5.0),material("#ffffff",0.0,0.72).albedo(tiles)).position(0.0,-0.05,0.0);
+let lens=scene.add(mesh_sphere(0.72,32,48),material("#ffffff",0.0,0.08).transmission(1.0).ior(1.52));
+lens.position(0.0,1.2465,0.0).cast_caustics(true); floor.receive_caustics(true);
+scene.area_light(0.0,8.0,0.0,0.0,-1.0,0.0,0.5,0.5,"#ffffff",80.0,20.0); scene.light_caustics(0,true);
+let image=scene.render_image(900,560,"cycles",512,8,991,true);
+image_assert_true(image.width()==900&amp;&amp;image.height()==560&amp;&amp;image.stddev(0)>0.01);
+image.save("build/bench-18-caustic-ball-lens.png");
+out.print("B18 analytic-area CPU MNEE lens | 512 spp | 8 bounces | seed 991 | OIDN | floor ROI/normal-mask proof in native gate");
+end _lmcode_
+savedsl(program,"build/bench-18-caustic-ball-lens.dslb");r=system(concat(dsl_cli(program),["--dsl","build/bench-18-caustic-ball-lens.dslb"]),900000);assert(r.code==0,r.stderr+r.stdout);println(r.stdout);</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-18-caustic-ball-lens.lms">Raw LMScript source (candidate must be published first)</a></p><figure><img src="/tools/lmvideo/media/bench-18-caustic-ball-lens-4cf78f9ab7d52a55422e91ad26fd5779fade1ce2fefd6988c68d9da510648df3.png" alt="Analytic Area Light Caustic Ball Lens" width="900" height="560"><figcaption>Analytic Area Light Caustic Ball Lens</figcaption></figure></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

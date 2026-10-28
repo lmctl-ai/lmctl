@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Confusion matrix — lmvideo — lmctl.com tools</title>
-<meta name="description" content="Draw a labeled three-class matrix with contrast-aware cell labels.">
+<meta name="description" content="Contents Previous Next">
 <link rel="stylesheet" href="/tools/style.css">
 
 <script src="/tools/lmctl-copy.js" defer></script>
@@ -17,11 +17,14 @@
 <li><a href="/skills/">Skills</a></li>
 <li><a href="/tools/lmvideo/">Overview</a></li>
 <li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
 <li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
 </ul>
 </nav>
-<main><!-- generated: tools-from-examples --><h1>Confusion matrix</h1><p>Draw a labeled three-class matrix with contrast-aware cell labels.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/b91247c3d92e10dce15c2d5ce3ee4a0e0eedcebd/examples/confusion-matrix.lms</kbd>
-<samp>(no stdout)</samp></pre><figure><img src="/tools/lmvideo/examples/img/confusion-matrix.png" alt="Confusion matrix rendered by lmvideo" width="960" height="540"><figcaption>Output preview from the public repository. Run with lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/b91247c3d92e10dce15c2d5ce3ee4a0e0eedcebd/examples/confusion-matrix.lms</figcaption></figure><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/b91247c3d92e10dce15c2d5ce3ee4a0e0eedcebd/examples/confusion-matrix.lms">Raw LMScript source</a></p><h2>The script</h2><pre><code># Multiclass confusion matrix with the same Park-Miller sequence and probabilities as lmplot.
+<main><!-- generated: tools-book --><h1>Confusion matrix</h1><p><a href="/tools/lmvideo/examples/">Contents</a> <a href="/tools/lmvideo/examples/org-chart-grid.html">Previous</a> <a href="/tools/lmvideo/examples/symlog-outlier.html">Next</a></p><p>Draw a labeled three-class matrix with contrast-aware cell labels.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/confusion-matrix.lms</kbd>
+<samp>(no stdout)</samp></pre><h2>Source</h2><pre><code># Multiclass confusion matrix with the same Park-Miller sequence and probabilities as lmplot.
 let classes=3;let per_class=80;let p0=[0.82,0.15,0.05];let p1=[0.12,0.70,0.25];let seed=90210;let counts=[];for(i in range(0,9)){counts=push(counts,0);}
 for(c in range(0,classes)){for(i in range(0,per_class)){seed=(seed*16807)%2147483647;let u=num(seed)/2147483647.0;let pred=u&lt;p0[c]?0:(u&lt;p0[c]+p1[c]?1:2);counts[c*3+pred]=counts[c*3+pred]+1;}}
 let diagonal=counts[0]+counts[4]+counts[8];let accuracy=num(diagonal)/240.0;
@@ -29,7 +32,7 @@ mkdir("images");standalone=ARGV.len()==0;dslout=ARGV.len()>0?ARGV[0]:"build/conf
 program = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.26";
 video.size(960,540);video.frames(1);video.output(${mp4});video.begin();video.frame();canvas.clear("#f5f7fa");let p=canvas.plot(215.0,20.0,530.0,500.0).title("Confusion matrix · accuracy "+${str(round(accuracy*1000.0)/1000.0)}).xlabel("predicted class").ylabel("true class").x_range(0.0,3.0).y_range(0.0,3.0).legend("none").background("#ffffff");let h=p.heatmap("cases",3,3).palette("magma").range(0.0,80.0).labels(true).colorbar(true);h.cell(2,0,float(${counts[0]})).cell(2,1,float(${counts[1]})).cell(2,2,float(${counts[2]})).cell(1,0,float(${counts[3]})).cell(1,1,float(${counts[4]})).cell(1,2,float(${counts[5]})).cell(0,0,float(${counts[6]})).cell(0,1,float(${counts[7]})).cell(0,2,float(${counts[8]}));p.draw();video.save_frame(${png});video.end();
 end _lmcode_
-mkdir(dirname(dslout));savedsl(program,dslout);if(standalone){r=system(concat(dsl_cli(program),["--dsl",dslout]),600000);if(r.code!=0){println(r.stderr+r.stdout);}assert(r.code==0);}</code></pre></main>
+mkdir(dirname(dslout));savedsl(program,dslout);if(standalone){r=system(concat(dsl_cli(program),["--dsl",dslout]),600000);if(r.code!=0){println(r.stderr+r.stdout);}assert(r.code==0);}</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/confusion-matrix.lms">Raw LMScript source (candidate must be published first)</a></p><figure><img src="/tools/lmvideo/media/confusion-matrix-133921b9650e9328609cc5ae1f369cad2999a7c336ae2efeabca4a0a36fc3767.png" alt="Confusion matrix rendered by lmvideo" width="960" height="540"><figcaption>Draw a labeled three-class matrix with contrast-aware cell labels.</figcaption></figure></main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
 </footer>

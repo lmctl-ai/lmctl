@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glass Goblets with Homogeneous Absorption — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Contents Previous Next">
+<link rel="stylesheet" href="/tools/style.css">
+
+<script src="/tools/lmctl-copy.js" defer></script>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+</ul>
+</nav>
+<main><!-- generated: tools-book --><h1>Glass Goblets with Homogeneous Absorption</h1><p><a href="/tools/lmvideo/showcase/">Contents</a> <a href="/tools/lmvideo/showcase/b16.html">Previous</a> <a href="/tools/lmvideo/showcase/b18.html">Next</a></p><p>900x560 CPU Cycles still with two closed unit-metre goblets, visible stems/rims/cavities, white base colour, IOR 1.52, transmission 1.0, amber and emerald homogeneous volume absorption, generated HDR studio environment with values above 1, and denoised CPU profile.</p><p>Locally verified acceptance capture. This source candidate and its required renderer are not yet a public release.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-17-glass-goblets-volume.lms</kbd>
+<samp>{"ok": true, "result": {"output": ["B17 solid glass goblets | IOR 1.52 | transmission 1 | amber/emerald homogeneous absorption | 96 spp | 8 bounces | seed 20261028 | OIDN"], "file": "build/bench-17-glass-goblets-volume.png", "width": 900, "height": 560, "frames": 1, "fps": 30, "bytecode_bytes": 5041, "instructions": 37175, "wall_ms": 40321, "phase_ms": {"post":4.476230,"prepare":1.669398,"render":40220.592717,"setup":27.567760,"write_media":61.157931}, "max_frame_ms": 0.000000, "max_render_ms": 40220.592717, "render_calls": 1}}</samp></pre><h2>Source</h2><pre><code># B17 / G.9: solid glass goblets with homogeneous amber and emerald absorption.
+# Geometry, studio environment and colours are authored procedurally.
+mkdir("build"); program=_lmcode_ cli="lmvideo";
+let profile="0,0,0,0.65,0,0,0.70,0.06,0,0.65,0.12,0,0.12,0.16,0,0.09,0.20,0,0.09,0.70,0,0.16,0.77,0,0.45,0.90,0,0.68,1.10,0,0.78,1.40,0,0.80,1.65,0,0.74,1.65,0,0.72,1.40,0,0.62,1.15,0,0.40,0.98,0,0.15,0.88,0,0,0.85,0";
+let goblet=mesh_lathe_closed(profile,64);
+let sky="";let peak=0.0;for(j in range(0,16)){for(i in range(0,32)){let x=float(i)/31.0;let y=float(j)/15.0;let key=18.0*pow(2.718281828459045,-90.0*(x-0.28)*(x-0.28)-28.0*(y-0.42)*(y-0.42));if(key>peak){peak=key;}if(sky!=""){sky=sky+",";}sky=sky+str(0.10+key)+","+str(0.14+key*0.86)+","+str(0.22+key*0.72);}}
+image_assert_true(peak>10.0);let studio=environment_linear(32,16,sky);
+let scene=scene3d().threads(4).background("#11151d").ambient(0.0).environment(studio,0.18,18.0,false).tonemap("aces",1.0);
+scene.camera(camera3d().look_at(3.4,3.0,6.8,0.0,0.78,0.0).perspective(38.0,0.1,30.0));
+scene.add(mesh_box(5.0,0.1,4.0),material("#d5dbe2",0.0,0.72)).position(0.0,-0.05,0.0);
+let amber=material("#ffffff",0.0,0.02).transmission(1.0).ior(1.52).volume_absorption("#d47a2c",0.18);
+let emerald=material("#ffffff",0.0,0.02).transmission(1.0).ior(1.52).volume_absorption("#2a9d72",0.22);
+scene.add(goblet,amber).position(-1.25,0.0,0.0);
+scene.add(goblet,emerald).position(1.25,0.0,0.0);
+scene.area_light(0.0,3.2,1.0,0.0,-1.0,-0.15,2.4,1.2,"#fff1dc",18.0,20.0);
+scene.directional_light(-2.0,3.0,4.0,"#b8d9ff",0.35);
+scene.save_job("build/cycles-target.lmjob",900,560,"cycles",96,8,20261028,true);
+let image=scene.render_image(900,560,"cycles",96,8,20261028,true);
+image_assert_true(image.width()==900&amp;&amp;image.height()==560&amp;&amp;image.stddev(0)>0.03&amp;&amp;image.mean(0)>0.02);
+image.save("build/bench-17-glass-goblets-volume.png");
+out.print("B17 solid glass goblets | IOR 1.52 | transmission 1 | amber/emerald homogeneous absorption | 96 spp | 8 bounces | seed 20261028 | OIDN");
+end _lmcode_
+savedsl(program,"build/bench-17-glass-goblets-volume.dslb");r=system(concat(dsl_cli(program),["--dsl","build/bench-17-glass-goblets-volume.dslb"]),600000);assert(r.code==0,r.stderr+r.stdout);println(r.stdout);</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-17-glass-goblets-volume.lms">Raw LMScript source (candidate must be published first)</a></p><figure><img src="/tools/lmvideo/media/bench-17-glass-goblets-volume-2e25fedf9d988f5c3df583d9a1b03d53d455c1cb604eedc080076839f29beb9f.png" alt="Glass Goblets with Homogeneous Absorption" width="900" height="560"><figcaption>Glass Goblets with Homogeneous Absorption</figcaption></figure></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

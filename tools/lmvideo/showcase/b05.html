@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tangent-Space Normal &amp; Bump Mapped Relief — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Contents Previous Next">
+<link rel="stylesheet" href="/tools/style.css">
+
+<script src="/tools/lmctl-copy.js" defer></script>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+</ul>
+</nav>
+<main><!-- generated: tools-book --><h1>Tangent-Space Normal &amp; Bump Mapped Relief</h1><p><a href="/tools/lmvideo/showcase/">Contents</a> <a href="/tools/lmvideo/showcase/b04.html">Previous</a> <a href="/tools/lmvideo/showcase/b06.html">Next</a></p><p>Exact 900x560 relief medallion whose procedural height field is converted through the available CPU height-relief path and lit by a grazing directional key; a flat-vs-relief witness is asserted.</p><p>Locally verified acceptance capture. This source candidate and its required renderer are not yet a public release.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-05-tangent-relief-medallion.lms</kbd>
+<samp>{"ok": true, "result": {"output": ["Moving the grazing point light changes relief while flat/perturbed normals differ."], "file": "build/bench-05-tangent-relief-medallion.png", "width": 900, "height": 560, "frames": 1, "fps": 30, "bytecode_bytes": 3359, "instructions": 171, "wall_ms": 623, "phase_ms": {"post":2.791127,"prepare":17.101983,"render":569.888638,"setup":0.034812,"write_media":34.114482}, "max_frame_ms": 0.000000, "max_render_ms": 199.634505, "render_calls": 3}}</samp></pre><h2>Source</h2><pre><code># B05: analytic UV relief under a moving/grazing key; compare flat and height-normal paths.
+mkdir("build");program=_lmcode_ cli="lmvideo";
+let height=image_pattern(256,256,"0.5+0.16*sin(x*26)*cos(y*23)+0.08*cos(x*51+y*17)","0.5+0.16*sin(x*26)*cos(y*23)+0.08*cos(x*51+y*17)","0.5+0.16*sin(x*26)*cos(y*23)+0.08*cos(x*51+y*17)","1");let quad=mesh_cylinder(1.45,0.12,96);let scene=scene3d().threads(4).background("#eaf0f6").ambient(0.025);scene.camera(camera3d().look_at(0.0,0.0,4.8,0.0,0.0,0.0).perspective(38.0,0.1,20.0));let mat=material("#bd7a3f",0.25,0.48);let node=scene.add(quad,mat).rotation(90.0,0.0,0.0);scene.point_light(3.0,0.35,1.0,"#fff4d6",35.0,20.0);let flat=scene.render_image(900,560,2);node.material(mat.copy().height(height,0.24,true));let relief=scene.render_image(900,560,2);image_assert_true(flat.rgba()!=relief.rgba()&amp;&amp;relief.width()==900&amp;&amp;relief.height()==560&amp;&amp;relief.stddev(0)>0.04);relief.save("build/bench-05-tangent-relief-medallion.png");
+let moved=scene3d().threads(4).background("#eaf0f6").ambient(0.025);moved.camera(camera3d().look_at(0.0,0.0,4.8,0.0,0.0,0.0).perspective(38.0,0.1,20.0));moved.add(quad,mat.copy().height(height,0.24,true)).rotation(90.0,0.0,0.0);moved.point_light(-3.0,0.35,1.0,"#fff4d6",35.0,20.0);image_assert_true(moved.render_image(900,560,2).rgba()!=relief.rgba());out.print("Moving the grazing point light changes relief while flat/perturbed normals differ.");
+end _lmcode_
+savedsl(program,"build/bench-05-tangent-relief-medallion.dslb");r=system(concat(dsl_cli(program),["--dsl","build/bench-05-tangent-relief-medallion.dslb"]),600000);assert(r.code==0,r.stdout+r.stderr);println(r.stdout);</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-05-tangent-relief-medallion.lms">Raw LMScript source (candidate must be published first)</a></p><figure><img src="/tools/lmvideo/media/bench-05-tangent-relief-medallion-c19ce1fd9cc88c1f363ae7bcdd0976413f4d7d5bf6f3bafd498bec443a004a43.png" alt="Tangent-Space Normal &amp; Bump Mapped Relief" width="900" height="560"><figcaption>Tangent-Space Normal &amp; Bump Mapped Relief</figcaption></figure></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

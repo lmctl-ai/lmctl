@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A second look: CPU Cycles — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Contents">
+<link rel="stylesheet" href="/tools/style.css">
+
+<script src="/tools/lmctl-copy.js" defer></script>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+</ul>
+</nav>
+<main><!-- generated: tools-book --><h1>A second look: CPU Cycles</h1><p><a href="/tools/lmvideo/cycles/">Contents</a> </p><p>Raster is the fast preview path. The same scene can use CPU Cycles for final lighting, reflections and roughness. A Cycles-enabled lmvideo binary and matching module must be installed locally; this candidate is not a published installable release.</p><p>Save each displayed source at its named examples/book/ path before running its compile/render commands. The output below is the structured result from the locked chapter capture; timing fields describe that historical run and vary on another machine.</p><h2>Run this example</h2><pre><kbd>lmscript examples/book/cycles-still.lms
+lmvideo --dsl build/sphere-cycles.dslb</kbd>
+<samp>{
+  "ok": true,
+  "result": {
+    "output": [],
+    "file": "build/sphere-cycles.png",
+    "width": 960,
+    "height": 540,
+    "frames": 1,
+    "fps": 30,
+    "bytecode_bytes": 1340,
+    "instructions": 52,
+    "wall_ms": 9579,
+    "phase_ms": {
+      "prepare": 0.134276,
+      "render": 9563.603889,
+      "setup": 0.053011,
+      "write_media": 15.9965
+    },
+    "max_frame_ms": 0.0,
+    "max_render_ms": 9563.603889,
+    "render_calls": 1
+  }
+}</samp></pre><h2>Source</h2><pre><code>mkdir("build");
+program = _lmcode_ cli="lmvideo";
+
+let scene = scene3d().background("#111923");
+scene.camera(camera3d()
+  .look_at(4.0, 2.8, 6.0, 0.0, 0.6, 0.0)
+  .perspective(42.0, 0.1, 100.0));
+scene.directional_light(2.0, 3.0, 4.0, "#ffffff", 2.0);
+scene.add(mesh_sphere(1.0, 32, 48),
+          material("#d9a441", 0.25, 0.45));
+
+let beauty = scene.render_image(
+  960, 540, "cycles", 32, 4, 42, true);
+beauty.save("build/sphere-cycles.png");
+
+end _lmcode_
+savedsl(program, "build/sphere-cycles.dslb");</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/book/cycles-still.lms">Raw LMScript source (candidate must be published first)</a></p><figure><img src="/tools/lmvideo/media/book-cycles-still-1d6af34e565c5531a6f9903034b881f4965aa3cb97b73e89afd8fc826bb923b4.png" alt="A 960 by 540 CPU Cycles still with denoising." width="960" height="540"><figcaption>A 960 by 540 CPU Cycles still with denoising.</figcaption></figure><h2>Run this example</h2><pre><kbd>lmscript examples/book/cycles-turntable.lms
+lmvideo --dsl build/turntable.dslb</kbd>
+<samp>{
+  "ok": true,
+  "result": {
+    "output": [],
+    "file": "build/turntable.mp4",
+    "width": 960,
+    "height": 540,
+    "frames": 48,
+    "fps": 24,
+    "bytecode_bytes": 2598,
+    "instructions": 1836,
+    "wall_ms": 455132,
+    "phase_ms": {
+      "compose": 127.045721,
+      "encode": 225.138949,
+      "prepare": 0.006583,
+      "render": 454778.978523,
+      "setup": 0.319084
+    },
+    "max_frame_ms": 13859.766442,
+    "max_render_ms": 13851.855575,
+    "render_calls": 48
+  }
+}</samp></pre><h2>Source</h2><pre><code>mkdir("build");
+program = _lmcode_ cli="lmvideo";
+video.size(960, 540); video.fps(24); video.frames(48);
+video.output("build/turntable.mp4"); video.begin();
+let scene = scene3d().background("#09111f");
+scene.camera(camera3d().look_at(4.5, 2.5, 5.5, 0.0, 0.0, 0.0)
+  .perspective(45.0, 0.1, 100.0));
+scene.directional_light(2.0, 3.0, 4.0, "#ffffff", 2.0);
+let body = scene.add(mesh_box(1.4, 1.0, 0.6),
+                     material("#e76f51", 0.25, 0.45));
+for (frame in range(0, video.count())) {
+  video.frame();
+  body.rotation(0.0, 360.0 * video.t(), 0.0);
+  scene.time(video.time());
+  let image = scene.render_image(
+    video.width(), video.height(), "cycles", 16, 4, 42, true);
+  canvas.clear("#09111f");
+  canvas.image(image, 0.0, 0.0);
+}
+video.end();
+end _lmcode_
+savedsl(program, "build/turntable.dslb");</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/book/cycles-turntable.lms">Raw LMScript source (candidate must be published first)</a></p><figure><video controls="" preload="metadata" poster="/tools/lmvideo/media/book-cycles-still-1d6af34e565c5531a6f9903034b881f4965aa3cb97b73e89afd8fc826bb923b4.png" width="960" height="540"><source type="video/mp4" src="/tools/lmvideo/media/book-cycles-turntable-5dd14bc7e9470a867950ba02201c7a1b3a5d48b706c119092fbdf498550ae6c0.mp4">Your browser can download this video.</video><figcaption>Forty-eight frames rendered by CPU Cycles at 24 frames per second. The still above is the chapter poster, not a frame from the clip. (2.0 seconds)</figcaption></figure><p>The seven render_image arguments are width, height, renderer name, samples, maximum bounces, repeatable seed and denoise. A build without Cycles must report an error rather than silently render with raster. Video generation compiles once and renders each frame; these captures are local verification evidence, not a new website benchmark run.</p></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

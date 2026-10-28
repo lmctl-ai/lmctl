@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CAD Preview and Cycles Final Twin — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Contents Previous Next">
+<link rel="stylesheet" href="/tools/style.css">
+
+<script src="/tools/lmctl-copy.js" defer></script>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+</ul>
+</nav>
+<main><!-- generated: tools-book --><h1>CAD Preview and Cycles Final Twin</h1><p><a href="/tools/lmvideo/showcase/">Contents</a> <a href="/tools/lmvideo/showcase/b26.html">Previous</a> <a href="/tools/lmvideo/showcase/b28.html">Next</a></p><p>Original filleted valve block, coaxial Z-axis through-bore and four-hole flange, shown with matched camera and shared modest HDR/direct illumination in raster preview and CPU Cycles.</p><p>Locally verified acceptance capture. This source candidate and its required renderer are not yet a public release.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-27-cad-preview-cycles-twin.lms</kbd>
+<samp>{"benchmark_stage":"preview","wall_s":0.10,"user_s":0.11,"sys_s":0.01,"max_rss_kib":23852}
+
+[OpenColorIO Info]: Color management disabled. (Specify the $OCIO environment variable to enable.)
+{"benchmark_stage":"final","wall_s":3.19,"user_s":9.88,"sys_s":0.26,"max_rss_kib":324664}
+
+{"ok": true, "result": {"output": ["B27 mask IoU=0.991836274030322 foreground_pixels=53162", "B27 original CAD preview/Cycles twin | one STL mesh | matched camera | projected through-bore label | 64 spp OIDN"], "file": "build/bench-27-cad-preview-cycles-twin.png", "width": 900, "height": 560, "frames": 1, "fps": 30, "bytecode_bytes": 4930, "instructions": 6768235, "wall_ms": 302, "phase_ms": {"compose":12.310786,"post":66.213675,"prepare":5.503026,"render":11.343746,"setup":27.438791,"write_media":15.777595}, "max_frame_ms": 0.000000, "max_render_ms": 11.343746, "render_calls": 1}}</samp></pre><h2>Source</h2><pre><code># B27 / G.9-G.13: one authored CAD STL, one camera, raster preview and Cycles twin.
+# lmcad is an external producer; the generated STL is original example content.
+mkdir("build"); cad=_lmcode_ cli="lmcad" install="github:lmctl-ai/lmcad@v0.1.72";
+let alloy=material().color(0.72,0.78,0.84).roughness(0.55).specular(0.22).shininess(48.0);
+let body=scene.box(120.0,70.0,80.0,alloy).fillet(2.0);let bore=scene.cylinder(16.0,100.0,alloy).rotate(1.5707963267948966,0.0,0.0);body.cut(bore);bore.visible(false);
+let flange=scene.cylinder(35.0,12.0,alloy).rotate(1.5707963267948966,0.0,0.0).position(0.0,0.0,46.0);let flange_bore=scene.cylinder(16.0,16.0,alloy).rotate(1.5707963267948966,0.0,0.0).position(0.0,0.0,46.0);flange.cut(flange_bore);flange_bore.visible(false);
+for(i in range(0,4)){let angle=float(i)*1.5707963267948966;let hole=scene.cylinder(3.0,16.0,alloy).rotate(1.5707963267948966,0.0,0.0).position(26.0*cos(angle),26.0*sin(angle),46.0);flange.cut(hole);hole.visible(false);}
+scene.export_stl("build/b27-flanged-valve.stl");
+end _lmcode_
+savedsl(cad,"build/b27-cad-geometry.dslb");r=system(concat(dsl_cli(cad),["--dsl","build/b27-cad-geometry.dslb"]),600000);assert(r.code==0,r.stderr+r.stdout);
+program=_lmcode_ cli="lmvideo";
+let mesh=mesh_load("build/b27-flanged-valve.stl");image_assert_true(mesh.triangles()>100);image_assert_close(mesh.bound(3)-mesh.bound(0),120.0,0.01);
+let scene=scene3d().threads(4).background("#dbe6ef").ambient(0.0).tonemap("aces",1.0);
+scene.environment(environment_linear(1,1,"0.08,0.10,0.13"),0.4,0.0,false);
+let node=scene.add(mesh,material("#b8c5d1",0.35,0.55));node.scale(0.001,0.001,0.001);
+scene.directional_light(1.0,3.0,4.0,"#ffffff",1.8).directional_light(-3.0,1.0,-1.0,"#aec8e5",0.6);
+let camera=camera3d().look_at(0.24,0.14,0.24,0.0,0.0,0.0).perspective(40.0,0.001,2.0);scene.camera(camera);
+scene.save_job("build/b27-preview.lmjob",435,540,2);scene.save_job("build/b27-final.lmjob",435,540,"cycles",64,6,20261104,true);
+let mask=scene3d().threads(4).background("#000000").ambient(0.0);mask.camera(camera);let white=material("#ffffff",0.0,1.0).emissive("#ffffff",1.0);mask.add(mesh,white).scale(0.001,0.001,0.001);
+mask.save_job("build/b27-mask-raster.lmjob",435,540,2);mask.save_job("build/b27-mask-cycles.lmjob",435,540,"cycles",16,2,20261104,false);
+end _lmcode_
+savedsl(program,"build/b27-cad-preview-cycles-twin.dslb");r=system(concat(dsl_cli(program),["--dsl","build/b27-cad-preview-cycles-twin.dslb"]),900000);assert(r.code==0,r.stderr+r.stdout);
+tp=system(["/usr/bin/time","-f","{\"benchmark_stage\":\"preview\",\"wall_s\":%e,\"user_s\":%U,\"sys_s\":%S,\"max_rss_kib\":%M}","lmvideo","render-job","build/b27-preview.lmjob","--renderer","raster","--output","build/b27-preview.png"]);assert(tp.code==0,tp.stdout+tp.stderr);println(tp.stderr);
+tf=system(["/usr/bin/time","-f","{\"benchmark_stage\":\"final\",\"wall_s\":%e,\"user_s\":%U,\"sys_s\":%S,\"max_rss_kib\":%M}","lmvideo","render-job","build/b27-final.lmjob","--renderer","cycles","--output","build/b27-final.png"]);assert(tf.code==0,tf.stdout+tf.stderr);println(tf.stderr);
+mr=system(concat(dsl_cli(program),["render-job","build/b27-mask-raster.lmjob","--renderer","raster","--output","build/b27-mask-raster.png"]));assert(mr.code==0,mr.stdout+mr.stderr);
+mc=system(concat(dsl_cli(program),["render-job","build/b27-mask-cycles.lmjob","--renderer","cycles","--output","build/b27-mask-cycles.png"]));assert(mc.code==0,mc.stdout+mc.stderr);
+post=_lmcode_ cli="lmvideo";
+let preview=image_file("build/b27-preview.png");let final=image_file("build/b27-final.png");image_assert_true(preview.stddev(0)>0.02&amp;&amp;final.stddev(0)>0.02);
+let postmesh=mesh_load("build/b27-flanged-valve.stl");let postscene=scene3d().threads(4).background("#dbe6ef").ambient(0.0).tonemap("aces",1.0);postscene.add(postmesh,material("#b8c5d1",0.35,0.55)).scale(0.001,0.001,0.001);postscene.camera(camera3d().look_at(0.24,0.14,0.24,0.0,0.0,0.0).perspective(40.0,0.001,2.0));let label=postscene.projection(435,540).at(0.0,0.0,0.053);let rim=postscene.projection(435,540).at(0.0,0.0,0.04);image_assert_true(label.visible()&amp;&amp;rim.visible());let depth=postscene.render_depth_image(435,540);image_assert_true(depth.stddev(0)>0.01);
+preview.line(label.x(),label.y(),label.x()+88.0,label.y()-42.0,0.77,0.32,0.18,1.0,2.0);preview.text(label.x()+90.0,label.y()-44.0,"through bore",15.0,0.62,0.18,0.10,1.0);
+let mask_r=image_file("build/b27-mask-raster.png");let mask_c=image_file("build/b27-mask-cycles.png");let inter=0;let union=0;
+for(y in range(0,540)){for(x in range(0,435)){let a=mask_r.pixel(x,y,0)>0.1;let b=mask_c.pixel(x,y,0)>0.1;if(a&amp;&amp;b){inter=inter+1;}if(a||b){union=union+1;}}}
+let iou=float(inter)/float(max(1,union));image_assert_true(iou>0.98);out.print("B27 mask IoU="+str(iou)+" foreground_pixels="+str(union));
+let sheet=layout_sheet().add(preview).add(final);let composed=sheet.render(2,10,0.94,0.96,0.98,1.0);composed.text(24.0,32.0,"CAD preview / Cycles final · one imported mesh and matched camera",20.0,0.09,0.21,0.30,1.0);composed.text(24.0,548.0,"Body 120 × 70 × 80 mm · coaxial 12 mm flange · STL scale 0.001 m/mm",17.0,0.09,0.21,0.30,1.0);composed.save("build/bench-27-cad-preview-cycles-twin.png");out.print("B27 original CAD preview/Cycles twin | one STL mesh | matched camera | projected through-bore label | 64 spp OIDN");
+end _lmcode_
+savedsl(post,"build/b27-post.dslb");r=system(concat(dsl_cli(post),["--dsl","build/b27-post.dslb"]),900000);assert(r.code==0,r.stderr+r.stdout);println(r.stdout);</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-27-cad-preview-cycles-twin.lms">Raw LMScript source (candidate must be published first)</a></p><figure><img src="/tools/lmvideo/media/bench-27-cad-preview-cycles-twin-ce67ab8882fbdc8b4ee85adef3db2651df8956be2243cc1b0a3d770d87fcbbe1.png" alt="CAD Preview and Cycles Final Twin" width="900" height="560"><figcaption>CAD Preview and Cycles Final Twin</figcaption></figure></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

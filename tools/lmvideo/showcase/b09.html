@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Procedural Terrain Heightfield &amp; Contour Map — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Contents Previous Next">
+<link rel="stylesheet" href="/tools/style.css">
+
+<script src="/tools/lmctl-copy.js" defer></script>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+</ul>
+</nav>
+<main><!-- generated: tools-book --><h1>Procedural Terrain Heightfield &amp; Contour Map</h1><p><a href="/tools/lmvideo/showcase/">Contents</a> <a href="/tools/lmvideo/showcase/b08.html">Previous</a> <a href="/tools/lmvideo/showcase/b10.html">Next</a></p><p>A seeded 128x128 FBM-like heightfield is colored by elevation/slope and paired with a top-down 2D marching-contour heatmap panel.</p><p>Locally verified acceptance capture. This source candidate and its required renderer are not yet a public release.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-09-terrain-contours.lms</kbd>
+<samp>{"ok": true, "result": {"output": ["16384 vertices; 32258 triangles; four pinned Perlin seeds; identical contour source."], "file": "build/bench-09-terrain-contours.png", "width": 900, "height": 560, "frames": 1, "fps": 30, "bytecode_bytes": 6542, "instructions": 1648343, "wall_ms": 469, "phase_ms": {"compose":5.117913,"encode":24.059973,"post":9.306111,"prepare":6.891879,"render":88.312994,"setup":5.168665}, "max_frame_ms": 29.961935, "max_render_ms": 88.312994, "render_calls": 1}}</samp></pre><h2>Source</h2><pre><code># B09: original seeded four-octave Perlin FBM; the same samples drive mesh and contours.
+mkdir("build");p=_lmcode_ cli="lmvideo";
+let heights=texture_noise("perlin",14159,3).mix(texture_noise("perlin",2718,6),0.35).mix(texture_noise("perlin",31415,12),0.18).mix(texture_noise("perlin",16180,24),0.08).bake(128,128,"linear").image(0);
+let terrain=mesh_heightfield(heights,5.0,5.0,2.0);let scalars="";
+for(j in range(0,128)){for(i in range(0,128)){let left=i-1;if(left&lt;0){left=0;}let right=i+1;if(right>127){right=127;}let top=j-1;if(top&lt;0){top=0;}let bottom=j+1;if(bottom>127){bottom=127;}let dx=(heights.pixel(right,j,0)-heights.pixel(left,j,0))*25.4;let dz=(heights.pixel(i,bottom,0)-heights.pixel(i,top,0))*25.4;let slope=sqrt(dx*dx+dz*dz);if(slope>1.0){slope=1.0;}let value=0.82*heights.pixel(i,j,0)+0.18*slope;if(scalars!=""){scalars=scalars+",";}scalars=scalars+str(value);}}
+terrain.set_vertex_scalars(scalars,"viridis",0.0,1.0);image_assert_true(terrain.vertices()==16384&amp;&amp;terrain.triangles()==32258);
+let scene=scene3d().threads(4).background("#edf3f8").ambient(0.18);scene.camera(camera3d().look_at(5.0,4.0,7.0,0.0,0.75,0.0).perspective(42.0,0.1,100.0));scene.add(terrain,material("#ffffff",0.0,0.85));scene.directional_light(1.0,4.0,3.0,"#ffffff",1.5);let rendered=scene.render_image(560,460,2);
+video.size(900,560);video.frames(1);video.output("build/bench-09-terrain-contours.png");video.begin();video.frame();canvas.clear("#edf3f8");canvas.image(rendered,20.0,60.0);
+let plot=canvas.plot(600.0,60.0,280.0,450.0).title("Same FBM samples").xlabel("x / m").ylabel("z / m").x_range(-2.5,2.5).y_range(-2.5,2.5).legend("none").background("#ffffff");let contours=plot.heatmap("elevation",33,33).palette("viridis").range(0.0,1.0).contours(10,"#17202a",1.0).colorbar(true);
+for(j in range(0,33)){for(i in range(0,33)){contours.cell(32-j,i,heights.pixel(i*127/32,j*127/32,0));}}plot.draw();canvas.text("128 x 128 seeded FBM | elevation + slope vertex colour",20.0,35.0,font(19.0),paint().color("#17364d"));video.end();out.print("16384 vertices; 32258 triangles; four pinned Perlin seeds; identical contour source.");
+end _lmcode_
+savedsl(p,"build/bench-09-terrain-contours.dslb");r=system(concat(dsl_cli(p),["--dsl","build/bench-09-terrain-contours.dslb"]),600000);assert(r.code==0,r.stderr+r.stdout);println(r.stdout);</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-09-terrain-contours.lms">Raw LMScript source (candidate must be published first)</a></p><figure><img src="/tools/lmvideo/media/bench-09-terrain-contours-a414c7e33156ad54555c4ef57fb796e93027cab51cce6bef6edca445acf59ce5.png" alt="Procedural Terrain Heightfield &amp; Contour Map" width="900" height="560"><figcaption>Procedural Terrain Heightfield &amp; Contour Map</figcaption></figure></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

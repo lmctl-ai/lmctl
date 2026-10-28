@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PBR Metallic/Roughness Sphere Matrix — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Contents Next">
+<link rel="stylesheet" href="/tools/style.css">
+
+<script src="/tools/lmctl-copy.js" defer></script>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+</ul>
+</nav>
+<main><!-- generated: tools-book --><h1>PBR Metallic/Roughness Sphere Matrix</h1><p><a href="/tools/lmvideo/showcase/">Contents</a> <a href="/tools/lmvideo/showcase/b02.html">Next</a></p><p>Exact 900x560 still showing a 5x5 UV-sphere matrix with metallic 0..1 by row, roughness 0.05..1 by column, sky/ground gradient, key/fill/rim directional lights, and linear-light 2x2 SSAA.</p><p>Locally verified acceptance capture. This source candidate and its required renderer are not yet a public release.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-01-pbr-metallic-roughness.lms</kbd>
+<samp>{"ok": true, "result": {"output": [], "file": "build/bench-01-pbr-metallic-roughness.png", "width": 900, "height": 560, "frames": 1, "fps": 30, "bytecode_bytes": 2987, "instructions": 1043, "wall_ms": 285, "phase_ms": {"post":2.218687,"prepare":18.072279,"render":232.066299,"setup":0.292160,"write_media":32.772577}, "max_frame_ms": 0.000000, "max_render_ms": 232.066299, "render_calls": 1}}</samp></pre><h2>Source</h2><pre><code># B01: original procedural 5x5 PBR matrix, exact 900x560 still.
+mkdir("build");
+program=_lmcode_ cli="lmvideo";
+let studio=image_pattern(128,64,"0.18+0.72*exp(-180*(x-0.28)^2-35*(y-0.4)^2)","0.22+0.68*exp(-180*(x-0.28)^2-35*(y-0.4)^2)","0.3+0.64*exp(-180*(x-0.28)^2-35*(y-0.4)^2)","1");
+let scene=scene3d().threads(4).background("#edf2f7").ambient(0.02).environment(environment_image(studio),1.2,25.0,false).tonemap("aces",1.0);
+scene.camera(camera3d().look_at(0.0,0.0,18.0,0.0,0.0,0.0).ortho(7.6,0.1,100.0));
+scene.directional_light(2.0,4.0,5.0,"#fff1d8",2.5).directional_light(-4.0,1.0,3.0,"#c0dfff",0.7).directional_light(0.0,-2.0,-3.0,"#ffffff",0.8);
+let sphere=mesh_sphere(0.52,18,32);
+for(row in range(0,5)){for(col in range(0,5)){let metallic=float(row)/4.0;let roughness=0.05+0.95*float(col)/4.0;scene.add(sphere,material("#cda87d",metallic,roughness)).position((float(col)-2.0)*1.5,(2.0-float(row))*1.4,0.0);}}
+let image=scene.render_image(900,560,2);image_assert_true(image.width()==900&amp;&amp;image.height()==560&amp;&amp;image.stddev(0)>0.08);image.save("build/bench-01-pbr-metallic-roughness.png");
+end _lmcode_
+savedsl(program,"build/bench-01-pbr-metallic-roughness.dslb");r=system(concat(dsl_cli(program),["--dsl","build/bench-01-pbr-metallic-roughness.dslb"]),600000);assert(r.code==0,r.stdout+r.stderr);println(r.stdout);</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-01-pbr-metallic-roughness.lms">Raw LMScript source (candidate must be published first)</a></p><figure><img src="/tools/lmvideo/media/bench-01-pbr-metallic-roughness-556220d625ba92f9756c286243ea912bdfb4732f8447bdcc0c117af327906cd0.png" alt="PBR Metallic/Roughness Sphere Matrix" width="900" height="560"><figcaption>PBR Metallic/Roughness Sphere Matrix</figcaption></figure></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

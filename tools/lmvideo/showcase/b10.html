@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FEM Stress Colormap &amp; 2D Callout Dashboard — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Contents Previous Next">
+<link rel="stylesheet" href="/tools/style.css">
+
+<script src="/tools/lmctl-copy.js" defer></script>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+</ul>
+</nav>
+<main><!-- generated: tools-book --><h1>FEM Stress Colormap &amp; 2D Callout Dashboard</h1><p><a href="/tools/lmvideo/showcase/">Contents</a> <a href="/tools/lmvideo/showcase/b09.html">Previous</a> <a href="/tools/lmvideo/showcase/b11.html">Next</a></p><p>An analytic cantilever stress field uses viridis vertex scalars and a depth-tested wireframe, with projected-style callout arrows, a colorbar and FRF plot.</p><p>Locally verified acceptance capture. This source candidate and its required renderer are not yet a public release.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-10-fem-callout-dashboard.lms</kbd>
+<samp>{"ok": true, "result": {"output": ["Analytic sigma proportional to moment*distance; anchors projected from same camera; actual viridis colourbar; second-order FRF."], "file": "build/bench-10-fem-callout-dashboard.png", "width": 900, "height": 560, "frames": 1, "fps": 30, "bytecode_bytes": 6865, "instructions": 10312, "wall_ms": 83, "phase_ms": {"compose":3.965710,"encode":16.036966,"post":0.078739,"prepare":0.109037,"render":60.810422,"setup":2.096077}, "max_frame_ms": 20.237985, "max_render_ms": 60.810422, "render_calls": 1}}</samp></pre><h2>Source</h2><pre><code># B10: analytic cantilever bending-stress proxy, not a finite-element solver.
+mkdir("build");p=_lmcode_ cli="lmvideo";
+let deformation=image_pattern(25,9,"0.12*x*x*(3-x)","0.12*x*x*(3-x)","0.12*x*x*(3-x)","1");let beam=mesh_heightfield(deformation,6.0,2.4,1.0);let stress="";
+for(j in range(0,9)){for(i in range(0,25)){let x=float(i)/24.0;let z=abs(float(j)/4.0-1.0);if(stress!=""){stress=stress+",";}stress=stress+str((1.0-x)*z);}}beam.set_vertex_scalars(stress,"viridis",0.0,1.0);
+let scene=scene3d().threads(4).background("#eaf0f6").ambient(0.2);scene.camera(camera3d().look_at(4.5,4.2,8.0,0.0,0.1,0.0).perspective(42.0,0.1,100.0));scene.directional_light(1.0,3.0,4.0,"#ffffff",1.8);scene.add(beam,material("#ffffff",0.0,0.9).double_sided(true).wireframe("#17364d",0.9));let image=scene.render_image(540,440,2);let projection=scene.projection(540,440);let hot=projection.at(-3.0,0.02,1.2);let fixed=projection.at(-3.0,0.02,0.0);image_assert_true(hot.visible()&amp;&amp;fixed.visible());
+video.size(900,560);video.frames(1);video.output("build/bench-10-fem-callout-dashboard.png");video.begin();video.frame();canvas.clear("#eaf0f6");canvas.image(image,20.0,70.0);canvas.text("Analytic cantilever stress / wireframe",20.0,36.0,font(21.0),paint().color("#17364d"));
+canvas.arrow(220.0,120.0,20.0+hot.x(),70.0+hot.y(),11.0,paint().color("#d55e4b").stroke().stroke_width(2.0));canvas.text("sigma / sigma_max = 1",220.0,108.0,font(16.0),paint().color("#8f3026"));canvas.arrow(90.0,475.0,20.0+fixed.x(),70.0+fixed.y(),11.0,paint().color("#2d789b").stroke().stroke_width(2.0));canvas.text("fixed end: x = -3 m",40.0,500.0,font(16.0),paint().color("#24546b"));
+let plot=canvas.plot(585.0,70.0,290.0,285.0).title("Modal FRF | zeta=0.06").xlabel("omega / omega_n").ylabel("gain").x_range(0.0,2.0).y_range(0.0,9.0).background("#ffffff");let series=plot.series("H","line","#d55e4b");for(i in range(0,101)){let r=float(i)/50.0;series.add(r,1.0/sqrt((1.0-r*r)*(1.0-r*r)+0.0144*r*r));}plot.draw();
+let bar=image_pattern(24,140,"1-y","1-y","1-y","1").colormap("viridis");canvas.image(bar,785.0,375.0);canvas.text("1.0",820.0,388.0,font(15.0),paint().color("#17364d"));canvas.text("0.0",820.0,512.0,font(15.0),paint().color("#17364d"));canvas.text("Normalized stress",600.0,400.0,font(17.0),paint().color("#17364d"));video.end();out.print("Analytic sigma proportional to moment*distance; anchors projected from same camera; actual viridis colourbar; second-order FRF.");
+end _lmcode_
+savedsl(p,"build/bench-10-fem-callout-dashboard.dslb");r=system(concat(dsl_cli(p),["--dsl","build/bench-10-fem-callout-dashboard.dslb"]),600000);assert(r.code==0,r.stderr+r.stdout);println(r.stdout);</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/61ac53d9290df095677027e557a2db0b75d43f41/examples/showcase/bench-10-fem-callout-dashboard.lms">Raw LMScript source (candidate must be published first)</a></p><figure><img src="/tools/lmvideo/media/bench-10-fem-callout-dashboard-b3ef0a6d75362df15dea7b7c798cfeed10c250ba1c0ea5cf59a9b2230eaef43d.png" alt="FEM Stress Colormap &amp; 2D Callout Dashboard" width="900" height="560"><figcaption>FEM Stress Colormap &amp; 2D Callout Dashboard</figcaption></figure></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>
