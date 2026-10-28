@@ -1,0 +1,74 @@
+# lmhtml template as code for one book index or chapter page.
+# Compile invocation (all values are data, never HTML):
+#   lmscript book-page.lms OUT.dslb OUT.html title intro kind source run expected
+#     image_src image_alt image_caption video_mp4 video_webm poster duration prev next contents
+# The Python book driver may pass empty strings for unused blocks. It owns
+# manifest validation and media hashes; this program owns the DOM presentation.
+title = ARGV.get(2, ""); intro = ARGV.get(3, ""); kind = ARGV.get(4, ""); source_path = ARGV.get(5, "");
+run_command = ARGV.get(6, ""); expected = ARGV.get(7, ""); image_src = ARGV.get(8, ""); image_alt = ARGV.get(9, "");
+image_caption = ARGV.get(10, ""); video_mp4 = ARGV.get(11, ""); video_webm = ARGV.get(12, ""); poster = ARGV.get(13, "");
+duration = ARGV.get(14, ""); previous = ARGV.get(15, ""); next_page = ARGV.get(16, ""); contents = ARGV.get(17, "");
+source_text = source_path == "" ? "" : read_file(source_path);
+video_source = video_webm == "" ? "" : "<source type=\"video/webm\">";
+link_suffix = intro == "" ? "" : " — " + intro;
+
+media_width = ARGV.len() > 18 ? ARGV[18] : "";
+media_height = ARGV.len() > 19 ? ARGV[19] : "";
+p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@v0.7.4";
+fn esc(s: string) -> string {
+  return str_replace(str_replace(str_replace(str_replace(s, "&", "&amp;"), "<", "&lt;"), ">", "&gt;"), "\"", "&quot;");
+}
+fn link(label: string, href: string) -> string {
+  let result = "";
+  if (href != "") { result = "<a href=\"" + esc(href) + "\">" + esc(label) + "</a>"; }
+  return result;
+}
+let page = html.parse("<main><!-- generated: tools-book --><h1></h1><p></p><nav></nav><section></section><hr></main>");
+if (${kind} != "init") { page = html.load(${ARGV[1]}); }
+if (${kind} == "init") {
+  page.select("h1").at(0).replace_with("<h1>" + esc(${title}) + "</h1>");
+  if (${intro} != "") { page.select("main > p").at(0).replace_with("<p>" + esc(${intro}) + "</p>"); } else { page.select("main > p").at(0).remove(); }
+}
+let nav = "";
+if (${kind} == "init") {
+  if (${contents} != "") { nav = nav + link("Contents", ${contents}) + " "; }
+  if (${previous} != "") { nav = nav + link("Previous", ${previous}) + " "; }
+  if (${next_page} != "") { nav = nav + link("Next", ${next_page}); }
+  if (nav != "") { page.select("main > nav").at(0).replace_with("<p>" + nav + "</p>"); } else { page.select("main > nav").at(0).remove(); }
+}
+let body = "";
+if (${kind} == "code") {
+  body = "<h2>Run this example</h2><pre><kbd>" + esc(${run_command}) + "</kbd>\n<samp>" + esc(${expected}) + "</samp></pre><h2>Source</h2><pre><code>" + esc(${source_text}) + "</code></pre>";
+} else if (${kind} == "image") {
+  body = "<figure><img><figcaption>" + esc(${image_caption}) + "</figcaption></figure>";
+} else if (${kind} == "video") {
+  body = "<figure><video controls preload=\"metadata\"><source type=\"video/mp4\">" + ${video_source} + "Your browser can download this video.</video><figcaption>" + esc(${image_caption}) + " (" + esc(${duration}) + ")</figcaption></figure>";
+} else if (${kind} == "text") {
+  body = "<p>" + esc(${intro}) + "</p>";
+} else if (${kind} == "row") {
+  body = "<tr><td>" + esc(${title}) + "</td><td>" + esc(${intro}) + "</td><td>" + esc(${duration}) + "</td><td>" + link("Open", ${next_page}) + "</td></tr>";
+} else if (${kind} == "link") {
+  body = "<p><a>" + esc(${title}) + "</a>" + esc(${link_suffix}) + "</p>";
+} else if (${kind} == "finish") {
+  page.select("main > hr").at(0).remove();
+}
+if (${kind} == "row") {
+  let tables = page.select("table");
+  if (tables.len() == 0) { page.select("main > section").at(0).insert_before("<table><thead><tr><th>Scene</th><th>Tier and status</th><th>Seconds</th><th>Link</th></tr></thead><tbody>" + body + "</tbody></table>"); }
+  else { let rows = tables.at(0).select("tbody > tr"); rows.at(rows.len() - 1).insert_after(body); }
+}
+if (${kind} == "link") { page.select("main > section").at(0).insert_before(body); let anchors = page.select("main > p > a"); anchors.at(anchors.len() - 1).set_attr("href", ${next_page}); }
+if (${kind} == "text" || ${kind} == "code" || ${kind} == "image" || ${kind} == "video") { page.select("main > section").at(0).insert_before(body); }
+if (${kind} == "image") { let figures = page.select("figure > img"); figures.at(figures.len() - 1).set_attr("src", ${image_src}).set_attr("alt", ${image_alt}).set_attr("width", ${media_width}).set_attr("height", ${media_height}); }
+if (${kind} == "video") {
+  let videos = page.select("video");
+  let video = videos.at(videos.len() - 1);
+  video.set_attr("poster", ${poster}).set_attr("width", ${media_width}).set_attr("height", ${media_height});
+  video.select("source").at(0).set_attr("src", ${video_mp4});
+  if (${video_webm} != "") { video.select("source").at(1).set_attr("src", ${video_webm}); }
+}
+if (${kind} == "finish") { page.select("main > section").at(0).remove(); }
+html.save(page.select("main").at(0).outer_html(), ${ARGV[1]});
+end _lmcode_
+savedsl(p, ARGV[0]);
+write_file(ARGV[0] + ".host", dsl_cli(p)[0]);

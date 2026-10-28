@@ -1,0 +1,292 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "tool": {
+      "type": "string",
+      "const": "lmvideo"
+    },
+    "repository": {
+      "const": "https://github.com/lmctl-ai/lmvideo"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 150000
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 150000
+    },
+    "licence": {
+      "const": "MIT"
+    },
+    "publication_status": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 150000
+    },
+    "groups": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150000
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150000
+          },
+          "chapters": {
+            "type": "array",
+            "maxItems": 1000,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 150000
+                },
+                "blocks": {
+                  "type": "array",
+                  "maxItems": 1000,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "kind": {
+                        "enum": [
+                          "text",
+                          "code",
+                          "image",
+                          "video"
+                        ]
+                      },
+                      "text": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150000
+                      },
+                      "script": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150000
+                      },
+                      "script_sha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      },
+                      "commands": {
+                        "type": "array",
+                        "maxItems": 10,
+                        "items": {
+                          "type": "array",
+                          "maxItems": 32,
+                          "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 150000
+                          }
+                        }
+                      },
+                      "stdout": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150000
+                      },
+                      "media": {},
+                      "alt": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150000
+                      },
+                      "caption": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150000
+                      },
+                      "poster": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 150000
+                      },
+                      "duration_seconds": {},
+                      "no_audio": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "blocks"
+              ]
+            }
+          },
+          "scoreboard": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 150000
+                },
+                "chapter": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 150000
+                },
+                "tier": {
+                  "type": "integer"
+                },
+                "status": {
+                  "enum": [
+                    "VERIFIED"
+                  ]
+                },
+                "seconds": {}
+              },
+              "required": [
+                "id",
+                "chapter",
+                "title",
+                "tier",
+                "status",
+                "seconds"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "summary",
+          "chapters"
+        ]
+      }
+    },
+    "media": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "file": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150000
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "bytes": {
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "png",
+              "mp4",
+              "webm"
+            ]
+          },
+          "width": {
+            "type": "integer"
+          },
+          "height": {
+            "type": "integer"
+          },
+          "duration_seconds": {},
+          "no_audio": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "file",
+          "sha256",
+          "bytes",
+          "kind",
+          "width",
+          "height"
+        ]
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "file": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150000
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "required": [
+          "file",
+          "sha256"
+        ]
+      }
+    }
+  },
+  "required": [
+    "version",
+    "tool",
+    "repository",
+    "title",
+    "description",
+    "licence",
+    "publication_status",
+    "groups",
+    "media",
+    "evidence"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "lmctl mixed-media book content profile v1"
+}

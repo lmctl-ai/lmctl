@@ -237,7 +237,15 @@ def main():
     p.add_argument('tool')
     p.add_argument('--ref', default='main')
     p.add_argument('--source', help='offline tracked Git checkout; reads committed blobs only')
+    p.add_argument('--books', action='store_true', help='pull the mixed-media book content profile')
+    p.add_argument('--media-store', help='local hash-verified render store for --books')
     a = p.parse_args()
+    if a.books:
+        if not a.media_store:
+            p.error('--books requires --media-store')
+        args = [sys.executable, str(Path(__file__).with_name('pull-books.py')), a.tool, '--ref', a.ref, '--media-store', a.media_store]
+        if a.source: args += ['--source', a.source]
+        raise SystemExit(subprocess.call(args))
     try:
         import_tool(a.tool, a.ref, a.source)
     except ManifestError as error:

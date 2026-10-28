@@ -16,7 +16,7 @@
     "check:tools:selftest": "bash scripts/tools/selftest.sh",
     "decorate:tools": "bash scripts/tools/run.sh decorate",
     "pull:tools": "python3 scripts/tools/pull-tools.py",
-    "test:pull:tools": "python3 scripts/tools/test-pull-tools.py",
+    "test:pull:tools": "python3 scripts/tools/test-pull-tools.py && python3 scripts/tools/test-pull-books.py && python3 scripts/tools/test-book-media.py",
     "sync:tool-examples": "bash scripts/tools/sync-example-book.sh",
     "test:redirect": "node tests/infra/lmctl-www-redirect.test.mjs",
     "build:skills": "bash scripts/tools/run.sh skills",
