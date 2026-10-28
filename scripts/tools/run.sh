@@ -32,12 +32,46 @@ host="$(cd "$(dirname "$host")" && pwd)/$(basename "$host")"
 PATH="$(dirname "$host"):$PATH"
 export PATH
 if [[ $command_name == host-path ]]; then printf '%s\n' "$host"; exit 0; fi
+# Each host invocation has a bounded Doc arena. Process tool pages separately,
+# then derive the shared catalog; no tool loses any contract or lint checks.
+if [[ -z ${TOOLS_SCOPE:-} && ( $command_name == decorate || $command_name == check ) && ( $# == 0 || ${1:-} == --check || -d ${1:-} ) ]]; then
+  if [[ $command_name == check ]]; then python3 "$HERE/check-book-media.py"; fi
+  shopt -s nullglob globstar
+  batch_status=0
+  if [[ $command_name == decorate ]]; then
+    # Preserve the source-safety gate: no page is rewritten until every tool's
+    # authored markup has passed, with a separate bounded arena for each tool.
+    for directory in tools/*/; do
+      task_scope=${directory%/}; task_scope=${task_scope##*/}
+      [[ $task_scope != img ]] || continue
+      if ! TOOLS_SCOPE=$task_scope TOOLS_MARKUP_ONLY=1 LMHTML=$host "$HERE/run.sh" decorate "$@"; then batch_status=1; fi
+    done
+    ((batch_status == 0)) || exit 1
+  fi
+  for directory in tools/*/; do
+    task_scope=${directory%/}; task_scope=${task_scope##*/}
+    [[ $task_scope != img ]] || continue
+    if ! TOOLS_SCOPE=$task_scope LMHTML=$host "$HERE/run.sh" "$command_name" "$@"; then batch_status=1; fi
+  done
+  if ! TOOLS_SCOPE=catalog LMHTML=$host "$HERE/run.sh" "$command_name" "$@"; then batch_status=1; fi
+  ((batch_status == 0)) || exit 1
+  if [[ $command_name == check ]]; then
+    "$host" lint --config "$HERE/plain.conf" tools
+    for page in tools/**/*.html; do
+      if ! "$host" clean --check "$page" > /dev/null 2>"$work/clean.txt"; then cat "$work/clean.txt" >&2; exit 1; fi
+    done
+  fi
+  echo "$command_name: OK (per-tool batches)"
+  exit 0
+fi
 if [[ $command_name == check && ( $# == 0 || -d ${1:-} ) ]]; then
+  if [[ -z ${TOOLS_SCOPE:-} ]]; then python3 "$HERE/check-book-media.py"; fi
   if ! "$HERE/run.sh" decorate --check; then
     "$host" lint --stats --config "$HERE/plain.conf" tools || true
     exit 1
   fi
 fi
+if [[ $command_name == contract && -z ${TOOLS_SCOPE:-} ]]; then python3 "$HERE/check-book-media.py"; fi
 script_name=$command_name
 [[ $command_name != check && $command_name != contract ]] || script_name=check
 cp "$HERE/$script_name.lms" "$work/$script_name.lms"
@@ -60,16 +94,16 @@ if [[ $command_name == links ]]; then
   argument=.
 fi
 (($# <= 1)) || { echo 'too many arguments' >&2; exit 2; }
-"$compiler" "$work/$script_name.lms" "$work/program.dslb" "$work/report.txt" "$argument"
+"$compiler" "$work/$script_name.lms" "$work/program.dslb" "$work/report.txt" "$argument" "${TOOLS_SCOPE:-}" "${TOOLS_MARKUP_ONLY:-}"
 status=0
 "$host" ${host_args:+"${host_args[@]}"} --dsl "$work/program.dslb" > "$work/result.json" || status=$?
 [[ ! -f $work/report.txt ]] || cat "$work/report.txt"
 if ((status)); then cat "$work/result.json" >&2; fi
 case "$command_name" in
-    check|contract) "$host" lint --config "$HERE/plain.conf" "${argument:-tools}" || status=$? ;;
+    check|contract) if [[ -z ${TOOLS_SCOPE:-} ]]; then "$host" lint --config "$HERE/plain.conf" "${argument:-tools}" || status=$?; fi ;;
     skills) if [[ $argument == --check || -z $argument ]]; then "$host" lint --config "$HERE/plain.conf" skills || status=$?; else "$host" lint --config "$HERE/plain.conf" "$argument" || status=$?; fi ;;
 esac
-if ((status == 0)); then
+if ((status == 0)) && [[ -z ${TOOLS_SCOPE:-} ]]; then
   shopt -s globstar nullglob
   pages=()
   case "$command_name" in

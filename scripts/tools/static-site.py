@@ -56,12 +56,12 @@ def digest(data):
 
 def inventory(area, root=ROOT):
     result = {}
-    def add(key, path):
+    def add(key, path, cache_control=None):
         if path.is_symlink():
             raise ValueError(f'refusing symlink: {path}')
         data = path.read_bytes()
         result[key] = dict(data=data, sha256=digest(data), content_type=TYPES[path.suffix],
-                           cache_control=DAY if path.suffix in ('.css', '.png', '.svg', '.ico', '.mp4', '.webm') else NO_CACHE)
+                           cache_control=cache_control or (DAY if path.suffix in ('.css', '.png', '.svg', '.ico', '.mp4', '.webm') else NO_CACHE))
     source = root / ('lmscript-site' if area == 'lmscript' else area)
     if area == 'tools':
         # One canonical progressive-enhancement script; keep publication scoped to /tools/.
@@ -70,7 +70,7 @@ def inventory(area, root=ROOT):
         rel = path.relative_to(source)
         if (any(p.startswith('.') or p == '_template' for p in rel.parts)
                 or path.name == 'README.md'
-                or (area == 'tools' and path.name in ('book.json', 'source-lock.json'))):
+                or (area == 'tools' and path.name in ('book.json', 'source-lock.json', 'books-lock.json'))):
             continue
         if path.is_symlink():
             raise ValueError(f'refusing symlink: {path}')
@@ -92,6 +92,20 @@ def inventory(area, root=ROOT):
             prefix = key[:-len('/index.html')]
             add(prefix, path)
             add(prefix + '/', path)
+    if area == 'tools':
+        media_root = root / 'build/tools-media/lmvideo'
+        lock = root / 'tools/lmvideo/books-lock.json'
+        if lock.is_file():
+            lock_data = json.loads(lock.read_text(encoding='utf-8'))
+            for item in lock_data.get('media', []):
+                key = item['url'].lstrip('/')
+                path = media_root / Path(item['url']).name
+                if not path.is_file() or path.is_symlink():
+                    raise ValueError(f'locked media missing or symlinked: {path}')
+                obj = dict(data=path.read_bytes(), sha256=digest(path.read_bytes()), content_type=TYPES[path.suffix], cache_control='public, max-age=31536000, immutable')
+                if obj['sha256'] != item['sha256'] or len(obj['data']) != item['bytes']:
+                    raise ValueError(f'locked media hash/size mismatch: {key}')
+                result[key] = obj
     if area == 'skills':
         for path in sorted((root / 'skills-moved').glob('*.md')):
             add('skills/' + path.name, path)
@@ -141,6 +155,8 @@ def deploy(area):
             aws('s3api', 'get-object', '--bucket', bucket, '--key', MANIFESTS[area], str(old))
             previous = json.loads(old.read_text())
         deletions = sorted(set(previous) - set(expected))
+        if area == 'tools':
+            deletions = [key for key in deletions if not key.startswith('tools/lmvideo/media/')]
         # Reject a corrupt or manually edited inventory that escapes its area.
         for key in deletions:
             if area == 'homepage':
@@ -325,7 +341,10 @@ def verify(areas, repair_cdn=False):
         if not error:
             try:
                 actual = json.loads(raw)
-                findings.extend(inventory_diff(set(inventory(area)) - {MANIFESTS[area]}, actual))
+                extra = inventory_diff(set(inventory(area)) - {MANIFESTS[area]}, actual)
+                if area == 'tools':
+                    extra = [finding for finding in extra if 'tools/lmvideo/media/' not in finding]
+                findings.extend(extra)
             except (ValueError, TypeError):
                 findings.append(f'invalid published inventory: {MANIFESTS[area]}')
     if 'homepage' in areas:

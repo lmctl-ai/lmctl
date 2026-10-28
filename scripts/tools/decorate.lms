@@ -1,5 +1,8 @@
 import "roles.lms";
-directories = join(sort(glob("tools/*/")), "|") + "|";
+tool_scope = ARGV.len() > 3 ? ARGV[3] : "";
+markup_only = ARGV.len() > 4 ? ARGV[4] == "1" : false;
+initial_pattern = tool_scope == "" ? "tools/**/*.html" : tool_scope == "catalog" ? "tools/*.html" : "tools/" + tool_scope + "/**/*.html";
+directories = tool_scope != "" && tool_scope != "catalog" ? "tools/" + tool_scope + "|" : join(sort(glob("tools/*/")), "|") + "|";
 p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 # Source-preserving pre formatting (kept identical in check/decorate).
 # Locate the nth real element with the host tokenizer, not a text match alone:
@@ -44,8 +47,14 @@ fn separate_commands(source: string, first: string, second: string) -> string {
   return result;
 }
 fn format_pre(source: string) -> string {
-  let result = separate_commands(source, "kbd", "samp");
-  result = separate_commands(result, "samp", "kbd");
+  let result = source;
+  # Most source-code blocks have no command/output pair. Avoid spending
+  # host Doc handles parsing them repeatedly; the normal tokenizer still
+  # handles every possible pair (including uppercase source tags).
+  if (str_contains(str_lower(source), "<kbd") && str_contains(str_lower(source), "<samp")) {
+    result = separate_commands(source, "kbd", "samp");
+    result = separate_commands(result, "samp", "kbd");
+  }
   let codes = html.parse(result).source_elements("code");
   for (i in range(0, codes.len())) {
     let raw = codes.at(i);
@@ -239,7 +248,7 @@ fn logo(path: string, alt: string) -> string {
 fn render(layout: string, nav: string, footer: string, body: string, title: string, description: string) -> string {
   # Replace CONTENT last: author text containing template markers is literal.
   let shell = layout;
-  if (str_contains(body, "<!-- generated: tools-from-examples -->") && str_contains(body, "<kbd>")) {
+  if ((str_contains(body, "<!-- generated: tools-from-examples -->") || str_contains(body, "<!-- generated: tools-book -->")) && str_contains(body, "<kbd>")) {
     shell = str_replace(shell, "</head>", "<script src=\"/tools/lmctl-copy.js\" defer></script>\n</head>");
   }
   let result = str_replace(shell, "{{TITLE}}", escape(title));
@@ -280,12 +289,13 @@ let layout = region(template_source, "layout");
 let site_layout = str_replace(layout, "{{ICON}}", favicon("/tools/img/icon.png"));
 # Refuse malformed authored source before changing any file; common shells are
 # replaceable, but token repair must never silently rewrite authored content.
-for (page in html.load_dir(".", "tools/**/*.html", "")) {
+for (page in html.load_dir(".", ${initial_pattern}, "")) {
   if (basename(page.path()) == "index.html") { continue; }
   for (problem in page.markup_errors()) { report.add("markup", page.path(), 0, problem); }
 }
 report.write_text(${ARGV[1]});
 report.fail_if_any();
+if (!${markup_only}) {
 let role_data = ${role_table};
 let tool_dirs = ${directories};
 let tool_links = "";
@@ -329,8 +339,18 @@ while (str_find(tool_dirs, "|") >= 0) {
       links = links + "<li><a href=\"/tools/" + escape(tool) + "/" + escape(filename) + "\">" + escape(text) + "</a></li>\n";
     }
   }
-  if (html.load_dir(directory, "*/*.html", "").len() > 0) {
-    links = links + "<li><a href=\"/tools/" + escape(tool) + "/examples/\">Examples</a></li>\n";
+  # Rich books are discovered only at the fixed, lock-authorized book roots.
+  let books = "getting-started|examples|showcase|cycles|";
+  while (str_find(books, "|") >= 0) {
+    let end = str_find(books, "|");
+    let book = str_substr(books, 0, end);
+    books = str_substr(books, end + 1, str_len(books));
+    if (html.link_exists(root_probe, "/" + directory + "/" + book + "/index.html")) {
+      let label = book;
+      if (book == "getting-started") { label = "Getting started"; }
+      else { if (book == "examples") { label = "Examples"; } else { if (book == "showcase") { label = "Showcase"; } else { label = "Cycles"; } } }
+      links = links + "<li><a href=\"/tools/" + escape(tool) + "/" + book + "/\">" + escape(label) + "</a></li>\n";
+    }
   }
   let nav = str_replace(region(template_source, "tool-nav"), "{{TOOL}}", escape(tool));
   nav = str_replace(nav, "{{PAGE_LINKS}}", links);
@@ -346,13 +366,18 @@ while (str_find(tool_dirs, "|") >= 0) {
   for (page in pages) {
     if (basename(page.path()) == "index.html") { continue; }
     if (tool_title == "") { tool_title = heading(page); tool_summary = summary(page); }
+    if (${tool_scope} == "" || ${tool_scope} == tool) {
     let result = render(tool_layout, nav, footer, content(page), page_title(heading(page), tool), page_description(page));
     store(page.path(), result, page.source(), check, differences(page, result));
+    }
   }
   for (page in html.load_dir(directory, "*/*.html", "")) {
+    if (${tool_scope} == "" || ${tool_scope} == tool) {
     let result = render(tool_layout, nav, footer, content(page), page_title(heading(page), tool), page_description(page));
     store(page.path(), result, page.source(), check, differences(page, result));
+    }
   }
+  if (${tool_scope} == "" || ${tool_scope} == tool) {
   let index_body = "";
   let index_description = tool_summary;
   let index_before = "";
@@ -372,10 +397,12 @@ while (str_find(tool_dirs, "|") >= 0) {
   let index_diff = "missing or stale generated tool index";
   if (authored_index) { index_diff = differences(index_page, index_result); }
   store(directory + "/index.html", index_result, index_before, check, index_diff);
+  }
   let icon = "";
   if (asset_exists(icon_path)) { icon = "<img src=\"" + escape(icon_path) + "\" alt=\"\">"; }
   tool_links = tool_links + "<li>" + icon + "<a href=\"/tools/" + escape(tool) + "/\">" + escape(tool_title) + "</a> — " + escape(tool_summary) + "</li>\n";
 }
+if (${tool_scope} == "" || ${tool_scope} == "catalog") {
 for (page in html.load_dir("tools", "*.html", "*/*.html")) {
   if (basename(page.path()) == "index.html") { continue; }
   store(page.path(), render(site_layout, region(template_source, "site-nav"), region(template_source, "site-footer"), content(page), heading(page) + " — lmctl.com tools", page_description(page)), page.source(), check, "missing or outdated site document shell");
@@ -386,6 +413,8 @@ let old_index = "";
 let probe = html.parse("");
 if (html.link_exists(probe, "/tools/index.html")) { old_index = html.load("tools/index.html").source(); }
 store("tools/index.html", render(site_layout, region(template_source, "site-nav"), region(template_source, "site-footer"), site_content, "Tools — lmctl.com", "Small command-line tools from lmctl, with skill pages for LLM agents and task-specific documentation."), old_index, check, "missing or stale generated tools index");
+}
+}
 report.write_text(${ARGV[1]});
 if (check) { report.fail_if_any(); }
 end _lmcode_

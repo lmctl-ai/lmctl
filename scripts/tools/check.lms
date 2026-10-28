@@ -1,4 +1,6 @@
 import "roles.lms";
+tool_scope = ARGV.len() > 3 ? ARGV[3] : "";
+page_pattern = tool_scope == "" ? "tools/**/*.html" : tool_scope == "catalog" ? "tools/*.html" : "tools/" + tool_scope + "/**/*.html";
 # run.sh copies this next to the schema emitted by the selected lmhtml binary.
 # ARGV: bytecode output, report output, optional single fixture (empty = tree).
 # Directory enumeration happens at compile time; all policy stays in the DSL.
@@ -7,7 +9,10 @@ for (directory in glob("tools/*/")) {
   tool_directories = tool_directories + directory + "|";
 }
 case_paths = join(sort(glob("tools/*/*.[hH][tT][mM][lL]")), "|") + "|";
-png_paths = join(sort(glob("tools/**/*.png")), "|") + "|";
+png_pattern = tool_scope == "" ? "tools/**/*.png" : tool_scope == "catalog" ? "tools/img/*.png" : "tools/" + tool_scope + "/**/*.png";
+png_paths = join(sort(glob(png_pattern)), "|") + "|";
+book_pages = "|" + read_file("build/book-media-pages.txt");
+book_media_urls = "|" + read_file("build/book-media-urls.txt");
 lmscript_urls = "|/lmscript|/lmscript/|/lmscript/index.html|";
 for (path in glob("lmscript-site/**/*.html")) {
   lmscript_urls = lmscript_urls + "/lmscript/" + substr(path, len("lmscript-site/"), len(path)) + "|";
@@ -56,8 +61,14 @@ fn separate_commands(source: string, first: string, second: string) -> string {
   return result;
 }
 fn format_pre(source: string) -> string {
-  let result = separate_commands(source, "kbd", "samp");
-  result = separate_commands(result, "samp", "kbd");
+  let result = source;
+  # Most source-code blocks have no command/output pair. Avoid spending
+  # host Doc handles parsing them repeatedly; the normal tokenizer still
+  # handles every possible pair (including uppercase source tags).
+  if (str_contains(str_lower(source), "<kbd") && str_contains(str_lower(source), "<samp")) {
+    result = separate_commands(source, "kbd", "samp");
+    result = separate_commands(result, "samp", "kbd");
+  }
   let codes = html.parse(result).source_elements("code");
   for (i in range(0, codes.len())) {
     let raw = codes.at(i);
@@ -130,6 +141,14 @@ fn page_role(file: string) -> string {
   }
   return stem;
 }
+fn rich_book_page(file: string) -> bool {
+  let normalized_file = file;
+  if (str_starts_with(normalized_file, "./")) { normalized_file = str_substr(normalized_file, 2, str_len(normalized_file)); }
+  return str_contains(${book_pages}, "|" + normalized_file + "|");
+}
+fn locked_media(url: string) -> bool {
+  return str_contains(${book_media_urls}, "|" + url + "|");
+}
 fn prose(page: Doc) -> string {
   let text = "";
   for (node in page.select("main p, main pre, main table, main dl, main ul, main ol")) { text = text + normalized(node.text()) + "|"; }
@@ -167,7 +186,9 @@ fn check_page(page: Doc) -> void {
       if (!found_command) { finding(file, page.select("pre").at(i).path(), "pre formatting: remove empty pre/code boundary lines"); }
     }
   }
+  let rich = rich_book_page(file);
   let allowed = "|html|head|meta|title|link|body|header|nav|main|section|footer|h1|h2|h3|h4|p|ul|ol|li|dl|dt|dd|pre|code|kbd|samp|em|strong|a|table|thead|tbody|tr|th|td|blockquote|hr|figure|figcaption|img|script|";
+  if (rich) { allowed = allowed + "video|source|track|"; }
   for (node in page.select("*")) {
     let tag = node.tag();
     let path = node.path();
@@ -183,6 +204,9 @@ fn check_page(page: Doc) -> void {
     if (tag == "th") { attrs = "|scope|colspan|rowspan|"; }
     if (tag == "td") { attrs = "|colspan|rowspan|"; }
     if (tag == "script") { attrs = "|src|defer|"; }
+    if (tag == "video" && rich) { attrs = "|controls|loop|muted|playsinline|preload|poster|width|height|"; }
+    if (tag == "source" && rich) { attrs = "|src|type|"; }
+    if (tag == "track" && rich) { attrs = "|kind|src|srclang|label|default|"; }
     for (attribute in node.attributes()) {
       if (!str_contains(attrs, "|" + attribute + "|")) {
         if (attribute == "id") { finding(file, path, "id is only allowed on h2/h3, not <" + tag + ">"); }
@@ -195,6 +219,13 @@ fn check_page(page: Doc) -> void {
       }
       if (normalized(node.text()) != "") { finding(file, path, "copy script must not contain inline code"); }
     }
+    if ((tag == "video" || tag == "source" || tag == "track") && !rich) { finding(file, path, "rich media is only allowed in a locked lmvideo book page"); }
+    if (tag == "video" && rich) {
+      if (node.parent().tag() != "figure" || node.has_attr("autoplay") || node.select("source").len() < 1 || node.select("source").len() > 2) { finding(file, path, "video needs figure, 1-2 sources, controls and no autoplay"); }
+      if (!node.has_attr("controls") || !node.has_attr("poster") || !str_ends_with(str_lower(node.attr("poster")), ".png") || !locked_media(node.attr("poster"))) { finding(file, path, "video poster must be a locked local PNG URL"); }
+    }
+    if (tag == "source" && rich && (node.parent().tag() != "video" || !locked_media(node.attr("src")) || (node.attr("type") != "video/mp4" && node.attr("type") != "video/webm") || (str_ends_with(str_lower(node.attr("src")), ".mp4") && node.attr("type") != "video/mp4") || (str_ends_with(str_lower(node.attr("src")), ".webm") && node.attr("type") != "video/webm"))) { finding(file, path, "video source must be a locked media URL with matching video/mp4 or video/webm type"); }
+    if (tag == "track" && rich && (node.attr("kind") != "captions" || !locked_media(node.attr("src")))) { finding(file, path, "caption track must use a locked media URL"); }
     if (tag == "html" && node.attr("lang") != "en") { finding(file, path, "<html> needs lang=\"en\""); }
     if (tag == "link") {
       let href = node.attr("href");
@@ -233,7 +264,8 @@ fn check_page(page: Doc) -> void {
         if (node.parent().tag() != "figure") { finding(file, path, "<img> must be inside <figure>"); }
         else { if (!landing_logo && node.parent().select("figcaption").len() != 1) { finding(file, path, "<figure> needs one <figcaption>"); } }
       }
-      let image_path_ok = str_starts_with(src, "/tools/");
+      let locked_image = rich && locked_media(src);
+      let image_path_ok = str_starts_with(src, "/tools/") || locked_image;
       let example_image = str_contains(src, "/examples/img/");
       let component = "";
       let component_index = 0;
@@ -251,12 +283,12 @@ fn check_page(page: Doc) -> void {
         }
       }
       let site_image = str_starts_with(src, "/tools/img/") && component_index == 1;
-      if ((!image_path_ok && !site_image) || (component_index != 2 && !site_image && !(example_image && component_index == 3)) || component == "" || str_contains(src, "..") || str_contains(src, "?") || str_contains(src, "#") || str_contains(src, "%") || str_contains(src, "\\")) {
+      if ((!locked_image && !image_path_ok && !site_image) || (!locked_image && component_index != 2 && !site_image && !(example_image && component_index == 3)) || component == "" || str_contains(src, "..") || str_contains(src, "?") || str_contains(src, "#") || str_contains(src, "%") || str_contains(src, "\\")) {
         finding(file, path, "image must be local under /tools/<tool>/img/ or /tools/<tool>/examples/img/: " + src);
       } else {
-        if (!html.link_exists(page, src)) { finding(file, path, "image not found: " + src); }
+        if (!locked_image && !html.link_exists(page, src)) { finding(file, path, "image not found: " + src); }
         else {
-          if (str_ends_with(str_lower(src), ".png")) {
+          if (str_ends_with(str_lower(src), ".png") && !locked_image) {
             let size = html.png_size(str_substr(src, 1, str_len(src)));
             if (!node.has_attr("width") || !node.has_attr("height")) { finding(file, path, "PNG needs width and height attributes: " + src); }
             else { if (node.attr("width") != str(size.width()) || node.attr("height") != str(size.height())) { finding(file, path, "PNG dimensions must match intrinsic " + str(size.width()) + "x" + str(size.height()) + ": " + src); } }
@@ -342,7 +374,7 @@ fn check_page(page: Doc) -> void {
       valid_roles = valid_roles + key;
       if (key == role_name) { known = true; }
     }
-    if (!known) { finding(file, "document", "unknown role " + role_name + "; valid roles: " + valid_roles); }
+    if (!known && !rich) { finding(file, "document", "unknown role " + role_name + "; valid roles: " + valid_roles); }
     if (role_name == "skill" && headings != "Purpose|When to use it|Install|Commands|Inputs and outputs|Safety rules|Worked examples|Errors and exit codes|How to verify|") {
       finding(file, "h2", "skill.html h2 headings must be exactly: Purpose, When to use it, Install, Commands, Inputs and outputs, Safety rules, Worked examples, Errors and exit codes, How to verify");
     }
@@ -386,7 +418,7 @@ let fixture = ${ARGV[2]};
 if (fixture != "") { check_page(html.load(fixture)); }
 else {
   # Loading from the repository root makes /tools/... resolve from that root.
-  let pages = html.load_dir(".", "tools/**/*.html", "");
+  let pages = html.load_dir(".", ${page_pattern}, "");
   let listing = html.load("tools/index.html");
   let named_paths = ${case_paths};
   while (str_find(named_paths, "|") >= 0) {
