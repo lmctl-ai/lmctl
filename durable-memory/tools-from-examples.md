@@ -91,7 +91,7 @@ The schema file scripts/tools/content-manifest-v1.schema.json is the definition;
 | script_sha256 | SHA-256 of the exact UTF-8 source bytes |
 | image | Repository-relative PNG path; regular tracked blob, no symlinks/traversal |
 | image_sha256 | SHA-256 of exact preview bytes; PNG below 30000 bytes |
-| stdout | Captured stdout, or the explicit display label (no stdout) when empty |
+| stdout | Optional captured stdout; if absent, omit unrecorded output rather than inventing a transcript |
 | licence | MIT for this example in the initial policy |
 
 See the live [lmvideo manifest](https://github.com/lmctl-ai/lmvideo/blob/b91247c3d92e10dce15c2d5ce3ee4a0e0eedcebd/examples/manifest.json) for a complete executable input. Text fields on individual examples are capped at 4000 characters; each imported blob is capped at 153600 bytes. The existing contract validates intrinsic PNG dimensions, markup, links and total HTML size after decoration. No upstream HTML or JavaScript is imported.

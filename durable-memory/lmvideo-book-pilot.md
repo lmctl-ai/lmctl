@@ -61,3 +61,29 @@ Open content findings, for the content owner (not website changes):
 - 34 code blocks show the raw host JSON envelope as expected output, including wall_ms and phase timings that change on every run. That is honest captured stdout, but readers expect the stable line (for example "B12: 2500 point sprites, 120 frames, 1280x720@30"). Either the scripts print only their output line (which changes their locked hashes, so it needs a re-verification pass), or the book manifest gains a reviewed expected-output excerpt beside the full transcript.
 - The scoreboard column titled Seconds is the historical capture wall time. Rename it Capture time (s), or explain it once in the index text.
 - 47 of the 76 expected outputs listed in the private showcase ledger (non-benchmark examples such as scene3d-primitives) are not in any local render store. The four books do not use them, but they must be re-rendered before those examples get chapters.
+
+## Published refresh: v0.1.36
+
+This update supersedes the original candidate-promotion instructions above. Public lmctl-ai/lmvideo main is pinned at 07bacf984553317394e231d24b9cdcb0470dff3b; v0.1.36 is the non-draft, non-prerelease Latest release with Linux x64/arm64, macOS x64/arm64 and Windows x64 native runtimes. The supplied staging compatibility report records PASS for all 101 examples, with no failures or skips. This website refresh does not repeat those scene renders.
+
+Rebuild from the published repository, without a local source override:
+
+```sh
+npm run pull:tools -- lmvideo --books \
+  --ref 07bacf984553317394e231d24b9cdcb0470dff3b \
+  --released-version 0.1.36 \
+  --media-store build/tools-media/lmvideo
+npm run decorate:tools
+npm run check:tools
+python3 scripts/tools/check-book-caption-urls.py
+```
+
+The public export omits optional stdout capture transcripts and evidence references. Both content validators accept their absence while validating supplied values; source/media hashes and mandatory structural fields remain required. Pages omit unrecorded program output rather than inventing a samp transcript. Every book page begins its installation commands with npm install -g @lmctl-ai/lmctl. Raw-source/autorun captions use the immutable public 07bacf9 commit, never the old candidate or mutable main. The caption checker performs GET requests, requires HTTP 200 and compares every returned source digest with the book lock; its full report is build/lmvideo-caption-urls.json.
+
+The content still contains historical pre-release wording and a pending-release status. The website preserves those author-owned bytes and presents a clear current v0.1.36 release notice explaining that the capture notes predate publication. The lock retains content_publication_status separately from its current PUBLISHED/released_version context. No public tool content was edited by this refresh.
+
+Four published posters have intrinsic sizes different from their video. Default candidate validation still rejects this mismatch. The explicit released-version path instead preserves the verified source image and generates an uncropped contain-and-pad presentation copy at the exact player dimensions. Derived PNGs receive full-digest filenames, derived_from/presentation records and the FFmpeg processor digest in the website lock. This is a website presentation transform; it does not overwrite source assets or change scene expectations. A focused test proves matching dimensions, source preservation and repeated derived-byte identity.
+
+The refreshed website inventory has 56 objects totaling 7,746,011 bytes, including the four derived posters. They remain under ignored build/tools-media/lmvideo/ and publish under /tools/lmvideo/media/. Public content and runtime promotion are complete; the remaining owner action is the manual deploy-static dispatch after the usual website/media checks. No deployment, AWS upload or workflow dispatch was performed in this refresh.
+
+The released refresh additionally includes the website-owned deterministic build input build-inputs/lmvideo/media-0.1.36.tar.gz (7,609,217 bytes). It contains only the 56 lock-listed media objects and is not part of the tool repository or a GitHub image gallery. Manual tools-check/deploy-static runners call stage-book-media.py before their checks, validating every filename, byte count and SHA-256 before installing the ignored render cache. A cold-cache extraction of all 56 objects was verified. This makes the owner's dispatch self-contained; no media staging upload or deployment was run by the agent. The original pilot's local-cache-only bootstrap is superseded for this released build.

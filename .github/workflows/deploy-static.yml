@@ -25,6 +25,8 @@ jobs:
           node-version: 24.15
       - name: Install published DSL compiler
         run: npm i -g @lmctl-ai/lmctl@0.2.420
+      - name: Stage locked website book media
+        run: python3 scripts/tools/stage-book-media.py
       - name: Resolve lmhtml from the lmscript tool cache
         env:
           GITHUB_TOKEN: ${{ github.token }}
