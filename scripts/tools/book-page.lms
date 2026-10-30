@@ -37,8 +37,12 @@ if (${kind} == "init") {
   if (nav != "") { page.select("main > nav").at(0).replace_with("<p>" + nav + "</p>"); } else { page.select("main > nav").at(0).remove(); }
 }
 let body = "";
-if (${kind} == "code") {
-  body = "<h2>Run this example</h2><pre><kbd>" + esc(${run_command}) + "</kbd>\n<samp>" + esc(${expected}) + "</samp></pre><h2>Source</h2><pre><code>" + esc(${source_text}) + "</code></pre>";
+if (${kind} == "install") {
+  body = "<h2>Install</h2><pre><kbd>npm install -g @lmctl-ai/lmctl</kbd></pre><p>" + esc(${intro}) + "</p>";
+} else if (${kind} == "code") {
+  body = "<h2>Run this example</h2><pre><kbd>" + esc(${run_command}) + "</kbd>";
+  if (${expected} != "") { body = body + "\n<samp>" + esc(${expected}) + "</samp>"; }
+  body = body + "</pre><h2>Source</h2><pre><code>" + esc(${source_text}) + "</code></pre>";
 } else if (${kind} == "image") {
   body = "<figure><img><figcaption>" + esc(${image_caption}) + "</figcaption></figure>";
 } else if (${kind} == "video") {
@@ -58,7 +62,7 @@ if (${kind} == "row") {
   else { let rows = tables.at(0).select("tbody > tr"); rows.at(rows.len() - 1).insert_after(body); }
 }
 if (${kind} == "link") { page.select("main > section").at(0).insert_before(body); let anchors = page.select("main > p > a"); anchors.at(anchors.len() - 1).set_attr("href", ${next_page}); }
-if (${kind} == "text" || ${kind} == "code" || ${kind} == "image" || ${kind} == "video") { page.select("main > section").at(0).insert_before(body); }
+if (${kind} == "install" || ${kind} == "text" || ${kind} == "code" || ${kind} == "image" || ${kind} == "video") { page.select("main > section").at(0).insert_before(body); }
 if (${kind} == "image") { let figures = page.select("figure > img"); figures.at(figures.len() - 1).set_attr("src", ${image_src}).set_attr("alt", ${image_alt}).set_attr("width", ${media_width}).set_attr("height", ${media_height}); }
 if (${kind} == "video") {
   let videos = page.select("video");

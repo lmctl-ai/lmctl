@@ -44,13 +44,13 @@ def blob(repo, commit, path):
     return subprocess.check_output(['git', '-C', str(repo), 'show', f'{commit}:{path}'])
 
 
-def validate(content, origin):
+def validate(content, origin, normalize_posters=False):
     schema = json.loads(SCHEMA.read_text())
     errors = policy.schema_errors(content, schema, schema)
     if errors: raise ValueError(origin + ': ' + '; '.join(errors))
     mids = {m['id']: m for m in content['media']}
     if len(mids) != len(content['media']): raise ValueError(origin + ': duplicate media id')
-    for e in content['evidence']:
+    for e in content.get('evidence',[]):
         if not safe_path(e['file']): raise ValueError(origin + ': unsafe evidence file ' + e['file'])
     filenames = set()
     for m in content['media']:
@@ -69,7 +69,8 @@ def validate(content, origin):
             chapters.add(chapter['id'])
             for i, b in enumerate(chapter['blocks']):
                 label = f'{origin}: {group["id"]}/{chapter["id"]}.blocks[{i}]'
-                if set(b) != fields[b['kind']]: raise ValueError(label + ': wrong fields for block kind')
+                allowed_fields = fields[b['kind']] - ({'stdout'} if b['kind']=='code' and 'stdout' not in b else set())
+                if set(b) != allowed_fields: raise ValueError(label + ': wrong fields for block kind')
                 if b['kind'] == 'code':
                     if not safe_path(b['script']) or not b['script'].endswith('.lms') or not b['commands'] or any(not cmd for cmd in b['commands']): raise ValueError(label + ': unsafe source or empty commands')
                 if b['kind'] == 'image' and (not isinstance(b['media'],str) or b['media'] not in mids or mids[b['media']]['kind'] != 'png'): raise ValueError(label + ': image reference must be a PNG')
@@ -80,7 +81,7 @@ def validate(content, origin):
                         if not isinstance(mid,str) or mid not in mids or mids[mid]['kind'] not in ('mp4','webm'): raise ValueError(label + ': invalid video source')
                     sizes = {(mids[mid]['width'], mids[mid]['height']) for mid in b['media']}
                     poster = (mids[b['poster']]['width'], mids[b['poster']]['height'])
-                    if len(sizes) != 1 or poster not in sizes: raise ValueError(label + f': poster {poster[0]}x{poster[1]} must match the video size ' + ' / '.join(f'{w}x{h}' for w, h in sorted(sizes)) + ' (otherwise the player letterboxes before playback)')
+                    if len(sizes) != 1 or (poster not in sizes and not normalize_posters): raise ValueError(label + f': poster {poster[0]}x{poster[1]} must match the video size ' + ' / '.join(f'{w}x{h}' for w, h in sorted(sizes)) + ' (otherwise the player letterboxes before playback)')
         for row in group.get('scoreboard',[]):
             if row['chapter'] not in chapters or row['tier'] not in (1,2,3) or not isinstance(row['seconds'],(float,int)) or not math.isfinite(row['seconds']) or row['seconds'] <= 0: raise ValueError(origin + ': invalid scoreboard row')
     if not content['groups']: raise ValueError(origin + ': empty books')
@@ -99,6 +100,17 @@ def media_info(path, m):
         videos = [x for x in probe['streams'] if x['codec_type']=='video']
         if len(videos)!=1 or any(x['codec_type']=='audio' for x in probe['streams']): raise ValueError('silent video profile violated')
         if (videos[0]['width'],videos[0]['height']) != (m['width'],m['height']) or abs(float(probe['format']['duration'])-m['duration_seconds']) > .05: raise ValueError('video metadata differs')
+
+
+def normalize_poster(cache, poster, video, work):
+    """Fit the verified content image into the player frame without cropping it."""
+    width,height=video['width'],video['height']
+    target=work/'normalized-poster.png'
+    subprocess.run(['ffmpeg','-y','-hide_banner','-loglevel','error','-i',str(cache/poster['file']),'-vf',f'scale={width}:{height}:force_original_aspect_ratio=decrease,pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:color=black','-frames:v','1','-threads','1',str(target)],check=True,timeout=30)
+    data=target.read_bytes()
+    if struct.unpack('>II',data[16:24])!=(width,height): raise ValueError('normalized poster has incorrect dimensions')
+    digest=sha(data);name='poster-'+digest+'.png';shutil.copyfile(target,cache/name)
+    return {'id':'media-'+digest,'file':name,'sha256':digest,'bytes':len(data),'kind':'png','width':width,'height':height,'derived_from':poster['sha256'],'presentation':'contain-pad-v1'}
 
 
 def install_books(out, target, book_ids, lock):
@@ -139,7 +151,8 @@ def install_books(out, target, book_ids, lock):
         if installed_ok or rolled_back: shutil.rmtree(backup)
 
 
-def pull(tool, ref, source, store):
+def pull(tool, ref, source, store, released_version=None):
+    if released_version and not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+",released_version): raise ValueError("invalid released version")
     if ref.startswith('-') or not re.fullmatch(r'[a-zA-Z0-9_./-]+',ref): raise ValueError('invalid Git ref')
     if tool != 'lmvideo': raise ValueError('book pilot currently supports lmvideo')
     with tempfile.TemporaryDirectory(prefix='lmtools-books-') as td:
@@ -151,9 +164,9 @@ def pull(tool, ref, source, store):
         origin = f'lmctl-ai/{tool}@{commit}:examples/books.json'
         # Preserve the established examples contract; a book is a distinct typed content profile.
         policy.validate(policy.parse_manifest(blob(repo,commit,'examples/manifest.json'),origin.replace('books.json','manifest.json')),tool)
-        raw=blob(repo,commit,'examples/books.json'); content=policy.parse_manifest(raw,origin); mids=validate(content,origin)
+        raw=blob(repo,commit,'examples/books.json'); content=policy.parse_manifest(raw,origin); mids=validate(content,origin,normalize_posters=bool(released_version))
         inputs={'examples/books.json':sha(raw)}
-        for e in content['evidence']:
+        for e in content.get('evidence',[]):
             data=blob(repo,commit,e['file'])
             if sha(data)!=e['sha256']: raise ValueError(origin+': evidence digest mismatch '+e['file'])
             inputs[e['file']]=sha(data)
@@ -165,6 +178,18 @@ def pull(tool, ref, source, store):
             src=Path(store)/name;media_info(src,m);dest=cache/name
             if src.resolve()!=dest.resolve(): shutil.copyfile(src,dest)
             url=f'/tools/{tool}/media/{name}';urls[mid]=url;locked.append(dict(m,url=url))
+        derived_posters={}
+        for group in content['groups']:
+            for chapter in group['chapters']:
+                for block in chapter['blocks']:
+                    if block['kind']!='video': continue
+                    poster=mids[block['poster']];video=mids[block['media'][0]]
+                    if (poster['width'],poster['height'])==(video['width'],video['height']): continue
+                    key=(block['poster'],video['width'],video['height'])
+                    if key not in derived_posters:
+                        normalized=normalize_poster(cache,poster,video,work)
+                        normalized['url']=f'/tools/{tool}/media/'+normalized['file']
+                        locked.append(normalized);derived_posters[key]=normalized['url']
         compiler='lmscript'; host=subprocess.check_output(['bash',str(ROOT/'scripts/tools/run.sh'),'host-path'],cwd=ROOT,text=True).strip()
         template=ROOT/'scripts/tools/book-page.lms';out=work/'pages';out.mkdir()
         def render(path,kind,title='',intro='',script='',command='',expected='',image='',alt='',caption='',mp4='',webm='',poster='',duration='',prev='',nxt='',contents='',width='',height=''):
@@ -172,11 +197,16 @@ def pull(tool, ref, source, store):
             policy.run(compiler,str(template),*args,cwd=ROOT,stdout=subprocess.DEVNULL)
             resolved=Path(args[0]+'.host').read_text().strip()
             policy.run(resolved,'--dsl',args[0],cwd=work,stdout=subprocess.PIPE)
+        release_note = ('lmvideo ' + released_version + ' is released. Source examples are pinned to public commit ' + commit[:7] + '. Capture notes and transcripts predate publication; references below to an unpublished candidate describe the capture, not current availability.') if released_version else 'Read downloaded programs before executing them. These sources require the matching lmvideo runtime.'
         for group in content['groups']:
             folder=out/group['id'];folder.mkdir();base=f'/tools/{tool}/{group["id"]}/';chapters=group['chapters'];index=folder/'index.html'
-            render(index,'init',group['title'],group['summary'])
+            render(index,'init',group['title'],'' if released_version else group['summary'])
+            render(index,'install',intro=release_note)
+            if released_version:
+                render(index,'link','Download lmvideo '+released_version,nxt=f'https://github.com/lmctl-ai/{tool}/releases/tag/v{released_version}')
+                render(index,'text',intro='Capture overview: '+group['summary'])
             if group.get('scoreboard'):
-                render(index,'text',intro='All 32 targets are locally VERIFIED in the locked capture ledger. These measurements are not fresh website render timings, and publication is a separate owner step.')
+                render(index,'text',intro='All 32 targets have verified captures. Timings describe the captured runs and can vary with hardware and settings.')
                 for row in group['scoreboard']: render(index,'row',row['id']+' '+row['title'],f'Tier {row["tier"]} / {row["status"]}',duration=str(round(row['seconds'],3))+' s',nxt=base+row['chapter']+'.html')
             else:
                 for c in chapters: render(index,'link',c['title'],nxt=base+c['id']+'.html')
@@ -184,6 +214,8 @@ def pull(tool, ref, source, store):
             for n,c in enumerate(chapters):
                 path=folder/(c['id']+'.html');prev=base+chapters[n-1]['id']+'.html' if n else '';nxt=base+chapters[n+1]['id']+'.html' if n+1<len(chapters) else ''
                 render(path,'init',c['title'],prev=prev,nxt=nxt,contents=base)
+                render(path,'install',intro=release_note)
+                if released_version: render(path,'link','Download lmvideo '+released_version,nxt=f'https://github.com/lmctl-ai/{tool}/releases/tag/v{released_version}')
                 for b in c['blocks']:
                     if b['kind']=='text': render(path,'text',intro=b['text'])
                     elif b['kind']=='code':
@@ -192,23 +224,23 @@ def pull(tool, ref, source, store):
                         inputs[b['script']]=sha(data);tmp=work/'source.lms';tmp.write_bytes(data)
                         rawurl=f'https://raw.githubusercontent.com/lmctl-ai/{tool}/{commit}/{b["script"]}'
                         commands=[' '.join(shlex.quote(rawurl if token==b['script'] and command[:2]==['lmctl','autorun'] else token) for token in command) for command in b['commands']]
-                        render(path,'code',script=str(tmp),command='\n'.join(commands),expected=b['stdout'])
-                        render(path,'link','Raw LMScript source (candidate must be published first)',nxt=rawurl)
+                        render(path,'code',script=str(tmp),command='\n'.join(commands),expected=b.get('stdout',''))
+                        render(path,'link','Raw LMScript source' if released_version else 'Raw LMScript source (candidate must be published first)',nxt=rawurl)
                     elif b['kind']=='image': render(path,'image',image=urls[b['media']],alt=b['alt'],caption=b['caption'],width=mids[b['media']]['width'],height=mids[b['media']]['height'])
                     else:
                         sources={mids[x]['kind']:urls[x] for x in b['media']}
-                        render(path,'video',caption=b['caption'],mp4=sources.get('mp4',''),webm=sources.get('webm',''),poster=urls[b['poster']],duration=str(b['duration_seconds'])+' seconds',width=mids[b['media'][0]]['width'],height=mids[b['media'][0]]['height'])
+                        render(path,'video',caption=b['caption'],mp4=sources.get('mp4',''),webm=sources.get('webm',''),poster=derived_posters.get((b['poster'],mids[b['media'][0]]['width'],mids[b['media'][0]]['height']),urls[b['poster']]),duration=str(b['duration_seconds'])+' seconds',width=mids[b['media'][0]]['width'],height=mids[b['media'][0]]['height'])
                 render(path,'finish')
         page_host=Path(str(work/'page.dslb')+'.host').read_text().strip()
-        lock={'version':1,'compiler':subprocess.check_output([compiler,'--version'],text=True).strip(),'page_renderer':{'version':subprocess.check_output([page_host,'--version'],text=True).strip(),'sha256':sha(Path(page_host).read_bytes())},'repository':content['repository'],'commit':commit,'content_sha256':sha(raw),'schema_sha256':sha(SCHEMA.read_bytes()),'template_sha256':sha(template.read_bytes()),'books':[g['id'] for g in content['groups']],'media':locked,'inputs':dict(sorted(inputs.items())),'publication_status':content['publication_status']}
+        lock={'version':1,'compiler':subprocess.check_output([compiler,'--version'],text=True).strip(),'page_renderer':{'version':subprocess.check_output([page_host,'--version'],text=True).strip(),'sha256':sha(Path(page_host).read_bytes())},'repository':content['repository'],'commit':commit,'content_sha256':sha(raw),'schema_sha256':sha(SCHEMA.read_bytes()),'template_sha256':sha(template.read_bytes()),'books':[g['id'] for g in content['groups']],'media':locked,'inputs':dict(sorted(inputs.items())),'publication_status':'PUBLISHED' if released_version else content['publication_status'],'content_publication_status':content['publication_status'],'released_version':released_version,'poster_processor_sha256':sha(Path(shutil.which('ffmpeg')).read_bytes()) if derived_posters else None}
         target=ROOT/'tools'/tool
         install_books(out,target,[g['id'] for g in content['groups']],lock)
         print(f'{tool}: rendered {len(content["groups"])} books, {sum(len(g["chapters"]) for g in content["groups"])} chapters; {len(locked)} media / {sum(m["bytes"] for m in locked)} bytes')
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('tool');p.add_argument('--source');p.add_argument('--ref',default='main');p.add_argument('--media-store',required=True);a=p.parse_args()
-    try: pull(a.tool,a.ref,a.source,a.media_store)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('tool');p.add_argument('--source');p.add_argument('--ref',default='main');p.add_argument('--media-store',required=True);p.add_argument('--released-version');a=p.parse_args()
+    try: pull(a.tool,a.ref,a.source,a.media_store,a.released_version)
     except (ValueError,KeyError) as e: p.exit(2,f'pull:books: {e}\n')
 
 if __name__=='__main__':main()

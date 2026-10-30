@@ -196,7 +196,7 @@ def import_tool(tool, ref, source=None):
                         raise ManifestError(f'lmctl-ai/{tool}@{commit}:{e[key]}: script must be valid UTF-8') from error
                     target = out / 'source' / (e['slug'] + '.lms')
                 target.write_bytes(data)
-            args = [str(work/'page.dslb'), str(out/(e['slug']+'.html')), e['title'], e['description'], str(out/'source'/(e['slug']+'.lms')), raw_base+e['script'], f'/tools/{tool}/examples/img/{e["slug"]}.png', e['alt'], e['stdout'], '', tool]
+            args = [str(work/'page.dslb'), str(out/(e['slug']+'.html')), e['title'], e['description'], str(out/'source'/(e['slug']+'.lms')), raw_base+e['script'], f'/tools/{tool}/examples/img/{e["slug"]}.png', e['alt'], e.get('stdout', '(stdout not recorded in this inventory)'), '', tool]
             run(compiler, str(template), *args, cwd=ROOT, stdout=subprocess.DEVNULL)
             host = Path(args[0] + '.host').read_text().strip()
             run(host, '--dsl', args[0], cwd=work, stdout=subprocess.PIPE)
@@ -239,12 +239,14 @@ def main():
     p.add_argument('--source', help='offline tracked Git checkout; reads committed blobs only')
     p.add_argument('--books', action='store_true', help='pull the mixed-media book content profile')
     p.add_argument('--media-store', help='local hash-verified render store for --books')
+    p.add_argument('--released-version', help='current published runtime version for book installation notices')
     a = p.parse_args()
     if a.books:
         if not a.media_store:
             p.error('--books requires --media-store')
         args = [sys.executable, str(Path(__file__).with_name('pull-books.py')), a.tool, '--ref', a.ref, '--media-store', a.media_store]
         if a.source: args += ['--source', a.source]
+        if a.released_version: args += ['--released-version', a.released_version]
         raise SystemExit(subprocess.call(args))
     try:
         import_tool(a.tool, a.ref, a.source)

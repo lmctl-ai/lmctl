@@ -22,7 +22,7 @@
     "example": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["slug", "title", "description", "script", "script_sha256", "image", "image_sha256", "alt", "stdout", "licence"],
+      "required": ["slug", "title", "description", "script", "script_sha256", "image", "image_sha256", "alt", "licence"],
       "properties": {
         "slug": {"$ref": "#/$defs/slug"},
         "title": {"$ref": "#/$defs/text"},

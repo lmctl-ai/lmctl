@@ -35,6 +35,14 @@ class BookManifestTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, needle):
             pull_books.validate(data, "lmctl-ai/lmvideo@deadbeef:examples/books.json")
 
+    def test_published_profile_without_capture_metadata(self):
+        data=self.valid()
+        del data['evidence']
+        data['groups'][0]['chapters'][0]['blocks']=[{'kind':'code','script':'examples/demo.lms','script_sha256':'a'*64,'commands':[['lmctl','autorun','examples/demo.lms']]}]
+        self.assertEqual(pull_books.validate(data,'origin'),{})
+        data['groups'][0]['chapters'][0]['blocks'][0]['stdout']=[]
+        self.check_bad(data,'stdout')
+
     def test_valid_minimal_content(self):
         self.assertEqual(pull_books.validate(self.valid(), "origin"), {})
 
@@ -87,6 +95,7 @@ class BookManifestTests(unittest.TestCase):
         ]
         data["groups"][0]["chapters"][0]["blocks"] = [{"kind": "video", "media": ["clip"], "poster": "still", "caption": "C", "duration_seconds": 2, "no_audio": True}]
         self.check_bad(data, r"examples/intro.blocks\[0\]: poster 900x560 must match the video size 1280x720")
+        pull_books.validate(data, "origin", normalize_posters=True)
         data["media"][0].update(width=1280, height=720)
         pull_books.validate(data, "origin")
 
@@ -94,6 +103,25 @@ class BookManifestTests(unittest.TestCase):
         data = self.valid()
         data["groups"][0]["scoreboard"] = [{"id": "B01", "chapter": "missing", "title": "X", "tier": 4, "status": "VERIFIED", "seconds": 1}]
         self.check_bad(data, r"invalid scoreboard")
+
+
+class PosterPresentationTests(unittest.TestCase):
+    def test_normalized_poster_preserves_source_and_repeats(self):
+        import shutil,struct,zlib
+        if not shutil.which('ffmpeg'): self.skipTest('ffmpeg not installed')
+        def chunk(kind,payload):
+            return struct.pack('>I',len(payload))+kind+payload+struct.pack('>I',zlib.crc32(kind+payload)&0xffffffff)
+        data=b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',2,1,8,2,0,0,0))+chunk(b'IDAT',zlib.compress(b'\0'+b'\xff\0\0'*2))+chunk(b'IEND',b'')
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);cache=root/'cache';work=root/'work';cache.mkdir();work.mkdir()
+            digest=pull_books.sha(data);file='source-'+digest+'.png';(cache/file).write_bytes(data)
+            source={'file':file,'sha256':digest,'width':2,'height':1}
+            first=pull_books.normalize_poster(cache,source,{'width':4,'height':4},work)
+            second=pull_books.normalize_poster(cache,source,{'width':4,'height':4},work)
+            self.assertEqual(first,second)
+            self.assertEqual((first['width'],first['height']),(4,4))
+            self.assertEqual((cache/file).read_bytes(),data)
+            self.assertEqual(first['derived_from'],digest)
 
 
 class InstallBooksTests(unittest.TestCase):

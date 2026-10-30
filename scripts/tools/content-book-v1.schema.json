@@ -284,8 +284,7 @@
     "licence",
     "publication_status",
     "groups",
-    "media",
-    "evidence"
+    "media"
   ],
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "lmctl mixed-media book content profile v1"

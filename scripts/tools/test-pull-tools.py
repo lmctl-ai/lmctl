@@ -22,6 +22,14 @@ class Policy(unittest.TestCase):
     def test_valid(self):
         m.validate(self.data, 'demo')
 
+    def test_inventory_stdout_is_optional_but_typed_when_present(self):
+        data=copy.deepcopy(self.data)
+        del data['examples'][0]['stdout']
+        m.validate(data,'demo')
+        data['examples'][0]['stdout']=[]
+        with self.assertRaisesRegex(ValueError,'stdout'):
+            m.validate(data,'demo')
+
     def test_bad_entries(self):
         for key, value in [('slug', '../escape'), ('slug', 'index'), ('script', 'arbitrary.lms'), ('image', 'output.svg'), ('script_sha256', 'oops'), ('licence', 'unknown'), ('title', '')]:
             data = copy.deepcopy(self.data)
@@ -75,13 +83,13 @@ class Policy(unittest.TestCase):
         data = copy.deepcopy(self.data)
         data['examples'][0]['alt'] = ''
         data['examples'][0]['css_class'] = 'hero'
-        del data['examples'][0]['stdout']
+        del data['examples'][0]['script']
         with self.assertRaises(m.ManifestError) as caught:
             m.validate(data, 'demo')
         text = str(caught.exception)
         self.assertIn('lmctl-ai/demo:examples/manifest.json', text)
         self.assertIn('$.examples[0].alt', text)
-        self.assertIn('missing required field "stdout"', text)
+        self.assertIn('missing required field "script"', text)
         self.assertIn('unknown field "css_class" (presentation belongs to lmctl-ai/lmctl', text)
 
     def test_semantic_optional_fields_and_featured_cap(self):
