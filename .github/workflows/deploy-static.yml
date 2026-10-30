@@ -23,6 +23,8 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24.15
+      - name: Install ffprobe for book video validation
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
       - name: Install published DSL compiler
         run: npm i -g @lmctl-ai/lmctl@0.2.420
       - name: Stage locked website book media
