@@ -32,6 +32,19 @@ class StageMediaTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'hash mismatch'): stager.stage(lock,bundle,cache)
             self.assertEqual(list(cache.iterdir()),[])
 
+    def test_bootstrap_can_retain_verified_unreferenced_objects(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);lock,bundle,name=self.fixture(root)
+            payload=b'old poster';digest=hashlib.sha256(payload).hexdigest();old='poster-'+digest+'.png'
+            with tarfile.open(bundle,'w:gz') as archive:
+                for filename,data in ((name,b'locked bytes'),(old,payload)):
+                    member=tarfile.TarInfo(filename);member.size=len(data);archive.addfile(member,io.BytesIO(data))
+            cache=root/'cache'
+            stager.stage(lock,bundle,cache,allow_retained=True)
+            self.assertEqual([p.name for p in cache.iterdir()],[name])
+            with self.assertRaisesRegex(ValueError,'unexpected'):
+                stager.stage(lock,bundle,root/'strict')
+
     def test_path_traversal_is_rejected(self):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td);lock,bundle,name=self.fixture(root,name='../escape');cache=root/'cache'

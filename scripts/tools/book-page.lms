@@ -58,7 +58,7 @@ if (${kind} == "install") {
 }
 if (${kind} == "row") {
   let tables = page.select("table");
-  if (tables.len() == 0) { page.select("main > section").at(0).insert_before("<table><thead><tr><th>Scene</th><th>Tier and status</th><th>Seconds</th><th>Link</th></tr></thead><tbody>" + body + "</tbody></table>"); }
+  if (tables.len() == 0) { page.select("main > section").at(0).insert_before("<table><thead><tr><th>Scene</th><th>Tier and status</th><th>Capture time (s)</th><th>Link</th></tr></thead><tbody>" + body + "</tbody></table>"); }
   else { let rows = tables.at(0).select("tbody > tr"); rows.at(rows.len() - 1).insert_after(body); }
 }
 if (${kind} == "link") { page.select("main > section").at(0).insert_before(body); let anchors = page.select("main > p > a"); anchors.at(anchors.len() - 1).set_attr("href", ${next_page}); }
