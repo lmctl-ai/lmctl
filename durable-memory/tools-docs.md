@@ -187,3 +187,8 @@ for a flag-only refresh of manifest-owned example scripts/pages. This preserves
 existing savedsl/system/dsl_cli structure, render assets and source provenance.
 Full book generation also normalizes host options when reading pinned source
 snapshots. The separate language plumbing migration remains independent.
+
+For typed books, run `python3 scripts/tools/pull-books.py --refresh-host-flag-spellings`.
+It refreshes only text in books-lock-owned pages/scripts and records the spelling
+overlay; input/capture/media hashes and the original source pin remain unchanged.
+Neither maintenance command executes a host or publishes content.

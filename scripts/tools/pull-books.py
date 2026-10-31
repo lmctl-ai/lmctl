@@ -23,6 +23,40 @@ SCHEMA = Path(__file__).with_name('content-book-v1.schema.json')
 BOOKS = {'getting-started', 'examples', 'showcase', 'cycles'}
 
 
+def host_flag_spelling(text):
+    return text.replace('--' + 'dsl', '--lmcode')
+
+
+def refresh_host_flag_spellings(root=ROOT):
+    """Refresh owned book text while retaining original capture/source hashes."""
+    changed = 0
+    for lockfile in sorted((root / 'tools').glob('*/books-lock.json')):
+        if lockfile.is_symlink() or not lockfile.resolve().is_relative_to(root.resolve()):
+            raise ValueError('unsafe book ownership lock')
+        lock = json.loads(lockfile.read_text())
+        if not set(lock['books']) <= BOOKS:
+            raise ValueError('invalid book ownership')
+        count = 0
+        for name in lock['books']:
+            folder = lockfile.parent / name
+            if folder.is_symlink() or not folder.resolve().is_relative_to(root.resolve()):
+                raise ValueError('unsafe book ownership path')
+            for path in folder.rglob('*'):
+                if path.is_symlink():
+                    raise ValueError('unsafe generated book symlink')
+                if path.is_file() and path.suffix in ('.html', '.lms'):
+                    raw = path.read_bytes()
+                    updated = raw.replace(b'--' + b'dsl', b'--lmcode')
+                    if raw != updated:
+                        path.write_bytes(updated)
+                        count += 1
+        if count:
+            lock['host_flag_spelling_overlay'] = 'lmcode'
+            lockfile.write_text(json.dumps(lock, indent=2) + '\n')
+        changed += count
+    return changed
+
+
 def sha(data): return hashlib.sha256(data).hexdigest()
 
 
@@ -170,7 +204,7 @@ def pull(tool, ref, source, store, released_version=None):
         compiler='lmscript'; host=subprocess.check_output(['bash',str(ROOT/'scripts/tools/run.sh'),'host-path'],cwd=ROOT,text=True).strip()
         template=ROOT/'scripts/tools/book-page.lms';out=work/'pages';out.mkdir()
         def render(path,kind,title='',intro='',script='',command='',expected='',image='',alt='',caption='',mp4='',webm='',poster='',duration='',prev='',nxt='',contents='',width='',height=''):
-            args=[str(work/'page.dslb'),str(path),title,intro,kind,script,command,expected,image,alt,caption,mp4,webm,poster,str(duration),prev,nxt,contents,str(width),str(height)]
+            args=[str(work/'page.dslb'),str(path),title,host_flag_spelling(intro),kind,script,host_flag_spelling(command),expected,image,alt,caption,mp4,webm,poster,str(duration),prev,nxt,contents,str(width),str(height)]
             policy.run(compiler,str(template),*args,cwd=ROOT,stdout=subprocess.DEVNULL)
             resolved=Path(args[0]+'.host').read_text().strip()
             policy.run(resolved,'--lmcode',args[0],cwd=work,stdout=subprocess.PIPE)
@@ -198,7 +232,7 @@ def pull(tool, ref, source, store, released_version=None):
                     elif b['kind']=='code':
                         data=blob(repo,commit,b['script'])
                         if sha(data)!=b['script_sha256']: raise ValueError(origin+': source hash mismatch '+b['script'])
-                        inputs[b['script']]=sha(data);tmp=work/'source.lms';tmp.write_bytes(data)
+                        inputs[b['script']]=sha(data);tmp=work/'source.lms';tmp.write_bytes(host_flag_spelling(data.decode('utf-8')).encode('utf-8'))
                         rawurl=f'https://raw.githubusercontent.com/lmctl-ai/{tool}/{commit}/{b["script"]}'
                         commands=[' '.join(shlex.quote(rawurl if token==b['script'] and command[:2]==['lmctl','autorun'] else token) for token in command) for command in b['commands']]
                         render(path,'code',script=str(tmp),command='\n'.join(commands),expected=b.get('stdout',''))
@@ -209,13 +243,16 @@ def pull(tool, ref, source, store, released_version=None):
                         render(path,'video',caption=b['caption'],mp4=sources.get('mp4',''),webm=sources.get('webm',''),poster=urls[b['poster']],duration=str(b['duration_seconds'])+' seconds',width=mids[b['media'][0]]['width'],height=mids[b['media'][0]]['height'])
                 render(path,'finish')
         page_host=Path(str(work/'page.dslb')+'.host').read_text().strip()
-        lock={'version':1,'compiler':subprocess.check_output([compiler,'--version'],text=True).strip(),'page_renderer':{'version':subprocess.check_output([page_host,'--version'],text=True).strip(),'sha256':sha(Path(page_host).read_bytes())},'repository':content['repository'],'commit':commit,'content_sha256':sha(raw),'schema_sha256':sha(SCHEMA.read_bytes()),'template_sha256':sha(template.read_bytes()),'books':[g['id'] for g in content['groups']],'media':locked,'inputs':dict(sorted(inputs.items())),'publication_status':'PUBLISHED' if released_version else content['publication_status'],'content_publication_status':content['publication_status'],'released_version':released_version}
+        lock={'host_flag_spelling_overlay':'lmcode','version':1,'compiler':subprocess.check_output([compiler,'--version'],text=True).strip(),'page_renderer':{'version':subprocess.check_output([page_host,'--version'],text=True).strip(),'sha256':sha(Path(page_host).read_bytes())},'repository':content['repository'],'commit':commit,'content_sha256':sha(raw),'schema_sha256':sha(SCHEMA.read_bytes()),'template_sha256':sha(template.read_bytes()),'books':[g['id'] for g in content['groups']],'media':locked,'inputs':dict(sorted(inputs.items())),'publication_status':'PUBLISHED' if released_version else content['publication_status'],'content_publication_status':content['publication_status'],'released_version':released_version}
         target=ROOT/'tools'/tool
         install_books(out,target,[g['id'] for g in content['groups']],lock)
         print(f'{tool}: rendered {len(content["groups"])} books, {sum(len(g["chapters"]) for g in content["groups"])} chapters; {len(locked)} media / {sum(m["bytes"] for m in locked)} bytes')
 
 
 def main():
+    if sys.argv[1:] == ['--refresh-host-flag-spellings']:
+        print('Refreshed', refresh_host_flag_spellings(), 'owned book text files')
+        return
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('tool');p.add_argument('--source');p.add_argument('--ref',default='main');p.add_argument('--media-store',required=True);p.add_argument('--released-version');a=p.parse_args()
     try: pull(a.tool,a.ref,a.source,a.media_store,a.released_version)
     except (ValueError,KeyError) as e: p.exit(2,f'pull:books: {e}\n')

@@ -25,6 +25,8 @@ def refresh_host_flag_spellings(root=ROOT):
     changed = 0
     for manifest in sorted((root / 'tools').glob('*/examples/.generated-files')):
         book = manifest.parent.resolve()
+        if manifest.is_symlink() or not book.is_relative_to(root.resolve()):
+            raise ValueError('unsafe generated book ownership')
         for relative in manifest.read_text().splitlines():
             target = root / relative if relative.startswith('tools/') else book / relative
             if target.is_symlink() or not target.resolve().is_relative_to(book):

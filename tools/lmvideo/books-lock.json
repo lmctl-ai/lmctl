@@ -598,5 +598,6 @@
   },
   "publication_status": "PUBLISHED",
   "content_publication_status": "RELEASED",
-  "released_version": "0.1.36"
+  "released_version": "0.1.36",
+  "host_flag_spelling_overlay": "lmcode"
 }

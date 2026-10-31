@@ -28,6 +28,25 @@ def manifest():
 
 
 class BookManifestTests(unittest.TestCase):
+    def test_owned_book_flag_refresh_preserves_source_pin_and_plumbing(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            tool = root/'tools/lmvideo'
+            book = tool/'showcase'
+            book.mkdir(parents=True)
+            lock = {'books':['showcase'], 'commit':'source-pin', 'inputs':{'source.lms':'original-hash'}, 'media':[]}
+            (tool/'books-lock.json').write_text(json.dumps(lock))
+            old = '--' + 'dsl'
+            raw = ('savedsl(p, "file.dslb"); system(host, ["'+old+'", "file.dslb"]);').encode()
+            (book/'sample.html').write_bytes(raw)
+            self.assertEqual(pull_books.refresh_host_flag_spellings(root), 1)
+            self.assertEqual((book/'sample.html').read_bytes(), raw.replace(old.encode(), b'--lmcode'))
+            updated = json.loads((tool/'books-lock.json').read_text())
+            self.assertEqual(updated['inputs'], lock['inputs'])
+            self.assertEqual(updated['commit'], lock['commit'])
+            self.assertEqual(updated['host_flag_spelling_overlay'], 'lmcode')
+            self.assertEqual(pull_books.refresh_host_flag_spellings(root), 0)
+
     def valid(self):
         return manifest()
 
