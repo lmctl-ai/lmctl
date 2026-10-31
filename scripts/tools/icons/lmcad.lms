@@ -1,5 +1,5 @@
 # lmcad icon: a cube with a cylindrical hole and a ball resting on top (CAD booleans).
-# Usage (see README.md): lmscript lmcad.lms OUT_DIR OUT.dslb, then lmcad --dsl OUT.dslb
+# Usage (see README.md): lmscript lmcad.lms OUT_DIR OUT.dslb, then lmcad --lmcode OUT.dslb
 out = ARGV.get(0, "build");
 p = _lmcode_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
 # --- shared icon look: identical in every icon script (render.sh --check verifies) ---

@@ -32,10 +32,10 @@
 <p>Download the latest lmdraw binary from <a href="https://github.com/lmctl-ai/lmdraw/releases/latest">GitHub Releases</a>. Install Node.js 24.15 or newer and use the published lmscript compiler with npx. Source builds require C++17, CMake, Ninja and Python 3; the project README has the build steps.</p>
 <h2>Commands</h2>
 <pre><code>npx --yes --package=@lmctl-ai/lmctl -- lmscript scene.lms build/scene.dslb
-lmdraw --dsl build/scene.dslb
+lmdraw --lmcode build/scene.dslb
 lmdraw --schema
 lmdraw --schema --json
-lmdraw --dsl-signatures</code></pre>
+lmdraw --lmcode-signatures</code></pre>
 <p>Compile against the exact JSON printed by lmdraw --schema --json. The short --schema summary is for people; the JSON is the compiler input.</p>
 <h2>Inputs and outputs</h2>
 <ul>
@@ -79,7 +79,7 @@ Scene.linear_gradient(string, float, float, float, float) -> Gradient</code></pr
 <h2>How to verify</h2>
 <ol>
 <li>Compile using the schema bytes from lmdraw --schema --json.</li>
-<li>Compare lmscript --dsl-signatures schema.json with lmdraw --dsl-signatures when checking schema and registry parity.</li>
+<li>Compare lmscript --lmcode-signatures schema.json with lmdraw --lmcode-signatures when checking schema and registry parity.</li>
 <li>Run the bytecode and confirm the host prints its success result.</li>
 <li>Check image dimensions and inspect the render visually. Re-run the same input and compare PNG bytes when determinism matters.</li>
 <li>For animation, count the numbered frames, inspect first, middle and last images, and verify the encoded video dimensions and frame rate.</li>

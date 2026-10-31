@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
 <pre><kbd>./greeter --signatures</kbd>
 <samp>context g: Greeter
 method Greeter.say(string) -> void</samp></pre>
-<pre><kbd>diff -u &lt;(npx --yes --package=@lmctl-ai/lmctl -- lmscript --dsl-signatures schema.json) &lt;(./greeter --signatures)</kbd>
+<pre><kbd>diff -u &lt;(npx --yes --package=@lmctl-ai/lmctl -- lmscript --lmcode-signatures schema.json) &lt;(./greeter --signatures)</kbd>
 <samp>signature parity: 0</samp></pre>
 <pre><kbd>./greeter demo.dslb schema.json</kbd>
 <samp>{"ok": true, "result": "Hello from the DSL"}</samp></pre>

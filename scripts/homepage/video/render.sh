@@ -71,7 +71,7 @@ if [[ $ENGINE == lmblender ]]; then
   if [[ $MODE == check ]]; then cmp "$work/manifest.json" "$SCRIPT_DIR/lmblender/manifest.json"; fi
   mkdir -p "$work/backdrop/build/rendered"
   (cd "$work/backdrop" && "$LMSCRIPT_BIN" "$SCRIPT_DIR/overlay/background.lms" background.dslb)
-  (cd "$work/backdrop" && nice -n 10 "$LMDRAW_BIN" --dsl background.dslb)
+  (cd "$work/backdrop" && nice -n 10 "$LMDRAW_BIN" --lmcode background.dslb)
   backdrop="$work/backdrop/build/rendered/backdrop.png"
   [[ -s $backdrop ]] || { echo 'lmdraw did not render the navy background.' >&2; exit 1; }
 fi
@@ -82,7 +82,7 @@ for n in 1 2 3 4; do
   if [[ $ENGINE == lmcad ]]; then
     cp "$SOURCE_DIR/$name.lms" "$work/$name.lms"
     (cd "$work" && "$LMSCRIPT_BIN" "$name.lms" "$name.dslb")
-    (cd "$work" && "$LMCAD_BIN" --dsl "$name.dslb")
+    (cd "$work" && "$LMCAD_BIN" --lmcode "$name.dslb")
   else
     cycle_dir="$cache_root/$name"; key_file="$cycle_dir/cache-key.txt"
     key_material=$(cat "$SOURCE_DIR/$name.lms" "$SOURCE_DIR/schema/lmblender.dsl.json"; printf '%s|%s|%s|%s|%s|%s' "$blender_hash" "$FRAME_COUNT" "$FRAME_RATE" "$WIDTH" "$HEIGHT" "$BLENDER_SAMPLES")
@@ -93,7 +93,7 @@ for n in 1 2 3 4; do
     else
       mkdir -p "$work/cycles/frames/$name"
       (cd "$work/cycles" && "$LMSCRIPT_BIN" "$SOURCE_DIR/$name.lms" "$name.dslb" final)
-      (cd "$work/cycles" && nice -n 10 "$LMBLENDER_BIN" --dsl "$name.dslb")
+      (cd "$work/cycles" && nice -n 10 "$LMBLENDER_BIN" --lmcode "$name.dslb")
       count=$(find "$work/cycles/frames/$name" -maxdepth 1 -type f -name 'frame-*.png' | wc -l | tr -d ' ')
       [[ $count == "$FRAME_COUNT" ]] || { echo "$name rendered $count Cycles frames; expected $FRAME_COUNT" >&2; exit 1; }
       rm -rf "$cycle_dir"; mkdir -p "$cycle_dir"
@@ -104,7 +104,7 @@ for n in 1 2 3 4; do
     cp "$cycle_dir"/frame-*.png "$work/frames/$name/"
     ov="$work/overlay/$name"; mkdir -p "$ov/build/rendered"
     (cd "$ov" && "$LMSCRIPT_BIN" "$SCRIPT_DIR/overlay/$name.lms" "$name.dslb")
-    (cd "$ov" && nice -n 10 "$LMDRAW_BIN" --dsl "$name.dslb")
+    (cd "$ov" && nice -n 10 "$LMDRAW_BIN" --lmcode "$name.dslb")
     ov_count=$(find "$ov/build/rendered" -maxdepth 1 -type f -name 'overlay-*.png' | wc -l | tr -d ' ')
     [[ $ov_count == "$FRAME_COUNT" ]] || { echo "$name rendered $ov_count overlays; expected $FRAME_COUNT" >&2; exit 1; }
     # Replace the Cycles black world with a branded navy gradient, then composite labels.

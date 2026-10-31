@@ -30,13 +30,13 @@
 <h2>When to use it</h2>
 <p>Use lmhtml for checking internal links, auditing CSS classes and IDs, comparing page structure, finding shared markup, or applying consistent edits across pages.</p>
 <h2>Install</h2>
-<p>For an LMScript program, install Node.js 24.15 or newer and lmscript 0.2.420 or newer. Compile with the published compiler. Declare the released host with cli="lmhtml" install="github:lmctl-ai/lmhtml@latest"; lmscript downloads the matching platform binary and verifies its release checksum. The binary prints lmhtml X.Y.Z with --version and exposes its schema with --dsl-schema --json. Source builds need C++17, CMake, Ninja and the project setup described in the <a href="https://github.com/lmctl-ai/lmhtml#build">README</a>.</p>
+<p>For an LMScript program, install Node.js 24.15 or newer and lmscript 0.2.420 or newer. Compile with the published compiler. Declare the released host with cli="lmhtml" install="github:lmctl-ai/lmhtml@latest"; lmscript downloads the matching platform binary and verifies its release checksum. The binary prints lmhtml X.Y.Z with --version and exposes its schema with --lmcode-schema --json. Source builds need C++17, CMake, Ninja and the project setup described in the <a href="https://github.com/lmctl-ai/lmhtml#build">README</a>.</p>
 <h2>Commands</h2>
-<pre><code>lmhtml --dsl-schema
-lmhtml --dsl-schema --json
-lmhtml --dsl-signatures
+<pre><code>lmhtml --lmcode-schema
+lmhtml --lmcode-schema --json
+lmhtml --lmcode-signatures
 npx --yes --package=@lmctl-ai/lmctl -- lmscript check.lms build/check.dslb
-lmhtml --dsl build/check.dslb</code></pre>
+lmhtml --lmcode build/check.dslb</code></pre>
 <p>Start from the <a href="/tools/lmhtml/examples/">runnable examples</a> or use the <a href="/tools/lmhtml/get_started.html">provider-session quickstart</a>.</p>
 <p>Markdown notes use the same document tree. Native commands need only the host:</p>
 <pre><kbd>lmhtml md2html notes/chapter.md build/chapter.html</kbd>
@@ -54,7 +54,7 @@ lmhtml --dsl build/check.dslb</code></pre>
 <h2>Errors and exit codes</h2>
 <p>Exit 0 means success. Exit 2 reports usage or bytecode compilation problems; exit 3 reports bytecode load or host runtime errors; exit 4 reports an application failure such as a report explicitly marked as failed. A missing file, invalid selector, or out-of-range collection access is a runtime failure. Compile errors point to a source location.</p>
 <h2>How to verify</h2>
-<ol><li>Compile tool programs with cli="lmhtml" and install="github:lmctl-ai/lmhtml@latest"; the local version-matched binary on PATH takes precedence over a download.</li><li>Compare lmscript --dsl-signatures schema.json with lmhtml --dsl-signatures when validating a host adapter.</li><li>Run the bytecode against a synthetic site first and inspect both the JSON result line and report file.</li><li>For edits, use --dry-run, review the destination files, then run normally and re-diff.</li><li>Repeat the run and compare outputs when deterministic reports matter.</li></ol>
+<ol><li>Compile tool programs with cli="lmhtml" and install="github:lmctl-ai/lmhtml@latest"; the local version-matched binary on PATH takes precedence over a download.</li><li>Compare lmscript --lmcode-signatures schema.json with lmhtml --lmcode-signatures when validating a host adapter.</li><li>Run the bytecode against a synthetic site first and inspect both the JSON result line and report file.</li><li>For edits, use --dry-run, review the destination files, then run normally and re-diff.</li><li>Repeat the run and compare outputs when deterministic reports matter.</li></ol>
 <h3>Plain content for agents</h3>
 <p>Use lint to measure unnecessary decoration and entities, normalize to remove them without changing the text, and clean to extract main content for agents. Plain prose has no inline code or emphasis. Copyable commands belong in blocks. Text needs only ampersand and less-than escapes; attributes need only ampersand and quote escapes.</p>
 <pre><code>lmhtml lint --stats --json skills tools durable-memory

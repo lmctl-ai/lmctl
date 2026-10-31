@@ -1,0 +1,20 @@
+{
+  "reason": "Exact pre-cutover historical record lines; maintained instructions and executable code have no exceptions.",
+  "lines": {
+    "durable-memory/skills-audit.md": [
+      "d33b01517d85b0a0dbf6a69384fbcd124652bb97b57c618ef78ad8e0353f65fe",
+      "1c4779c248c8c257931879e29e417fad860ecaa4edcbb136aecc93c8842e19da"
+    ],
+    "durable-memory/tool-book-feedback/lmcad.md": [
+      "f2b21a7e3c87a2771dbd099581cb66a0061ad13a27943ea5099e7d9564c86cf1",
+      "bb76b6ceed06bb8d00b93dd1a11139e6b348783a540297bebdd4e1f879acd807"
+    ],
+    "durable-memory/tool-book-feedback/lmhtml.md": [
+      "b8587cb5aca678a942213f5d60cb397acced6c848ac5f59632d3e78461be3dbc"
+    ],
+    "durable-memory/tool-book-feedback/lmr.md": [
+      "30ecdf9d9139ca170b6fff8f52a92c3f71ea6bbbcc6d4cd5366abac878b7bb95",
+      "c06c28e7231c1f312c3874414c0438778468ba4c81e1682d4ae349b813e67bb1"
+    ]
+  }
+}

@@ -1,5 +1,5 @@
 # lmpy icon: a compact numerical matrix on a rounded panel.
-# Usage (see README.md): lmscript lmpy.lms OUT_DIR OUT.dslb, then lmcad --dsl OUT.dslb
+# Usage (see README.md): lmscript lmpy.lms OUT_DIR OUT.dslb, then lmcad --lmcode OUT.dslb
 out = ARGV.get(0, "build");
 p = _lmcode_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
 # --- shared icon look: identical in every icon script (render.sh --check verifies) ---

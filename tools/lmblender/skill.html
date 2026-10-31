@@ -44,7 +44,7 @@ scene.studio_setup();
 scene.render_png("build/ball.png", 16, 640, 480);
 end _lmcode_
 savedsl(p, "build/ball.dslb");
-r = system ${dsl_cli(p)} --dsl build/ball.dslb;
+r = system ${dsl_cli(p)} --lmcode build/ball.dslb;
 if (r.code != 0) { println(trim(r.stdout)); exit(1); }</code></pre>
 <h2>Commands</h2>
 <p>Run a complete lmscript file from an empty working directory. Output paths are relative to that directory. Make each output directory before calling the host.</p>
@@ -52,14 +52,14 @@ if (r.code != 0) { println(trim(r.stdout)); exit(1); }</code></pre>
 <p>Useful host commands are:</p>
 <ul>
 <li>lmblender --version prints the host and linked renderer versions.</li>
-<li>lmblender --dsl-schema prints a compact API summary.</li>
-<li>lmblender --dsl-schema --json prints the embedded schema.</li>
-<li>lmblender --dsl-signatures prints the registered DSL signatures.</li>
+<li>lmblender --lmcode-schema prints a compact API summary.</li>
+<li>lmblender --lmcode-schema --json prints the embedded schema.</li>
+<li>lmblender --lmcode-signatures prints the registered DSL signatures.</li>
 <li>lmblender --presets lists embedded scene presets.</li>
 </ul>
 <p>For renders that can take longer than sixty seconds, use an argument list and pass an explicit timeout in milliseconds to system. Keep the render within the example-book limit of 180 seconds.</p>
 <pre><code>argv = dsl_cli(p);
-push(argv, "--dsl");
+push(argv, "--lmcode");
 push(argv, "build/scene.dslb");
 r = system(argv, 240000);</code></pre>
 <h2>Inputs and outputs</h2>
@@ -88,7 +88,7 @@ scene.studio_setup();
 scene.render_png("build/ball.png", 16, 640, 480);
 end _lmcode_
 savedsl(p, "build/ball.dslb");
-r = system ${dsl_cli(p)} --dsl build/ball.dslb;
+r = system ${dsl_cli(p)} --lmcode build/ball.dslb;
 if (r.code != 0) { println(trim(r.stdout)); exit(1); }</code></pre>
 <p>For a geometric model, inspect the result before adding presentation details:</p>
 <pre><code>let box = scene.cube(2.0);
@@ -110,7 +110,7 @@ scene.assert_close(box.volume(), 8.0, 0.000001);</code></pre>
 <li>Confirm the requested image or mesh file exists and is nonempty.</li>
 <li>Check image dimensions and inspect the composition at the target size.</li>
 <li>Assert mesh counts or numeric properties in the scene when the task has measurable geometry requirements.</li>
-<li>For a release check, compare --version with the pinned release tag, compare --dsl-schema --json byte-for-byte with the repository schema, and compare --dsl-signatures with the generated schema signatures.</li>
+<li>For a release check, compare --version with the pinned release tag, compare --lmcode-schema --json byte-for-byte with the repository schema, and compare --lmcode-signatures with the generated schema signatures.</li>
 </ol>
 </main>
 <footer>

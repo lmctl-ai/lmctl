@@ -19,6 +19,40 @@ spec.loader.exec_module(module)
 
 
 class ExampleBookTests(unittest.TestCase):
+    def test_retired_flag_in_a_pinned_source_does_not_restore_old_output(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            script = root / 'example.lms'
+            old = '--' + 'dsl'
+            script.write_text('p = _lmcode_ cli="lmr" install="github:lmctl-ai/lmr@latest";\nend _lmcode_\nsavedsl(p, out);\nrun = system ${dsl_cli(p)} ' + old + ' ${out};\n')
+            result = module.quickrun_source('lmr', script, root, root)
+        self.assertNotIn(old, result)
+        self.assertEqual(result.count('system ${dsl_cli(p)} --lmcode ${out}'), 1)
+        self.assertIn('savedsl(p, out);', result)
+
+    def test_flag_refresh_preserves_plumbing_and_is_idempotent(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            book = root / 'tools/demo/examples'
+            book.mkdir(parents=True)
+            (book / '.generated-files').write_text('tools/demo/examples/sample.lms\n')
+            old = '--' + 'dsl'
+            original = ('p = _dsl_ schema="sample.dsl.json";\nend _dsl_\nsavedsl(p, "out.dslb");\nr = system ${dsl_cli(p)} ' + old + ' ${out};\n').encode()
+            script = book / 'sample.lms'
+            script.write_bytes(original)
+            self.assertEqual(module.refresh_host_flag_spellings(root), 1)
+            self.assertEqual(script.read_bytes(), original.replace(old.encode(), b'--lmcode'))
+            self.assertEqual(module.refresh_host_flag_spellings(root), 0)
+
+    def test_flag_refresh_refuses_paths_outside_generated_book(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            book = root / 'tools/demo/examples'
+            book.mkdir(parents=True)
+            (book / '.generated-files').write_text('../../outside.lms\n')
+            with self.assertRaisesRegex(ValueError, 'unsafe generated book path'):
+                module.refresh_host_flag_spellings(root)
+
     def test_quickrun_preserves_release_install_declaration(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -40,7 +74,7 @@ savedsl(p, out);
             script.write_text('''p = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";\nscene.assert_close(1.0, 1.0, 0.001);\nend _dsl_\nsavedsl(p, "build/loop-row.dslb");\n''')
             result = module.quickrun_source("lmcad", script, root, root)
         self.assertIn('out = "build/loop-row.dslb";', result)
-        self.assertIn("system ${dsl_cli(p)} --dsl ${out}", result)
+        self.assertIn("system ${dsl_cli(p)} --lmcode ${out}", result)
 
     def test_quickrun_does_not_append_a_second_host_run(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -51,12 +85,12 @@ out = "build/example.dslb";
 p = _dsl_ cli="lmr" install="github:lmctl-ai/lmr@v0.5.1";
 end _dsl_
 savedsl(p, out);
-  r = system ${dsl_cli(p)} --dsl ${out};
+  r = system ${dsl_cli(p)} --lmcode ${out};
 ''')
             result = module.quickrun_source("lmr", script, root, root, "v0.5.1")
         self.assertIn('install="github:lmctl-ai/lmr@v0.5.1"', result)
         self.assertEqual(result.count('if (!file_exists("build"))'), 1)
-        self.assertEqual(result.count("system ${dsl_cli(p)} --dsl ${out}"), 1)
+        self.assertEqual(result.count("system ${dsl_cli(p)} --lmcode ${out}"), 1)
 
     def test_text_output_is_written_and_rendered_as_plain_text(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -68,7 +102,7 @@ savedsl(p, out);
 p = _dsl_ cli="sampletool" install="github:lmctl-ai/sampletool@latest";
 end _dsl_
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 ''')
             data_path = root / "book.json"
             data_path.write_text(json.dumps({
@@ -174,7 +208,7 @@ savedsl(p, out);
         self.assertIn('scene.load_svg("assets/quickrun-', result)
         self.assertIn('set_attr("font-family", "Noto Sans")', result)
         self.assertNotIn("scene.load_font", result)
-        self.assertIn("system ${dsl_cli(p)} --dsl ${out}", result)
+        self.assertIn("system ${dsl_cli(p)} --lmcode ${out}", result)
 
     def test_refuses_svg_escape(self):
         with tempfile.TemporaryDirectory() as temp:

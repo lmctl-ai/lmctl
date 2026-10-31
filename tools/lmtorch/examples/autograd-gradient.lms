@@ -12,7 +12,7 @@ end _lmcode_
 out = "autograd-gradient.dslb";
 
 savedsl(p, "autograd-gradient.dslb");
-run = system ${dsl_cli(p)} --dsl autograd-gradient.dslb;
+run = system ${dsl_cli(p)} --lmcode autograd-gradient.dslb;
 if (run.code != 0) { println(str(run.stderr)); exit(run.code); }
 result = json_parse(run.stdout).result;
 println(f"loss {result.loss}, gradient {json_stringify(result.gradient)}");

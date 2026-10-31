@@ -29,8 +29,8 @@
 <h2>CLI</h2>
 <pre><code>lmdraw --schema
 lmdraw --schema --json
-lmdraw --dsl-signatures
-lmdraw --dsl FILE.dslb [FILE.dslb ...]</code></pre>
+lmdraw --lmcode-signatures
+lmdraw --lmcode FILE.dslb [FILE.dslb ...]</code></pre>
 <p>The short schema output is generated from the host registry. JSON output is the exact embedded schema bytes used by lmscript. Multiple bytecode files are validated before execution, then run in order.</p>
 <h2>Schema summary</h2>
 <p>This list is copied from lmdraw --schema. The output is the canonical compact summary for authors.</p>
@@ -64,7 +64,7 @@ Scene.polyline(string, string, float) -> Node
 Scene.rect(float, float, float, float, string) -> Node
 Scene.render_png(string, int, int, int) -> void
 Scene.text(float, float, float, string, string) -> Node</code></pre>
-<p>For the exact compiler input, save lmdraw --schema --json to a file and use that JSON in the LMCode declaration. lmdraw --dsl-signatures prints the registry side of the compiler parity check.</p>
+<p>For the exact compiler input, save lmdraw --schema --json to a file and use that JSON in the LMCode declaration. lmdraw --lmcode-signatures prints the registry side of the compiler parity check.</p>
 <h2>Retained nodes and attributes</h2>
 <p>Constructors return Node, Group or Gradient handles. Node.set_attr(name, value) updates a node using SVG attribute names. Group.add attaches a node or group. A node or group may have only one parent, and group cycles are rejected.</p>
 <table>
@@ -111,7 +111,7 @@ Scene.text(float, float, float, string, string) -> Node</code></pre>
 <ul>
 <li>At most 10,000 nodes and 1,024 gradients, with at most 128 stops per gradient.</li>
 <li>SVG input is at most 2 MiB; custom font input is a TrueType file below assets/fonts/ and at most 8 MiB.</li>
-<li>Bytecode files are at most 16 MiB. Every file passed to one --dsl call is verified before any script runs.</li>
+<li>Bytecode files are at most 16 MiB. Every file passed to one --lmcode call is verified before any script runs.</li>
 <li>Image dimensions are limited to 4,096 per side and 8,000,000 total pixels. Render scale is from 1 to 4 within that total.</li>
 <li>PNG output must be a direct child of build/rendered/. Symlink escapes and traversal are rejected; writes are atomic and respect the process umask.</li>
 <li>Exit 2 indicates invalid arguments, exit 3 a bytecode or host error, and exit 4 another application failure.</li>

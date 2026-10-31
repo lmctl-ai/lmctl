@@ -14,5 +14,5 @@ report.write_text("build/template-report.txt");
 end _lmcode_
 savedsl(p, out);
 
-run = system ${dsl_cli(p)} --dsl ${out};
+run = system ${dsl_cli(p)} --lmcode ${out};
 if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

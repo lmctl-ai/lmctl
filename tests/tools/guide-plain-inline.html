@@ -28,14 +28,14 @@
 <p>lmhtml is a native host for auditing links and CSS names, comparing HTML documents, extracting templates, and applying shared-page edits.</p>
 <h2>Install and run</h2>
 <p>Use the latest binary from <a href="https://github.com/lmctl-ai/lmhtml/releases">Releases</a>. For source builds, follow the setup and build steps in the <a href="https://github.com/lmctl-ai/lmhtml#build">README</a>. Install Node.js 24.15 or newer for the published compiler.</p>
-<pre><code>lmhtml --dsl-schema
-lmhtml --dsl-schema --json > lmhtml.dsl.json
-lmhtml --dsl-signatures
+<pre><code>lmhtml --lmcode-schema
+lmhtml --lmcode-schema --json > lmhtml.dsl.json
+lmhtml --lmcode-signatures
 npx --yes --package=@lmctl-ai/lmctl -- lmscript audit.lms build/audit.dslb
-lmhtml --dsl build/audit.dslb [more.dslb ...]</code></pre>
-<p>--dsl-schema prints a compact human-readable summary; --dsl-schema --json prints the embedded compiler input byte-for-byte. --dsl-signatures prints the bound host signatures. Multiple bytecode files run in order against the same embedded schema; all files are loaded and verified before execution. Use --dry-run to report saves without writing.</p>
+lmhtml --lmcode build/audit.dslb [more.dslb ...]</code></pre>
+<p>--lmcode-schema prints a compact human-readable summary; --lmcode-schema --json prints the embedded compiler input byte-for-byte. --lmcode-signatures prints the bound host signatures. Multiple bytecode files run in order against the same embedded schema; all files are loaded and verified before execution. Use --dry-run to report saves without writing.</p>
 <h2>Reference</h2>
-<p>The following members are copied from the output of lmhtml --dsl-schema (lmhtml v0.2.0). Contexts are followed by functions and then each host type with its methods.</p>
+<p>The following members are copied from the output of lmhtml --lmcode-schema (lmhtml v0.2.0). Contexts are followed by functions and then each host type with its methods.</p>
 <h3>Contexts and functions</h3>
 <pre><code>context html: Html
 context report: Report

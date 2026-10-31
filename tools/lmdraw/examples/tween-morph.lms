@@ -79,5 +79,5 @@ end _lmcode_
 savedsl(p, out);
 println(f"wrote {out}");
 
-run = system ${dsl_cli(p)} --dsl ${out};
+run = system ${dsl_cli(p)} --lmcode ${out};
 if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

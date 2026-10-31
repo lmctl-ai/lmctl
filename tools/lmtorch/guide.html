@@ -31,7 +31,7 @@
 let x = torch.tensor("[1.0, 2.0, 3.0]");
 out.set("sum", x.sum().item());
 end _lmcode_</code></pre>
-<p>Use dsl_cli(p) as the command prefix when running the saved bytecode with --dsl. The host prints one JSON result containing values set through out.</p>
+<p>Use dsl_cli(p) as the command prefix when running the saved bytecode with --lmcode. The host prints one JSON result containing values set through out.</p>
 <h2>Tensor creation and operations</h2>
 <p>Torch creates tensors from JSON arrays and provides zeros, ones, full, rand, randn, arange, linspace, eye, and scalar constructors. Tensor methods cover shape, indexing, arithmetic, matrix multiplication, reductions, reshaping, activations, comparisons, and file output.</p>
 <pre><code>let a = torch.tensor("[[1.0, 2.0], [3.0, 4.0]]");

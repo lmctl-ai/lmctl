@@ -2,7 +2,7 @@
 # geometric glyphs — l (ascender bar), m (three stems, flat top),
 # C (open capital), t (stem + crossbar) — built from extruded boxes.
 # (No helper functions: script fns cannot capture the constants below.)
-# Usage (see README.md): lmscript site.lms OUT_DIR OUT.dslb, then lmcad --dsl OUT.dslb
+# Usage (see README.md): lmscript site.lms OUT_DIR OUT.dslb, then lmcad --lmcode OUT.dslb
 out = ARGV.get(0, "build");
 p = _lmcode_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
 # --- shared icon look: identical in every icon script (render.sh --check verifies) ---

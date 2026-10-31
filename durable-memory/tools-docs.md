@@ -13,7 +13,7 @@ tools/ is the source of [https://lmctl.com/tools/](<https://lmctl.com/tools/>): 
 3. npm run check:tools (must print check: OK).
 4. Commit the content and the generated HTML together, including repo.txt when needed.
 
-Prerequisite once: lmscript 0.2.369 or newer on PATH (or set LMSCRIPT for icon rendering). Each script declares its host with cli and install; lmscript reads that release binary's embedded schema and downloads a missing asset into its tool cache with SHA-256 verification. CI installs the matching compiler release and works from an empty host cache. lmhtml, lmcad and lmdraw scripts use @latest. lmdraw 0.1.2 exposes --version and the compiler's --dsl-schema protocol; lmblender releases are still drafts, so its scenes keep a local schema until a release supports the install contract.
+Prerequisite once: lmscript 0.2.369 or newer on PATH (or set LMSCRIPT for icon rendering). Each script declares its host with cli and install; lmscript reads that release binary's embedded schema and downloads a missing asset into its tool cache with SHA-256 verification. CI installs the matching compiler release and works from an empty host cache. lmhtml, lmcad and lmdraw scripts use @latest. lmdraw 0.1.2 exposes --version and the compiler's --lmcode-schema protocol; lmblender releases are still drafts, so its scenes keep a local schema until a release supports the install contract.
 
 ## Layout
 
@@ -179,3 +179,11 @@ lmhtml clean FILE --base [https://lmctl.com/tools/lmhtml/](<https://lmctl.com/to
 An examples book can live below tools/TOOL/examples/. The per-tool input is tools/TOOL/book.json and is excluded from the static publication manifest. It drives both the examples book and the solo/trio scripts, so adding a tool requires data, not generator edits. It records the public repository, description, task, the LMScript DSL/API/example links, provider member defaults and optional examples/render metadata. Run TOOL=NAME REF=main npm run sync:tool-examples; set SOURCE_DIR and SOURCE_REF to use a local checkout, OUTPUT_DIR to render into a scratch tree, and DATA_FILE only to test alternate JSON. The generator reads examples/*.lms plus examples/README.md descriptions and examples/renders previews, unless book.json explicitly lists example files and rendered outputs. It writes pages, install-enabled source and compact images under tools/NAME/examples/. It runs the generated sources directly with lmscript when available, so release installation and host rendering do not need provider config. Set LMSCRIPT_TOOL_CACHE to an empty directory to prove the released install path. When ffmpeg is available, full-size PNG outputs are quantized to compact previews; otherwise the source repository preview is used.
 
 Autorun team scripts use scripts/tools/quickrun-template.lms and the same tools/NAME/book.json. Run TOOL=NAME python3 scripts/tools/generate-quickruns.py to regenerate tools/NAME/NAME_solo.lms and NAME_trio.lms; set OUTPUT_ROOT for a scratch tree. The generator writes leading autorun-role headers and matching @role(Alias.provider) and @role(Alias.model) references from member data. Add approved script entries to autorun/examples.json, then run node scripts/build-onboarding-catalogs.mjs; this regenerates /autorun/index.txt and the hello-only /helloexample/index.txt and their HTML views. Hello provider examples join the curated autorun catalog automatically and do not belong in the tool list. Public .lms sources are deployed as text/plain with revalidation, so edits become live promptly. The tools checker handles HTML book pages and the static publisher includes HTML, source and preview assets in its manifest and live byte checks.
+
+## Host option spelling maintenance
+
+Run `python3 scripts/tools/generate-example-book.py --refresh-host-flag-spellings`
+for a flag-only refresh of manifest-owned example scripts/pages. This preserves
+existing savedsl/system/dsl_cli structure, render assets and source provenance.
+Full book generation also normalizes host options when reading pinned source
+snapshots. The separate language plumbing migration remains independent.

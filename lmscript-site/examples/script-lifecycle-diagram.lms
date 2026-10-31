@@ -20,6 +20,6 @@ scene.text(60.0, 250.0, 14.0, "A dry preflight previews effects; it is not a sec
 scene.render_png("build/rendered/script-lifecycle.png", 960, 300, 1);
 end _lmcode_
 savedsl(p, "build/rendered/script-lifecycle.dslb");
-run = system ${dsl_cli(p)} --dsl build/rendered/script-lifecycle.dslb;
+run = system ${dsl_cli(p)} --lmcode build/rendered/script-lifecycle.dslb;
 if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }
 println("compiled script lifecycle diagram");

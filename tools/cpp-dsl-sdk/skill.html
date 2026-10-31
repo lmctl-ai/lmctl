@@ -31,9 +31,9 @@
 <p>Include dslvm.hpp from the SDK and compile as C++17. The standard function schema is included by each Registry; add callbacks only for host-specific functions and methods. Use a compiler that emits the SDK's current bytecode version.</p>
 <h2>Commands</h2>
 <pre><code>g++ -std=c++17 -Iinclude host.cpp -o host
-lmscript --dsl-signatures schema.json
-./host --dsl-signatures
-./host --dsl scene.dslb</code></pre>
+lmscript --lmcode-signatures schema.json
+./host --lmcode-signatures
+./host --lmcode scene.dslb</code></pre>
 <h2>Inputs and outputs</h2>
 <ul><li>Input: binary bytecode and the exact JSON schema bytes used to compile it.</li><li>Host setup: registry callbacks plus context pointers to host-owned objects.</li><li>Output: host-defined effects and, for command-line programs, one standard JSON result line.</li></ul>
 <h2>Safety rules</h2>

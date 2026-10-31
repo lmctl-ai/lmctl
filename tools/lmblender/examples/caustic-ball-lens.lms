@@ -36,12 +36,12 @@ scene.render_png("images/caustic-ball-lens.png", 64, 900, 560);
 end _lmcode_
 savedsl(p, out);
 argv = dsl_cli(p);
-push(argv, "--dsl");
+push(argv, "--lmcode");
 push(argv, out);
 r = system(argv, 240000);
 if (r.code != 0) { println(trim(r.stdout)); println(trim(r.stderr)); }
 assert(r.code == 0);
 println("wrote images/caustic-ball-lens.png");
 
-run = system ${dsl_cli(p)} --dsl ${out};
+run = system ${dsl_cli(p)} --lmcode ${out};
 if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

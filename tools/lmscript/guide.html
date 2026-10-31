@@ -85,7 +85,7 @@
 <tr><td>--pref FILE</td><td>Overlay a TOML properties file on PROPS.</td></tr>
 <tr><td>--module SPEC=FILE</td><td>Use a local file for a schema-module import.</td></tr>
 <tr><td>--base-dir DIR, --source-name LABEL</td><td>Import resolution base and the file name used in diagnostics (useful with - and -e).</td></tr>
-<tr><td>--dsl-signatures SCHEMA</td><td>Print a DSL schema's canonical signatures (see <a href="#dsl">DSL blocks</a>).</td></tr>
+<tr><td>--lmcode-signatures SCHEMA</td><td>Print a DSL schema's canonical signatures (see <a href="#dsl">DSL blocks</a>).</td></tr>
 <tr><td>--version, -v</td><td>Print the version.</td></tr>
 <tr><td>help, help NAME, help topics</td><td>List all functions by category, explain one function or built-in, list or show language topics.</td></tr>
 </tbody>
@@ -322,7 +322,7 @@ report.write_text("broken.txt");
 end _lmcode_
 savedsl(check, "links.dslb");</code></pre></li>
 <li>Compile by running the script: lmscript links.lms writes links.dslb.</li>
-<li>Run it in the host: lmhtml --dsl links.dslb prints one JSON result line, {"ok": true, "result": null}, and writes broken.txt.</li>
+<li>Run it in the host: lmhtml --lmcode links.dslb prints one JSON result line, {"ok": true, "result": null}, and writes broken.txt.</li>
 </ol>
 <p>The language inside the block:</p>
 <ul>
@@ -333,7 +333,7 @@ savedsl(check, "links.dslb");</code></pre></li>
 <li>${expr} in the body inserts an lmscript value as a typed literal before compiling (string, int, float or bool).</li>
 <li>Type errors are check errors at the exact position, before anything runs: <pre><samp>error:/home/me/bad.lms:2:27: _dsl_: method Html.load_dir expects string for argument 1; found int</samp></pre></li>
 <li>The compiled value is opaque: printing it is an error; savedsl(value, path) is the only use (atomic write; nothing is written under --dry-run).</li>
-<li>lmscript --dsl-signatures SCHEMA prints the schema's functions and methods, one per line.</li>
+<li>lmscript --lmcode-signatures SCHEMA prints the schema's functions and methods, one per line.</li>
 </ul>
 <p>The bytecode records the SHA-256 of the exact schema bytes; a host refuses a file compiled against a different schema. Note: the built-in lmscript help dsl text in 0.2.348 still describes the previous version (no while, bytecode v4); the released compiler supports while/break/continue and writes bytecode v5, which current hosts require.</p>
 <h3 id="install-cache">Native host install cache</h3>

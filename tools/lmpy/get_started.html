@@ -34,7 +34,7 @@ out.close("normal quantile", q, 1.959963984540054, 0.00000000000001);
 out.put("quantile", q);
 end _lmcode_
 savedsl(p, "build/normal-quantile.dslb");
-r = system ${dsl_cli(p)} --dsl build/normal-quantile.dslb;
+r = system ${dsl_cli(p)} --lmcode build/normal-quantile.dslb;
 if (r.code != 0) { println(r.stderr); exit(r.code); }
 println(r.stdout);</code></pre>
 <h2>2. Run the program</h2>

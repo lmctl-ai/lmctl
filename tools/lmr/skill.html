@@ -31,7 +31,7 @@
 <p>Install the LMScript compiler with npm install -g @lmctl-ai/lmctl. A released lmr binary supports Linux x64 and arm64, macOS x64 and arm64, and Windows x64. The compiler can download the matching release asset and verify its SHA-256 when the host declaration includes install.</p>
 <pre><code>lmscript --version
 lmr --version
-lmr --dsl-schema --json</code></pre>
+lmr --lmcode-schema --json</code></pre>
 <p>The v0.5.1 release embeds the lmr-specific schema from native/schema/lmr.dsl.json. The standard StrList methods come from the LMScript standard library and are not repeated in the host schema. Compare the released binary's JSON bytes with that file when validating a release.</p>
 <h2>Commands</h2>
 <p>Declare the released host in an LMScript program. Then compile and run the saved bytecode through that same binary.</p>
@@ -43,7 +43,7 @@ end _lmcode_
 if (!file_exists("build")) { mkdir("build"); }
 out = "build/analysis.dslb";
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 if (r.code != 0) { println(str(r.stderr)); lm_exit(r.code); }
 println(r.stdout);</code></pre>
 <p>Run the <a href="/tools/lmr/examples/normal-quantile.html">normal quantile example</a> for a complete program with an expected-value check.</p>
@@ -67,10 +67,10 @@ println(r.stdout);</code></pre>
 <h2>How to verify</h2>
 <p>Check the version, schema bytes, and canonical signatures. Then run a fresh-cache example so lmscript downloads the released host and validates its checksum.</p>
 <pre><code>lmr --version
-lmr --dsl-schema --json > /tmp/lmr-schema.json
+lmr --lmcode-schema --json > /tmp/lmr-schema.json
 cmp /tmp/lmr-schema.json native/schema/lmr.dsl.json
-lmr --dsl-signatures > /tmp/lmr-host-signatures.txt
-lmscript --dsl-signatures native/schema/lmr.dsl.json > /tmp/lmr-compiler-signatures.txt
+lmr --lmcode-signatures > /tmp/lmr-host-signatures.txt
+lmscript --lmcode-signatures native/schema/lmr.dsl.json > /tmp/lmr-compiler-signatures.txt
 diff -u /tmp/lmr-compiler-signatures.txt /tmp/lmr-host-signatures.txt</code></pre>
 <p>For an end-to-end install check, run one of the <a href="/tools/lmr/examples/">lmr book examples</a> with LMSCRIPT_TOOL_CACHE set to a new temporary directory and lmr absent from PATH. A host already on PATH bypasses installation.</p>
 </main>

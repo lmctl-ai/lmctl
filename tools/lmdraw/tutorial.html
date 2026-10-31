@@ -30,7 +30,7 @@
 <samp>wrote build/title-card.dslb</samp></pre>
 <h2>2. Render and inspect the still</h2>
 <p>The host writes PNG output below build/rendered/ and prints a success result.</p>
-<pre><kbd>./build/lmdraw --dsl build/title-card.dslb</kbd>
+<pre><kbd>./build/lmdraw --lmcode build/title-card.dslb</kbd>
 <samp>{"ok": true, "result": null}</samp>
 <kbd>file build/rendered/title-card.png</kbd>
 <samp>build/rendered/title-card.png: PNG image data, 960 x 540, 8-bit/color RGBA, non-interlaced</samp></pre>
@@ -39,7 +39,7 @@
 <p>The included example loads the bundled homepage automation-ladder SVG fixture by id, changes opacity on the retained handle, and renders it. It also demonstrates loading multiple SVG assets in one program.</p>
 <pre><kbd>lmscript examples/render-assets.lms build/render-assets.dslb</kbd>
 <samp>wrote six SVG renders</samp>
-<kbd>./build/lmdraw --dsl build/render-assets.dslb</kbd>
+<kbd>./build/lmdraw --lmcode build/render-assets.dslb</kbd>
 <samp>{"ok": true, "result": null}</samp>
 <kbd>file build/rendered/svg-automation-ladder.png</kbd>
 <samp>build/rendered/svg-automation-ladder.png: PNG image data, 960 x 360, 8-bit/color RGBA, non-interlaced</samp></pre>
@@ -48,7 +48,7 @@
 <p>The animation script updates an SVG opacity and a marker position in a range loop. It writes 24 numbered PNG frames.</p>
 <pre><kbd>lmscript examples/animated-ladder.lms build/animated-ladder.dslb</kbd>
 <samp>wrote 24 deterministic numbered frames</samp>
-<kbd>./build/lmdraw --dsl build/animated-ladder.dslb</kbd>
+<kbd>./build/lmdraw --lmcode build/animated-ladder.dslb</kbd>
 <samp>wrote 24 deterministic numbered frames</samp>
 <kbd>ls build/rendered/ladder-*.png | wc -l</kbd>
 <samp>24</samp></pre>

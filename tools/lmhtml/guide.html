@@ -30,12 +30,12 @@
 <h2>Install and run</h2>
 <p>Use Node.js 24.15 or newer with lmscript 0.2.420 or newer. A DSL declaration with cli="lmhtml" install="github:lmctl-ai/lmhtml@latest" downloads the platform release, checks its SHA-256 and compiles against its embedded schema.</p>
 <pre><code>lmhtml --version
-lmhtml --dsl-schema
-lmhtml --dsl-schema --json
-lmhtml --dsl-signatures
+lmhtml --lmcode-schema
+lmhtml --lmcode-schema --json
+lmhtml --lmcode-signatures
 lmscript audit.lms build/audit.dslb
-lmhtml --dsl build/audit.dslb</code></pre>
-<p>--dsl-schema prints a summary, --dsl-schema --json prints the compiler schema bytes, and --dsl-signatures prints canonical host signatures. The full member list is available from the released binary; the following summary is copied from lmhtml 0.7.3.</p>
+lmhtml --lmcode build/audit.dslb</code></pre>
+<p>--lmcode-schema prints a summary, --lmcode-schema --json prints the compiler schema bytes, and --lmcode-signatures prints canonical host signatures. The full member list is available from the released binary; the following summary is copied from lmhtml 0.7.3.</p>
 <h2>DSL contexts and functions</h2>
 <pre><code>context html: Html
 context report: Report

@@ -9,7 +9,7 @@ end _lmcode_
 
 out = ARGV.len() > 0 ? ARGV[0] : "build/normal-quantile.dslb";
 savedsl(p, out);
-r = system ${dsl_cli(p)} --dsl ${out};
+r = system ${dsl_cli(p)} --lmcode ${out};
 if (r.code != 0) { println("lmpy failed: " + trim(r.stderr)); exit(r.code); }
 result = json_parse(r.stdout).result.values;
 println("97.5% standard normal quantile: " + str(result.quantile));

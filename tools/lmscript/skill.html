@@ -51,7 +51,7 @@
 <tr><td>lmscript FILE [ARGS]</td><td>Check, silent dry pass, then the real run.</td></tr>
 <tr><td>lmscript -e 'CODE'</td><td>Run a one-line program (quote it for the shell).</td></tr>
 <tr><td>lmscript help NAME</td><td>Signature, description and example of a function; lmscript help lists all; help topics lists topics (csv, json, cmd, dsl, path, methods, …).</td></tr>
-<tr><td>lmscript --dsl-signatures SCHEMA</td><td>List a DSL schema's functions and methods (experimental LMCode blocks).</td></tr>
+<tr><td>lmscript --lmcode-signatures SCHEMA</td><td>List a DSL schema's functions and methods (experimental LMCode blocks).</td></tr>
 </tbody>
 </table>
 <p>Options go before the file; every word after the file is script data in ARGV.</p>
@@ -145,7 +145,7 @@ report.write_text("broken.txt");
 end _lmcode_
 savedsl(check, "links.dslb");</code></pre>
 <pre><kbd>lmscript links.lms</kbd>
-<kbd>lmhtml --dsl links.dslb</kbd>
+<kbd>lmhtml --lmcode links.dslb</kbd>
 <samp>{"ok": true, "result": null}</samp>
 <kbd>cat broken.txt</kbd>
 <samp>broken-link site/index.html:0: missing.html not found</samp></pre>
@@ -172,7 +172,7 @@ savedsl(check, "links.dslb");</code></pre>
 <tr><td>Function declarations are only allowed at top level</td><td>Move the fn out of the other function.</td></tr>
 <tr><td>map m has no key "k"</td><td>m.has("k") or m.get("k", default).</td></tr>
 <tr><td>Division by zero</td><td>Guard the divisor.</td></tr>
-<tr><td>Compiler reports a method signature mismatch</td><td>Match the schema signature (--dsl-signatures).</td></tr>
+<tr><td>Compiler reports a method signature mismatch</td><td>Match the schema signature (--lmcode-signatures).</td></tr>
 </tbody>
 </table>
 
@@ -182,7 +182,7 @@ savedsl(check, "links.dslb");</code></pre>
 <li>lmscript --check-files script.lms when the script uses path literals.</li>
 <li>lmscript --dry-run script.lms ARGS: the plan lists exactly the writes, deletes and program runs you intend, with the right arguments.</li>
 <li>Run it; confirm exit code 0 (or the documented code) and that the expected files or output exist, for example by reading them back with read_file/read_json or ls.</li>
-<li>For LMCode: the script exits 0 and writes the .dslb; HOST --dsl file.dslb prints {"ok": true, …} with exit 0; check the files the host program wrote.</li>
+<li>For LMCode: the script exits 0 and writes the .dslb; HOST --lmcode file.dslb prints {"ok": true, …} with exit 0; check the files the host program wrote.</li>
 <li>Report what you ran and what you checked; never claim success from exit code 0 alone when files were supposed to change.</li>
 </ol>
 </main>

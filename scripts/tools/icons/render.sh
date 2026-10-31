@@ -59,7 +59,7 @@ for script in "$HERE"/*.lms; do
   if ! log="$(cd "$WORK" && lmscript_cmd "$name.lms" "out/$name" "$name.dslb" 2>&1)"; then
     echo "$name: compile failed:" >&2; echo "$log" >&2; exit 1
   fi
-  if ! log="$(cd "$WORK" && "$LMCAD" --dsl "$name.dslb" 2>&1)"; then
+  if ! log="$(cd "$WORK" && "$LMCAD" --lmcode "$name.dslb" 2>&1)"; then
     echo "$name: lmcad failed: $log" >&2; exit 1
   fi
   if [[ "$name" == tools ]]; then

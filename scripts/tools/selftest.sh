@@ -68,7 +68,7 @@ savedsl(p, ARGV[0]);
 LMS
 compiler=${LMSCRIPT_BIN:-$(command -v lmscript)}
 "$compiler" "$work/assert.lms" "$work/assert.dslb"
-(cd "$work" && "$host" --dsl "$work/assert.dslb") || { cat "$work/assert.txt"; exit 1; }
+(cd "$work" && "$host" --lmcode "$work/assert.dslb") || { cat "$work/assert.txt"; exit 1; }
 cp -R "$work/tools" "$work/unchanged"
 touch "$work/before-second-run"
 run decorate
@@ -93,7 +93,7 @@ end _dsl_
 savedsl(p, ARGV[0]);
 LMS
 "$compiler" "$work/mutate.lms" "$work/mutate.dslb"
-(cd "$work" && "$host" --dsl "$work/mutate.dslb") >/dev/null
+(cd "$work" && "$host" --lmcode "$work/mutate.dslb") >/dev/null
 expect_failure 'outdated' decorate --check
 run decorate
 run check
@@ -133,7 +133,7 @@ end _dsl_
 savedsl(p, ARGV[0]);
 LMS
 "$compiler" "$work/copy-guide.lms" "$work/copy-guide.dslb"
-(cd "$work" && "$host" --dsl "$work/copy-guide.dslb") >/dev/null
+(cd "$work" && "$host" --lmcode "$work/copy-guide.dslb") >/dev/null
 run decorate
 expect_failure 'guide must not duplicate skill' contract
 rm "$work/tools/zeta/guide.html"
@@ -178,7 +178,7 @@ end _dsl_
 savedsl(p, ARGV[0]);
 LMS
 "$compiler" "$work/visual-setup.lms" "$work/visual-setup.dslb"
-(cd "$work" && "$host" --dsl "$work/visual-setup.dslb") >/dev/null
+(cd "$work" && "$host" --lmcode "$work/visual-setup.dslb") >/dev/null
 expect_failure 'run npm run decorate:tools' decorate --check
 run decorate
 run check
@@ -209,7 +209,7 @@ end _dsl_
 savedsl(p, ARGV[0]);
 LMS
 "$compiler" "$work/visual-assert.lms" "$work/visual-assert.dslb"
-(cd "$work" && "$host" --dsl "$work/visual-assert.dslb") || { cat "$work/visual-assert.txt"; exit 1; }
+(cd "$work" && "$host" --lmcode "$work/visual-assert.dslb") || { cat "$work/visual-assert.txt"; exit 1; }
 cp -R "$work/tools" "$work/visual-unchanged"
 run decorate
 for file in "$work"/tools/*.html "$work"/tools/*/*.html; do cmp "$file" "$work/visual-unchanged/${file#"$work/tools/"}"; done
@@ -240,7 +240,7 @@ end _dsl_
 savedsl(p, ARGV[0]);
 LMS
 "$compiler" "$work/icons-assert.lms" "$work/icons-assert.dslb"
-(cd "$work" && "$host" --dsl "$work/icons-assert.dslb") || { cat "$work/icons-assert.txt"; exit 1; }
+(cd "$work" && "$host" --lmcode "$work/icons-assert.dslb") || { cat "$work/icons-assert.txt"; exit 1; }
 cat > "$work/tools/zeta/guide-images.html" <<'HTML'
 <h1>Images</h1><p>Intrinsic geometry reserves layout space.</p><h2>Overview</h2>
 <!-- <img src='/tools/zeta/img/logo.png'> -->
@@ -262,7 +262,7 @@ end _dsl_
 savedsl(p, ARGV[0]);
 LMS
 "$compiler" "$work/dimensions.lms" "$work/dimensions.dslb"
-(cd "$work" && "$host" --dsl "$work/dimensions.dslb") || { cat "$work/dimensions.txt"; exit 1; }
+(cd "$work" && "$host" --lmcode "$work/dimensions.dslb") || { cat "$work/dimensions.txt"; exit 1; }
 run decorate
 expect_failure 'PNG dimensions must match intrinsic 64x64' contract
 rm "$work/tools/zeta/guide-images.html"
@@ -281,7 +281,7 @@ end _dsl_
 savedsl(p, ARGV[0]);
 LMS
 "$compiler" "$work/break-icons.lms" "$work/break-icons.dslb"
-(cd "$work" && "$host" --dsl "$work/break-icons.dslb") >/dev/null
+(cd "$work" && "$host" --lmcode "$work/break-icons.dslb") >/dev/null
 expect_failure 'image not found: /tools/zeta/img/missing.png' contract
 expect_failure 'favicon not found: /tools/zeta/img/missing.png' contract
 run decorate

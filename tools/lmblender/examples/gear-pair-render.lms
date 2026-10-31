@@ -109,7 +109,7 @@ scene.export_stl("build/gear-wheel.stl");
 end _lmcode_
 cad_out = "build/gear-pair-cad.dslb";
 savedsl(cad, cad_out);
-c = system ${dsl_cli(cad)} --dsl ${cad_out};
+c = system ${dsl_cli(cad)} --lmcode ${cad_out};
 if (c.code != 0) { println(trim(c.stdout)); println(trim(c.stderr)); }
 assert(c.code == 0);
 p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
@@ -137,7 +137,7 @@ scene.render_png("images/gear-pair-render.png", 32, 900, 560);
 end _lmcode_
 savedsl(p, out);
 argv = dsl_cli(p);
-push(argv, "--dsl");
+push(argv, "--lmcode");
 push(argv, out);
 r = system(argv, 240000);
 if (r.code != 0) { println(trim(r.stdout)); println(trim(r.stderr)); }

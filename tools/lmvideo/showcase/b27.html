@@ -32,7 +32,7 @@ let flange=scene.cylinder(35.0,12.0,alloy).rotate(1.5707963267948966,0.0,0.0).po
 for(i in range(0,4)){let angle=float(i)*1.5707963267948966;let hole=scene.cylinder(3.0,16.0,alloy).rotate(1.5707963267948966,0.0,0.0).position(26.0*cos(angle),26.0*sin(angle),46.0);flange.cut(hole);hole.visible(false);}
 scene.export_stl("build/b27-flanged-valve.stl");
 end _lmcode_
-savedsl(cad,"build/b27-cad-geometry.dslb");r=system(concat(dsl_cli(cad),["--dsl","build/b27-cad-geometry.dslb"]),600000);assert(r.code==0,r.stderr+r.stdout);
+savedsl(cad,"build/b27-cad-geometry.dslb");r=system(concat(dsl_cli(cad),["--lmcode","build/b27-cad-geometry.dslb"]),600000);assert(r.code==0,r.stderr+r.stdout);
 program=_lmcode_ cli="lmvideo";
 let mesh=mesh_load("build/b27-flanged-valve.stl");image_assert_true(mesh.triangles()>100);image_assert_close(mesh.bound(3)-mesh.bound(0),120.0,0.01);
 let scene=scene3d().threads(4).background("#dbe6ef").ambient(0.0).tonemap("aces",1.0);
@@ -44,7 +44,7 @@ scene.save_job("build/b27-preview.lmjob",435,540,2);scene.save_job("build/b27-fi
 let mask=scene3d().threads(4).background("#000000").ambient(0.0);mask.camera(camera);let white=material("#ffffff",0.0,1.0).emissive("#ffffff",1.0);mask.add(mesh,white).scale(0.001,0.001,0.001);
 mask.save_job("build/b27-mask-raster.lmjob",435,540,2);mask.save_job("build/b27-mask-cycles.lmjob",435,540,"cycles",16,2,20261104,false);
 end _lmcode_
-savedsl(program,"build/b27-cad-preview-cycles-twin.dslb");r=system(concat(dsl_cli(program),["--dsl","build/b27-cad-preview-cycles-twin.dslb"]),900000);assert(r.code==0,r.stderr+r.stdout);
+savedsl(program,"build/b27-cad-preview-cycles-twin.dslb");r=system(concat(dsl_cli(program),["--lmcode","build/b27-cad-preview-cycles-twin.dslb"]),900000);assert(r.code==0,r.stderr+r.stdout);
 tp=system(["/usr/bin/time","-f","{\"benchmark_stage\":\"preview\",\"wall_s\":%e,\"user_s\":%U,\"sys_s\":%S,\"max_rss_kib\":%M}","lmvideo","render-job","build/b27-preview.lmjob","--renderer","raster","--output","build/b27-preview.png"]);assert(tp.code==0,tp.stdout+tp.stderr);println(tp.stderr);
 tf=system(["/usr/bin/time","-f","{\"benchmark_stage\":\"final\",\"wall_s\":%e,\"user_s\":%U,\"sys_s\":%S,\"max_rss_kib\":%M}","lmvideo","render-job","build/b27-final.lmjob","--renderer","cycles","--output","build/b27-final.png"]);assert(tf.code==0,tf.stdout+tf.stderr);println(tf.stderr);
 mr=system(concat(dsl_cli(program),["render-job","build/b27-mask-raster.lmjob","--renderer","raster","--output","build/b27-mask-raster.png"]));assert(mr.code==0,mr.stdout+mr.stderr);
@@ -58,7 +58,7 @@ for(y in range(0,540)){for(x in range(0,435)){let a=mask_r.pixel(x,y,0)>0.1;let 
 let iou=float(inter)/float(max(1,union));image_assert_true(iou>0.98);out.print("B27 mask IoU="+str(iou)+" foreground_pixels="+str(union));
 let sheet=layout_sheet().add(preview).add(final);let composed=sheet.render(2,10,0.94,0.96,0.98,1.0);composed.text(24.0,32.0,"CAD preview / Cycles final · one imported mesh and matched camera",20.0,0.09,0.21,0.30,1.0);composed.text(24.0,548.0,"Body 120 × 70 × 80 mm · coaxial 12 mm flange · STL scale 0.001 m/mm",17.0,0.09,0.21,0.30,1.0);composed.save("build/bench-27-cad-preview-cycles-twin.png");out.print("B27 original CAD preview/Cycles twin | one STL mesh | matched camera | projected through-bore label | 64 spp OIDN");
 end _lmcode_
-savedsl(post,"build/b27-post.dslb");r=system(concat(dsl_cli(post),["--dsl","build/b27-post.dslb"]),900000);assert(r.code==0,r.stderr+r.stdout);println(r.stdout);</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/7fd44831ee766c52b40adf222ae5e9f199fd6849/examples/showcase/bench-27-cad-preview-cycles-twin.lms">Raw LMScript source</a></p><figure><img src="/tools/lmvideo/media/bench-27-cad-preview-cycles-twin-ce67ab8882fbdc8b4ee85adef3db2651df8956be2243cc1b0a3d770d87fcbbe1.png" alt="A valve-like CAD component with a central bore and a perforated flange." width="900" height="560"><figcaption>Compare the preview geometry with the final path-traced appearance.</figcaption></figure></main>
+savedsl(post,"build/b27-post.dslb");r=system(concat(dsl_cli(post),["--lmcode","build/b27-post.dslb"]),900000);assert(r.code==0,r.stderr+r.stdout);println(r.stdout);</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/7fd44831ee766c52b40adf222ae5e9f199fd6849/examples/showcase/bench-27-cad-preview-cycles-twin.lms">Raw LMScript source</a></p><figure><img src="/tools/lmvideo/media/bench-27-cad-preview-cycles-twin-ce67ab8882fbdc8b4ee85adef3db2651df8956be2243cc1b0a3d770d87fcbbe1.png" alt="A valve-like CAD component with a central bore and a perforated flange." width="900" height="560"><figcaption>Compare the preview geometry with the final path-traced appearance.</figcaption></figure></main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
 </footer>

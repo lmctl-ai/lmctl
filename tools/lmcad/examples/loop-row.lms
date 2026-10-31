@@ -16,5 +16,5 @@ end _lmcode_
 out = "build/loop-row.dslb";
 savedsl(p, "build/loop-row.dslb");
 
-run = system ${dsl_cli(p)} --dsl ${out};
+run = system ${dsl_cli(p)} --lmcode ${out};
 if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

@@ -50,7 +50,7 @@ for(k in range(0,2)){
 sheet.render(1,0,0.0,0.0,0.0,1.0).save("build/bench-22-physical-sky.png");
 out.print("B22 candidate: Hosek-Wilkie Y-up sky, 2/45 degree sun; explicit artistic direct sun, no solar-disc claim");
 end _lmcode_
-savedsl(program,"build/physical-sky.dslb");r=system(concat(dsl_cli(program),["--dsl","build/physical-sky.dslb"]),900000);assert(r.code==0,r.stdout+r.stderr);println(r.stdout);</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/7fd44831ee766c52b40adf222ae5e9f199fd6849/examples/showcase/bench-22-physical-sky.lms">Raw LMScript source</a></p><figure><img src="/tools/lmvideo/media/bench-22-physical-sky-4ab40e5ae33914362ba8d9a704f5b0671281196635e657fc18e9e2c036c8cada.png" alt="Stone monoliths shown under low and high sun lighting." width="900" height="560"><figcaption>Compare the warm low-sun view with the higher-sun view.</figcaption></figure></main>
+savedsl(program,"build/physical-sky.dslb");r=system(concat(dsl_cli(program),["--lmcode","build/physical-sky.dslb"]),900000);assert(r.code==0,r.stdout+r.stderr);println(r.stdout);</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/7fd44831ee766c52b40adf222ae5e9f199fd6849/examples/showcase/bench-22-physical-sky.lms">Raw LMScript source</a></p><figure><img src="/tools/lmvideo/media/bench-22-physical-sky-4ab40e5ae33914362ba8d9a704f5b0671281196635e657fc18e9e2c036c8cada.png" alt="Stone monoliths shown under low and high sun lighting." width="900" height="560"><figcaption>Compare the warm low-sun view with the higher-sun view.</figcaption></figure></main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
 </footer>

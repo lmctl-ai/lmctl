@@ -41,7 +41,7 @@ savedsl(p, "build/hello.dslb");</code></pre>
 <p>Compile the file with the published compiler and run the bytecode. The compiler emits a bytecode file; the host prints one JSON result line.</p>
 <pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript hello.lms build/hello.dslb</kbd>
 <samp>exit status: 0</samp></pre>
-<pre><kbd>build/lmcad --dsl build/hello.dslb</kbd>
+<pre><kbd>build/lmcad --lmcode build/hello.dslb</kbd>
 <samp>{"ok": true, "result": null}</samp></pre>
 <pre><kbd>file build/hello.png</kbd>
 <samp>build/hello.png: PNG image data, 480 x 320, 8-bit/color RGB, non-interlaced</samp></pre>
@@ -55,7 +55,7 @@ savedsl(p, "build/hello.dslb");</code></pre>
 <p>Compile and run the complete loop example:</p>
 <pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript examples/loop-row.lms build/loop-row.dslb</kbd>
 <samp>exit status: 0</samp></pre>
-<pre><kbd>build/lmcad --dsl build/loop-row.dslb</kbd>
+<pre><kbd>build/lmcad --lmcode build/loop-row.dslb</kbd>
 <samp>{"ok": true, "result": null}</samp></pre>
 <pre><kbd>file build/loop-row.png</kbd>
 <samp>build/loop-row.png: PNG image data, 480 x 270, 8-bit/color RGB, non-interlaced</samp></pre>
@@ -63,7 +63,7 @@ savedsl(p, "build/hello.dslb");</code></pre>
 <p>The tween example reads keyframes from CSV, interpolates position and color in DSL loops, writes numbered PNGs and assembles a 30-frame APNG.</p>
 <pre><kbd>npx --yes --package=@lmctl-ai/lmctl -- lmscript examples/tween.lms build/tween.dslb</kbd>
 <samp>exit status: 0</samp></pre>
-<pre><kbd>build/lmcad --dsl build/tween.dslb</kbd>
+<pre><kbd>build/lmcad --lmcode build/tween.dslb</kbd>
 <samp>{"ok": true, "result": null}</samp></pre>
 <pre><kbd>ls -lh build/tween.apng build/tween-15.png</kbd>
 <samp>build/tween-15.png  9.1K

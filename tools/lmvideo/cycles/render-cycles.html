@@ -24,7 +24,7 @@
 </ul>
 </nav>
 <main><!-- generated: tools-book --><h1>A second look: CPU Cycles</h1><p><a href="/tools/lmvideo/cycles/">Contents</a> </p><h2>Install</h2><pre><kbd>npm install -g @lmctl-ai/lmctl</kbd></pre><p>lmvideo 0.1.36 is released. Source examples are pinned to public commit 7fd4483.</p><p><a href="https://github.com/lmctl-ai/lmvideo/releases/tag/v0.1.36">Download lmvideo 0.1.36</a></p><p>Raster is the fast preview path. The same scene can use CPU Cycles for final lighting, reflections and roughness. Use the released lmvideo 0.1.36 runtime.</p><p>Save each displayed source at its named examples/book/ path before running its compile/render commands. The output below is the structured result from the locked chapter capture; timing fields describe that historical run and vary on another machine.</p><h2>Run this example</h2><pre><kbd>lmscript examples/book/cycles-still.lms
-lmvideo --dsl build/sphere-cycles.dslb</kbd></pre><h2>Source</h2><pre><code>mkdir("build");
+lmvideo --lmcode build/sphere-cycles.dslb</kbd></pre><h2>Source</h2><pre><code>mkdir("build");
 program = _lmcode_ cli="lmvideo";
 
 let scene = scene3d().background("#111923");
@@ -41,7 +41,7 @@ beauty.save("build/sphere-cycles.png");
 
 end _lmcode_
 savedsl(program, "build/sphere-cycles.dslb");</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/7fd44831ee766c52b40adf222ae5e9f199fd6849/examples/book/cycles-still.lms">Raw LMScript source</a></p><figure><img src="/tools/lmvideo/media/book-cycles-still-1d6af34e565c5531a6f9903034b881f4965aa3cb97b73e89afd8fc826bb923b4.png" alt="A gold sphere lit against a dark background." width="960" height="540"><figcaption>A CPU Cycles still shows lighting and reflections on a curved surface.</figcaption></figure><h2>Run this example</h2><pre><kbd>lmscript examples/book/cycles-turntable.lms
-lmvideo --dsl build/turntable.dslb</kbd></pre><h2>Source</h2><pre><code>mkdir("build");
+lmvideo --lmcode build/turntable.dslb</kbd></pre><h2>Source</h2><pre><code>mkdir("build");
 program = _lmcode_ cli="lmvideo";
 video.size(960, 540); video.fps(24); video.frames(48);
 video.output("build/turntable.mp4"); video.begin();

@@ -305,7 +305,7 @@ def inspect_html(files, work, host):
     compiler_env = os.environ.copy()
     compiler_env['PATH'] = str(Path(host).resolve().parent) + os.pathsep + compiler_env.get('PATH', '')
     subprocess.run([os.environ.get('LMSCRIPT_BIN', 'lmscript'), str(driver), str(work / 'links.dslb'), str(report)], check=True, stdout=subprocess.DEVNULL, env=compiler_env)
-    subprocess.run([host, '--dsl', str(work / 'links.dslb')], check=True, stdout=subprocess.DEVNULL)
+    subprocess.run([host, '--lmcode', str(work / 'links.dslb')], check=True, stdout=subprocess.DEVNULL)
     output = json.loads(report.read_text())
     return output['findings'] if isinstance(output, dict) else output
 

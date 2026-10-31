@@ -10,7 +10,7 @@ end _lmcode_
 out = "tensor-sum.dslb";
 
 savedsl(p, "tensor-sum.dslb");
-run = system ${dsl_cli(p)} --dsl tensor-sum.dslb;
+run = system ${dsl_cli(p)} --lmcode tensor-sum.dslb;
 if (run.code != 0) { println(str(run.stderr)); exit(run.code); }
 result = json_parse(run.stdout).result;
 println(f"shape {result.shape}, sum {result.sum}");

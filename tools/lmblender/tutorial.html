@@ -38,7 +38,7 @@ scene.render_png("first-render.png", 16, 640, 480);
 end _lmcode_
 file = "first-render.dslb";
 savedsl(p, file);
-r = system ${dsl_cli(p)} --dsl ${file};
+r = system ${dsl_cli(p)} --lmcode ${file};
 delete_file(file);
 if (r.code != 0) { println(trim(r.stdout)); if (trim(r.stderr) != "") { println(trim(r.stderr)); } exit(1); }
 println("wrote first-render.png");</code></pre>
@@ -47,7 +47,7 @@ println("wrote first-render.png");</code></pre>
 <p>Expected output (the first run also downloads the lmblender release, so it takes longer):</p>
 <pre><samp>wrote first-render.png</samp></pre>
 <p>What each part does:</p>
-<ul><li>The declaration selects the lmblender host and opens a block of scene code. The install= value tells lmscript where to fetch the executable if it is not on your PATH; @v0.3.6 pins the released host used by this book.</li><li>scene.uv_sphere(1.0, 48, 24, true) adds a sphere of radius 1 with 48 segments and 24 rings, smooth shaded. Units are scene units and Z points up.</li><li>scene.studio_setup() frames the camera on the geometry and adds a floor and three soft lights.</li><li>scene.render_png(path, samples, width, height) renders with CPU Cycles. More samples means less grain and more time.</li><li>After the block closes, savedsl writes the compiled bytecode, system ${dsl_cli(p)} --dsl ${file} runs lmblender on it, and the script prints the host's error and exits 1 if the render failed.</li></ul>
+<ul><li>The declaration selects the lmblender host and opens a block of scene code. The install= value tells lmscript where to fetch the executable if it is not on your PATH; @v0.3.6 pins the released host used by this book.</li><li>scene.uv_sphere(1.0, 48, 24, true) adds a sphere of radius 1 with 48 segments and 24 rings, smooth shaded. Units are scene units and Z points up.</li><li>scene.studio_setup() frames the camera on the geometry and adds a floor and three soft lights.</li><li>scene.render_png(path, samples, width, height) renders with CPU Cycles. More samples means less grain and more time.</li><li>After the block closes, savedsl writes the compiled bytecode, system ${dsl_cli(p)} --lmcode ${file} runs lmblender on it, and the script prints the host's error and exits 1 if the render failed.</li></ul>
 <p>The sphere looks flat white because it has no material yet; meshes without one get a plain unlit surface. Page 4 adds materials.</p>
 <h2 id="02-place-objects">2. Place objects</h2>
 <p>Goal: put several objects in the scene where you want them.</p>
@@ -66,7 +66,7 @@ scene.render_png("place-objects.png", 16, 640, 480);
 end _lmcode_
 file = "place-objects.dslb";
 savedsl(p, file);
-r = system ${dsl_cli(p)} --dsl ${file};
+r = system ${dsl_cli(p)} --lmcode ${file};
 delete_file(file);
 if (r.code != 0) { println(trim(r.stdout)); if (trim(r.stderr) != "") { println(trim(r.stderr)); } exit(1); }
 println("wrote place-objects.png");</code></pre>
@@ -94,7 +94,7 @@ scene.render_png("camera.png", 16, 640, 480);
 end _lmcode_
 file = "camera.dslb";
 savedsl(p, file);
-r = system ${dsl_cli(p)} --dsl ${file};
+r = system ${dsl_cli(p)} --lmcode ${file};
 delete_file(file);
 if (r.code != 0) { println(trim(r.stdout)); if (trim(r.stderr) != "") { println(trim(r.stderr)); } exit(1); }
 println("wrote camera.png");</code></pre>
@@ -125,7 +125,7 @@ scene.render_png("materials.png", 32, 640, 480);
 end _lmcode_
 file = "materials.dslb";
 savedsl(p, file);
-r = system ${dsl_cli(p)} --dsl ${file};
+r = system ${dsl_cli(p)} --lmcode ${file};
 delete_file(file);
 if (r.code != 0) { println(trim(r.stdout)); if (trim(r.stderr) != "") { println(trim(r.stderr)); } exit(1); }
 println("wrote materials.png");</code></pre>
@@ -159,7 +159,7 @@ scene.render_png("lights.png", 32, 640, 480);
 end _lmcode_
 file = "lights.dslb";
 savedsl(p, file);
-r = system ${dsl_cli(p)} --dsl ${file};
+r = system ${dsl_cli(p)} --lmcode ${file};
 delete_file(file);
 if (r.code != 0) { println(trim(r.stdout)); if (trim(r.stderr) != "") { println(trim(r.stderr)); } exit(1); }
 println("wrote lights.png");</code></pre>
@@ -194,7 +194,7 @@ scene.render_png("textures.png", 32, 640, 480);
 end _lmcode_
 file = "textures.dslb";
 savedsl(p, file);
-r = system ${dsl_cli(p)} --dsl ${file};
+r = system ${dsl_cli(p)} --lmcode ${file};
 delete_file(file);
 if (r.code != 0) { println(trim(r.stdout)); if (trim(r.stderr) != "") { println(trim(r.stderr)); } exit(1); }
 println("wrote textures.png");</code></pre>
@@ -247,7 +247,7 @@ scene.render_png("import-a-mesh.png", 32, 640, 480);
 end _lmcode_
 file = "import-a-mesh.dslb";
 savedsl(p, file);
-r = system ${dsl_cli(p)} --dsl ${file};
+r = system ${dsl_cli(p)} --lmcode ${file};
 delete_file(file);
 if (r.code != 0) { println(trim(r.stdout)); if (trim(r.stderr) != "") { println(trim(r.stderr)); } exit(1); }
 println("wrote import-a-mesh.png");</code></pre>
@@ -302,7 +302,7 @@ scene.render_sequence("animation-{frame}.png", 0, 2, 16, 320, 240);
 end _lmcode_
 file = "animation.dslb";
 savedsl(p, file);
-r = system ${dsl_cli(p)} --dsl ${file};
+r = system ${dsl_cli(p)} --lmcode ${file};
 delete_file(file);
 if (r.code != 0) { println(trim(r.stdout)); if (trim(r.stderr) != "") { println(trim(r.stderr)); } exit(1); }
 println("wrote animation-0.png, animation-1.png, animation-2.png");</code></pre>
@@ -360,7 +360,7 @@ scene.render_png("view-agx.png", 32, 320, 240);
 end _lmcode_
 file = "view-transforms.dslb";
 savedsl(p, file);
-r = system ${dsl_cli(p)} --dsl ${file};
+r = system ${dsl_cli(p)} --lmcode ${file};
 delete_file(file);
 if (r.code != 0) { println(trim(r.stdout)); if (trim(r.stderr) != "") { println(trim(r.stderr)); } exit(1); }
 println("wrote view-standard.png, view-agx.png");</code></pre>
@@ -416,7 +416,7 @@ scene.render_png("when-it-fails.png", 32, 640, 480);
 end _lmcode_
 file = "when-it-fails.dslb";
 savedsl(p, file);
-r = system ${dsl_cli(p)} --dsl ${file};
+r = system ${dsl_cli(p)} --lmcode ${file};
 delete_file(file);
 if (r.code != 0) { println(trim(r.stdout)); if (trim(r.stderr) != "") { println(trim(r.stderr)); } exit(1); }
 println("wrote when-it-fails.png");</code></pre>

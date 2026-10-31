@@ -60,7 +60,7 @@ scene.render_sequence("build/kepler-orbit/frame-{frame}.png", 0, frames - 1, 6, 
 end _lmcode_
 savedsl(p, out);
 argv = dsl_cli(p);
-push(argv, "--dsl");
+push(argv, "--lmcode");
 push(argv, out);
 r = system(argv, 240000);
 if (r.code != 0) { println(trim(r.stdout)); println(trim(r.stderr)); }
@@ -75,5 +75,5 @@ if (probe.code == 0) {
   println("ffmpeg not found: skipped images/kepler-orbit.gif (frames are in build/kepler-orbit/)");
 }
 
-run = system ${dsl_cli(p)} --dsl ${out};
+run = system ${dsl_cli(p)} --lmcode ${out};
 if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }

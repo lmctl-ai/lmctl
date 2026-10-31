@@ -20,6 +20,6 @@ scene.text(70.0, 58.0, 25.0, "Team message flow", "#dbe7f3");
 scene.render_png("build/rendered/team-message-flow.png", 960, 360, 1);
 end _lmcode_
 savedsl(p, "build/rendered/team-message-flow.dslb");
-run = system ${dsl_cli(p)} --dsl build/rendered/team-message-flow.dslb;
+run = system ${dsl_cli(p)} --lmcode build/rendered/team-message-flow.dslb;
 if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }
 println("compiled team message flow diagram");

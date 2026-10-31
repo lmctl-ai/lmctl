@@ -15,6 +15,30 @@ import textwrap
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def host_flag_spelling(source):
+    # Normalize documentation inputs, never accept a runtime option alias.
+    return source.replace('--' + 'dsl', '--lmcode')
+
+
+def refresh_host_flag_spellings(root=ROOT):
+    """Refresh only generated command bytes, preserving the existing plumbing."""
+    changed = 0
+    for manifest in sorted((root / 'tools').glob('*/examples/.generated-files')):
+        book = manifest.parent.resolve()
+        for relative in manifest.read_text().splitlines():
+            target = root / relative if relative.startswith('tools/') else book / relative
+            if target.is_symlink() or not target.resolve().is_relative_to(book):
+                raise ValueError('unsafe generated book path: ' + relative)
+            if not target.is_file() or target.suffix not in ('.lms', '.html'):
+                continue
+            raw = target.read_bytes()
+            updated = raw.replace(b'--' + b'dsl', b'--lmcode')
+            if raw != updated:
+                target.write_bytes(updated)
+                changed += 1
+    return changed
+
+
 def png_size(path):
     data = path.read_bytes()
     if data[:8] != b"\x89PNG\r\n\x1a\n" or data[12:16] != b"IHDR":
@@ -23,7 +47,7 @@ def png_size(path):
 
 
 def quickrun_source(tool, script, examples_root, repo_root, release_version="latest"):
-    source = script.read_text()
+    source = host_flag_spelling(script.read_text())
     host_var = None
     source, count = re.subn(
         r'(?m)^(\w+)\s*=\s*_(?:dsl|lmcode)_\s+schema="[^"]+"\s*;',
@@ -98,10 +122,10 @@ def quickrun_source(tool, script, examples_root, repo_root, release_version="lat
     if bootstrap:
         source = source[:dsl_line.start()] + "\n".join(bootstrap) + "\n" + source[dsl_line.start():]
     # Complete source examples already execute their saved block.
-    if re.search(rf"(?m)^\s*\w+\s*=\s*system\s+\$\{{dsl_cli\({re.escape(host_var)}\)\}}\s+--dsl\s", source):
+    if re.search(rf"(?m)^\s*\w+\s*=\s*system\s+\$\{{dsl_cli\({re.escape(host_var)}\)\}}\s+--lmcode\s", source):
         return source
     source += (
-        f"\nrun = system ${{dsl_cli({host_var})}} --dsl ${{out}};\n"
+        f"\nrun = system ${{dsl_cli({host_var})}} --lmcode ${{out}};\n"
         'if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }\n'
     )
     return source
@@ -173,6 +197,9 @@ def compact_png(path):
 
 
 def main():
+    if sys.argv[1:] == ['--refresh-host-flag-spellings']:
+        print('Refreshed', refresh_host_flag_spellings(), 'generated host command files')
+        return
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tool", required=True, help="lowercase tool name")
     parser.add_argument("--source", required=True, help="checked-out public tool repository")

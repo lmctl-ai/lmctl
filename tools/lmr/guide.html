@@ -26,10 +26,10 @@
 <p>lmr is a native LMScript host that implements a fixed catalog of statistical operations. The C++17 runtime does not require an R installation. Its public schema and operation signatures are embedded in each release binary.</p>
 <h2>Check the host</h2>
 <pre><code>lmr --version
-lmr --dsl-schema
-lmr --dsl-schema --json
-lmr --dsl-signatures
-lmr --dsl FILE.dslb</code></pre>
+lmr --lmcode-schema
+lmr --lmcode-schema --json
+lmr --lmcode-signatures
+lmr --lmcode FILE.dslb</code></pre>
 <p>Use cli="lmr" to compile against the embedded schema and install="github:lmctl-ai/lmr@v0.5.1" to fetch the v0.5.1 release binary when lmr is not on PATH. The v0.5.1 host schema contains lmr-specific functions; the standard StrList methods come from the LMScript standard library.</p>
 <h2>Operation catalog</h2>
 <table>

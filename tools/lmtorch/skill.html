@@ -37,7 +37,7 @@ let x = torch.tensor("[1.0, 2.0, 3.0]");
 out.set("sum", x.sum().item());
 end _lmcode_
 savedsl(p, "program.dslb");
-run = system ${dsl_cli(p)} --dsl program.dslb;</code></pre>
+run = system ${dsl_cli(p)} --lmcode program.dslb;</code></pre>
 <p>Check run.code before using run.stdout. The host prints a JSON result for values set through out.</p>
 <h2>Inputs and outputs</h2>
 <p>Create tensors from JSON arrays or Torch constructors. Tensor operations return tensors; methods such as item, item_int, shape, and to_text return scalar or textual values. Set output fields with out.set and check expectations with out.check.</p>

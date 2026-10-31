@@ -91,7 +91,7 @@ prompt_human(question)</code></pre>
 <tr><td>lmscript FILE [ARGS...]</td><td>Run a standalone script; remaining words become ARGV.</td></tr>
 <tr><td>lmscript --check FILE [ARGS...]</td><td>Static check only; exit 0 or 2.</td></tr>
 <tr><td>lmscript --dry-run FILE [ARGS...]</td><td>Run the simulation and print its plan; exit 0 or 2.</td></tr>
-<tr><td>lmscript --dsl-signatures SCHEMA</td><td>Print canonical DSL signatures from a schema file.</td></tr>
+<tr><td>lmscript --lmcode-signatures SCHEMA</td><td>Print canonical DSL signatures from a schema file.</td></tr>
 <tr><td>lmctl script FILE [ARGS...]</td><td>Run with lmctl provider configuration and automation services.</td></tr>
 <tr><td>lmctl autorun URL or ./FILE.lms</td><td>Fetch or load a script, check declared provider roles, map missing providers, and run it. Requires a build with autorun support; @lmctl-ai/lmctl 0.2.373 does not include this command. Use --save-only to guarantee saving without execution. Non-interactive mapping proposals are saved; when all providers are installed, the current implementation can execute.</td></tr>
 </tbody></table>

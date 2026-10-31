@@ -37,7 +37,7 @@ out.check(total == 10.0, "sum must be 10");
 out.set("shape", values.shape()).set("sum", total);
 end _lmcode_
 savedsl(p, "tensor-sum.dslb");
-run = system ${dsl_cli(p)} --dsl tensor-sum.dslb;
+run = system ${dsl_cli(p)} --lmcode tensor-sum.dslb;
 if (run.code != 0) { println(str(run.stderr)); exit(run.code); }
 result = json_parse(run.stdout).result;
 println(f"shape {result.shape}, sum {result.sum}");</code></pre>

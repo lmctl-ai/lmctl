@@ -173,7 +173,7 @@ def pull(tool, ref, source, store, released_version=None):
             args=[str(work/'page.dslb'),str(path),title,intro,kind,script,command,expected,image,alt,caption,mp4,webm,poster,str(duration),prev,nxt,contents,str(width),str(height)]
             policy.run(compiler,str(template),*args,cwd=ROOT,stdout=subprocess.DEVNULL)
             resolved=Path(args[0]+'.host').read_text().strip()
-            policy.run(resolved,'--dsl',args[0],cwd=work,stdout=subprocess.PIPE)
+            policy.run(resolved,'--lmcode',args[0],cwd=work,stdout=subprocess.PIPE)
         release_note = ('lmvideo ' + released_version + ' is released. Source examples are pinned to public commit ' + commit[:7] + '.') if released_version else 'Read downloaded programs before executing them. These sources require the matching lmvideo runtime.'
         for group in content['groups']:
             folder=out/group['id'];folder.mkdir();base=f'/tools/{tool}/{group["id"]}/';chapters=group['chapters'];index=folder/'index.html'

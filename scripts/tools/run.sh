@@ -96,7 +96,7 @@ fi
 (($# <= 1)) || { echo 'too many arguments' >&2; exit 2; }
 "$compiler" "$work/$script_name.lms" "$work/program.dslb" "$work/report.txt" "$argument" "${TOOLS_SCOPE:-}" "${TOOLS_MARKUP_ONLY:-}"
 status=0
-"$host" ${host_args:+"${host_args[@]}"} --dsl "$work/program.dslb" > "$work/result.json" || status=$?
+"$host" ${host_args:+"${host_args[@]}"} --lmcode "$work/program.dslb" > "$work/result.json" || status=$?
 [[ ! -f $work/report.txt ]] || cat "$work/report.txt"
 if ((status)); then cat "$work/result.json" >&2; fi
 case "$command_name" in

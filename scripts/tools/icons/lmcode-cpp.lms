@@ -1,5 +1,5 @@
 # lmcode-cpp icon: two meshing gears (a runtime turning bytecode), teeth placed in loops.
-# Usage (see README.md): lmscript lmcode-cpp.lms OUT_DIR OUT.dslb, then lmcad --dsl OUT.dslb
+# Usage (see README.md): lmscript lmcode-cpp.lms OUT_DIR OUT.dslb, then lmcad --lmcode OUT.dslb
 out = ARGV.get(0, "build");
 p = _lmcode_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
 # --- shared icon look: identical in every icon script (render.sh --check verifies) ---
