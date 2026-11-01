@@ -8,7 +8,9 @@ for (round in range(0, 3)) {
   if (answer == null) { answer = env("AGENTIC_APPROVE", "n"); }
   answer = trim(answer);
   if (answer == "y") {
-    write_file("announcement.txt", draft + "\n");
+    # The write grant exists only on this approved path.
+    saved = tool_call("write_file", {path: "announcement.txt", content: draft + "\n"}, {write: true});
+    require(saved.ok, "could not save the announcement");
     println("decision=approved");
     exit(0);
   }

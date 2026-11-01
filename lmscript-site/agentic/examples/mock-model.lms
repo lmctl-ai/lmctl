@@ -42,10 +42,12 @@ fn reply(system: string, last: string) -> string {
   } else if (is_role(system, "tester")) {
     out = "1. A repository with no TODO lines prints 0. 2. Untracked files are skipped; check with git status.";
   } else if (is_role(system, "file analyst")) {
-    if (str_starts_with(last, "TOOL_RESULT")) {
+    if (str_starts_with(last, "TOOL_RESULT read_file") && str_contains(last, "0.4 adds embeddings")) {
       out = "Release 0.4 adds embeddings (notes.txt, line 2).";
+    } else if (str_starts_with(last, "TOOL_RESULT")) {
+      out = "The tool result did not contain notes.txt.";
     } else {
-      out = "{\"op\":\"read_file\",\"path\":\"notes.txt\"}";
+      out = "{\"tool\":\"read_file\",\"args\":{\"path\":\"notes.txt\"}}";
     }
   } else if (is_role(system, "announcement writer")) {
     out = "Agent workflow recipes for lmscript are online. Each one is a short script you can read, run offline and adapt.";
