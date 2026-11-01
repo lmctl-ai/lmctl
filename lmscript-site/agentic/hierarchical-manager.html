@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base href="/lmscript/agentic/">
+<title>Hierarchical manager — lmscript</title>
+<meta name="description" content="A manager agent assigns work to named workers until it declares the goal done.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li><li><a href="/lmscript/agentic/">Agentic recipes</a></li></ul></nav>
+<main>
+<h1>Hierarchical manager</h1>
+<p>A manager agent assigns work to named workers until it declares the goal done.</p>
+<p>The manager replies with JSON naming the next worker (coder, tester or writer) and its task, or done with the final answer. The script runs the chosen worker, records the result and shows the manager everything finished so far. The loop stops after six rounds, so a manager that never finishes fails loudly instead of running forever.</p>
+<h2>What it maps to</h2>
+<p>Hierarchical process and delegation: the manager decides who works next; the script enforces the worker list and the round limit. See the <a href="crewai-map.html">concept map</a>.</p>
+<h2>Script: hierarchical-manager.lms</h2>
+<pre><code># Hierarchical manager: a manager assigns work to named workers until it declares the goal done.
+import "agentic.lms";
+goal = ARGV.get(0, "a one-line shell command that counts TODO lines in a repository, with a short usage note");
+manager = agent("manager", "split the goal into worker tasks, then accept the result");
+workers = {
+  coder: agent("coder", "write one small shell command"),
+  tester: agent("tester", "name two edge cases and how to check them"),
+  writer: agent("writer", "write a two-sentence usage note")
+};
+schema = {type: "object", required: ["assign", "task"], properties: {
+  assign: {type: "string", enum: ["coder", "tester", "writer", "done"]}, task: {type: "string"}}};
+done = [];
+for (round in range(0, 6)) {
+  d = ask_json(manager, f"Goal: {goal}\nFinished work: {json_stringify(done)}\nAssign the next worker, or assign done with the final answer as task.", schema);
+  if (d == null || d.assign == "done") {
+    println(d == null ? "(dry run)" : d.task);
+    exit(0);
+  }
+  push(done, {worker: d.assign, task: d.task, result: ask(workers.get(d.assign, null), d.task)});
+  println(f"round {round + 1}: {d.assign}");
+}
+error("manager did not finish within 6 rounds");
+exit(1);
+</code></pre>
+<p>It imports the shared helpers from <a href="examples/agentic.lms">examples/agentic.lms</a>, shown on the <a href="index.html">recipe index</a>.</p>
+<h2>Run it</h2>
+<pre><code>export OLLAMA_API_KEY=...
+LLM_MODEL=ollama-cloud/deepseek-v4.1-flash lmscript examples/hierarchical-manager.lms</code></pre>
+<h2>Output (offline mock)</h2>
+<p>The site check runs this recipe against examples/mock-model.lms, a deterministic stand-in for the model, and compares this output.</p>
+<pre><samp>round 1: coder
+round 2: tester
+round 3: writer
+git grep -n TODO | wc -l -- run it from the repository root; binary files and untracked files are not counted.</samp></pre>
+<h2>Live run</h2>
+<p>Recorded on 2026-11-01 with ollama-cloud/deepseek-v4.1-flash. It made 3 model calls and used 1217 tokens. Live replies differ from run to run.</p>
+<pre><samp>round 1: coder
+```sh
+git grep -In -E '\bTODO\b' | wc -l
+```
+
+**Usage:** Run from the repository root (or any subdirectory to scope the count there). It counts lines—not TODO occurrences—in git-tracked text files that contain the whole word `TODO`, respecting `.gitignore`; binary files are skipped via `-I`. Add `FIXME` with `-E '\b(TODO|FIXME)\b'` if you want both.</samp></pre>
+<p><a href="sequential-crew.html">Previous: Sequential crew</a> · <a href="tool-agent.html">Next: Tool agent with lmtools</a></p>
+<p>Try it: download <a href="examples/hierarchical-manager.lms">examples/hierarchical-manager.lms</a> and <a href="examples/agentic.lms">examples/agentic.lms</a> into an examples/ directory, export the key for your provider, then run the command above. Pass a goal as the first argument.</p>
+</main>
+<footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
+</body>
+</html>

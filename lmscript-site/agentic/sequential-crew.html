@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base href="/lmscript/agentic/">
+<title>Sequential crew — lmscript</title>
+<meta name="description" content="Run a researcher, a writer and an editor in order, each task seeing the previous output.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li><li><a href="/lmscript/agentic/">Agentic recipes</a></li></ul></nav>
+<main>
+<h1>Sequential crew</h1>
+<p>Run a researcher, a writer and an editor in order, each task seeing the previous output.</p>
+<p>Three agents run as a list of tasks. Each task receives the previous task output as its context, and every result is appended to crew-log.md so the whole run can be read afterwards. Only the editor output is printed.</p>
+<h2>What it maps to</h2>
+<p>Crew with a sequential process: a list of tasks and a for loop. Task context: the previous output is passed in the prompt. See the <a href="crewai-map.html">concept map</a>.</p>
+<h2>Script: sequential-crew.lms</h2>
+<pre><code># Sequential crew: researcher, writer and editor run in order; each task sees the previous output.
+import "agentic.lms";
+topic = ARGV.get(0, "why short scripts are easier to review than agent frameworks");
+tasks = [
+  {who: agent("researcher", "collect concrete, checkable points"), todo: f"List 4 short points about: {topic}. One per line."},
+  {who: agent("writer", "turn points into a clear paragraph"), todo: "Write one paragraph of at most 90 words from these points."},
+  {who: agent("editor", "tighten prose without dropping points"), todo: "Edit this paragraph. Output only the final paragraph."}
+];
+context = "";
+for (t in tasks) {
+  context = ask(t.who, t.todo + "\n\n" + context);
+  append_file("crew-log.md", f"## {t.who.role}\n{context}\n\n");
+}
+println(context);
+</code></pre>
+<p>It imports the shared helpers from <a href="examples/agentic.lms">examples/agentic.lms</a>, shown on the <a href="index.html">recipe index</a>.</p>
+<h2>Run it</h2>
+<pre><code>export OLLAMA_API_KEY=...
+LLM_MODEL=ollama-cloud/deepseek-v4.1-flash lmscript examples/sequential-crew.lms</code></pre>
+<h2>Output (offline mock)</h2>
+<p>The site check runs this recipe against examples/mock-model.lms, a deterministic stand-in for the model, and compares this output.</p>
+<pre><samp>Short scripts are easy to review: every step is written in order, every model call shows its inputs, no state hides in a framework, and each change is a small diff.</samp></pre>
+<h2>Live run</h2>
+<p>Recorded on 2026-11-01 with ollama-cloud/deepseek-v4.1-flash. It made 3 model calls and used 1111 tokens. Live replies differ from run to run.</p>
+<pre><samp>Less code means fewer lines and files to inspect, and explicit control flow eases tracing behavior. Fewer abstractions and dependencies reduce hidden interactions; simpler data flow eases checking edge cases and failures. Together, these qualities make a system easier to understand, review, and debug.</samp></pre>
+<p><a href="triage-router.html">Previous: Triage router</a> · <a href="hierarchical-manager.html">Next: Hierarchical manager</a></p>
+<p>Try it: download <a href="examples/sequential-crew.lms">examples/sequential-crew.lms</a> and <a href="examples/agentic.lms">examples/agentic.lms</a> into an examples/ directory, export the key for your provider, then run the command above. Pass a topic as the first argument.</p>
+</main>
+<footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
+</body>
+</html>

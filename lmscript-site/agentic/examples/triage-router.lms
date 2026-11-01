@@ -1,0 +1,16 @@
+# Triage router: classify a ticket, then hand it to the matching specialist.
+import "agentic.lms";
+ticket = ARGV.get(0, "I was charged twice for my October invoice.");
+triage = agent("triage desk", "label support tickets");
+schema = {type: "object", required: ["label", "reason"], additionalProperties: false,
+  properties: {label: {type: "string", enum: ["billing", "bug", "question"]}, reason: {type: "string", maxLength: 160}}};
+decision = ask_json(triage, f"Label this ticket: {ticket}", schema);
+route = decision == null ? "question" : decision.label;
+specialists = {
+  billing: agent("billing specialist", "resolve charges politely and say what happens next"),
+  bug: agent("support engineer", "ask for the exact steps to reproduce"),
+  question: agent("support agent", "answer briefly and link nothing")
+};
+answer = ask(specialists.get(route, null), f"Customer ticket: {ticket}\nWrite a reply of at most 3 sentences.");
+println(f"route={route}");
+println(answer);

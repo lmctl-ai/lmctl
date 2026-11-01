@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base href="/lmscript/agentic/">
+<title>Concept map — lmscript</title>
+<meta name="description" content="How crewAI concepts map to the lmscript agentic recipes on this site.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li><li><a href="/lmscript/agentic/">Agentic recipes</a></li></ul></nav>
+<main>
+<h1>Concept map</h1>
+<p>This page maps the main concepts of crewAI, a Python framework for agent crews and flows, to the recipes on this site. The recipes do not use crewAI; they show how each idea looks as plain lmscript.</p>
+<table>
+<thead><tr><th>crewAI concept</th><th>How the recipe does it</th><th>Recipe</th></tr></thead>
+<tbody>
+<tr><td>Agent: role, goal, backstory, model</td><td>A map from agent(role, goal); the role and goal become the system prompt</td><td><a href="sequential-crew.html">sequential-crew</a></td></tr>
+<tr><td>Task: description, expected output, context</td><td>A map in a list; the previous output is passed in the prompt</td><td><a href="sequential-crew.html">sequential-crew</a></td></tr>
+<tr><td>Crew with the sequential process</td><td>A for loop over the task list</td><td><a href="sequential-crew.html">sequential-crew</a></td></tr>
+<tr><td>Hierarchical process with a manager</td><td>The manager returns JSON naming the next worker; the script enforces the worker list and a round limit</td><td><a href="hierarchical-manager.html">hierarchical-manager</a></td></tr>
+<tr><td>Delegation between agents</td><td>The manager assigns a task; the script runs the named worker and reports the result back</td><td><a href="hierarchical-manager.html">hierarchical-manager</a></td></tr>
+<tr><td>Flow router</td><td>A validated label chooses the next agent</td><td><a href="triage-router.html">triage-router</a></td></tr>
+<tr><td>Flow state and persistence</td><td>A state map written to state.json after each step</td><td><a href="stateful-checkpoint.html">stateful-checkpoint</a></td></tr>
+<tr><td>Checkpointing and resume</td><td>Finished steps are skipped on the next run in the same directory</td><td><a href="stateful-checkpoint.html">stateful-checkpoint</a></td></tr>
+<tr><td>Tools</td><td>A JSON text protocol; the script runs lmtools as an argument array and feeds back the result</td><td><a href="tool-agent.html">tool-agent</a></td></tr>
+<tr><td>Short-term memory</td><td>The history option of llm_prompt, kept by the script</td><td><a href="tool-agent.html">tool-agent</a></td></tr>
+<tr><td>Knowledge sources</td><td>Paragraphs from local files scored by question words and passed as sources</td><td><a href="keyword-knowledge.html">keyword-knowledge</a></td></tr>
+<tr><td>Guardrails and structured output</td><td>json_validate on a JSON reply, with the errors fed back for a retry</td><td><a href="fan-out-judge.html">fan-out-judge</a></td></tr>
+<tr><td>Human input</td><td>prompt_human on a terminal, AGENTIC_APPROVE without one; the default is to reject</td><td><a href="human-checkpoint.html">human-checkpoint</a></td></tr>
+<tr><td>Asynchronous tasks</td><td>parallel_map with a concurrency limit; results keep input order</td><td><a href="fan-out-judge.html">fan-out-judge</a></td></tr>
+<tr><td>Event listeners and usage metrics</td><td>trace.jsonl with role, tokens, latency and attempts for each model call</td><td><a href="sequential-crew.html">sequential-crew</a></td></tr>
+</tbody>
+</table>
+<h2>Not covered yet</h2>
+<ul>
+<li>Embedding-based memory and knowledge: llm_prompt has no embeddings call, so retrieval here is keyword scoring.</li>
+<li>Web search tools: lmtools webget fetches a known address but does not search.</li>
+<li>Token streaming: llm_prompt returns the complete reply.</li>
+<li>Images and other files sent to the model: prompts are text only.</li>
+<li>Planning before acting (crewAI planning): no recipe does it yet; a plan-then-execute loop fits ask_json with a step list schema.</li>
+<li>Skill directories (crewAI SKILL.md packages): not mapped; the lmscript version is read_file of a skill file added to the system prompt.</li>
+<li>Evaluation runs and training (crewAI test, crewai train): the offline mock checks above play the role of repeatable tests; model training itself does not apply here.</li>
+</ul>
+<p><a href="index.html">Back to the recipe index</a></p>
+</main>
+<footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
+</body>
+</html>

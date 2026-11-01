@@ -1,0 +1,21 @@
+# Human checkpoint: a draft waits for an operator. y approves, n rejects, other text is feedback for a revision.
+import "agentic.lms";
+writer = agent("announcement writer", "write short, friendly release announcements");
+draft = ask(writer, "Write a 2-sentence announcement: lmscript recipes for agent workflows are online.");
+for (round in range(0, 3)) {
+  println(f"draft {round + 1}: {draft}");
+  answer = prompt_human("Approve? y / n / feedback: ");
+  if (answer == null) { answer = env("AGENTIC_APPROVE", "n"); }
+  answer = trim(answer);
+  if (answer == "y") {
+    write_file("announcement.txt", draft + "\n");
+    println("decision=approved");
+    exit(0);
+  }
+  if (answer == "n" || answer == "") {
+    println("decision=rejected (no operator approval; set AGENTIC_APPROVE=y or answer y on a terminal)");
+    exit(0);
+  }
+  draft = ask(writer, f"Revise this announcement.\nDraft: {draft}\nFeedback: {answer}");
+}
+println("decision=rejected after 3 revisions");

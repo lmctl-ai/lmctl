@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base href="/lmscript/agentic/">
+<title>Human checkpoint — lmscript</title>
+<meta name="description" content="A draft waits for an operator: y approves, n rejects, any other text is feedback for a revision.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li><li><a href="/lmscript/agentic/">Agentic recipes</a></li></ul></nav>
+<main>
+<h1>Human checkpoint</h1>
+<p>A draft waits for an operator: y approves, n rejects, any other text is feedback for a revision.</p>
+<p>The writer drafts an announcement, then the script stops and asks the operator. On a terminal prompt_human reads the answer; without a terminal it returns null and the script falls back to AGENTIC_APPROVE, which defaults to no. Feedback text sends the draft back for up to three revisions. Only an approved draft is written to announcement.txt.</p>
+<h2>What it maps to</h2>
+<p>Human input: prompt_human on a terminal, an environment variable in automation. The default is to reject, never to publish unapproved text. See the <a href="crewai-map.html">concept map</a>.</p>
+<h2>Script: human-checkpoint.lms</h2>
+<pre><code># Human checkpoint: a draft waits for an operator. y approves, n rejects, other text is feedback for a revision.
+import "agentic.lms";
+writer = agent("announcement writer", "write short, friendly release announcements");
+draft = ask(writer, "Write a 2-sentence announcement: lmscript recipes for agent workflows are online.");
+for (round in range(0, 3)) {
+  println(f"draft {round + 1}: {draft}");
+  answer = prompt_human("Approve? y / n / feedback: ");
+  if (answer == null) { answer = env("AGENTIC_APPROVE", "n"); }
+  answer = trim(answer);
+  if (answer == "y") {
+    write_file("announcement.txt", draft + "\n");
+    println("decision=approved");
+    exit(0);
+  }
+  if (answer == "n" || answer == "") {
+    println("decision=rejected (no operator approval; set AGENTIC_APPROVE=y or answer y on a terminal)");
+    exit(0);
+  }
+  draft = ask(writer, f"Revise this announcement.\nDraft: {draft}\nFeedback: {answer}");
+}
+println("decision=rejected after 3 revisions");
+</code></pre>
+<p>It imports the shared helpers from <a href="examples/agentic.lms">examples/agentic.lms</a>, shown on the <a href="index.html">recipe index</a>.</p>
+<h2>Run it</h2>
+<pre><code>export OLLAMA_API_KEY=...
+LLM_MODEL=ollama-cloud/deepseek-v4.1-flash lmscript examples/human-checkpoint.lms</code></pre>
+<h2>Output (offline mock)</h2>
+<p>The site check runs this recipe against examples/mock-model.lms, a deterministic stand-in for the model, and compares this output.</p>
+<pre><samp>draft 1: Agent workflow recipes for lmscript are online. Each one is a short script you can read, run offline and adapt.
+decision=rejected (no operator approval; set AGENTIC_APPROVE=y or answer y on a terminal)</samp></pre>
+<h2>Live run</h2>
+<p>Recorded on 2026-11-01 with ollama-cloud/deepseek-v4.1-flash. It made 1 model call and used 124 tokens. The run used AGENTIC_APPROVE=y. Live replies differ from run to run.</p>
+<pre><samp>draft 1: Our lmscript recipes for agent workflows are now online! Dive in to explore practical examples and make your agent workflows even smoother.
+decision=approved</samp></pre>
+<p><a href="tool-agent.html">Previous: Tool agent with lmtools</a> · <a href="fan-out-judge.html">Next: Fan-out and judge</a></p>
+<p>Try it: download <a href="examples/human-checkpoint.lms">examples/human-checkpoint.lms</a> and <a href="examples/agentic.lms">examples/agentic.lms</a> into an examples/ directory, export the key for your provider, then run the command above. Run it on a terminal to answer interactively, or set AGENTIC_APPROVE=y to approve without one.</p>
+</main>
+<footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
+</body>
+</html>

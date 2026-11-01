@@ -4,58 +4,17 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 LMSCRIPT_BIN="${LMSCRIPT_BIN:-$(command -v lmscript)}"
 "$LMSCRIPT_BIN" --version
-LMHTML="${LMHTML:-$(LMSCRIPT_BIN="$LMSCRIPT_BIN" bash scripts/tools/run.sh host-path)}"
+# Host installation uses the published compiler: mono has a separate 0.2.x
+# version series that fails tools/run.sh's published-package version guard.
+LMHTML="${LMHTML:-$(LMSCRIPT_BIN="${LMHTML_BOOTSTRAP_BIN:-$(command -v lmscript)}" bash scripts/tools/run.sh host-path)}"
 "$LMHTML" lint --config scripts/tools/plain.conf lmscript-site
-python3 - <<'PY'
-from pathlib import Path
-from html import unescape
-from html.parser import HTMLParser
-from urllib.parse import urljoin, urlsplit
-import re
-class Links(HTMLParser):
-    def __init__(self):
-        super().__init__()
-        self.links = []
-        self.ids = set()
-    def handle_starttag(self, tag, attrs):
-        attrs = dict(attrs)
-        if 'id' in attrs:
-            self.ids.add(attrs['id'])
-        if tag in ('a', 'img'):
-            self.links.append(attrs.get('href' if tag == 'a' else 'src', ''))
-
-for path in Path('lmscript-site').glob('*.html'):
-    text = path.read_text()
-    links = Links()
-    links.feed(text)
-    for href in links.links:
-        url = urlsplit(urljoin('https://lmctl.com/lmscript/', href))
-        if url.netloc != 'lmctl.com' or not url.path.startswith('/lmscript/'):
-            continue
-        target = Path('lmscript-site') / url.path.removeprefix('/lmscript/')
-        if target.is_dir():
-            target /= 'index.html'
-        if not target.is_file():
-            raise SystemExit(f'{path}: broken tutorial link {href}')
-        if url.fragment:
-            destination = Links()
-            destination.feed(target.read_text())
-            if url.fragment not in destination.ids:
-                raise SystemExit(f'{path}: missing tutorial anchor {href}')
-    if re.search(r'<(?:strong|em)(?:\s|>)', text, re.I):
-        raise SystemExit(f'{path}: emphasis markup is not allowed')
-    outside = re.sub(r'<pre\b[^>]*>.*?</pre>', '', text, flags=re.I | re.S)
-    if re.search(r'<code(?:\s|>)', outside, re.I):
-        raise SystemExit(f'{path}: inline code markup is not allowed')
-    match = re.search(r'<h2>Script: ([^<]+)</h2>\s*<pre><code>(.*?)</code></pre>', text, re.S)
-    if match:
-        source = Path('lmscript-site/examples') / match.group(1)
-        if not source.is_file() or unescape(match.group(2)) != source.read_text():
-            raise SystemExit(f'{path}: displayed source differs from {source}')
-        if not re.search(r'<p>Try it:.*?</p>\s*</main>', text, re.S):
-            raise SystemExit(f'{path}: tutorial must end with a Try it instruction')
-PY
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/lmscript-site -p 'test_*.py'
+node --test scripts/lmscript-site/test_compile_mock.mjs
+python3 scripts/lmscript-site/pages.py
+# Exercise new recipes even when a legacy native-host example fails later.
+LMSCRIPT_BIN="$LMSCRIPT_BIN" python3 scripts/lmscript-site/agentic.py offline
 tmp="$(mktemp -d "${TMPDIR:-/tmp}/lmscript-site-XXXXXX")"
+trap 'rm -rf "$tmp"' EXIT
 run_expect() {
   local file="$1" expected="$2"; shift 2
   local actual
@@ -79,12 +38,14 @@ PY
 # Run native hosts in the temporary working directory so their rendered files
 # stay out of the source tree, while warming verified release assets for --check.
 run_expect dsl-hosts.lms 'compiled and ran lmdraw, lmcad and lmhtml'
-for file in lmscript-site/examples/*.lms; do
+while IFS= read -r -d '' file; do
   case "$file" in
     lmscript-site/examples/undeclared-name.lms) continue ;;
+    # Needs a generated schema; agentic.py checks its staged copy.
+    lmscript-site/agentic/examples/mock-model.lms) continue ;;
   esac
   "$LMSCRIPT_BIN" --check "$file"
-done
+done < <(find lmscript-site -path '*/examples/*.lms' -type f -print0)
 run_expect hello-vars.lms 'Hello, Ada!' Ada
 run_expect control-flow-functions.lms 'sum=46'
 run_expect strings-data.lms $'DRAW has 3 members: Ada, Lin, Mina\n{"team":"draw","count":3}'

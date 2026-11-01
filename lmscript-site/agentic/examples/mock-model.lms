@@ -1,0 +1,88 @@
+# Deterministic stand-in for an OpenAI-compatible chat model, used by the offline site checks.
+# Each reply is chosen from the role named in the system prompt ("You are the ROLE.") and the
+# last user message, so every recipe gets the same answers on every run.
+# The checker writes `lmmock schema` to schema.json beside a copy of this file, compiles the
+# _lmcode_ block with lmscript's dist/dsl.js compileDsl, then runs each recipe under
+# `lmmock exec --lmcode mock.dslb` with LMSCRIPT_LLM_MOCK_URL set to $LMMOCK_URL.
+program = _lmcode_ schema="schema.json";
+fn field(j: Json, key: string) -> string {
+  let value = "";
+  if (j.has(key)) { value = j.get(key).as_string(); }
+  return value;
+}
+
+fn is_role(system: string, role: string) -> bool {
+  return str_contains(system, "You are the " + role + ".");
+}
+
+fn reply(system: string, last: string) -> string {
+  let out = "pong";
+  if (is_role(system, "triage desk")) {
+    out = "{\"label\":\"billing\",\"reason\":\"The customer reports a duplicate charge on one invoice.\"}";
+  } else if (is_role(system, "billing specialist")) {
+    out = "Sorry about the double charge. We have refunded the duplicate October payment; it reaches your card in 3 to 5 days.";
+  } else if (is_role(system, "researcher")) {
+    out = "A script shows every step in order.\nEach model call has visible inputs.\nDiffs are small and reviewable.\nThere is no hidden framework state.";
+  } else if (is_role(system, "writer")) {
+    out = "Short scripts are easy to review because every step is written down in order, each model call shows its inputs, and nothing happens in hidden framework state; a change is a small diff.";
+  } else if (is_role(system, "editor")) {
+    out = "Short scripts are easy to review: every step is written in order, every model call shows its inputs, no state hides in a framework, and each change is a small diff.";
+  } else if (is_role(system, "manager")) {
+    if (str_contains(last, "Finished work: []")) {
+      out = "{\"assign\":\"coder\",\"task\":\"Write one shell command that counts lines containing TODO in a git repository.\"}";
+    } else if (!str_contains(last, "\"worker\":\"tester\"")) {
+      out = "{\"assign\":\"tester\",\"task\":\"Name two edge cases for: git grep -n TODO | wc -l\"}";
+    } else if (!str_contains(last, "\"worker\":\"writer\"")) {
+      out = "{\"assign\":\"writer\",\"task\":\"Write a two-sentence usage note for: git grep -n TODO | wc -l\"}";
+    } else {
+      out = "{\"assign\":\"done\",\"task\":\"git grep -n TODO | wc -l -- run it from the repository root; binary files and untracked files are not counted.\"}";
+    }
+  } else if (is_role(system, "coder")) {
+    out = "git grep -n TODO | wc -l";
+  } else if (is_role(system, "tester")) {
+    out = "1. A repository with no TODO lines prints 0. 2. Untracked files are skipped; check with git status.";
+  } else if (is_role(system, "file analyst")) {
+    if (str_starts_with(last, "TOOL_RESULT")) {
+      out = "Release 0.4 adds embeddings (notes.txt, line 2).";
+    } else {
+      out = "{\"op\":\"read_file\",\"path\":\"notes.txt\"}";
+    }
+  } else if (is_role(system, "announcement writer")) {
+    out = "Agent workflow recipes for lmscript are online. Each one is a short script you can read, run offline and adapt.";
+  } else if (is_role(system, "security reviewer")) {
+    out = "Risk: scripts may hold credentials in plain files. Benefit: every job is reviewed like code.";
+  } else if (is_role(system, "operations engineer")) {
+    out = "Risk: a failed run needs alerting that cron gave us for free. Benefit: one runner and one log format.";
+  } else if (is_role(system, "finance lead")) {
+    out = "Risk: model calls add a small per-run cost. Benefit: fewer hand-maintained jobs.";
+  } else if (is_role(system, "judge")) {
+    out = "{\"verdict\":\"accept with conditions\",\"reason\":\"Keep credentials in the environment and add failure alerts before switching off cron.\"}";
+  } else if (is_role(system, "outliner")) {
+    out = "- Shipped this week\n- Blocked items\n- Next week";
+  } else if (is_role(system, "drafter")) {
+    out = "This week we shipped the recipe site. Nothing is blocked. Next week we add embeddings.";
+  } else if (is_role(system, "subject writer")) {
+    out = "Status: recipes shipped, embeddings next";
+  } else if (is_role(system, "librarian")) {
+    out = "Run lmscript --dry-run FILE: it evaluates the script with effects off and the PLAN lists every skipped effect (kb/dry-run.md).";
+  }
+  return out;
+}
+
+@completion
+fn completion(x: Exchange) -> void implements Handler {
+  let request = json_parse(x.body());
+  let messages = request.get("messages");
+  let system = "";
+  let last = "";
+  for (i in range(0, messages.len())) {
+    let role = field(messages.at(i), "role");
+    if (role == "system") { system = field(messages.at(i), "content"); }
+    if (role == "user") { last = field(messages.at(i), "content"); }
+  }
+  let content = reply(system, last);
+  x.json("{\"id\":\"mock-1\",\"model\":\"mock-model\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":" + json_quote(content) + "},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":40,\"completion_tokens\":20,\"total_tokens\":60}}");
+}
+
+route("POST", "/chat/completions", "completion");
+end _lmcode_

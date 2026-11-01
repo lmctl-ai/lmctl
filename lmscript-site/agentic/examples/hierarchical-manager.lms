@@ -1,0 +1,23 @@
+# Hierarchical manager: a manager assigns work to named workers until it declares the goal done.
+import "agentic.lms";
+goal = ARGV.get(0, "a one-line shell command that counts TODO lines in a repository, with a short usage note");
+manager = agent("manager", "split the goal into worker tasks, then accept the result");
+workers = {
+  coder: agent("coder", "write one small shell command"),
+  tester: agent("tester", "name two edge cases and how to check them"),
+  writer: agent("writer", "write a two-sentence usage note")
+};
+schema = {type: "object", required: ["assign", "task"], properties: {
+  assign: {type: "string", enum: ["coder", "tester", "writer", "done"]}, task: {type: "string"}}};
+done = [];
+for (round in range(0, 6)) {
+  d = ask_json(manager, f"Goal: {goal}\nFinished work: {json_stringify(done)}\nAssign the next worker, or assign done with the final answer as task.", schema);
+  if (d == null || d.assign == "done") {
+    println(d == null ? "(dry run)" : d.task);
+    exit(0);
+  }
+  push(done, {worker: d.assign, task: d.task, result: ask(workers.get(d.assign, null), d.task)});
+  println(f"round {round + 1}: {d.assign}");
+}
+error("manager did not finish within 6 rounds");
+exit(1);

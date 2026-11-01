@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base href="/lmscript/agentic/">
+<title>Triage router — lmscript</title>
+<meta name="description" content="Classify a support ticket with a validated JSON reply, then hand it to the matching specialist.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li><li><a href="/lmscript/agentic/">Agentic recipes</a></li></ul></nav>
+<main>
+<h1>Triage router</h1>
+<p>Classify a support ticket with a validated JSON reply, then hand it to the matching specialist.</p>
+<p>A triage agent labels the ticket as billing, bug or question. The label must pass a JSON Schema check (an enum), so an unexpected label is retried with the validator errors instead of being trusted. The script then picks the specialist agent from a map and prints the route and the reply.</p>
+<h2>What it maps to</h2>
+<p>Router and flow state: the label is the routing decision, and a lookup in the specialist map is the branch. Structured output: ask_json with json_validate. See the <a href="crewai-map.html">concept map</a>.</p>
+<h2>Script: triage-router.lms</h2>
+<pre><code># Triage router: classify a ticket, then hand it to the matching specialist.
+import "agentic.lms";
+ticket = ARGV.get(0, "I was charged twice for my October invoice.");
+triage = agent("triage desk", "label support tickets");
+schema = {type: "object", required: ["label", "reason"], additionalProperties: false,
+  properties: {label: {type: "string", enum: ["billing", "bug", "question"]}, reason: {type: "string", maxLength: 160}}};
+decision = ask_json(triage, f"Label this ticket: {ticket}", schema);
+route = decision == null ? "question" : decision.label;
+specialists = {
+  billing: agent("billing specialist", "resolve charges politely and say what happens next"),
+  bug: agent("support engineer", "ask for the exact steps to reproduce"),
+  question: agent("support agent", "answer briefly and link nothing")
+};
+answer = ask(specialists.get(route, null), f"Customer ticket: {ticket}\nWrite a reply of at most 3 sentences.");
+println(f"route={route}");
+println(answer);
+</code></pre>
+<p>It imports the shared helpers from <a href="examples/agentic.lms">examples/agentic.lms</a>, shown on the <a href="index.html">recipe index</a>.</p>
+<h2>Run it</h2>
+<pre><code>export OLLAMA_API_KEY=...
+LLM_MODEL=ollama-cloud/deepseek-v4.1-flash lmscript examples/triage-router.lms</code></pre>
+<h2>Output (offline mock)</h2>
+<p>The site check runs this recipe against examples/mock-model.lms, a deterministic stand-in for the model, and compares this output.</p>
+<pre><samp>route=billing
+Sorry about the double charge. We have refunded the duplicate October payment; it reaches your card in 3 to 5 days.</samp></pre>
+<h2>Live run</h2>
+<p>Recorded on 2026-11-01 with ollama-cloud/deepseek-v4.1-flash. It made 2 model calls and used 549 tokens. Live replies differ from run to run.</p>
+<pre><samp>route=billing
+I’m sorry to hear you were charged twice for your October invoice. I’ll review the payment records now and, if the duplicate is confirmed, initiate a refund to your original payment method. You’ll receive an update once the review is complete.</samp></pre>
+<p><a href="index.html">Back to the recipe index</a> · <a href="sequential-crew.html">Next: Sequential crew</a></p>
+<p>Try it: download <a href="examples/triage-router.lms">examples/triage-router.lms</a> and <a href="examples/agentic.lms">examples/agentic.lms</a> into an examples/ directory, export the key for your provider, then run the command above. Pass your own ticket as the first argument.</p>
+</main>
+<footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
+</body>
+</html>

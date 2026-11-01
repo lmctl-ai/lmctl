@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base href="/lmscript/agentic/">
+<title>Stateful checkpoint — lmscript</title>
+<meta name="description" content="Save each step result to state.json so a rerun skips finished steps and resumes.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li><li><a href="/lmscript/agentic/">Agentic recipes</a></li></ul></nav>
+<main>
+<h1>Stateful checkpoint</h1>
+<p>Save each step result to state.json so a rerun skips finished steps and resumes.</p>
+<p>The flow has three steps: outline, draft and subject line. After each step the whole state is written to state.json. On the next run finished steps are skipped and their saved results are reused. Set AGENTIC_FAIL_AT=draft to simulate a failure, then run again in the same directory to see it resume.</p>
+<h2>What it maps to</h2>
+<p>Flow state and checkpointing: an explicit state map saved after every step. Resume: rerun the same script in the same directory. See the <a href="crewai-map.html">concept map</a>.</p>
+<h2>Script: stateful-checkpoint.lms</h2>
+<pre><code># Stateful checkpoint: each step's result is saved to state.json, so a rerun skips finished steps.
+import "agentic.lms";
+state_file = "state.json";
+state = file_exists(state_file) ? read_json(state_file) : {topic: ARGV.get(0, "a weekly team status email"), done: {}};
+steps = [
+  {name: "outline", who: agent("outliner", "outline in 3 bullets"), todo: "Outline: "},
+  {name: "draft", who: agent("drafter", "write from an outline"), todo: "Write at most 80 words from this outline: "},
+  {name: "subject", who: agent("subject writer", "write one subject line"), todo: "Write a subject line for: "}
+];
+input = state.topic;
+for (s in steps) {
+  if (state.done.has(s.name)) {
+    println(f"{s.name}: skipped (saved)");
+  } else {
+    if (env("AGENTIC_FAIL_AT", "") == s.name) { error(f"simulated failure at {s.name}; rerun to resume"); exit(1); }
+    state.done[s.name] = ask(s.who, s.todo + input);
+    write_json(state_file, state);
+    println(f"{s.name}: done");
+  }
+  input = state.done.get(s.name, "");
+}
+println(f"subject: {state.done.subject}");
+</code></pre>
+<p>It imports the shared helpers from <a href="examples/agentic.lms">examples/agentic.lms</a>, shown on the <a href="index.html">recipe index</a>.</p>
+<h2>Run it</h2>
+<pre><code>export OLLAMA_API_KEY=...
+LLM_MODEL=ollama-cloud/deepseek-v4.1-flash lmscript examples/stateful-checkpoint.lms</code></pre>
+<h2>Output (offline mock)</h2>
+<p>The site check runs this recipe against examples/mock-model.lms, a deterministic stand-in for the model, and compares this output.</p>
+<pre><samp>outline: done
+draft: done
+subject: done
+subject: Status: recipes shipped, embeddings next</samp></pre>
+<h2>Live run</h2>
+<p>Recorded on 2026-11-01 with ollama-cloud/deepseek-v4.1-flash. It made 3 model calls and used 1390 tokens. Live replies differ from run to run.</p>
+<pre><samp>outline: done
+draft: done
+subject: done
+subject: Weekly Team Status: On Track; Analytics Blocker &amp; QA Decision Needed</samp></pre>
+<p><a href="fan-out-judge.html">Previous: Fan-out and judge</a> · <a href="keyword-knowledge.html">Next: Keyword knowledge</a></p>
+<p>Try it: download <a href="examples/stateful-checkpoint.lms">examples/stateful-checkpoint.lms</a> and <a href="examples/agentic.lms">examples/agentic.lms</a> into an examples/ directory, export the key for your provider, then run the command above. Delete state.json to start over.</p>
+</main>
+<footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
+</body>
+</html>

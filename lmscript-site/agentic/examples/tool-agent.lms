@@ -1,0 +1,28 @@
+# Tool agent: the model asks for read-only lmtools calls in JSON; the script runs them and feeds back results.
+import "agentic.lms";
+write_file("notes.txt", "Release 0.3 ships the agentic recipes.\nRelease 0.4 adds embeddings.\n");
+analyst = agent("file analyst", "answer questions about files in the current directory");
+question = ARGV.get(0, "Which release adds embeddings? Check notes.txt.");
+protocol = "To use a tool reply with ONLY {\"op\":\"list_files\"|\"read_file\",\"path\":\"...\"}. Otherwise reply with the final answer.";
+history = [];
+message = question + "\n" + protocol;
+for (step in range(0, 5)) {
+  r = llm_prompt(analyst.model, message, {system: system_for(analyst), history: history, temperature: 0, max_tokens: 400, retries: 2});
+  if (r.dry_run) { exit(0); }
+  if (!r.ok) {
+    error(f"model call failed: {r.error.code}");
+    exit(1);
+  }
+  trace(analyst.role, r);
+  push(history, {role: "user", content: message}, {role: "assistant", content: r.text});
+  call = json_parse_safe(r.text, null);
+  if (!is_map(call) || !contains(["list_files", "read_file"], call.get("op", ""))) {
+    println(trim(r.text));
+    exit(0);
+  }
+  warning("[tool] lmtools " + call.op + " " + call.get("path", "."));
+  res = system(["lmtools", call.op, call.get("path", ".")], 20000);
+  message = "TOOL_RESULT\n" + (res.code == null ? "error: " + res.error : slice(res.stdout, 0, 3000));
+}
+error("no final answer after 5 tool steps");
+exit(1);

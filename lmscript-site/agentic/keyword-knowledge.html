@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base href="/lmscript/agentic/">
+<title>Keyword knowledge — lmscript</title>
+<meta name="description" content="Score paragraphs of local files against a question and answer only from the best matches.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li><li><a href="/lmscript/agentic/">Agentic recipes</a></li></ul></nav>
+<main>
+<h1>Keyword knowledge</h1>
+<p>Score paragraphs of local files against a question and answer only from the best matches.</p>
+<p>The script writes two small notes into kb/, splits every file into paragraphs and scores each paragraph by how many question words it contains. The two best paragraphs, with their file names, are the only sources the librarian agent sees, and it is asked to cite them. There are no embeddings: the scoring is plain and easy to inspect.</p>
+<h2>What it maps to</h2>
+<p>Knowledge: retrieval from local files before the model call. Citations come from the file names passed with each paragraph. See the <a href="crewai-map.html">concept map</a>.</p>
+<h2>Script: keyword-knowledge.lms</h2>
+<pre><code># Keyword knowledge: score paragraphs of local files against the question and answer from the best ones.
+import "agentic.lms";
+mkdir("kb");
+write_file("kb/dry-run.md", "Dry runs\n\nRun lmscript --dry-run FILE to evaluate a script with effects off.\n\nThe PLAN lists every skipped effect.");
+write_file("kb/check.md", "Checking\n\nRun lmscript --check FILE to type-check without running anything.");
+question = ARGV.get(0, "How do I run a script with effects off?");
+hits = [];
+for (file in sort(glob("kb/*.md"))) {
+  for (para in split(read_file(file), "\n\n")) {
+    score = 0;
+    for (w in words(lower(question))) {
+      if (len(w) > 3 &amp;&amp; contains(lower(para), w)) { score = score + 1; }
+    }
+    if (score > 0) { push(hits, {score: score, file: file, text: para}); }
+  }
+}
+top = take(reverse(sort(hits, "score")), 2);
+require(len(top) > 0, "no matching paragraphs in kb/");
+librarian = agent("librarian", "answer only from the given sources and cite the file names");
+println(ask(librarian, f"Sources: {json_stringify(top)}\nQuestion: {question}"));
+</code></pre>
+<p>It imports the shared helpers from <a href="examples/agentic.lms">examples/agentic.lms</a>, shown on the <a href="index.html">recipe index</a>.</p>
+<h2>Run it</h2>
+<pre><code>export OLLAMA_API_KEY=...
+LLM_MODEL=ollama-cloud/deepseek-v4.1-flash lmscript examples/keyword-knowledge.lms</code></pre>
+<h2>Output (offline mock)</h2>
+<p>The site check runs this recipe against examples/mock-model.lms, a deterministic stand-in for the model, and compares this output.</p>
+<pre><samp>Run lmscript --dry-run FILE: it evaluates the script with effects off and the PLAN lists every skipped effect (kb/dry-run.md).</samp></pre>
+<h2>Live run</h2>
+<p>Recorded on 2026-11-01 with ollama-cloud/deepseek-v4.1-flash. It made 1 model call and used 212 tokens. Live replies differ from run to run.</p>
+<pre><samp>Run `lmscript --dry-run FILE` to evaluate a script with effects off. (Source: `kb/dry-run.md`)</samp></pre>
+<p><a href="stateful-checkpoint.html">Previous: Stateful checkpoint</a> · <a href="crewai-map.html">Next: concept map</a></p>
+<p>Try it: download <a href="examples/keyword-knowledge.lms">examples/keyword-knowledge.lms</a> and <a href="examples/agentic.lms">examples/agentic.lms</a> into an examples/ directory, export the key for your provider, then run the command above. Replace the kb/ notes with your own files and pass a question as the first argument.</p>
+</main>
+<footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
+</body>
+</html>

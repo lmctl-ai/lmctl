@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base href="/lmscript/agentic/">
+<title>Agentic recipes — lmscript</title>
+<meta name="description" content="Agent workflows as short lmscript files: routing, crews, managers, tools, human approval, parallel review, checkpoints and local knowledge.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li><li><a href="/lmscript/agentic/">Agentic recipes</a></li></ul></nav>
+<main>
+<h1>Agentic recipes</h1>
+<p>These recipes build agent workflows from short lmscript files: agents with roles and goals, tasks run in order or by a manager, routing, tools, human approval, parallel reviewers, saved state and local knowledge. Each one is a single script you can read top to bottom. The script owns every step, every model call and every tool call; nothing runs in hidden framework state.</p>
+<p>Model calls use llm_prompt, which sends one prompt to Ollama Cloud, OpenRouter or DeepSeek and returns a map with ok, text and error. Set LLM_MODEL to a provider/model selector and export the matching key: OLLAMA_API_KEY, OPENROUTER_API_KEY or DEEPSEEK_API_KEY. Without LLM_MODEL the recipes use deepseek/deepseek-chat. Keys are read from the environment and never printed.</p>
+<p>These recipes need an lmscript release that includes llm_prompt with the json and retries options and json_validate.</p>
+<h2>Recipes</h2>
+<ol>
+<li><a href="triage-router.html">Triage router</a> — Classify a support ticket with a validated JSON reply, then hand it to the matching specialist.</li>
+<li><a href="sequential-crew.html">Sequential crew</a> — Run a researcher, a writer and an editor in order, each task seeing the previous output.</li>
+<li><a href="hierarchical-manager.html">Hierarchical manager</a> — A manager agent assigns work to named workers until it declares the goal done.</li>
+<li><a href="tool-agent.html">Tool agent with lmtools</a> — The model asks for read-only lmtools calls in JSON; the script runs them and feeds the results back.</li>
+<li><a href="human-checkpoint.html">Human checkpoint</a> — A draft waits for an operator: y approves, n rejects, any other text is feedback for a revision.</li>
+<li><a href="fan-out-judge.html">Fan-out and judge</a> — Reviewers answer in parallel, then a judge returns one validated verdict with a reason.</li>
+<li><a href="stateful-checkpoint.html">Stateful checkpoint</a> — Save each step result to state.json so a rerun skips finished steps and resumes.</li>
+<li><a href="keyword-knowledge.html">Keyword knowledge</a> — Score paragraphs of local files against a question and answer only from the best matches.</li>
+</ol>
+<p>The <a href="crewai-map.html">concept map</a> lists familiar agent-framework concepts and the recipe that covers each one.</p>
+<h2>Offline and live runs</h2>
+<p>Every recipe page shows two outputs. The offline output comes from examples/mock-model.lms, an lmmock script that answers like a chat model with fixed replies chosen by the agent role, so the site check can run every recipe without a key or network access. The live output is a recorded run against a real model; it is not rerun by the check.</p>
+<h2>Script: agentic.lms</h2>
+<pre><code># Shared helpers for the agentic recipes: an agent is a map, ask() is one llm_prompt turn.
+# Model: LLM_MODEL, default deepseek/deepseek-chat. Keys come from the environment and are never printed.
+MODEL = env("LLM_MODEL", "deepseek/deepseek-chat");
+
+fn agent(role, goal) {
+  return {role: role, goal: goal, model: MODEL};
+}
+
+fn system_for(a) {
+  return f"You are the {a.role}. Your goal: {a.goal}. Reply with the requested output only.";
+}
+
+fn ask(a, prompt) {
+  r = llm_prompt(a.model, prompt, {system: system_for(a), temperature: 0, max_tokens: 700, retries: 2});
+  if (r.dry_run) { return f"(dry run: {a.role})"; }
+  if (!r.ok) {
+    error(f"{a.role} failed: {r.error.code}");
+    exit(1);
+  }
+  trace(a.role, r);
+  return trim(r.text);
+}
+
+# One JSON object that must match schema; the validator's errors are fed back for up to 2 retries.
+fn ask_json(a, prompt, schema) {
+  request = prompt + "\nReply with one JSON object matching this JSON Schema: " + json_stringify(schema);
+  for (attempt in range(0, 3)) {
+    r = llm_prompt(a.model, request, {system: system_for(a), temperature: 0, max_tokens: 700, json: true, retries: 2});
+    if (r.dry_run) { return null; }
+    if (!r.ok) {
+      error(f"{a.role} failed: {r.error.code}");
+      exit(1);
+    }
+    trace(a.role, r);
+    value = json_parse_safe(r.text, null);
+    checked = json_validate(value, schema);
+    if (checked.ok) { return value; }
+    request = prompt + "\nYour last reply was rejected: " + join(checked.errors, "; ") + "\nReply with one JSON object matching: " + json_stringify(schema);
+  }
+  error(f"{a.role} gave no valid JSON after 3 attempts");
+  exit(1);
+}
+
+# Append one event per model call to trace.jsonl (role, tokens, latency; never prompt text or keys).
+fn trace(role, r) {
+  append_file("trace.jsonl", json_stringify({role: role, model: r.model, tokens: r.usage.total_tokens, latency_ms: r.latency_ms, attempts: r.attempts}) + "\n");
+}
+</code></pre>
+<p>agent returns a map. ask sends one prompt with the agent role and goal as the system prompt, retries rate limits and server errors twice, and stops the script with the error code if the call fails. ask_json asks for a JSON object, checks it with json_validate and sends the validation errors back for up to two more attempts. trace appends the role, token count and latency of each call to trace.jsonl, never the prompt text.</p>
+<p>Try it: download <a href="examples/agentic.lms">examples/agentic.lms</a> with any recipe into an examples/ directory, export your provider key, and run the recipe with lmscript.</p>
+</main>
+<footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
+</body>
+</html>

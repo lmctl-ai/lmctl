@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base href="/lmscript/agentic/">
+<title>Tool agent with lmtools — lmscript</title>
+<meta name="description" content="The model asks for read-only lmtools calls in JSON; the script runs them and feeds the results back.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li><li><a href="/lmscript/agentic/">Agentic recipes</a></li></ul></nav>
+<main>
+<h1>Tool agent with lmtools</h1>
+<p>The model asks for read-only lmtools calls in JSON; the script runs them and feeds the results back.</p>
+<p>The model may reply with one JSON object naming a read-only lmtools operation (list_files or read_file) and a path. The script runs lmtools as an argument array without a shell, feeds the JSON result back as the next message with the conversation history, and stops at the first plain-text answer or after five tool steps. Any other operation is treated as a final answer and never executed. Tool calls are traced on standard error.</p>
+<h2>What it maps to</h2>
+<p>Tools: a text protocol instead of provider tool calling, so it also works with small models. Short-term memory: the history option carries the conversation. See the <a href="crewai-map.html">concept map</a>.</p>
+<h2>Script: tool-agent.lms</h2>
+<pre><code># Tool agent: the model asks for read-only lmtools calls in JSON; the script runs them and feeds back results.
+import "agentic.lms";
+write_file("notes.txt", "Release 0.3 ships the agentic recipes.\nRelease 0.4 adds embeddings.\n");
+analyst = agent("file analyst", "answer questions about files in the current directory");
+question = ARGV.get(0, "Which release adds embeddings? Check notes.txt.");
+protocol = "To use a tool reply with ONLY {\"op\":\"list_files\"|\"read_file\",\"path\":\"...\"}. Otherwise reply with the final answer.";
+history = [];
+message = question + "\n" + protocol;
+for (step in range(0, 5)) {
+  r = llm_prompt(analyst.model, message, {system: system_for(analyst), history: history, temperature: 0, max_tokens: 400, retries: 2});
+  if (r.dry_run) { exit(0); }
+  if (!r.ok) {
+    error(f"model call failed: {r.error.code}");
+    exit(1);
+  }
+  trace(analyst.role, r);
+  push(history, {role: "user", content: message}, {role: "assistant", content: r.text});
+  call = json_parse_safe(r.text, null);
+  if (!is_map(call) || !contains(["list_files", "read_file"], call.get("op", ""))) {
+    println(trim(r.text));
+    exit(0);
+  }
+  warning("[tool] lmtools " + call.op + " " + call.get("path", "."));
+  res = system(["lmtools", call.op, call.get("path", ".")], 20000);
+  message = "TOOL_RESULT\n" + (res.code == null ? "error: " + res.error : slice(res.stdout, 0, 3000));
+}
+error("no final answer after 5 tool steps");
+exit(1);
+</code></pre>
+<p>It imports the shared helpers from <a href="examples/agentic.lms">examples/agentic.lms</a>, shown on the <a href="index.html">recipe index</a>.</p>
+<h2>Run it</h2>
+<pre><code>export OLLAMA_API_KEY=...
+LLM_MODEL=ollama-cloud/deepseek-v4.1-flash lmscript examples/tool-agent.lms</code></pre>
+<h2>Output (offline mock)</h2>
+<p>The site check runs this recipe against examples/mock-model.lms, a deterministic stand-in for the model, and compares this output.</p>
+<pre><samp>Release 0.4 adds embeddings (notes.txt, line 2).</samp></pre>
+<h2>Live run</h2>
+<p>Recorded on 2026-11-01 with ollama-cloud/deepseek-v4.1-flash. It made 2 model calls: one read_file request, which the script ran as lmtools read_file notes.txt, and the answer. Live replies differ from run to run.</p>
+<pre><samp>Release 0.4 adds embeddings.</samp></pre>
+<p><a href="hierarchical-manager.html">Previous: Hierarchical manager</a> · <a href="human-checkpoint.html">Next: Human checkpoint</a></p>
+<p>Try it: download <a href="examples/tool-agent.lms">examples/tool-agent.lms</a> and <a href="examples/agentic.lms">examples/agentic.lms</a> into an examples/ directory, export the key for your provider, then run the command above. Install lmtools first with lmscript install github:lmctl-ai/lmtools@v0.1.0 and put it on PATH.</p>
+</main>
+<footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
+</body>
+</html>

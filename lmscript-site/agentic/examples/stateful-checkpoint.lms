@@ -1,0 +1,22 @@
+# Stateful checkpoint: each step's result is saved to state.json, so a rerun skips finished steps.
+import "agentic.lms";
+state_file = "state.json";
+state = file_exists(state_file) ? read_json(state_file) : {topic: ARGV.get(0, "a weekly team status email"), done: {}};
+steps = [
+  {name: "outline", who: agent("outliner", "outline in 3 bullets"), todo: "Outline: "},
+  {name: "draft", who: agent("drafter", "write from an outline"), todo: "Write at most 80 words from this outline: "},
+  {name: "subject", who: agent("subject writer", "write one subject line"), todo: "Write a subject line for: "}
+];
+input = state.topic;
+for (s in steps) {
+  if (state.done.has(s.name)) {
+    println(f"{s.name}: skipped (saved)");
+  } else {
+    if (env("AGENTIC_FAIL_AT", "") == s.name) { error(f"simulated failure at {s.name}; rerun to resume"); exit(1); }
+    state.done[s.name] = ask(s.who, s.todo + input);
+    write_json(state_file, state);
+    println(f"{s.name}: done");
+  }
+  input = state.done.get(s.name, "");
+}
+println(f"subject: {state.done.subject}");

@@ -1,0 +1,20 @@
+# Keyword knowledge: score paragraphs of local files against the question and answer from the best ones.
+import "agentic.lms";
+mkdir("kb");
+write_file("kb/dry-run.md", "Dry runs\n\nRun lmscript --dry-run FILE to evaluate a script with effects off.\n\nThe PLAN lists every skipped effect.");
+write_file("kb/check.md", "Checking\n\nRun lmscript --check FILE to type-check without running anything.");
+question = ARGV.get(0, "How do I run a script with effects off?");
+hits = [];
+for (file in sort(glob("kb/*.md"))) {
+  for (para in split(read_file(file), "\n\n")) {
+    score = 0;
+    for (w in words(lower(question))) {
+      if (len(w) > 3 && contains(lower(para), w)) { score = score + 1; }
+    }
+    if (score > 0) { push(hits, {score: score, file: file, text: para}); }
+  }
+}
+top = take(reverse(sort(hits, "score")), 2);
+require(len(top) > 0, "no matching paragraphs in kb/");
+librarian = agent("librarian", "answer only from the given sources and cite the file names");
+println(ask(librarian, f"Sources: {json_stringify(top)}\nQuestion: {question}"));

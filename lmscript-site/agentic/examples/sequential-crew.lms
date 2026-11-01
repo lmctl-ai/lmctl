@@ -1,0 +1,14 @@
+# Sequential crew: researcher, writer and editor run in order; each task sees the previous output.
+import "agentic.lms";
+topic = ARGV.get(0, "why short scripts are easier to review than agent frameworks");
+tasks = [
+  {who: agent("researcher", "collect concrete, checkable points"), todo: f"List 4 short points about: {topic}. One per line."},
+  {who: agent("writer", "turn points into a clear paragraph"), todo: "Write one paragraph of at most 90 words from these points."},
+  {who: agent("editor", "tighten prose without dropping points"), todo: "Edit this paragraph. Output only the final paragraph."}
+];
+context = "";
+for (t in tasks) {
+  context = ask(t.who, t.todo + "\n\n" + context);
+  append_file("crew-log.md", f"## {t.who.role}\n{context}\n\n");
+}
+println(context);

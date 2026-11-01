@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base href="/lmscript/agentic/">
+<title>Fan-out and judge — lmscript</title>
+<meta name="description" content="Reviewers answer in parallel, then a judge returns one validated verdict with a reason.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" href="/tools/lmscript/img/icon.png" type="image/png">
+</head>
+<body>
+<nav><ul><li><a href="/">lmctl.com</a></li><li><a href="/lmctl/">Docs</a></li><li><a href="/tools/">Tools</a></li><li><a href="/skills/">Skills</a></li><li><a href="/lmscript/">lmscript</a></li><li><a href="/lmscript/agentic/">Agentic recipes</a></li></ul></nav>
+<main>
+<h1>Fan-out and judge</h1>
+<p>Reviewers answer in parallel, then a judge returns one validated verdict with a reason.</p>
+<p>Three reviewer agents get the same proposal at once through parallel_map, which keeps the results in input order. The judge then reads all three reviews and must answer with a verdict from a fixed list and a short reason, checked by json_validate.</p>
+<h2>What it maps to</h2>
+<p>Asynchronous tasks: parallel_map with a concurrency limit. Guardrails: the judge output is schema-checked. See the <a href="crewai-map.html">concept map</a>.</p>
+<h2>Script: fan-out-judge.lms</h2>
+<pre><code># Fan-out and judge: reviewers answer in parallel, then a judge picks one verdict with a reason.
+import "agentic.lms";
+proposal = ARGV.get(0, "Replace the nightly cron jobs with lmscript scripts checked in next to the code.");
+seats = ["security reviewer", "operations engineer", "finance lead"];
+fn review(seat) {
+  return {seat: seat, view: ask(agent(seat, "judge proposals from your seat"), f"Proposal: {proposal}\nGive one risk and one benefit in 2 sentences.")};
+}
+views = parallel_map(seats, review, 3);
+notes = "";
+for (v in views) {
+  notes = notes + f"[{v.seat}] {v.view}\n";
+  println(f"{v.seat}: {v.view}");
+}
+judge = agent("judge", "weigh the reviews and decide");
+schema = {type: "object", required: ["verdict", "reason"], properties: {
+  verdict: {type: "string", enum: ["accept", "accept with conditions", "reject"]}, reason: {type: "string", maxLength: 200}}};
+decision = ask_json(judge, f"Proposal: {proposal}\nReviews:\n{notes}", schema);
+if (decision != null) { println(f"verdict={decision.verdict}: {decision.reason}"); }
+</code></pre>
+<p>It imports the shared helpers from <a href="examples/agentic.lms">examples/agentic.lms</a>, shown on the <a href="index.html">recipe index</a>.</p>
+<h2>Run it</h2>
+<pre><code>export OLLAMA_API_KEY=...
+LLM_MODEL=ollama-cloud/deepseek-v4.1-flash lmscript examples/fan-out-judge.lms</code></pre>
+<h2>Output (offline mock)</h2>
+<p>The site check runs this recipe against examples/mock-model.lms, a deterministic stand-in for the model, and compares this output.</p>
+<pre><samp>security reviewer: Risk: scripts may hold credentials in plain files. Benefit: every job is reviewed like code.
+operations engineer: Risk: a failed run needs alerting that cron gave us for free. Benefit: one runner and one log format.
+finance lead: Risk: model calls add a small per-run cost. Benefit: fewer hand-maintained jobs.
+verdict=accept with conditions: Keep credentials in the environment and add failure alerts before switching off cron.</samp></pre>
+<h2>Live run</h2>
+<p>Recorded on 2026-11-01 with ollama-cloud/deepseek-v4.1-flash. It made 4 model calls and used 1535 tokens. Live replies differ from run to run.</p>
+<pre><samp>security reviewer: Risk: Moving nightly execution into repo-checked-in lmscript lets anyone with write access alter privileged scheduled jobs, so require protected branches, mandatory review, and least-privilege credentials. Benefit: scheduling logic becomes versioned and peer-reviewed, improving auditability and reproducibility over opaque server cron entries.
+operations engineer: Risk: Moving nightly jobs to checked-in lmscript removes the familiar cron scheduler’s retry, logging, alerting, and runtime ownership, creating operational blind spots unless an equivalent runner is enforced. Benefit: Jobs become versioned, reviewable, and deployable with the code they depend on, reducing drift and making changes reproducible.
+finance lead: Risk: Moving nightly jobs into checked-in lmscript increases dependence on engineering discipline and deployment controls, so a missed script update could silently break finance feeds. Benefit: co-locating jobs with code improves version control and auditability, making changes easier to review and reducing untracked cron drift.
+verdict=accept with conditions: Enforce protected branches, mandatory review, least-privilege credentials, and an equivalent scheduler/runner with retry, logging, alerting, and ownership before migrating.</samp></pre>
+<p><a href="human-checkpoint.html">Previous: Human checkpoint</a> · <a href="stateful-checkpoint.html">Next: Stateful checkpoint</a></p>
+<p>Try it: download <a href="examples/fan-out-judge.lms">examples/fan-out-judge.lms</a> and <a href="examples/agentic.lms">examples/agentic.lms</a> into an examples/ directory, export the key for your provider, then run the command above. Pass a proposal as the first argument.</p>
+</main>
+<footer><p>lmscript is part of <a href="https://github.com/lmctl-ai/lmctl">lmctl</a>. <a href="/tools/lmscript/">Tool overview</a> · <a href="/skills/lmscript-workflow-skill.html">Workflow skill</a></p></footer>
+</body>
+</html>
