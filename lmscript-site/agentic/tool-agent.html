@@ -14,7 +14,7 @@
 <main>
 <h1>Tool agent</h1>
 <p>The model asks for built-in read-only tool calls in JSON; the script runs them and feeds the results back.</p>
-<p>tool_specs lists the tools the grants allow; with no write or web grant that is list_files and read_file, and their JSON schemas go into the system prompt. The model may reply with one JSON object naming a tool and its arguments. tool_parse extracts it, also from a fenced or chatty reply, and tool_call runs it inside the workspace root. Every tool result, including a refused or invalid call, comes back as data in the next TOOL_RESULT message with the conversation history. The loop stops at the first plain-text answer or after five tool steps, and an empty reply is an error. Tool calls are traced on standard error.</p>
+<p>tool_specs lists the tools the grants allow; with no write or web grant that is list_files and read_file. The script turns each spec into one plain line (name, argument names, description) for the system prompt; pasting the raw function-spec JSON made the model sometimes reply through the provider's native tool-call channel, which leaves the reply text empty. The model may reply with one JSON object naming a tool and its arguments. tool_parse extracts it, also from a fenced or chatty reply, and tool_call runs it inside the workspace root. Every tool result, including a refused or invalid call, comes back as data in the next TOOL_RESULT message with the conversation history. The loop stops at the first plain-text answer or after five tool steps, and an empty reply is an error. Tool calls are traced on standard error.</p>
 <h2>What it maps to</h2>
 <p>Tools: the built-in tool_specs, tool_parse and tool_call with a JSON text protocol instead of provider tool calling, so it also works with small models. Permissions: the script grants root, write and web; the model cannot widen them. Short-term memory: the history option carries the conversation. See the <a href="crewai-map.html">concept map</a>.</p>
 <h2>Script: tool-agent.lms</h2>
@@ -24,8 +24,18 @@ write_file("notes.txt", "Release 0.3 ships the agentic recipes.\nRelease 0.4 add
 analyst = agent("file analyst", "answer questions about files in the current directory");
 question = ARGV.get(0, "Which release adds embeddings? Check notes.txt.");
 grants = {root: ".", write: false, web: false};
+# List the tools as plain lines. Pasting the raw function-spec JSON made the model sometimes answer
+# through the provider's native tool_calls channel, which leaves the reply text empty.
+fn tool_lines(specs) {
+  out = "";
+  for (spec in specs) {
+    f = spec.get("function", null);
+    out = out + f"- {f.name}({join(keys(f.parameters.properties), ", ")}): {f.description}\n";
+  }
+  return out;
+}
 prompt_system = system_for(analyst) + "\nTo use a tool, reply with ONLY one JSON object {\"tool\": NAME, \"args\": {...}} and no other text." +
-  " Each result comes back as a TOOL_RESULT message. Answer in plain text when you are done.\nTools: " + json_stringify(tool_specs(grants));
+  " Each result comes back as a TOOL_RESULT message. Answer in plain text when you are done.\nTools:\n" + tool_lines(tool_specs(grants));
 history = [];
 message = question;
 for (step in range(0, 5)) {
@@ -61,7 +71,8 @@ LLM_MODEL=ollama-cloud/deepseek-v4.1-flash lmscript examples/tool-agent.lms</cod
 <p>The site check runs this recipe against examples/mock-model.lms, a deterministic stand-in for the model, and compares this output.</p>
 <pre><samp>Release 0.4 adds embeddings (notes.txt, line 2).</samp></pre>
 <h2>Live run</h2>
-<p>Not recorded yet for the built-in tools version. The first attempt on 2026-11-01 with ollama-cloud/deepseek-v4.1-flash returned an empty reply after one call; the script now treats an empty reply as an error and allows a larger reply budget.</p>
+<p>Recorded on 2026-11-01 with ollama-cloud/deepseek-v4.1-flash. It made 3 model calls and used 979 tokens. The model called list_files and then read_file on notes.txt, as the standard error trace showed: [tool] list_files {"path":".","recursive":false} ok=true, then [tool] read_file {"path":"notes.txt","max_bytes":65536} ok=true. Live replies differ from run to run.</p>
+<pre><samp>Release 0.4 adds embeddings.</samp></pre>
 <p><a href="hierarchical-manager.html">Previous: Hierarchical manager</a> · <a href="human-checkpoint.html">Next: Human checkpoint</a></p>
 <p>Try it: download <a href="examples/tool-agent.lms">examples/tool-agent.lms</a> and <a href="examples/agentic.lms">examples/agentic.lms</a> into an examples/ directory, export the key for your provider, then run the command above. No extra tools are needed: the file tools are built into lmscript.</p>
 </main>

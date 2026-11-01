@@ -4,8 +4,18 @@ write_file("notes.txt", "Release 0.3 ships the agentic recipes.\nRelease 0.4 add
 analyst = agent("file analyst", "answer questions about files in the current directory");
 question = ARGV.get(0, "Which release adds embeddings? Check notes.txt.");
 grants = {root: ".", write: false, web: false};
+# List the tools as plain lines. Pasting the raw function-spec JSON made the model sometimes answer
+# through the provider's native tool_calls channel, which leaves the reply text empty.
+fn tool_lines(specs) {
+  out = "";
+  for (spec in specs) {
+    f = spec.get("function", null);
+    out = out + f"- {f.name}({join(keys(f.parameters.properties), ", ")}): {f.description}\n";
+  }
+  return out;
+}
 prompt_system = system_for(analyst) + "\nTo use a tool, reply with ONLY one JSON object {\"tool\": NAME, \"args\": {...}} and no other text." +
-  " Each result comes back as a TOOL_RESULT message. Answer in plain text when you are done.\nTools: " + json_stringify(tool_specs(grants));
+  " Each result comes back as a TOOL_RESULT message. Answer in plain text when you are done.\nTools:\n" + tool_lines(tool_specs(grants));
 history = [];
 message = question;
 for (step in range(0, 5)) {
