@@ -77,7 +77,7 @@ def _main(mode, fixture_root):
             if key.startswith('LLM_MODEL'):
                 env.pop(key)
         env.pop('LMSCRIPT_LLM_MOCK_URL', None)
-        env['LLM_MODEL'] = 'ollama-cloud/deepseek-v4.1-flash'
+        env['LLM_MODEL'] = os.environ.get('AGENTIC_MODEL', 'ollama-cloud/deepseek-v4.1-flash')
         print(f'Live model: {env["LLM_MODEL"]}; date: {datetime.now(timezone.utc).date()}', flush=True)
     else:
         raise ValueError('Expected offline or live')

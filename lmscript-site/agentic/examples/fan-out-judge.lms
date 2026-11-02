@@ -13,6 +13,6 @@ for (v in views) {
 }
 judge = agent("judge", "weigh the reviews and decide");
 schema = {type: "object", required: ["verdict", "reason"], properties: {
-  verdict: {type: "string", enum: ["accept", "accept with conditions", "reject"]}, reason: {type: "string", maxLength: 200}}};
+  verdict: {type: "string", enum: ["accept", "accept with conditions", "reject"]}, reason: {type: "string", maxLength: 500}}};
 decision = ask_json(judge, f"Proposal: {proposal}\nReviews:\n{notes}", schema);
 if (decision != null) { println(f"verdict={decision.verdict}: {decision.reason}"); }

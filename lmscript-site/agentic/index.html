@@ -32,8 +32,16 @@
 <p>Every recipe page shows two outputs. The offline output comes from examples/mock-model.lms, an lmmock script that answers like a chat model with fixed replies chosen by the agent role, so the site check can run every recipe without a key or network access. The live output is a recorded run against a real model; it is not rerun by the check.</p>
 <h2>Script: agentic.lms</h2>
 <pre><code># Shared helpers for the agentic recipes: an agent is a map, ask() is one llm_prompt turn.
-# Model: LLM_MODEL, default deepseek/deepseek-chat. Keys come from the environment and are never printed.
-MODEL = env("LLM_MODEL", "deepseek/deepseek-chat");
+# Switch provider or model with LLM_MODEL=provider/model; nothing else changes.
+# With LLM_MODEL unset, the first registered provider whose key is set is used. Keys are never printed.
+MODEL = env("LLM_MODEL", "");
+BUDGET = 32768;
+for (p in llm_providers()) {
+  usable = p.key_set == true || (env(p.key_env) != null &amp;&amp; env(p.key_env) != "");
+  if (MODEL == "" &amp;&amp; usable) { MODEL = p.id + "/" + p.default_model; }
+  if (MODEL != "" &amp;&amp; starts_with(MODEL, p.id + "/") &amp;&amp; p.max_output_tokens != null &amp;&amp; p.max_output_tokens &lt; BUDGET) { BUDGET = p.max_output_tokens; }
+}
+if (MODEL == "") { MODEL = "ollama-cloud/deepseek-v4.1-flash"; }
 
 fn agent(role, goal) {
   return {role: role, goal: goal, model: MODEL};
@@ -44,7 +52,7 @@ fn system_for(a) {
 }
 
 fn ask(a, prompt) {
-  r = llm_prompt(a.model, prompt, {system: system_for(a), temperature: 0, max_tokens: 32768, retries: 2});
+  r = llm_prompt(a.model, prompt, {system: system_for(a), temperature: 0, max_tokens: BUDGET, retries: 2});
   if (r.dry_run) { return f"(dry run: {a.role})"; }
   if (!r.ok) {
     error(f"{a.role} failed: {r.error.code}");
@@ -58,7 +66,7 @@ fn ask(a, prompt) {
 fn ask_json(a, prompt, schema) {
   request = prompt + "\nReply with one JSON object matching this JSON Schema: " + json_stringify(schema);
   for (attempt in range(0, 3)) {
-    r = llm_prompt(a.model, request, {system: system_for(a), temperature: 0, max_tokens: 32768, json: true, retries: 2});
+    r = llm_prompt(a.model, request, {system: system_for(a), temperature: 0, max_tokens: BUDGET, json: true, retries: 2});
     if (r.dry_run) { return null; }
     if (!r.ok) {
       error(f"{a.role} failed: {r.error.code}");
@@ -77,8 +85,7 @@ fn ask_json(a, prompt, schema) {
 # Append one event per model call to trace.jsonl (role, tokens, latency; never prompt text or keys).
 fn trace(role, r) {
   append_file("trace.jsonl", json_stringify({role: role, model: r.model, tokens: r.usage.total_tokens, latency_ms: r.latency_ms, attempts: r.attempts}) + "\n");
-}
-</code></pre>
+}</pre>
 <p>agent returns a map. ask sends one prompt with the agent role and goal as the system prompt, retries rate limits and server errors twice, and stops the script with the error code if the call fails. ask_json asks for a JSON object, checks it with json_validate and sends the validation errors back for up to two more attempts. trace appends the role, token count and latency of each call to trace.jsonl, never the prompt text.</p>
 <p>Try it: download <a href="examples/agentic.lms">examples/agentic.lms</a> with any recipe into an examples/ directory, export your provider key, and run the recipe with lmscript.</p>
 </main>

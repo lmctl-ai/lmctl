@@ -3,7 +3,7 @@ import "agentic.lms";
 ticket = ARGV.get(0, "I was charged twice for my October invoice.");
 triage = agent("triage desk", "label support tickets");
 schema = {type: "object", required: ["label", "reason"], additionalProperties: false,
-  properties: {label: {type: "string", enum: ["billing", "bug", "question"]}, reason: {type: "string", maxLength: 160}}};
+  properties: {label: {type: "string", enum: ["billing", "bug", "question"]}, reason: {type: "string", maxLength: 400}}};
 decision = ask_json(triage, f"Label this ticket: {ticket}", schema);
 route = decision == null ? "question" : decision.label;
 specialists = {
