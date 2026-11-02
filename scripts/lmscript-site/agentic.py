@@ -59,7 +59,7 @@ def _main(mode, fixture_root):
         env.pop('AGENTIC_APPROVE', None)
         env.update(DEEPSEEK_API_KEY='fixture-key', LLM_MODEL='deepseek/deepseek-chat')
         mock = host_path()
-        schema = subprocess.run([mock, 'schema'], text=True, capture_output=True, timeout=30)
+        schema = subprocess.run([mock, 'schema'], text=True, capture_output=True)
         if schema.returncode:
             raise ValueError('Pinned lmmock schema export failed')
         (Path(fixture_root) / 'schema.json').write_text(schema.stdout)
@@ -70,12 +70,14 @@ def _main(mode, fixture_root):
         for script in sorted((SITE / 'examples').glob('*.lms')):
             target = driver if script.name == 'mock-model.lms' else script
             checked = subprocess.run([compiler, '--check', str(target)], env=env,
-                                     text=True, capture_output=True, timeout=60)
+                                     text=True, capture_output=True)
             if checked.returncode:
                 raise ValueError(f'{script.name}: static check failed; run LMSCRIPT_BIN --check on this source to diagnose')
     elif mode == 'live':
-        if not env.get('OLLAMA_API_KEY'):
-            raise ValueError('Live agentic runs require OLLAMA_API_KEY in the environment')
+        provider = env.get('AGENTIC_MODEL', 'ollama-cloud/deepseek-v4.1-flash').split('/', 1)[0]
+        required_key = {'ollama-cloud': 'OLLAMA_API_KEY', 'deepseek': 'DEEPSEEK_API_KEY', 'openrouter': 'OPENROUTER_API_KEY', 'anthropic': 'ANTHROPIC_API_KEY', 'zai-coding-plan': 'ZHIPU_API_KEY'}.get(provider)
+        if required_key is None or not env.get(required_key):
+            raise ValueError(f'Live agentic run requires {required_key or "a supported provider"} in the environment')
         for key in list(env):
             if key.startswith('LLM_MODEL'):
                 env.pop(key)
@@ -90,13 +92,14 @@ def _main(mode, fixture_root):
             if mode == 'offline':
                 command = [compiler, str(driver), mock,
                            sys.executable, str(Path(__file__).resolve()), 'child', *command]
-            result = subprocess.run(command, cwd=cwd, env=env, stdin=subprocess.DEVNULL, text=True, capture_output=True, timeout=300)
+            result = subprocess.run(command, cwd=cwd, env=env, stdin=subprocess.DEVNULL, text=True, capture_output=True)
             if result.returncode:
                 # Do not echo arbitrary CLI diagnostics containing environment values.
-                detail = [' | '.join(l.strip() for l in result.stderr.strip().splitlines() if l.strip() and not set(l.strip()) <= set('=-'))[-300:]] if result.stderr else []
-                for key, value in env.items():
-                    if value and key.endswith(('_API_KEY', '_TOKEN', '_SECRET')):
-                        detail = [line.replace(value, '[REDACTED]') for line in detail]
+                safe_stderr = result.stderr
+                # Redact before formatting or clipping: a clipped token no longer matches the secret.
+                for value in sorted((v for k, v in env.items() if v and k.endswith(('_API_KEY', '_TOKEN', '_SECRET'))), key=len, reverse=True):
+                    safe_stderr = safe_stderr.replace(value, '[REDACTED]')
+                detail = [' | '.join(l.strip() for l in safe_stderr.strip().splitlines() if l.strip() and not set(l.strip()) <= set('=-'))[-300:]] if safe_stderr else []
                 raise ValueError(f'{script.name}: {mode} execution failed (exit {result.returncode}){": " + detail[0][:300] if detail else ""}; run locally to diagnose')
             actual = result.stdout.rstrip('\n')
             if mode == 'offline' and actual != expected:

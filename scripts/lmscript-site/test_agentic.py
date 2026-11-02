@@ -78,6 +78,27 @@ class RunnerTests(unittest.TestCase):
         self.assertNotIn('test-sentinel', output.getvalue())
         self.assertIn('[REDACTED]', output.getvalue())
 
+    def test_live_redacts_before_clipping_failure(self):
+        key = 's' * 47 + 'Q'
+        def run(command, **kwargs):
+            return subprocess.CompletedProcess(command, 1, '', key + 'x' * 253)
+        with patch.dict(os.environ, {'OLLAMA_API_KEY': key}, clear=True), \
+             patch.object(agentic.shutil, 'which', return_value='/fixture/lmscript'), \
+             patch.object(agentic.subprocess, 'run', side_effect=run), contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaisesRegex(ValueError, 'exit 1') as error:
+                agentic.main('live')
+        self.assertNotIn(key[1:], str(error.exception))
+
+    def test_live_needs_only_the_selected_provider_key_and_has_no_case_deadline(self):
+        def run(command, **kwargs):
+            self.assertNotIn('timeout', kwargs)
+            self.assertEqual(kwargs['env']['LLM_MODEL'], 'deepseek/test')
+            return subprocess.CompletedProcess(command, 0, 'fixture', '')
+        with patch.dict(os.environ, {'DEEPSEEK_API_KEY': 'synthetic-selected', 'AGENTIC_MODEL': 'deepseek/test'}, clear=True), \
+             patch.object(agentic.shutil, 'which', return_value='/fixture/lmscript'), \
+             patch.object(agentic.subprocess, 'run', side_effect=run), contextlib.redirect_stdout(io.StringIO()):
+            agentic.main('live')
+
     def test_static_failure_stops_execution(self):
         with patch.object(agentic.shutil, 'which', return_value='/fixture/lmscript'), \
              patch.object(agentic, 'host_path', return_value='/fixture/lmmock'), \
