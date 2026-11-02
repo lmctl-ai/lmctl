@@ -95,7 +95,8 @@ fn ask_json(a, prompt, schema) {
 # Append one event per model call to trace.jsonl (role, tokens, latency; never prompt text or keys).
 fn trace(role, r) {
   append_file("trace.jsonl", json_stringify({role: role, model: r.model, tokens: r.usage.total_tokens, latency_ms: r.latency_ms, attempts: r.attempts}) + "\n");
-}</pre>
+}
+</code></pre>
 <p>agent returns a map. ask sends one prompt with the agent role and goal as the system prompt, retries rate limits and server errors twice, and stops the script with the error code if the call fails. ask_json asks for a JSON object, checks it with json_validate and sends the validation errors back for up to two more attempts. trace appends the role, token count and latency of each call to trace.jsonl, never the prompt text.</p>
 <p>Try it: download <a href="examples/agentic.lms">examples/agentic.lms</a> with any recipe into an examples/ directory, export your provider key, and run the recipe with lmscript.</p>
 </main>

@@ -14,10 +14,10 @@
 <main>
 <h1>Typed host blocks</h1>
 <p>Compile native host calls with install declarations for lmdraw, lmcad, and lmhtml.</p>
-<p>A host is a separate program that provides extra operations. Its schema describes the calls and types that lmscript can check. A host block is compiled to bytecode, a file of instructions for that host. The install declaration tells lmscript where to get a missing host release; it does not install a general-purpose command on PATH.</p>
+<p>A host is a separate program that provides extra operations. Its schema describes the calls and types that lmscript can check. A host block is a program for that host: lmscript checks it against the host's schema, and run_lmcode hands it to the host to execute. The install declaration tells lmscript where to get a missing host release; it does not install a general-purpose command on PATH.</p>
 <p>LMCode hosts can use the five-language SDK family: <a href="https://github.com/lmctl-ai/lmcode-cpp">C++</a>, <a href="https://github.com/lmctl-ai/lmcode-rust">Rust</a>, <a href="https://github.com/lmctl-ai/lmcode-go">Go</a>, <a href="https://github.com/lmctl-ai/lmcode-csharp">C#</a>, or <a href="https://github.com/lmctl-ai/lmcode-java">Java</a>.</p>
 <p>Each default SDK registry includes the standard function catalog. The canonical std/lmcode-std.schema.json has 72 signatures; keep host schemas limited to host-specific declarations and do not register standard functions again. The C++, Rust, Go, and C# READMEs say to merge standard declarations into the effective compiler schema until compiler injection is available, then embed those exact bytes. The Java README confirms that its default Registry installs the catalog and new Registry(false) creates an empty registry; it does not describe compiler-schema merging, so check the Java runtime guidance rather than inferring a merge step.</p>
-<p>The declarations select release binaries and obtain their schemas. The first compile needs an internet connection to fetch an uncached release; later compiles can use the local cache. During script execution, savedsl writes the compiled bytecode in the working directory. The example then runs each bytecode file with the exact host binary used to check that block, and writes any generated assets under build/rendered.</p>
+<p>The declarations select release binaries and obtain their schemas. The first run needs an internet connection to fetch an uncached release; later runs can use the local cache. The example calls run_lmcode on each block, which runs it with the exact host binary used to check that block, and writes any generated assets under build/rendered.</p>
 <h2>Script: dsl-hosts.lms</h2>
 <pre><code>if (!file_exists("build")) { mkdir("build"); }
 if (!file_exists("build/rendered")) { mkdir("build/rendered"); }
@@ -26,9 +26,8 @@ scene.canvas(480, 270, "#152438");
 scene.text(32.0, 76.0, 32.0, "Hello from lmscript", "#f5c16c");
 scene.render_png("build/rendered/hello.png", 480, 270, 1);
 end _lmcode_
-savedsl(draw, path_join(Directory, "hello.dslb"));
-draw_run = system ${dsl_cli(draw)} --lmcode ${path_join(Directory, "hello.dslb")};
-require(draw_run.code == 0, draw_run.stderr);
+draw_run = run_lmcode(draw);
+require(draw_run.ok, "lmdraw failed");
 
 cad = _lmcode_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
 let mat = material();
@@ -36,22 +35,20 @@ let block = scene.box(2.0, 2.0, 2.0, mat);
 scene.fit_camera(1.2, 1.0);
 scene.render_png("build/rendered/block.png", 320, 240);
 end _lmcode_
-savedsl(cad, path_join(Directory, "block.dslb"));
-cad_run = system ${dsl_cli(cad)} --lmcode ${path_join(Directory, "block.dslb")};
-require(cad_run.code == 0, cad_run.stderr);
+cad_run = run_lmcode(cad);
+require(cad_run.ok, "lmcad failed");
 
 html = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
-let doc = html.parse("&lt;!doctype html>&lt;title>Example&lt;/title>&lt;p>Checked&lt;/p>");
+let doc = html.parse("&lt;!doctype html&gt;&lt;title&gt;Example&lt;/title&gt;&lt;p&gt;Checked&lt;/p&gt;");
 report.add("example.html", doc.source(), 0, "tutorial example");
 end _lmcode_
-savedsl(html, path_join(Directory, "audit.dslb"));
-html_run = system ${dsl_cli(html)} --lmcode ${path_join(Directory, "audit.dslb")};
-require(html_run.code == 0, html_run.stderr);
+html_run = run_lmcode(html);
+require(html_run.ok, "lmhtml failed");
 println("compiled and ran lmdraw, lmcad and lmhtml");
 </code></pre>
 <h2>Run it</h2>
 <pre><code>lmscript examples/dsl-hosts.lms</code></pre>
-<p>The command above compiles and runs all three host blocks. lmdraw writes build/rendered/hello.png, lmcad writes build/rendered/block.png, and lmhtml processes its report entry. lmscript uses the installed host path associated with each compiled block, so you do not need to put downloaded hosts on PATH.</p>
+<p>The command above runs all three host blocks. lmdraw writes build/rendered/hello.png, lmcad writes build/rendered/block.png, and lmhtml processes its report entry. lmscript uses the installed host path associated with each block, so you do not need to put downloaded hosts on PATH.</p>
 <h2>Script output</h2>
 <pre><samp>compiled and ran lmdraw, lmcad and lmhtml</samp></pre>
 <h2>Generated files</h2>

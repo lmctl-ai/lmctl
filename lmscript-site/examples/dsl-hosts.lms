@@ -5,9 +5,8 @@ scene.canvas(480, 270, "#152438");
 scene.text(32.0, 76.0, 32.0, "Hello from lmscript", "#f5c16c");
 scene.render_png("build/rendered/hello.png", 480, 270, 1);
 end _lmcode_
-savedsl(draw, path_join(Directory, "hello.dslb"));
-draw_run = system ${dsl_cli(draw)} --lmcode ${path_join(Directory, "hello.dslb")};
-require(draw_run.code == 0, draw_run.stderr);
+draw_run = run_lmcode(draw);
+require(draw_run.ok, "lmdraw failed");
 
 cad = _lmcode_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
 let mat = material();
@@ -15,15 +14,13 @@ let block = scene.box(2.0, 2.0, 2.0, mat);
 scene.fit_camera(1.2, 1.0);
 scene.render_png("build/rendered/block.png", 320, 240);
 end _lmcode_
-savedsl(cad, path_join(Directory, "block.dslb"));
-cad_run = system ${dsl_cli(cad)} --lmcode ${path_join(Directory, "block.dslb")};
-require(cad_run.code == 0, cad_run.stderr);
+cad_run = run_lmcode(cad);
+require(cad_run.ok, "lmcad failed");
 
 html = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 let doc = html.parse("<!doctype html><title>Example</title><p>Checked</p>");
 report.add("example.html", doc.source(), 0, "tutorial example");
 end _lmcode_
-savedsl(html, path_join(Directory, "audit.dslb"));
-html_run = system ${dsl_cli(html)} --lmcode ${path_join(Directory, "audit.dslb")};
-require(html_run.code == 0, html_run.stderr);
+html_run = run_lmcode(html);
+require(html_run.ok, "lmhtml failed");
 println("compiled and ran lmdraw, lmcad and lmhtml");

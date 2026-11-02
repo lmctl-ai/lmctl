@@ -1,9 +1,9 @@
 {
-  "version": "v0.1.94",
+  "version": "v0.1.96",
   "sha256": {
-    "lmmock-linux-x64": "e1007ce813516b36ca4fb56df0f2c4684e2a7e080f31b0f5693c8d1ce06c6dc5",
-    "lmmock-linux-arm64": "6a6f8e603399ea1c4d709c3e7c6e7a6096fbb7a64531301b3527427df22cfc44",
-    "lmmock-macos-x64": "5a8b5631e723ea872595e620676b1467aee87e907b621ae6d7219771f1811e05",
-    "lmmock-macos-arm64": "6dbd81097636476fec0eb7db08485431695b52f1d4dc9c1b0aee37bbb0c8701a"
+    "lmmock-linux-x64": "a98fc314c8dfb609b0e330643db084369834aae9059139c4e939088139f02f33",
+    "lmmock-linux-arm64": "dae0ba49ce168c960154315084858dc007f6c8791105a3a60a15f1538b5dcb5a",
+    "lmmock-macos-x64": "0270190f15b13d2b04be0eccfe6159946f8c03b73dabd56ce0822fcf13f0adff",
+    "lmmock-macos-arm64": "4c648cb15787809277bd1c3367954291f793b1e40c923aff7dd6ca874bcc9f1f"
   }
 }
