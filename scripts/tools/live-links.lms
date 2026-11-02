@@ -19,6 +19,7 @@ while (str_find(remaining, "|") >= 0) {
     if (node.has_attr("poster")) { report.add("link", file, 0, node.path() + "\t" + node.attr("poster")); }
   }
 }
-report.write_json(${ARGV[1]});
+report.write_json(${ARGV[0]});
 end _lmcode_
-savedsl(p, ARGV[0]);
+r = run_lmcode(p);
+require(r.ok, "lmhtml live-links: " + json_stringify(r));

@@ -25,7 +25,7 @@ jobs:
           node-version: 24.15
       - name: Install published DSL compiler
         run: npm i -g @lmctl-ai/lmctl@staging
-      - name: Resolve lmhtml from the lmscript tool cache
+      - name: Resolve lmhtml (PATH, else the release pinned in scripts/tools/lmhtml.lock)
         run: echo "LMHTML=$(bash scripts/tools/run.sh host-path)" >> "$GITHUB_ENV"
       - name: check durable-memory notes and index
         run: npm run check:memory

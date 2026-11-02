@@ -177,6 +177,9 @@ def import_tool(tool, ref, source=None):
         (out / 'source').mkdir()
         inputs = {}
         compiler = os.environ.get('LMSCRIPT_BIN', 'lmscript')
+        # example-page.lms runs its program with run_lmcode on this host (first on PATH).
+        host = subprocess.check_output(['bash', str(ROOT / 'scripts/tools/run.sh'), 'host-path'], cwd=ROOT, text=True).strip()
+        page_env = dict(os.environ, PATH=str(Path(host).parent) + os.pathsep + os.environ.get('PATH', ''))
         template = ROOT / 'scripts/tools/example-page.lms'
         raw_base = f'https://raw.githubusercontent.com/lmctl-ai/{tool}/{commit}/'
         for e in sorted(m['examples'], key=lambda e: e['slug']):
@@ -196,13 +199,10 @@ def import_tool(tool, ref, source=None):
                         raise ManifestError(f'lmctl-ai/{tool}@{commit}:{e[key]}: script must be valid UTF-8') from error
                     target = out / 'source' / (e['slug'] + '.lms')
                 target.write_bytes(data)
-            args = [str(work/'page.dslb'), str(out/(e['slug']+'.html')), e['title'], e['description'], str(out/'source'/(e['slug']+'.lms')), raw_base+e['script'], f'/tools/{tool}/examples/img/{e["slug"]}.png', e['alt'], e.get('stdout', '(stdout not recorded in this inventory)'), '', tool]
-            run(compiler, str(template), *args, cwd=ROOT, stdout=subprocess.DEVNULL)
-            host = Path(args[0] + '.host').read_text().strip()
-            run(host, '--lmcode', args[0], cwd=work, stdout=subprocess.PIPE)
-        args = [str(work/'page.dslb'), str(out/'index.html'), m['title'], m['description'], '', '', '', '', '', str(out), tool]
-        run(compiler, str(template), *args, cwd=ROOT, stdout=subprocess.DEVNULL)
-        run(host, '--lmcode', args[0], cwd=work, stdout=subprocess.PIPE)
+            args = [str(out/(e['slug']+'.html')), e['title'], e['description'], str(out/'source'/(e['slug']+'.lms')), raw_base+e['script'], f'/tools/{tool}/examples/img/{e["slug"]}.png', e['alt'], e.get('stdout', '(stdout not recorded in this inventory)'), '', tool]
+            run(compiler, str(template), *args, cwd=ROOT, stdout=subprocess.DEVNULL, env=page_env)
+        args = [str(out/'index.html'), m['title'], m['description'], '', '', '', '', '', str(out), tool]
+        run(compiler, str(template), *args, cwd=ROOT, stdout=subprocess.DEVNULL, env=page_env)
         lock = {'version': 1, 'repository': m['repository'], 'commit': commit, 'manifest_sha256': digest(raw), 'schema_sha256': digest(SCHEMA.read_bytes()), 'inputs': dict(sorted(inputs.items())), 'template_sha256': digest(template.read_bytes()), 'renderer': {'version': subprocess.check_output([host, '--version'], text=True).strip(), 'sha256': digest(Path(host).read_bytes())}, 'compiler': subprocess.check_output([compiler, '--version'], text=True).strip()}
         (out/'source-lock.json').write_text(json.dumps(lock, indent=2)+'\n')
         destination = ROOT/'tools'/tool/'examples'

@@ -24,11 +24,13 @@ LMCAD_BIN="${LMCAD_BIN:-$(command -v lmcad || true)}"
 LMBLENDER_BIN="${LMBLENDER_BIN:-$(command -v lmblender || echo /home/ubuntu/lmblender-release/current/bin/lmblender)}"
 LMDRAW_BIN="${LMDRAW_BIN:-$(command -v lmdraw || true)}"
 LMSCRIPT_BIN="${LMSCRIPT_BIN:-$(command -v lmscript || true)}"
-[[ -x $LMSCRIPT_BIN ]] || { echo 'Install @lmctl-ai/lmctl@0.2.420 or newer and put lmscript on PATH.' >&2; exit 2; }
+[[ -x $LMSCRIPT_BIN ]] || { echo 'Install @lmctl-ai/lmctl@staging (lmscript 0.2.454 or newer) and put lmscript on PATH.' >&2; exit 2; }
 compiler_version=$($LMSCRIPT_BIN --version 2>&1 | awk '{print $NF}')
 IFS=. read -r compiler_major compiler_minor compiler_patch <<< "$compiler_version"
 [[ $compiler_major =~ ^[0-9]+$ && $compiler_minor =~ ^[0-9]+$ && $compiler_patch =~ ^[0-9]+$ ]] || { echo "unrecognized lmscript version: $compiler_version" >&2; exit 2; }
-((compiler_major > 0 || compiler_minor > 2 || (compiler_minor == 2 && compiler_patch >= 420))) || { echo 'lmscript >= 0.2.420 required for cli=install.' >&2; exit 2; }
+((compiler_major > 0 || compiler_minor > 2 || (compiler_minor == 2 && compiler_patch >= 454))) || { echo 'lmscript >= 0.2.454 required for run_lmcode.' >&2; exit 2; }
+# The release an install="github:lmctl-ai/TOOL@latest" block resolves to.
+installed_host() { "$LMSCRIPT_BIN" install "github:lmctl-ai/$1@latest" | sed -n 's/^path: //p'; }
 for tool in ffmpeg ffprobe; do command -v "$tool" >/dev/null || { echo "$tool is required." >&2; exit 2; }; done
 sha256_file() { if command -v sha256sum >/dev/null; then sha256sum "$1"; else shasum -a 256 "$1"; fi; }
 file_size() { if stat -c '%s' "$1" >/dev/null 2>&1; then stat -c '%s' "$1"; else stat -f '%z' "$1"; fi; }
@@ -43,21 +45,16 @@ mkdir -p "$OUTPUT_DIR"
 work=$(mktemp -d "${TMPDIR:-/tmp}/lmctl-homepage-video.XXXXXX")
 trap 'rm -rf -- "$work"' EXIT
 if [[ $ENGINE == lmcad ]]; then
-  if [[ -z $LMCAD_BIN ]]; then
-    "$LMSCRIPT_BIN" "$ROOT/scripts/tools/lmcad-path.lms" "$work/lmcad-path.txt"
-    LMCAD_BIN=$(cat "$work/lmcad-path.txt")
-  fi
+  if [[ -z $LMCAD_BIN ]]; then LMCAD_BIN=$(installed_host lmcad); fi
   [[ -x $LMCAD_BIN ]] || { echo "lmcad is not executable: $LMCAD_BIN" >&2; exit 2; }
   PATH="$(dirname "$LMCAD_BIN"):$PATH"
   export PATH
 fi
 if [[ $ENGINE == lmblender ]]; then
-  if [[ -z $LMDRAW_BIN ]]; then
-    "$LMSCRIPT_BIN" "$SCRIPT_DIR/overlay/lmdraw-path.lms" "$work/lmdraw-path.txt"
-    LMDRAW_BIN=$(cat "$work/lmdraw-path.txt")
-  fi
+  if [[ -z $LMDRAW_BIN ]]; then LMDRAW_BIN=$(installed_host lmdraw); fi
   [[ -x $LMDRAW_BIN ]] || { echo "lmdraw is not executable: $LMDRAW_BIN" >&2; exit 2; }
-  PATH="$(dirname "$LMDRAW_BIN"):$PATH"
+  # Each script runs its block with run_lmcode on the host first on PATH.
+  PATH="$(dirname "$LMDRAW_BIN"):$(dirname "$LMBLENDER_BIN"):$PATH"
   export PATH
   # The cache key excludes overlays, so title/layout edits do not rerender Cycles.
   cache_root="${LMBLENDER_FRAME_CACHE:-$ROOT/build/homepage-video/lmblender-cycles}"
@@ -70,8 +67,7 @@ if [[ $ENGINE == lmblender ]]; then
   printf '{\n  "lmblender": "%s",\n  "lmblender_binary_sha256": "%s",\n  "preset": "diagram-dark-16x9-final",\n  "samples": %s,\n  "resolution": "%sx%s",\n  "frames": %s,\n  "fps": %s,\n  "background": "lmdraw navy gradient",\n  "lmdraw": "%s",\n  "lmdraw_binary_sha256": "%s",\n  "lmscript": "%s"\n}\n' "$blender_version" "$blender_hash" "$BLENDER_SAMPLES" "$WIDTH" "$HEIGHT" "$FRAME_COUNT" "$FRAME_RATE" "$draw_version" "$draw_hash" "$compiler_version" > "$work/manifest.json"
   if [[ $MODE == check ]]; then cmp "$work/manifest.json" "$SCRIPT_DIR/lmblender/manifest.json"; fi
   mkdir -p "$work/backdrop/build/rendered"
-  (cd "$work/backdrop" && "$LMSCRIPT_BIN" "$SCRIPT_DIR/overlay/background.lms" background.dslb)
-  (cd "$work/backdrop" && nice -n 10 "$LMDRAW_BIN" --lmcode background.dslb)
+  (cd "$work/backdrop" && nice -n 10 "$LMSCRIPT_BIN" "$SCRIPT_DIR/overlay/background.lms")
   backdrop="$work/backdrop/build/rendered/backdrop.png"
   [[ -s $backdrop ]] || { echo 'lmdraw did not render the navy background.' >&2; exit 1; }
 fi
@@ -81,8 +77,7 @@ for n in 1 2 3 4; do
   name="level-$n"; mkdir -p "$work/frames/$name"
   if [[ $ENGINE == lmcad ]]; then
     cp "$SOURCE_DIR/$name.lms" "$work/$name.lms"
-    (cd "$work" && "$LMSCRIPT_BIN" "$name.lms" "$name.dslb")
-    (cd "$work" && "$LMCAD_BIN" --lmcode "$name.dslb")
+    (cd "$work" && "$LMSCRIPT_BIN" "$name.lms")
   else
     cycle_dir="$cache_root/$name"; key_file="$cycle_dir/cache-key.txt"
     key_material=$(cat "$SOURCE_DIR/$name.lms" "$SOURCE_DIR/schema/lmblender.dsl.json"; printf '%s|%s|%s|%s|%s|%s' "$blender_hash" "$FRAME_COUNT" "$FRAME_RATE" "$WIDTH" "$HEIGHT" "$BLENDER_SAMPLES")
@@ -92,8 +87,7 @@ for n in 1 2 3 4; do
       echo "$name: reusing Cycles frame cache $cache_key"
     else
       mkdir -p "$work/cycles/frames/$name"
-      (cd "$work/cycles" && "$LMSCRIPT_BIN" "$SOURCE_DIR/$name.lms" "$name.dslb" final)
-      (cd "$work/cycles" && nice -n 10 "$LMBLENDER_BIN" --lmcode "$name.dslb")
+      (cd "$work/cycles" && nice -n 10 "$LMSCRIPT_BIN" "$SOURCE_DIR/$name.lms" final)
       count=$(find "$work/cycles/frames/$name" -maxdepth 1 -type f -name 'frame-*.png' | wc -l | tr -d ' ')
       [[ $count == "$FRAME_COUNT" ]] || { echo "$name rendered $count Cycles frames; expected $FRAME_COUNT" >&2; exit 1; }
       rm -rf "$cycle_dir"; mkdir -p "$cycle_dir"
@@ -103,8 +97,7 @@ for n in 1 2 3 4; do
     fi
     cp "$cycle_dir"/frame-*.png "$work/frames/$name/"
     ov="$work/overlay/$name"; mkdir -p "$ov/build/rendered"
-    (cd "$ov" && "$LMSCRIPT_BIN" "$SCRIPT_DIR/overlay/$name.lms" "$name.dslb")
-    (cd "$ov" && nice -n 10 "$LMDRAW_BIN" --lmcode "$name.dslb")
+    (cd "$ov" && nice -n 10 "$LMSCRIPT_BIN" "$SCRIPT_DIR/overlay/$name.lms")
     ov_count=$(find "$ov/build/rendered" -maxdepth 1 -type f -name 'overlay-*.png' | wc -l | tr -d ' ')
     [[ $ov_count == "$FRAME_COUNT" ]] || { echo "$name rendered $ov_count overlays; expected $FRAME_COUNT" >&2; exit 1; }
     # Replace the Cycles black world with a branded navy gradient, then composite labels.

@@ -29,7 +29,7 @@ jobs:
         run: npm i -g @lmctl-ai/lmctl@staging
       - name: Stage locked website book media
         run: python3 scripts/tools/stage-book-media.py
-      - name: Resolve lmhtml from the lmscript tool cache
+      - name: Resolve lmhtml (PATH, else the release pinned in scripts/tools/lmhtml.lock)
         run: echo "LMHTML=$(bash scripts/tools/run.sh host-path)" >> "$GITHUB_ENV"
       - name: check public example import policy
         run: npm run test:pull:tools

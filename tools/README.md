@@ -8,7 +8,7 @@ Write plain HTML content. lmhtml supplies the document shell, navigation, footer
 2. Optionally add tutorial.html, tutorial-animation.html, guide.html, guide-schema.html, recipes.html, reference.html, faq.html or changelog.html. Choose pages that help this tool's readers.
 3. Run npm run decorate:tools, then npm run check:tools, and commit the content and decorated HTML together. Author index.html as the tool overview; the decorator adds its shared shell and navigation.
 
-Install Node supported by the published compiler and npm i -g @lmctl-ai/lmctl@0.2.347 (or newer) once. The runner downloads the SHA256-pinned lmhtml release from scripts/tools/lmhtml.lock. LMHTML=/path/to/lmhtml and LMSCRIPT_BIN=/path/to/lmscript select local executables.
+Install Node supported by the compiler and npm i -g @lmctl-ai/lmctl@staging (lmscript 0.2.454 or newer, for run_lmcode) once. The runner uses lmhtml on PATH, else downloads the SHA256-pinned lmhtml release from scripts/tools/lmhtml.lock. LMHTML=/path/to/lmhtml and LMSCRIPT_BIN=/path/to/lmscript select local executables.
 
 ## Names and roles
 
@@ -58,7 +58,7 @@ The generated shell has HTML doctype, lang=en, charset, viewport, title, descrip
 
 Site-rooted links resolve from the repository root; / maps to the deployed homepage/index.html. scripts/tools/run.sh links /path/to/built/site reports broken internal links independently, ignoring external/non-web schemes. npm run check:tools:selftest tests named bad fixtures and the current tree, then uses an isolated copy to test fragments, roles, template propagation, indexes, dry-run, source preservation and idempotence.
 
-Only scripts/deploy-tools.sh deploys this section. The template and scripts are outside tools/ and are never uploaded. No Node HTML checker remains; lmscript compiles the DSL and lmhtml runs it.
+Only scripts/deploy-tools.sh deploys this section. The template and scripts are outside tools/ and are never uploaded. No Node HTML checker remains; each lmscript script runs its program on lmhtml with run_lmcode.
 
 ## Legacy /skills/
 

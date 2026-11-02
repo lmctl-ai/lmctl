@@ -50,6 +50,12 @@ def png_size(path):
 
 def quickrun_source(tool, script, examples_root, repo_root, release_version="latest"):
     source = host_flag_spelling(script.read_text())
+    # The compiler only knows _lmcode_ and run_lmcode now: modernize the removed
+    # _dsl_ marker, and refuse a hand-written runner built on the removed dsl_cli.
+    source = re.sub(r"(?m)^(\w+\s*=\s*)_dsl_\b", r"\g<1>_lmcode_", source)
+    source = re.sub(r"(?m)^(\s*)end _dsl_\s*$", r"\g<1>end _lmcode_", source)
+    if "dsl_cli(" in source:
+        raise ValueError(f"{script.name} runs its block with the removed dsl_cli(); migrate it to run_lmcode")
     host_var = None
     source, count = re.subn(
         r'(?m)^(\w+)\s*=\s*_(?:dsl|lmcode)_\s+schema="[^"]+"\s*;',
@@ -71,12 +77,8 @@ def quickrun_source(tool, script, examples_root, repo_root, release_version="lat
     host_var = host_var_match.group(1) if host_var_match else None
     if not host_var:
         raise ValueError(f"could not find host variable in {script}")
-    has_output = re.search(r"(?m)^out\s*=", source)
-    if not has_output:
-        savedsl = re.search(rf"(?m)^\s*savedsl\(\s*{re.escape(host_var)}\s*,\s*([^,)]+)\s*\);", source)
-        if not savedsl:
-            raise ValueError(f"{script.name} must save its {host_var} bytecode with savedsl()")
-        source = source[:savedsl.start()] + f"out = {savedsl.group(1).strip()};\n" + source[savedsl.start():]
+    # savedsl() was removed with the CLI bytecode files; run_lmcode replaces it below.
+    source = re.sub(rf"(?m)^\s*savedsl\(\s*{re.escape(host_var)}\s*,[^\n]*\);[ \t]*\n?", "", source)
 
     font_load = re.compile(
         r'(?m)^\s*scene\.load_font\("([^"]+)"\s*,\s*"assets/fonts/[^"\n]+"\s*,\s*(?:true|false)\s*\);\s*\n?'
@@ -123,12 +125,13 @@ def quickrun_source(tool, script, examples_root, repo_root, release_version="lat
     bootstrap = [line for line in bootstrap if line not in source]
     if bootstrap:
         source = source[:dsl_line.start()] + "\n".join(bootstrap) + "\n" + source[dsl_line.start():]
-    # Complete source examples already execute their saved block.
-    if re.search(rf"(?m)^\s*\w+\s*=\s*system\s+\$\{{dsl_cli\({re.escape(host_var)}\)\}}\s+--lmcode\s", source):
+    # Complete source examples already run their block.
+    if re.search(rf"\brun_lmcode\(\s*{re.escape(host_var)}\b", source):
         return source
+    # A host failure comes back as data: print the envelope and keep the host's exit code.
     source += (
-        f"\nrun = system ${{dsl_cli({host_var})}} --lmcode ${{out}};\n"
-        'if (run.code != 0) { println(str(run.stderr)); lm_exit(run.code); }\n'
+        f"\nrun = run_lmcode({host_var});\n"
+        'if (!run.ok) { println(json_stringify(run)); lm_exit(run.phase == "app" ? 4 : 3); }\n'
     )
     return source
 

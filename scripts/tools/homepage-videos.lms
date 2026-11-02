@@ -42,8 +42,9 @@ while (str_find(names, "|") >= 0) {
   }
 }
 if (html.load("homepage/levels/index.html").select("main h1").len() != 1) { finding("homepage/levels/index.html", "missing levels index"); }
-report.write_text(${ARGV[1]});
+report.write_text(${ARGV[0]});
 report.fail_if_any();
-report.write_text(${ARGV[1]});
+report.write_text(${ARGV[0]});
 end _lmcode_
-savedsl(p, ARGV[0]);
+r = run_lmcode(p);
+require(r.ok, "lmhtml homepage-videos: " + json_stringify(r));

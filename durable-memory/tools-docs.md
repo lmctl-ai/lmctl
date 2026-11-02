@@ -13,7 +13,7 @@ tools/ is the source of [https://lmctl.com/tools/](<https://lmctl.com/tools/>): 
 3. npm run check:tools (must print check: OK).
 4. Commit the content and the generated HTML together, including repo.txt when needed.
 
-Prerequisite once: lmscript 0.2.369 or newer on PATH (or set LMSCRIPT for icon rendering). Each script declares its host with cli and install; lmscript reads that release binary's embedded schema and downloads a missing asset into its tool cache with SHA-256 verification. CI installs the matching compiler release and works from an empty host cache. lmhtml, lmcad and lmdraw scripts use @latest. lmdraw 0.1.2 exposes --version and the compiler's --lmcode-schema protocol; lmblender releases are still drafts, so its scenes keep a local schema until a release supports the install contract.
+Prerequisite once: lmscript 0.2.454 or newer on PATH (staging; scripts run their blocks with run_lmcode; set LMSCRIPT for icon rendering). Each script declares its host with cli and install; lmscript reads that release binary's embedded schema and downloads a missing asset into its tool cache with SHA-256 verification. CI installs the matching compiler release and works from an empty host cache. lmhtml, lmcad and lmdraw scripts use @latest. lmdraw 0.1.2 exposes --version and the compiler's --lmcode-schema protocol; lmblender releases are still drafts, so its scenes keep a local schema until a release supports the install contract.
 
 ## Layout
 
@@ -26,7 +26,7 @@ Prerequisite once: lmscript 0.2.369 or newer on PATH (or set LMSCRIPT for icon r
 | tools/\<tool\>/img/ | Local images; icon.png (64×64) and logo.png (256×256) are picked up automatically |
 | tools/\<tool\>/repo.txt | Required: one repository URL when it is not github.com/lmctl-ai/\<tool\> |
 | tools/img/ | Site icon (icon.png) and catalog logo (tools.png) |
-| scripts/tools/run.sh | Runner: compiles and runs against the lmhtml release named by each script |
+| scripts/tools/run.sh | Runner: runs each script (run_lmcode inside) with lmhtml first on PATH: LMHTML, else lmhtml on PATH, else the release pinned in lmhtml.lock |
 | scripts/tools/check.lms, decorate.lms, links.lms, roles.lms | Checker, decorator, link checker, role table |
 | scripts/tools/template.html | Shared shell: layout, nav/footer variants, index regions |
 | scripts/tools/icons/ | lmcad icon scripts and render.sh |
@@ -182,13 +182,6 @@ Autorun team scripts use scripts/tools/quickrun-template.lms and the same tools/
 
 ## Host option spelling maintenance
 
-Run `python3 scripts/tools/generate-example-book.py --refresh-host-flag-spellings`
-for a flag-only refresh of manifest-owned example scripts/pages. This preserves
-existing savedsl/system/dsl_cli structure, render assets and source provenance.
-Full book generation also normalizes host options when reading pinned source
-snapshots. The separate language plumbing migration remains independent.
+Run python3 scripts/tools/generate-example-book.py --refresh-host-flag-spellings for a flag-only refresh of manifest-owned example scripts and pages. This preserves existing script structure, render assets and source provenance. Full book generation also normalizes host options when reading pinned source snapshots, modernizes the removed dsl marker and savedsl form to the lmcode marker with run_lmcode, and refuses sources that still run their block through the removed dsl_cli. The separate language plumbing migration remains independent.
 
-For typed books, run `python3 scripts/tools/pull-books.py --refresh-host-flag-spellings`.
-It refreshes only text in books-lock-owned pages/scripts and records the spelling
-overlay; input/capture/media hashes and the original source pin remain unchanged.
-Neither maintenance command executes a host or publishes content.
+For typed books, run python3 scripts/tools/pull-books.py --refresh-host-flag-spellings. It refreshes only text in books-lock-owned pages and scripts and records the spelling overlay; input, capture and media hashes and the original source pin remain unchanged. Neither maintenance command executes a host or publishes content.

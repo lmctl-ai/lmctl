@@ -97,7 +97,7 @@ class LiveTests(unittest.TestCase):
             (root / 'static/js').mkdir(parents=True)
             (root / 'static/js/lmctl-copy.js').write_text('/* copy */')
             (root / 'tools/lmdraw').mkdir(parents=True)
-            (root / 'tools/lmdraw/lmdraw_solo.lms').write_text('p = _dsl_ cli="lmdraw";\n')
+            (root / 'tools/lmdraw/lmdraw_solo.lms').write_text('p = _lmcode_ cli="lmdraw";\n')
             entries = site.inventory('tools', root)
         obj = entries['tools/lmdraw/lmdraw_solo.lms']
         self.assertEqual(obj['content_type'], 'text/plain; charset=utf-8')

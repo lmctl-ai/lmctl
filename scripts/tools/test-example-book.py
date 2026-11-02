@@ -24,11 +24,11 @@ class ExampleBookTests(unittest.TestCase):
             root = Path(temp)
             script = root / 'example.lms'
             old = '--' + 'dsl'
-            script.write_text('p = _lmcode_ cli="lmr" install="github:lmctl-ai/lmr@latest";\nend _lmcode_\nsavedsl(p, out);\nrun = system ${dsl_cli(p)} ' + old + ' ${out};\n')
+            script.write_text('p = _lmcode_ cli="lmr" install="github:lmctl-ai/lmr@latest";\nend _lmcode_\nrun = run_lmcode(p, {command: ["lmr", "' + old + '", "$DSLFILE"]});\n')
             result = module.quickrun_source('lmr', script, root, root)
         self.assertNotIn(old, result)
-        self.assertEqual(result.count('system ${dsl_cli(p)} --lmcode ${out}'), 1)
-        self.assertIn('savedsl(p, out);', result)
+        self.assertEqual(result.count('run_lmcode(p, {command: ["lmr", "--lmcode", "$DSLFILE"]})'), 1)
+        self.assertEqual(result.count('run_lmcode('), 1)
 
     def test_flag_refresh_preserves_plumbing_and_is_idempotent(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -37,7 +37,7 @@ class ExampleBookTests(unittest.TestCase):
             book.mkdir(parents=True)
             (book / '.generated-files').write_text('tools/demo/examples/sample.lms\n')
             old = '--' + 'dsl'
-            original = ('p = _dsl_ schema="sample.dsl.json";\nend _dsl_\nsavedsl(p, "out.dslb");\nr = system ${dsl_cli(p)} ' + old + ' ${out};\n').encode()
+            original = ('p = _lmcode_ schema="sample.dsl.json";\nend _lmcode_\nr = run_lmcode(p, {command: ["sample", "' + old + '", "$DSLFILE"]});\n').encode()
             script = book / 'sample.lms'
             script.write_bytes(original)
             self.assertEqual(module.refresh_host_flag_spellings(root), 1)
@@ -66,31 +66,44 @@ savedsl(p, out);
             result = module.quickrun_source("lmdraw", script, root, root)
         self.assertIn('cli="lmdraw" install="github:lmctl-ai/lmdraw@latest"', result)
         self.assertEqual(result.count('install="github:lmctl-ai/lmdraw@latest"'), 1)
+        # The removed _dsl_/savedsl spelling is modernized to _lmcode_ + run_lmcode.
+        self.assertNotIn('_dsl_', result)
+        self.assertNotIn('savedsl', result)
+        self.assertIn('end _lmcode_', result)
+        self.assertIn('run = run_lmcode(p);', result)
 
-    def test_quickrun_derives_run_path_when_source_saves_a_literal_path(self):
+    def test_quickrun_replaces_a_literal_savedsl_with_one_run(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             script = root / "loop-row.lms"
             script.write_text('''p = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";\nscene.assert_close(1.0, 1.0, 0.001);\nend _dsl_\nsavedsl(p, "build/loop-row.dslb");\n''')
             result = module.quickrun_source("lmcad", script, root, root)
-        self.assertIn('out = "build/loop-row.dslb";', result)
-        self.assertIn("system ${dsl_cli(p)} --lmcode ${out}", result)
+        self.assertNotIn("savedsl", result)
+        self.assertNotIn(".dslb", result)
+        self.assertEqual(result.count("run_lmcode(p)"), 1)
+        self.assertIn('lm_exit(run.phase == "app" ? 4 : 3)', result)
+
+    def test_quickrun_refuses_the_removed_dsl_cli_runner(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            script = root / "old.lms"
+            script.write_text('p = _lmcode_ cli="lmr" install="github:lmctl-ai/lmr@latest";\nend _lmcode_\nr = system ${dsl_cli(p)} --lmcode ${out};\n')
+            with self.assertRaisesRegex(ValueError, "migrate it to run_lmcode"):
+                module.quickrun_source("lmr", script, root, root)
 
     def test_quickrun_does_not_append_a_second_host_run(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             script = root / "example.lms"
             script.write_text('''if (!file_exists("build")) { mkdir("build"); }
-out = "build/example.dslb";
-p = _dsl_ cli="lmr" install="github:lmctl-ai/lmr@v0.5.1";
-end _dsl_
-savedsl(p, out);
-  r = system ${dsl_cli(p)} --lmcode ${out};
+p = _lmcode_ cli="lmr" install="github:lmctl-ai/lmr@v0.5.1";
+end _lmcode_
+  r = run_lmcode(p);
 ''')
             result = module.quickrun_source("lmr", script, root, root, "v0.5.1")
         self.assertIn('install="github:lmctl-ai/lmr@v0.5.1"', result)
         self.assertEqual(result.count('if (!file_exists("build"))'), 1)
-        self.assertEqual(result.count("system ${dsl_cli(p)} --lmcode ${out}"), 1)
+        self.assertEqual(result.count("run_lmcode("), 1)
 
     def test_text_output_is_written_and_rendered_as_plain_text(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -98,11 +111,9 @@ savedsl(p, out);
             repo = root / "repo"
             (repo / "examples").mkdir(parents=True)
             script = repo / "examples" / "sample.lms"
-            script.write_text('''out = "build/sample.dslb";
-p = _dsl_ cli="sampletool" install="github:lmctl-ai/sampletool@latest";
-end _dsl_
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
+            script.write_text('''p = _lmcode_ cli="sampletool" install="github:lmctl-ai/sampletool@latest";
+end _lmcode_
+r = run_lmcode(p);
 ''')
             data_path = root / "book.json"
             data_path.write_text(json.dumps({
@@ -145,10 +156,9 @@ r = system ${dsl_cli(p)} --lmcode ${out};
             (repo / "examples" / "book").mkdir(parents=True)
             (repo / "schema").mkdir()
             script = repo / "examples" / "book" / "sample.lms"
-            script.write_text('''out = "build/sample.dslb";
-p = _dsl_ schema="../schema/tool.json";
+            script.write_text('''p = _dsl_ schema="../schema/tool.json";
 end _dsl_
-savedsl(p, out);
+savedsl(p, "build/sample.dslb");
 ''')
             data_path = root / "book.json"
             data_path.write_text(json.dumps({
@@ -191,13 +201,12 @@ savedsl(p, out);
             (root / "assets/fonts/font.ttf").write_bytes(b"font fixture")
             script = root / "example.lms"
             script.write_text('''if (!file_exists("build")) { mkdir("build"); }
-out = "build/rendered/example.dslb";
 p = _dsl_ schema="../schema/tool.json";
 scene.load_font("Extra", "assets/fonts/font.ttf", false);
 let imported = scene.load_svg("assets/diagram.svg", "root");
 imported.set_attr("font-family", "Extra");
 end _dsl_
-savedsl(p, out);
+savedsl(p, "build/rendered/example.dslb");
 ''')
             result = module.quickrun_source("lmdraw", script, root / "examples", root)
         self.assertIn('install="github:lmctl-ai/lmdraw@latest"', result)
@@ -208,7 +217,7 @@ savedsl(p, out);
         self.assertIn('scene.load_svg("assets/quickrun-', result)
         self.assertIn('set_attr("font-family", "Noto Sans")', result)
         self.assertNotIn("scene.load_font", result)
-        self.assertIn("system ${dsl_cli(p)} --lmcode ${out}", result)
+        self.assertIn("run = run_lmcode(p);", result)
 
     def test_refuses_svg_escape(self):
         with tempfile.TemporaryDirectory() as temp:

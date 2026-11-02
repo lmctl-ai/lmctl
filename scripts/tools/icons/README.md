@@ -31,8 +31,11 @@ LMCAD=/path/to/lmcad scripts/tools/icons/render.sh --check    # verify committed
 LMCAD=/path/to/lmcad scripts/tools/icons/render.sh --preview /tmp/icons  # also 32 px renders
 ```
 
-`render.sh` compiles with `npx --package=@lmctl-ai/lmctl@0.2.369 -- lmscript`
-(override with `LMSCRIPT=...` or `LMSCRIPT_VERSION=...`). Output is
+`render.sh` runs each script with `npx --package=@lmctl-ai/lmctl@staging -- lmscript`
+(override with `LMSCRIPT=...` or `LMSCRIPT_VERSION=...`); each script runs its block
+with `run_lmcode` on the lmcad first on PATH (`LMCAD`, else `lmcad` on PATH, else
+`lmscript install github:lmctl-ai/lmcad@latest`). The lmcad must speak the current
+lmcode envelope protocol. Output is
 deterministic: the same lmcad binary renders byte-identical PNGs, and
 `--check` renders into a temporary directory and compares. A different lmcad
 version may change pixels; then re-render and commit. The filleted shapes need

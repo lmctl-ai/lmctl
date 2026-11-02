@@ -330,7 +330,7 @@ fn region(source: string, name: string) -> string {
   let end = str_find(source, end_marker);
   if (offset < 0 || end < start) {
     report.add("template", "scripts/tools/template.html", 0, "missing or invalid region: " + name);
-    report.write_text(${ARGV[1]});
+    report.write_text(${ARGV[0]});
     report.fail_if_any();
   }
   return str_trim(str_substr(source, start, end - start));
@@ -444,7 +444,7 @@ fn index_group(names: string, title: string) -> string {
   }
   return result + "</ul>\n";
 }
-let mode = ${ARGV[2]};
+let mode = ${ARGV[1]};
 let check = mode == "--check";
 if (mode != "" && !check) {
   let page = html.load(mode);
@@ -485,7 +485,8 @@ if (mode != "" && !check) {
   store("skills/index.html", render_skills_index(body, "Skills — lmctl.com", excerpt(intro, 160, true)), check);
   if (check && html.link_exists(html.parse(""), "/skills/index.html")) { check_page(html.load("skills/index.html")); }
 }
-report.write_text(${ARGV[1]});
+report.write_text(${ARGV[0]});
 report.fail_if_any();
 end _lmcode_
-savedsl(p, ARGV[0]);
+r = run_lmcode(p);
+require(r.ok, "lmhtml skills: " + json_stringify(r));

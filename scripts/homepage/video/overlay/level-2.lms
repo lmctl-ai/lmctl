@@ -1,4 +1,3 @@
-out = ARGV[0];
 p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(1280, 720, "#00000000");
 let gold = "#f5c16c";
@@ -31,4 +30,5 @@ for (i in range(0, 240)) {
   scene.render_png("build/rendered/overlay-" + str(i) + ".png", 1280, 720, 1);
 }
 end _lmcode_
-savedsl(p, out);
+r = run_lmcode(p);
+require(r.ok, "lmdraw overlay/level-2: " + json_stringify(r));

@@ -1,7 +1,7 @@
 # Internal links only; HTTP(S), protocol-relative and non-web schemes are
 # intentionally unchecked. Pass a built site's root, not its source tree.
 p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
-let root = ${ARGV[2]};
+let root = ${ARGV[1]};
 if (root == "") { root = "."; }
 for (page in html.load_dir(root)) {
   for (node in page.select("a[href], link[href], img[src], script[src]")) {
@@ -14,7 +14,8 @@ for (page in html.load_dir(root)) {
     }
   }
 }
-report.write_text(${ARGV[1]});
+report.write_text(${ARGV[0]});
 report.fail_if_any();
 end _lmcode_
-savedsl(p, ARGV[0]);
+r = run_lmcode(p);
+require(r.ok, "lmhtml links: " + json_stringify(r));

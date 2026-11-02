@@ -5,6 +5,7 @@ import hashlib
 import importlib.util
 import json
 import math
+import os
 from pathlib import Path, PurePosixPath
 import re
 import shlex
@@ -202,12 +203,12 @@ def pull(tool, ref, source, store, released_version=None):
             if src.resolve()!=dest.resolve(): shutil.copyfile(src,dest)
             url=f'/tools/{tool}/media/{name}';urls[mid]=url;locked.append(dict(m,url=url))
         compiler='lmscript'; host=subprocess.check_output(['bash',str(ROOT/'scripts/tools/run.sh'),'host-path'],cwd=ROOT,text=True).strip()
+        # book-page.lms runs its program with run_lmcode on this host (first on PATH).
+        page_env=dict(os.environ,PATH=str(Path(host).parent)+os.pathsep+os.environ.get('PATH',''))
         template=ROOT/'scripts/tools/book-page.lms';out=work/'pages';out.mkdir()
         def render(path,kind,title='',intro='',script='',command='',expected='',image='',alt='',caption='',mp4='',webm='',poster='',duration='',prev='',nxt='',contents='',width='',height=''):
-            args=[str(work/'page.dslb'),str(path),title,host_flag_spelling(intro),kind,script,host_flag_spelling(command),expected,image,alt,caption,mp4,webm,poster,str(duration),prev,nxt,contents,str(width),str(height)]
-            policy.run(compiler,str(template),*args,cwd=ROOT,stdout=subprocess.DEVNULL)
-            resolved=Path(args[0]+'.host').read_text().strip()
-            policy.run(resolved,'--lmcode',args[0],cwd=work,stdout=subprocess.PIPE)
+            args=[str(path),title,host_flag_spelling(intro),kind,script,host_flag_spelling(command),expected,image,alt,caption,mp4,webm,poster,str(duration),prev,nxt,contents,str(width),str(height)]
+            policy.run(compiler,str(template),*args,cwd=ROOT,stdout=subprocess.DEVNULL,env=page_env)
         release_note = ('lmvideo ' + released_version + ' is released. Source examples are pinned to public commit ' + commit[:7] + '.') if released_version else 'Read downloaded programs before executing them. These sources require the matching lmvideo runtime.'
         for group in content['groups']:
             folder=out/group['id'];folder.mkdir();base=f'/tools/{tool}/{group["id"]}/';chapters=group['chapters'];index=folder/'index.html'
@@ -242,7 +243,7 @@ def pull(tool, ref, source, store, released_version=None):
                         sources={mids[x]['kind']:urls[x] for x in b['media']}
                         render(path,'video',caption=b['caption'],mp4=sources.get('mp4',''),webm=sources.get('webm',''),poster=urls[b['poster']],duration=str(b['duration_seconds'])+' seconds',width=mids[b['media'][0]]['width'],height=mids[b['media'][0]]['height'])
                 render(path,'finish')
-        page_host=Path(str(work/'page.dslb')+'.host').read_text().strip()
+        page_host=host
         lock={'host_flag_spelling_overlay':'lmcode','version':1,'compiler':subprocess.check_output([compiler,'--version'],text=True).strip(),'page_renderer':{'version':subprocess.check_output([page_host,'--version'],text=True).strip(),'sha256':sha(Path(page_host).read_bytes())},'repository':content['repository'],'commit':commit,'content_sha256':sha(raw),'schema_sha256':sha(SCHEMA.read_bytes()),'template_sha256':sha(template.read_bytes()),'books':[g['id'] for g in content['groups']],'media':locked,'inputs':dict(sorted(inputs.items())),'publication_status':'PUBLISHED' if released_version else content['publication_status'],'content_publication_status':content['publication_status'],'released_version':released_version}
         target=ROOT/'tools'/tool
         install_books(out,target,[g['id'] for g in content['groups']],lock)

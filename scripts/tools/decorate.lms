@@ -1,6 +1,6 @@
 import "roles.lms";
-tool_scope = ARGV.len() > 3 ? ARGV[3] : "";
-markup_only = ARGV.len() > 4 ? ARGV[4] == "1" : false;
+tool_scope = ARGV.len() > 2 ? ARGV[2] : "";
+markup_only = ARGV.len() > 3 ? ARGV[3] == "1" : false;
 initial_pattern = tool_scope == "" ? "tools/**/*.html" : tool_scope == "catalog" ? "tools/*.html" : "tools/" + tool_scope + "/**/*.html";
 directories = tool_scope != "" && tool_scope != "catalog" ? "tools/" + tool_scope + "|" : join(sort(glob("tools/*/")), "|") + "|";
 p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
@@ -139,7 +139,7 @@ fn region(source: string, name: string) -> string {
   let end = str_find(source, end_marker);
   if (offset < 0 || end < start) {
     report.add("template", "scripts/tools/template.html", 0, "missing or invalid region: " + name);
-    report.write_text(${ARGV[1]});
+    report.write_text(${ARGV[0]});
     report.fail_if_any();
   }
   return str_trim(str_substr(source, start, end - start));
@@ -277,7 +277,7 @@ fn store(path: string, result: string, before: string, check: bool, what: string
     if (!check) { html.save(result, path); }
   }
 }
-let check = ${ARGV[2]} == "--check";
+let check = ${ARGV[1]} == "--check";
 let template_source = html.load("scripts/tools/template.html").source();
 let required_regions = "layout|tool-nav|tool-footer|site-nav|site-footer|tool-index|site-index|";
 while (str_find(required_regions, "|") >= 0) {
@@ -293,7 +293,7 @@ for (page in html.load_dir(".", ${initial_pattern}, "")) {
   if (basename(page.path()) == "index.html") { continue; }
   for (problem in page.markup_errors()) { report.add("markup", page.path(), 0, problem); }
 }
-report.write_text(${ARGV[1]});
+report.write_text(${ARGV[0]});
 report.fail_if_any();
 if (!${markup_only}) {
 let role_data = ${role_table};
@@ -415,7 +415,8 @@ if (html.link_exists(probe, "/tools/index.html")) { old_index = html.load("tools
 store("tools/index.html", render(site_layout, region(template_source, "site-nav"), region(template_source, "site-footer"), site_content, "Tools — lmctl.com", "Small command-line tools from lmctl, with skill pages for LLM agents and task-specific documentation."), old_index, check, "missing or stale generated tools index");
 }
 }
-report.write_text(${ARGV[1]});
+report.write_text(${ARGV[0]});
 if (check) { report.fail_if_any(); }
 end _lmcode_
-savedsl(p, ARGV[0]);
+r = run_lmcode(p);
+require(r.ok, "lmhtml decorate: " + json_stringify(r));

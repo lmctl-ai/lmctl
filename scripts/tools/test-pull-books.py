@@ -37,7 +37,7 @@ class BookManifestTests(unittest.TestCase):
             lock = {'books':['showcase'], 'commit':'source-pin', 'inputs':{'source.lms':'original-hash'}, 'media':[]}
             (tool/'books-lock.json').write_text(json.dumps(lock))
             old = '--' + 'dsl'
-            raw = ('savedsl(p, "file.dslb"); system(host, ["'+old+'", "file.dslb"]);').encode()
+            raw = ('r = run_lmcode(p, {command: [host, "'+old+'", "$DSLFILE"]});').encode()
             (book/'sample.html').write_bytes(raw)
             self.assertEqual(pull_books.refresh_host_flag_spellings(root), 1)
             self.assertEqual((book/'sample.html').read_bytes(), raw.replace(old.encode(), b'--lmcode'))

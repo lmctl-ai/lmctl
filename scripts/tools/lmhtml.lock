@@ -1,0 +1,8 @@
+# lmhtml host for scripts/tools/run.sh when LMHTML is unset and no lmhtml is on PATH.
+# Values copied from the release's SHA256SUMS; update both lines together.
+version=v0.7.5
+sha256.lmhtml-linux-arm64=c6c7f9ede2baadaf6f65008fd876fe0fd8710b41ce904b36039fef2a0552aeb9
+sha256.lmhtml-linux-x64=dd8c9f3f364d6467d943056df19cd2c715e395ddd8fb983ae05f46652271ed99
+sha256.lmhtml-macos-arm64=4963ca38132cf1ca4d13b385f533832fde98a25a1780897890d2f3b67625aebe
+sha256.lmhtml-macos-x64=c65e0d2f85d72603425f836344091c70094bddf6c47f3eb035b6e21483dbaf43
+sha256.lmhtml-windows-x64.exe=4cee3b15b75a3b331d93aa0f62663bd6b80ffac31f087b832728f8a8aa4534b6

@@ -1,8 +1,8 @@
 import "roles.lms";
-tool_scope = ARGV.len() > 3 ? ARGV[3] : "";
+tool_scope = ARGV.len() > 2 ? ARGV[2] : "";
 page_pattern = tool_scope == "" ? "tools/**/*.html" : tool_scope == "catalog" ? "tools/*.html" : "tools/" + tool_scope + "/**/*.html";
 # run.sh copies this next to the schema emitted by the selected lmhtml binary.
-# ARGV: bytecode output, report output, optional single fixture (empty = tree).
+# ARGV: report output, optional single fixture (empty = tree), tool scope.
 # Directory enumeration happens at compile time; all policy stays in the DSL.
 tool_directories = "";
 for (directory in glob("tools/*/")) {
@@ -134,7 +134,7 @@ fn page_role(file: string) -> string {
   if (dash >= 0) { stem = str_substr(stem, 0, dash); }
   if (name == "get_started.html") { stem = "guide"; }
   # Existing named bad fixtures use x.role.html to select role checks.
-  if (${ARGV[2]} != "") {
+  if (${ARGV[1]} != "") {
     if (str_ends_with(file, ".skill.html")) { stem = "skill"; }
     if (str_ends_with(file, ".tutorial.html")) { stem = "tutorial"; }
     if (str_ends_with(file, ".guide.html")) { stem = "guide"; }
@@ -414,7 +414,7 @@ fn check_page(page: Doc) -> void {
     }
   }
 }
-let fixture = ${ARGV[2]};
+let fixture = ${ARGV[1]};
 if (fixture != "") { check_page(html.load(fixture)); }
 else {
   # Loading from the repository root makes /tools/... resolve from that root.
@@ -459,7 +459,7 @@ while (str_find(images, "|") >= 0) {
   if (size >= 30000) { finding(image_path, "file", "PNG must be under 30 KB (30000 bytes), found " + str(size)); }
   else { if (size > 20000) { warnings = warnings + image_path + "|"; } }
 }
-report.write_text(${ARGV[1]});
+report.write_text(${ARGV[0]});
 report.fail_if_any();
 # Warnings are appended only after the failure decision; they are non-fatal.
 while (str_find(warnings, "|") >= 0) {
@@ -468,6 +468,7 @@ while (str_find(warnings, "|") >= 0) {
   warnings = str_substr(warnings, end + 1, str_len(warnings));
   report.add("warning", image_path, 0, "PNG exceeds 20 KB; consider lossless compression");
 }
-report.write_text(${ARGV[1]});
+report.write_text(${ARGV[0]});
 end _lmcode_
-savedsl(p, ARGV[0]);
+r = run_lmcode(p);
+require(r.ok, "lmhtml check: " + json_stringify(r));

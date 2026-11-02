@@ -6,8 +6,9 @@
 #                                            committed PNGs are byte-identical
 #   scripts/tools/icons/render.sh --preview DIR   also keep the 32 and 16 px renders in DIR
 #
-# Env: LMCAD (lmcad binary, default `lmcad` on PATH), LMSCRIPT (compiler
-# command; default: the published compiler via npx, pinned below).
+# Env: LMCAD (lmcad binary; default `lmcad` on PATH, else `lmscript install
+# github:lmctl-ai/lmcad@latest`), LMSCRIPT (compiler command; default: the
+# published staging compiler via npx, pinned below; run_lmcode needs 0.2.454+).
 # Outputs: tools/<tool>/img/logo.png (256x256) and icon.png (64x64); the site
 # icon is tools/img/tools.png (256x256) and tools/img/icon.png (64x64).
 set -euo pipefail
@@ -15,7 +16,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../.." && pwd)"
 LMCAD="${LMCAD:-}"
-LMSCRIPT_VERSION="${LMSCRIPT_VERSION:-0.2.420}"
+LMSCRIPT_VERSION="${LMSCRIPT_VERSION:-staging}"
 MAX_BYTES=20480
 MODE="write"
 PREVIEW=""
@@ -42,9 +43,10 @@ done
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
+if [[ -z $LMCAD ]]; then LMCAD=$(command -v lmcad || true); fi
 if [[ -z $LMCAD ]]; then
-  lmscript_cmd "$ROOT/scripts/tools/lmcad-path.lms" "$WORK/lmcad-path.txt"
-  LMCAD=$(cat "$WORK/lmcad-path.txt")
+  # The same release an install="github:lmctl-ai/lmcad@latest" block resolves to.
+  LMCAD=$(lmscript_cmd install github:lmctl-ai/lmcad@latest | sed -n 's/^path: //p')
 fi
 [[ -x $LMCAD ]] || { echo "lmcad is not executable: $LMCAD" >&2; exit 1; }
 PATH="$(dirname "$LMCAD"):$PATH"
@@ -56,11 +58,9 @@ for script in "$HERE"/*.lms; do
   out="$WORK/out/$name"
   mkdir -p "$out"
   cp "$script" "$WORK/$name.lms"
-  if ! log="$(cd "$WORK" && lmscript_cmd "$name.lms" "out/$name" "$name.dslb" 2>&1)"; then
-    echo "$name: compile failed:" >&2; echo "$log" >&2; exit 1
-  fi
-  if ! log="$(cd "$WORK" && "$LMCAD" --lmcode "$name.dslb" 2>&1)"; then
-    echo "$name: lmcad failed: $log" >&2; exit 1
+  # The script runs its block with run_lmcode on the lmcad first on PATH.
+  if ! log="$(cd "$WORK" && lmscript_cmd "$name.lms" "out/$name" 2>&1)"; then
+    echo "$name: render failed:" >&2; echo "$log" >&2; exit 1
   fi
   if [[ "$name" == tools ]]; then
     dest="$ROOT/tools/img"; logo="tools.png"

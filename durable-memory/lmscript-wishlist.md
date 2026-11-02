@@ -4,6 +4,8 @@ This note records authoring friction observed while exercising the published lmd
 
 ## Help text and API status
 
+Resolved by removal (2026-11-02): savedsl, dsl_cli and CLI bytecode files are gone; scripts run blocks with run_lmcode. Kept as history.
+
 The command lmscript help savedsl describes the function as EXPERIMENTAL (lmctlhq/poc-web), even though savedsl is used by published host tutorials and the lmdraw example book. The internal prototype label makes it unclear whether authors should rely on the function.
 
 Proposed fix: remove the prototype label from user-facing help, or clearly separate any experimental mode from the supported savedsl contract. State that the output path is interpreted from the current working directory and that the host's own output rules still apply.

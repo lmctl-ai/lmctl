@@ -52,7 +52,7 @@ run decorate
 run check
 echo 'ok - generated example pages receive one deferred same-origin copy script'
 cat > "$work/assert.lms" <<'LMS'
-p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 let skill = html.load("tools/zeta/skill.html");
 let fragment = html.load("original.fragment");
 if (skill.source_inner("main") != str_replace(fragment.source(), "&lt;input&gt;", "&lt;input>")) { report.add("test", "skill", 0, "authored bytes changed"); }
@@ -63,12 +63,12 @@ if (skill.select("nav a").len() != 5) { report.add("test", "nav", 0, "shared sit
 if (skill.select("head title").at(0).text() != "Example & helpers {{CONTENT}} — zeta — lmctl.com tools") { report.add("test", "title", 0, "placeholder expansion corrupted title"); }
 report.write_text("assert.txt");
 report.fail_if_any();
-end _dsl_
-savedsl(p, ARGV[0]);
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));
 LMS
 compiler=${LMSCRIPT_BIN:-$(command -v lmscript)}
-"$compiler" "$work/assert.lms" "$work/assert.dslb"
-(cd "$work" && "$host" --lmcode "$work/assert.dslb") || { cat "$work/assert.txt"; exit 1; }
+(cd "$work" && "$compiler" "$work/assert.lms") || { cat "$work/assert.txt"; exit 1; }
 cp -R "$work/tools" "$work/unchanged"
 touch "$work/before-second-run"
 run decorate
@@ -86,14 +86,14 @@ echo 'ok - stale nav repaired'
 cp "$work/scripts/tools/template.html" "$work/template.original"
 # Literal fixture editing through lmscript/host, not a second HTML processor.
 cat > "$work/mutate.lms" <<'LMS'
-p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 let template_doc = html.load("scripts/tools/template.html");
 html.save(str_replace(template_doc.source(), "Source and releases:", "Project source and releases:"), "scripts/tools/template.html");
-end _dsl_
-savedsl(p, ARGV[0]);
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));
 LMS
-"$compiler" "$work/mutate.lms" "$work/mutate.dslb"
-(cd "$work" && "$host" --lmcode "$work/mutate.dslb") >/dev/null
+(cd "$work" && "$compiler" "$work/mutate.lms") >/dev/null
 expect_failure 'outdated' decorate --check
 run decorate
 run check
@@ -127,13 +127,13 @@ cp "$work/original.fragment" "$work/tools/zeta/skill.html"
 run decorate
 cp "$work/tools/index.html" "$work/one-tool.html"
 cat > "$work/copy-guide.lms" <<'LMS'
-p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 html.save(str_replace(html.load("original.fragment").source(), "<h2>Purpose</h2>", "<h2>Overview</h2>"), "tools/zeta/guide.html");
-end _dsl_
-savedsl(p, ARGV[0]);
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));
 LMS
-"$compiler" "$work/copy-guide.lms" "$work/copy-guide.dslb"
-(cd "$work" && "$host" --lmcode "$work/copy-guide.dslb") >/dev/null
+(cd "$work" && "$compiler" "$work/copy-guide.lms") >/dev/null
 run decorate
 expect_failure 'guide must not duplicate skill' contract
 rm "$work/tools/zeta/guide.html"
@@ -169,21 +169,21 @@ cp tests/tools/authoring/visual.fragment "$work/tools/zeta/guide-alpha.html"
 cp tests/tools/authoring/visual.fragment "$work/visual.original"
 expect_failure 'command: demo one' contract tools/zeta/guide-alpha.html
 cat > "$work/visual-setup.lms" <<'LMS'
-p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 let source = html.load("visual.original").source();
 html.save(str_replace(source, "Visual regression examples.", "Another topic with the same heading."), "tools/zeta/guide-beta.html");
 let words = "Éclair tooling preserves whole words while describing repeatable operations for teams using plain HTML documents and predictable command line programs with detailed documentation for everyone";
 html.save("<h1>Fallback</h1><p>" + words + "</p><h2>Overview</h2><p>Distinct guide.</p><pre><code>\r\n  crlf preserved\r\n</code></pre>", "tools/zeta/guide-gamma.html");
-end _dsl_
-savedsl(p, ARGV[0]);
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));
 LMS
-"$compiler" "$work/visual-setup.lms" "$work/visual-setup.dslb"
-(cd "$work" && "$host" --lmcode "$work/visual-setup.dslb") >/dev/null
+(cd "$work" && "$compiler" "$work/visual-setup.lms") >/dev/null
 expect_failure 'run npm run decorate:tools' decorate --check
 run decorate
 run check
 cat > "$work/visual-assert.lms" <<'LMS'
-p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 let page = html.load("tools/zeta/guide-alpha.html");
 let index = html.load("tools/zeta/index.html");
 if (index.select("main p").at(0).text() != "A complete first sentence.") { report.add("test", "summary", 0, "not a complete sentence"); }
@@ -205,11 +205,11 @@ if (page.source_inner("main") != expected) { report.add("test", "pre", 0, "chang
 if (fallback.source_elements("code").at(0) != "<code>  crlf preserved</code>") { report.add("test", "crlf", 0, "blank boundary lines remain"); }
 report.write_text("visual-assert.txt");
 report.fail_if_any();
-end _dsl_
-savedsl(p, ARGV[0]);
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));
 LMS
-"$compiler" "$work/visual-assert.lms" "$work/visual-assert.dslb"
-(cd "$work" && "$host" --lmcode "$work/visual-assert.dslb") || { cat "$work/visual-assert.txt"; exit 1; }
+(cd "$work" && "$compiler" "$work/visual-assert.lms") || { cat "$work/visual-assert.txt"; exit 1; }
 cp -R "$work/tools" "$work/visual-unchanged"
 run decorate
 for file in "$work"/tools/*.html "$work"/tools/*/*.html; do cmp "$file" "$work/visual-unchanged/${file#"$work/tools/"}"; done
@@ -225,7 +225,7 @@ expect_failure 'run npm run decorate:tools' decorate --check
 run decorate
 run check
 cat > "$work/icons-assert.lms" <<'LMS'
-p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 let root = html.load("tools/index.html");
 let index = html.load("tools/zeta/index.html");
 let skill = html.load("tools/zeta/skill.html");
@@ -236,11 +236,11 @@ if (index.select("main > h1 + figure > img[src='/tools/zeta/img/logo.png'][alt='
 if (root.select("main > h1 + figure > img[src='/tools/img/tools.png'][alt='lmctl tools'][width='256'][height='256']").len() != 1) { report.add("test", "logo", 0, "site logo missing"); }
 report.write_text("icons-assert.txt");
 report.fail_if_any();
-end _dsl_
-savedsl(p, ARGV[0]);
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));
 LMS
-"$compiler" "$work/icons-assert.lms" "$work/icons-assert.dslb"
-(cd "$work" && "$host" --lmcode "$work/icons-assert.dslb") || { cat "$work/icons-assert.txt"; exit 1; }
+(cd "$work" && "$compiler" "$work/icons-assert.lms") || { cat "$work/icons-assert.txt"; exit 1; }
 cat > "$work/tools/zeta/guide-images.html" <<'HTML'
 <h1>Images</h1><p>Intrinsic geometry reserves layout space.</p><h2>Overview</h2>
 <!-- <img src='/tools/zeta/img/logo.png'> -->
@@ -251,18 +251,18 @@ expect_failure 'PNG needs width and height attributes' contract
 run decorate
 run check
 cat > "$work/dimensions.lms" <<'LMS'
-p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 let page = html.load("tools/zeta/guide-images.html");
 if (page.select("img[width='256'][height='256']").len() != 1 || page.select("img[width='64'][height='64']").len() != 1) { report.add("test", "dimensions", 0, "missing pair or half-pair not filled"); }
 if (!str_contains(page.source(), "<!-- <img src='/tools/zeta/img/logo.png'> -->")) { report.add("test", "dimensions", 0, "comment changed"); }
 report.write_text("dimensions.txt");
 report.fail_if_any();
 html.save(str_replace(page.source(), "width='64'", "width='12'"), "tools/zeta/guide-images.html");
-end _dsl_
-savedsl(p, ARGV[0]);
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));
 LMS
-"$compiler" "$work/dimensions.lms" "$work/dimensions.dslb"
-(cd "$work" && "$host" --lmcode "$work/dimensions.dslb") || { cat "$work/dimensions.txt"; exit 1; }
+(cd "$work" && "$compiler" "$work/dimensions.lms") || { cat "$work/dimensions.txt"; exit 1; }
 run decorate
 expect_failure 'PNG dimensions must match intrinsic 64x64' contract
 rm "$work/tools/zeta/guide-images.html"
@@ -272,16 +272,16 @@ run decorate
 for file in "$work"/tools/*.html "$work"/tools/*/*.html; do cmp "$file" "$work/icons-unchanged/${file#"$work/tools/"}"; done
 run decorate --check
 cat > "$work/break-icons.lms" <<'LMS'
-p = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 let root = html.load("tools/index.html").source();
 html.save(str_replace(root, "/tools/zeta/img/icon.png", "/tools/zeta/img/missing.png"), "tools/index.html");
 let skill = html.load("tools/zeta/skill.html").source();
 html.save(str_replace(skill, "/tools/zeta/img/icon.png", "/tools/zeta/img/missing.png"), "tools/zeta/skill.html");
-end _dsl_
-savedsl(p, ARGV[0]);
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));
 LMS
-"$compiler" "$work/break-icons.lms" "$work/break-icons.dslb"
-(cd "$work" && "$host" --lmcode "$work/break-icons.dslb") >/dev/null
+(cd "$work" && "$compiler" "$work/break-icons.lms") >/dev/null
 expect_failure 'image not found: /tools/zeta/img/missing.png' contract
 expect_failure 'favicon not found: /tools/zeta/img/missing.png' contract
 run decorate

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Compile and run against the exact published host used by each cli=install block.
+# Run each tools script (run_lmcode inside it) with the lmhtml host first on PATH.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
@@ -8,13 +8,35 @@ command_name=${1:-check}
 if (($#)); then shift; fi
 case "$command_name" in check|contract|decorate|links|skills|host-path|homepage-videos) ;; *) echo 'usage: run.sh check [file] | decorate [--check] | links [site-root] | homepage-videos' >&2; exit 2;; esac
 compiler=${LMSCRIPT_BIN:-$(command -v lmscript || true)}
-[[ -n $compiler ]] || { echo 'Install @lmctl-ai/lmctl@0.2.420 or newer and put lmscript on PATH.' >&2; exit 2; }
+[[ -n $compiler ]] || { echo 'Install @lmctl-ai/lmctl@staging (lmscript 0.2.454 or newer) and put lmscript on PATH.' >&2; exit 2; }
 compiler="$(cd "$(dirname "$compiler")" && pwd)/$(basename "$compiler")"
 version_text=$("$compiler" --version)
 version=${version_text##* }
 IFS=. read -r major minor patch <<< "$version"
 [[ $major =~ ^[0-9]+$ && $minor =~ ^[0-9]+$ && $patch =~ ^[0-9]+$ ]] || { echo "unrecognized compiler version: $version_text" >&2; exit 2; }
-((major > 0 || minor > 2 || (minor == 2 && patch >= 420))) || { echo 'lmscript >= 0.2.420 required for cli=install.' >&2; exit 2; }
+((major > 0 || minor > 2 || (minor == 2 && patch >= 454))) || { echo 'lmscript >= 0.2.454 required for run_lmcode.' >&2; exit 2; }
+# The release named in lmhtml.lock, downloaded once into a cache and checked
+# against the sha256 pinned there (never an unverified binary).
+pinned_lmhtml() {
+  local lock="$HERE/lmhtml.lock" version os arch asset want cache url got
+  version=$(sed -n 's/^version=//p' "$lock")
+  case "$(uname -s)" in Linux) os=linux;; Darwin) os=macos;; MINGW*|MSYS*|CYGWIN*) os=windows;; *) echo "no lmhtml release for $(uname -s)" >&2; return 2;; esac
+  case "$(uname -m)" in x86_64|amd64) arch=x64;; aarch64|arm64) arch=arm64;; *) echo "no lmhtml release for $(uname -m)" >&2; return 2;; esac
+  asset="lmhtml-$os-$arch"; [[ $os != windows ]] || asset="$asset.exe"
+  want=$(sed -n "s/^sha256\.$asset=//p" "$lock")
+  [[ -n $want ]] || { echo "lmhtml.lock pins no $asset" >&2; return 2; }
+  cache="${XDG_CACHE_HOME:-$HOME/.cache}/lmctl-site/lmhtml/$version"
+  if [[ ! -x $cache/$asset ]] || [[ $(sha256 "$cache/$asset") != "$want" ]]; then
+    mkdir -p "$cache"
+    url="https://github.com/lmctl-ai/lmhtml/releases/download/$version/$asset"
+    curl -fsSL --retry 3 -o "$cache/$asset.part" "$url" || { echo "download failed: $url" >&2; return 2; }
+    got=$(sha256 "$cache/$asset.part")
+    [[ $got == "$want" ]] || { rm -f "$cache/$asset.part"; echo "$asset sha256 $got does not match lmhtml.lock" >&2; return 2; }
+    chmod +x "$cache/$asset.part"; mv "$cache/$asset.part" "$cache/$asset"
+  fi
+  printf '%s\n' "$cache/$asset"
+}
+sha256() { if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1"; else shasum -a 256 "$1"; fi | cut -c1-64; }
 work=$(mktemp -d "${TMPDIR:-/tmp}/lmctl-tools.XXXXXX")
 trap 'rm -rf "$work"' EXIT
 if [[ -n "${LMHTML:-}" ]]; then
@@ -24,8 +46,7 @@ if [[ -n "${LMHTML:-}" ]]; then
 elif command -v lmhtml >/dev/null 2>&1; then
   host=$(command -v lmhtml)
 else
-  "$compiler" "$HERE/lmhtml-path.lms" "$work/host-path.txt"
-  host=$(cat "$work/host-path.txt")
+  host=$(pinned_lmhtml)
 fi
 [[ -x $host ]] || { echo "lmhtml is not executable: $host" >&2; exit 2; }
 host="$(cd "$(dirname "$host")" && pwd)/$(basename "$host")"
@@ -77,7 +98,6 @@ script_name=$command_name
 cp "$HERE/$script_name.lms" "$work/$script_name.lms"
 cp "$HERE/roles.lms" "$work/roles.lms"
 cp "$HERE/lmctl-subcommands.lms" "$work/lmctl-subcommands.lms"
-host_args=()
 argument=${1:-}
 if [[ $command_name == check && -n $argument && -d $argument ]]; then
   # check.lms accepts one HTML fixture or an empty argument for the full tools tree.
@@ -94,9 +114,10 @@ if [[ $command_name == links ]]; then
   argument=.
 fi
 (($# <= 1)) || { echo 'too many arguments' >&2; exit 2; }
-"$compiler" "$work/$script_name.lms" "$work/program.dslb" "$work/report.txt" "$argument" "${TOOLS_SCOPE:-}" "${TOOLS_MARKUP_ONLY:-}"
+# The script runs its program with run_lmcode on the host first on PATH; a host
+# failure comes back as data and the script's require() reports the envelope.
 status=0
-"$host" ${host_args:+"${host_args[@]}"} --lmcode "$work/program.dslb" > "$work/result.json" || status=$?
+"$compiler" "$work/$script_name.lms" "$work/report.txt" "$argument" "${TOOLS_SCOPE:-}" "${TOOLS_MARKUP_ONLY:-}" > "$work/result.json" || status=$?
 [[ ! -f $work/report.txt ]] || cat "$work/report.txt"
 if ((status)); then cat "$work/result.json" >&2; fi
 case "$command_name" in
