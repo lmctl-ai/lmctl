@@ -53,13 +53,11 @@ per-recipe stdout, and redacts known credential environment values. It does not
 rewrite pages: the author reviews and records transcripts. No publication or
 remote writes are performed by this infrastructure.
 
-The runner generates schema.json beside a temporary copy of mock-model.lms,
-statically checks every example with LMSCRIPT_BIN, then compiles the fixture's
-single _lmcode_ block with parseDslSchema/compileDsl from that compiler's
-dist/dsl.js. It resolves the compiler executable's symlinks before locating the
-module. For custom launcher layouts, set LMSCRIPT_DSL_MODULE to the absolute
-path of the matching dist/dsl.js. Node must be on PATH. No separate historical
-compiler is required. The runner starts lmmock exec --lmcode mock.dslb, avoiding
-source mode and removed savedsl APIs. Schema JSON and bytecode stay temporary.
+The runner writes schema.json (from lmmock schema) beside a temporary driver.lms. The driver is
+mock-model.lms plus a short tail that calls run_lmcode with the command
+`lmmock exec --lmcode $DSLFILE -- CLIENT...`, so lmscript writes the private invocation file, lmmock serves
+the deterministic model and the recipe runs as its client. The client's stdout comes back as data and is
+compared with the page's Output sample. Every example is first checked statically with LMSCRIPT_BIN.
+No compiler module, bytecode export or saved file is involved; schema JSON and driver stay temporary.
 Offline stdin is closed and inherited AGENTIC_APPROVE is removed so the human
 checkpoint cannot accidentally approve.

@@ -9,7 +9,6 @@ LMSCRIPT_BIN="${LMSCRIPT_BIN:-$(command -v lmscript)}"
 LMHTML="${LMHTML:-$(LMSCRIPT_BIN="${LMHTML_BOOTSTRAP_BIN:-$(command -v lmscript)}" bash scripts/tools/run.sh host-path)}"
 "$LMHTML" lint --config scripts/tools/plain.conf lmscript-site
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/lmscript-site -p 'test_*.py'
-node --test scripts/lmscript-site/test_compile_mock.mjs
 python3 scripts/lmscript-site/pages.py
 # Exercise new recipes even when a legacy native-host example fails later.
 LMSCRIPT_BIN="$LMSCRIPT_BIN" python3 scripts/lmscript-site/agentic.py offline

@@ -32,14 +32,11 @@ class RunnerTests(unittest.TestCase):
         def run(command, **kwargs):
             if 'schema' in command:
                 return subprocess.CompletedProcess(command, 0, '{}', '')
-            if any(str(arg).endswith('compile-mock.mjs') for arg in command):
-                return subprocess.CompletedProcess(command, 0, '', '')
             if '--check' in command:
                 return subprocess.CompletedProcess(command, 0, '', '')
             calls.append(kwargs)
-            self.assertIn('exec', command)
-            self.assertIn('--lmcode', command)
-            self.assertNotIn('--script', command)
+            self.assertTrue(str(command[1]).endswith('driver.lms'))
+            self.assertEqual(command[2], '/fixture/lmmock')
             self.assertIn('child', command)
             self.assertEqual(kwargs['env']['DEEPSEEK_API_KEY'], 'fixture-key')
             self.assertNotIn('OLLAMA_API_KEY', kwargs['env'])

@@ -17,6 +17,13 @@ from lmmock import host_path
 
 ROOT = Path(__file__).resolve().parents[2]
 SITE = ROOT / 'lmscript-site' / 'agentic'
+DRIVER_TAIL = '''
+r = run_lmcode(program, {
+  command: concat([ARGV[0], "exec", "--lmcode", "$DSLFILE", "--"], slice(ARGV, 1))
+});
+require(r.ok, "mock client failed");
+if (r.result != null) { print(r.result.stdout); }
+'''
 
 
 def recipes():
@@ -52,24 +59,20 @@ def _main(mode, fixture_root):
         env.pop('AGENTIC_APPROVE', None)
         env.update(DEEPSEEK_API_KEY='fixture-key', LLM_MODEL='deepseek/deepseek-chat')
         mock = host_path()
-        staged_mock = Path(fixture_root) / 'mock-model.lms'
-        shutil.copyfile(SITE / 'examples/mock-model.lms', staged_mock)
         schema = subprocess.run([mock, 'schema'], text=True, capture_output=True, timeout=30)
         if schema.returncode:
             raise ValueError('Pinned lmmock schema export failed')
         (Path(fixture_root) / 'schema.json').write_text(schema.stdout)
+        # The mock fixture program plus a driver tail that runs the recipe as the mock's client:
+        # `lmmock exec --lmcode <private file> -- CLIENT...`, with the client's stdout returned as data.
+        driver = Path(fixture_root) / 'driver.lms'
+        driver.write_text((SITE / 'examples/mock-model.lms').read_text().rstrip('\n') + DRIVER_TAIL)
         for script in sorted((SITE / 'examples').glob('*.lms')):
-            target = staged_mock if script.name == 'mock-model.lms' else script
+            target = driver if script.name == 'mock-model.lms' else script
             checked = subprocess.run([compiler, '--check', str(target)], env=env,
                                      text=True, capture_output=True, timeout=60)
             if checked.returncode:
                 raise ValueError(f'{script.name}: static check failed; run LMSCRIPT_BIN --check on this source to diagnose')
-        bytecode = Path(fixture_root) / 'mock.dslb'
-        compiled = subprocess.run(['node', str(Path(__file__).with_name('compile-mock.mjs')),
-                                   compiler, str(staged_mock), str(Path(fixture_root) / 'schema.json'),
-                                   str(bytecode)], env=env, text=True, capture_output=True, timeout=60)
-        if compiled.returncode:
-            raise ValueError('Mock bytecode compilation failed; run compile-mock.mjs with the selected compiler (or set LMSCRIPT_DSL_MODULE) to diagnose')
     elif mode == 'live':
         if not env.get('OLLAMA_API_KEY'):
             raise ValueError('Live agentic runs require OLLAMA_API_KEY in the environment')
@@ -85,7 +88,7 @@ def _main(mode, fixture_root):
         with tempfile.TemporaryDirectory(prefix='lmscript-agentic-') as cwd:
             command = [compiler, str(script)]
             if mode == 'offline':
-                command = [mock, 'exec', '--lmcode', str(bytecode), '--',
+                command = [compiler, str(driver), mock,
                            sys.executable, str(Path(__file__).resolve()), 'child', *command]
             result = subprocess.run(command, cwd=cwd, env=env, stdin=subprocess.DEVNULL, text=True, capture_output=True, timeout=300)
             if result.returncode:

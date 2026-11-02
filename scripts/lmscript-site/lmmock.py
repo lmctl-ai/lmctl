@@ -9,6 +9,9 @@ import urllib.request
 
 
 def host_path():
+    override = os.environ.get('LMMOCK_BIN')
+    if override:
+        return str(Path(override).absolute())
     lock = json.loads(Path(__file__).with_name('lmmock.lock').read_text())
     os_name = {'Linux': 'linux', 'Darwin': 'macos'}.get(platform.system())
     arch = {'x86_64': 'x64', 'AMD64': 'x64', 'arm64': 'arm64', 'aarch64': 'arm64'}.get(platform.machine())

@@ -1,9 +1,8 @@
 # Deterministic stand-in for an OpenAI-compatible chat model, used by the offline site checks.
 # Each reply is chosen from the role named in the system prompt ("You are the ROLE.") and the
 # last user message, so every recipe gets the same answers on every run.
-# The checker writes `lmmock schema` to schema.json beside a copy of this file, compiles the
-# _lmcode_ block with lmscript's dist/dsl.js compileDsl, then runs each recipe under
-# `lmmock exec --lmcode mock.dslb` with LMSCRIPT_LLM_MOCK_URL set to $LMMOCK_URL.
+# The checker writes `lmmock schema` to schema.json beside a copy of this file, appends a run_lmcode driver
+# tail, and runs each recipe as the client of `lmmock exec --lmcode $DSLFILE` with LMSCRIPT_LLM_MOCK_URL set to $LMMOCK_URL.
 program = _lmcode_ schema="schema.json";
 fn field(j: Json, key: string) -> string {
   let value = "";
