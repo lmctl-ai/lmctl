@@ -39,7 +39,7 @@ prompt_system = system_for(analyst) + "\nTo use a tool, reply with ONLY one JSON
 history = [];
 message = question;
 for (step in range(0, 5)) {
-  r = llm_prompt(analyst.model, message, {system: prompt_system, history: history, temperature: 0, max_tokens: 1000, retries: 2});
+  r = llm_prompt(analyst.model, message, {system: prompt_system, history: history, max_tokens: 1000, retries: 2});
   if (r.dry_run) { exit(0); }
   if (!r.ok) {
     error(f"model call failed: {r.error.code}");

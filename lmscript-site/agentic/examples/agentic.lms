@@ -19,7 +19,7 @@ fn system_for(a) {
 }
 
 fn ask(a, prompt) {
-  r = llm_prompt(a.model, prompt, {system: system_for(a), temperature: 0, max_tokens: BUDGET, retries: 2});
+  r = llm_prompt(a.model, prompt, {system: system_for(a), max_tokens: BUDGET, retries: 2});
   if (r.dry_run) { return f"(dry run: {a.role})"; }
   if (!r.ok) {
     error(f"{a.role} failed: {r.error.code} {r.error.http_status}: {substr(r.error.message, 0, 240)}");
@@ -42,7 +42,7 @@ fn ask_json(a, prompt, schema) {
   request = prompt + "\nKeep every text field to one or two short sentences.\nReply with one JSON object matching this JSON Schema: " + json_stringify(schema);
   last_errors = [];
   for (attempt in range(0, 3)) {
-    r = llm_prompt(a.model, request, {system: system_for(a), temperature: 0, max_tokens: BUDGET, json: true, retries: 2});
+    r = llm_prompt(a.model, request, {system: system_for(a), max_tokens: BUDGET, json: true, retries: 2});
     if (r.dry_run) { return null; }
     if (!r.ok) {
       error(f"{a.role} failed: {r.error.code} {r.error.http_status}: {substr(r.error.message, 0, 240)}");
