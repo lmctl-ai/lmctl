@@ -90,7 +90,11 @@ def _main(mode, fixture_root):
             result = subprocess.run(command, cwd=cwd, env=env, stdin=subprocess.DEVNULL, text=True, capture_output=True, timeout=300)
             if result.returncode:
                 # Do not echo arbitrary CLI diagnostics containing environment values.
-                raise ValueError(f'{script.name}: {mode} execution failed (exit {result.returncode}); run locally to diagnose')
+                detail = result.stderr.strip().splitlines()[-1:] if result.stderr else []
+                for key, value in env.items():
+                    if value and key.endswith(('_API_KEY', '_TOKEN', '_SECRET')):
+                        detail = [line.replace(value, '[REDACTED]') for line in detail]
+                raise ValueError(f'{script.name}: {mode} execution failed (exit {result.returncode}){": " + detail[0][:300] if detail else ""}; run locally to diagnose')
             actual = result.stdout.rstrip('\n')
             if mode == 'offline' and actual != expected:
                 raise ValueError(f'{page}: offline stdout differs from Output sample')
