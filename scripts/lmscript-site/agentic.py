@@ -90,7 +90,7 @@ def _main(mode, fixture_root):
             result = subprocess.run(command, cwd=cwd, env=env, stdin=subprocess.DEVNULL, text=True, capture_output=True, timeout=300)
             if result.returncode:
                 # Do not echo arbitrary CLI diagnostics containing environment values.
-                detail = result.stderr.strip().splitlines()[-1:] if result.stderr else []
+                detail = [' | '.join(l.strip() for l in result.stderr.strip().splitlines() if l.strip() and not set(l.strip()) <= set('=-'))[-300:]] if result.stderr else []
                 for key, value in env.items():
                     if value and key.endswith(('_API_KEY', '_TOKEN', '_SECRET')):
                         detail = [line.replace(value, '[REDACTED]') for line in detail]

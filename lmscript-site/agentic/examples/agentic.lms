@@ -30,6 +30,14 @@ fn ask(a, prompt) {
 }
 
 # One JSON object that must match schema; the validator's errors are fed back for up to 2 retries.
+# Some models wrap JSON in a code fence or add a sentence around it: keep the outermost braces.
+fn json_body(text) {
+  first = index_of(text, "{");
+  last = last_index_of(text, "}");
+  if (first < 0 || last < first) { return text; }
+  return slice(text, first, last + 1);
+}
+
 fn ask_json(a, prompt, schema) {
   request = prompt + "\nKeep every text field to one or two short sentences.\nReply with one JSON object matching this JSON Schema: " + json_stringify(schema);
   last_errors = [];
@@ -41,7 +49,7 @@ fn ask_json(a, prompt, schema) {
       exit(1);
     }
     trace(a.role, r);
-    value = json_parse_safe(r.text, null);
+    value = json_parse_safe(json_body(r.text), null);
     checked = json_validate(value, schema);
     if (checked.ok) { return value; }
     last_errors = checked.errors;
