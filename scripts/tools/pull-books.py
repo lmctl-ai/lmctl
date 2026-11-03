@@ -21,7 +21,7 @@ spec = importlib.util.spec_from_file_location('tool_policy', Path(__file__).with
 policy = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(policy)
 SCHEMA = Path(__file__).with_name('content-book-v1.schema.json')
-BOOKS = {'getting-started', 'examples', 'showcase', 'cycles'}
+BOOKS = {'getting-started', 'examples', 'showcase', 'cycles', 'migration'}
 
 
 def host_flag_spelling(text):
@@ -202,13 +202,14 @@ def pull(tool, ref, source, store, released_version=None):
             src=Path(store)/name;media_info(src,m);dest=cache/name
             if src.resolve()!=dest.resolve(): shutil.copyfile(src,dest)
             url=f'/tools/{tool}/media/{name}';urls[mid]=url;locked.append(dict(m,url=url))
-        compiler='lmscript'; host=subprocess.check_output(['bash',str(ROOT/'scripts/tools/run.sh'),'host-path'],cwd=ROOT,text=True).strip()
+        compiler=os.environ.get('LMSCRIPT_BIN','lmscript'); host=subprocess.check_output(['bash',str(ROOT/'scripts/tools/run.sh'),'host-path'],cwd=ROOT,text=True).strip()
+        host_bin=work/'host-bin'; host_bin.mkdir(); (host_bin/'lmhtml').symlink_to(host)
         # book-page.lms runs its program with run_lmcode on this host (first on PATH).
-        page_env=dict(os.environ,PATH=str(Path(host).parent)+os.pathsep+os.environ.get('PATH',''))
+        page_env=dict(os.environ,PATH=str(host_bin)+os.pathsep+os.environ.get('PATH',''))
         template=ROOT/'scripts/tools/book-page.lms';out=work/'pages';out.mkdir()
         def render(path,kind,title='',intro='',script='',command='',expected='',image='',alt='',caption='',mp4='',webm='',poster='',duration='',prev='',nxt='',contents='',width='',height=''):
             args=[str(path),title,host_flag_spelling(intro),kind,script,host_flag_spelling(command),expected,image,alt,caption,mp4,webm,poster,str(duration),prev,nxt,contents,str(width),str(height)]
-            policy.run(compiler,str(template),*args,cwd=ROOT,stdout=subprocess.DEVNULL,env=page_env)
+            policy.run(compiler,str(template),*args,cwd=work,stdout=subprocess.DEVNULL,env=page_env)
         release_note = ('lmvideo ' + released_version + ' is released. Source examples are pinned to public commit ' + commit[:7] + '.') if released_version else 'Read downloaded programs before executing them. These sources require the matching lmvideo runtime.'
         for group in content['groups']:
             folder=out/group['id'];folder.mkdir();base=f'/tools/{tool}/{group["id"]}/';chapters=group['chapters'];index=folder/'index.html'

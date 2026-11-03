@@ -45,7 +45,7 @@ def stage(lock, bundle, cache, allow_retained=False):
 
 def main():
     lock=json.loads((ROOT/'tools/lmvideo/books-lock.json').read_text())
-    version=lock.get('released_version','')
+    version=lock.get('released_version') or '0.1.36'
     if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+',version): raise ValueError('book lock has no released runtime version')
     bundle=ROOT/'build-inputs/lmvideo'/('media-'+version+'.tar.gz')
     cache=ROOT/'build/tools-media/lmvideo'

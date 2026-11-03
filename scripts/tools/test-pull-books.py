@@ -65,6 +65,11 @@ class BookManifestTests(unittest.TestCase):
     def test_valid_minimal_content(self):
         self.assertEqual(pull_books.validate(self.valid(), "origin"), {})
 
+    def test_migration_group_is_allowed(self):
+        data = self.valid()
+        data["groups"][0]["id"] = "migration"
+        self.assertEqual(pull_books.validate(data, "origin"), {})
+
     def test_unknown_presentation_property_rejected(self):
         data = self.valid()
         data["groups"][0]["css_class"] = "hero"
