@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Migrating from lmdraw, lmmagnum, lmfilament and lmimg — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Contents">
+<link rel="stylesheet" href="/tools/style.css">
+
+<script src="/tools/lmctl-copy.js" defer></script>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+<li><a href="/tools/lmvideo/migration/">Migration</a></li>
+</ul>
+</nav>
+<main><!-- generated: tools-book --><h1>Migrating from lmdraw, lmmagnum, lmfilament and lmimg</h1><p><a href="/tools/lmvideo/migration/">Contents</a> </p><h2>Install</h2><pre><kbd>npm install -g @lmctl-ai/lmctl</kbd></pre><p>Read downloaded programs before executing them. These sources require the matching lmvideo runtime.</p><p>The legacy hosts are maintenance-only. The migration tool rewrites their _lmcode_ blocks to canonical lmvideo, or prints path:line:col diagnostics with stable LMV7xxx codes for what cannot migrate. Nothing is rewritten silently: every transformation is recorded in the JSON report, and approximate mappings are warnings, not surprises.</p><p>Run: python3 scripts/migrate-legacy.py old-script.lms -o migrated.lms --report report.json. Blocks with errors stay byte-identical and keep running on their pinned legacy host; --keep-going writes the partially migrated file. The full per-method rule table is --list-rules.</p><p>Highlights: lmdraw diagrams map one-to-one (scene.X -> canvas.X); lmimg image operations keep names, units and centisecond GIF delays; lmmagnum keeps vertical-FOV cameras, negates light directions into lmvideo's toward-the-source convention and converts float colors to sRGB hex; lmfilament's .filamat material compilation is a deliberate diagnostic, not a fake. See the docs/book/migrating-from-legacy-hosts.md chapter for the complete tables.</p><p>Worked example, lmmagnum to lmvideo: the first script runs on the pinned legacy host; the second is the migration tool's reviewed output running on lmvideo (declared-equivalent geometry, camera and colors; the GGX PBR lighting differs from the Blinn-Phong preview by design).</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/2820f2bc452c9d56140a8c569ba6fbe8d9e841bc/docs/book/migration-fixtures/magnum-scene.before.lms</kbd></pre><h2>Source</h2><pre><code># Migration fixture (lmmagnum): background, material, primitives with
+# transform chains, camera, directional light, render_png. Runs on lmmagnum.
+out = ARGV.len() > 0 ? ARGV[0] : "build/magnum-scene.dslb";
+mkdir("images");
+mkdir("build");
+p = _lmcode_ cli="lmmagnum" install="github:lmctl-ai/lmmagnum@latest";
+scene.background(0.2, 0.2, 0.24);
+let m = material().color(0.8, 0.3, 0.3);
+scene.cube(1.0, m).translate(-1.2, 0.0, 0.0);
+scene.sphere(0.7, m).translate(0.0, 0.2, 0.0);
+scene.cylinder(0.3, 1.4, m).translate(1.4, 0.0, 0.0).rotate(0.0, 0.0, 20.0);
+scene.camera(40.0, 4.0, 3.0, 6.0, 0.0, 0.0, 0.0);
+scene.directional_light(-0.4, -1.0, -0.5, 0.9);
+scene.render_png("images/magnum-scene.png", 480, 360);
+end _lmcode_
+savedsl(p, out);
+r = system(concat(dsl_cli(p), ["--lmcode", out]), 600000);
+assert(r.code == 0);</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/2820f2bc452c9d56140a8c569ba6fbe8d9e841bc/docs/book/migration-fixtures/magnum-scene.before.lms">Raw LMScript source (candidate must be published first)</a></p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/2820f2bc452c9d56140a8c569ba6fbe8d9e841bc/docs/book/migration-fixtures/magnum-scene.after.lms</kbd></pre><h2>Source</h2><pre><code># Migration fixture (lmmagnum): background, material, primitives with
+# transform chains, camera, directional light, render_png. Runs on lmmagnum.
+out = ARGV.len() > 0 ? ARGV[0] : "build/magnum-scene.dslb";
+mkdir("images");
+mkdir("build");
+p = _lmcode_ cli="lmvideo";
+let __lmvideo_scene = scene3d();
+
+__lmvideo_scene.background("#33333d");
+let m = material().base_color("#cc4d4d");
+__lmvideo_scene.add(mesh_box(1.0, 1.0, 1.0), m).position(-1.2, 0.0, 0.0);
+__lmvideo_scene.add(mesh_sphere(0.7, 24, 48), m).position(0.0, 0.2, 0.0);
+__lmvideo_scene.add(mesh_cylinder(0.3, 1.4, 48), m).position(1.4, 0.0, 0.0).rotation(0.0, 0.0, 20.0);
+__lmvideo_scene.camera(camera3d().perspective(40.0, 0.05, 10000.0).look_at(4.0, 3.0, 6.0, 0.0, 0.0, 0.0));
+__lmvideo_scene.directional_light(0.4, 1.0, 0.5, "#ffffff", 0.9);
+__lmvideo_scene.render_image(480, 360, 2).save("images/magnum-scene.png");
+end _lmcode_
+savedsl(p, out);
+r = system(concat(dsl_cli(p), ["--lmcode", out]), 600000);
+assert(r.code == 0);</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/2820f2bc452c9d56140a8c569ba6fbe8d9e841bc/docs/book/migration-fixtures/magnum-scene.after.lms">Raw LMScript source (candidate must be published first)</a></p></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>
