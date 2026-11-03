@@ -46,13 +46,14 @@ require(area(3, 4) == 12, "area calculation failed");</code></pre>
 </tbody></table>
 <p>Directory and NonInteractive are read-only and cannot be set in init.toml. Standalone lmscript and lmctl script can both read the configured init.toml properties; use --pref FILE before the script to overlay one explicit properties file. lmctl script also connects the lmctl automation functions to provider sessions and team services.</p>
 <h2 id="blocks">Data and native blocks</h2>
-<p>JSON, CSV, TOML and properties blocks parse embedded data. Command and GraphQL blocks have their own checked forms. Experimental typed native blocks compile code against a host schema. They can select a release host with an install declaration; the host provides the schema and runs saved bytecode. The schema, compiler and host must agree.</p>
+<p>JSON, CSV, TOML and properties blocks parse embedded data. Command and GraphQL blocks have their own checked forms. Experimental typed native blocks compile code against a host schema. They can select a release host with an install declaration; the host provides the schema, and run_lmcode runs the block through it. The schema, compiler and host must agree.</p>
 <pre><code>p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(480, 270, "#152438");
 scene.text(32.0, 76.0, 32.0, "Hello", "#f5c16c");
 scene.render_png("build/rendered/hello.png", 480, 270, 1);
 end _lmcode_
-savedsl(p, "build/hello.dslb");</code></pre>
+r = run_lmcode(p);
+require(r.ok, "lmdraw failed");</code></pre>
 <h3 id="install-cache">Native host install cache</h3>
 <p>A declaration using install with @latest checks for a newer release at most once every six hours per exact install string. The verified binary and the last successful release check are stored in the lmscript tool cache. A fresh check uses the cached binary when GitHub is temporarily unavailable and prints a warning. An exact release tag needs no release lookup after its binary is cached and SHA-256 verified.</p>
 <p>Set LMSCRIPT_INSTALL_CACHE_TTL_MS to a non-negative number of milliseconds to change the @latest check interval. Set it to 0 to check on every real run. Leave it unset for the six-hour default. CI jobs with fresh runners should pin an exact release tag so every run uses a deliberate release and does not depend on the mutable latest endpoint.</p>

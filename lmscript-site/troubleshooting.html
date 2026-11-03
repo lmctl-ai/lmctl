@@ -38,8 +38,12 @@
 <p>When a key is optional, check it first with record.has("email") or use record.get("email", "not provided") to supply a default.</p>
 <h2>Failed require: fix the condition or input</h2>
 <pre><code>lmscript --source-name failed-require.lms examples/failed-require.lms</code></pre>
-<p>This command prints this exact runtime error and exits with code 1:</p>
-<pre><samp>error:failed-require.lms:2:1: score must be positive</samp></pre>
+<p>This command prints this exact runtime error, followed by an error summary, and exits with code 1:</p>
+<pre><samp>error: score must be positive
+
+=== LMScript Error Summary (1 error) ===
+  1. score must be positive
+==========================================</samp></pre>
 <p>require stops the script when its first argument is false. Check where score comes from and whether zero or negative values need their own behavior.</p>
 <h2>Example scripts</h2>
 <p>The failure examples are intentionally invalid and are run by the documentation checker with a stable source name. See the exact source and expected output here:</p>

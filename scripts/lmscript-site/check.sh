@@ -91,5 +91,9 @@ PY
 }
 run_error undeclared-name.lms "error:undeclared-name.lms:1:9: Undeclared variable 'greet'" 2
 run_error missing-map-key.lms 'error:missing-map-key.lms:2:16: map record has no key "email"; test with record.has("email") or read record.get("email", default)' 1
-run_error failed-require.lms 'error:failed-require.lms:2:1: score must be positive' 1
+run_error failed-require.lms 'error: score must be positive
+
+=== LMScript Error Summary (1 error) ===
+  1. score must be positive
+==========================================' 1
 printf 'lmscript site check: 13 passing examples and 3 reproduced errors\n'
