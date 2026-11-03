@@ -39,7 +39,7 @@ cad_run = run_lmcode(cad);
 require(cad_run.ok, "lmcad failed");
 
 html = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
-let doc = html.parse("&lt;!doctype html&gt;&lt;title&gt;Example&lt;/title&gt;&lt;p&gt;Checked&lt;/p&gt;");
+let doc = html.parse("&lt;!doctype html>&lt;title>Example&lt;/title>&lt;p>Checked&lt;/p>");
 report.add("example.html", doc.source(), 0, "tutorial example");
 end _lmcode_
 html_run = run_lmcode(html);
