@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A bowl full of momentum — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Contents Next">
+<link rel="stylesheet" href="/tools/style.css">
+
+<script src="/tools/lmctl-copy.js" defer></script>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+<li><a href="/tools/lmvideo/migration/">Migration</a></li>
+<li><a href="/tools/lmvideo/physics/">Physics</a></li>
+</ul>
+</nav>
+<main><!-- generated: tools-book --><h1>A bowl full of momentum</h1><p><a href="/tools/lmvideo/physics/">Contents</a> <a href="/tools/lmvideo/physics/bar-stack.html">Next</a></p><h2>Install</h2><pre><kbd>npm install -g @lmctl-ai/lmctl</kbd></pre><p>lmvideo 0.1.38 is released. Source examples are pinned to public commit aab2677.</p><p><a href="https://github.com/lmctl-ai/lmvideo/releases/tag/v0.1.38">Download lmvideo 0.1.38</a></p><p>Follow the rebounds as a crowd of colored balls finds the floor. Motion is replayed through a smooth periodic phase to form the loop.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/aab2677a4b6264ae6afae8ad64a1d7c1dcd3a052/examples/physics/ballpit-impact.lms</kbd></pre><h2>Source</h2><pre><code># Physics motion: pastel balls arriving in a shallow pit, with depth-tested afterimages at impact.
+mkdir("build/physics");
+program=_lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.38";
+let world=physics_world(0.008333333,1337).gravity(0.0,-9.81,0.0).planar(true);
+world.box(10.0,0.4,5.0,0.0,-0.2,0.0,0.0,physics_material(0.8,0.12));
+for(i in range(0,24)){world.sphere(0.22,-2.5+float(i%8)*0.7,2.0+float(i/8)*0.65,0.0,0.35,physics_material(0.42,0.58));}
+let take=world.bake(180,1);
+fn palette(i: int) -> string { let c="#f2c86d"; if(i%4==0){c="#ef8f8f";} if(i%4==1){c="#79c7c0";} if(i%4==2){c="#9fa5dc";} return c; }
+video.size(512,384);video.fps(24);video.frames(96);video.output("build/physics/ballpit-impact.mp4");video.begin();
+let scene=scene3d().background("#10192b").ambient(0.28);let camera=camera3d().look_at(7.0,4.0,10.0,0.0,1.0,0.0).perspective(43.0,0.1,40.0);
+for(frame in range(0,video.count())){
+video.frame();let phase=sin(3.1415926535*float(frame)/96.0);let t=phase*phase;scene.clear();scene.camera(camera).shadows(256,0.0004,0.001,1);scene.directional_light(-3.0,6.0,5.0,"#fff0d6",1.3);scene.add(mesh_box(10.0,0.4,5.0),"#bd9b7a").position(0.0,-0.2,0.0);
+ for(i in range(0,24)){for(g in range(1,2)){let pf=(frame-6*g+96)%96;let gq=sin(3.1415926535*float(pf)/96.0);let gt=gq*gq;let ghost=scene.add(mesh_sphere(0.22,16,24),material(palette(i),0.0,0.8).opacity(0.14).alpha("blend",0.5)).unlit(true).cast_shadow(false).receive_shadow(false);take.pose(gt,i+1).sync(ghost);}let node=scene.add(mesh_sphere(0.22,16,24),palette(i));take.pose(t,i+1).sync(node);}
+ let rendered=scene.render_image(512,384,2);canvas.clear("#101827");canvas.image(rendered,0.0,0.0);canvas.text("time-replayed physics",16.0,28.0,font(15.0),paint().color("#fff1d6"));if(frame==24){rendered.save("build/physics/ballpit-impact.png");}
+}
+video.end();
+end _lmcode_
+r=run_lmcode(program);assert(r.ok,(r.ok ? "" : r.message));</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/aab2677a4b6264ae6afae8ad64a1d7c1dcd3a052/examples/physics/ballpit-impact.lms">Raw LMScript source</a></p><figure><video controls="" preload="metadata" poster="/tools/lmvideo/media/ballpit-impact-645fa1804a76104946087199d7f85cfe44aaa05c3a45f44ee28677019e160a07.png" width="512" height="384"><source type="video/mp4" src="/tools/lmvideo/media/ballpit-impact-70b8ca4ab60c4623ebec4025524d44861ae58f6fc4a056017ff5fcd079391c49.mp4">Your browser can download this video.</video><figcaption>Follow the rebounds as a crowd of colored balls finds the floor. (4.0 seconds)</figcaption></figure><figure><img src="/tools/lmvideo/media/ballpit-impact-645fa1804a76104946087199d7f85cfe44aaa05c3a45f44ee28677019e160a07.png" alt="A bowl full of momentum" width="512" height="384"><figcaption>Follow the rebounds as a crowd of colored balls finds the floor.</figcaption></figure></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Follow the slope — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Contents Previous Next">
+<link rel="stylesheet" href="/tools/style.css">
+
+<script src="/tools/lmctl-copy.js" defer></script>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+<li><a href="/tools/lmvideo/migration/">Migration</a></li>
+<li><a href="/tools/lmvideo/physics/">Physics</a></li>
+</ul>
+</nav>
+<main><!-- generated: tools-book --><h1>Follow the slope</h1><p><a href="/tools/lmvideo/physics/">Contents</a> <a href="/tools/lmvideo/physics/pyramid-collapse.html">Previous</a> <a href="/tools/lmvideo/physics/slide-tumble.html">Next</a></p><h2>Install</h2><pre><kbd>npm install -g @lmctl-ai/lmctl</kbd></pre><p>lmvideo 0.1.38 is released. Source examples are pinned to public commit aab2677.</p><p><a href="https://github.com/lmctl-ai/lmvideo/releases/tag/v0.1.38">Download lmvideo 0.1.38</a></p><p>A simple ramp turns height into a rolling journey. Motion is replayed through a smooth periodic phase to form the loop.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/aab2677a4b6264ae6afae8ad64a1d7c1dcd3a052/examples/physics/rolling-ramp.lms</kbd></pre><h2>Source</h2><pre><code># Rolling ramp: one sphere, one real ramp, and no scripted trajectory.
+mkdir("build/physics");
+program=_lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.38";
+let w=physics_world(0.008333333,91).gravity(0.0,-9.81,0.0).planar(true);
+w.box(12.0,0.35,4.0,0.0,-0.2,0.0,0.0,physics_material(0.8,0.1));w.box(4.0,0.35,2.0,-2.4,1.0,0.0,0.0,physics_material(0.8,0.1)).rotation(0.0,0.0,-18.0);
+w.sphere(0.4,-3.4,2.4,0.0,1.0,physics_material(0.28,0.72));let take=w.bake(180,1);
+video.size(512,384);video.fps(24);video.frames(96);video.output("build/physics/rolling-ramp.mp4");video.begin();let s=scene3d().background("#121a2a").ambient(0.25);let c=camera3d().look_at(7.0,4.0,9.0,0.0,0.7,0.0).perspective(42.0,0.1,40.0);
+for(f in range(0,video.count())){video.frame();let q=sin(3.1415926535*float(f)/96.0);let t=q*q;s.clear().camera(c).shadows(256,0.0004,0.001,1).directional_light(-2.0,5.0,4.0,"#ffefd4",1.4);s.add(mesh_box(12.0,0.35,4.0),"#c49b74").position(0.0,-0.2,0.0);let ramp=s.add(mesh_box(4.0,0.35,2.0),"#d9b27d");ramp.position(-2.4,1.0,0.0).rotation(0.0,0.0,-18.0);let n=s.add(mesh_sphere(0.4,20,28),"#e7b754");take.pose(t,2).sync(n);let im=s.render_image(512,384,2);canvas.clear("#101827");canvas.image(im,0.0,0.0);canvas.text("time-replayed physics",16.0,28.0,font(15.0),paint().color("#fff1d6"));if(f==40){im.save("build/physics/rolling-ramp.png");}}
+video.end();
+end _lmcode_
+r=run_lmcode(program);assert(r.ok,(r.ok ? "" : r.message));</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/aab2677a4b6264ae6afae8ad64a1d7c1dcd3a052/examples/physics/rolling-ramp.lms">Raw LMScript source</a></p><figure><video controls="" preload="metadata" poster="/tools/lmvideo/media/rolling-ramp-57c7d69f2df2d8e793faebf1a2ebab5d9a21c8a7849bb52cbbc5e45fe517e0f3.png" width="512" height="384"><source type="video/mp4" src="/tools/lmvideo/media/rolling-ramp-a4327abb502291e95b7c4251873c0470197c38808714886db1b21125269ebd8e.mp4">Your browser can download this video.</video><figcaption>A simple ramp turns height into a rolling journey. (4.0 seconds)</figcaption></figure><figure><img src="/tools/lmvideo/media/rolling-ramp-57c7d69f2df2d8e793faebf1a2ebab5d9a21c8a7849bb52cbbc5e45fe517e0f3.png" alt="Follow the slope" width="512" height="384"><figcaption>A simple ramp turns height into a rolling journey.</figcaption></figure></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

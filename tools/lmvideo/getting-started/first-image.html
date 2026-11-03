@@ -22,19 +22,20 @@
 <li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
 <li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
 <li><a href="/tools/lmvideo/migration/">Migration</a></li>
+<li><a href="/tools/lmvideo/physics/">Physics</a></li>
 </ul>
 </nav>
-<main><!-- generated: tools-book --><h1>Draw your first diagram</h1><p><a href="/tools/lmvideo/getting-started/">Contents</a> </p><h2>Install</h2><pre><kbd>npm install -g @lmctl-ai/lmctl</kbd></pre><p>Read downloaded programs before executing them. These sources require the matching lmvideo runtime.</p><p>Install the lmctl command runner with npm install -g @lmctl-ai/lmctl. Read the source before running downloaded programs, then use a fresh directory for outputs. This first example uses a released lmvideo host declared by its source.</p><p>Draw a hierarchy with a grid, anchored boxes and elbow connectors.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/2820f2bc452c9d56140a8c569ba6fbe8d9e841bc/examples/org-chart-grid.lms</kbd></pre><h2>Source</h2><pre><code># Org chart on an explicit grid: CEO on row 0, two VPs on row 1, six
+<main><!-- generated: tools-book --><h1>Draw your first diagram</h1><p><a href="/tools/lmvideo/getting-started/">Contents</a> </p><h2>Install</h2><pre><kbd>npm install -g @lmctl-ai/lmctl</kbd></pre><p>lmvideo 0.1.38 is released. Source examples are pinned to public commit aab2677.</p><p><a href="https://github.com/lmctl-ai/lmvideo/releases/tag/v0.1.38">Download lmvideo 0.1.38</a></p><p>Install the lmctl command runner with npm install -g @lmctl-ai/lmctl. Read the source before running downloaded programs, then use a fresh directory for outputs. This first example uses a released lmvideo host declared by its source.</p><p>Draw a hierarchy with a grid, anchored boxes and elbow connectors.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/aab2677a4b6264ae6afae8ad64a1d7c1dcd3a052/examples/org-chart-grid.lms</kbd></pre><h2>Source</h2><pre><code># Org chart on an explicit grid: CEO on row 0, two VPs on row 1, six
 # reports on row 2. Boxes sit on host grid cell anchors; parent-child
 # links are elbow tree connectors (vertical drop, horizontal bus, arrowed
 # vertical stubs); one dotted-line report runs from Platform to the VP of
 # Product. The grid and shapes come from the host diagram API; the tree
 # connector layout stays in-script. Port of lmdraw's org-chart-grid.
-standalone = ARGV.len() == 0;
-dslout = ARGV.len() > 0 ? ARGV[0] : "build/org-chart-grid.dslb";
-png = ARGV.len() > 1 ? ARGV[1] : "images/org-chart-grid.png";
+
+
+png = ARGV.len() > 0 ? ARGV[0] : "images/org-chart-grid.png";
 mkdir("images");
-program = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@latest";
+program = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.38";
 video.size(1000, 640); video.fps(30); video.frames(1); video.crf(20); video.output(${png}); video.begin(); video.frame();
 canvas.clear("#101820");
 
@@ -100,11 +101,10 @@ canvas.connector(platform, "e", vp_prod, "w", "elbow", "none", "arrow", "5 5", "
 canvas.draw_diagram();
 video.end();
 end _lmcode_
-mkdir(dirname(dslout)); savedsl(program, dslout);
-if (standalone) {
-  r = system(concat(dsl_cli(program), ["--lmcode", dslout]), 600000); if (r.code != 0) { println(r.stderr + r.stdout); } assert(r.code == 0);
-}
-println(f"wrote {dslout} ({png})");</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/2820f2bc452c9d56140a8c569ba6fbe8d9e841bc/examples/org-chart-grid.lms">Raw LMScript source (candidate must be published first)</a></p><figure><img src="/tools/lmvideo/media/org-chart-grid-e3f87eca2ba1acb188f1e53a6b7a58111051c4099c2bba549e33ce8aa2a76a7c.png" alt="Labeled boxes connected by elbow lines in an organization chart." width="1000" height="640"><figcaption>Anchored connectors follow the hierarchy of boxes.</figcaption></figure></main>
+
+r = run_lmcode(program); if (!r.ok) { println((r.ok ? "" : r.message)); } assert(r.ok);
+
+println(f"wrote lmvideo result ({png})");</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/aab2677a4b6264ae6afae8ad64a1d7c1dcd3a052/examples/org-chart-grid.lms">Raw LMScript source</a></p><figure><img src="/tools/lmvideo/media/org-chart-grid-e3f87eca2ba1acb188f1e53a6b7a58111051c4099c2bba549e33ce8aa2a76a7c.png" alt="Labeled boxes connected by elbow lines in an organization chart." width="1000" height="640"><figcaption>Anchored connectors follow the hierarchy of boxes.</figcaption></figure></main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
 </footer>
