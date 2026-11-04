@@ -14,15 +14,16 @@
 <main>
 <h1>Strings and data</h1>
 <p>Read JSON data, update a list, build a map, and format the result.</p>
-<p>The JSON block turns the text into a map with a team string and a members list. push adds a name and returns the updated list; len reports its item count. Dot notation reads a known map key, while json_stringify turns the new map back into JSON text.</p>
+<p>The JSON block holds the text as data; value() reads it as a map with a team string and a members list. push adds a name and returns the updated list; len reports its item count. Dot notation reads a known map key, while json_stringify turns the new map back into JSON text.</p>
 <h2>Script: strings-data.lms</h2>
 <pre><code>raw = _json_;
 {"team":"draw","members":["Ada","Lin"]}
 end _json_
-names = raw.members;
+data = raw.value();
+names = data.members;
 names = push(names, "Mina");
-record = {team: raw.team, count: names.len()};
-println(f"{upper(raw.team)} has {record.count} members: {join(names, ", ")}");
+record = {team: data.team, count: names.len()};
+println(f"{upper(data.team)} has {record.count} members: {join(names, ", ")}");
 println(json_stringify(record));
 </code></pre>
 <h2>Run it</h2>

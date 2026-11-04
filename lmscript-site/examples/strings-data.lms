@@ -1,8 +1,9 @@
 raw = _json_;
 {"team":"draw","members":["Ada","Lin"]}
 end _json_
-names = raw.members;
+data = raw.value();
+names = data.members;
 names = push(names, "Mina");
-record = {team: raw.team, count: names.len()};
-println(f"{upper(raw.team)} has {record.count} members: {join(names, ", ")}");
+record = {team: data.team, count: names.len()};
+println(f"{upper(data.team)} has {record.count} members: {join(names, ", ")}");
 println(json_stringify(record));

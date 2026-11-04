@@ -26,7 +26,7 @@ analyst = with_tools(agent("file analyst", "answer questions about files in the 
 r = turn(analyst, question, {max_steps: 6, max_tokens: BUDGET, retries: 2});
 if (r.dry_run) { exit(0); }
 for (c in r.tool_calls) { warning(f"[tool] {c.name} ok={c.ok}"); }
-require(len(r.tool_calls) &gt; 0, "the model answered without reading the file");
+require(len(r.tool_calls) > 0, "the model answered without reading the file");
 println(trim(r.reply));
 </code></pre>
 <p>It imports the shared helpers from <a href="examples/agentic.lms">examples/agentic.lms</a>, shown on the <a href="index.html">recipe index</a>.</p>
