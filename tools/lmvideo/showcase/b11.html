@@ -22,10 +22,11 @@
 <li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
 <li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
 <li><a href="/tools/lmvideo/migration/">Migration</a></li>
+<li><a href="/tools/lmvideo/physics/">Physics</a></li>
 </ul>
 </nav>
-<main><!-- generated: tools-book --><h1>Dynamic Matrix Instancing</h1><p><a href="/tools/lmvideo/showcase/">Contents</a> <a href="/tools/lmvideo/showcase/b10.html">Previous</a> <a href="/tools/lmvideo/showcase/b12.html">Next</a></p><h2>Install</h2><pre><kbd>npm install -g @lmctl-ai/lmctl</kbd></pre><p>Read downloaded programs before executing them. These sources require the matching lmvideo runtime.</p><p>900x560 still; procedural 32x32 wave-modulated shared beveled cube mesh (1,024 instances), per-instance colour and phase.</p><p>Verified acceptance capture, reproducible with the released lmvideo 0.1.36 runtime.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/2820f2bc452c9d56140a8c569ba6fbe8d9e841bc/examples/showcase/bench-11-dynamic-matrix-instancing.lms</kbd></pre><h2>Source</h2><pre><code># B11 / G.1: one shared beveled cube mesh, 32x32 = 1,024 wave instances.
-mkdir("build"); program=_lmcode_ cli="lmvideo";
+<main><!-- generated: tools-book --><h1>Dynamic Matrix Instancing</h1><p><a href="/tools/lmvideo/showcase/">Contents</a> <a href="/tools/lmvideo/showcase/b10.html">Previous</a> <a href="/tools/lmvideo/showcase/b12.html">Next</a></p><h2>Install</h2><pre><kbd>npm install -g @lmctl-ai/lmctl</kbd></pre><p>lmvideo 0.1.38 is released. Source examples are pinned to public commit aab2677.</p><p><a href="https://github.com/lmctl-ai/lmvideo/releases/tag/v0.1.38">Download lmvideo 0.1.38</a></p><p>900x560 still; procedural 32x32 wave-modulated shared beveled cube mesh (1,024 instances), per-instance colour and phase.</p><p>Verified acceptance capture, reproducible with the lmvideo 0.1.38 prerelease runtime.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/aab2677a4b6264ae6afae8ad64a1d7c1dcd3a052/examples/showcase/bench-11-dynamic-matrix-instancing.lms</kbd></pre><h2>Source</h2><pre><code># B11 / G.1: one shared beveled cube mesh, 32x32 = 1,024 wave instances.
+mkdir("build"); program=_lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.38";
 let scene=scene3d().threads(4).background("#edf3f8").ambient(0.24).threads(4);
 scene.camera(camera3d().look_at(31.0,28.0,40.0,0.0,0.0,0.0).perspective(43.0,0.1,120.0));
 let cubes=scene.add_instances(mesh_beveled_box(0.62,0.62,0.62,0.06),"#359b9a");
@@ -34,7 +35,7 @@ image_assert_true(cubes.size()==1024);
 scene.directional_light(1.0,3.0,4.0,"#ffffff",0.95);
 let image=scene.render_image(900,560,2); image_assert_true(image.stddev(0)>0.05); image.save("build/bench-11-dynamic-matrix-instancing.png");
 end _lmcode_
-savedsl(program,"build/bench-11-dynamic-matrix-instancing.dslb"); r=system(concat(dsl_cli(program),["--lmcode","build/bench-11-dynamic-matrix-instancing.dslb"]),600000); assert(r.code==0,r.stdout+r.stderr);println(r.stdout);</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/2820f2bc452c9d56140a8c569ba6fbe8d9e841bc/examples/showcase/bench-11-dynamic-matrix-instancing.lms">Raw LMScript source (candidate must be published first)</a></p><figure><img src="/tools/lmvideo/media/bench-11-dynamic-matrix-instancing-aa6e5c89382e592584241c79cc67f8ad91f3726030f9663b2c2e2fd9d974d54a.png" alt="A wave-shaped grid of colored beveled cubes." width="900" height="560"><figcaption>Shared geometry appears in many positions with different colors and phases.</figcaption></figure></main>
+ r=run_lmcode(program); assert(r.ok,(r.ok ? "" : r.message));println(json_stringify(r.result));</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/aab2677a4b6264ae6afae8ad64a1d7c1dcd3a052/examples/showcase/bench-11-dynamic-matrix-instancing.lms">Raw LMScript source</a></p><figure><img src="/tools/lmvideo/media/bench-11-dynamic-matrix-instancing-aa6e5c89382e592584241c79cc67f8ad91f3726030f9663b2c2e2fd9d974d54a.png" alt="A wave-shaped grid of colored beveled cubes." width="900" height="560"><figcaption>Shared geometry appears in many positions with different colors and phases.</figcaption></figure></main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
 </footer>

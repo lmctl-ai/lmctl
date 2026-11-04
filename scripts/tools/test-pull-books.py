@@ -70,6 +70,26 @@ class BookManifestTests(unittest.TestCase):
         data["groups"][0]["id"] = "migration"
         self.assertEqual(pull_books.validate(data, "origin"), {})
 
+    def test_physics_group_and_action_poster_pairing(self):
+        data = self.valid()
+        data["runtime_release"] = "v0.1.38"
+        data["release_channel"] = "latest"
+        data["groups"][0]["id"] = "physics"
+        data["media"] = [
+            {"id": "media-" + "b" * 64, "file": "clip-" + "b" * 64 + ".mp4", "sha256": "b" * 64, "bytes": 100, "kind": "mp4", "format": "mp4", "width": 512, "height": 384, "frames": 96, "fps": 24.0, "duration": 4.0, "technical_evidence": {"motion_mae": 0.03, "seam_mae": 0.001, "seam_limit": 0.003}},
+            {"id": "media-" + "a" * 64, "file": "clip-" + "a" * 64 + ".png", "sha256": "a" * 64, "bytes": 50, "kind": "png", "format": "png", "width": 512, "height": 384, "frames": 1, "fps": 25.0, "duration": 0.0, "technical_evidence": {"poster_frame_index": 24, "poster_video_sha256": "b" * 64, "poster_match_mae": 0.004}},
+        ]
+        data["groups"][0]["chapters"][0]["blocks"] = [
+            {"kind": "video", "media": "media-" + "b" * 64, "alt": "Intro", "caption": "Motion."},
+            {"kind": "image", "media": "media-" + "a" * 64, "alt": "Intro", "caption": "Motion."},
+        ]
+        mids = pull_books.validate(copy.deepcopy(data), "origin")
+        self.assertTrue(mids["media-" + "b" * 64]["no_audio"])
+        self.assertEqual(mids["media-" + "b" * 64]["duration_seconds"], 4.0)
+        bad = copy.deepcopy(data)
+        bad["media"][1]["width"] = 320
+        self.check_bad(bad, r"physics/intro.blocks\[0\]: poster 320x384 must match the video size 512x384")
+
     def test_unknown_presentation_property_rejected(self):
         data = self.valid()
         data["groups"][0]["css_class"] = "hero"

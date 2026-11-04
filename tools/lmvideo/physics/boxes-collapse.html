@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The stack lets go — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Contents Previous Next">
+<link rel="stylesheet" href="/tools/style.css">
+
+<script src="/tools/lmctl-copy.js" defer></script>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+<li><a href="/tools/lmvideo/migration/">Migration</a></li>
+<li><a href="/tools/lmvideo/physics/">Physics</a></li>
+</ul>
+</nav>
+<main><!-- generated: tools-book --><h1>The stack lets go</h1><p><a href="/tools/lmvideo/physics/">Contents</a> <a href="/tools/lmvideo/physics/bar-stack.html">Previous</a> <a href="/tools/lmvideo/physics/bullet-container.html">Next</a></p><h2>Install</h2><pre><kbd>npm install -g @lmctl-ai/lmctl</kbd></pre><p>lmvideo 0.1.38 is released. Source examples are pinned to public commit aab2677.</p><p><a href="https://github.com/lmctl-ai/lmvideo/releases/tag/v0.1.38">Download lmvideo 0.1.38</a></p><p>A small impulse turns a neat stack into a tumble of pastel blocks. Motion is replayed through a smooth periodic phase to form the loop.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/aab2677a4b6264ae6afae8ad64a1d7c1dcd3a052/examples/physics/boxes-collapse.lms</kbd></pre><h2>Source</h2><pre><code># Physics motion: a pastel stack caught during its collapse.
+mkdir("build/physics");
+program=_lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.38";
+let world=physics_world(0.008333333,4242).gravity(0.0,-9.81,0.0).planar(true);
+let mat=physics_material(0.55,0.22);
+world.box(12.0,0.5,7.0,0.0,-0.25,0.0,0.0,physics_material(0.8,0.12));
+for(i in range(0,12)){ world.box(0.85,0.85,0.85,-2.5+float(i%4)*1.0,0.5+float(i/4)*0.9,0.0,1.0,mat); }
+world.body(1).impulse(2.6,0.0,0.0);
+let take=world.bake(180,1);
+fn palette(i: int) -> string { let c="#f2c86d"; if(i%4==0){c="#ef8f8f";} if(i%4==1){c="#79c7c0";} if(i%4==2){c="#9fa5dc";} return c; }
+video.size(512,384);video.fps(24);video.frames(96);video.output("build/physics/boxes-collapse.mp4");video.begin();
+let scene=scene3d().background("#151a2a").ambient(0.22);let camera=camera3d().look_at(7.0,5.0,10.0,0.0,1.3,0.0).perspective(42.0,0.1,40.0);
+for(frame in range(0,video.count())){
+video.frame();let phase=sin(3.1415926535*float(frame)/96.0);let t=phase*phase;scene.clear();scene.camera(camera).shadows(256,0.0004,0.001,1);scene.directional_light(-2.0,5.0,4.0,"#ffe8cf",1.4);scene.add(mesh_box(12.0,0.5,7.0),"#d8b58f").position(0.0,-0.25,0.0);
+ for(i in range(0,12)){let node=scene.add(mesh_box(0.85,0.85,0.85),palette(i));take.pose(t,i+1).sync(node);}
+ let rendered=scene.render_image(512,384,2);canvas.clear("#101827");canvas.image(rendered,0.0,0.0);canvas.text("time-replayed physics",16.0,28.0,font(15.0),paint().color("#fff1d6"));if(frame==40){rendered.save("build/physics/boxes-collapse.png");}
+}
+video.end();
+end _lmcode_
+r=run_lmcode(program);assert(r.ok,(r.ok ? "" : r.message));</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/aab2677a4b6264ae6afae8ad64a1d7c1dcd3a052/examples/physics/boxes-collapse.lms">Raw LMScript source</a></p><figure><video controls="" preload="metadata" poster="/tools/lmvideo/media/boxes-collapse-6c3bf4c6820340970038aa6b044bf44decd18b81261af008a17fef7456de8925.png" width="512" height="384"><source type="video/mp4" src="/tools/lmvideo/media/boxes-collapse-8f53fa64de9a3f8439d9f148abed69bf3ec06d14b7a511e6ac8a8ea659ca627d.mp4">Your browser can download this video.</video><figcaption>A small impulse turns a neat stack into a tumble of pastel blocks. (4.0 seconds)</figcaption></figure><figure><img src="/tools/lmvideo/media/boxes-collapse-6c3bf4c6820340970038aa6b044bf44decd18b81261af008a17fef7456de8925.png" alt="The stack lets go" width="512" height="384"><figcaption>A small impulse turns a neat stack into a tumble of pastel blocks.</figcaption></figure></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

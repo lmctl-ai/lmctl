@@ -340,7 +340,7 @@ while (str_find(tool_dirs, "|") >= 0) {
     }
   }
   # Rich books are discovered only at the fixed, lock-authorized book roots.
-  let books = "getting-started|examples|showcase|cycles|migration|";
+  let books = "getting-started|examples|showcase|cycles|migration|physics|";
   while (str_find(books, "|") >= 0) {
     let end = str_find(books, "|");
     let book = str_substr(books, 0, end);
@@ -348,7 +348,7 @@ while (str_find(tool_dirs, "|") >= 0) {
     if (html.link_exists(root_probe, "/" + directory + "/" + book + "/index.html")) {
       let label = book;
       if (book == "getting-started") { label = "Getting started"; }
-      else { if (book == "examples") { label = "Examples"; } else { if (book == "showcase") { label = "Showcase"; } else { if (book == "cycles") { label = "Cycles"; } else { label = "Migration"; } } } }
+      else { if (book == "examples") { label = "Examples"; } else { if (book == "showcase") { label = "Showcase"; } else { if (book == "cycles") { label = "Cycles"; } else { if (book == "migration") { label = "Migration"; } else { label = "Physics"; } } } } }
       links = links + "<li><a href=\"/tools/" + escape(tool) + "/" + book + "/\">" + escape(label) + "</a></li>\n";
     }
   }

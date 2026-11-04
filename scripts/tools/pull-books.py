@@ -21,7 +21,7 @@ spec = importlib.util.spec_from_file_location('tool_policy', Path(__file__).with
 policy = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(policy)
 SCHEMA = Path(__file__).with_name('content-book-v1.schema.json')
-BOOKS = {'getting-started', 'examples', 'showcase', 'cycles', 'migration'}
+BOOKS = {'getting-started', 'examples', 'showcase', 'cycles', 'migration', 'physics'}
 
 
 def host_flag_spelling(text):
@@ -79,7 +79,60 @@ def blob(repo, commit, path):
     return subprocess.check_output(['git', '-C', str(repo), 'show', f'{commit}:{path}'])
 
 
+def normalize_physics_book(content, origin):
+    if not isinstance(content, dict) or not isinstance(content.get('media'), list) or not isinstance(content.get('groups'), list):
+        return
+    for k in ('runtime_release', 'release_channel'):
+        if k in content:
+            if not isinstance(content.get(k), str) or not content[k]:
+                raise ValueError(origin + f': invalid {k}')
+            content.pop(k, None)
+    posters = {}
+    for m in content['media']:
+        if not isinstance(m, dict) or 'technical_evidence' not in m:
+            continue
+        ev = m.get('technical_evidence')
+        if not isinstance(ev, dict) or not set(ev) <= {'motion_mae', 'seam_mae', 'seam_limit', 'poster_frame_index', 'poster_video_sha256', 'poster_match_mae'}:
+            raise ValueError(origin + ': invalid media technical_evidence')
+        if m.get('kind') == 'png' and 'poster_video_sha256' in ev:
+            if not isinstance(ev.get('poster_frame_index'), int) or ev['poster_frame_index'] <= 0 or not (0 <= ev.get('poster_match_mae', 1) <= 0.015):
+                raise ValueError(origin + ': invalid physics poster provenance')
+            posters[ev['poster_video_sha256']] = m['id']
+    for m in content['media']:
+        if not isinstance(m, dict) or 'technical_evidence' not in m:
+            continue
+        if m.get('format') != m.get('kind'):
+            raise ValueError(origin + ': media format/kind mismatch')
+        if m.get('kind') != 'png' and 'duration_seconds' not in m:
+            if m.get('sha256') not in posters:
+                raise ValueError(origin + ': physics video media lacks verified poster provenance')
+            m['duration_seconds'] = m.get('duration')
+            m['no_audio'] = True
+        for k in ('format', 'frames', 'fps', 'duration', 'technical_evidence'):
+            m.pop(k, None)
+    by_id = {m['id']: m for m in content['media'] if isinstance(m, dict) and 'id' in m}
+    for g in content['groups']:
+        if not isinstance(g, dict) or g.get('id') != 'physics' or not isinstance(g.get('chapters'), list):
+            continue
+        for c in g['chapters']:
+            if not isinstance(c, dict):
+                continue
+            for k in ('commands', 'source_sha256', 'status', 'rights', 'measured_wall_seconds'):
+                c.pop(k, None)
+            for b in c.get('blocks', []):
+                if isinstance(b, dict) and b.get('kind') == 'video' and isinstance(b.get('media'), str) and set(b) == {'kind', 'media', 'alt', 'caption'}:
+                    vm = by_id.get(b['media'], {})
+                    poster_id = posters.get(vm.get('sha256'))
+                    if poster_id:
+                        b['poster'] = poster_id
+                        b['media'] = [b['media']]
+                        b['duration_seconds'] = vm.get('duration_seconds')
+                        b['no_audio'] = vm.get('no_audio')
+                        del b['alt']
+
+
 def validate(content, origin):
+    normalize_physics_book(content, origin)
     schema = json.loads(SCHEMA.read_text())
     errors = policy.schema_errors(content, schema, schema)
     if errors: raise ValueError(origin + ': ' + '; '.join(errors))

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build a chart one block at a time — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Contents Previous Next">
+<link rel="stylesheet" href="/tools/style.css">
+
+<script src="/tools/lmctl-copy.js" defer></script>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+<li><a href="/tools/lmvideo/migration/">Migration</a></li>
+<li><a href="/tools/lmvideo/physics/">Physics</a></li>
+</ul>
+</nav>
+<main><!-- generated: tools-book --><h1>Build a chart one block at a time</h1><p><a href="/tools/lmvideo/physics/">Contents</a> <a href="/tools/lmvideo/physics/ballpit-impact.html">Previous</a> <a href="/tools/lmvideo/physics/boxes-collapse.html">Next</a></p><h2>Install</h2><pre><kbd>npm install -g @lmctl-ai/lmctl</kbd></pre><p>lmvideo 0.1.38 is released. Source examples are pinned to public commit aab2677.</p><p><a href="https://github.com/lmctl-ai/lmvideo/releases/tag/v0.1.38">Download lmvideo 0.1.38</a></p><p>The bars have weight: each colored unit can fall and collide. Motion is replayed through a smooth periodic phase to form the loop.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/aab2677a4b6264ae6afae8ad64a1d7c1dcd3a052/examples/physics/bar-stack.lms</kbd></pre><h2>Source</h2><pre><code>mkdir("build/physics");
+program=_lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.38";
+let p=physics_presentation(512,384,20261103).title("BUILD SHIP",80.0,60.0,"#ef91b1").bar("BUILD",8.0,10.0,110.0,280.0,"#79c7c0").bar("SHIP",5.0,10.0,300.0,280.0,"#9fa5dc");let cache=timeline_create(512,384);
+for(i in range(0,180)){cache.add(p.render(),1);p.step(1);}
+video.size(512,384);video.fps(24);video.frames(96);video.output("build/physics/bar-stack.mp4");video.begin();
+for(f in range(0,video.count())){video.frame();let q=sin(3.1415926535*float(f)/96.0);let im=cache.frame(int(q*q*179.0+0.5));canvas.clear("#101827");canvas.image(im,0.0,0.0);canvas.text("time-replayed physics",16.0,28.0,font(15.0),paint().color("#fff1d6"));if(f==32){video.save_frame("build/physics/bar-stack.png");}}
+video.end();
+end _lmcode_
+r=run_lmcode(program);assert(r.ok,(r.ok ? "" : r.message));</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/aab2677a4b6264ae6afae8ad64a1d7c1dcd3a052/examples/physics/bar-stack.lms">Raw LMScript source</a></p><figure><video controls="" preload="metadata" poster="/tools/lmvideo/media/bar-stack-c2048d4e9173ea9d6af789cde553cc8d24c164b24c1c6ee53ab8cf26246f696c.png" width="512" height="384"><source type="video/mp4" src="/tools/lmvideo/media/bar-stack-ca5429526cd27e4294a188b40f5170f480d050b4ad99b9dfdc743be230167723.mp4">Your browser can download this video.</video><figcaption>The bars have weight: each colored unit can fall and collide. (4.0 seconds)</figcaption></figure><figure><img src="/tools/lmvideo/media/bar-stack-c2048d4e9173ea9d6af789cde553cc8d24c164b24c1c6ee53ab8cf26246f696c.png" alt="Build a chart one block at a time" width="512" height="384"><figcaption>The bars have weight: each colored unit can fall and collide.</figcaption></figure></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

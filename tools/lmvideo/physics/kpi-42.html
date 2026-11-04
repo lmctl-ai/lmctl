@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>42 ideas become matter — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Contents Previous Next">
+<link rel="stylesheet" href="/tools/style.css">
+
+<script src="/tools/lmctl-copy.js" defer></script>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+<li><a href="/tools/lmvideo/migration/">Migration</a></li>
+<li><a href="/tools/lmvideo/physics/">Physics</a></li>
+</ul>
+</nav>
+<main><!-- generated: tools-book --><h1>42 ideas become matter</h1><p><a href="/tools/lmvideo/physics/">Contents</a> <a href="/tools/lmvideo/physics/kinetic-sculpture.html">Previous</a> <a href="/tools/lmvideo/physics/letter-drop.html">Next</a></p><h2>Install</h2><pre><kbd>npm install -g @lmctl-ai/lmctl</kbd></pre><p>lmvideo 0.1.38 is released. Source examples are pinned to public commit aab2677.</p><p><a href="https://github.com/lmctl-ai/lmvideo/releases/tag/v0.1.38">Download lmvideo 0.1.38</a></p><p>Forty-two separate grains turn a number into something tangible. Motion is replayed through a smooth periodic phase to form the loop.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/aab2677a4b6264ae6afae8ad64a1d7c1dcd3a052/examples/physics/kpi-42.lms</kbd></pre><h2>Source</h2><pre><code>mkdir("build/physics");
+program=_lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.38";
+let p=physics_presentation(512,384,20261105).title("KPI FLIGHT",70.0,55.0,"#ef91b1").kpi("42",42,360.0,280.0,"#a2d9a8");let cache=timeline_create(512,384);
+for(i in range(0,180)){cache.add(p.render(),1);p.step(1);}
+video.size(512,384);video.fps(24);video.frames(96);video.output("build/physics/kpi-42.mp4");video.begin();
+for(f in range(0,video.count())){video.frame();let q=sin(3.1415926535*float(f)/96.0);let im=cache.frame(int(q*q*179.0+0.5));canvas.clear("#101827");canvas.image(im,0.0,0.0);canvas.text("time-replayed physics",16.0,28.0,font(15.0),paint().color("#fff1d6"));if(f==32){video.save_frame("build/physics/kpi-42.png");}}
+video.end();
+end _lmcode_
+r=run_lmcode(program);assert(r.ok,(r.ok ? "" : r.message));</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/aab2677a4b6264ae6afae8ad64a1d7c1dcd3a052/examples/physics/kpi-42.lms">Raw LMScript source</a></p><figure><video controls="" preload="metadata" poster="/tools/lmvideo/media/kpi-42-127391ecafbb1d6322029b4e740c2e39d0d88181d7955811aabf4448949e2fc3.png" width="512" height="384"><source type="video/mp4" src="/tools/lmvideo/media/kpi-42-f39d1260212966e0665952c09b8e66dc1cf61a8ff3465561919b990f3fdfff1e.mp4">Your browser can download this video.</video><figcaption>Forty-two separate grains turn a number into something tangible. (4.0 seconds)</figcaption></figure><figure><img src="/tools/lmvideo/media/kpi-42-127391ecafbb1d6322029b4e740c2e39d0d88181d7955811aabf4448949e2fc3.png" alt="42 ideas become matter" width="512" height="384"><figcaption>Forty-two separate grains turn a number into something tangible.</figcaption></figure></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

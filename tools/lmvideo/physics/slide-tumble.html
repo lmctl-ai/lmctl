@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Turn the slide over — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Contents Previous Next">
+<link rel="stylesheet" href="/tools/style.css">
+
+<script src="/tools/lmctl-copy.js" defer></script>
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+<li><a href="/tools/lmvideo/migration/">Migration</a></li>
+<li><a href="/tools/lmvideo/physics/">Physics</a></li>
+</ul>
+</nav>
+<main><!-- generated: tools-book --><h1>Turn the slide over</h1><p><a href="/tools/lmvideo/physics/">Contents</a> <a href="/tools/lmvideo/physics/rolling-ramp.html">Previous</a> <a href="/tools/lmvideo/physics/title-drop.html">Next</a></p><h2>Install</h2><pre><kbd>npm install -g @lmctl-ai/lmctl</kbd></pre><p>lmvideo 0.1.38 is released. Source examples are pinned to public commit aab2677.</p><p><a href="https://github.com/lmctl-ai/lmvideo/releases/tag/v0.1.38">Download lmvideo 0.1.38</a></p><p>Words and blocks become the moving parts of a slide transition. Motion is replayed through a smooth periodic phase to form the loop.</p><h2>Run this example</h2><pre><kbd>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/aab2677a4b6264ae6afae8ad64a1d7c1dcd3a052/examples/physics/slide-tumble.lms</kbd></pre><h2>Source</h2><pre><code>mkdir("build/physics");
+program=_lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.38";
+let p=physics_presentation(512,384,20261106).title("OLD SLIDE",70.0,60.0,"#ef91b1").bar("PAST",6.0,10.0,110.0,270.0,"#9fa5dc");let cache=timeline_create(512,384);
+for(i in range(0,180)){if(i==140){p.tumble();}cache.add(p.render(),1);p.step(1);}
+video.size(512,384);video.fps(24);video.frames(96);video.output("build/physics/slide-tumble.mp4");video.begin();
+for(f in range(0,video.count())){video.frame();let q=sin(3.1415926535*float(f)/96.0);let im=cache.frame(int(q*q*179.0+0.5));canvas.clear("#101827");canvas.image(im,0.0,0.0);canvas.text("time-replayed physics",16.0,28.0,font(15.0),paint().color("#fff1d6"));if(f==32){video.save_frame("build/physics/slide-tumble.png");}}
+video.end();
+end _lmcode_
+r=run_lmcode(program);assert(r.ok,(r.ok ? "" : r.message));</code></pre><p><a href="https://raw.githubusercontent.com/lmctl-ai/lmvideo/aab2677a4b6264ae6afae8ad64a1d7c1dcd3a052/examples/physics/slide-tumble.lms">Raw LMScript source</a></p><figure><video controls="" preload="metadata" poster="/tools/lmvideo/media/slide-tumble-28d96e18b84080e3cd7e67983e1d2b6e47705568bf91fd516c8d1a4fc8849a5c.png" width="512" height="384"><source type="video/mp4" src="/tools/lmvideo/media/slide-tumble-8d2c4bb0d3750c1c00f51760b177652532f444ad2005ff842778d950a4b79f08.mp4">Your browser can download this video.</video><figcaption>Words and blocks become the moving parts of a slide transition. (4.0 seconds)</figcaption></figure><figure><img src="/tools/lmvideo/media/slide-tumble-28d96e18b84080e3cd7e67983e1d2b6e47705568bf91fd516c8d1a4fc8849a5c.png" alt="Turn the slide over" width="512" height="384"><figcaption>Words and blocks become the moving parts of a slide transition.</figcaption></figure></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

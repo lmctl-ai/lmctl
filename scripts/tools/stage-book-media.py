@@ -6,8 +6,24 @@ from pathlib import Path
 import re
 import tarfile
 import tempfile
+import time
+import urllib.request
 
 ROOT=Path(__file__).resolve().parents[2]
+
+
+def fetch_pinned_media(commit, name, size, sha256):
+    url=f'https://raw.githubusercontent.com/lmctl-ai/lmvideo/{commit}/docs/images/physics/gallery/{name}'
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(url, timeout=30) as response:
+                data=response.read(size+1)
+            if len(data)!=size or hashlib.sha256(data).hexdigest()!=sha256:
+                raise ValueError('pinned media hash/size mismatch: '+name)
+            return data
+        except OSError:
+            if attempt==2: raise
+            time.sleep(attempt+1)
 
 
 def stage(lock, bundle, cache, allow_retained=False):
@@ -39,6 +55,11 @@ def stage(lock, bundle, cache, allow_retained=False):
                 # The immutable bootstrap may retain old objects. Validate them,
                 # but only stage objects authorized by the current website lock.
                 if name in expected: (pending/name).write_bytes(data)
+        if allow_retained and not set(expected)<=seen and re.fullmatch(r'[0-9a-f]{40}',str(lock.get('commit',''))) and lock.get('repository')=='https://github.com/lmctl-ai/lmvideo':
+            for name in sorted(set(expected)-seen):
+                m=expected[name]
+                data=(cache/name).read_bytes() if valid(cache/name,m) else fetch_pinned_media(lock['commit'],name,m['bytes'],m['sha256'])
+                (pending/name).write_bytes(data);seen.add(name)
         if not set(expected)<=seen: raise ValueError('media bundle is incomplete')
         for name in sorted(expected): (pending/name).replace(cache/name)
 
@@ -48,6 +69,7 @@ def main():
     version=lock.get('released_version') or '0.1.36'
     if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+',version): raise ValueError('book lock has no released runtime version')
     bundle=ROOT/'build-inputs/lmvideo'/('media-'+version+'.tar.gz')
+    if not bundle.is_file(): bundle=ROOT/'build-inputs/lmvideo/media-0.1.36.tar.gz'
     cache=ROOT/'build/tools-media/lmvideo'
     stage(lock,bundle,cache,allow_retained=True)
     print(f'Staged and verified {len(lock["media"])} locked book media files')
