@@ -25,8 +25,8 @@
 <tr><td>Flow router</td><td>A validated label chooses the next agent</td><td><a href="triage-router.html">triage-router</a></td></tr>
 <tr><td>Flow state and persistence</td><td>A state map written to state.json after each step</td><td><a href="stateful-checkpoint.html">stateful-checkpoint</a></td></tr>
 <tr><td>Checkpointing and resume</td><td>Finished steps are skipped on the next run in the same directory</td><td><a href="stateful-checkpoint.html">stateful-checkpoint</a></td></tr>
-<tr><td>Tools</td><td>tool_specs, tool_parse and tool_call: a JSON text protocol over built-in workspace tools; the script grants write and web access</td><td><a href="tool-agent.html">tool-agent</a></td></tr>
-<tr><td>Short-term memory</td><td>The history option of llm_prompt, kept by the script</td><td><a href="tool-agent.html">tool-agent</a></td></tr>
+<tr><td>Tools</td><td>The tools map of the agent spec (root, write, web): the host declares the built-in workspace tools, runs the calls and reports tool_calls and files</td><td><a href="tool-agent.html">tool-agent</a></td></tr>
+<tr><td>Short-term memory</td><td>The session the host keeps for each agent; agent_open and a session_id resume it</td><td><a href="tool-agent.html">tool-agent</a></td></tr>
 <tr><td>Knowledge sources</td><td>Paragraphs from local files scored by question words and passed as sources</td><td><a href="keyword-knowledge.html">keyword-knowledge</a></td></tr>
 <tr><td>Guardrails and structured output</td><td>json_validate on a JSON reply, with the errors fed back for a retry</td><td><a href="fan-out-judge.html">fan-out-judge</a></td></tr>
 <tr><td>Human input</td><td>prompt_human on a terminal, AGENTIC_APPROVE without one; the default is to reject</td><td><a href="human-checkpoint.html">human-checkpoint</a></td></tr>
@@ -36,9 +36,9 @@
 </table>
 <h2>Not covered yet</h2>
 <ul>
-<li>Embedding-based memory and knowledge: llm_prompt has no embeddings call, so retrieval here is keyword scoring.</li>
+<li>Embedding-based memory and knowledge: the embedded agent has no embeddings call, so retrieval here is keyword scoring.</li>
 <li>Web search tools: the built-in webget tool fetches a known public address but does not search.</li>
-<li>Token streaming: llm_prompt returns the complete reply.</li>
+<li>Token streaming: agent_prompt returns the complete reply.</li>
 <li>Images and other files sent to the model: prompts are text only.</li>
 <li>Planning before acting (crewAI planning): no recipe does it yet; a plan-then-execute loop fits ask_json with a step list schema.</li>
 <li>Skill directories (crewAI SKILL.md packages): not mapped; the lmscript version is read_file of a skill file added to the system prompt.</li>

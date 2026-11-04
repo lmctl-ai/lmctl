@@ -1,4 +1,4 @@
-# Shared helpers for the agentic recipes: an agent is a map, ask() is one llm_prompt turn.
+# Shared helpers for the agentic recipes: an agent is a map, ask() is one agent_prompt turn on an embedded model.
 # Switch provider or model with LLM_MODEL=provider/model; nothing else changes.
 # With LLM_MODEL unset, the first registered provider whose key is set is used. Keys are never printed.
 MODEL = env("LLM_MODEL", "");
@@ -9,24 +9,38 @@ for (p in llm_providers()) {
   if (MODEL != "" && starts_with(MODEL, p.id + "/") && p.max_output_tokens != null && p.max_output_tokens < BUDGET) { BUDGET = p.max_output_tokens; }
 }
 if (MODEL == "") { MODEL = "ollama-cloud/deepseek-v4.1-flash"; }
+SLASH = index_of(MODEL, "/");
+PROVIDER = slice(MODEL, 0, SLASH);
+MODEL_ID = slice(MODEL, SLASH + 1, len(MODEL));
 
+# An agent is its role plus the spec agent_prompt opens a session from: provider, model, system prompt and optional tools.
 fn agent(role, goal) {
-  return {role: role, goal: goal, model: MODEL};
+  return {role: role, goal: goal, spec: {provider: PROVIDER, model: MODEL_ID,
+    system: f"You are the {role}. Your goal: {goal}. Reply with the requested output only."}};
 }
 
-fn system_for(a) {
-  return f"You are the {a.role}. Your goal: {a.goal}. Reply with the requested output only.";
+fn with_tools(a, tools) {
+  spec = a.spec;
+  spec["tools"] = tools;
+  return {role: a.role, goal: a.goal, spec: spec};
 }
 
-fn ask(a, prompt) {
-  r = llm_prompt(a.model, prompt, {system: system_for(a), max_tokens: BUDGET, retries: 2});
-  if (r.dry_run) { return f"(dry run: {a.role})"; }
-  if (!r.ok) {
-    error(f"{a.role} failed: {r.error.code} {r.error.http_status}: {substr(r.error.message, 0, 240)}");
+# One turn. A failed turn stops the script with the role and the provider's error code.
+fn turn(a, prompt, options) {
+  r = agent_prompt(a.spec, prompt, options);
+  if (r.dry_run) { return r; }
+  if (r.status != "ok") {
+    error(f"{a.role} failed: {r.status} {r.error == null ? "" : r.error.code}: {r.error == null ? "" : substr(r.error.message, 0, 240)}");
     exit(1);
   }
   trace(a.role, r);
-  return trim(r.text);
+  return r;
+}
+
+fn ask(a, prompt) {
+  r = turn(a, prompt, {max_tokens: BUDGET, retries: 2});
+  if (r.dry_run) { return f"(dry run: {a.role})"; }
+  return trim(r.reply);
 }
 
 # One JSON object that must match schema; the validator's errors are fed back for up to 2 retries.
@@ -42,14 +56,9 @@ fn ask_json(a, prompt, schema) {
   request = prompt + "\nKeep every text field to one or two short sentences.\nReply with one JSON object matching this JSON Schema: " + json_stringify(schema);
   last_errors = [];
   for (attempt in range(0, 3)) {
-    r = llm_prompt(a.model, request, {system: system_for(a), max_tokens: BUDGET, retries: 2});
+    r = turn(a, request, {max_tokens: BUDGET, retries: 2});
     if (r.dry_run) { return null; }
-    if (!r.ok) {
-      error(f"{a.role} failed: {r.error.code} {r.error.http_status}: {substr(r.error.message, 0, 240)}");
-      exit(1);
-    }
-    trace(a.role, r);
-    value = json_parse_safe(json_body(r.text), null);
+    value = json_parse_safe(json_body(r.reply), null);
     checked = json_validate(value, schema);
     if (checked.ok) { return value; }
     last_errors = checked.errors;
@@ -59,7 +68,8 @@ fn ask_json(a, prompt, schema) {
   exit(1);
 }
 
-# Append one event per model call to trace.jsonl (role, tokens, latency; never prompt text or keys).
+# Append one event per turn to trace.jsonl (role, tokens, steps; never prompt text or keys).
 fn trace(role, r) {
-  append_file("trace.jsonl", json_stringify({role: role, model: r.model, tokens: r.usage.total_tokens, latency_ms: r.latency_ms, attempts: r.attempts}) + "\n");
+  tokens = r.usage == null ? null : r.usage.input_uncached + r.usage.output;
+  append_file("trace.jsonl", json_stringify({role: role, model: r.model_reported, tokens: tokens, steps: r.steps, latency_ms: r.latency_ms}) + "\n");
 }

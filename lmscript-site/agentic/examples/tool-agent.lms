@@ -1,44 +1,10 @@
-# Tool agent: the model calls built-in read-only tools by replying with JSON; the script runs them and feeds back results.
+# Tool agent: the model reads files with the embedded read-only tools; one agent_prompt call runs the whole tool conversation.
 import "agentic.lms";
 write_file("notes.txt", "Release 0.3 ships the agentic recipes.\nRelease 0.4 adds embeddings.\n");
-analyst = agent("file analyst", "answer questions about files in the current directory");
 question = ARGV.get(0, "Which release adds embeddings? Check notes.txt.");
-grants = {root: ".", write: false, web: false};
-# List the tools as plain lines. Pasting the raw function-spec JSON made the model sometimes answer
-# through the provider's native tool_calls channel, which leaves the reply text empty.
-fn tool_lines(specs) {
-  out = "";
-  for (spec in specs) {
-    f = spec.get("function", null);
-    out = out + f"- {f.name}({join(keys(f.parameters.properties), ", ")}): {f.description}\n";
-  }
-  return out;
-}
-prompt_system = system_for(analyst) + "\nTo use a tool, reply with ONLY one JSON object {\"tool\": NAME, \"args\": {...}} and no other text." +
-  " Each result comes back as a TOOL_RESULT message. Answer in plain text when you are done.\nTools:\n" + tool_lines(tool_specs(grants));
-history = [];
-message = question;
-for (step in range(0, 5)) {
-  r = llm_prompt(analyst.model, message, {system: prompt_system, history: history, max_tokens: 1000, retries: 2});
-  if (r.dry_run) { exit(0); }
-  if (!r.ok) {
-    error(f"model call failed: {r.error.code}");
-    exit(1);
-  }
-  trace(analyst.role, r);
-  if (trim(r.text) == "") {
-    error(f"model returned an empty reply (finish_reason={r.finish_reason})");
-    exit(1);
-  }
-  push(history, {role: "user", content: message}, {role: "assistant", content: r.text});
-  call = tool_parse(r.text);
-  if (!call.ok) {
-    println(trim(r.text));
-    exit(0);
-  }
-  res = tool_call(call.name, call.args, grants);
-  warning(f"[tool] {call.name} {json_stringify(call.args)} ok={res.ok}");
-  message = f"TOOL_RESULT {call.name}\n{res.text}";
-}
-error("no final answer after 5 tool steps");
-exit(1);
+analyst = with_tools(agent("file analyst", "answer questions about files in the current directory"), {root: ".", write: false, web: false});
+r = turn(analyst, question, {max_steps: 6, max_tokens: BUDGET, retries: 2});
+if (r.dry_run) { exit(0); }
+for (c in r.tool_calls) { warning(f"[tool] {c.name} ok={c.ok}"); }
+require(len(r.tool_calls) > 0, "the model answered without reading the file");
+println(trim(r.reply));
