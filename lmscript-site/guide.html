@@ -58,17 +58,14 @@ require(r.ok, "lmdraw failed");</code></pre>
 <p>A declaration using install with @latest checks for a newer release at most once every six hours per exact install string. The verified binary and the last successful release check are stored in the lmscript tool cache. A fresh check uses the cached binary when GitHub is temporarily unavailable and prints a warning. An exact release tag needs no release lookup after its binary is cached and SHA-256 verified.</p>
 <p>Set LMSCRIPT_INSTALL_CACHE_TTL_MS to a non-negative number of milliseconds to change the @latest check interval. Set it to 0 to check on every real run. Leave it unset for the six-hour default. CI jobs with fresh runners should pin an exact release tag so every run uses a deliberate release and does not depend on the mutable latest endpoint.</p>
 <h2 id="lm-functions">Built-in lmctl functions</h2>
-<p>The following names are the lmctl automation functions listed by lmscript 0.2.373. Provider calls can create sessions or send messages; review the script before running it.</p>
-<pre><code>lm_agent(member, prompt, options)
-lm_agent_message(member, prompt, options)
-lm_batch_close(handle, status, error)
+<p>The following names are the lmctl automation functions listed by lmscript 0.2.460. Provider calls can create sessions or send messages; review the script before running it.</p>
+<pre><code>lm_batch_close(handle, status, error)
 lm_batch_open(teamfile, alias, batchfile, options)
 lm_batch_open(member, options)
 lm_batch_turn(handle, prompt, index, total)
 lm_classify_failure(text, options)
 lm_error(value, ...values)
 lm_exit(code)
-lm_fanout(participants, prompts, options)
 lm_lint(teamfile)
 lm_log(value, ...values)
 lm_member(teamfile, alias)
@@ -86,7 +83,21 @@ lm_session_list(options)
 lm_session_turn(member, prompt, options)
 lm_terminal(teamfile, alias)
 prompt_human(question)</code></pre>
-<p>lm_seed creates missing provider sessions in a teamfile. lm_prompt sends one turn to a named member. lm_terminal opens the provider's interactive interface. lm_agent and lm_agent_message address a provider directly. The remaining calls inspect or control sessions, batches, usage, teamfiles and recorded errors. Exact optional arguments are listed by lmscript help.</p>
+<p>lm_seed creates missing provider sessions in a teamfile. lm_prompt sends one turn to a named member. lm_terminal opens the provider's interactive interface. The remaining calls inspect or control sessions, batches, usage, teamfiles and recorded errors. Exact optional arguments are listed by lmscript help.</p>
+<h2 id="agent-functions">Agent functions</h2>
+<p>The agent functions talk to a model or an AI coding tool through one vocabulary, with no team file. A spec map names the provider and optionally the model, a system prompt and the tools an embedded model may use.</p>
+<pre><code>agent_providers(options)
+agent_models(provider, options)
+agent_open(spec, options)
+agent_turn(agent, prompt, options)
+agent_tool_result(agent, results, options)
+agent_prompt(spec, prompt, options)
+agent_info(agent)
+agent_history(agent, options)
+agent_compact(agent, options)
+agent_usage(options)
+agent_close(agent, status)</code></pre>
+<p>agent_prompt opens a session, runs one turn and closes it. agent_open keeps the session for several turns and can resume one by session_id. Every turn returns status, reply, tool_calls, usage and, for embedded models, the files their write tools created or changed. The <a href="agentic/">agentic recipes</a> use agent_prompt.</p>
 <h2 id="cli">Command-line reference</h2>
 <table><thead><tr><th>Form</th><th>Use</th></tr></thead><tbody>
 <tr><td>lmscript FILE [ARGS...]</td><td>Run a standalone script; remaining words become ARGV.</td></tr>
