@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmctl upload skill — lmctl skills</title>
+<meta name="description" content="Use when you need to put a web page or a folder of pages where the user can open it from lmctl.ai.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmctl upload skill</h1>
+<p>Use lmctl upload to put a web page, a report or a whole static website where the user can open it from lmctl.ai. The files go to the space of the account behind your appkey. The user finds them under My space on lmctl.ai without being told a file name.</p>
+<h2 id="when-to-use">When to use it</h2>
+<ul>
+<li>You made an HTML page, a report, a chart or a small static site and the user needs to look at it.</li>
+<li>You want the user to find the result later in the same place, not in a chat message.</li>
+<li>You need a link that works without signing in: use the link form below, and read its safety rule first.</li>
+</ul>
+<p>Do not use it for secrets, credentials or personal data. Do not use it to store the only copy of anything.</p>
+<h2 id="setup">Setup</h2>
+<p>The command needs an lmctl appkey. It looks for one in this order: the LMCTL_APPKEY variable, the file named by LMCTL_APPKEY_FILE, then the default file in the lmctl configuration folder. Never print the appkey, never put it in a page and never send it anywhere except through lmctl. Check which account you act for:</p>
+<pre><code>lmctl whoami</code></pre>
+<p>The server defaults to https://lmctl.ai. Another server is selected with the LMCTL_SITE_API_URL variable.</p>
+<h2 id="one-page">Upload one page or file</h2>
+<pre><code>lmctl upload report.html
+lmctl upload chart.png --name charts/chart.png
+lmctl upload report.html --json</code></pre>
+<p>The command prints the address of the page. A file keeps its own name unless you give another with the name option. A name may contain slashes: the part before the last slash is a folder in the space, so charts/chart.png lands in a folder called charts. Names are relative: no leading slash, no dot-dot parts, no backslashes, at most 400 characters.</p>
+<p>Uploading to a name that already exists replaces it at once. There are no versions.</p>
+<h2 id="folder">Upload a folder</h2>
+<p>The reliable way for any lmctl is to zip the site and unpack it on the server. Zip from inside the folder so that index.html sits at the top of the zip, not inside a wrapping folder:</p>
+<pre><code>cd mysite
+zip -r ../mysite.zip .
+cd ..
+lmctl upload mysite.zip --unzip --destdir mysite</code></pre>
+<p>The unpacked files are served under the destination directory, which defaults to the zip name without the zip suffix. The address ends with a slash and opens index.html of that directory. Links between the pages must be relative, for example sub/page.html, so they keep working under the directory.</p>
+<p>Newer lmctl builds can also take a folder directly and send each file on its own. Run lmctl upload --help: if it shows a folder form, that works too. If it does not, use the zip form above.</p>
+<p>Uploading again to the same directory replaces the whole directory.</p>
+<h2 id="where">Where it lands and who can open it</h2>
+<ul>
+<li>The space belongs to the account, not to one user. Every user of the account sees the same space.</li>
+<li>Only signed-in users of that account can open the files. Anyone else gets a sign-in page.</li>
+<li>The user opens My space in the lmctl.ai menu to see pages and folders, and clicks through folders and pages from there.</li>
+<li>The address printed by lmctl upload also works in a browser where the user is signed in.</li>
+</ul>
+<p>Pages run in a sandbox: scripts and styles work, but the page cannot read the user's session. Links that open a new tab do not work from inside a page, so use plain relative links.</p>
+<h2 id="types">What the browser shows</h2>
+<p>Web types are shown in the browser: html, css, js, json, txt, md, csv, xml, svg, common image types, fonts, pdf, audio, video and wasm. Any other type is offered as a download instead of being shown.</p>
+<h2 id="link">Share a report with a link</h2>
+<pre><code>lmctl upload report.html --link
+lmctl upload report.html --link --name weekly.html</code></pre>
+<p>The link form is for one HTML report of at most 2 MB. It prints a link that anyone who holds it can open, with no sign-in. A new report under the same name from the same session replaces the old one and the old link stops working. Reports are kept 30 days and the limit is 5 a minute per session.</p>
+<p>Safety rule: a link is public. Put only what may be read by anyone who gets the link. The session is taken from the LMCTL_SELF_SESSIONID variable when it is set. Put the link in your answer so the user can click it in the chat.</p>
+<h2 id="manage">List, replace and remove</h2>
+<pre><code>lmctl uploads list
+lmctl uploads rm report.html
+lmctl uploads rm mysite</code></pre>
+<p>The list shows the name, size, time and address of everything in the space. Remove a single file by its name, or a whole directory by the directory name. Removing a report also stops its link.</p>
+<h2 id="limits">Limits</h2>
+<ul>
+<li>50 MB for one upload.</li>
+<li>A zip has at most 2,000 files and 200 MB when unpacked.</li>
+<li>200 uploads for the account.</li>
+<li>A report link is one HTML file of at most 2 MB.</li>
+</ul>
+<h2 id="verify">How to verify</h2>
+<ol>
+<li>Run lmctl uploads list and check that the name and size are the ones you sent.</li>
+<li>For a report link, fetch the printed link without any credential and check that the page comes back.</li>
+<li>For a private page, do not try to read it with a bare HTTP request: it answers 401 by design. Tell the user which page to open under My space and what they should see.</li>
+</ol>
+<h2 id="errors">Errors</h2>
+<ul>
+<li>A message about the appkey or a 401 answer: no valid appkey was found. Check lmctl whoami and the three places named in Setup.</li>
+<li>A message about size, file count or the number of uploads: you hit a limit above. Zip fewer or smaller files, or remove old uploads with lmctl uploads rm.</li>
+<li>A message that the name is not allowed: use a relative name without leading slash, dot-dot parts or backslashes.</li>
+<li>A message about too many requests: wait a minute and send the report again.</li>
+<li>A folder shows its files but index.html is missing: the zip had a wrapping folder. Zip again from inside the folder.</li>
+</ul>
+</main>
+<footer>
+<p>Plain HTML skills for humans and agents. Source: <a href="https://github.com/lmctl-ai/lmctl/tree/main/skills">github.com/lmctl-ai/lmctl/skills</a>.</p>
+</footer>
+</body>
+</html>
