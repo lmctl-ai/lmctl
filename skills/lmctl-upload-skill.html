@@ -27,14 +27,16 @@
 </ul>
 <p>Do not use it for secrets, credentials or personal data. Do not use it to store the only copy of anything.</p>
 <h2 id="setup">Setup</h2>
-<p>The command needs an lmctl appkey. It looks for one in this order: the LMCTL_APPKEY variable, the file named by LMCTL_APPKEY_FILE, then the default file in the lmctl configuration folder. Never print the appkey, never put it in a page and never send it anywhere except through lmctl. Check which account you act for:</p>
+<p>The command needs an lmctl appkey. It looks for one in this order: the LMCTL_APPKEY variable, the file named by LMCTL_APPKEY_FILE, then the default file ~/.config/lmctl/appkey.json. Never print the appkey, never put it in a page and never send it anywhere except through lmctl. Check which account you act for:</p>
 <pre><code>lmctl whoami</code></pre>
 <p>The server defaults to https://lmctl.ai. Another server is selected with the LMCTL_SITE_API_URL variable.</p>
 <h2 id="one-page">Upload one page or file</h2>
 <pre><code>lmctl upload report.html
 lmctl upload chart.png --name charts/chart.png
+lmctl upload report.html --destdir reports
 lmctl upload report.html --json</code></pre>
 <p>The command prints the address of the page. A file keeps its own name unless you give another with the name option. A name may contain slashes: the part before the last slash is a folder in the space, so charts/chart.png lands in a folder called charts. Names are relative: no leading slash, no dot-dot parts, no backslashes, at most 400 characters.</p>
+<p>The destdir option puts the file inside a directory of that name: report.html with destdir reports is served as reports/report.html. A directory is one upload, so uploading again to the same destdir replaces everything in it, and removing it removes everything in it. Use the name option with slashes when you want to add one file to a folder without touching the others.</p>
 <p>Uploading to a name that already exists replaces it at once. There are no versions.</p>
 <h2 id="folder">Upload a folder</h2>
 <p>The reliable way for any lmctl is to zip the site and unpack it on the server. Zip from inside the folder so that index.html sits at the top of the zip, not inside a wrapping folder:</p>
@@ -43,7 +45,6 @@ zip -r ../mysite.zip .
 cd ..
 lmctl upload mysite.zip --unzip --destdir mysite</code></pre>
 <p>The unpacked files are served under the destination directory, which defaults to the zip name without the zip suffix. The address ends with a slash and opens index.html of that directory. Links between the pages must be relative, for example sub/page.html, so they keep working under the directory.</p>
-<p>Newer lmctl builds can also take a folder directly and send each file on its own. Run lmctl upload --help: if it shows a folder form, that works too. If it does not, use the zip form above.</p>
 <p>Uploading again to the same directory replaces the whole directory.</p>
 <h2 id="where">Where it lands and who can open it</h2>
 <ul>
@@ -54,11 +55,11 @@ lmctl upload mysite.zip --unzip --destdir mysite</code></pre>
 </ul>
 <p>Pages run in a sandbox: scripts and styles work, but the page cannot read the user's session. Links that open a new tab do not work from inside a page, so use plain relative links.</p>
 <h2 id="types">What the browser shows</h2>
-<p>Web types are shown in the browser: html, css, js, json, txt, md, csv, xml, svg, common image types, fonts, pdf, audio, video and wasm. Any other type is offered as a download instead of being shown.</p>
+<p>These types are shown in the browser: html, htm, css, js, mjs, json, map, txt, md, csv, xml, svg, png, jpg, jpeg, gif, webp, ico, avif, woff, woff2, ttf, otf, pdf, mp3, mp4, webm and wasm. Any other type, for example wav, ogg, mov or tiff, is offered as a download instead of being shown.</p>
 <h2 id="link">Share a report with a link</h2>
 <pre><code>lmctl upload report.html --link
 lmctl upload report.html --link --name weekly.html</code></pre>
-<p>The link form is for one HTML report of at most 2 MB. It prints a link that anyone who holds it can open, with no sign-in. A new report under the same name from the same session replaces the old one and the old link stops working. Reports are kept 30 days and the limit is 5 a minute per session.</p>
+<p>The link form is for one HTML report of at most 2 MB. It prints a link that anyone who holds it can open, with no sign-in. A new report under the same name from the same session replaces the old one and prints a new link. The old link stops working, so give the user the new one. Reports are kept 30 days and the limit is 5 a minute per session.</p>
 <p>Safety rule: a link is public. Put only what may be read by anyone who gets the link. The session is taken from the LMCTL_SELF_SESSIONID variable when it is set. Put the link in your answer so the user can click it in the chat.</p>
 <h2 id="manage">List, replace and remove</h2>
 <pre><code>lmctl uploads list
@@ -69,7 +70,7 @@ lmctl uploads rm mysite</code></pre>
 <ul>
 <li>50 MB for one upload.</li>
 <li>A zip has at most 2,000 files and 200 MB when unpacked.</li>
-<li>200 uploads for the account.</li>
+<li>200 uploads in the space.</li>
 <li>A report link is one HTML file of at most 2 MB.</li>
 </ul>
 <h2 id="verify">How to verify</h2>
