@@ -37,7 +37,7 @@ The static /tools/ section (one plain-HTML section per tool, skill page for LLM 
   8. Template catalog (templates/ -\> /templates/)
   9. Curated LMScript command library (lmscript/commands/ -\> /lmscript/commands/)
   10. Historical workflow catalog (workflows/ -\> /workflows/, deployed via scripts/deploy-workflows.sh)
-  11. Static tool pages (tools/ -\> /tools/, new; deployed by the static push workflow or scripts/deploy-tools.sh, never by deploy.sh). Plain HTML, one stylesheet, rules in tools/README.md, validated by npm run check:tools (CI: .github/workflows/tools-check.yml).
+  11. Static tool pages (tools/ -\> /tools/, new; deployed by the static push workflow or scripts/deploy-tools.sh, never by deploy.sh). Documentation uses plain HTML and one stylesheet; demo.html is a restricted raw executable exception. Rules in tools/README.md, validated by npm run check:tools (CI: .github/workflows/tools-check.yml).
 - NEVER run aws s3 sync --delete on the S3 bucket root: The S3 bucket lmctl-website-prod holds all prefixes co-tenanted. A root --delete wipes the other prefixes. Use scoped sync scripts (deploy.sh, deploy-homepage.sh, deploy-quickrun.sh, deploy-lmprobe.sh).
 - CloudFront Function vs S3 Triple-Key Index Hack: infra/lmctl-www-redirect.js rewrites clean URLs for /lmctl/\* and /lmprobe/\* (deployed) and, in source but not yet deployed, /tools/\* (node tests/infra/lmctl-www-redirect.test.mjs). All other paths (/skills, /quickrun, /templates, /helloexample, /lmscript/commands) pass through untouched. To prevent S3 404 NoSuchKey errors when accessed without .html, the static deploy scripts upload triple keys: \<prefix\>, \<prefix\>/, and \<prefix\>/index.html (see durable-memory/site-design.md).
 - Documentation checks: Static /tools/ pages are checked with npm run check:tools; npm run check:tools:selftest verifies that the checker rejects malformed fixtures. Legacy skills use npm run check:skills and npm run check:skills:selftest; regenerate with npm run build:skills. Neither checker validates Docusaurus docs/. There is no scripts/test-docs.sh in this repository.
@@ -55,7 +55,7 @@ The static /tools/ section (one plain-HTML section per tool, skill page for LLM 
 - bash scripts/deploy-homepage.sh: Deploys root homepage files (index.html, 404.html, assets/) to S3 apex without --delete.
 - bash scripts/deploy-quickrun.sh: Deploys only /quickrun/ tasks and verifies content hashes via curl.
 - npm ci / Node version: Requires Node \>= 22 (declared in package.json "engines").
-- TeaVM + LMCode demo: install the local lmcode-java artifact, then set `LMCODE_COMPILER_MODULE` to lmscript's `dist/dsl.js` and run `mvn -f demo/teavm/pom.xml clean package`. This compiles the `DemoHandler`, `DrawCommand`, and `TodoHandler` entries plus Java/TeaVM sources into `homepage/demo/teavm/`. Commit the generated `teavm.js`; the existing homepage publisher deploys it to `/demo/teavm/`. See DEPLOY.md for both prerequisites.
+- TeaVM + LMCode demo: canonical sources and browser integration tests live in `github.com/lmctl-ai/lmteavm`. Install lmcode-java, set `LMCODE_COMPILER_MODULE` to the public compiler package's `dist/dsl.js`, and run `mvn -f /path/to/lmteavm/pom.xml -Ddemo.output="$PWD/tools/lmteavm" clean package`. Commit generated `teavm.js` and assets. The tools publisher serves `/tools/lmteavm/demo.html`; `index.html` is the LLM quick reference and `demo.html` is a raw executable page exempt from documentation decoration. See DEPLOY.md and tools/README.md.
 
 ## Traps that have bitten people
 

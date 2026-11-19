@@ -77,7 +77,7 @@ def inventory(area, root=ROOT):
         if not path.is_file():
             continue
         allowed = ({'.html', '.lms', '.png'} if area == 'lmscript' else
-                   {'.html', '.css', '.png', '.svg', '.txt', '.lms'} if area == 'tools' else
+                   {'.html', '.css', '.js', '.json', '.png', '.svg', '.txt', '.lms'} if area == 'tools' else
                    {'.html'} if area == 'skills' else
                    {'.html', '.txt', '.lms', '.lmctl'} if area == 'helloexample' else
                    {'.html', '.txt'} if area == 'autorun' else
@@ -123,6 +123,17 @@ def aws(*args):
     return json.loads(proc.stdout or '{}')
 
 
+def deletion_allowed(area, key):
+    if area == 'homepage':
+        return (key.startswith(('assets/', 'levels/', 'demo/teavm/'))
+                or key in ('levels', 'demo/teavm', 'index.html', '404.html', 'robots.txt', 'sitemap.xml'))
+    if area == 'lmscript':
+        return key.startswith('lmscript/')
+    if area in ('helloexample', 'autorun'):
+        return key.startswith(area + '/')
+    return key == area or key.startswith(area + '/')
+
+
 def deploy(area):
     bucket = os.environ.get('S3_BUCKET', 'lmctl-website-prod')
     distribution = os.environ.get('CF_DISTRIBUTION_ID', 'E1GKUWTM93U7IV')
@@ -159,15 +170,7 @@ def deploy(area):
             deletions = [key for key in deletions if not key.startswith('tools/lmvideo/media/')]
         # Reject a corrupt or manually edited inventory that escapes its area.
         for key in deletions:
-            if area == 'homepage':
-                valid = key.startswith(('assets/', 'levels/')) or key in ('levels', 'index.html', '404.html', 'robots.txt', 'sitemap.xml')
-            elif area == 'lmscript':
-                valid = key.startswith(('lmscript/',))
-            elif area in ('helloexample', 'autorun'):
-                valid = key.startswith((area + '/',))
-            else:
-                valid = key == area or key.startswith(area + '/')
-            if not valid:
+            if not deletion_allowed(area, key):
                 raise ValueError(f'previous manifest contains out-of-scope key: {key}')
         def upload(key):
             print(f'{area}: upload {key}', flush=True)

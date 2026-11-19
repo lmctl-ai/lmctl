@@ -138,6 +138,7 @@ fn page_role(file: string) -> string {
     if (str_ends_with(file, ".skill.html")) { stem = "skill"; }
     if (str_ends_with(file, ".tutorial.html")) { stem = "tutorial"; }
     if (str_ends_with(file, ".guide.html")) { stem = "guide"; }
+    if (str_ends_with(file, ".demo.html")) { stem = "demo"; }
   }
   return stem;
 }
@@ -154,11 +155,41 @@ fn prose(page: Doc) -> string {
   for (node in page.select("main p, main pre, main table, main dl, main ul, main ol")) { text = text + normalized(node.text()) + "|"; }
   return text;
 }
+fn check_demo_page(page: Doc) -> void {
+  let file = page.path();
+  for (node in page.select("*")) {
+    for (attribute in node.attributes()) {
+      if (str_starts_with(str_lower(attribute), "on")) { finding(file, node.path(), "demo does not allow inline event handlers"); }
+      if (attribute == "style") { finding(file, node.path(), "demo does not allow inline style attributes"); }
+    }
+  }
+  let scripts = page.select("script");
+  if (scripts.len() == 0) { finding(file, "document", "demo needs an external script"); }
+  for (node in scripts) {
+    if (node.parent().tag() != "body" || (node.attr("src") != "teavm.js" && node.attr("src") != "boot.js")) {
+      finding(file, node.path(), "demo scripts must be external teavm.js or boot.js in body");
+    }
+    if (normalized(node.text()) != "") { finding(file, node.path(), "demo scripts must not contain inline code"); }
+  }
+  for (node in page.select("link")) {
+    let stylesheet = node.attr("rel") == "stylesheet" && node.attr("href") == "demo.css";
+    let icon = node.attr("rel") == "icon" && node.attr("href") == "favicon.svg" && node.attr("type") == "image/svg+xml";
+    if (!stylesheet && !icon) { finding(file, node.path(), "demo links must use demo.css or favicon.svg"); }
+  }
+  if (page.select("head meta[charset='utf-8' i]").len() != 1) { finding(file, "head", "missing <meta charset=\"utf-8\">"); }
+  if (page.select("head meta[name='viewport']").len() != 1) { finding(file, "head", "missing <meta name=\"viewport\">"); }
+  if (page.select("head meta[name='description']").len() != 1) { finding(file, "head", "missing meta description"); }
+  if (page.select("head title").len() != 1) { finding(file, "head", "missing title"); }
+  if (page.select("main h1").len() != 1 || page.select("h1").len() != 1) { finding(file, "main", "demo needs exactly one h1 in main"); }
+}
 fn check_page(page: Doc) -> void {
   let file = page.path();
   if (page.byte_size() > 153600) { finding(file, "document", "page is " + str(page.byte_size()) + " bytes (limit 153600)"); }
   if (page.doctype() != "html") { finding(file, "document", "page must start with <!doctype html>"); }
   for (problem in page.markup_errors()) { finding(file, "document", problem); }
+  let demo = page_role(file) == "demo";
+  if (demo) { check_demo_page(page); }
+  if (!demo) {
   let pres = page.source_elements("pre");
   for (i in range(0, pres.len())) {
     let raw = pres.at(i);
@@ -412,6 +443,7 @@ fn check_page(page: Doc) -> void {
       if (page.select("main h2, main h3").len() == 0) { finding(file, "main", "faq needs h2/h3 questions"); }
       for (question in page.select("main h2, main h3")) { if (!str_ends_with(normalized(question.text()), "?")) { finding(file, question.path(), "faq heading must be a question ending in ?"); } }
     }
+  }
   }
 }
 let fixture = ${ARGV[1]};

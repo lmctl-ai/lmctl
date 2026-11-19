@@ -364,7 +364,7 @@ while (str_find(tool_dirs, "|") >= 0) {
   let tool_summary = "";
   if (authored_index) { tool_title = heading(index_page); tool_summary = summary(index_page); }
   for (page in pages) {
-    if (basename(page.path()) == "index.html") { continue; }
+    if (basename(page.path()) == "index.html" || role(basename(page.path())) == "demo") { continue; }
     if (tool_title == "") { tool_title = heading(page); tool_summary = summary(page); }
     if (${tool_scope} == "" || ${tool_scope} == tool) {
     let result = render(tool_layout, nav, footer, content(page), page_title(heading(page), tool), page_description(page));

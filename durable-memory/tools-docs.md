@@ -4,7 +4,7 @@ A guide for an LLM (or a person) adding or improving a tool's documentation in t
 
 ## Purpose and where it is published
 
-tools/ is the source of [https://lmctl.com/tools/](<https://lmctl.com/tools/>): one plain-HTML section per tool (lmscript, lmcad, lmdraw, lmhtml, lmcode-cpp, …), each with a skill page written for LLM agents plus optional tutorial, guide, recipes, reference, FAQ and changelog pages. There is no framework, no JavaScript and no build step: authors write content HTML, and scripts/tools/ (an lmscript \_dsl\_ program run by the lmhtml host) decorates and checks it. scripts/deploy-tools.sh publishes it directly, and a push to main automatically publishes changed tool pages through the path-filtered static workflow. Details are in [Publishing lmctl.com](<publishing.md>).
+tools/ is the source of [https://lmctl.com/tools/](<https://lmctl.com/tools/>): one plain-HTML section per tool (lmscript, lmcad, lmdraw, lmhtml, lmcode-cpp, …), each with a skill page written for LLM agents plus optional tutorial, guide, recipes, reference, FAQ, changelog and executable demo pages. Documentation has no framework, JavaScript or application build step: authors write content HTML, and scripts/tools/ (an lmscript \_dsl\_ program run by the lmhtml host) decorates and checks it. A demo.html is a raw executable exception with same-tool assets. scripts/deploy-tools.sh publishes it directly, and a push to main automatically publishes changed tool pages through the path-filtered static workflow. Details are in [Publishing lmctl.com](<publishing.md>).
 
 ## The 30-second version
 
@@ -48,10 +48,13 @@ The exact filename get_started.html is also accepted for a tool's quickrun landi
 | reference | At least one table or definition list |
 | faq | h2/h3 questions ending in a question mark |
 | changelog | Free content |
+| demo | Raw executable demo; uses restricted local assets and is not decorated |
 
 Topic pages (guide-schema.html, tutorial-animation.html) are labelled Role: h1 in the nav, shortened near 80 characters at a word boundary. The role order and labels live in scripts/tools/roles.lms.
 
 ## The page contract
+
+A demo.html is a raw executable exception: it is not decorated and may use application markup, demo.css, favicon.svg, and external body scripts named teavm.js and boot.js. Inline scripts, event-handler attributes, and inline style attributes remain forbidden. Its same-tool JavaScript and JSON assets are published. All documentation pages follow this contract:
 
 - One h1. Allowed elements only: html head meta title link body header nav main section footer h1 h2 h3 h4 p ul ol li dl dt dd pre code kbd samp em strong a table thead tbody tr th td blockquote hr figure figcaption img.
 - Forbidden: class and style attributes, script, div, span, iframes, on\* handlers, data attributes, unlisted attributes, external resources. id only on h2/h3, unique. Explicit closing tags (malformed markup is reported, not repaired). At most 153600 bytes per page.

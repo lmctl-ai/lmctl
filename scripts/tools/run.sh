@@ -53,6 +53,24 @@ host="$(cd "$(dirname "$host")" && pwd)/$(basename "$host")"
 PATH="$(dirname "$host"):$PATH"
 export PATH
 if [[ $command_name == host-path ]]; then printf '%s\n' "$host"; exit 0; fi
+is_demo_page() { case "$1" in */demo.html|*.demo.html) return 0;; *) return 1;; esac; }
+lint_tool_pages() {
+  local source=${1:-tools} page target
+  if [[ $source != tools ]]; then
+    if is_demo_page "$source"; then return 0; fi
+    "$host" lint --config "$HERE/plain.conf" "$source"
+    return
+  fi
+  shopt -s nullglob globstar
+  mkdir -p "$work/prose-tools"
+  for page in tools/**/*.html; do
+    if is_demo_page "$page"; then continue; fi
+    target="$work/prose-tools/$page"
+    mkdir -p "$(dirname "$target")"
+    cp "$page" "$target"
+  done
+  "$host" lint --config "$HERE/plain.conf" "$work/prose-tools"
+}
 # Each host invocation has a bounded Doc arena. Process tool pages separately,
 # then derive the shared catalog; no tool loses any contract or lint checks.
 if [[ -z ${TOOLS_SCOPE:-} && ( $command_name == decorate || $command_name == check ) && ( $# == 0 || ${1:-} == --check || -d ${1:-} ) ]]; then
@@ -77,8 +95,9 @@ if [[ -z ${TOOLS_SCOPE:-} && ( $command_name == decorate || $command_name == che
   if ! TOOLS_SCOPE=catalog LMHTML=$host "$HERE/run.sh" "$command_name" "$@"; then batch_status=1; fi
   ((batch_status == 0)) || exit 1
   if [[ $command_name == check ]]; then
-    "$host" lint --config "$HERE/plain.conf" tools
+    lint_tool_pages
     for page in tools/**/*.html; do
+      if is_demo_page "$page"; then continue; fi
       if ! "$host" clean --check "$page" > /dev/null 2>"$work/clean.txt"; then cat "$work/clean.txt" >&2; exit 1; fi
     done
   fi
@@ -121,7 +140,7 @@ status=0
 [[ ! -f $work/report.txt ]] || cat "$work/report.txt"
 if ((status)); then cat "$work/result.json" >&2; fi
 case "$command_name" in
-    check|contract) if [[ -z ${TOOLS_SCOPE:-} ]]; then "$host" lint --config "$HERE/plain.conf" "${argument:-tools}" || status=$?; fi ;;
+    check|contract) if [[ -z ${TOOLS_SCOPE:-} ]]; then lint_tool_pages "$argument" || status=$?; fi ;;
     skills) if [[ $argument == --check || -z $argument ]]; then "$host" lint --config "$HERE/plain.conf" skills || status=$?; else "$host" lint --config "$HERE/plain.conf" "$argument" || status=$?; fi ;;
 esac
 if ((status == 0)) && [[ -z ${TOOLS_SCOPE:-} ]]; then
@@ -131,7 +150,10 @@ if ((status == 0)) && [[ -z ${TOOLS_SCOPE:-} ]]; then
     check|contract) if [[ -n $argument ]]; then pages=("$argument"); else pages=(tools/**/*.html); fi ;;
     skills) if [[ -n $argument && $argument != --check ]]; then pages=("$argument"); else pages=(skills/*.html); fi ;;
   esac
-  for page in "${pages[@]}"; do "$host" clean --check "$page" >/dev/null 2>"$work/clean.txt" || { cat "$work/clean.txt" >&2; status=1; }; done
+  for page in "${pages[@]}"; do
+    if is_demo_page "$page"; then continue; fi
+    "$host" clean --check "$page" >/dev/null 2>"$work/clean.txt" || { cat "$work/clean.txt" >&2; status=1; }
+  done
 fi
 if ((status == 0)); then echo "$command_name: OK"; fi
 exit "$status"

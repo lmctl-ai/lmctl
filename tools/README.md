@@ -25,8 +25,11 @@ The exact filename get_started.html is also accepted for a tool's quickrun landi
 | reference | At least one table or definition list |
 | faq | h2/h3 question headings ending in a question mark |
 | changelog | Optional, free content |
+| demo | Raw executable demo; exempt from documentation decoration and normal markup restrictions, with the asset rules below |
 
 roles.lms contains the shared role order and labels. The clearly marked ROLE RULES section of check.lms contains the content checks. To add a role, add one name=Label pair to the table and its rule in that section; decoration picks up its order and label automatically. The index is labelled Overview; base pages use the role label. Topic pages use Role: h1, with the heading shortened at a word boundary near 80 characters. Repeated labels gain the filename stem in parentheses. Nav links are ordered by role, then filename, and only include pages that exist. There are no active-page classes.
+
+Executable demo.html pages remain raw full documents. They use demo.css, optional favicon.svg, and external body scripts named teavm.js and boot.js. Inline scripts, inline event handlers, and inline style attributes are forbidden. Same-tool JavaScript and JSON assets are published with the demo. Other pages keep the documentation contract.
 
 ## Decoration and generated indexes
 

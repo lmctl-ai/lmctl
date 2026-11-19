@@ -142,6 +142,12 @@ class LiveTests(unittest.TestCase):
             self.assertIn(key, site.live_targets(entries))
         self.assertEqual(site.live_targets(entries)[''], entries['index.html'])
 
+    def test_retired_teavm_demo_deletion_scope(self):
+        for key in ('demo/teavm', 'demo/teavm/', 'demo/teavm/teavm.js', 'demo/teavm/todos.json'):
+            self.assertTrue(site.deletion_allowed('homepage', key), key)
+        for key in ('demo', 'demo/', 'demo/teavm-other/file.js', 'demo/other/file.js', 'tools/lmteavm/demo.html'):
+            self.assertFalse(site.deletion_allowed('homepage', key), key)
+
     def test_stale_edge_with_current_s3(self):
         entries = site.inventory('homepage')
         calls = []

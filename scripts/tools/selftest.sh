@@ -106,7 +106,7 @@ run check
 echo 'ok - template propagation, topic tutorial, deleted optional page'
 cp "$work/original.fragment" "$work/tools/zeta/skil.html"
 run decorate
-expect_failure 'valid roles: skill, tutorial, guide, recipes, reference, faq, changelog' contract
+expect_failure 'valid roles: skill, tutorial, guide, recipes, reference, faq, changelog, demo' contract
 rm "$work/tools/zeta/skil.html"
 cp "$work/original.fragment" "$work/tools/zeta/Skill.html"
 run decorate

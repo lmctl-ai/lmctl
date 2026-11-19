@@ -25,22 +25,22 @@ The static artifact is written to `build/` with Docusaurus `baseUrl` set to
 
 ## Build the TeaVM demo
 
+Canonical sources and browser integration tests are in
+`github.com/lmctl-ai/lmteavm`. Install lmcode-java, install the public compiler
+package, then override its output directory:
+
 ```bash
 mvn -f /path/to/lmcode-java/pom.xml install
-LMCODE_COMPILER_MODULE=/path/to/lmscript/dist/dsl.js \
-  mvn -f demo/teavm/pom.xml clean package
+npm install --prefix /tmp/lmteavm-compiler @lmctl-ai/lmctl@0.2.482
+LMCODE_COMPILER_MODULE=/tmp/lmteavm-compiler/node_modules/@lmctl-ai/lmctl/dist/dsl.js \
+  mvn -f /path/to/lmteavm/pom.xml -Ddemo.output="$PWD/tools/lmteavm" clean package
 ```
 
-The LMCode compiler builds the `DemoHandler`, `DrawCommand`, and `TodoHandler`
-interface entries from `demo/teavm/src/main/lmcode/` into a generated Java class.
-The demo entries are dispatched by their annotations and call the DOM, canvas,
-WebGL, and animation host functions in `BrowserDom`. The two JSON drawing options
-share the same entries and runtime loader, differing only in their data file.
-TeaVM 0.16.0 then compiles that class, the lmcode-java runtime, and
-`src/main/java/` to JavaScript.
-The web assets and generated JavaScript are copied to `homepage/demo/teavm/`.
-The existing homepage publisher serves the result at `/demo/teavm/`; commit the
-regenerated `teavm.js` with the Java, LMCode, and web sources.
+The web assets and generated JavaScript are copied to `tools/lmteavm/`. The tools
+publisher serves the demo at `/tools/lmteavm/demo.html` and the LLM quick
+reference at `/tools/lmteavm/`. Commit the regenerated assets with documentation
+changes. The raw demo page uses the restricted demo role; documentation pages
+retain the normal decoration and content contract.
 
 ## Deploy
 

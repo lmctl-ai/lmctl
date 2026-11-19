@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmteavm application authoring skill — lmteavm — lmctl.com tools</title>
+<meta name="description" content="Use the lmteavm example to embed annotation-dispatched LMCode entries in a TeaVM browser application.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmteavm/">Overview</a></li>
+<li><a href="/tools/lmteavm/skill.html">Skill</a></li>
+<li><a href="/tools/lmteavm/demo.html">Demo</a></li>
+</ul>
+</nav>
+<main><h1>lmteavm application authoring skill</h1>
+<p>Use the lmteavm example to embed annotation-dispatched LMCode entries in a TeaVM browser application.</p>
+<h2>Purpose</h2>
+<p>Build browser behavior in Java, expose typed host callbacks to LMCode, and dispatch LMCode interface entries by annotation. The <a href="/tools/lmteavm/">quick reference</a> contains copyable schema, LMCode, Java, and JSON examples.</p>
+<h2>When to use it</h2>
+<p>Use this pattern when a browser application needs LMCode behavior with explicit host capabilities, or when Java browser infrastructure and LMCode handlers should share a typed contract. Start with the <a href="/tools/lmteavm/demo.html">working demo</a> and its <a href="https://github.com/lmctl-ai/lmteavm">public source</a>.</p>
+<h2>Install</h2>
+<p>Install Java 21, Maven, Node 24.15 or newer, lmcode-java 0.1.1 in the local Maven repository, and @lmctl-ai/lmctl 0.2.482 or newer. Set LMCODE_COMPILER_MODULE to the compiler package's dist/dsl.js.</p>
+<h2>Commands</h2>
+<pre><kbd>mvn clean package
+npm ci
+npx playwright install --with-deps chromium
+npm test</kbd></pre>
+<h2>Inputs and outputs</h2>
+<ul><li>Input: Java browser code, an LMCode schema, annotated LMCode entries, and optional static JSON.</li><li>Build output: demo.html, demo.css, teavm.js, boot.js, favicon, and JSON assets under target/demo/.</li><li>Runtime output: host-defined DOM, SVG, canvas, WebGL, animation, hydration, and drawing effects.</li></ul>
+<h2>Safety rules</h2>
+<ul><li>Register only required host functions and preserve exact schema bytes.</li><li>Match every function and interface signature on both sides.</li><li>Use innerText for external text; do not inject untrusted HTML.</li><li>Cancel animation and guard asynchronous mode changes before replacing output.</li><li>Normalize optional JSON null and undefined values before calling LMCode.</li></ul>
+<h2>Worked examples</h2>
+<ol><li>Read the demo's DemoHandler, DrawCommand, and TodoHandler interfaces.</li><li>Add an annotation and function implementing DemoHandler.</li><li>Register any required host callback with Registry.function.</li><li>Resolve the annotation through program.entries() and invoke Program.call.</li><li>For data-driven drawing, add a JSON document using the shared @data and @draw entries rather than duplicating the renderer.</li></ol>
+<h2>Errors and exit codes</h2>
+<p>Compiler diagnostics and Maven failures produce a nonzero build exit. Program.load reports schema mismatches and unbound imports. Browser integration assertions produce a nonzero test exit; inspect the reported status, console errors, and page errors.</p>
+<h2>How to verify</h2>
+<ol><li>Run a clean Maven build.</li><li>Run npm test with Chromium installed.</li><li>Exercise each changed mode through real browser events.</li><li>Check JSON requests and visible output, not only compilation.</li><li>For canvas and WebGL, verify rendered pixels and the absence of browser or GL errors.</li></ol>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmteavm">github.com/lmctl-ai/lmteavm</a>.</p>
+</footer>
+</body>
+</html>
