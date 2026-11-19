@@ -103,11 +103,6 @@ button:disabled {
     line-height: 1.45;
 }
 
-.todo-marker {
-    color: #8dd8c5;
-    font-weight: 800;
-}
-
 .completed span:last-child {
     color: #98a6c5;
     text-decoration: line-through;

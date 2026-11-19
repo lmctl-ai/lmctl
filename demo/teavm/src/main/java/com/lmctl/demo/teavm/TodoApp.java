@@ -15,6 +15,7 @@ public final class TodoApp {
     private static HTMLButtonElement loadButton;
     private static HTMLElement status;
     private static HTMLElement list;
+    private static TodoHandler todoHandler;
 
     private TodoApp() {
     }
@@ -24,6 +25,7 @@ public final class TodoApp {
         loadButton = (HTMLButtonElement) document.getElementById("load-todos");
         status = document.getElementById("status");
         list = document.getElementById("todo-list");
+        todoHandler = new TodoHandler();
         loadButton.onClick(event -> loadTodos());
     }
 
@@ -52,19 +54,12 @@ public final class TodoApp {
                 HTMLElement item = document.createElement("li");
                 item.setClassName(todo.isCompleted() ? "todo completed" : "todo");
 
-                HTMLElement marker = document.createElement("span");
-                marker.setClassName("todo-marker");
-                marker.setAttribute("aria-hidden", "true");
-                marker.setInnerText(todo.isCompleted() ? "✓" : "○");
-
-                HTMLElement title = document.createElement("span");
-                title.setInnerText(todo.getTitle());
-
-                item.appendChild(marker);
-                item.appendChild(title);
+                HTMLElement label = document.createElement("span");
+                label.setInnerText(todoHandler.render(todo.getTitle(), todo.isCompleted()));
+                item.appendChild(label);
                 list.appendChild(item);
             }
-            status.setInnerText(todos.getLength() + " todos loaded from todos.json");
+            status.setInnerText(todos.getLength() + " todos rendered by LMCode TodoHandler");
         } catch (RuntimeException e) {
             showError("The todo file contains invalid JSON.");
         } finally {

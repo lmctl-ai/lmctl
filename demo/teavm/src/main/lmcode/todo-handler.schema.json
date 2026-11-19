@@ -1,0 +1,1 @@
+{"dsl.schema":2,"name":"teavm_todo_handler","interfaces":{"TodoHandler":{"params":[{"name":"title","type":"string"},{"name":"completed","type":"bool"}],"returns":"string"}}}

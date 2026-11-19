@@ -1,0 +1,10 @@
+program = _lmcode_ schema="todo-handler.schema.json";
+@render
+fn render(title: string, completed: bool) -> string implements TodoHandler {
+  let marker = "○ ";
+  if (completed) {
+    marker = "✓ ";
+  }
+  return marker + title;
+}
+end _lmcode_

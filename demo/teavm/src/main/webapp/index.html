@@ -3,16 +3,16 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="A small todo list powered by Java compiled to JavaScript with TeaVM.">
+    <meta name="description" content="A todo list powered by TeaVM and an LMCode interface entry.">
     <base href="/demo/teavm/">
-    <title>TeaVM todo demo · lmctl</title>
+    <title>TeaVM + LMCode todo demo · lmctl</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <main class="demo-card">
-        <p class="eyebrow">Java → JavaScript</p>
-        <h1>A todo list brewed with TeaVM</h1>
-        <p class="intro">The click handler, JSON request, parsing, and list rendering below are written in Java and compiled to JavaScript by TeaVM.</p>
+        <p class="eyebrow">TeaVM + LMCode</p>
+        <h1>A todo list with an LMCode handler</h1>
+        <p class="intro">TeaVM compiles the Java click handler, JSON request, and DOM code. Each label is then rendered by an LMCode function implementing the <strong>TodoHandler</strong> interface.</p>
 
         <button id="load-todos" type="button">Load todos</button>
         <p id="status" class="status" role="status" aria-live="polite">Ready to fetch the static todo list.</p>
