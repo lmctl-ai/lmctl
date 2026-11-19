@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A small todo list powered by Java compiled to JavaScript with TeaVM.">
+    <base href="/demo/teavm/">
+    <title>TeaVM todo demo · lmctl</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main class="demo-card">
+        <p class="eyebrow">Java → JavaScript</p>
+        <h1>A todo list brewed with TeaVM</h1>
+        <p class="intro">The click handler, JSON request, parsing, and list rendering below are written in Java and compiled to JavaScript by TeaVM.</p>
+
+        <button id="load-todos" type="button">Load todos</button>
+        <p id="status" class="status" role="status" aria-live="polite">Ready to fetch the static todo list.</p>
+        <ul id="todo-list" class="todo-list"></ul>
+        <noscript>This demo needs JavaScript enabled.</noscript>
+    </main>
+    <script src="teavm.js"></script>
+    <script>main();</script>
+</body>
+</html>

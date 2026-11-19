@@ -23,6 +23,17 @@ npm run build
 The static artifact is written to `build/` with Docusaurus `baseUrl` set to
 `/lmctl/`.
 
+## Build the TeaVM demo
+
+```bash
+mvn -f demo/teavm/pom.xml clean package
+```
+
+This compiles `demo/teavm/src/main/java/` with TeaVM 0.16.0 and copies the
+generated JavaScript plus `src/main/webapp/` assets to
+`homepage/demo/teavm/`. The existing homepage publisher serves the result at
+`/demo/teavm/`; commit the regenerated `teavm.js` with the Java and web sources.
+
 ## Deploy
 
 | Target | Script |

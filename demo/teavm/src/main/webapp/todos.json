@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "title": "Compile Java to JavaScript with TeaVM",
+    "completed": true
+  },
+  {
+    "id": 2,
+    "title": "Fetch a static JSON file on a button click",
+    "completed": true
+  },
+  {
+    "id": 3,
+    "title": "Publish the demo at lmctl.com/demo/teavm",
+    "completed": false
+  },
+  {
+    "id": 4,
+    "title": "Grow the demo into a small web framework",
+    "completed": false
+  }
+]

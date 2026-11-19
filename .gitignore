@@ -1,6 +1,7 @@
 node_modules/
 dist/
 build/
+demo/teavm/target/
 .docusaurus/
 .cache/
 .env

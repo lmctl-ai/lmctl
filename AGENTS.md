@@ -55,6 +55,7 @@ The static /tools/ section (one plain-HTML section per tool, skill page for LLM 
 - bash scripts/deploy-homepage.sh: Deploys root homepage files (index.html, 404.html, assets/) to S3 apex without --delete.
 - bash scripts/deploy-quickrun.sh: Deploys only /quickrun/ tasks and verifies content hashes via curl.
 - npm ci / Node version: Requires Node \>= 22 (declared in package.json "engines").
+- TeaVM demo: `mvn -f demo/teavm/pom.xml clean package` compiles the Java source and copies the JavaScript/static assets into `homepage/demo/teavm/`. Commit the generated `teavm.js`; the existing homepage publisher deploys it to `/demo/teavm/`.
 
 ## Traps that have bitten people
 
