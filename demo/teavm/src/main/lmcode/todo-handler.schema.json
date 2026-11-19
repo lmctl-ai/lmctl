@@ -7,10 +7,25 @@
     "canvas_clear": [{"params": ["string", "int", "int"], "returns": "void"}],
     "canvas_fill_rect": [{"params": ["string", "int", "int", "int", "int", "string"], "returns": "void"}],
     "canvas_stroke_line": [{"params": ["string", "int", "int", "int", "int", "string", "int"], "returns": "void"}],
-    "canvas_fill_text": [{"params": ["string", "string", "int", "int", "string", "string"], "returns": "void"}]
+    "canvas_fill_text": [{"params": ["string", "string", "int", "int", "string", "string"], "returns": "void"}],
+    "canvas_fill_circle": [{"params": ["string", "int", "int", "int", "string"], "returns": "void"}],
+    "webgl_draw": [{"params": ["string"], "returns": "void"}],
+    "animation_start": [{"params": ["string"], "returns": "void"}]
   },
   "interfaces": {
     "DemoHandler": {"params": [], "returns": "void"},
+    "DrawCommand": {
+      "params": [
+        {"name": "command", "type": "string"},
+        {"name": "x", "type": "int"},
+        {"name": "y", "type": "int"},
+        {"name": "w", "type": "int"},
+        {"name": "h", "type": "int"},
+        {"name": "color", "type": "string"},
+        {"name": "text", "type": "string"}
+      ],
+      "returns": "void"
+    },
     "TodoHandler": {
       "params": [{"name": "title", "type": "string"}, {"name": "completed", "type": "bool"}],
       "returns": "string"

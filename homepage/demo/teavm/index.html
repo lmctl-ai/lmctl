@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="TeaVM and LMCode demo with DOM host functions, hydration, SVG, and canvas.">
+    <meta name="description" content="TeaVM and LMCode demo with DOM host functions, hydration, SVG, WebGL, animation, and JSON drawing.">
     <base href="/demo/teavm/">
     <title>TeaVM + LMCode browser demo · lmctl</title>
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
@@ -13,7 +13,7 @@
     <main class="demo-card">
         <p class="eyebrow">TeaVM + LMCode</p>
         <h1>LMCode in the browser</h1>
-        <p class="intro">TeaVM compiles Java browser events to JavaScript. LMCode handlers use typed host functions to update the DOM and draw diagrams. Each option below matches an LMCode annotation.</p>
+        <p class="intro">TeaVM compiles Java browser events to JavaScript. LMCode handlers use typed host functions to update the DOM, draw, and animate. Options map to LMCode annotations; both data modes share <strong>@data</strong> and differ only by JSON file.</p>
 
         <div class="controls">
             <label for="demo-mode">LMCode handler</label>
@@ -21,6 +21,10 @@
                 <option value="todo">Todo list (@todo)</option>
                 <option value="svg">SVG diagram (@svg)</option>
                 <option value="canvas">2D canvas diagram (@canvas)</option>
+                <option value="webgl">3D WebGL cube (@webgl)</option>
+                <option value="animation">Interactive animation (@animation)</option>
+                <option value="data-shapes">JSON drawing: shape scene (@data)</option>
+                <option value="data-chart">JSON drawing: bar chart (@data)</option>
             </select>
             <button id="run-demo" type="button">Load todos</button>
         </div>
@@ -29,11 +33,22 @@
 
         <section class="hydration-demo" aria-labelledby="hydration-title">
             <h2 id="hydration-title">Hydrated static HTML</h2>
-            <p>TeaVM finds this static code block at startup and adds a working copy button.</p>
+            <p>TeaVM finds these static code blocks at startup and adds working copy buttons.</p>
             <div class="code-sample">
                 <pre><code>@canvas
 fn draw() -> void implements DemoHandler {
   canvas_fill_text("diagram-canvas", "Hello", 320, 130, "#edf2ff", "20px sans-serif");
+}</code></pre>
+            </div>
+            <h3>JSON draw DSL</h3>
+            <p>Each document has a title and commands. Rectangles use <strong>w/h</strong> for size, lines for their end point, and circles use <strong>w</strong> for radius. Text commands add a <strong>text</strong> field.</p>
+            <div class="code-sample">
+                <pre><code>{
+  "title": "JSON shape scene",
+  "commands": [
+    {"type": "rect", "x": 220, "y": 140, "w": 180, "h": 120, "color": "#263d75"},
+    {"type": "circle", "x": 500, "y": 70, "w": 38, "color": "#8dd8c5"}
+  ]
 }</code></pre>
             </div>
         </section>

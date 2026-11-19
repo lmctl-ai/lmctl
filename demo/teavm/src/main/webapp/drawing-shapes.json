@@ -1,0 +1,15 @@
+{
+  "title": "JSON shape scene",
+  "commands": [
+    {"type": "rect", "x": 0, "y": 0, "w": 640, "h": 320, "color": "#0b1020"},
+    {"type": "text", "x": 320, "y": 35, "color": "#edf2ff", "text": "A scene loaded from drawing-shapes.json"},
+    {"type": "circle", "x": 520, "y": 78, "w": 38, "color": "#8dd8c5"},
+    {"type": "rect", "x": 220, "y": 140, "w": 180, "h": 120, "color": "#263d75"},
+    {"type": "line", "x": 200, "y": 145, "w": 310, "h": 85, "color": "#edf2ff"},
+    {"type": "line", "x": 310, "y": 85, "w": 420, "h": 145, "color": "#edf2ff"},
+    {"type": "rect", "x": 285, "y": 195, "w": 50, "h": 65, "color": "#8dd8c5"},
+    {"type": "line", "x": 50, "y": 270, "w": 590, "h": 270, "color": "#6f91e8"},
+    {"type": "circle", "x": 100, "y": 235, "w": 30, "color": "#365493"},
+    {"type": "text", "x": 320, "y": 295, "color": "#b6c2df", "text": "Same renderer, different data"}
+  ]
+}

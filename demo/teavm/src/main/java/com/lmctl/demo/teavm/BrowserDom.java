@@ -21,6 +21,7 @@ final class BrowserDom {
             return Value.none();
         });
         registry.function("dom_set_html", List.of("string", "string"), "void", (context, self, args) -> {
+            AnimationDemo.stop();
             element(string(args[0])).setInnerHTML(string(args[1]));
             return Value.none();
         });
@@ -61,6 +62,23 @@ final class BrowserDom {
                     canvas.fillText(string(args[1]), args[2].asInt(), args[3].asInt());
                     return Value.none();
                 });
+        registry.function("canvas_fill_circle",
+                List.of("string", "int", "int", "int", "string"), "void", (context, self, args) -> {
+                    CanvasRenderingContext2D canvas = canvasContext(canvas(string(args[0])));
+                    canvas.setFillStyle(string(args[4]));
+                    canvas.beginPath();
+                    canvas.arc(args[1].asInt(), args[2].asInt(), args[3].asInt(), 0, Math.PI * 2);
+                    canvas.fill();
+                    return Value.none();
+                });
+        registry.function("webgl_draw", List.of("string"), "void", (context, self, args) -> {
+            WebGlDemo.draw(canvas(string(args[0])));
+            return Value.none();
+        });
+        registry.function("animation_start", List.of("string"), "void", (context, self, args) -> {
+            AnimationDemo.start(canvas(string(args[0])));
+            return Value.none();
+        });
     }
 
     private static HTMLElement element(String id) {

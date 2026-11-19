@@ -1,0 +1,17 @@
+{
+  "title": "JSON bar chart",
+  "commands": [
+    {"type": "rect", "x": 0, "y": 0, "w": 640, "h": 320, "color": "#0b1020"},
+    {"type": "text", "x": 320, "y": 35, "color": "#edf2ff", "text": "Browser demo commands"},
+    {"type": "line", "x": 100, "y": 260, "w": 570, "h": 260, "color": "#b6c2df"},
+    {"type": "line", "x": 100, "y": 65, "w": 100, "h": 260, "color": "#b6c2df"},
+    {"type": "rect", "x": 140, "y": 180, "w": 70, "h": 80, "color": "#365493"},
+    {"type": "rect", "x": 250, "y": 125, "w": 70, "h": 135, "color": "#6f91e8"},
+    {"type": "rect", "x": 360, "y": 80, "w": 70, "h": 180, "color": "#8dd8c5"},
+    {"type": "rect", "x": 470, "y": 150, "w": 70, "h": 110, "color": "#9a82db"},
+    {"type": "text", "x": 175, "y": 285, "color": "#b6c2df", "text": "DOM"},
+    {"type": "text", "x": 285, "y": 285, "color": "#b6c2df", "text": "SVG"},
+    {"type": "text", "x": 395, "y": 285, "color": "#b6c2df", "text": "WebGL"},
+    {"type": "text", "x": 505, "y": 285, "color": "#b6c2df", "text": "JSON"}
+  ]
+}

@@ -98,7 +98,8 @@ button:hover:not(:disabled) {
 }
 
 button:focus-visible,
-select:focus-visible {
+select:focus-visible,
+.diagram:focus-visible {
     outline: 3px solid #edf2ff;
     outline-offset: 3px;
 }
@@ -118,6 +119,10 @@ select:disabled {
 
 .demo-output:empty {
     display: none;
+}
+
+#animation-toggle {
+    margin-bottom: 0.75rem;
 }
 
 .diagram {

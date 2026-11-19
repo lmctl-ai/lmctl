@@ -38,6 +38,35 @@ fn drawCanvas() -> void implements DemoHandler {
   canvas_fill_text("diagram-canvas", "This diagram was painted by LMCode host calls", 320, 225, "#b6c2df", "16px sans-serif");
   dom_set_text("status", "Canvas diagram rendered by LMCode @canvas through drawing host functions");
 }
+@webgl
+fn drawWebGl() -> void implements DemoHandler {
+  dom_set_html("demo-output", "<canvas id='webgl-canvas' class='diagram' width='640' height='320' role='img' aria-label='A depth-tested three-dimensional cube rendered with WebGL'></canvas>");
+  webgl_draw("webgl-canvas");
+  dom_set_text("status", "3D cube rendered by LMCode @webgl through the WebGL host function");
+}
+@animation
+fn startAnimation() -> void implements DemoHandler {
+  dom_set_html("demo-output", "<button id='animation-toggle' type='button'>Pause animation</button><canvas id='animation-canvas' class='diagram' width='640' height='300' role='img' aria-label='Interactive animation running; use the Pause animation button to control it'></canvas>");
+  animation_start("animation-canvas");
+  dom_set_text("status", "Animation running via requestAnimationFrame. Move the pointer; use Pause animation to stop.");
+}
+@data
+fn selectDataDrawing() -> void implements DemoHandler {
+  dom_set_html("demo-output", "<canvas id='data-canvas' class='diagram' width='640' height='320' role='img' aria-label='Drawing loaded from a JSON draw document'></canvas>");
+  dom_set_text("status", "Loading JSON drawing…");
+}
+@draw
+fn drawCommand(command: string, x: int, y: int, w: int, h: int, color: string, text: string) -> void implements DrawCommand {
+  if (command == "rect") {
+    canvas_fill_rect("data-canvas", x, y, w, h, color);
+  } else if (command == "line") {
+    canvas_stroke_line("data-canvas", x, y, w, h, color, 3);
+  } else if (command == "circle") {
+    canvas_fill_circle("data-canvas", x, y, w, color);
+  } else if (command == "text") {
+    canvas_fill_text("data-canvas", text, x, y, color, "18px sans-serif");
+  }
+}
 @render
 fn render(title: string, completed: bool) -> string implements TodoHandler {
   let marker = "○ ";

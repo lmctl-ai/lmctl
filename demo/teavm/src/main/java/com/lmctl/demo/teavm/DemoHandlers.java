@@ -30,6 +30,12 @@ final class DemoHandlers {
         return result.asString().toString();
     }
 
+    void draw(String command, int x, int y, int width, int height, String color, String text) {
+        program.call(findEntry("draw"), context, registry, List.of(
+                Value.ofString(command), Value.ofInt(x), Value.ofInt(y), Value.ofInt(width), Value.ofInt(height),
+                Value.ofString(color), Value.ofString(text)));
+    }
+
     private int findEntry(String annotation) {
         for (int i = 0; i < program.entries().size(); i++) {
             if (program.entries().get(i).annotation().equals(annotation)) {
