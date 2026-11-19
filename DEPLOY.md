@@ -31,9 +31,11 @@ LMCODE_COMPILER_MODULE=/path/to/lmscript/dist/dsl.js \
   mvn -f demo/teavm/pom.xml clean package
 ```
 
-The LMCode compiler builds the `TodoHandler` interface entry from
-`demo/teavm/src/main/lmcode/` into a generated Java class. TeaVM 0.16.0 then
-compiles that class, the lmcode-java runtime, and `src/main/java/` to JavaScript.
+The LMCode compiler builds the `DemoHandler` and `TodoHandler` interface entries
+from `demo/teavm/src/main/lmcode/` into a generated Java class. The demo entries
+are dispatched by their annotations and call the DOM/canvas host functions in
+`BrowserDom`. TeaVM 0.16.0 then compiles that class, the lmcode-java runtime, and
+`src/main/java/` to JavaScript.
 The web assets and generated JavaScript are copied to `homepage/demo/teavm/`.
 The existing homepage publisher serves the result at `/demo/teavm/`; commit the
 regenerated `teavm.js` with the Java, LMCode, and web sources.

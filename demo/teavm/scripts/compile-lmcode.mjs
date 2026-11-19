@@ -18,14 +18,14 @@ const compiled = compileDsl(body.split('\n'), parseDslSchema(schemaBytes, schema
 
 const java = `package com.lmctl.demo.teavm;
 
-final class TodoHandlerProgram {
+final class DemoHandlersProgram {
     static final String BYTECODE = "${Buffer.from(compiled.bytes).toString('base64')}";
     static final String SCHEMA = ${JSON.stringify(schemaBytes.toString('utf8'))};
 
-    private TodoHandlerProgram() {
+    private DemoHandlersProgram() {
     }
 }
 `;
-const output = path.join(root, 'target/generated-sources/lmcode/com/lmctl/demo/teavm/TodoHandlerProgram.java');
+const output = path.join(root, 'target/generated-sources/lmcode/com/lmctl/demo/teavm/DemoHandlersProgram.java');
 mkdirSync(path.dirname(output), { recursive: true });
 writeFileSync(output, java);

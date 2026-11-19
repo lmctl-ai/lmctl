@@ -22,7 +22,7 @@ body {
 }
 
 .demo-card {
-    width: min(100%, 42rem);
+    width: min(100%, 48rem);
     padding: clamp(1.5rem, 5vw, 3rem);
     border: 1px solid #344468;
     border-radius: 1.25rem;
@@ -46,20 +46,50 @@ h1 {
     letter-spacing: -0.04em;
 }
 
+h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1.2rem;
+}
+
 .intro {
     margin: 1.25rem 0 2rem;
     color: #b6c2df;
     line-height: 1.65;
 }
 
+.controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.65rem;
+}
+
+.controls label {
+    grid-column: 1 / -1;
+    color: #b6c2df;
+    font-size: 0.9rem;
+    font-weight: 650;
+}
+
+select,
 button {
     border: 0;
     border-radius: 0.65rem;
     padding: 0.8rem 1.2rem;
-    background: #8dd8c5;
-    color: #09251f;
     font: inherit;
     font-weight: 750;
+}
+
+select {
+    min-width: 0;
+    border: 1px solid #344468;
+    background: #19243a;
+    color: #edf2ff;
+    cursor: pointer;
+}
+
+button {
+    background: #8dd8c5;
+    color: #09251f;
     cursor: pointer;
 }
 
@@ -67,12 +97,14 @@ button:hover:not(:disabled) {
     background: #b0eadb;
 }
 
-button:focus-visible {
+button:focus-visible,
+select:focus-visible {
     outline: 3px solid #edf2ff;
     outline-offset: 3px;
 }
 
-button:disabled {
+button:disabled,
+select:disabled {
     cursor: wait;
     opacity: 0.65;
 }
@@ -82,6 +114,19 @@ button:disabled {
     margin: 1rem 0;
     color: #b6c2df;
     font-size: 0.9rem;
+}
+
+.demo-output:empty {
+    display: none;
+}
+
+.diagram {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid #344468;
+    border-radius: 0.65rem;
+    background: #0b1020;
 }
 
 .todo-list {
@@ -106,4 +151,55 @@ button:disabled {
 .completed span:last-child {
     color: #98a6c5;
     text-decoration: line-through;
+}
+
+.hydration-demo {
+    margin-top: 2.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid #344468;
+}
+
+.hydration-demo > p {
+    color: #b6c2df;
+    line-height: 1.6;
+}
+
+.code-sample {
+    position: relative;
+}
+
+pre {
+    margin: 0;
+    padding: 3.25rem 1rem 1rem;
+    overflow: auto;
+    border: 1px solid #344468;
+    border-radius: 0.65rem;
+    background: #0b1020;
+    color: #c6f6e8;
+    font-size: 0.85rem;
+    line-height: 1.6;
+}
+
+.copy-button {
+    position: absolute;
+    top: 0.65rem;
+    right: 0.65rem;
+    padding: 0.45rem 0.65rem;
+    background: #263d75;
+    color: #edf2ff;
+    font-size: 0.75rem;
+}
+
+.copy-button:hover:not(:disabled) {
+    background: #365493;
+}
+
+@media (max-width: 34rem) {
+    .controls {
+        grid-template-columns: 1fr;
+    }
+
+    .controls label {
+        grid-column: auto;
+    }
 }

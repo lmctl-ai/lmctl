@@ -3,20 +3,40 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="A todo list powered by TeaVM and an LMCode interface entry.">
+    <meta name="description" content="TeaVM and LMCode demo with DOM host functions, hydration, SVG, and canvas.">
     <base href="/demo/teavm/">
-    <title>TeaVM + LMCode todo demo · lmctl</title>
+    <title>TeaVM + LMCode browser demo · lmctl</title>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <main class="demo-card">
         <p class="eyebrow">TeaVM + LMCode</p>
-        <h1>A todo list with an LMCode handler</h1>
-        <p class="intro">TeaVM compiles the Java click handler, JSON request, and DOM code. Each label is then rendered by an LMCode function implementing the <strong>TodoHandler</strong> interface.</p>
+        <h1>LMCode in the browser</h1>
+        <p class="intro">TeaVM compiles Java browser events to JavaScript. LMCode handlers use typed host functions to update the DOM and draw diagrams. Each option below matches an LMCode annotation.</p>
 
-        <button id="load-todos" type="button">Load todos</button>
-        <p id="status" class="status" role="status" aria-live="polite">Ready to fetch the static todo list.</p>
-        <ul id="todo-list" class="todo-list"></ul>
+        <div class="controls">
+            <label for="demo-mode">LMCode handler</label>
+            <select id="demo-mode">
+                <option value="todo">Todo list (@todo)</option>
+                <option value="svg">SVG diagram (@svg)</option>
+                <option value="canvas">2D canvas diagram (@canvas)</option>
+            </select>
+            <button id="run-demo" type="button">Load todos</button>
+        </div>
+        <p id="status" class="status" role="status" aria-live="polite">Initializing LMCode…</p>
+        <div id="demo-output" class="demo-output"></div>
+
+        <section class="hydration-demo" aria-labelledby="hydration-title">
+            <h2 id="hydration-title">Hydrated static HTML</h2>
+            <p>TeaVM finds this static code block at startup and adds a working copy button.</p>
+            <div class="code-sample">
+                <pre><code>@canvas
+fn draw() -> void implements DemoHandler {
+  canvas_fill_text("diagram-canvas", "Hello", 320, 130, "#edf2ff", "20px sans-serif");
+}</code></pre>
+            </div>
+        </section>
         <noscript>This demo needs JavaScript enabled.</noscript>
     </main>
     <script src="teavm.js"></script>
