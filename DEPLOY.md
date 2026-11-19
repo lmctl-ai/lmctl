@@ -30,7 +30,7 @@ Canonical sources and browser integration tests are in
 package, then override its output directory:
 
 ```bash
-mvn -f /path/to/lmcode-java/pom.xml install
+(cd /path/to/lmcode-java && mvn install)
 npm install --prefix /tmp/lmteavm-compiler @lmctl-ai/lmctl@0.2.482
 LMCODE_COMPILER_MODULE=/tmp/lmteavm-compiler/node_modules/@lmctl-ai/lmctl/dist/dsl.js \
   mvn -f /path/to/lmteavm/pom.xml -Ddemo.output="$PWD/tools/lmteavm" clean package

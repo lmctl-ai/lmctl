@@ -29,7 +29,7 @@
 <li>The public lmcode-java runtime and the LMCode compiler bundled in @lmctl-ai/lmctl.</li>
 </ul>
 <p>From a directory containing lmteavm and lmcode-java checkouts, run:</p>
-<pre><kbd>mvn -f lmcode-java/pom.xml -DskipTests install
+<pre><kbd>(cd lmcode-java &amp;&amp; mvn -DskipTests install)
 npm install --prefix compiler @lmctl-ai/lmctl@0.2.482
 export LMCODE_COMPILER_MODULE="$PWD/compiler/node_modules/@lmctl-ai/lmctl/dist/dsl.js"
 mvn -f lmteavm/pom.xml clean package</kbd></pre>
