@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmmock — lmctl.com tools</title>
+<meta name="description" content="lmmock is a scriptable multi-protocol mock server and LMScript host for HTTP, OAuth2, LLM APIs, stdio ACP and MCP, WebSocket, HTTP/2, gRPC, and wire protocols.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmmock/">Overview</a></li>
+<li><a href="/tools/lmmock/skill.html">Skill</a></li>
+<li><a href="/tools/lmmock/guide.html">Guide</a></li>
+<li><a href="/tools/lmmock/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmmock</h1>
+<p>lmmock is a scriptable multi-protocol mock server and LMScript host for HTTP, OAuth2, LLM APIs, stdio ACP and MCP, WebSocket, HTTP/2, gRPC, and wire protocols. It binds loopback listeners, executes annotated lmcode handlers, and wraps integration test commands with automatic lifecycle cleanup.</p>
+<h2>Quick reference</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl@latest
+lmmock --version
+lmmock --lmcode-schema --json
+lmmock --lmcode-signatures</code></pre>
+<table>
+<thead><tr><th>Interface or flag</th><th>Signature or syntax</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>CLI exec wrapper</td><td>lmmock exec --lmcode FILE [flags] -- COMMAND [ARG...]</td><td>Bind an ephemeral loopback listener, export LMMOCK_URL to the child command, and shut down on exit.</td></tr>
+<tr><td>CLI standalone server</td><td>lmmock serve --lmcode FILE [--listen 127.0.0.1:0] [--ready-file FILE]</td><td>Start a loopback mock server, emit readiness JSON on stdout, and serve until SIGINT or SIGTERM.</td></tr>
+<tr><td>CLI built-in presets</td><td>lmmock exec|serve --builtin llm-api|oauth-codex-device [--config FILE]</td><td>Run embedded OpenAI, Anthropic, Gemini, Ollama, or Codex OAuth device-flow mocks without compiling scripts.</td></tr>
+<tr><td>CLI wire and proto servers</td><td>lmmock proto &lt;name> | lmmock wire serve|exec &lt;ws|http2|grpc|line></td><td>Run in-memory Kafka, MongoDB, Postgres, Redis, MQTT, SMTP, IMAP, AMQP, WebSocket, HTTP/2, or gRPC mocks.</td></tr>
+<tr><td>CLI stdio and scenarios</td><td>lmmock stdio acp|mcp|mcp-client|agent | lmmock scenario scrub|import|verify</td><td>Mock stdio JSON-RPC agents and MCP servers, or scrub and verify recorded lminspect traffic captures.</td></tr>
+<tr><td>CLI assertion runner</td><td>lmmock check --suite FILE [--url URL]</td><td>Run multi-step declarative HTTP assertion suites with dot-path JSON checks and variable capture.</td></tr>
+<tr><td>Handler and Exchange</td><td>@name fn h(x: Exchange) -> void implements Handler</td><td>Handle HTTP requests with status, headers, buffered json/send, ordered stream_event, delay, or faults.</td></tr>
+<tr><td>Host functions</td><td>route(method, path, ann) | config() | form_get() | sha256_url()</td><td>Register ServeMux routes, read JSON config, parse forms and Basic auth, and generate PKCE hashes or tokens.</td></tr>
+<tr><td>Standard REST and CLI</td><td>RestGet..RestOptions, RestHandler, CliCommand, CliOption</td><td>Define standard lmcode_std_v3 HTTP routes (:param) and stateless CLI commands dispatched via rest_cli.</td></tr>
+</tbody>
+</table>
+<pre><code>p = _lmcode_ cli="lmmock" install="github:lmctl-ai/lmmock@latest";
+@health
+fn healthcheck(x: Exchange) -> void implements Handler {
+  x.json("{\"ok\":true,\"hits\":" + str(x.increment("hits")) + "}");
+}
+route("GET", "/health", "health");
+
+@"--env"
+fn opt_env(x: RestExchange) -> void implements CliOption {
+  x.set("env", x.query("env"));
+}
+
+@"/users/:id"
+fn get_user(x: RestExchange) -> void implements RestGet {
+  x.json("{\"id\":\"" + x.param("id") + "\",\"env\":\"" + x.get("env") + "\"}");
+}
+rest_config("session", "global");
+assert_eq(rest_cli(str_split("--env=test /users/42", " ")), "{\"id\":\"42\",\"env\":\"test\"}");
+end _lmcode_
+res = run_lmcode(p, {command: ["lmmock", "exec", "--lmcode", "$DSLFILE", "--", "lmmock", "check", "--suite", "examples/api-client.json"]});
+require(res.ok, json_stringify(res));</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmmock/skill.html">Skill</a> — agent authoring rules, CLI modes, loopback safety boundaries, exit codes, and verification steps.</li>
+<li><a href="/tools/lmmock/guide.html">Guide</a> — HTTP handler architecture, LLM and OAuth fixtures, stdio and wire protocols, TLS and capture replay, and standard REST and CLI interfaces.</li>
+<li><a href="/tools/lmmock/reference.html">Reference</a> — complete CLI subcommands and flags, Exchange and RPC methods, host functions, standard lmcode_std_v3 interfaces, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmmock">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmmock">github.com/lmctl-ai/lmmock</a>.</p>
+</footer>
+</body>
+</html>

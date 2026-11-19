@@ -22,16 +22,97 @@
 <p>Small command-line tools from lmctl. Each tool has a skill page for LLM agents and documentation for the tasks it supports.</p>
 <p>Older utilities and coordination guides are in the <a href="/skills/">skills catalog</a>.</p>
 <ul>
-<li><a href="/tools/lmblender/">lmblender</a> — lmblender runs lmscript scene descriptions through a standalone CPU renderer based on Blender's Cycles engine.</li>
-<li><img src="/tools/lmcad/img/icon.png" alt="" width="64" height="64"><a href="/tools/lmcad/">lmcad</a> — lmcad is an experimental native CAD host that models OpenCASCADE solids, renders PNG and APNG images, and exports STL and OBJ meshes.</li>
-<li><img src="/tools/lmcode-cpp/img/icon.png" alt="" width="64" height="64"><a href="/tools/lmcode-cpp/">lmcode-cpp</a> — Experimental. lmcode-cpp is a C++17, standard-library-only header for loading, verifying and executing lmscript bytecode inside a host application.</li>
-<li><img src="/tools/lmdraw/img/icon.png" alt="" width="64" height="64"><a href="/tools/lmdraw/">lmdraw</a> — lmdraw is a native host for retained 2D scenes written in lmscript.</li>
-<li><img src="/tools/lmhtml/img/icon.png" alt="" width="64" height="64"><a href="/tools/lmhtml/">lmhtml</a> — lmhtml is a native host for auditing links and CSS names, comparing HTML documents, extracting templates, and applying shared-page edits.</li>
-<li><img src="/tools/lmpy/img/icon.png" alt="" width="64" height="64"><a href="/tools/lmpy/">lmpy</a> — lmpy is a native numerical host for LMScript programs.</li>
-<li><a href="/tools/lmr/">lmr — Native statistics for LMScript</a> — lmr is a native LMScript host for distributions, statistical tests, regression, time series, clustering, smoothing, and numerical optimization.</li>
-<li><img src="/tools/lmscript/img/icon.png" alt="" width="64" height="64"><a href="/tools/lmscript/">lmscript</a> — lmscript is an experimental scripting language and CLI for file operations, structured data, subprocesses, and agent workflows.</li>
-<li><img src="/tools/lmtorch/img/icon.png" alt="" width="64" height="64"><a href="/tools/lmtorch/">lmtorch</a> — lmtorch is a CPU tensor host for LMScript.</li>
-<li><a href="/tools/lmvideo/">A second look: CPU Cycles</a> — Contents</li>
+<li><a href="/tools/awssim/">awssim</a> — awssim is a single-binary local AWS emulator on 127.0.0.1:4566 that runs S3, DynamoDB, and SQS in-process without Java or Docker at runtime.</li>
+<li><a href="/tools/azuresim/">azuresim</a> — azuresim is a single-binary local Azure emulator on 127.0.0.1:4577 that runs Blob and Queue Storage in-process without Docker, Java, or an Azure account.</li>
+<li><a href="/tools/claude-ollama-live/">claude-ollama-live</a> — claude-ollama-live qualifies Claude Code (@anthropic-ai/claude-code) against Ollama Cloud and a loopback lmmock Anthropic Messages server in GitHub Actions.</li>
+<li><a href="/tools/deepseek-harness/">deepseek-harness</a> — deepseek-harness (dsh) is an open-source everything-is-a-plugin agent harness powered by Cordis, maintained in lmctl-ai/deepseek-harness for arm64 builds and…</li>
+<li><a href="/tools/gcpsim/">gcpsim</a> — gcpsim is a single-binary local GCP emulator on 127.0.0.1:4588 that runs Cloud Storage (GCS) and Pub/Sub in-process without Docker, Java, or a Google Cloud…</li>
+<li><a href="/tools/integration/">integration</a> — integration provides hermetic E2E scenarios, the ported mono-test suite, and reusable GitHub Actions for published lmctl, lmscript, and lmcode releases.</li>
+<li><a href="/tools/kimi-code/">kimi-code</a> — kimi-code is the lmctl-maintained fork of Moonshot AI's Kimi Code CLI, patching stale ACP runtime bindings after session restore and batching queued prompts.</li>
+<li><a href="/tools/lmasm/">lmasm</a> — lmasm exposes the Java ASM bytecode inspection library as an lmcode host for class discovery and dependency analysis across JARs and class folders.</li>
+<li><a href="/tools/lmaudio/">lmaudio</a> — lmaudio is a native lmcode host for offline audio: synthesis, physical models, filters, effects and analysis in one static executable scripted from LMScript.</li>
+<li><a href="/tools/lmauth/">lmauth</a> — lmauth is a guided, LLM-drivable authorization helper that collects operator tokens and stores them write-only in lmconn without exposing secrets to the caller.</li>
+<li><a href="/tools/lmaws/">lmaws</a> — lmaws is the AWS scripting host for LMScript, providing both the shared lmcloud procedural schema and a curated AWS inventory, spend, and sandbox API.</li>
+<li><a href="/tools/lmazure/">lmazure</a> — lmazure is the Azure scripting host for LMScript, providing the shared lmcloud procedural schema and a 72-example Azure metadata and owned-resource suite.</li>
+<li><a href="/tools/lmbio/">lmbio</a> — lmbio is an LMCode host that simulates gene circuits, enzymes, drugs, epidemics and molecular noise as reaction networks: stiff ODEs with CVODE, steady states…</li>
+<li><a href="/tools/lmblender/">lmblender</a> — lmblender is Blender's Cycles path tracer as one static executable, driven by short lmscript scenes: no Blender install, no Python, no GPU.</li>
+<li><img src="/tools/lmcad/img/icon.png" alt="" width="64" height="64"><a href="/tools/lmcad/">lmcad</a> — lmcad is a native lmcode host for parametric 3D solids: OpenCASCADE B-rep modelling, volume checks, and a built-in software renderer that writes PNG, APNG, STL…</li>
+<li><a href="/tools/lmcell/">lmcell</a> — lmcell is a native lmcode host for 2D multicellular simulations: cell types that divide, die, migrate, follow gradients and exchange diffusing substrates, with…</li>
+<li><a href="/tools/lmclean/">lmclean</a> — lmclean is a native lmcode host for scriptable file search and cleanup with dry-run defaults, reversible trash manifests, Git status checks, and a REST server.</li>
+<li><a href="/tools/lmclient/">lmclient</a> — lmclient is a scriptable protocol client and lmcode host in one native executable for JDBC databases, Redis, mail, message queues, MQTT, and MongoDB.</li>
+<li><a href="/tools/lmcloud/">lmcloud</a> — lmcloud defines the shared procedural lmcode schema and Go hostkit implemented by lmaws, lmazure, lmgcp, and lmoci.</li>
+<li><a href="/tools/lmcode/">lmcode</a> — lmcode is the specification, DSLB v6 bytecode contract, 226-signature standard catalog, and conformance suite for schema-bound host programs.</li>
+<li><a href="/tools/lmcode-c-sample/">lmcode-c-sample</a> — lmcode-c-sample is the reference C11 domain library and C++17 host application demonstrating how to wrap a pure C library with lmcode-cpp.</li>
+<li><img src="/tools/lmcode-cpp/img/icon.png" alt="" width="64" height="64"><a href="/tools/lmcode-cpp/">lmcode-cpp</a> — lmcode-cpp is the experimental C++17 header-only runtime for lmscript _lmcode_ bytecode: loader, verifier, VM and host registry in include/dslvm.hpp.</li>
+<li><a href="/tools/lmcode-cpp-sample/">lmcode-cpp-sample</a> — lmcode-cpp-sample is the canonical C++17 reference Shop and Ledger host that defines the 123-case portable sample suite for all lmcode runtimes.</li>
+<li><a href="/tools/lmcode-csharp/">lmcode-csharp</a> — lmcode-csharp is a dependency-free .NET 8 SDK (namespace LmCode) for embedding the lmcode DSLB v6 verifier and VM in managed or NativeAOT C# hosts.</li>
+<li><a href="/tools/lmcode-csharp-sample/">lmcode-csharp-sample</a> — lmcode-csharp-sample is the reference .NET 8 C# Shop and Ledger host embedding lmcode-csharp and passing the 123-case canonical sample suite.</li>
+<li><a href="/tools/lmcode-go/">lmcode-go</a> — lmcode-go is a standard-library-only Go 1.26+ SDK (package lmcode) for verifying and executing lmcode DSLB v6 bytecode in static Go binaries.</li>
+<li><a href="/tools/lmcode-go-sample/">lmcode-go-sample</a> — lmcode-go-sample is the static, CGO-free Go 1.26+ reference Shop and Ledger host embedding lmcode-go and passing the canonical sample suite.</li>
+<li><a href="/tools/lmcode-java/">lmcode-java</a> — lmcode-java is a zero-dependency Java 21 SDK (package io.lmctl.lmcode) for running lmcode DSLB v6 bytecode on the JVM or GraalVM Native Image.</li>
+<li><a href="/tools/lmcode-java-sample/">lmcode-java-sample</a> — lmcode-java-sample is the Java 21 and GraalVM Native Image reference Shop and Ledger host embedding lmcode-java and passing the canonical sample suite.</li>
+<li><a href="/tools/lmcode-js/">lmcode-js</a> — lmcode-js is a dependency-free Node.js ESM SDK (@lmctl-ai/lmcode-js) for loading, verifying, and executing lmcode DSLB v6 bytecode in JavaScript hosts.</li>
+<li><a href="/tools/lmcode-kotlin-sample/">lmcode-kotlin-sample</a> — lmcode-kotlin-sample is the idiomatic Kotlin reference Shop and Ledger host built on the vendored lmcode-java SDK and passing the canonical sample suite.</li>
+<li><a href="/tools/lmcode-python/">lmcode-python</a> — lmcode-python is a pure-Python 3.9+ SDK (package lmcode) for loading, verifying, and executing lmcode DSLB v6 bytecode with zero third-party dependencies.</li>
+<li><a href="/tools/lmcode-rust/">lmcode-rust</a> — lmcode-rust is a zero-dependency Rust SDK (dslvm crate) for loading, verifying, and executing lmcode DSLB v6 bytecode in native Rust hosts.</li>
+<li><a href="/tools/lmcode-rust-sample/">lmcode-rust-sample</a> — lmcode-rust-sample is the native Rust reference Shop and Ledger host embedding the vendored dslvm crate and passing the 123-case canonical sample suite.</li>
+<li><a href="/tools/lmcode-scala-sample/">lmcode-scala-sample</a> — lmcode-scala-sample is the Scala 3 reference Shop and Ledger host compiling against the vendored lmcode-java SDK and passing the canonical sample suite.</li>
+<li><a href="/tools/lmconn/">lmconn</a> — lmconn is a zero-dependency connector CLI and cli.schema.v1 module for AI-agent workflows with an AES-256-GCM encrypted SQLite credential and OAuth2 store.</li>
+<li><a href="/tools/lmcurl/">lmcurl</a> — lmcurl is an HTTP, LDAPv3, and LLM contract testing CLI and LMScript host built on libcurl and a pure C++17 BER/ASN.1 LDAPv3 wire engine.</li>
+<li><a href="/tools/lmdebug/">lmdebug</a> — lmdebug is a Linux network, system, process, packet-capture, and detection introspection CLI and LMScript host in one self-contained executable.</li>
+<li><img src="/tools/lmdraw/img/icon.png" alt="" width="64" height="64"><a href="/tools/lmdraw/">lmdraw</a> — lmdraw is a native host for retained 2D scenes written in lmscript: an _lmcode_ block builds a scene from shapes, text, diagram blocks and imported SVG, and…</li>
+<li><a href="/tools/lmfilament/">lmfilament</a> — lmfilament is a native host for the lmscript _lmcode_ statement that embeds Google Filament 1.78.1 (material compiler, engine, geometry tools) in one static…</li>
+<li><a href="/tools/lmfinance/">lmfinance</a> — lmfinance is a native lmcode host that puts QuantLib behind an LMScript _lmcode_ block: yield curves, bonds, swaps, caps, floors and swaptions, vanilla,…</li>
+<li><a href="/tools/lmfluid/">lmfluid</a> — lmfluid is a native lmcode host that solves Poisson, heat and linear-elasticity problems with serial MFEM finite elements and 2D low-Mach flow with a D2Q9…</li>
+<li><a href="/tools/lmformat/">lmformat</a> — lmformat (@lmctl-ai/lmformat) is a dependency-free Node.js library for CLI output formatting: automatically sized tables, counts, durations, and timestamps.</li>
+<li><a href="/tools/lmgallery/">lmgallery</a> — lmgallery is a showcase of 50 runnable LMScript compositions across 16 native hosts that compute scientific, financial, or engineering results and render…</li>
+<li><a href="/tools/lmgcp/">lmgcp</a> — lmgcp is the Google Cloud Platform scripting host for LMScript, exposing a 16-service GCP schema alongside the shared lmcloud procedural schema.</li>
+<li><a href="/tools/lmgh/">lmgh</a> — lmgh is a native lmcode host that turns the GitHub CLI (gh) into a type-checked API for repositories, issues, pull requests, workflow runs, and reviews.</li>
+<li><a href="/tools/lmgit/">lmgit</a> — lmgit is a native lmcode host that exposes Git repositories, commits, branches, status entries, and audit reports to type-checked LMScript programs.</li>
+<li><img src="/tools/lmhtml/img/icon.png" alt="" width="64" height="64"><a href="/tools/lmhtml/">lmhtml</a> — lmhtml is a native host for auditing links and CSS names, comparing HTML documents, extracting templates, applying shared-page edits, converting Markdown and…</li>
+<li><a href="/tools/lmimg/">lmimg</a> — lmimg is a native lmcode host for image editing, compositing and procedural graphics from scripts: a static ImageMagick core with original GIMP-style layers,…</li>
+<li><a href="/tools/lminspect/">lminspect</a> — lminspect is a pure-Go HTTP/HTTPS proxy, dynamic TLS MITM interceptor, flow recorder, and LMScript host modeled on mitmproxy.</li>
+<li><a href="/tools/lminstall/">lminstall</a> — lminstall is a static Go CLI and GitHub Action to install, verify, upgrade, configure, run, and uninstall coding provider CLIs without shelling out.</li>
+<li><a href="/tools/lmldap/">lmldap</a> — lmldap is a single-executable OpenLDAP (slapd + LMDB) server with zero-config startup, an integrated HTTP/JSON REST server, and an embedded LMScript host.</li>
+<li><a href="/tools/lmlucene/">lmlucene</a> — lmlucene exposes Apache Lucene 10.5.2 indexing, full-text and KNN vector search, facets, and SAM analysis/scoring rules to LMScript programs.</li>
+<li><a href="/tools/lmmagnum/">lmmagnum</a> — lmmagnum is a native lmcode host that builds a 3D scene from Magnum primitives, renders it with a built-in software rasterizer and exports PNG, PPM, STL, OBJ…</li>
+<li><a href="/tools/lmmcp/">lmmcp</a> — lmmcp is a pure-Go Model Context Protocol (MCP) bridge and LMScript host exposing stdio, Streamable HTTP, and HTTP+SSE MCP servers over REST, CLI, and…</li>
+<li><a href="/tools/lmmock/">lmmock</a> — lmmock is a scriptable multi-protocol mock server and LMScript host for HTTP, OAuth2, LLM APIs, stdio ACP and MCP, WebSocket, HTTP/2, gRPC, and wire protocols.</li>
+<li><a href="/tools/lmmol/">lmmol</a> — lmmol documents and specifies lmmol.com, a cross-referenced biomedical knowledge graph of proteins, clinical trials, diseases, genes, and Gene Ontology terms.</li>
+<li><a href="/tools/lmmolecule/">lmmolecule</a> — lmmolecule is a native molecular dynamics host for LMScript built on OpenMM 8.2.0, supporting crystal lattices, rigid water models, Lepton custom potentials,…</li>
+<li><a href="/tools/lmnet/">lmnet</a> — lmnet is a statically-linked Linux network diagnostics CLI and LMScript host combining iputils ping and tracepath, iperf3, rtnetlink, procfs, DNS, and TCP…</li>
+<li><a href="/tools/lmnum/">lmnum</a> — lmnum is a native numerical computing host for LMScript that embeds Eigen linear algebra, SUNDIALS ODE and nonlinear solvers, quadrature, root finding, and…</li>
+<li><a href="/tools/lmoci/">lmoci</a> — lmoci is the Oracle Cloud Infrastructure scripting host for LMScript, providing both the shared lmcloud procedural schema and a 16-section OCI SDK and CLI…</li>
+<li><a href="/tools/lmoffice/">lmoffice</a> — lmoffice is a self-contained .NET 8 NativeAOT lmcode host that creates and inspects Word, Excel, and PowerPoint Open XML documents.</li>
+<li><a href="/tools/lmok/">lmok</a> — lmok embeds tree-sitter 0.27.1 (12 languages), SQLite FTS5 code indexing, JSON and lmcode lint packs, SARIF output, and a REST server in one static CLI.</li>
+<li><a href="/tools/lmparticle/">lmparticle</a> — lmparticle is a seeded Monte Carlo photon transport host for LMScript with embedded NIST XCOM cross sections.</li>
+<li><a href="/tools/lmpdf/">lmpdf</a> — lmpdf is a self-contained Rust and Typst lmcode host that generates deterministic, tagged PDF/A-2b and PDF/UA-1 documents and slide decks.</li>
+<li><a href="/tools/lmphysics/">lmphysics</a> — lmphysics is a self-contained Project Chrono rigid-body physics host for LMScript.</li>
+<li><a href="/tools/lmplayer/">lmplayer</a> — lmplayer is an open-source AI coding agent for scripts, unattended workflows, single-user REST services, and terminal sessions.</li>
+<li><a href="/tools/lmplot/">lmplot</a> — lmplot is gnuplot packaged as a single self-contained executable and LMScript host with embedded DejaVu fonts and a deterministic PNG/SVG rasterizer.</li>
+<li><a href="/tools/lmprobe/">lmprobe</a> — lmprobe is a one-shot, AST-aware structural code-search CLI and 63-operation lmcode host for symbol graphs, Git history, secret scans, and guarded edits.</li>
+<li><a href="/tools/lmproxy/">lmproxy</a> — lmproxy is a statically-linked HTTP/HTTPS proxy daemon, URL and HTTP/1.x parser CLI, and LMScript host built on the embedded Squid 7 engine.</li>
+<li><img src="/tools/lmpy/img/icon.png" alt="" width="64" height="64"><a href="/tools/lmpy/">lmpy</a> — lmpy is a native numerical host for LMScript: linear algebra, statistics, tables, optimisation, differential equations, signal processing, graphs, statistical…</li>
+<li><a href="/tools/lmr/">lmr</a> — lmr is a native LMScript host for distributions, statistical tests, regression, time series, clustering, smoothing, and numerical optimization.</li>
+<li><a href="/tools/lmsaml/">lmsaml</a> — lmsaml is a single-binary SAML 2.0 Identity Provider, Service Provider, REST API server, and LMScript host built in pure Go.</li>
+<li><img src="/tools/lmscript/img/icon.png" alt="" width="64" height="64"><a href="/tools/lmscript/">lmscript</a> — lmscript is a small scripting language and CLI for file operations, structured data, subprocesses, agent workflows and typed _lmcode_ programs that native…</li>
+<li><a href="/tools/lmsearch/">lmsearch</a> — lmsearch is a native C++ vector and neural search CLI and lmcode host unifying ONNX embeddings, AutoFaiss index tuning, and FAISS search.</li>
+<li><a href="/tools/lmspace/">lmspace</a> — lmspace is a native orbital mechanics and astronomy host for lmscript with N-body integration, Kepler propagation, transfers, and NASA NAIF CSPICE frames.</li>
+<li><a href="/tools/lmssh/">lmssh</a> — lmssh is a static executable bundling OpenSSH 10.6p1 (ssh, sftp, scp, ssh-keygen) with an embedded LMScript bytecode VM for remote fleet automation and key…</li>
+<li><a href="/tools/lmssl/">lmssl</a> — lmssl is a static executable bundling the OpenSSL 4.0.3 CLI and embedded openssl.cnf with an LMScript bytecode VM for X.509, PKI, TLS, and crypto scripting.</li>
+<li><a href="/tools/lmtop/">lmtop</a> — lmtop is a cross-platform host resource monitor (CPU, memory, disk, network) that runs as a non-interactive newline-delimited JSON server over stdio.</li>
+<li><img src="/tools/lmtorch/img/icon.png" alt="" width="64" height="64"><a href="/tools/lmtorch/">lmtorch</a> — lmtorch is a CPU tensor host for LMScript: tensor operations, automatic differentiation, model layers, optimizers, and safetensors and CSV input and output…</li>
+<li><a href="/tools/lmvalkey/">lmvalkey</a> — lmvalkey is a single-executable Valkey key-value server combining the native RESP protocol engine, an integrated HTTP REST API, and an embedded LMScript…</li>
+<li><a href="/tools/lmvideo/">lmvideo</a> — lmvideo is an lmcode host that draws plots, diagrams, processed images, CPU rendered 3D scenes, rigid body motion and video from short LMScript programs.</li>
+<li><a href="/tools/lmweather/">lmweather</a> — lmweather is a self-contained atmospheric and oceanic shallow-water dynamics host for lmscript on the rotating sphere and beta-plane.</li>
+<li><a href="/tools/lmweblab/">lmweblab</a> — lmweblab is a pictures-first cloud web stack integration benchmark and 12-scenario suite comparing native lmaws and OpenTofu-based lmcloud on AWS.</li>
+<li><a href="/tools/lmwebtest/">lmwebtest</a> — lmwebtest is a Playwright Chromium browser automation host and web integration testing tool for lmscript.</li>
+<li><a href="/tools/miniplayer/">miniplayer</a> — miniplayer is a fast, lightweight CLI harness for language models built on the principle of prompt in, text out, with zero built-in tool dependencies.</li>
+<li><a href="/tools/n8n/">n8n</a> — n8n is an independent, from-scratch workflow runtime for n8n-style JSON graphs built with LMScript, LMCode, and an lmcode-go HTTP host.</li>
+<li><a href="/tools/ocisim/">ocisim</a> — ocisim is a single-binary local Oracle Cloud Infrastructure (OCI) emulator on 127.0.0.1:4599 that runs Object Storage, IAM, Queue, Streaming, Vault, KMS, and…</li>
+<li><a href="/tools/provider-mock-e2e/">provider-mock-e2e</a> — provider-mock-e2e runs unmodified coding agent CLIs installed by lminstall against a checksum-verified loopback lmmock server with zero vendor credentials.</li>
+<li><a href="/tools/tree-sitter-lmcode/">tree-sitter-lmcode</a> — tree-sitter-lmcode is the Tree-sitter grammar and C external scanner for the standalone lmcode language inside _lmcode_ blocks.</li>
+<li><a href="/tools/tree-sitter-lmscript/">tree-sitter-lmscript</a> — tree-sitter-lmscript is the Tree-sitter grammar, external scanner, and companion lmscript_lmcode injection parser for LMScript (.lms) files.</li>
 </ul>
 </main>
 <footer>

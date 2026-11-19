@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lminspect reference — lminspect — lmctl.com tools</title>
+<meta name="description" content="Complete command-line subcommand and flag reference, host schema contexts, hook interfaces, Flow/Request/Response methods, standard lmcode_std_v3 REST and CLI…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lminspect/">Overview</a></li>
+<li><a href="/tools/lminspect/skill.html">Skill</a></li>
+<li><a href="/tools/lminspect/guide.html">Guide</a></li>
+<li><a href="/tools/lminspect/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lminspect reference</h1>
+<p>Complete command-line subcommand and flag reference, host schema contexts, hook interfaces, Flow/Request/Response methods, standard lmcode_std_v3 REST and CLI interfaces, and exit codes for lminspect v0.1.0.</p>
+<h2>Host and CLI commands and flags</h2>
+<table>
+<thead><tr><th>Command or flag</th><th>Arguments</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>--version</td><td>none</td><td>Print the lminspect version string (lminspect 0.1.0) and exit 0.</td></tr>
+<tr><td>--lmcode-schema / --dsl-schema</td><td>[--json]</td><td>Write the exact embedded schema/lminspect.dsl.json bytes to stdout and exit 0.</td></tr>
+<tr><td>--lmcode-signatures / --dsl-signatures</td><td>none</td><td>Print all canonical host and 226 standard lmcode_std_v3 signatures and exit 0.</td></tr>
+<tr><td>--lmcode / --dsl</td><td>&lt;file.dslb> [file...] [--save &lt;out.dslb>]</td><td>Execute one or more compiled LMScript bytecode files offline, optionally saving the bytecode artifact to --save.</td></tr>
+<tr><td>run / proxy</td><td>[proxy flags]</td><td>Start the HTTP/HTTPS proxy server with the configured mode, TLS settings, declarative rules, and DSL addon script.</td></tr>
+<tr><td>run --listen / --bind / --port</td><td>--listen &lt;addr> | --bind &lt;ip> | --port &lt;int></td><td>Configure proxy bind address and port (default 127.0.0.1:8080).</td></tr>
+<tr><td>run --mode</td><td>regular | reverse:&lt;target_url> | transparent</td><td>Select forward proxy mode (regular), reverse proxy mode to an upstream origin, or transparent mode.</td></tr>
+<tr><td>run --ssl-bump / --ca-cert / --ca-key</td><td>[--ssl-bump] [--ca-cert &lt;path>] [--ca-key &lt;path>]</td><td>Enable dynamic TLS MITM decryption using leaf certificates signed by the specified or ephemeral Root CA.</td></tr>
+<tr><td>run --insecure</td><td>[true|false]</td><td>Skip TLS certificate verification on upstream server connections (default true).</td></tr>
+<tr><td>run --tap / --record / --replay-server</td><td>[--tap] [--record &lt;file.jsonl>] [--replay-server &lt;file.jsonl>]</td><td>Stream sanitized flow summaries to stderr, append sanitized flows to a JSONL file, or serve recorded responses from JSONL.</td></tr>
+<tr><td>run --script</td><td>&lt;file.dslb></td><td>Load a compiled _lmcode_ bytecode addon implementing RequestHook, ResponseHook, or FlowHook into the proxy pipeline.</td></tr>
+<tr><td>run --redirect / --route / --header / --mock</td><td>&lt;pattern=value> (repeatable)</td><td>Apply declarative URL redirects, host:port routing overrides, key:val header injections, or status_code:body mock responses.</td></tr>
+<tr><td>replay</td><td>--client &lt;file.jsonl> [--target &lt;host:port>]</td><td>Replay recorded client requests from a JSONL file, optionally overriding destination host:port, and log sanitized status lines.</td></tr>
+<tr><td>certgen</td><td>[--cert &lt;ca.crt>] [--key &lt;ca.key>]</td><td>Generate and save a local Root CA certificate and private key for SSL-Bump TLS interception.</td></tr>
+</tbody>
+</table>
+<h2>Host contexts, hook interfaces, and Flow methods</h2>
+<table>
+<thead><tr><th>Type / context / interface</th><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context inspect: Inspector</td><td>inspect.new_flow(method: string, url: string) -> Flow</td><td>Construct a new synthetic HTTP Flow with the given HTTP method and full URL.</td></tr>
+<tr><td>Inspector</td><td>inspect.parse_flow(json_str: string) -> Flow</td><td>Reconstitute a Flow object from its serialized JSON representation.</td></tr>
+<tr><td>context flow: Flow</td><td>flow</td><td>Reference the currently active Flow during hook execution.</td></tr>
+<tr><td>interface RequestHook</td><td>@request fn h(flow: Flow) -> void implements RequestHook</td><td>Hook invoked on each incoming HTTP request before forwarding to the upstream server.</td></tr>
+<tr><td>interface ResponseHook</td><td>@response fn h(flow: Flow) -> void implements ResponseHook</td><td>Hook invoked after receiving an upstream response (or synthetic mock) before returning to the client.</td></tr>
+<tr><td>interface FlowHook</td><td>fn h(flow: Flow) -> void implements FlowHook</td><td>General flow lifecycle hook invoked on a Flow object.</td></tr>
+<tr><td>Flow</td><td>f.id() -> string | f.client_addr() -> string | f.duration_ms() -> int</td><td>Return the 16-character hex flow ID, client IP:port address, or elapsed request duration in milliseconds.</td></tr>
+<tr><td>Flow</td><td>f.request() -> Request | f.response() -> Response | f.has_response() -> bool | f.error() -> string</td><td>Access the mutable Request and Response objects, check whether a response exists, or read any flow error string.</td></tr>
+<tr><td>Flow</td><td>f.respond(status_code: int, body: string, content_type: string) -> void</td><td>Attach a synthetic HTTP response directly from the proxy and skip upstream forwarding.</td></tr>
+<tr><td>Flow</td><td>f.intercept() -> void | f.is_intercepted() -> bool | f.resume() -> void</td><td>Pause a flow for inspection, check interception state, or resume a paused flow.</td></tr>
+<tr><td>Flow</td><td>f.kill() -> void | f.is_killed() -> bool</td><td>Immediately drop the connection and mark the flow as killed, or check killed status.</td></tr>
+<tr><td>Flow</td><td>f.to_json() -> string</td><td>Serialize the flow to a credential-sanitized JSON string.</td></tr>
+<tr><td>global functions</td><td>assert(cond: bool, msg: string) -> void | println(msg: string) -> void</td><td>Assert a boolean invariant (aborting with an error if false) or print a credential-sanitized line to stdout.</td></tr>
+</tbody>
+</table>
+<h2>Request and Response methods</h2>
+<table>
+<thead><tr><th>Type</th><th>Method signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Request</td><td>req.method() -> string | req.set_method(string) -> void</td><td>Get or set the HTTP request method (GET, POST, PUT, DELETE, etc.).</td></tr>
+<tr><td>Request</td><td>req.url() -> string | req.set_url(string) -> void</td><td>Get or replace the full request URL, updating scheme, host, port, and path automatically.</td></tr>
+<tr><td>Request</td><td>req.scheme() -> string | req.set_scheme(string) -> void</td><td>Get or set the URL scheme (http or https).</td></tr>
+<tr><td>Request</td><td>req.host() -> string | req.set_host(string) -> void | req.port() -> int | req.set_port(int) -> void</td><td>Get or rewrite the destination hostname and TCP port.</td></tr>
+<tr><td>Request</td><td>req.path() -> string | req.set_path(string) -> void</td><td>Get or rewrite the request path and raw query string (/path?k=v).</td></tr>
+<tr><td>Request</td><td>req.header(string) -> string | req.set_header(string, string) -> void | req.remove_header(string) -> void | req.header_names() -> StrList</td><td>Read (case-insensitively), set, remove, or list HTTP request headers.</td></tr>
+<tr><td>Request</td><td>req.query(string) -> string | req.set_query(string, string) -> void | req.query_names() -> StrList</td><td>Read, set, or list URL query parameter keys and values.</td></tr>
+<tr><td>Request</td><td>req.text() -> string | req.set_text(string) -> void</td><td>Read or replace the request payload body as text and update Content-Length.</td></tr>
+<tr><td>Response</td><td>resp.status_code() -> int | resp.set_status_code(int) -> void</td><td>Get or set the HTTP response status code (200, 201, 404, 500, etc.).</td></tr>
+<tr><td>Response</td><td>resp.reason() -> string | resp.set_reason(string) -> void</td><td>Get or set the HTTP status reason phrase (OK, Not Found, etc.).</td></tr>
+<tr><td>Response</td><td>resp.header(string) -> string | resp.set_header(string, string) -> void | resp.remove_header(string) -> void | resp.header_names() -> StrList</td><td>Read, set, remove, or list HTTP response headers.</td></tr>
+<tr><td>Response</td><td>resp.text() -> string | resp.set_text(string) -> void</td><td>Read or replace the response payload body as text and synchronize Content-Length.</td></tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<table>
+<thead><tr><th>Interface or function</th><th>Signature / annotation</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>RestGet .. RestOptions</td><td>@"/path/:param" fn h(x: RestExchange) -> void implements RestGet</td><td>Bind an HTTP GET, POST, PUT, DELETE, PATCH, HEAD, or OPTIONS route handler.</td></tr>
+<tr><td>RestHandler</td><td>@"/path" fn h(x: RestExchange) -> void implements RestHandler</td><td>Bind a method-agnostic HTTP route handler.</td></tr>
+<tr><td>CliCommand</td><td>@"cmd" fn h(x: RestExchange) -> void implements CliCommand</td><td>Bind a named CLI subcommand dispatched by rest_cli.</td></tr>
+<tr><td>CliOption</td><td>@"--flag" fn h(x: RestExchange) -> void implements CliOption</td><td>Bind a CLI option flag (--flag=val or --flag val) evaluated before the command handler.</td></tr>
+<tr><td>rest_config / rest_route</td><td>rest_config(key: string, val: string) -> void | rest_route(method: string, path: string, handler: string) -> void</td><td>Configure host, port, or session (ephemeral or global) and dynamically register HTTP route handlers.</td></tr>
+<tr><td>rest_serve / rest_stop / rest_cli</td><td>rest_serve() -> void | rest_stop() -> void | rest_cli(args: StrList) -> string</td><td>Start or stop the embedded standard HTTP server or dispatch CLI options, commands, and routes in-process.</td></tr>
+<tr><td>RestExchange</td><td>x.method() | x.path() | x.body() | x.param(string) | x.query(string) | x.header(string) | x.get(string) -> string | x.has_query(string) | x.has_header(string) -> bool | x.status(int) | x.set_header(string, string) | x.send(string) | x.json(string) | x.set(string, string) -> void | x.increment(string) -> int</td><td>Inspect request metadata, emit plain text or JSON responses, and read or mutate ephemeral/global session state.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th>Exit code</th><th>Category</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success</td><td>Proxy exited cleanly, CA generation or flow replay completed, or _lmcode_ bytecode program succeeded.</td></tr>
+<tr><td>1</td><td>Operation error</td><td>Proxy startup, CA generation, addon initialization, or JSONL replay file open failed.</td></tr>
+<tr><td>2</td><td>Usage error</td><td>Missing or invalid CLI command, unknown flag, or unreadable program path under LMCODE_INVOCATION_FILE.</td></tr>
+<tr><td>3</td><td>Host / VM error</td><td>Bytecode load failure, schema mismatch, or runtime execution failure in standalone --lmcode / --dsl mode.</td></tr>
+<tr><td>4</td><td>Application failure</td><td>Host or application assertion failure reported through the LMCODE_INVOCATION_FILE manifest v1 result contract.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lminspect">github.com/lmctl-ai/lminspect</a>.</p>
+</footer>
+</body>
+</html>

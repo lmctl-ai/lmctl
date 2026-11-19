@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmdebug authoring skill — lmdebug — lmctl.com tools</title>
+<meta name="description" content="lmdebug is a self-contained Linux network, system, process, packet-capture, and detection introspection CLI and LMScript host.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmdebug/">Overview</a></li>
+<li><a href="/tools/lmdebug/skill.html">Skill</a></li>
+<li><a href="/tools/lmdebug/guide.html">Guide</a></li>
+<li><a href="/tools/lmdebug/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmdebug authoring skill</h1>
+<p>lmdebug is a self-contained Linux network, system, process, packet-capture, and detection introspection CLI and LMScript host. It statically links iputils ping, iperf3, libpcap, and libyara alongside an embedded _lmcode_ runtime with typed domain contexts and an audited dry-run-by-default mutation framework.</p>
+<h2>Purpose</h2>
+<p>Use lmdebug to inspect Linux network interfaces, rtnetlink routes, policy rules, neighbors, ethtool link settings, kernel protocol counters, and listening sockets; sample CPU, memory, PSI pressure, disk I/O, and process tables; scan files and persistence locations with embedded YARA rules and offline hash databases; dissect or synthesize pcap and pcapng packet captures; plan or apply audited system mutations; and serve standard lmcode_std_v3 REST and CLI endpoints.</p>
+<h2>When to use it</h2>
+<p>Choose lmdebug when a diagnostic, security, or forensic workflow needs structured JSON from the Linux kernel (/proc, rtnetlink, SIOCETHTOOL, pidfd), offline or live pcap/pcapng protocol dissection via lmdebug pcap, or dry-run-first remediation planning for link state, sysctl values, signals, and file quarantine. Pair lmdebug with lmssl for sub-millisecond TLS 1.3 segment timing and packet-flight correlation, or with lmplot and lmdraw to render packet-capture statistics and ladder diagrams. Use lmcurl or lminspect instead when testing higher-level HTTP/HTTPS application payloads or MITM proxy flows.</p>
+<h2>Install</h2>
+<p>Install the lmctl toolchain with npm install -g @lmctl-ai/lmctl@latest. Release assets publish lmdebug-linux-x64 and lmdebug-linux-arm64 built against glibc 2.35 or newer with third-party libraries statically linked. When an LMScript program specifies cli="lmdebug" (or cli="lmdebug pcap") and install="github:lmctl-ai/lmdebug@latest", lmscript resolves lmdebug on PATH or downloads the verified release asset automatically.</p>
+<pre><code>lmscript --version
+lmdebug --version
+lmdebug caps
+lmdebug --lmcode-schema
+lmdebug --lmcode-signatures
+lmdebug pcap --lmcode-signatures</code></pre>
+<h2>Commands</h2>
+<p>lmdebug provides domain CLI subcommands that emit structured JSON, a dedicated pcap subcommand for packet capture and dissection bytecode, and standard _lmcode_ introspection and execution flags.</p>
+<pre><code># Capabilities, schema, and bytecode execution
+lmdebug caps
+lmdebug --lmcode-schema --json
+lmdebug --lmcode-signatures
+lmdebug pcap --lmcode-schema --json
+lmdebug pcap --lmcode-signatures
+lmdebug --lmcode build/program.dslb
+lmdebug --dry-run --plan-format json --lmcode build/program.dslb
+
+# Networking, routing, sockets, and active probes
+lmdebug dns localhost
+lmdebug dig example.com A @1.1.1.1
+lmdebug ifaddrs
+lmdebug link
+lmdebug ethtool lo
+lmdebug route
+lmdebug rule
+lmdebug neigh
+lmdebug counters
+lmdebug sockets tcp --listen
+lmdebug sockets --summary
+lmdebug scan 127.0.0.1 --ports 22,80,443 --timeout 750 --concurrency 64
+lmdebug trace 1.1.1.1 16 --pmtu
+lmdebug mtr 1.1.1.1 --cycles 5 --interval 200
+
+# System performance and process inspection
+lmdebug sys cpu --interval 500
+lmdebug sys mem
+lmdebug sys disk --interval 500 --count 1
+lmdebug sys top --interval 500 --top 10 --sort cpu
+lmdebug proc list --sort mem --top 20 --fds --net
+lmdebug proc show 1 --fds --net --maps
+
+# Detection and dry-run-by-default mutations
+lmdebug detect scan /etc --max-size 16
+lmdebug detect autoruns --root /
+lmdebug detect hashes status
+lmdebug sys set net.ipv4.ip_forward=0
+lmdebug link set eth0 mtu 1500
+lmdebug proc kill 99999999 --signal SIGTERM
+lmdebug detect quarantine /tmp/suspect.bin</code></pre>
+<h2>Inputs and outputs</h2>
+<p>Standard _lmcode_ programs compiled for cli="lmdebug" access five domain contexts: context lmdebug: Meta, context net: Net, context sys: Sys, context proc: Proc, and context detect: Detect, plus all 226 standard lmcode_std_v3 signatures. Programs compiled for cli="lmdebug pcap" access context shark: Shark for pcap/pcapng synthesis, dissection, flow reconstruction, display filtering, and libpcap interface inventory. Domain methods treat missing privileges or unreachable targets as structured data via .error() methods on result objects rather than crashing the virtual machine.</p>
+<h2>Safety rules</h2>
+<p>Follow capability, mutation, and memory guardrails when authoring lmdebug workflows:</p>
+<ul>
+<li>Keep mutations dry-run by default: link.set, sys.set, proc.kill, detect.hash_import, detect.quarantine, and detect.restore compute a read-only Change plan with plan_id, before, after, diff, undo, warnings, and needs unless --apply is explicitly passed on the CLI.</li>
+<li>Pin approved change plans with --if-match sha256:&lt;64hex> when applying mutations so state drift between planning and execution aborts cleanly with exit code 6, and reserve --force for operations flagged with needs_force: true (such as kernel.* sysctls, MTU below 576, or SIGKILL).</li>
+<li>Check .error() on active probe and device results: raw-socket operations (net.trace, net.mtr, net.arping, shark.live) require root or CAP_NET_RAW, and net.link_set requires CAP_NET_ADMIN. Always branch on res.error() != "" so unprivileged runs degrade gracefully.</li>
+<li>Respect the process memory ceiling: lmdebug caps total VM memory at 4096 MiB by default (configurable with a positive integer in LMDEBUG_MAX_MEMORY_MB) and terminates with exit code 3 if exceeded.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>The first example enumerates network interfaces, summarizes listening TCP sockets, inspects PID 1 resource limits, and generates a read-only sysctl mutation plan:</p>
+<pre><code>p = _lmcode_ cli="lmdebug" install="github:lmctl-ai/lmdebug@latest";
+let ifs = net.interfaces();
+assert(ifs.len() > 0);
+let s = net.socket_summary("tcp");
+assert(s.listening() >= 0);
+
+let init_proc = proc.show(1);
+assert_eq(init_proc.pid(), 1);
+assert(init_proc.limits().len() > 0);
+
+let plan = sys.set("net.ipv4.ip_forward", "0");
+assert_eq(plan.dry_run(), true);
+assert_eq(plan.applied(), false);
+lmcode_return_put("interfaces", ifs.len());
+lmcode_return_put("plan_action", plan.action());
+end _lmcode_
+res = run_lmcode(p);
+require(res.ok, json_stringify(res));
+println(json_stringify(res));</code></pre>
+<p>The second example exposes DNS resolution and TCP socket summaries through the standard lmcode_std_v3 CliOption, CliCommand, and RestGet interfaces and dispatches them in-process via rest_cli:</p>
+<pre><code>p = _lmcode_ cli="lmdebug" install="github:lmctl-ai/lmdebug@latest";
+@"--host"
+fn opt_host(x: RestExchange) -> void implements CliOption {
+  x.set("host", x.query("host"));
+}
+
+@"resolve"
+fn cmd_resolve(x: RestExchange) -> void implements CliCommand {
+  let addrs = net.dns_lookup(x.get("host"));
+  x.send(x.get("host") + ":" + str(addrs.len()));
+}
+
+@"/sockets/:proto"
+fn get_sockets(x: RestExchange) -> void implements RestGet {
+  let s = net.socket_summary(x.param("proto"));
+  x.json("{\"proto\":\"" + x.param("proto") + "\",\"listening\":" + str(s.listening()) + "}");
+}
+
+rest_config("session", "global");
+let cli_out = rest_cli(str_split("--host=localhost resolve", " "));
+let rest_out = rest_cli(str_split("/sockets/tcp", " "));
+lmcode_return_put("cli_out", cli_out);
+lmcode_return_put("rest_out", rest_out);
+end _lmcode_</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmdebug uses distinct exit codes to separate CLI usage, runtime/VM limits, assertion failures, refused mutations, and plan-drift errors:</p>
+<ul>
+<li>Exit code 0 indicates that the CLI subcommand, dry-run plan, or _lmcode_ program succeeded.</li>
+<li>Exit code 1 indicates a direct CLI subcommand execution or operational failure.</li>
+<li>Exit code 2 indicates a CLI usage error, malformed flag, or invalid LMDEBUG_MAX_MEMORY_MB setting.</li>
+<li>Exit code 3 indicates a bytecode load failure, schema mismatch, unhandled VM runtime error, or exceeding the 4096 MiB memory cap.</li>
+<li>Exit code 4 indicates an application assertion or contract failure inside an _lmcode_ program.</li>
+<li>Exit code 5 indicates a refused mutation policy violation (such as write-only one-shot sysctls vm.drop_caches or vm.compact_memory, or signaling PID 1).</li>
+<li>Exit code 6 indicates an --if-match plan ID mismatch caused by host state drift between planning and --apply.</li>
+</ul>
+<h2>How to verify</h2>
+<p>Verify the lmdebug installation by checking its version, capabilities report, embedded schema and signatures, and the offline repository contract suite:</p>
+<pre><code>lmdebug --version
+lmdebug caps
+lmdebug --lmcode-schema --json > /tmp/lmdebug-schema.json
+lmdebug --lmcode-signatures > /tmp/lmdebug-sigs.txt
+lmdebug pcap --lmcode-signatures > /tmp/lmdebug-pcap-sigs.txt</code></pre>
+<p>In a repository checkout, run ./test.sh to execute offline integration-runner contracts, cross-platform supervisor checks, and the 226-signature lmcode_std_v3 REST and CLI verification suite.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmdebug">github.com/lmctl-ai/lmdebug</a>.</p>
+</footer>
+</body>
+</html>

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Use lmpy from LMScript — lmpy — lmctl.com tools</title>
-<meta name="description" content="lmpy is a native numerical host for LMScript programs. This guide explains how to install a release, run checked computations, and verify their results.">
+<meta name="description" content="lmpy is a native numerical host for LMScript programs.">
 <link rel="stylesheet" href="/tools/style.css">
 <link rel="icon" type="image/png" href="/tools/lmpy/img/icon.png">
 </head>
@@ -18,32 +18,133 @@
 <li><a href="/tools/lmpy/skill.html">Skill</a></li>
 <li><a href="/tools/lmpy/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmpy/guide.html">Guide</a></li>
+<li><a href="/tools/lmpy/reference.html">Reference</a></li>
 <li><a href="/tools/lmpy/examples/">Examples</a></li>
 </ul>
 </nav>
 <main><h1>Use lmpy from LMScript</h1>
-<p>lmpy is a native numerical host for LMScript programs. This guide explains how to install a release, run checked computations, and verify their results.</p>
+<p>lmpy is a native numerical host for LMScript programs. This skill explains how to declare the released host in an _lmcode_ block, run it with run_lmcode, record checked results, and verify them. It describes lmpy 0.1.46.</p>
 <h2>Purpose</h2>
-<p>Use lmpy for native numerical analysis from LMScript, including arrays, tables, statistics, optimisation, signal processing, graphs and machine learning.</p>
+<p>Use lmpy to compute numerical answers from LMScript in one native process: vectors, matrices and tables, linear algebra, sparse systems, probability distributions and tests, optimisation, roots, quadrature, linear programming, differential equations, interpolation, signal processing, spatial queries, graphs, regression and time-series models, and a scikit-learn style machine-learning subset. A block chains many operations in memory and returns one JSON result with the values and checks it recorded.</p>
 <h2>When to use it</h2>
-<p>Choose lmpy when a task needs deterministic numerical operations available through its API and schema. Use a separate tool when the task requires capabilities outside that API.</p>
+<ul>
+<li>A task needs a numerical result that must be reproducible and checked against a known answer or tolerance.</li>
+<li>The machine has Node.js and lmscript but no Python, R or Docker.</li>
+<li>Several steps (read a CSV, transform, fit, test, report) should run in one typed program instead of one process per step.</li>
+</ul>
+<p>Do not use it for plotting, for arbitrary Python code, or for the unsupported items listed in the guide: random forests, gradient boosting, the trust-constr method, analog filter design and convex hulls above three dimensions.</p>
 <h2>Install</h2>
-<p>Install Node.js and the LMScript compiler. Declare the released host in the program so compilation uses the matching embedded schema.</p>
-<pre><code>p = _lmcode_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";</code></pre>
+<p>Install the LMScript compiler (lmscript 0.2.460 or newer). Do not install lmpy by hand: declare it in the block and lmscript downloads the release asset for the platform into its tool cache, verified against the SHA-256 digest of the release asset. Assets exist for Linux x64 and arm64, macOS x64 and arm64, and Windows x64.</p>
+<pre><code>npm i -g @lmctl-ai/lmctl
+lmscript --version</code></pre>
+<pre><code>p = _lmcode_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";
+# statements
+end _lmcode_</code></pre>
+<p>Pin a release by replacing latest with a tag such as v0.1.46. A local build is selected in the repository examples by passing an explicit command to run_lmcode.</p>
 <h2>Commands</h2>
-<p>Run an LMScript source file with lmscript. The declaration downloads the matching lmpy release binary when needed.</p>
-<pre><code>lmscript normal-quantile.lms</code></pre>
-<p>For direct host diagnostics, run lmpy --version, lmpy --lmcode-schema --json, or lmpy --lmcode-signatures.</p>
+<table>
+<thead>
+<tr><th>Command</th><th>Use</th></tr>
+</thead>
+<tbody>
+<tr><td>lmscript --check program.lms</td><td>Compile and type-check every _lmcode_ block against the lmpy schema without running it</td></tr>
+<tr><td>lmscript program.lms</td><td>Compile, then run_lmcode runs the block on lmpy and returns the decoded result</td></tr>
+<tr><td>lmpy --version</td><td>Print the release identity</td></tr>
+<tr><td>lmpy --lmcode-schema</td><td>Print the plain-text API summary; add --json for the exact schema bytes</td></tr>
+<tr><td>lmpy --lmcode-signatures</td><td>Print canonical signatures, one per line</td></tr>
+<tr><td>lmpy --api-md</td><td>Print the full API reference as Markdown</td></tr>
+<tr><td>lmpy --lmcode FILE [FILE ...]</td><td>Host protocol used by run_lmcode; add --dry-run before --lmcode to load without running</td></tr>
+</tbody>
+</table>
+<p>Inside the block, write statements with let, if, for over range, and # comment lines. The host is reached through free functions such as vec, mat, read_csv, dist and minimize, through methods on the returned objects, and through the context object out.</p>
 <h2>Inputs and outputs</h2>
-<p>Values are passed through the typed LMScript DSL. Host results are JSON values exposed through the program's result object; file operations use the formats and working-directory rules documented by the API.</p>
+<p>Inputs are literals in the block, CSV files read with read_csv, text read with read_text, and arrays read with read_npy or read_safetensors. Relative paths resolve against the working directory of the run. Option values go in an Opts built with opts().set(key, value); an unknown key is an error.</p>
+<p>Outputs are recorded on out. out.put(name, value) accepts float, int, string, bool, Vec, StrVec, Mat, Res and Frame. out.check(name, condition), out.close(name, got, want, tol) and out.close_rel(name, got, want, rtol) record named checks. run_lmcode returns a map: on success ok is true and result holds values and checks; on failure ok is false with phase, code and message.</p>
+<pre><code>r = run_lmcode(p);
+require(r.ok, json_stringify(r));
+values = r.result.values;
+passed = r.result.checks.passed;</code></pre>
+<p>Operations return a Res. Read its fields with the typed getters num, int, vec, mat, res, strs, text and flag; ok() is true when the status field is OK. Files are written only by explicit calls such as write_csv on a Frame, write_text, write_npy, write_safetensors and save on an Estimator.</p>
 <h2>Safety rules</h2>
-<p>Read an example's inputs and output paths before running it. Keep generated files in a temporary working directory and use out.check or out.close to validate important results.</p>
+<ul>
+<li>Bytecode is trusted like code: a block can read and write files with the permissions of the user. Read a program's file paths before running it and run in a scratch directory.</li>
+<li>The standard file functions (file_read, file_write, file_append) and the host writers add no sandbox; write_text and array writers replace their target.</li>
+<li>Always test r.ok. A failed check does not throw in LMScript by itself; run_lmcode returns ok false and the program must stop, for example with require.</li>
+<li>Check numerical status: a non-converged fit returns a Res whose ok() is false, not an error. Record out.check("status OK", fit.ok()).</li>
+<li>Random numbers require an explicit integer seed; keep the seed in the program so results are reproducible.</li>
+<li>Do not call the REST and CLI standard functions (rest_config, rest_route, rest_serve, rest_stop, rest_cli) in a block for lmpy 0.1.46; that release ships the 206-signature standard catalog, which does not include them.</li>
+</ul>
 <h2>Worked examples</h2>
-<p>The <a href="/tools/lmpy/examples/">example book</a> includes standalone release-installed scripts for a normal quantile, a least-squares fit, and a matrix solve.</p>
+<h3>Least-squares line</h3>
+<pre><code>p = _lmcode_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";
+let x = arange(5);
+let fit = cols(ones(5), x).lstsq(x.mul(2.0).add(3.0));
+let coefficients = fit.vec("x");
+out.check("fit succeeded", fit.ok());
+out.close("intercept and slope", coefficients, vec(3.0, 2.0), 0.000000000001);
+out.put("coefficients", coefficients);
+end _lmcode_
+
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));
+println("Fitted coefficients [intercept, slope]: " + str(r.result.values.coefficients));
+println("Checks passed: " + str(r.result.checks.passed));</code></pre>
+<pre><kbd>lmscript line.lms</kbd>
+<samp>Fitted coefficients [intercept, slope]: [2.999999999999999,2]
+Checks passed: 2</samp></pre>
+<h3>Minimise an expression with options</h3>
+<p>The objective is an expression string in the host grammar, the unknowns are named by a StrVec, and the result is a nested Res.</p>
+<pre><code>p = _lmcode_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";
+let fit = minimize("100*(y-x^2)^2 + (1-x)^2", strs("x, y"), vec(-1.2, 1.0), opts().set("method", "BFGS").set("tol", 0.000001));
+out.check("status OK", fit.ok());
+out.close("x", fit.res("par").num("x"), 1.0, 0.001);
+out.close("y", fit.res("par").num("y"), 1.0, 0.001);
+out.put("status", fit.status());
+out.put("x", fmt(fit.res("par").num("x"), 4));
+out.put("y", fmt(fit.res("par").num("y"), 4));
+end _lmcode_
+
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));
+v = r.result.values;
+println(f"status={v.status} x={v.x} y={v.y}");</code></pre>
+<pre><kbd>lmscript rosen.lms</kbd>
+<samp>status=OK x=1.0000 y=1.0000</samp></pre>
+<h3>A failed check</h3>
+<pre><code>p = _lmcode_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";
+out.put("pi", pi());
+out.close("pi is three", pi(), 3.0, 0.01);
+end _lmcode_
+
+r = run_lmcode(p);
+println(json_stringify(r));</code></pre>
+<pre><kbd>lmscript fail.lms</kbd>
+<samp>lmpy: {"values": {"pi": 3.141592653589793}, "checks": {"passed": 0, "failed": 1, "failures": [{"name": "pi is three", "detail": "got 3.141592653589793, want 3 +- 0.01"}]}}
+{"ok":false,"phase":"app","code":"APP_FAIL","message":"1 check(s) failed: pi is three (got 3.141592653589793, want 3 +- 0.01)"}</samp></pre>
+<p>The first line is the host's standard error, which keeps the values recorded before the failure; the second is the decoded result printed by the program.</p>
 <h2>Errors and exit codes</h2>
-<p>A compile error means the source does not match the installed schema or DSL syntax. A host error reports an operation failure. A failed output assertion exits unsuccessfully and names the failed check; correct the inputs or tolerance, then rerun.</p>
+<table>
+<thead>
+<tr><th>Where</th><th>Signal</th><th>Fix</th></tr>
+</thead>
+<tbody>
+<tr><td>lmscript compile</td><td>Exit 2 with a located message, for example: type Dist has no method 'quantile' followed by the list of methods</td><td>Use a name and argument types from the reference or lmpy --lmcode-schema</td></tr>
+<tr><td>lmpy usage</td><td>Exit 2, frame with phase cli and code CLI_USAGE</td><td>Pass --lmcode FILE, or one of the documented query flags</td></tr>
+<tr><td>lmpy load</td><td>Exit 3, phase load, for example code LOAD_BAD_BYTECODE</td><td>Recompile with the same lmpy binary that runs the block; let run_lmcode manage the bytecode</td></tr>
+<tr><td>lmpy run</td><td>Exit 3, phase run, code RUN_HOST, message such as dsl line 2:25: Mat.solve: the matrix is singular, with line and column</td><td>Correct the input named by the message</td></tr>
+<tr><td>lmpy application</td><td>Exit 4, phase app, code APP_FAIL; the message names every failed check</td><td>Correct the inputs or the expected value and tolerance</td></tr>
+</tbody>
+</table>
+<p>Those exit codes belong to the lmpy process. The LMScript program sees them as the map returned by run_lmcode; when require(r.ok, ...) fails, lmscript itself exits 1.</p>
 <h2>How to verify</h2>
-<p>Check the host version and schema, compare canonical signatures with the compiler, run an example in a clean directory, and confirm its printed values and assertion summary.</p>
+<ol>
+<li>Run lmscript --check on the program: exit 0 means every call matches the schema of the installed lmpy.</li>
+<li>Run the program and require r.ok; then read r.result.checks: failed must be 0 and passed must equal the number of checks you wrote.</li>
+<li>Give every important value a check: out.close against a known answer, a recomputation by a second method, or a conservation law.</li>
+<li>Confirm the host: lmpy --version prints the release, and lmpy --lmcode-signatures prints 757 lines for 0.1.46.</li>
+<li>For files a block writes, read them back in the same block or check that they exist from LMScript.</li>
+</ol>
+<p>See the <a href="/tools/lmpy/reference.html">reference</a> for every signature and the <a href="/tools/lmpy/examples/">example book</a> for release-installed scripts.</p>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmpy">github.com/lmctl-ai/lmpy</a>.</p>

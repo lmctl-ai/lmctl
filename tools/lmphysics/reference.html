@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmphysics reference — lmphysics — lmctl.com tools</title>
+<meta name="description" content="Complete CLI flags, environment variables, Phys/System/Body/Joint schema methods, recorded CSV columns, the standard lmcode_std_v3 catalog, and exit codes for…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmphysics/">Overview</a></li>
+<li><a href="/tools/lmphysics/skill.html">Skill</a></li>
+<li><a href="/tools/lmphysics/guide.html">Guide</a></li>
+<li><a href="/tools/lmphysics/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmphysics reference</h1>
+<p>Complete CLI flags, environment variables, Phys/System/Body/Joint schema methods, recorded CSV columns, the standard lmcode_std_v3 catalog, and exit codes for lmphysics.</p>
+<h2>CLI flags and environment variables</h2>
+<table>
+<thead><tr><th>Flag or variable</th><th>Arguments</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>--version</td><td>none</td><td>Print lmphysics X.Y.Z and exit 0.</td></tr>
+<tr><td>--notices</td><td>none</td><td>Print Project Chrono, Bullet, Eigen, and runtime license notices.</td></tr>
+<tr><td>--lmcode-schema</td><td>[--json]</td><td>Print a human-readable schema summary or exact embedded schema JSON bytes.</td></tr>
+<tr><td>--lmcode-signatures</td><td>none</td><td>Print canonical context, function, and method signatures registered in the host.</td></tr>
+<tr><td>--lmcode</td><td>FILE [FILE ...]</td><td>Load and execute compiled LMScript bytecode; further files for multi-part builders follow the single flag.</td></tr>
+<tr><td>--dry-run</td><td>none</td><td>Placed before --lmcode; requests dry mode for a standalone run that has no invocation manifest.</td></tr>
+<tr><td>LMPHYSICS_MAX_MEMORY_MB</td><td>integer (default 4096)</td><td>Maximum process memory budget in MiB for bodies, joints, recorded steps, and Chrono/Bullet state.</td></tr>
+</tbody>
+</table>
+<h2>Phys and System schema methods (context phys: Phys)</h2>
+<table>
+<thead><tr><th>Type / context</th><th>Method signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context phys: Phys</td><td>phys.system(string) -> System</td><td>Create a new physics world with contact mode "nsc" (non-smooth complementarity) or "smc" (smooth penalty contact).</td></tr>
+<tr><td>Phys</td><td>phys.assert_close(float, float, float) -> void | phys.print(string) -> void | phys.version() -> string</td><td>Assert |actual - expected| &lt;= tol (exiting 3 on failure), print a line, or return the host version string.</td></tr>
+<tr><td>System</td><td>s.gravity(float, float, float) -> System | s.timestep(float) -> System</td><td>Set world gravity vector in m/s2 (default 0, 0, -9.81) and fixed integration time step dt in seconds.</td></tr>
+<tr><td>System</td><td>s.integrator(string) -> System | s.solver(string, int) -> System</td><td>Select time integrator (euler, trapezoidal, hht, newmark) and solver (psor, pjacobi, pminres, bb, apgd, minres, sparse_lu, sparse_qr) with max iterations.</td></tr>
+<tr><td>System</td><td>s.newton(int, float, float) -> System | s.hht_alpha(float) -> System</td><td>Configure implicit integrator Newton iterations and relative/absolute tolerances, or HHT numerical damping alpha (in [-1/3, 0]; requires integrator("hht") first).</td></tr>
+<tr><td>System</td><td>s.bounce_speed(float) -> System | s.collision_margins(float, float) -> System</td><td>Set minimum approach speed (m/s, default 0.15) for restitution and NSC collision envelope/margin in meters (default 0.03, 0.01).</td></tr>
+<tr><td>System</td><td>s.material(string, float, float) -> System | s.stiffness(string, float, float) -> System</td><td>Define a named contact material with friction and restitution, and set SMC Young's modulus (Pa) and Poisson ratio.</td></tr>
+<tr><td>System</td><td>s.ground(string) -> Body | s.floor(string, string) -> Body</td><td>Create a fixed non-colliding ground anchor or a fixed 200x200x2 m collision floor slab with top face at z = 0 using the named material.</td></tr>
+<tr><td>System</td><td>s.box(string, float, float, float, float) -> Body | s.sphere(string, float, float) -> Body | s.cylinder(string, float, float, float) -> Body</td><td>Create a rigid box (sx, sy, sz, density), sphere (radius, density), or local-y-axis cylinder (radius, height, density).</td></tr>
+<tr><td>System</td><td>s.revolute(string, Body, Body, float, float, float, float, float, float) | s.prismatic(...) | s.cylindrical(...) -> Joint</td><td>Connect bodies A and B with a hinge, sliding guide, or cylindrical joint at world point (px, py, pz) along world axis (ax, ay, az).</td></tr>
+<tr><td>System</td><td>s.universal(string, Body, Body, float, float, float, float, float, float, float, float, float) -> Joint</td><td>Create a Cardan universal joint at (px, py, pz) with perpendicular cross axes (ax, ay, az) in A and (bx, by, bz) in B.</td></tr>
+<tr><td>System</td><td>s.gear(string, Body, Body, float, float, float, float) -> Joint</td><td>Couple shafts of A and B along world axis (ax, ay, az) with transmission ratio (B turns at -ratio * A).</td></tr>
+<tr><td>System</td><td>s.lock(string, Body, Body, float, float, float) | s.spherical(string, Body, Body, float, float, float) -> Joint</td><td>Weld bodies A and B together or connect them with a ball-and-socket joint at world point (px, py, pz).</td></tr>
+<tr><td>System</td><td>s.distance(string, Body, Body, float, float, float, float, float, float) -> Joint</td><td>Constrain the distance between world anchor point (ax, ay, az) on A and (bx, by, bz) on B.</td></tr>
+<tr><td>System</td><td>s.spring(string, Body, Body, float, float, float) | s.spring_at(string, Body, Body, float, float, float, float, float, float, float, float, float) -> Joint</td><td>Attach a linear spring-damper (k, c, rest_length) between body centers or between world anchor points on A and B.</td></tr>
+<tr><td>System</td><td>s.motor_speed(string, Body, Body, float, float, float, float, float, float, string) | s.motor_angle(...) | s.motor_torque(...) -> Joint</td><td>Drive rotation of B relative to A about (px, py, pz) and axis (ax, ay, az) using a time expression expr(t).</td></tr>
+<tr><td>System</td><td>s.motor_position(string, Body, Body, float, float, float, float, float, float, string) | s.motor_linear_speed(...) | s.motor_force(...) -> Joint</td><td>Drive linear translation of B relative to A along axis (ax, ay, az) through (px, py, pz) using expr(t).</td></tr>
+<tr><td>System</td><td>s.record(string, string) -> System | s.record_every(int) -> System | s.save_csv(string) -> System</td><td>Register comma-separated columns for a named body or joint, subsample every n-th step, and write the logged CSV file.</td></tr>
+<tr><td>System</td><td>s.step() -> System | s.run(float) -> System | s.time() -> float | s.energy() -> float | s.contacts() -> int</td><td>Advance one step or until t_end, or query current simulation time, total mechanical energy (kinetic + gravity + springs), or active contact count.</td></tr>
+</tbody>
+</table>
+<h2>Body and Joint schema methods</h2>
+<table>
+<thead><tr><th>Type</th><th>Method signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Body</td><td>b.pos(float, float, float) | b.vel(float, float, float) | b.rot_axis(float, float, float, float) | b.omega(float, float, float) -> Body</td><td>Set initial center-of-mass position, linear velocity, axis-angle rotation (ax, ay, az, angle_rad), or angular velocity in world coordinates.</td></tr>
+<tr><td>Body</td><td>b.fixed(bool) | b.mass_props(float, float, float, float) | b.collide(string) -> Body</td><td>Fix or unfix the body in space, override mass and principal moments of inertia (m, ixx, iyy, izz), or enable collision using a named material.</td></tr>
+<tr><td>Body</td><td>b.force(string, string, string) | b.torque(string, string, string) | b.drag(float, float) -> Body</td><td>Apply world-frame force or torque expressions (fx(t), fy(t), fz(t)) at the center of mass, or isotropic drag F = -(c1 + c2 * |v|) * v.</td></tr>
+<tr><td>Body</td><td>b.mass() | b.x() | b.y() | b.z() | b.vx() | b.vy() | b.vz() | b.wx() | b.wy() | b.wz() | b.lx() | b.ly() | b.lz() | b.speed() | b.ke() -> float</td><td>Query body mass, position, linear velocity, angular velocity, world-frame angular momentum about the center, speed, or kinetic energy.</td></tr>
+<tr><td>Joint</td><td>j.angle() | j.travel() | j.length() | j.force() | j.torque() | j.effort() | j.reaction_x() | j.reaction_y() | j.reaction_z() -> float</td><td>Query unwrapped rotation angle (rad), linear travel (m), distance/spring length (m), spring force or reaction magnitude (N), reaction torque magnitude (N*m), signed motor effort, or world-frame reaction force components on body B.</td></tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 catalog</h2>
+<table>
+<thead><tr><th>Category or interface</th><th>Functions, types, or signatures</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Strings, math, and files</td><td>str_len, str_substr, str_find, str_contains, str_starts_with, str_ends_with, str_lower, str_upper, str_trim, str_replace, str_repeat, str_split, str_match, str_to_int, str_is_int, str_to_float, str_is_float, str_base64_encode, str_base64_decode, str_hex_encode, str_hex_decode, math_abs, math_min, math_max, math_floor, math_ceil, math_round, math_sqrt, math_pow, file_read, file_write, file_append, file_exists, file_lines</td><td>Standard byte-string operations, numeric math helpers, base64/hex encoding, and UTF-8 file I/O.</td></tr>
+<tr><td>Collections, JSON, and return framing</td><td>IntList, FloatList, StrList, IntMap, FloatMap, StrMap, IntStack, FloatStack, StrStack, IntQueue, FloatQueue, StrQueue, IntPQ, FloatPQ, StrPQ, Json (json_parse, template_render), lmcode_return_set, lmcode_return_put, lmcode_return_put_null, lmcode_return_null</td><td>Typed containers, JSON parsing, template rendering, and structured LMCODE_RETURN payload builders.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th>Exit code</th><th>Phase</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>success</td><td>Simulation and assertions completed and emitted a terminal LMCODE_RETURN frame.</td></tr>
+<tr><td>2</td><td>cli</td><td>Invalid CLI flags, malformed LMPHYSICS_MAX_MEMORY_MB, or invalid invocation manifest metadata.</td></tr>
+<tr><td>3</td><td>load / run</td><td>Bytecode load error, invalid simulation state (NaN/inf, singular solver, NSC with linear solver), failed assert_close, or exceeded memory limit.</td></tr>
+<tr><td>4</td><td>app</td><td>Application failure or CSV file output error.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmphysics">github.com/lmctl-ai/lmphysics</a>.</p>
+</footer>
+</body>
+</html>

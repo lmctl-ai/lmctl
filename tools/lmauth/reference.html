@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmauth reference — lmauth — lmctl.com tools</title>
+<meta name="description" content="CLI subcommands, flags, lmcode host functions, and exit codes for lmauth.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmauth/">Overview</a></li>
+<li><a href="/tools/lmauth/skill.html">Skill</a></li>
+<li><a href="/tools/lmauth/guide.html">Guide</a></li>
+<li><a href="/tools/lmauth/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmauth reference</h1>
+<p>CLI subcommands, flags, lmcode host functions, and exit codes for lmauth.</p>
+<h2>CLI subcommands and flags</h2>
+<table>
+<thead>
+<tr><th>Command or flag</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>lmauth --version</td><td>Print the release version string (for example lmauth 0.1.15).</td></tr>
+<tr><td>lmauth --lmcode-schema [--json]</td><td>Print the embedded lmcode host schema JSON (with or without --json).</td></tr>
+<tr><td>lmauth --lmcode-signatures</td><td>Print canonical host function signatures.</td></tr>
+<tr><td>lmauth --lmcode FILE</td><td>Execute a compiled lmcode bytecode program (honors LMCODE_INVOCATION_FILE).</td></tr>
+<tr><td>lmauth plan --owner OWNER --repos REPOS</td><td>Print the guided fine-grained GitHub token recipe for OWNER and comma-separated REPOS.</td></tr>
+<tr><td>lmauth present --owner OWNER --repos REPOS ...</td><td>Present the guided recipe, collect the token, verify identity, and store it in lmconn.</td></tr>
+<tr><td>--lmconn-node ABS</td><td>Absolute path to the Node.js executable used to run the lmconn broker.</td></tr>
+<tr><td>--lmconn-entry ABS</td><td>Absolute path to lmconn's bin/lmconn.js entry script.</td></tr>
+<tr><td>--lmconn-db ABS</td><td>Absolute path to the private SQLite credentials database managed by lmconn.</td></tr>
+<tr><td>--lmconn-key-file ABS</td><td>Optional absolute path to lmconn's instance key file in a separate private directory.</td></tr>
+<tr><td>--terminal</td><td>Collect the token from a controlling terminal prompt instead of a local browser page.</td></tr>
+<tr><td>--mock-api URL</td><td>Point identity and repository verification at a loopback lmmock server for offline testing.</td></tr>
+</tbody>
+</table>
+<h2>Domain host functions</h2>
+<table>
+<thead>
+<tr><th>Signature</th><th>Return type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>fn auth_plan(owner: string, repos: string)</td><td>string</td><td>Generate an authorization recipe for the specified GitHub owner and repository list.</td></tr>
+<tr><td>fn auth_recipe(string)</td><td>Json</td><td>Recipe function declared in the released host schema; takes a string and returns Json.</td></tr>
+<tr><td>fn auth_present(recipe: string)</td><td>string</td><td>Present the authorization recipe to the human operator and return a session handle.</td></tr>
+<tr><td>fn auth_collect(session: string)</td><td>string</td><td>Collect the entered token from the session as an opaque credential reference.</td></tr>
+<tr><td>fn auth_verify(credential: string)</td><td>Json</td><td>Verify the credential's identity and public repository metadata without exposing the secret.</td></tr>
+<tr><td>fn auth_store(credential: string)</td><td>Json</td><td>Write the credential into the encrypted lmconn store and return a nonsecret handle receipt.</td></tr>
+<tr><td>fn lmcode_return_set(value: Json)</td><td>void</td><td>Standard catalog function (one of several overloads) that sets the result payload in the terminal return frame.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr><th>Code</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>Recipe planning, dry execution, or credential verification and storage succeeded.</td></tr>
+<tr><td>2</td><td>Invalid CLI arguments, retired --first/--last flags, or malformed LMCODE_INVOCATION_FILE manifest.</td></tr>
+<tr><td>3</td><td>Bytecode load failure, schema mismatch, or runtime execution error.</td></tr>
+<tr><td>4</td><td>Application or security policy failure (for example missing TTY under --terminal or Windows private_store_acl_not_implemented).</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmauth">github.com/lmctl-ai/lmauth</a>.</p>
+</footer>
+</body>
+</html>

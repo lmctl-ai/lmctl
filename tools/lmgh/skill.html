@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmgh authoring skill — lmgh — lmctl.com tools</title>
+<meta name="description" content="lmgh is a native lmcode host that turns the GitHub CLI (gh) into a type-checked LMScript API returning structured Repo, Issue, Pr, Triage, Release, Run,…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmgh/">Overview</a></li>
+<li><a href="/tools/lmgh/skill.html">Skill</a></li>
+<li><a href="/tools/lmgh/guide.html">Guide</a></li>
+<li><a href="/tools/lmgh/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmgh authoring skill</h1>
+<p>lmgh is a native lmcode host that turns the GitHub CLI (gh) into a type-checked LMScript API returning structured Repo, Issue, Pr, Triage, Release, Run, Review, and Report objects.</p>
+<h2>Purpose</h2>
+<p>Use lmgh to script GitHub repository audits, pull-request triage, CI failure-log extraction, release-readiness checks, and human-reviewed pull-request creation or review submission from LMScript programs.</p>
+<h2>When to use it</h2>
+<p>Use lmgh when you want repeatable, type-checked GitHub automation over multiple repositories, pull requests, or workflow runs with structured findings and dry-run write controls. Use lmgit when inspecting or modifying local Git working trees and commits.</p>
+<h2>Install</h2>
+<p>Install the LMScript toolchain with npm install -g @lmctl-ai/lmctl and ensure the GitHub CLI (gh version 2.45.0 or newer, below 3.0.0) is authenticated via gh auth login or GH_TOKEN. Install or pin the lmgh release binary with lmscript install.</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmscript install github:lmctl-ai/lmgh@v0.3.2
+lmgh --version
+lmgh --lmcode-schema --json
+lmgh --lmcode-signatures</code></pre>
+<p>Set LMGH_GH=/path/to/gh if the gh binary is not on PATH.</p>
+<h2>Commands</h2>
+<p>Declare cli="lmgh" inside an _lmcode_ block and invoke operations on the gh and report contexts:</p>
+<pre><code>owner = ARGV.len() > 0 ? ARGV[0] : "lmctl-ai";
+repo = ARGV.len() > 1 ? ARGV[1] : "lmgh";
+p = _lmcode_ cli="lmgh" install="github:lmctl-ai/lmgh@v0.3.2";
+let prs = gh.pr_list(${owner}, ${repo}, "open", 30);
+for (i in range(0, prs.len())) {
+  let pr = prs.at(i);
+  print("#" + str(pr.number()) + ": " + pr.title() + " (by @" + pr.author() + ")");
+}
+end _lmcode_
+r = run_lmcode(p);
+if (!r.ok) { print(r.message); exit(r.code == "APP_FAIL" ? 4 : 3); }</code></pre>
+<h2>Inputs and outputs</h2>
+<p>Host methods on the gh context accept owner, repo, state filters, numeric limits, issue or PR numbers, search queries, or TOML proposal paths, and return typed handles (Repo, RepoList, Issue, IssueList, Pr, PrList, Triage, ReleaseList, RunList, Review).</p>
+<p>The report context accumulates structured findings via report.add(rule, target, message), writes text or JSON reports with write_text and write_json, and triggers an exit-4 application failure when report.fail_if_any() is called on a non-empty report. Every invocation ends with an LMCODE_RETURN_BEGIN and LMCODE_RETURN_END JSON frame.</p>
+<h2>Safety rules</h2>
+<p>lmgh executes gh strictly through argument vectors with interactive prompts disabled. Call gh.dry_run(true) before write operations (issue_create, issue_close, pr_comment, label_add, pr_merge, release_create, pr_submit, pr_review_submit) to record write intent into the report instead of mutating GitHub.</p>
+<p>For pull-request creation and reviews, use the two-step human-in-the-loop TOML workflow (pr_prepare followed by operator inspection and pr_submit, or pr_review_prepare followed by pr_review_submit) or inline pr_create_toml with dry-mode validation. Review TOML files enforce exact-case keys and refuse to overwrite existing files.</p>
+<h2>Worked examples</h2>
+<p>Run the bundled read-only task recipes to extract failed CI job logs, audit repository metadata, or triage pull requests:</p>
+<pre><code>lmscript examples/ci-errors.lms lmctl-ai lmgh 5
+lmscript examples/org-ci-health.lms lmctl-ai lmgh,lmgit,lmclean
+lmscript examples/release-readiness.lms lmctl-ai lmgh
+lmscript examples/pr-triage.lms lmctl-ai lmgh 1
+lmscript examples/pr-status.lms lmctl-ai/lmgh#1</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmgh exits with code 0 on success. Code 2 indicates CLI usage errors, retired --first or --last flags, or malformed LMCODE_INVOCATION_FILE metadata. Code 3 indicates bytecode load failure, schema mismatch, or runtime gh/API errors. Code 4 (APP_FAIL) indicates an application failure such as non-empty findings on report.fail_if_any() or unreadable input files.</p>
+<h2>How to verify</h2>
+<p>Verify the host version, embedded schema bytes, canonical signatures, and the 95-check offline test suite.</p>
+<pre><code>lmgh --version
+lmgh --lmcode-schema --json > /tmp/lmgh-schema.json
+cmp /tmp/lmgh-schema.json schema/lmgh.dsl.json
+lmgh --lmcode-signatures
+./test.sh</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmgh">github.com/lmctl-ai/lmgh</a>.</p>
+</footer>
+</body>
+</html>

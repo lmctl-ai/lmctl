@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>integration guide — integration — lmctl.com tools</title>
+<meta name="description" content="integration (lmctl-ai/integration) is the end-to-end verification and reusable GitHub Actions repository for published lmctl, lmscript, and lmcode host…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/integration/">Overview</a></li>
+<li><a href="/tools/integration/skill.html">Skill</a></li>
+<li><a href="/tools/integration/guide.html">Guide</a></li>
+<li><a href="/tools/integration/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>integration guide</h1>
+<h2>Overview</h2>
+<p>integration (lmctl-ai/integration) is the end-to-end verification and reusable GitHub Actions repository for published lmctl, lmscript, and lmcode host artifacts. Instead of testing an unbuilt source tree, every job installs released npm packages (@lmctl-ai/lmctl) and SHA-256-verified GitHub release binaries into a private temporary prefix and exercises them through multi-tier scenarios and negative controls.</p>
+<h2>Reusable setup action (actions/setup)</h2>
+<p>The setup action (lmctl-ai/integration/actions/setup@&lt;full-commit-sha>) prepares a clean runner environment without touching global state:</p>
+<ul>
+<li>Private npm prefix: installs @lmctl-ai/lmctl (latest, staging, or an explicit X.Y.Z version) into a private directory under RUNNER_TEMP, never using npm install -g or modifying ~/.lmctl.</li>
+<li>SHA-256-verified tool downloads: for each NAME[@TAG][+EXTRA_ASSET...] in the tools input, downloads the platform release binary (NAME-{linux,macos}-{x64,arm64} or NAME-windows-x64.exe) and any extra archive (such as examples.tar.gz for lmmock), verifies every file against the release SHA256SUMS manifest (retrying transient network errors up to 3 times while never retrying a checksum mismatch), and exports INTEGRATION_ASSETS_&lt;NAME>.</li>
+<li>Source-pinned miniplayer support: accepts an exact 40-character hexadecimal commit SHA for miniplayer when testing pre-release commits, rejecting branch names or short refs.</li>
+</ul>
+<h2>T0 and T1 scenario tiers and hermetic isolation</h2>
+<p>Every scenario is launched through scripts/run-scenario.sh and scripts/hermetic.sh, which copy the scenario into a scratch directory, create a private HOME, LMCTL_DB, and cache, and scrub the inherited lmctl session variables such as LMCTL_SELF_SESSIONID; the scenario scripts pass --no-preflight to lmscript:</p>
+<ul>
+<li>Tier T0 (in-process ClaudeMock, zero network): t0-claudemock tests lm_prompt across ok, scripted error, empty reply, and delayed reply cases; t0-fanout tests lm_fanout over three ClaudeMock members preserving slot order and error reporting; t0-provider-smoke-mock runs a fresh seed, ping, and three-turn conversation.</li>
+<li>Tier T1 (full ACP + HTTP + lmmock chain): t1-lmmock-ai drives lmscript -> lmctl -> miniplayer acp -> HTTP -> lmmock llm-api.lms and queries the mock to prove it received model mock-agent; t1-lmmock-modes spawns one lmmock exec per mode (ok, retry, unauthorized, rate-limit, server-error, bad-json) and checks both lmctl's error_class and GET /__requests request counts (confirming the initial 429 retry attempt actually occurred).</li>
+</ul>
+<h2>Ported mono-test tier and vacuity controls</h2>
+<p>suites/mono-test ports the mockable portion of lmctlhq/lmctl-mono-test (88 entries cataloged in inventory.tsv as ported, support, skip-host, or skip-live) and executes them against the installed lmctl binary via node suites/mono-test/run.mjs with a scrubbed PATH so host provider CLIs cannot leak in.</p>
+<p>Known version-skew exceptions in allowlist.json require suite, match, reason, owner, and an expiration date (expires); expired or uncovered failures turn the job red, and stale allowlist entries on passing suites are flagged. Running node suites/mono-test/run.mjs --control broken-bin substitutes a no-op lmctl that exits 0 with empty output; any lmctl-driven suite that remains green is reported as VACUOUS and fails the build.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/integration">github.com/lmctl-ai/integration</a>.</p>
+</footer>
+</body>
+</html>

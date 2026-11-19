@@ -1,6 +1,7 @@
 import "roles.lms";
 tool_scope = ARGV.len() > 2 ? ARGV[2] : "";
 page_pattern = tool_scope == "" ? "tools/**/*.html" : tool_scope == "catalog" ? "tools/*.html" : "tools/" + tool_scope + "/**/*.html";
+exclude_pattern = tool_scope == "catalog" ? "tools/*/*.html" : "";
 # run.sh copies this next to the schema emitted by the selected lmhtml binary.
 # ARGV: report output, optional single fixture (empty = tree), tool scope.
 # Directory enumeration happens at compile time; all policy stays in the DSL.
@@ -418,7 +419,7 @@ let fixture = ${ARGV[1]};
 if (fixture != "") { check_page(html.load(fixture)); }
 else {
   # Loading from the repository root makes /tools/... resolve from that root.
-  let pages = html.load_dir(".", ${page_pattern}, "");
+  let pages = html.load_dir(".", ${page_pattern}, ${exclude_pattern});
   let listing = html.load("tools/index.html");
   let named_paths = ${case_paths};
   while (str_find(named_paths, "|") >= 0) {

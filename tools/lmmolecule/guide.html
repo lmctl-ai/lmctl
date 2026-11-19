@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmmolecule guide — lmmolecule — lmctl.com tools</title>
+<meta name="description" content="lmmolecule embeds OpenMM 8.2.0 behind a deterministic LMScript schema so molecular dynamics simulations, custom Lepton potentials, and structural analyses run…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmmolecule/">Overview</a></li>
+<li><a href="/tools/lmmolecule/skill.html">Skill</a></li>
+<li><a href="/tools/lmmolecule/guide.html">Guide</a></li>
+<li><a href="/tools/lmmolecule/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmmolecule guide</h1>
+<p>lmmolecule embeds OpenMM 8.2.0 behind a deterministic LMScript schema so molecular dynamics simulations, custom Lepton potentials, and structural analyses run as self-contained scripts without Python or external force-field databases.</p>
+<h2>Overview</h2>
+<p>An lmmolecule program builds a physical model through the global md context in three stages: configure the execution platform (Reference double precision or SIMD CPU), assemble particles and forces on a System object, and instantiate a Sim context to minimize energy, integrate trajectories, and sample observables.</p>
+<h2>Unit conventions</h2>
+<p>Every method in lmmolecule uses OpenMM's coherent molecular dynamics unit system:</p>
+<ul>
+<li>Length, coordinates, box dimensions, and cutoffs: nanometers (1 nm = 10 Angstroms).</li>
+<li>Time and integration timestep dt: picoseconds (1 ps = 1000 fs).</li>
+<li>Mass: atomic mass units (amu, numerically equal to g/mol).</li>
+<li>Velocity: nm/ps (1 nm/ps = 1000 m/s).</li>
+<li>Energy (ke, pe, energy, epsilon): kJ/mol, where 1 amu * (nm/ps)^2 = 1 kJ/mol and kB = 0.008314462618 kJ/(mol*K).</li>
+<li>Force (fx, fy, fz): kJ/(mol*nm).</li>
+<li>Charge: elementary charge e, with 1/(4*pi*eps0) = 138.935457644382 kJ*nm/(mol*e^2).</li>
+<li>Angle and dihedral phase: radians.</li>
+<li>Temperature and pressure: kelvin (K) and bar.</li>
+</ul>
+<h2>Building lattices, gases, and rigid water</h2>
+<p>System provides built-in geometry generators for common condensed-matter benchmarks as well as file loaders:</p>
+<ul>
+<li>sys.fcc(cells, a, mass) builds a face-centered cubic crystal of 4 * cells^3 atoms with lattice constant a (nm) and sets the periodic box to cells * a.</li>
+<li>sys.rocksalt(cells, a, mass_a, mass_b, q) builds an 8 * cells^3 two-species NaCl-type rock-salt crystal with alternating +q and -q charges.</li>
+<li>sys.gas(n, box_len, mass, seed) places n particles at random non-overlapping positions inside a cubic box.</li>
+<li>sys.water(model, x, y, z) and sys.water_box(model, n, spacing, seed) create rigid TIP3P or SPC/E water molecules with intramolecular exclusions and SETTLE distance constraints already applied.</li>
+<li>sys.load_xyz(path, mass) and sys.load_pdb(path) load external coordinates; load_pdb converts Angstrom coordinates to nanometers, reads CRYST1 box dimensions, and assigns atomic masses from a 42-element table.</li>
+</ul>
+<pre><code>let sys = md.system()
+  .water_box("tip3p", 6, 0.31, 42)
+  .coulomb("pme", 0.9)
+  .dispersion_correction(true);</code></pre>
+<h2>Forces and custom Lepton potentials</h2>
+<p>Standard bonded and nonbonded interactions are configured directly on System with bond, angle, torsion, constrain, lj, lj_particle, charge, coulomb, dielectric, dispersion_correction, and exclude. When analytic potentials outside standard harmonic or Lennard-Jones 12-6 forms are needed, OpenMM's embedded Lepton compiler evaluates custom energy expressions:</p>
+<ul>
+<li>sys.custom_external(expr, params) applies an external potential function of particle coordinates x, y, and z (for example harmonic traps or walls).</li>
+<li>sys.custom_bond(i, j, expr) applies a pair bond potential function of interatomic distance r (plus pi and e), for example a Morse potential 120*(1-exp(-12*(r-0.16)))^2.</li>
+<li>sys.custom_nonbonded(expr, params, cutoff) applies a custom pairwise nonbonded interaction function of distance r across all non-excluded pairs within cutoff.</li>
+</ul>
+<p>Before optimization, lmmolecule validates every Lepton expression tree and rejects non-finite constant sub-expressions (such as 1/0 or sqrt(-1)).</p>
+<h2>Integrators, thermostats, barostats, and reproducibility</h2>
+<p>Call sys.sim(integrator, dt, temp_K, friction, seed) to compile the system into an OpenMM Context:</p>
+<ul>
+<li>Use "verlet" for NVE microcanonical dynamics, or combine "verlet" with sys.andersen(temp_K, rate, seed) for Andersen collision thermostatting.</li>
+<li>Use "langevin" for NVT canonical dynamics via OpenMM's BAOAB LangevinMiddleIntegrator with friction in 1/ps.</li>
+<li>Add sys.barostat(pressure_bar, temp_K, freq, seed) before sys.sim to sample the NPT isothermal-isobaric ensemble via Monte Carlo volume moves.</li>
+</ul>
+<p>By default, lmmolecule runs on OpenMM's double-precision Reference platform. Calling md.platform("cpu") switches subsequent simulations to the SIMD CPU platform with DeterministicForces enabled; md.threads(1) keeps single-thread CPU runs byte-identical across reruns on the same machine.</p>
+<h2>Structural and transport observables</h2>
+<p>In addition to instantaneous ke(), pe(), energy(), temperature(), dof(), box_volume(), distance(i, j), angle_val(i, j, k), and per-particle x/y/z, vx/vy/vz, and fx/fy/fz accessors, Sim includes built-in condensed-matter analysis methods:</p>
+<ul>
+<li>sim.mark() records current unwrapped particle positions, and sim.msd() returns the mean squared displacement (in nm^2) of mobile particles since mark(), enabling direct Einstein diffusion calculations D = MSD / (6 * t).</li>
+<li>sim.rdf(path, rmax, bins, frames, stride) and sim.rdf_pair(path, sym_a, sym_b, rmax, bins, frames, stride) advance the simulation across frames snapshots separated by stride steps and write the normalized radial distribution function g(r) to path.</li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmmolecule">github.com/lmctl-ai/lmmolecule</a>.</p>
+</footer>
+</body>
+</html>

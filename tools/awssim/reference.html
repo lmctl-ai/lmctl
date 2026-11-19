@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>awssim reference — awssim — lmctl.com tools</title>
+<meta name="description" content="Reference tables for awssim CLI commands and flags, environment variables, enforced S3/DynamoDB/SQS operations, client LMScript standard REST/CLI interfaces,…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/awssim/">Overview</a></li>
+<li><a href="/tools/awssim/skill.html">Skill</a></li>
+<li><a href="/tools/awssim/guide.html">Guide</a></li>
+<li><a href="/tools/awssim/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>awssim reference</h1>
+<p>Reference tables for awssim CLI commands and flags, environment variables, enforced S3/DynamoDB/SQS operations, client LMScript standard REST/CLI interfaces, and exit codes.</p>
+<h2>CLI commands and flags</h2>
+<table>
+<thead>
+<tr>
+<th>Command or flag</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>awssim --version</td>
+<td>none</td>
+<td>Print awssim version string and exit 0.</td>
+</tr>
+<tr>
+<td>awssim --help, -h</td>
+<td>none</td>
+<td>Print command usage and options and exit 0.</td>
+</tr>
+<tr>
+<td>awssim serve | start</td>
+<td>foreground</td>
+<td>Start the local AWS emulator on 127.0.0.1.</td>
+</tr>
+<tr>
+<td>--port &lt;port></td>
+<td>4566</td>
+<td>TCP port on 127.0.0.1 for the HTTP listener.</td>
+</tr>
+<tr>
+<td>--data-dir &lt;dir></td>
+<td>in-memory</td>
+<td>Directory for persistent S3, DynamoDB, and SQS state across restarts.</td>
+</tr>
+<tr>
+<td>--auth open | enforce</td>
+<td>open</td>
+<td>Select permissive open mode or enforced SigV4 and IAM policy evaluation.</td>
+</tr>
+<tr>
+<td>--auth-config &lt;path></td>
+<td>unset</td>
+<td>Path to the JSON credentials and IAM policy file required when --auth enforce is set.</td>
+</tr>
+</tbody>
+</table>
+<h2>Environment variables</h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SIM_AUTH</td>
+<td>open</td>
+<td>Set to enforce to enable SigV4 and IAM policy checks (overridden by --auth).</td>
+</tr>
+<tr>
+<td>SIM_AUTH_CONFIG</td>
+<td>unset</td>
+<td>Path to the JSON auth configuration file (overridden by --auth-config).</td>
+</tr>
+<tr>
+<td>FLOCI_SERVICES_EC2_ENABLED</td>
+<td>false</td>
+<td>Opt into upstream EC2 emulation (which binds an extra IMDS listener on port 9169).</td>
+</tr>
+<tr>
+<td>FLOCI_DOCKER_RESOURCE_NAMESPACE</td>
+<td>awssim</td>
+<td>Docker container/resource namespace tag to avoid colliding with stock Floci deployments.</td>
+</tr>
+</tbody>
+</table>
+<h2>Enforced AWS service operations</h2>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>Supported operations in --auth enforce mode</th>
+<th>Resource ARN pattern</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S3</td>
+<td>CreateBucket, DeleteBucket, ListBuckets, ListObjects/ListObjectsV2, HeadBucket, HeadObject, GetObject, PutObject, DeleteObject, GetBucketLocation, Get/Put/DeleteBucketTagging</td>
+<td>arn:aws:s3:::&lt;bucket> and arn:aws:s3:::&lt;bucket>/&lt;key></td>
+</tr>
+<tr>
+<td>DynamoDB</td>
+<td>CreateTable, DescribeTable, DeleteTable, ListTables, PutItem, GetItem, DeleteItem, UpdateItem, Query, Scan, TagResource, UntagResource, ListTagsOfResource</td>
+<td>arn:aws:dynamodb:&lt;region>:000000000000:table/&lt;table></td>
+</tr>
+<tr>
+<td>SQS</td>
+<td>CreateQueue, DeleteQueue, GetQueueUrl, ListQueues, GetQueueAttributes, SetQueueAttributes, SendMessage, ReceiveMessage, DeleteMessage, ChangeMessageVisibility, PurgeQueue, TagQueue, UntagQueue, ListQueueTags</td>
+<td>arn:aws:sqs:&lt;region>:000000000000:&lt;queue></td>
+</tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces (client hosts)</h2>
+<table>
+<thead>
+<tr>
+<th>Interface or function</th>
+<th>Signature</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RestGet .. RestOptions, RestHandler</td>
+<td>fn h(x: RestExchange) -> void implements RestGet .. RestHandler</td>
+<td>HTTP route handlers in lmaws/lmcloud client programs annotated with @"/path/:param".</td>
+</tr>
+<tr>
+<td>CliCommand, CliOption</td>
+<td>fn c(x: RestExchange) -> void implements CliCommand | CliOption</td>
+<td>CLI subcommand (@"cmd") and flag (@"--opt") interfaces in client programs.</td>
+</tr>
+<tr>
+<td>rest_config, rest_route, rest_serve, rest_stop, rest_cli</td>
+<td>rest_config(string, string) -> void; rest_route(string, string, string) -> void; rest_serve() -> void; rest_stop() -> void; rest_cli(StrList) -> string</td>
+<td>Configure and invoke REST and CLI handlers driving awssim workflows.</td>
+</tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Clean shutdown or --version / --help printed.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Invalid CLI arguments or missing/malformed --auth-config file.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Server startup failure (such as bind address or port already in use).</td>
+</tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/awssim">github.com/lmctl-ai/awssim</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tree-sitter-lmscript — lmctl.com tools</title>
+<meta name="description" content="tree-sitter-lmscript is the Tree-sitter grammar, external scanner, and companion lmscript_lmcode injection parser for LMScript (.lms) files.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/tree-sitter-lmscript/">Overview</a></li>
+<li><a href="/tools/tree-sitter-lmscript/skill.html">Skill</a></li>
+<li><a href="/tools/tree-sitter-lmscript/guide.html">Guide</a></li>
+<li><a href="/tools/tree-sitter-lmscript/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>tree-sitter-lmscript</h1>
+<p>tree-sitter-lmscript is the Tree-sitter grammar, external scanner, and companion lmscript_lmcode injection parser for LMScript (.lms) files. It parses outer LMScript statements, command literals, queued data blocks, and _lmcode_ bodies with single-line f"..." template expansion.</p>
+<h2>Quick reference</h2>
+<pre><code>git clone https://github.com/lmctl-ai/tree-sitter-lmscript.git
+cd tree-sitter-lmscript
+npm install --prefix /tmp/lmscript-tree-sitter tree-sitter-cli@0.27.1
+export TREE_SITTER=/tmp/lmscript-tree-sitter/node_modules/.bin/tree-sitter
+npm test</code></pre>
+<table><thead><tr><th>Component</th><th>Version / Kind</th><th>Role</th></tr></thead><tbody>
+<tr><td>tree-sitter-cli</td><td>0.27.1</td><td>Pinned CLI version used by npm test to regenerate and verify src/parser.c</td></tr>
+<tr><td>data_block_statement</td><td>Outer AST node</td><td>Contains marker_expression/block_marker (_lmcode_ or _dsl_), lmcode_body, and block_closer</td></tr>
+<tr><td>lmcode_body</td><td>Injection range node</td><td>Opaque outer node whose byte range excludes header and closer for inner reparsing</td></tr>
+<tr><td>lmcode-body/</td><td>Companion grammar</td><td>lmscript_lmcode companion parser extending tree-sitter-lmcode with f"..." formatted strings</td></tr>
+<tr><td>queries/injections.scm</td><td>Tree-sitter query</td><td>Selects the lmscript_lmcode companion parser for every lmcode_body node</td></tr>
+<tr><td>corpus-manifest.json</td><td>119 file hashes</td><td>SHA-256 manifest of 119 verified mono and skills-scripts .lms files</td></tr>
+</tbody></table>
+<pre><code># Run the public corpus, 39 Tree-sitter corpus cases, and 3 mutant controls
+npm install --prefix /tmp/lmscript-tree-sitter tree-sitter-cli@0.27.1
+export TREE_SITTER=/tmp/lmscript-tree-sitter/node_modules/.bin/tree-sitter
+npm test</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/tree-sitter-lmscript/skill.html">Skill</a></li>
+<li><a href="/tools/tree-sitter-lmscript/guide.html">Guide</a></li>
+<li><a href="/tools/tree-sitter-lmscript/reference.html">Reference</a></li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/tree-sitter-lmscript">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/tree-sitter-lmscript">github.com/lmctl-ai/tree-sitter-lmscript</a>.</p>
+</footer>
+</body>
+</html>

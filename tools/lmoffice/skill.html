@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmoffice authoring skill — lmoffice — lmctl.com tools</title>
+<meta name="description" content="lmoffice is a self-contained .NET 8 NativeAOT lmcode host for LMScript that creates, validates, and extracts Word (.docx), Excel (.xlsx), and PowerPoint…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmoffice/">Overview</a></li>
+<li><a href="/tools/lmoffice/skill.html">Skill</a></li>
+<li><a href="/tools/lmoffice/guide.html">Guide</a></li>
+<li><a href="/tools/lmoffice/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmoffice authoring skill</h1>
+<p>lmoffice is a self-contained .NET 8 NativeAOT lmcode host for LMScript that creates, validates, and extracts Word (.docx), Excel (.xlsx), and PowerPoint (.pptx) Open XML documents without requiring Microsoft Office or network access.</p>
+<h2>Purpose</h2>
+<p>Use lmoffice to author typed Word documents, multi-sheet Excel workbooks with formulas and native charts, and 16:9 PowerPoint slide decks from LMScript _lmcode_ blocks, or to inspect and convert existing Open XML packages to JSON summaries and canonical Markdown.</p>
+<h2>When to use it</h2>
+<p>Choose lmoffice when a workflow needs editable Office Open XML deliverables (.docx, .xlsx, .pptx) or structured inspection of existing Office packages. Use lmpdf instead when the final output must be an archival PDF/A-2b and PDF/UA-1 document or slide deck from the same docx or pptx calls.</p>
+<h2>Install</h2>
+<p>Install the lmctl CLI globally with npm, or let LMScript resolve the pinned GitHub release binary automatically via install="github:lmctl-ai/lmoffice@v0.1.33" on first execution.</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmoffice --version
+lmoffice docx --help
+lmoffice inspect report.docx</code></pre>
+<h2>Commands</h2>
+<p>Each document format has its own subcommand and embedded schema (lmoffice docx, lmoffice xlsx, lmoffice pptx), while inspect is a shared top-level command that validates any .docx, .xlsx, or .pptx package with OpenXmlValidator and prints a JSON summary.</p>
+<pre><code>lmoffice --version
+lmoffice docx --lmcode-schema --json
+lmoffice docx --lmcode-signatures
+lmoffice docx --lmcode invocation.json
+lmoffice xlsx --lmcode-schema --json
+lmoffice xlsx --lmcode-signatures
+lmoffice xlsx --lmcode invocation.json
+lmoffice pptx --lmcode-schema --json
+lmoffice pptx --lmcode-signatures
+lmoffice pptx --lmcode invocation.json
+lmoffice inspect report.docx
+lmoffice inspect report.docx --markdown</code></pre>
+<h2>Inputs and outputs</h2>
+<p>Each format subcommand exposes a single root context variable (docx: DocxHost, xlsx: XlsxHost, or pptx: PptxHost) alongside the standard lmcode_std_v3 catalog. Context factories create(path) return format handles (Docx, Xlsx, Pptx) whose save() method writes the package; the host then writes a terminal LMCODE_RETURN result frame.</p>
+<ul>
+<li>Word documents (docx.create): supports headings, paragraphs, bullets, numbered lists, legal clauses, signatures, tables with 1-based cells and merges, headers and footers with PAGE and NUMPAGES fields, table of contents, footnotes, comments, tracked insertions and deletions, Markdown bodies via Docx.markdown and Docx.markdown_file, and XHTML/CSS profiles via Docx.html_doc and Docx.html_xml.</li>
+<li>Excel workbooks (xlsx.create): supports named worksheets with 1-based row and column coordinates, string/int/float/bool cell values, unevaluated formulas, number formats, fonts, fills, borders, frozen panes, merged ranges, autofilters, tables, data validation lists, conditional formatting (cell_is, color_scale, color_scale3, icon_set), bar/line/pie charts, and direct table import via Xlsx.sheet_from_markdown_table and Xlsx.sheet_from_csv.</li>
+<li>PowerPoint presentations (pptx.create): uses a 1280x720 pixel canvas at 96 DPI and supports theme palettes, slide layouts (title_slide, section_header, two_content), positioned text and bullet boxes, rectangles, rounded rectangles, ellipses, lines, arrows, hyperlinks, speaker notes, styled tables, bar/line/pie charts, and slide-separated Markdown decks via Pptx.markdown.</li>
+</ul>
+<h2>Safety rules</h2>
+<ul>
+<li>Match the CLI subcommand (lmoffice docx, lmoffice xlsx, or lmoffice pptx) to the context used in the _lmcode_ block; each subcommand embeds only its own format schema.</li>
+<li>Use 1-based row and column indices for Word table cells, Excel worksheet cells, and PowerPoint table cells.</li>
+<li>Remember that lmoffice stores Excel formulas in the workbook without evaluating cached formula results, and CSV cells beginning with = imported via sheet_from_csv remain literal strings.</li>
+<li>Only supported local PNG and JPEG paths or portable data URIs are accepted for images; unsafe paths and unknown HTML/CSS profile elements or properties are rejected with source locations.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>Create a Word weekly brief from an inline Markdown string and verify the execution envelope:</p>
+<pre><code>body = """# Weekly brief
+
+- **Shipped:** the pilot workflow
+- **Next:** customer feedback
+
+{{sign: Avery Chen}}
+""";
+p = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.33";
+docx.create("brief.docx").markdown(${body}).save();
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));</code></pre>
+<p>Create an Excel departmental budget with formulas, formatting, and a frozen header row:</p>
+<pre><code>p = _lmcode_ cli="lmoffice xlsx" install="github:lmctl-ai/lmoffice@v0.1.33";
+let wb = xlsx.create("budget.xlsx");
+let s = wb.sheet("Q1");
+s.set(1, 1, "Category").set(1, 2, "Planned").set(1, 3, "Actual").set(1, 4, "Variance");
+s.bold(1, 1).bold(1, 2).bold(1, 3).bold(1, 4).freeze(1, 0);
+s.set(2, 1, "Compute").set(2, 2, 12000.0).set(2, 3, 11450.0).formula(2, 4, "C2-B2");
+s.set(3, 1, "Storage").set(3, 2, 4500.0).set(3, 3, 4620.0).formula(3, 4, "C3-B3");
+s.number_format(2, 2, "$#,##0.00").number_format(2, 3, "$#,##0.00").number_format(2, 4, "$#,##0.00");
+wb.save();
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Exit code 0 indicates success and emits a terminal LMCODE_RETURN frame with ok set to true. Exit code 2 indicates an invalid command or manifest. Exit code 3 indicates an lmcode or VM run failure. Exit code 4 indicates an application or document failure.</p>
+<h2>How to verify</h2>
+<p>Verify schema parity and validate every generated .docx, .xlsx, or .pptx package with lmoffice inspect, which runs OpenXmlValidator before returning format counts and extracted text:</p>
+<pre><code>lmoffice docx --lmcode-schema --json > /tmp/docx.schema.json
+lmoffice docx --lmcode-signatures > /tmp/docx.sigs.txt
+lmscript --lmcode-signatures /tmp/docx.schema.json > /tmp/docx.compiler.txt
+diff -u /tmp/docx.compiler.txt /tmp/docx.sigs.txt
+lmoffice inspect brief.docx
+lmoffice inspect brief.docx --markdown</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmoffice">github.com/lmctl-ai/lmoffice</a>.</p>
+</footer>
+</body>
+</html>

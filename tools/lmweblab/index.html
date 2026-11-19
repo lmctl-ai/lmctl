@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmweblab — lmctl.com tools</title>
+<meta name="description" content="lmweblab is a pictures-first cloud web stack integration benchmark and 12-scenario suite comparing native lmaws and OpenTofu-based lmcloud on AWS.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmweblab/">Overview</a></li>
+<li><a href="/tools/lmweblab/skill.html">Skill</a></li>
+<li><a href="/tools/lmweblab/guide.html">Guide</a></li>
+<li><a href="/tools/lmweblab/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmweblab</h1>
+<p>lmweblab is a pictures-first cloud web stack integration benchmark and 12-scenario suite comparing native lmaws and OpenTofu-based lmcloud on AWS. Every stack provisions tagged S3, CloudFront, Route 53, ACM, EC2, or serverless resources, validates HTTP and p95 latency contracts with lmcurl, and proves zero leftovers on teardown.</p>
+<h2>Quick reference</h2>
+<pre><code>npm i -g @lmctl-ai/lmctl
+lmctl lmaws/web_stack.lms all --offline --phase2
+lmctl lmaws/report.lms
+lmctl lmcloud/all.lms
+bash test.sh</code></pre>
+<table>
+<thead>
+<tr>
+<th>Driver or recipe</th>
+<th>Invocation</th>
+<th>Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>lmaws/web_stack.lms</td>
+<td>lmctl lmaws/web_stack.lms all --offline [--phase2]</td>
+<td>Run Part A (lmaws) up, HTTP test, optional Phase 2 HTTPS upgrade, and teardown</td>
+</tr>
+<tr>
+<td>lmaws/down.lms</td>
+<td>lmctl lmaws/down.lms --run-id RUN_ID [--live]</td>
+<td>Perform reverse-order teardown of a tagged run and verify zero owned leftovers</td>
+</tr>
+<tr>
+<td>lmaws/status.lms</td>
+<td>lmctl lmaws/status.lms --run-id RUN_ID [--live]</td>
+<td>Inspect masked run state and provider inventory without locking lifecycle state</td>
+</tr>
+<tr>
+<td>lmaws/recipes/steps.lms</td>
+<td>import "./lmaws/recipes/steps.lms";</td>
+<td>Import granular guarded step helpers (web_bucket, web_certificate, web_distribution, etc.)</td>
+</tr>
+<tr>
+<td>lmcloud/all.lms</td>
+<td>lmctl lmcloud/all.lms [--live]</td>
+<td>Run Part B (lmcloud/OpenTofu) end-to-end lifecycle and render architecture/latency PNGs</td>
+</tr>
+<tr>
+<td>lmcloud/validate.lms</td>
+<td>lmctl lmcloud/validate.lms</td>
+<td>Run offline OpenTofu fmt_check, init, validate, and Phase 1/Phase 2 mock plans</td>
+</tr>
+<tr>
+<td>scenarios/NN-name/*/all.lms</td>
+<td>lmctl all.lms --offline</td>
+<td>Execute any of the 12 cloud web and serverless scenarios (up, test, down)</td>
+</tr>
+</tbody>
+</table>
+<pre><code># Run the offline Part A lifecycle and generate architecture and latency charts
+lmctl lmaws/web_stack.lms all --offline --phase2
+lmctl lmaws/report.lms</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmweblab/skill.html">Authoring skill</a>: purpose, commands, safety rules, worked examples, and verification gates for offline and live AWS runs.</li>
+<li><a href="/tools/lmweblab/guide.html">Guide</a>: dual-engine architecture (lmaws vs lmcloud), two-phase HTTP/HTTPS flow, 12-scenario catalog, and cost and ownership guardrails.</li>
+<li><a href="/tools/lmweblab/reference.html">Reference</a>: complete tables of CLI flags, environment variables, native lmaws Web APIs, importable recipes, 12-scenario catalog specifications, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmweblab">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmweblab">github.com/lmctl-ai/lmweblab</a>.</p>
+</footer>
+</body>
+</html>

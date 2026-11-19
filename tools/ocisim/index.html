@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ocisim — lmctl.com tools</title>
+<meta name="description" content="ocisim is a single-binary local Oracle Cloud Infrastructure (OCI) emulator on 127.0.0.1:4599 that runs Object Storage, IAM, Queue, Streaming, Vault, KMS, and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/ocisim/">Overview</a></li>
+<li><a href="/tools/ocisim/skill.html">Skill</a></li>
+<li><a href="/tools/ocisim/guide.html">Guide</a></li>
+<li><a href="/tools/ocisim/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>ocisim</h1>
+<p>ocisim is a single-binary local Oracle Cloud Infrastructure (OCI) emulator on 127.0.0.1:4599 that runs Object Storage, IAM, Queue, Streaming, Vault, KMS, and Secrets in-process.</p>
+<h2>Quick reference</h2>
+<p>Start ocisim on loopback port 4599 in open mode or with two-layer RSA-SHA256 HTTP signature and OCI IAM policy enforcement, then connect lmoci or any OCI SDK.</p>
+<pre><code>ocisim --version
+ocisim serve
+ocisim serve --port 4599 --data-dir ./state
+ocisim serve --auth enforce --auth-config ./auth.json
+curl http://127.0.0.1:4599/_floci-oci/health</code></pre>
+<table>
+<thead>
+<tr>
+<th>Command or option</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ocisim serve | start</td>
+<td>127.0.0.1:4599, in-memory</td>
+<td>Run the foreground loopback OCI emulator for Object Storage, IAM, Queue, Streaming, Vault, KMS, and Secrets.</td>
+</tr>
+<tr>
+<td>--port &lt;port></td>
+<td>4599</td>
+<td>Override the loopback TCP listening port.</td>
+</tr>
+<tr>
+<td>--data-dir &lt;path></td>
+<td>in-memory</td>
+<td>Persist buckets, objects, compartments, and queues across restarts.</td>
+</tr>
+<tr>
+<td>--auth open | enforce</td>
+<td>open (OCISIM_AUTH / SIM_AUTH)</td>
+<td>Parse keyId for multi-tenancy isolation in open mode, or enforce RSA-SHA256 signatures and IAM policies.</td>
+</tr>
+<tr>
+<td>--auth-config &lt;file></td>
+<td>OCISIM_AUTH_CONFIG / SIM_AUTH_CONFIG</td>
+<td>JSON file defining credentials (keyId, publicKeyFile, groups, statements, policy.Statement).</td>
+</tr>
+<tr>
+<td>GET /_floci-oci/health</td>
+<td>anonymous</td>
+<td>Health endpoint available in both open and enforce modes.</td>
+</tr>
+</tbody>
+</table>
+<p>Example driving a running ocisim on 127.0.0.1:4599 with lmoci in open mode:</p>
+<pre><code>curl http://127.0.0.1:4599/_floci-oci/health
+lmoci os namespace --endpoint http://127.0.0.1:4599
+lmoci os create-bucket demo-bucket --endpoint http://127.0.0.1:4599
+lmoci os put-object demo-bucket hello.txt --content "hello from lmoci" --endpoint http://127.0.0.1:4599
+lmoci os get-object demo-bucket hello.txt --endpoint http://127.0.0.1:4599</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/ocisim/skill.html">Skill</a> — LLM agent authoring rules, commands, default OCIDs, two-layer auth rules, and verification steps for ocisim.</li>
+<li><a href="/tools/ocisim/guide.html">Guide</a> — Architecture, draft-cavage RSA-SHA256 verification, OCI IAM policy engine, and template-driven LMScript integration.</li>
+<li><a href="/tools/ocisim/reference.html">Reference</a> — CLI flags, environment variables, default identity OCIDs, auth.json schema, service endpoints, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/ocisim">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/ocisim">github.com/lmctl-ai/ocisim</a>.</p>
+</footer>
+</body>
+</html>

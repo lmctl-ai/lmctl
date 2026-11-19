@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmazure reference — lmazure — lmctl.com tools</title>
+<meta name="description" content="Reference tables for lmazure CLI options, environment variables, shared Cloud methods, ARM inventory session methods, standard lmcode_std_v3 REST and CLI…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmazure/">Overview</a></li>
+<li><a href="/tools/lmazure/skill.html">Skill</a></li>
+<li><a href="/tools/lmazure/guide.html">Guide</a></li>
+<li><a href="/tools/lmazure/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmazure reference</h1>
+<p>Reference tables for lmazure CLI options, environment variables, shared Cloud methods, ARM inventory session methods, standard lmcode_std_v3 REST and CLI interfaces, and exit codes.</p>
+<h2>CLI flags</h2>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>--version, -V</td>
+<td>Print lmazure version string (for example lmazure 0.1.5).</td>
+</tr>
+<tr>
+<td>--help, -h</td>
+<td>Print usage, endpoint precedence, and simulator environment variables.</td>
+</tr>
+<tr>
+<td>--notices</td>
+<td>Print embedded third-party notices for lmcode-go, lmcloud, and Azure SDK for Go packages.</td>
+</tr>
+<tr>
+<td>[cloud] --lmcode-schema [--json]</td>
+<td>Emit raw embedded schema JSON bytes for lmscript compilation.</td>
+</tr>
+<tr>
+<td>[cloud] --lmcode-signatures [--without-std]</td>
+<td>Print sorted canonical signatures with or without the 226 lmcode_std_v3 standard signatures.</td>
+</tr>
+<tr>
+<td>[cloud] [--lmcode|--first|--last] FILE ...</td>
+<td>Execute compiled .dslb bytecode files under the invocation manifest; dry runs come from the manifest written by lmscript --dry-run.</td>
+</tr>
+<tr>
+<td>--sweep [RUN_ID]</td>
+<td>Run stale-prefix sweep and emit a JSON summary of swept resources.</td>
+</tr>
+</tbody>
+</table>
+<h2>Environment variables</h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LMCLOUD_ENDPOINT, LMAZURE_ENDPOINT, AZURE_STORAGE_ENDPOINT, AZURE_ENDPOINT</td>
+<td>unset (in-process fake)</td>
+<td>Loopback HTTP origin for azuresim (such as http://127.0.0.1:4577).</td>
+</tr>
+<tr>
+<td>AZURE_STORAGE_BLOB_ENDPOINT, AZURE_STORAGE_QUEUE_ENDPOINT</td>
+<td>unset</td>
+<td>Service-specific loopback endpoint overrides for Blob or Queue Storage.</td>
+</tr>
+<tr>
+<td>LMAZURE_SIM_ACCOUNT</td>
+<td>devstoreaccount1</td>
+<td>Storage account name used in loopback azuresim URLs and SharedKey signing.</td>
+</tr>
+<tr>
+<td>LMAZURE_SIM_KEY</td>
+<td>Azurite/azuresim dev key</td>
+<td>Base64 SharedKey used to sign loopback requests when LMAZURE_SIM_TOKEN is unset.</td>
+</tr>
+<tr>
+<td>LMAZURE_SIM_TOKEN</td>
+<td>unset</td>
+<td>Bearer token override for testing azuresim --auth enforce Bearer rules.</td>
+</tr>
+<tr>
+<td>LMAZURE_COMPAT_PROBE_EXISTENCE</td>
+<td>1</td>
+<td>Pre-operation existence probes for azuresim builds before 7903c9c; enabled by default.</td>
+</tr>
+<tr>
+<td>LMAZURE_MAX_MEMORY_MB</td>
+<td>4096</td>
+<td>Memory ceiling in whole MiB; invalid values exit 2, breaches exit 3.</td>
+</tr>
+</tbody>
+</table>
+<h2>Shared Cloud and ARM gallery APIs</h2>
+<table>
+<thead>
+<tr>
+<th>Surface</th>
+<th>Methods</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cloud object storage (Blob)</td>
+<td>bucket_create, bucket_delete, bucket_exists, bucket_list, object_put, object_get, object_head, object_delete, object_list, object_list_all</td>
+<td>Create and delete Blob containers and upload, download, head, list, or delete block blobs.</td>
+</tr>
+<tr>
+<td>Cloud queues (Queue Storage)</td>
+<td>queue_create, queue_delete, queue_exists, queue_list, queue_send, queue_receive, queue_ack, queue_nack</td>
+<td>Create and delete Azure queues, enqueue messages, dequeue batches, delete by receipt, and update visibility timeout.</td>
+</tr>
+<tr>
+<td>Cloud tables, permissions, functions, userpools</td>
+<td>table_*, item_*, policy_*, function_*, userpool_*, user_*, group_*, cost_*, metrics*</td>
+<td>Portable key-value tables, policy linting/attachment, serverless functions, user directories, cost caps, and latency metrics.</td>
+</tr>
+<tr>
+<td>ARM inventory session</td>
+<td>mock(), live(), session.inventory(kind), session.find_prefix(prefix), session.readonly_cost_report(path), session.begin_run(path), run.container(suffix), run.queue(suffix), run.cost_cap(usd), run.cleanup()</td>
+<td>72-example gallery surface for read-only ARM metadata tables and ledger-tracked container/queue sandboxes.</td>
+</tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<table>
+<thead>
+<tr>
+<th>Interface or function</th>
+<th>Signature</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RestGet .. RestOptions, RestHandler</td>
+<td>fn h(x: RestExchange) -> void implements RestGet .. RestHandler</td>
+<td>HTTP route handlers bound via @"/path/:param" annotations.</td>
+</tr>
+<tr>
+<td>CliCommand, CliOption</td>
+<td>fn c(x: RestExchange) -> void implements CliCommand | CliOption</td>
+<td>CLI subcommands (@"cmd") and options (@"--flag").</td>
+</tr>
+<tr>
+<td>rest_config, rest_route, rest_serve, rest_stop, rest_cli</td>
+<td>rest_config(k, v); rest_route(m, p, h); rest_serve(); rest_stop(); rest_cli(args) -> string</td>
+<td>Configure routes, serve HTTP, or dispatch CLI and REST requests in-process.</td>
+</tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Command or bytecode execution succeeded.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Invalid command-line flags or invalid LMAZURE_MAX_MEMORY_MB setting.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Cloud error, cost cap exceeded, assertion failure, or memory ceiling exceeded.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Bytecode file or schema contract loading failure.</td>
+</tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmazure">github.com/lmctl-ai/lmazure</a>.</p>
+</footer>
+</body>
+</html>

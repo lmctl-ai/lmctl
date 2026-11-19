@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmtop guide — lmtop — lmctl.com tools</title>
+<meta name="description" content="lmtop reimagines the traditional interactive top utility as a deterministic, cross-platform stdio JSON server for automated agents, benchmarks, and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmtop/">Overview</a></li>
+<li><a href="/tools/lmtop/skill.html">Skill</a></li>
+<li><a href="/tools/lmtop/guide.html">Guide</a></li>
+<li><a href="/tools/lmtop/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmtop guide</h1>
+<h2>Overview</h2>
+<p>lmtop reimagines the traditional interactive top utility as a deterministic, cross-platform stdio JSON server for automated agents, benchmarks, and observability pipelines. Instead of rendering ANSI escape sequences to a terminal, it samples 24 host-normalized CPU, memory, disk, and network metrics on a background thread and answers structured NDJSON queries over stdin and stdout.</p>
+<h2>Sampling architecture and ring buffer memory model</h2>
+<p>The server separates periodic metric collection from request handling so slow or bursty client queries never jitter the sampling clock:</p>
+<ul>
+<li>Absolute tick schedule: On startup, Monitor::start captures an initial baseline snapshot of CPU, disk, and network counters and launches a dedicated sampling thread. The thread sleeps until absolute steady-clock deadlines (sleep_until(started + k * interval)). If host load causes the thread to miss one or more deadlines, it skips ahead to the next future grid point rather than burst-catching up, and increments status.missed_ticks.</li>
+<li>Warm-up synchronization: Because rate metrics require a measured time delta (dt_s) between two counter snapshots, the first sample is recorded one interval after startup. If a client sends a now query before the first tick completes, the server waits up to two intervals on a condition variable so one-shot callers receive a populated sample immediately.</li>
+<li>Bounded in-memory history: Each sample is stored as a fixed-size C++ Sample struct containing wall-clock unix_ms, measured dt_s, 24 double-precision values, and four per-group error strings. The ring buffer capacity is governed by --cap-mb (default 100 MiB, divided by sizeof(Sample)); when full, the oldest sample is evicted in O(1) time.</li>
+<li>Signal and EOF handling: On Linux, SIGINT and SIGTERM are masked on the background sampling thread and handled on the main polling loop so signals, stdin EOF, or a {"method":"stop"} request all join the sampling thread and exit cleanly with code 0.</li>
+</ul>
+<h2>Cross-platform metric parity and honest missing values</h2>
+<p>lmtop shares its 24-metric catalog and normalization rules with lmdebug's sys sample / sys counters specification across three native OS backends selected at compile time:</p>
+<ul>
+<li>Linux backend (src/procfs.cpp): Reads aggregate and per-core CPU ticks from /proc/stat, memory and swap availability from /proc/meminfo, block I/O counters from /proc/diskstats filtered by /sys/block and /sys/class/block eligibility rules, non-loopback interface counters from /proc/net/dev, and 10-second Pressure Stall Information (some avg10) from /proc/pressure/{cpu,memory,io}.</li>
+<li>Windows backend (src/sys_win.cpp): Queries PDH (\Processor, \PhysicalDisk(*), \Network Interface(*)) and GlobalMemoryStatusEx, rebasing per-tick rates into pseudo-counters so the shared delta engine computes identical percentages and rates.</li>
+<li>macOS backend (src/sys_mac.cpp): Uses Mach host_processor_info for per-core CPU ticks, sysctl and host_statistics64 for memory and swap, IOKit block-storage statistics for disk throughput and IOPS, and getifaddrs (AF_LINK) for network interface counters.</li>
+<li>Disk deduplication and counter integrity: To prevent double-counting block I/O, lmtop excludes loop, ram, and zram devices, partitions, and stacked devices where both a partition and its device-mapper target or aggregate parent appear. If any counter moves backward (such as an interface reset) or a metric is unsupported on the host OS (such as PSI outside Linux or disk.max_util_pct on macOS), lmtop emits -1 rather than fabricating zeros.</li>
+</ul>
+<h2>Window statistics and downsampled history</h2>
+<p>Clients can query the accumulated ring buffer at any time without disturbing ongoing collection:</p>
+<ul>
+<li>Time-series history and stride downsampling: The history method accepts optional seconds (0 = entire buffer) and max_points parameters. When total samples in the window exceed max_points, lmtop computes stride = ceil(total / max_points), emits every stride-th row, and always appends the newest sample row if it did not land on a stride boundary.</li>
+<li>Welford window summaries: The summary method aggregates each of the 24 metrics over the requested seconds window, skipping any -1 (missing) entries. For every metric with n > 0 valid samples, it returns n, min, mean, median, p95, p99 (type-7 linear interpolation percentiles), max, sample standard deviation (Welford's online algorithm), first, and last.</li>
+</ul>
+<pre><code># Example requests sent to the server over stdio, one JSON object per line
+{"id":1,"method":"status"}
+{"id":2,"method":"summary","params":{"seconds":10}}</code></pre>
+<h2>Combining lmtop with LMScript and load tests</h2>
+<p>In LMScript performance workflows, start lmtop server redirected to a pair of POSIX FIFOs before executing an lmcurl load test, lmvalkey benchmark, or lmrg corpus search. Once the workload finishes, invoke lmtop client --in ... --out ... summary to capture the exact host CPU peak, hottest single core percentage, disk write bandwidth, and memory pressure during the run, then send stop to terminate the monitor cleanly.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmtop">github.com/lmctl-ai/lmtop</a>.</p>
+</footer>
+</body>
+</html>

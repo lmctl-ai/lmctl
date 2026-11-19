@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lminspect — lmctl.com tools</title>
+<meta name="description" content="lminspect is a pure-Go HTTP/HTTPS proxy, dynamic TLS MITM interceptor, flow recorder, and LMScript host modeled on mitmproxy.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lminspect/">Overview</a></li>
+<li><a href="/tools/lminspect/skill.html">Skill</a></li>
+<li><a href="/tools/lminspect/guide.html">Guide</a></li>
+<li><a href="/tools/lminspect/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lminspect</h1>
+<p>lminspect is a pure-Go HTTP/HTTPS proxy, dynamic TLS MITM interceptor, flow recorder, and LMScript host modeled on mitmproxy. It runs bytecode-compiled _lmcode_ addons inside the proxy pipeline, enforces mandatory credential sanitization on all outputs, and supports standard REST and CLI interfaces.</p>
+<h2>Quick reference</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl@latest
+lminspect --version
+lminspect --lmcode-schema
+lminspect --lmcode-signatures</code></pre>
+<table>
+<thead><tr><th>Interface or flag</th><th>Signature or syntax</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>CLI host bytecode</td><td>lminspect --lmcode prog.dslb [--save out.dslb]</td><td>Execute compiled LMScript bytecode offline or validate and save an addon bytecode artifact.</td></tr>
+<tr><td>CLI schema and signatures</td><td>lminspect --lmcode-schema [--json] | --lmcode-signatures</td><td>Print embedded JSON schema or all canonical host and lmcode_std_v3 signatures (also accepts --dsl-* aliases).</td></tr>
+<tr><td>CLI proxy daemon</td><td>lminspect run [--listen ADDR] [--mode MODE] [--ssl-bump] [--tap] [--record FILE] [--script FILE.dslb]</td><td>Start a forward, reverse (reverse:URL), or transparent HTTP/HTTPS proxy with optional TLS MITM, JSONL recording, and DSL addons.</td></tr>
+<tr><td>CLI declarative rules</td><td>lminspect run [--redirect pat=url] [--route pat=host:port] [--header pat=k:v] [--mock pat=code:body]</td><td>Apply pattern-matched redirects, upstream route overrides, header injections, or synthetic responses without writing a script.</td></tr>
+<tr><td>CLI certgen and replay</td><td>lminspect certgen [--cert ca.crt] [--key ca.key] | lminspect replay --client flows.jsonl [--target host:port]</td><td>Mint a local Root CA for dynamic SSL-Bump leaf certificates or replay recorded JSONL flows against a target endpoint.</td></tr>
+<tr><td>context inspect: Inspector</td><td>inspect.new_flow(method, url) | inspect.parse_flow(json) -> Flow</td><td>Construct synthetic HTTP flows or reconstitute serialized flows inside _lmcode_ scripts.</td></tr>
+<tr><td>RequestHook / ResponseHook / FlowHook</td><td>@request fn h(f: Flow) -> void implements RequestHook</td><td>Intercept and mutate live HTTP requests and responses or return synthetic responses via Flow.respond.</td></tr>
+<tr><td>Flow / Request / Response</td><td>f.request().set_header(k, v) | f.respond(code, body, ctype) | f.kill()</td><td>Read and rewrite methods, URLs, query parameters, headers, and bodies, or short-circuit and drop flows.</td></tr>
+<tr><td>Standard REST and CLI</td><td>RestGet..RestOptions, RestHandler, CliCommand, CliOption</td><td>Expose _lmcode_ functions as HTTP routes (:param) or stateless CLI flags and commands via rest_serve and rest_cli.</td></tr>
+</tbody>
+</table>
+<pre><code>p = _lmcode_ cli="lminspect" install="github:lmctl-ai/lminspect@latest";
+@request
+fn on_req(f: Flow) -> void implements RequestHook {
+  f.request().set_header("X-Proxy-By", "lminspect");
+}
+
+@"/flow/:seg"
+fn get_flow(x: RestExchange) -> void implements RestGet {
+  let f = inspect.new_flow("POST", "https://api.internal/" + x.param("seg"));
+  f.respond(201, "{\"seg\":\"" + x.param("seg") + "\"}", "application/json");
+  x.json("{\"status\":" + str(f.response().status_code()) + ",\"path\":\"" + f.request().path() + "\"}");
+}
+
+rest_config("session", "global");
+let out = rest_cli(str_split("/flow/orders", " "));
+assert(out == "{\"status\":201,\"path\":\"/orders\"}", "unexpected rest_cli output");
+end _lmcode_
+res = run_lmcode(p);
+require(res.ok, json_stringify(res));</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lminspect/skill.html">Skill</a> — agent authoring rules, proxy and replay commands, mandatory credential sanitization rules, exit codes, and verification steps.</li>
+<li><a href="/tools/lminspect/guide.html">Guide</a> — proxy architecture, dynamic SSL-Bump TLS decryption, Flow hook lifecycle, credential-safe JSONL capture format, and standard REST and CLI interfaces.</li>
+<li><a href="/tools/lminspect/reference.html">Reference</a> — complete CLI subcommands and flags, Inspector/Flow/Request/Response methods, standard lmcode_std_v3 interfaces, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lminspect">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lminspect">github.com/lmctl-ai/lminspect</a>.</p>
+</footer>
+</body>
+</html>

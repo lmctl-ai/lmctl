@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmplot guide — lmplot — lmctl.com tools</title>
+<meta name="description" content="Embedded gnuplot engine, deterministic native PNG rasterizer, DejaVu font mapping, stats and fit read-back loops, and the standard lmcode_std_v3 catalog for…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmplot/">Overview</a></li>
+<li><a href="/tools/lmplot/skill.html">Skill</a></li>
+<li><a href="/tools/lmplot/guide.html">Guide</a></li>
+<li><a href="/tools/lmplot/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmplot guide</h1>
+<p>Embedded gnuplot engine, deterministic native PNG rasterizer, DejaVu font mapping, stats and fit read-back loops, and the standard lmcode_std_v3 catalog for lmplot.</p>
+<h2>Overview</h2>
+<p>lmplot embeds the complete non-interactive gnuplot command engine, a custom C++ anti-aliased RGBA scanline rasterizer (lmpng.trm), stb_truetype and stb_image, four DejaVu TrueType font faces, and the lmcode-cpp runtime into a single executable. Because it has no external dependencies on X11, Cairo, Pango, libgd, or system fontconfig directories, the same script produces byte-identical PNG and SVG files across containers, CI servers, and workstations.</p>
+<h2>Native PNG terminal and embedded DejaVu fonts</h2>
+<p>In standard gnuplot builds, PNG output depends on external libgd or Cairo/Pango stacks whose font selection and hinting vary across operating systems. lmplot replaces those external drivers with a deterministic built-in driver registered under both png and pngcairo:</p>
+<ul>
+<li>Anti-aliased and crisp scanline rendering: curves, polygons, and rotated text outlines use 16x vertical sub-scanline coverage with straight-alpha compositing, while axis-aligned boxes and pm3d surface quads use half-open pixel-center crisp fills so adjacent tiles join without seams.</li>
+<li>Embedded TrueType fonts: DejaVu Sans, DejaVu Sans Bold, DejaVu Serif, and DejaVu Sans Mono are compiled directly into the binary. Font names containing mono, courier, consol, or fixed select Mono; names containing serif, times, georgia, palatino, bookman, garamond, or century (without sans) select Serif; symbol maps Adobe Symbol characters to Unicode Greek and math glyphs (so {/Symbol a} renders alpha); all other names select Sans.</li>
+<li>Terminal options: set terminal png (or plot.png(path, w, h)) supports size W,H, font "name,size", fontscale, enhanced and noenhanced, transparent, crop, background, linewidth, dashlength, butt, rounded, square, and monochrome.</li>
+<li>Deterministic compression: the PNG writer uses adaptive row filtering and a fixed-Huffman LZ77 deflate encoder, writing 24-bit RGB when opaque and 32-bit RGBA when transparent.</li>
+</ul>
+<h2>Generate-plot-read-back workflows and multi-host dashboards</h2>
+<ul>
+<li>Two-way expression bridge: an _lmcode_ block can synthesize data or load a datablock with plot.data(name, text), run gnuplot's stats or Marquardt-Levenberg fit command, read the resulting internal variables back into LMScript with plot.num("STATS_slope") or plot.str("GPVAL_TERM"), check tolerances with plot.assert_close, and format derived annotations onto the final figure.</li>
+<li>Compositing images from sibling hosts: gnuplot's set pixmap N "file.png" at screen X,Y width screen W and plot "file.png" binary filetype=png with rgbimage read PNG, JPEG, GIF, BMP, TGA, and PNM files through stb_image. A script can run lmparticle or lmphysics to simulate a system, render a 2D schematic with lmdraw or a 3D cutaway with lmcad, and place that image inside an lmplot multiplot dashboard.</li>
+<li>Persistent session state: variables, user functions, datablocks, and terminal settings persist across Plot method calls and across multi-part --lmcode builder files within a single invocation.</li>
+</ul>
+<h2>Standard lmcode_std_v3 library</h2>
+<p>Alongside context plot: Plot, lmplot embeds the pinned standard lmcode_std_v3 catalog (cpp/std/lmcode-std.schema.json, 206 canonical signatures) of string, encoding, math, collection (IntList, FloatList, StrList, IntMap, FloatMap, StrMap, stacks, queues, priority queues), JSON, template, file, and return-framing functions. The pinned catalog does not include the REST and CLI interfaces (RestGet, CliCommand, rest_serve and related functions) found in newer lmcode_std_v3 catalogs, so do not use them in lmplot blocks.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmplot">github.com/lmctl-ai/lmplot</a>.</p>
+</footer>
+</body>
+</html>

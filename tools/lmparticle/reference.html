@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmparticle reference — lmparticle — lmctl.com tools</title>
+<meta name="description" content="Complete command-line flags, Rad/Material/Geometry/Source/Sim/Result schema methods, built-in materials and elements, the standard lmcode_std_v3 catalog, and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmparticle/">Overview</a></li>
+<li><a href="/tools/lmparticle/skill.html">Skill</a></li>
+<li><a href="/tools/lmparticle/guide.html">Guide</a></li>
+<li><a href="/tools/lmparticle/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmparticle reference</h1>
+<p>Complete command-line flags, Rad/Material/Geometry/Source/Sim/Result schema methods, built-in materials and elements, the standard lmcode_std_v3 catalog, and exit codes for lmparticle.</p>
+<h2>CLI flags and environment variables</h2>
+<table>
+<thead><tr><th>Flag or variable</th><th>Arguments</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>--version</td><td>none</td><td>Print the lmparticle version string and exit 0.</td></tr>
+<tr><td>--notices</td><td>none</td><td>Print NIST XCOM citation and open-source license notices.</td></tr>
+<tr><td>--lmcode-schema</td><td>[--json]</td><td>Print a human-readable schema summary or exact embedded schema JSON bytes.</td></tr>
+<tr><td>--lmcode-signatures</td><td>none</td><td>Print canonical context, function, and method signatures registered in the host.</td></tr>
+<tr><td>--lmcode</td><td>FILE</td><td>Load and execute compiled LMScript bytecode (repeatable for builder parts).</td></tr>
+<tr><td>LMPARTICLE_MAX_MEMORY_MB</td><td>integer (default 4096)</td><td>Maximum host memory budget in MiB before aborting cleanly with exit code 3.</td></tr>
+</tbody>
+</table>
+<h2>Host schema types and methods (context rad: Rad)</h2>
+<table>
+<thead><tr><th>Type / context</th><th>Method signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context rad: Rad</td><td>rad.builtin(string) -> Material</td><td>Load a built-in material: water, air, lead, iron, aluminum, copper, tungsten, silicon, germanium, concrete, nai, polyethylene, tissue, bone, or pmma.</td></tr>
+<tr><td>Rad</td><td>rad.material(string, float) -> Material</td><td>Create a custom material with a name and density in g/cm3.</td></tr>
+<tr><td>Rad</td><td>rad.element_table(string, int, string) -> void</td><td>Register or replace an element symbol and atomic number Z from XCOM-format rows (E coherent incoherent photo pair_nuclear pair_electron in cm2/g, covering 0.001..20 MeV).</td></tr>
+<tr><td>Rad</td><td>rad.geometry() -> Geometry | rad.source() -> Source | rad.simulation(Geometry, Source) -> Sim</td><td>Construct empty Geometry, Source, or Sim builder handles.</td></tr>
+<tr><td>Rad</td><td>rad.klein_nishina(float) -> float | rad.compton_mean_transfer(float) -> float | rad.sample_compton_mean(float, int, int) -> float</td><td>Compute total Klein-Nishina cross section (cm2/electron), analytic mean Compton energy transfer (MeV), or Monte Carlo sampled mean transfer for (E, samples, seed).</td></tr>
+<tr><td>Rad</td><td>rad.assert_close(float, float, float) -> void | rad.assert_true(bool) -> void</td><td>Assert |actual - expected| &lt;= tol or boolean truth; fails with exit code 3 on violation.</td></tr>
+<tr><td>Rad</td><td>rad.save_text(string, string) -> void | rad.print(string) -> void | rad.version() -> string</td><td>Write text to a file, print a diagnostic line to stderr, or return the host version string.</td></tr>
+<tr><td>Material</td><td>m.element(string, float) -> Material</td><td>Add an element mass fraction (built-in: H, C, N, O, Na, Mg, Al, Si, P, S, Ar, K, Ca, Fe, Cu, Ge, I, W, Pb, or custom element_table symbols).</td></tr>
+<tr><td>Material</td><td>m.name() -> string | m.density() -> float</td><td>Return the material name or density in g/cm3.</td></tr>
+<tr><td>Material</td><td>m.mu(float) -> float | m.mu_mass(float) -> float | m.mu_partial(float, string) -> float</td><td>Return linear attenuation coefficient (1/cm), mass attenuation coefficient (cm2/g), or partial linear coefficient for rayleigh, compton, photo, or pair at energy E (MeV).</td></tr>
+<tr><td>Material</td><td>m.mfp(float) -> float | m.hvl(float) -> float</td><td>Return mean free path (1/mu) or half-value layer (ln(2)/mu) in cm at energy E (MeV).</td></tr>
+<tr><td>Geometry</td><td>g.box(string, Material, float, float, float, float, float, float) -> Geometry</td><td>Add an axis-aligned box region named name over [x0, x1] x [y0, y1] x [z0, z1] in cm.</td></tr>
+<tr><td>Geometry</td><td>g.slab(string, Material, float, float) -> Geometry</td><td>Add an infinite x-y slab region named name over [z0, z1] in cm.</td></tr>
+<tr><td>Geometry</td><td>g.sphere(string, Material, float, float, float, float) -> Geometry</td><td>Add a spherical region named name with center (cx, cy, cz) and radius r in cm.</td></tr>
+<tr><td>Geometry</td><td>g.cylinder(string, Material, float, float, float, float, float) -> Geometry</td><td>Add a z-axis cylindrical region named name with center (cx, cy), radius r, and z span [z0, z1] in cm.</td></tr>
+<tr><td>Geometry</td><td>g.regions() -> int</td><td>Return the number of defined regions in the geometry.</td></tr>
+<tr><td>Source</td><td>s.point(float, float, float) -> Source | s.disc(float) -> Source</td><td>Set source position (x, y, z) in cm, optionally spread uniformly over a disc of radius r perpendicular to the beam.</td></tr>
+<tr><td>Source</td><td>s.beam(float, float, float) -> Source | s.cone(float, float, float, float) -> Source | s.isotropic() -> Source</td><td>Set pencil beam direction (dx, dy, dz), cone direction with half-angle in degrees, or 4-pi isotropic emission.</td></tr>
+<tr><td>Source</td><td>s.energy(float) -> Source | s.line(float, float) -> Source</td><td>Set a monoenergetic source energy in MeV (replacing prior lines) or add a discrete spectral line (energy_MeV, relative_weight).</td></tr>
+<tr><td>Sim</td><td>sim.plane(string, string, float) -> Sim</td><td>Add an infinite scoring plane named name normal to axis x, y, or z at coordinate pos (cm) counting forward crossings.</td></tr>
+<tr><td>Sim</td><td>sim.spectrum(int, float) -> Sim | sim.pulse_height(string) -> Sim</td><td>Configure energy histogram binning (bins, emax_MeV) and enable per-history pulse-height tallying in a named region.</td></tr>
+<tr><td>Sim</td><td>sim.cutoff(float) -> Sim | sim.no_rayleigh() -> Sim | sim.implicit_capture(float) -> Sim</td><td>Set absorption energy cutoff in MeV (>= 0.001), disable Rayleigh scattering, or enable implicit capture with Russian roulette weight cutoff (0 &lt; w &lt; 1).</td></tr>
+<tr><td>Sim</td><td>sim.tracks(int) -> Sim | sim.seed(int) -> Sim | sim.run(int) -> Result</td><td>Record interaction vertices for the first n histories (0..100000), set the RNG seed, and run n histories.</td></tr>
+<tr><td>Result</td><td>r.histories() -> int | r.source_energy() -> float | r.track_points() -> int</td><td>Return simulated history count, mean emitted energy per source photon (MeV), or recorded track vertex count.</td></tr>
+<tr><td>Result</td><td>r.deposited(string) | r.deposited_err(string) | r.deposited_uncollided(string) | r.deposited_uncollided_err(string) -> float</td><td>Return total or first-collision kerma deposited in a named region (MeV per source photon) and its standard error.</td></tr>
+<tr><td>Result</td><td>r.total_deposited() | r.total_deposited_err() | r.escaped() | r.escaped_err() | r.escaped_uncollided() | r.escaped_uncollided_err() | r.escaped_energy() -> float</td><td>Return total energy deposited across all regions or fraction/energy of photons escaping the geometry.</td></tr>
+<tr><td>Result</td><td>r.plane_count(string) | r.plane_count_err(string) | r.plane_uncollided(string) | r.plane_uncollided_err(string) | r.plane_energy(string) -> float</td><td>Return total or uncollided forward crossings and forward energy per source photon across a named scoring plane.</td></tr>
+<tr><td>Result</td><td>r.interactions(string) -> float | r.pulse_fraction(string, float, float) -> float</td><td>Return interactions per source photon by process (rayleigh, compton, photo, pair, total) or pulse-height fraction in [lo, hi) MeV.</td></tr>
+<tr><td>Result</td><td>r.save_regions(string) | r.save_plane_spectrum(string, string) | r.save_leakage_spectrum(string) | r.save_pulse_height(string, string) | r.save_tracks(string) -> void</td><td>Write space-separated region kerma table, plane spectrum, leakage spectrum, pulse-height histogram, or interaction tracks to disk.</td></tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 catalog</h2>
+<table>
+<thead><tr><th>Category</th><th>Functions, types, or signatures</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Strings and encodings</td><td>str_len, str_substr, str_find, str_contains, str_starts_with, str_ends_with, str_lower, str_upper, str_trim, str_replace, str_repeat, str_split, str_match, str_to_int, str_is_int, str_to_float, str_is_float, str_base64_encode, str_base64_decode, str_hex_encode, str_hex_decode</td><td>Byte string operations, decimal conversion, and base64/hex encoding.</td></tr>
+<tr><td>Math and files</td><td>math_abs, math_min, math_max, math_floor, math_ceil, math_round, math_sqrt, math_pow, file_read, file_write, file_append, file_exists, file_lines</td><td>Numeric math helpers and UTF-8 file I/O functions.</td></tr>
+<tr><td>Collections, JSON, and return framing</td><td>IntList, FloatList, StrList, IntMap, FloatMap, StrMap, IntStack, FloatStack, StrStack, IntQueue, FloatQueue, StrQueue, IntPQ, FloatPQ, StrPQ, Json (json_parse, template_render), lmcode_return_set, lmcode_return_put, lmcode_return_put_null, lmcode_return_null</td><td>Typed containers, JSON parsing, template rendering, and structured LMCODE_RETURN payload builders.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th>Exit code</th><th>Phase</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>success</td><td>Simulation and assertions succeeded and emitted a terminal LMCODE_RETURN frame.</td></tr>
+<tr><td>2</td><td>cli</td><td>Invalid command-line arguments, unknown or retired flag, or malformed invocation manifest.</td></tr>
+<tr><td>3</td><td>load / run</td><td>Bytecode load failure, invalid physics parameter, failed assert_close/assert_true, or exceeded LMPARTICLE_MAX_MEMORY_MB.</td></tr>
+<tr><td>4</td><td>app</td><td>Output file write failure or application I/O error.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmparticle">github.com/lmctl-ai/lmparticle</a>.</p>
+</footer>
+</body>
+</html>

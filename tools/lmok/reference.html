@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmok reference — lmok — lmctl.com tools</title>
+<meta name="description" content="CLI verbs, flags, Ts/Tree/Node host schema methods, SAM interfaces, standard REST and CLI interfaces, and exit codes for lmok.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmok/">Overview</a></li>
+<li><a href="/tools/lmok/skill.html">Skill</a></li>
+<li><a href="/tools/lmok/guide.html">Guide</a></li>
+<li><a href="/tools/lmok/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmok reference</h1>
+<p>CLI verbs, flags, Ts/Tree/Node host schema methods, SAM interfaces, standard REST and CLI interfaces, and exit codes for lmok.</p>
+<h2>CLI subcommands and flags</h2>
+<table>
+<thead>
+<tr><th>Verb or flag</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>parse [--lang L] FILE|-</td><td>Print the concrete syntax tree as a single-line S-expression.</td></tr>
+<tr><td>query [--lang L] [--pattern] Q FILE...</td><td>Run a tree-sitter S-expression query or code-shaped --pattern and print 0-based capture ranges.</td></tr>
+<tr><td>lint PACK.json FILE|DIR... [OPTIONS]</td><td>Run a JSON rule pack (--db, --new-since, --baseline, --changed[=REV], --fail-on-new, --sarif, --no-suppress).</td></tr>
+<tr><td>check [--lang L] RULES.dslb FILE|DIR...</td><td>Validate @NODE_KIND annotations against grammar L and dispatch compiled Rule callbacks over files.</td></tr>
+<tr><td>ci [--config FILE] [--sarif FILE] [ROOT]</td><td>Run project rules from .lmok/config.json and exit 1 if findings meet severity_floor.</td></tr>
+<tr><td>rules PACK.json... / test PACK.json FIXTURE...</td><td>List pack rule metadata as JSONL or verify annotated rule test fixtures.</td></tr>
+<tr><td>facts [--lang L] FILE|DIR...</td><td>Extract definitions, references, and edges as JSONL without a database.</td></tr>
+<tr><td>index FILE|DIR... [--db PATH]</td><td>Index file facts and FTS5 trigram source text into SQLite, skipping unchanged files.</td></tr>
+<tr><td>symbols PAT / refs NAME / find PAT [--fts]</td><td>Query stored SQLite symbols (LIKE), references (exact), or source text (literal or FTS5).</td></tr>
+<tr><td>findings [--rule ID] [--file P] / status [--init]</td><td>Read live recorded findings or inspect/initialize the SQLite database status.</td></tr>
+<tr><td>outline FILE|DIR... [--budget N] [--db PATH]</td><td>Print live symbol definitions, optionally ranked by stored reference counts.</td></tr>
+<tr><td>metrics FILE... / dup [--tokens N] FILE...</td><td>Report lines, functions, and max_nesting, or detect duplicate normalized token windows.</td></tr>
+<tr><td>serve [--preset NAME] / remote ...</td><td>Run the caching local REST API server or dispatch commands to LMOK_SERVER.</td></tr>
+<tr><td>--lmcode FILE / --lmcode-schema [--json] / --lmcode-signatures</td><td>Execute compiled DSLB v6 bytecode or inspect the host schema and signatures.</td></tr>
+</tbody>
+</table>
+<h2>Ts context, Tree, Node, and NodeList methods (lmok.dsl.json)</h2>
+<table>
+<thead>
+<tr><th>Signature</th><th>Return type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>ts.parse(s) / parse_c(s) / parse_cpp(s) / parse_python(s) / parse_bash(s) / parse_java(s)</td><td>Tree</td><td>Parse UTF-8 source text with the JSON, C, C++, Python, Bash, or Java grammar.</td></tr>
+<tr><td>ts.reparse(old, s) / reparse_c / reparse_cpp / reparse_python / reparse_bash / reparse_java</td><td>Tree</td><td>Incrementally re-parse new source text against an edited Tree.</td></tr>
+<tr><td>ts.changed_ranges(old: Tree, new: Tree)</td><td>string</td><td>Return changed byte and point ranges between two trees as a JSON array string.</td></tr>
+<tr><td>ts.query(n, q) / query_c / query_cpp / query_python / query_bash / query_java</td><td>NodeList</td><td>Run a tree-sitter S-expression query with predicates over subtree n.</td></tr>
+<tr><td>ts.match_c(n: Node, pat: string) / match_python(n: Node, pat: string)</td><td>NodeList</td><td>Match a code-shaped pattern ($VAR, ...) over a C or Python subtree.</td></tr>
+<tr><td>ts.report(n: Node, msg: string[, rule: string, sev: string])</td><td>void</td><td>Append a finding to the per-run findings sink (capped at 65536 per run).</td></tr>
+<tr><td>ts.report_fix(n, msg, rule, sev, fix) / ts.report_meta(n, msg, rule, sev, meta)</td><td>void</td><td>Append a finding with an autofix replacement or extra JSON metadata.</td></tr>
+<tr><td>ts.report_count() / ts.report_json()</td><td>int / string</td><td>Return the number of recorded findings or serialize them as a JSON array string.</td></tr>
+<tr><td>ts.db_files(pat: string) / ts.db_symbols(pat: string) / ts.db_refs(name: string)</td><td>string</td><td>Query stored files, symbols, or references from the active SQLite index as JSON.</td></tr>
+<tr><td>Tree.sexp() / has_error() / node_count() / root() / nodes()</td><td>string / bool / int / Node / NodeList</td><td>Inspect S-expression, syntax error flag, total nodes, root Node, or pre-order named NodeList.</td></tr>
+<tr><td>Tree.edit(start_byte: int, old_end_byte: int, new_end_byte: int)</td><td>void</td><td>Record a byte-offset edit on a tree prior to calling ts.reparse*.</td></tr>
+<tr><td>Node.kind() / text() / is_named() / is_missing()</td><td>string / string / bool / bool</td><td>Node grammar kind, source slice, named status, and missing-token placeholder flag.</td></tr>
+<tr><td>Node.start_row() / start_col() / end_row() / end_col()</td><td>int</td><td>Zero-based start and end row and byte column coordinates.</td></tr>
+<tr><td>Node.child_count() / child(i: int) / has_parent() / parent()</td><td>int / Node / bool / Node</td><td>Navigate named children or walk upward to the parent Node.</td></tr>
+<tr><td>NodeList.len() / NodeList.at(i: int)</td><td>int / Node</td><td>Length and bounds-checked element access on a NodeList.</td></tr>
+</tbody>
+</table>
+<h2>SAM interfaces and standard REST/CLI interfaces (lmcode_std_v3)</h2>
+<table>
+<thead>
+<tr><th>Interface</th><th>Annotation</th><th>Signature</th><th>Role</th></tr>
+</thead>
+<tbody>
+<tr><td>Rule</td><td>@NODE_KIND</td><td>(n: Node) -> void</td><td>CST node visitor dispatched by lmok check for every matching node kind.</td></tr>
+<tr><td>RestGet..RestOptions, RestHandler</td><td>@"/path/:param"</td><td>(exchange: RestExchange) -> void</td><td>Standard lmcode_std_v3 HTTP route handler interfaces (current main; check --lmcode-signatures on a released host).</td></tr>
+<tr><td>CliCommand, CliOption</td><td>@"cmd" / @"--opt"</td><td>(exchange: RestExchange) -> void</td><td>Standard lmcode_std_v3 stateless CLI handler interfaces for rest_cli.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr><th>Code</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>Execution succeeded (lint findings do not fail the run unless --fail-on-new is passed).</td></tr>
+<tr><td>1</td><td>Project quality gate failed in lmok ci (findings met or exceeded severity_floor).</td></tr>
+<tr><td>2</td><td>CLI usage error, unknown --lang, rule-pack format error, or missing SQLite DB on a read verb.</td></tr>
+<tr><td>3</td><td>Input or lmcode error: unreadable file, invalid query pattern, unreadable or corrupt DB, or LOAD_UNBOUND rule kind in check.</td></tr>
+<tr><td>4</td><td>Stdout write failure or new findings detected under lint --fail-on-new.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmok">github.com/lmctl-ai/lmok</a>.</p>
+</footer>
+</body>
+</html>

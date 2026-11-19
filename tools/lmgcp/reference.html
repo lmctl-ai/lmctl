@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmgcp reference — lmgcp — lmctl.com tools</title>
+<meta name="description" content="Reference tables for lmgcp CLI options, environment variables, 16-domain Gcp methods, shared lmgcp cloud methods, standard lmcode_std_v3 REST and CLI…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmgcp/">Overview</a></li>
+<li><a href="/tools/lmgcp/skill.html">Skill</a></li>
+<li><a href="/tools/lmgcp/guide.html">Guide</a></li>
+<li><a href="/tools/lmgcp/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmgcp reference</h1>
+<p>Reference tables for lmgcp CLI options, environment variables, 16-domain Gcp methods, shared lmgcp cloud methods, standard lmcode_std_v3 REST and CLI interfaces, and exit codes.</p>
+<h2>CLI flags</h2>
+<table>
+<thead>
+<tr>
+<th>Flag or subcommand</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>--version</td>
+<td>Print lmgcp version string .</td>
+</tr>
+<tr>
+<td>--help, -h</td>
+<td>Print usage, environment variables, and safety overview.</td>
+</tr>
+<tr>
+<td>--notices</td>
+<td>Print embedded third-party license notices.</td>
+</tr>
+<tr>
+<td>--lmcode-schema [--json]</td>
+<td>Print human-readable schema summary or raw JSON schema for schema/lmgcp.dsl.json.</td>
+</tr>
+<tr>
+<td>--lmcode-signatures [--without-std]</td>
+<td>Print sorted canonical DSL signatures (525 total, or 299 host-only with --without-std).</td>
+</tr>
+<tr>
+<td>--lmcode FILE [--lmcode FILE ...]</td>
+<td>Load, verify, and execute compiled .dslb bytecode against Gcp.</td>
+</tr>
+<tr>
+<td>--sweep [--older-than-hours N] [--delete] [--run-id ID] [--ledger PATH]</td>
+<td>List (dry-run default) or delete (--delete) run-owned leftovers from the recovery journal.</td>
+</tr>
+<tr>
+<td>cloud [--lmcode-schema|--lmcode-signatures|--lmcode FILE]</td>
+<td>Switch to the shared lmcloud schema (schema/lmcloud.dsl.json) served by hostkit/cloudhost.</td>
+</tr>
+</tbody>
+</table>
+<h2>Environment variables</h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LMGCP_MAX_MEMORY_MB</td>
+<td>4096</td>
+<td>Total memory budget in whole MiB; invalid values exit 2, breaches run CleanupLedger and exit 3.</td>
+</tr>
+<tr>
+<td>LMGCP_LIVE</td>
+<td>0</td>
+<td>Set to 1 to use Google Application Default Credentials instead of the in-process fake GCP server.</td>
+</tr>
+<tr>
+<td>LMGCP_ENDPOINT</td>
+<td>unset</td>
+<td>Loopback HTTP emulator origin (such as http://127.0.0.1:4588 for gcpsim); mutually exclusive with LMGCP_LIVE=1.</td>
+</tr>
+<tr>
+<td>LMGCP_ACCESS_TOKEN</td>
+<td>unset</td>
+<td>Optional dummy OAuth bearer token when targeting gcpsim --auth enforce.</td>
+</tr>
+<tr>
+<td>LMGCP_PROJECT</td>
+<td>masked fake project</td>
+<td>Target GCP project ID (masked in all outputs).</td>
+</tr>
+<tr>
+<td>LMGCP_REGION, LMGCP_ZONE</td>
+<td>us-central1 / us-central1-a</td>
+<td>Default GCP region and zone for regional and zonal operations.</td>
+</tr>
+<tr>
+<td>LMGCP_STATE_DIR, LMGCP_LEDGER</td>
+<td>user state dir</td>
+<td>Directory or explicit file path for the durable fsynced recovery journal.</td>
+</tr>
+</tbody>
+</table>
+<h2>16-service Gcp domain summary</h2>
+<table>
+<thead>
+<tr>
+<th>Service domain</th>
+<th>Representative methods on gcp (type Gcp)</th>
+<th>Return types</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Compute Engine &amp; Disks</td>
+<td>compute_list_instances, compute_get_instance, compute_create_instance, compute_delete_instance, compute_list_disks</td>
+<td>ComputeInstance, StrList, bool</td>
+</tr>
+<tr>
+<td>VPC, Subnets &amp; Firewalls</td>
+<td>network_list_vpcs, network_create_vpc, network_create_subnet, network_list_firewalls, network_create_firewall</td>
+<td>VpcNetwork, Subnet, FirewallRule, StrList</td>
+</tr>
+<tr>
+<td>Cloud Storage (GCS)</td>
+<td>storage_list_buckets, storage_create_bucket, storage_delete_bucket, storage_put_object, storage_read_object, storage_list_objects</td>
+<td>StorageBucket, StrList, string, bool</td>
+</tr>
+<tr>
+<td>Pub/Sub</td>
+<td>pubsub_create_topic, pubsub_create_subscription, pubsub_publish, pubsub_pull, pubsub_delete_topic</td>
+<td>PubsubTopic, PubsubSubscription, StrList, string, bool</td>
+</tr>
+<tr>
+<td>Cloud Run v2</td>
+<td>run_list_services, run_deploy_service, run_set_traffic_split, run_delete_service</td>
+<td>CloudRunService, StrList, bool</td>
+</tr>
+<tr>
+<td>Cloud SQL, Firestore &amp; BigQuery</td>
+<td>sql_list_instances, sql_create_instance, firestore_put_doc, firestore_get_doc, bq_create_dataset, bq_create_table</td>
+<td>SqlInstance, StrMap, BqDataset, BqTable</td>
+</tr>
+<tr>
+<td>IAM, Secret Manager &amp; KMS</td>
+<td>iam_list_service_accounts, iam_list_bindings, secrets_list, secrets_create_metadata, kms_list_keys, kms_create_key</td>
+<td>ServiceAccount, SecretMetadata, KmsKey, StrList</td>
+</tr>
+<tr>
+<td>GKE, Artifact Registry &amp; DNS</td>
+<td>gke_list_clusters, ar_list_repositories, ar_create_repository, dns_create_zone, dns_add_record</td>
+<td>GkeCluster, ArtifactRepo, DnsZone, StrList, bool</td>
+</tr>
+<tr>
+<td>Cloud Logging, Monitoring &amp; Ledger</td>
+<td>logging_write_entry, logging_create_sink, monitoring_create_alert_policy, set_cost_cap_usd, estimated_cost_usd, cost_report, cleanup_ledger</td>
+<td>LogSink, AlertPolicy, bool, float, string, int</td>
+</tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Signature</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RestGet .. RestOptions, RestHandler</td>
+<td>fn h(x: RestExchange) -> void implements RestGet .. RestHandler</td>
+<td>HTTP route handler interfaces bound via @"/path/:param" annotations.</td>
+</tr>
+<tr>
+<td>CliCommand, CliOption</td>
+<td>fn c(x: RestExchange) -> void implements CliCommand | CliOption</td>
+<td>CLI subcommands (@"cmd") and options (@"--flag").</td>
+</tr>
+<tr>
+<td>rest_config, rest_route, rest_serve, rest_stop, rest_cli</td>
+<td>rest_config(k, v); rest_route(m, p, h); rest_serve(); rest_stop(); rest_cli(args) -> string</td>
+<td>Configure routes, run HTTP servers, or dispatch CLI/REST requests in-process.</td>
+</tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Execution or sweep completed successfully.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Invalid CLI arguments, invalid invocation manifest, or invalid LMGCP_MAX_MEMORY_MB value.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Runtime cloud error, cost cap exceeded, shape allowlist violation, or memory ceiling exceeded.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Bytecode load failure or schema write failure.</td>
+</tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmgcp">github.com/lmctl-ai/lmgcp</a>.</p>
+</footer>
+</body>
+</html>

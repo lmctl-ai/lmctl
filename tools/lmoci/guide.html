@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmoci guide — lmoci — lmctl.com tools</title>
+<meta name="description" content="lmoci is the Oracle Cloud Infrastructure host for LMScript.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmoci/">Overview</a></li>
+<li><a href="/tools/lmoci/skill.html">Skill</a></li>
+<li><a href="/tools/lmoci/guide.html">Guide</a></li>
+<li><a href="/tools/lmoci/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmoci guide</h1>
+<h2>Overview</h2>
+<p>lmoci is the Oracle Cloud Infrastructure host for LMScript. It implements the shared provider-neutral lmcloud schema on Go hostkit with official OCI draft-cavage RSA-SHA256 request signing (github.com/oracle/oci-go-sdk/v65), and also provides a 16-section OCI inventory, Object Storage, Queue, Streaming, IAM, and Vault/KMS CLI and scripting surface.</p>
+<h2>Architecture and endpoint resolution</h2>
+<p>The lmoci Go host resolves endpoints using a strict precedence chain:</p>
+<pre><code>1. cloud.set_endpoint(service | "all", url)
+2. LMCLOUD_&lt;SVC>_ENDPOINT
+3. LMOCI_&lt;SVC>_ENDPOINT
+4. LMCLOUD_ENDPOINT
+5. LMOCI_ENDPOINT
+6. OCI_OBJECT_STORAGE_ENDPOINT / OCI_QUEUE_ENDPOINT
+7. OCI_ENDPOINT</code></pre>
+<p>When no endpoint is configured, lmoci executes offline against hostkit/fakeadapter in memory. When pointed at a loopback endpoint such as http://127.0.0.1:4599 (ocisim), lmoci discovers the Object Storage namespace via GET /n/ (or uses LMOCI_SIM_NAMESPACE), resolves the compartment OCID from LMOCI_SIM_COMPARTMENT_ID or the tenancy segment of LMOCI_SIM_KEY_ID, and signs every HTTP request using the OCI draft-cavage signature format.</p>
+<h2>Working with ocisim in open and enforce modes</h2>
+<p>lmoci pairs directly with ocisim on 127.0.0.1:4599 for both open and IAM-enforced testing:</p>
+<ul>
+<li>Open mode (ocisim serve): lmoci automatically generates an ephemeral 2048-bit RSA keypair and a synthetic keyId (flocilocaltenancy / flocilocaluser) when LMOCI_SIM_PRIVATE_KEY_PATH is unset. Requests traverse the full OCI HTTP signing pipeline without requiring an ~/.oci/config file.</li>
+<li>Enforced mode (ocisim serve --auth enforce --auth-config auth.json): set LMOCI_SIM_KEY_ID (in the format &lt;tenancy>/&lt;user>/&lt;fingerprint>) and LMOCI_SIM_PRIVATE_KEY_PATH to the matching RSA private key PEM file. ocisim verifies the RSA-SHA256 signature and x-content-sha256 body hash (returning HTTP 401 NotAuthenticated on mismatch) and evaluates OCI IAM policy statements and JSON policy rules (returning HTTP 403 NotAuthorizedOrNotFound on denial).</li>
+</ul>
+<h2>OCI service mapping and direct CLI subcommands</h2>
+<p>Under the shared lmcloud schema, portable calls map to OCI REST endpoints:</p>
+<ul>
+<li>Object storage: buckets map to /n/{namespace}/b/{bucket} and objects map to /n/{namespace}/b/{bucket}/o/{object} with opc-meta-* custom headers and ETag metadata.</li>
+<li>Queues: queue_create and queue_delete manage queues under /20210201/queues in the active compartment, while queue_send, queue_receive, queue_ack, and queue_nack target the /20210201/queues/{queueId}/messages data-plane endpoint.</li>
+<li>Direct CLI subcommands: for shell scripting, lmoci cred, lmoci inventory, lmoci os, lmoci iam, lmoci queue, lmoci stream, and lmoci vault emit structured JSON envelopes; lmoci cred get and lmoci cred list read the shared ~/.lmconn/creds.db store and mask private keys and passphrases as ***REDACTED*** unless --reveal is passed.</li>
+</ul>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<p>lmoci embeds lmcode-go with all 226 lmcode_std_v3 standard signatures and the 10 standard REST and CLI SAM interfaces (RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand, CliOption). You can combine OCI storage and queue calls with HTTP :param routes and CLI options in one script:</p>
+<pre><code>p = _lmcode_ cli="lmoci" install="github:lmctl-ai/lmoci@latest";
+  @"/tenancy/buckets/:bucket/:key"
+  fn handle_get(x: RestExchange) -> void implements RestGet {
+    let val = cloud.object_get(x.param("bucket"), x.param("key"));
+    x.json("{\"key\":\"" + x.param("key") + "\",\"value\":\"" + val + "\"}");
+  }
+
+  @"--compartment"
+  fn opt_comp(x: RestExchange) -> void implements CliOption {
+    x.set("compartment", x.query("compartment"));
+  }
+
+  @"provision"
+  fn cmd_prov(x: RestExchange) -> void implements CliCommand {
+    cloud.bucket_create("tenancy-bkt");
+    cloud.object_put("tenancy-bkt", "compartment.txt", x.get("compartment"));
+    x.send("provisioned");
+  }
+
+  rest_config("prefix", "/v1");
+  let p_out = rest_cli(str_split("--compartment sandbox provision", " "));
+  let g_out = rest_cli(str_split("/v1/tenancy/buckets/tenancy-bkt/compartment.txt", " "));
+  print(p_out + " | " + g_out);
+end _lmcode_</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmoci">github.com/lmctl-ai/lmoci</a>.</p>
+</footer>
+</body>
+</html>

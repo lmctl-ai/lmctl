@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmlucene — lmctl.com tools</title>
+<meta name="description" content="lmlucene exposes Apache Lucene 10.5.2 indexing, full-text and KNN vector search, facets, and SAM analysis/scoring rules to LMScript programs.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmlucene/">Overview</a></li>
+<li><a href="/tools/lmlucene/skill.html">Skill</a></li>
+<li><a href="/tools/lmlucene/guide.html">Guide</a></li>
+<li><a href="/tools/lmlucene/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmlucene</h1>
+<p>lmlucene exposes Apache Lucene 10.5.2 indexing, full-text and KNN vector search, facets, and SAM analysis/scoring rules to LMScript programs.</p>
+<h2>Quick reference</h2>
+<pre><code>lmscript install github:lmctl-ai/lmlucene@latest
+lmlucene --version
+lmlucene --lmcode-schema --json
+lmlucene --lmcode-signatures
+lmscript lmcode/examples/basic.lms</code></pre>
+<table>
+<thead>
+<tr><th>Item</th><th>Kind</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>--lmcode FILE.dslb</td><td>CLI flag</td><td>Execute compiled lmcode bytecode against real Apache Lucene objects.</td></tr>
+<tr><td>run --program FILE.dslb [--dryrun]</td><td>Subcommand</td><td>Run or dry-validate a compiled program via the cli.schema.v1 contract.</td></tr>
+<tr><td>memory_directory / fs_directory / index_writer</td><td>Host functions</td><td>Create in-memory or persistent NIOFSDirectory Lucene indexes.</td></tr>
+<tr><td>index_searcher / parse_query / knn_query</td><td>Host functions</td><td>Run full-text, Boolean, numeric range, facet drilldown, and KNN searches.</td></tr>
+<tr><td>TokenTransform, FieldWeight</td><td>SAM interfaces</td><td>Customize Lucene token normalization and BM25 per-field scoring weights.</td></tr>
+<tr><td>RestGet..RestOptions, CliCommand, CliOption</td><td>SAM interfaces</td><td>Standard lmcode_std_v3 REST and stateless CLI handler interfaces (current main; check --lmcode-signatures on a released host).</td></tr>
+</tbody>
+</table>
+<pre><code>program = _lmcode_ cli="lmlucene" install="github:lmctl-ai/lmlucene@latest";
+let directory = memory_directory();
+let analyzer = standard_analyzer();
+let writer = index_writer(directory, writer_config(analyzer));
+writer.add(document().keyword("id", "1", true).text("body", "Hello Lucene", true));
+let reader = writer.reader();
+index_searcher(reader).search(term_query("body", "lucene"), 10).emit("matches");
+end _lmcode_
+r = run_lmcode(program);
+assert(r.ok);</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmlucene/skill.html">Skill</a> for setup, writer commit and reader snapshot rules, and verification.</li>
+<li><a href="/tools/lmlucene/guide.html">Guide</a> for document field types, SAM TokenTransform/FieldWeight rules, and REST/CLI interfaces.</li>
+<li><a href="/tools/lmlucene/reference.html">Reference</a> for CLI flags, Lucene host types and methods, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmlucene">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmlucene">github.com/lmctl-ai/lmlucene</a>.</p>
+</footer>
+</body>
+</html>

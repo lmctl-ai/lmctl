@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmplot reference — lmplot — lmctl.com tools</title>
+<meta name="description" content="Complete CLI flags, gnuplot passthrough usage, Plot schema methods, built-in terminals, standard lmcode_std_v3 catalog, and exit codes for lmplot.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmplot/">Overview</a></li>
+<li><a href="/tools/lmplot/skill.html">Skill</a></li>
+<li><a href="/tools/lmplot/guide.html">Guide</a></li>
+<li><a href="/tools/lmplot/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmplot reference</h1>
+<p>Complete CLI flags, gnuplot passthrough usage, Plot schema methods, built-in terminals, standard lmcode_std_v3 catalog, and exit codes for lmplot.</p>
+<h2>CLI commands, flags, and environment variables</h2>
+<table>
+<thead><tr><th>Command, flag, or variable</th><th>Arguments</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>lmplot --version</td><td>none</td><td>Print lmplot X.Y.Z and exit 0.</td></tr>
+<tr><td>lmplot --notices</td><td>none</td><td>Print gnuplot, DejaVu font, stb_truetype, stb_image, and runtime license notices.</td></tr>
+<tr><td>lmplot --lmcode-schema</td><td>[--json]</td><td>Print the embedded JSON schema for the lmplot host (identical bytes with or without --json).</td></tr>
+<tr><td>lmplot --lmcode-signatures</td><td>none</td><td>Print canonical context, function, and method signatures registered in the host.</td></tr>
+<tr><td>lmplot --lmcode</td><td>FILE [--lmcode FILE ...]</td><td>Load and execute one or more compiled LMScript bytecode files in a shared gnuplot session.</td></tr>
+<tr><td>lmplot gnuplot</td><td>[gnuplot-options] [file.gp ...]</td><td>Run the full headless gnuplot command-line interface (such as -e "commands" or script files).</td></tr>
+<tr><td>LMPLOT_MAX_MEMORY_MB</td><td>integer (default 4096)</td><td>Maximum total memory budget in MiB for gnuplot datablocks, arrays, voxel grids, and the PNG canvas.</td></tr>
+</tbody>
+</table>
+<h2>Host schema methods (context plot: Plot)</h2>
+<table>
+<thead><tr><th>Type / context</th><th>Method signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context plot: Plot</td><td>plot.cmd(string) -> void</td><td>Execute a single gnuplot command line (semicolon-separated statements are supported).</td></tr>
+<tr><td>Plot</td><td>plot.script(string) -> void</td><td>Write multi-line gnuplot text to a temporary file and execute it via load (supports inline datablocks and structured blocks).</td></tr>
+<tr><td>Plot</td><td>plot.load(string) -> void</td><td>Execute a gnuplot script file from disk (load "path").</td></tr>
+<tr><td>Plot</td><td>plot.data(string, string) -> void</td><td>Define the in-memory gnuplot datablock $name (pass name without the leading $; must start with a letter).</td></tr>
+<tr><td>Plot</td><td>plot.png(string, int, int) -> void</td><td>Select the deterministic built-in PNG terminal at width x height pixels and open the output file.</td></tr>
+<tr><td>Plot</td><td>plot.svg(string, int, int) -> void</td><td>Select the SVG terminal at width x height pixels and open the output file.</td></tr>
+<tr><td>Plot</td><td>plot.close() -> void</td><td>Run set output to flush and close the current output file.</td></tr>
+<tr><td>Plot</td><td>plot.num(string) -> float</td><td>Evaluate a gnuplot numeric expression and return its float value (complex or array values fail with exit code 3; NaN returns NaN).</td></tr>
+<tr><td>Plot</td><td>plot.str(string) -> string</td><td>Evaluate a gnuplot expression and return its string value (numbers are formatted with %.15g).</td></tr>
+<tr><td>Plot</td><td>plot.terminals() -> string</td><td>Return the space-separated list of built-in gnuplot terminals (GPVAL_TERMINALS).</td></tr>
+<tr><td>Plot</td><td>plot.echo(string) -> void</td><td>Print a line to stdout.</td></tr>
+<tr><td>Plot</td><td>plot.version() -> string</td><td>Return the lmplot version string (lmplot X.Y.Z).</td></tr>
+<tr><td>Plot</td><td>plot.assert_close(float, float, float) -> void</td><td>Assert |actual - expected| &lt;= tol for finite numbers and non-negative tol; fails with exit code 3 on violation.</td></tr>
+</tbody>
+</table>
+<h2>Built-in terminals and image inputs</h2>
+<table>
+<thead><tr><th>Feature</th><th>Supported formats or options</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Raster terminals</td><td>png, pngcairo</td><td>Built-in anti-aliased RGBA scanline rasterizer with embedded DejaVu Sans, Sans Bold, Serif, Sans Mono, and Symbol mapping.</td></tr>
+<tr><td>Vector and TeX terminals</td><td>svg, canvas, postscript, eps, epslatex, pslatex, pstricks, context, cgm, emf, fig, hpgl, dxf</td><td>Standard headless gnuplot vector, HTML5 canvas, CAD, and LaTeX terminals.</td></tr>
+<tr><td>Text terminals</td><td>dumb, block, tek40xx</td><td>ASCII/UTF-8 terminal plots for console logs.</td></tr>
+<tr><td>Image inputs</td><td>png, jpg, gif (first frame), bmp, tga, pnm</td><td>Loaded via set pixmap or plot ... binary filetype=png|jpg|gif with rgbimage / rgbalpha.</td></tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 catalog</h2>
+<p>The pinned catalog (cpp/std/lmcode-std.schema.json) has 206 canonical signatures and does not include the REST and CLI interfaces of newer catalogs.</p>
+<table>
+<thead><tr><th>Category</th><th>Functions, types, or signatures</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Strings, math, and files</td><td>str_len, str_substr, str_find, str_contains, str_starts_with, str_ends_with, str_lower, str_upper, str_trim, str_replace, str_repeat, str_split, str_match, str_to_int, str_is_int, str_to_float, str_is_float, str_base64_encode, str_base64_decode, str_hex_encode, str_hex_decode, math_abs, math_min, math_max, math_floor, math_ceil, math_round, math_sqrt, math_pow, file_read, file_write, file_append, file_exists, file_lines</td><td>Standard byte-string manipulation, numeric math helpers, base64/hex encoding, and UTF-8 file I/O.</td></tr>
+<tr><td>Collections, JSON, and return framing</td><td>IntList, FloatList, StrList, IntMap, FloatMap, StrMap, IntStack, FloatStack, StrStack, IntQueue, FloatQueue, StrQueue, IntPQ, FloatPQ, StrPQ, Json (json_parse, template_render), lmcode_return_set, lmcode_return_put, lmcode_return_put_null, lmcode_return_null</td><td>Typed containers, JSON parsing, template rendering, and structured LMCODE_RETURN payload builders.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th>Exit code</th><th>Phase</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>success</td><td>Plotting script, expression evaluation, and assertions succeeded.</td></tr>
+<tr><td>2</td><td>cli</td><td>Invalid CLI flags, retired flag (--first, --last, --dry-run), or malformed invocation manifest metadata.</td></tr>
+<tr><td>3</td><td>load / run</td><td>Bytecode load error, gnuplot command error (gnuplot: &lt;GPVAL_ERRMSG>), failed assert_close, output write error, or exceeded LMPLOT_MAX_MEMORY_MB.</td></tr>
+<tr><td>4</td><td>app</td><td>Application failure or inability to write the terminal LMCODE_RETURN result frame.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmplot">github.com/lmctl-ai/lmplot</a>.</p>
+</footer>
+</body>
+</html>

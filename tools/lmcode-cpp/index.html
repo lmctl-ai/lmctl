@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>lmcode-cpp — lmctl.com tools</title>
-<meta name="description" content="A C++17 header-only SDK for embedding the lmscript bytecode verifier and virtual machine in native hosts.">
+<meta name="description" content="lmcode-cpp is the experimental C++17 header-only runtime for lmscript _lmcode_ bytecode: loader, verifier, VM and host registry in include/dslvm.hpp.">
 <link rel="stylesheet" href="/tools/style.css">
 <link rel="icon" type="image/png" href="/tools/lmcode-cpp/img/icon.png">
 </head>
@@ -18,25 +18,86 @@
 <li><a href="/tools/lmcode-cpp/skill.html">Skill</a></li>
 <li><a href="/tools/lmcode-cpp/tutorial.html">Tutorial</a></li>
 <li><a href="/tools/lmcode-cpp/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-cpp/reference.html">Reference</a></li>
 </ul>
 </nav>
-<main>
-<h1>lmcode-cpp</h1>
+<main><h1>lmcode-cpp</h1>
 <figure><img src="/tools/lmcode-cpp/img/logo.png" alt="lmcode-cpp logo" width="256" height="256"></figure>
-<h2>Overview</h2>
-<p>Experimental. lmcode-cpp is a C++17, standard-library-only header for loading, verifying and executing lmscript bytecode inside a host application.</p>
-<p>Start with the <a href="/tools/lmcode-cpp/tutorial.html">tutorial</a>, use the <a href="/tools/lmcode-cpp/guide.html">user guide</a> for API and format details, or give the <a href="/tools/lmcode-cpp/skill.html">skill page</a> to an assistant writing host bindings.</p>
-<p>Install by copying include/dslvm.hpp into your project or pinning the SDK source commit. There is no compiled library or third-party dependency. Each default Registry provides the 72 standard signatures, so hosts do not register those functions. See the guide for the standard schema and compiler input.</p>
-<h2>LMCode SDK family</h2>
-<p>lmcode-cpp is the C++ entry in a five-language SDK family. Each runtime provides the same schema-bound bytecode model and its language's host API.</p>
-<table><thead><tr><th>Language</th><th>SDK</th></tr></thead><tbody>
-<tr><td>C++</td><td><a href="https://github.com/lmctl-ai/lmcode-cpp">lmcode-cpp</a></td></tr>
-<tr><td>Rust</td><td><a href="https://github.com/lmctl-ai/lmcode-rust">lmcode-rust</a></td></tr>
-<tr><td>Go</td><td><a href="https://github.com/lmctl-ai/lmcode-go">lmcode-go</a></td></tr>
-<tr><td>C#</td><td><a href="https://github.com/lmctl-ai/lmcode-csharp">lmcode-csharp</a></td></tr>
-<tr><td>Java</td><td><a href="https://github.com/lmctl-ai/lmcode-java">lmcode-java</a></td></tr>
-</tbody></table>
-<ul><li><a href="https://github.com/lmctl-ai/lmcode-cpp">Source repository</a></li><li><a href="https://github.com/lmctl-ai/lmcode-cpp/releases/latest">Latest release</a></li><li><a href="https://github.com/lmctl-ai/lmcode-cpp/issues">Report an issue</a></li><li><a href="https://github.com/lmctl-ai/lmcode-cpp/blob/main/README.md">README and API example</a></li><li><a href="https://github.com/lmctl-ai/lmcode-cpp/blob/main/LICENSE">MIT license</a></li></ul>
+<p>lmcode-cpp is the experimental C++17 header-only runtime for lmscript _lmcode_ bytecode: loader, verifier, VM and host registry in include/dslvm.hpp. Every default Registry provides the 226 signatures of the lmcode_std_v3 standard catalog, including the standard REST and CLI interfaces.</p>
+<h2>Install and build</h2>
+<pre><code>git clone https://github.com/lmctl-ai/lmcode-cpp
+g++ -std=c++17 -Ilmcode-cpp/include host.cpp -o host
+make test
+make conformance</code></pre>
+<p>There is no compiled library and no third-party dependency. The runtime reads bytecode version 6 only; use a matching lmscript compiler from the published @lmctl-ai/lmctl npm package.</p>
+<h2>Host protocol</h2>
+<table>
+<thead><tr><th>Command</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td>HOST --lmcode-schema --json</td><td>Prints the host schema JSON that lmscript compiles against.</td></tr>
+<tr><td>HOST --lmcode-signatures</td><td>Prints the registry's sorted canonical signatures, host and standard.</td></tr>
+<tr><td>HOST --lmcode FILE.dslb</td><td>Loads and runs a compiled program file.</td></tr>
+<tr><td>lmscript --lmcode-signatures schema.json</td><td>Compiler-side signatures to diff against the host.</td></tr>
+<tr><td>Exit codes</td><td>0 success, 2 command-line failure, 3 load or run failure, 4 application failure.</td></tr>
+</tbody>
+</table>
+<p>In lmscript a block is written prog = _lmcode_ cli="HOST" install="github:lmctl-ai/HOST@latest"; ... end _lmcode_ and executed with r = run_lmcode(prog), which returns ok and result.</p>
+<h2>C++ API quick reference</h2>
+<table>
+<thead><tr><th>Name</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td>dslvm::Registry</td><td>Declares context, function and method bindings with schema type strings; includes the standard catalog unless built with StdMode::Disabled.</td></tr>
+<tr><td>Registry::context, method, function</td><td>Bind host context variables, methods and functions.</td></tr>
+<tr><td>Registry::signatures()</td><td>Sorted canonical signatures for the parity check.</td></tr>
+<tr><td>dslvm::Program::load(bytecode, schema, registry)</td><td>Verifies the file against the exact schema bytes; refuses before anything runs.</td></tr>
+<tr><td>Program::run(context, registry)</td><td>Runs the body.</td></tr>
+<tr><td>Program::entries(), Program::call(i, context, registry, args)</td><td>Lists and invokes annotated rule entries, the mechanism behind REST and CLI handlers.</td></tr>
+<tr><td>dslvm::Context</td><td>Maps context names to live host objects; set_dry(true) selects dry execution.</td></tr>
+<tr><td>dslvm::Value</td><td>INT, FLOAT, STR, BOOL or OBJ; Value::none() for void.</td></tr>
+<tr><td>dslvm::Error</td><td>Load, run and host failures.</td></tr>
+</tbody>
+</table>
+<h2>Minimal host</h2>
+<pre><code>#include "dslvm.hpp"
+struct Greeter { std::string last; };
+
+int main(int argc, char** argv) {
+  dslvm::Registry reg;
+  reg.context("g", "Greeter");
+  reg.method("Greeter", "say", {"string"}, "void", [](void* self, dslvm::Args&amp; a) {
+    static_cast&lt;Greeter*>(self)->last = a[0].s; return dslvm::Value::none(); });
+
+  dslvm::Program program;
+  try { program = dslvm::Program::load(dslvm::read_file(argv[1]), dslvm::read_file(argv[2]), reg); }
+  catch (const dslvm::Error&amp; e) { std::cerr &lt;&lt; "refused: " &lt;&lt; e.what() &lt;&lt; "\n"; return 3; }
+
+  Greeter greeter;
+  dslvm::Context ctx; ctx.set("g", &amp;greeter);
+  try { program.run(ctx, reg); } catch (const dslvm::Error&amp; e) { std::cerr &lt;&lt; "dsl error: " &lt;&lt; e.what() &lt;&lt; "\n"; return 3; }
+  std::cout &lt;&lt; greeter.last &lt;&lt; "\n";
+}</code></pre>
+<h2>Standard catalog and REST/CLI interfaces</h2>
+<p>The canonical std/lmcode-std.schema.json (lmcode_std_v3, std.lock version 3) holds 226 signatures in ten groups: string, math, collections, containers, json, encoding, file, result, testing and rest. Hosts do not register these; keep host schemas limited to host calls.</p>
+<table>
+<thead><tr><th>Item</th><th>Names</th></tr></thead>
+<tbody>
+<tr><td>Interfaces, each (RestExchange) -> void</td><td>RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand, CliOption</td></tr>
+<tr><td>Functions</td><td>rest_config(string, string) -> void, rest_route(string, string, string) -> void, rest_serve() -> void, rest_stop() -> void, rest_cli(StrList) -> string</td></tr>
+<tr><td>RestExchange request methods</td><td>method, path, query, has_query, param, header, has_header, body</td></tr>
+<tr><td>RestExchange response methods</td><td>status, set_header, send, json</td></tr>
+<tr><td>RestExchange shared state methods</td><td>get, set, increment</td></tr>
+<tr><td>Route templates</td><td>{param} and {rest...}, or :param and :rest...</td></tr>
+</tbody>
+</table>
+<p>Requests are HTTP/1.1 read from an input stream and answered on an output stream; there is no network listener. rest_cli is a stateless CLI mode that dispatches an argument list to options, commands and REST routes.</p>
+<h2>More</h2>
+<ul>
+<li><a href="/tools/lmcode-cpp/reference.html">Reference</a>: C++ API, flags, exit codes, standard groups, REST and CLI interfaces</li>
+<li><a href="/tools/lmcode-cpp/skill.html">Skill page</a> for assistants writing host bindings</li>
+<li><a href="/tools/lmcode-cpp/guide.html">User guide</a></li>
+<li><a href="/tools/lmcode-cpp/tutorial.html">Tutorial</a></li>
+<li><a href="https://github.com/lmctl-ai/lmcode-cpp">Source repository</a>, with sibling SDKs <a href="https://github.com/lmctl-ai/lmcode-rust">lmcode-rust</a>, <a href="https://github.com/lmctl-ai/lmcode-go">lmcode-go</a>, <a href="https://github.com/lmctl-ai/lmcode-csharp">lmcode-csharp</a> and <a href="https://github.com/lmctl-ai/lmcode-java">lmcode-java</a></li>
+</ul>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-cpp">github.com/lmctl-ai/lmcode-cpp</a>.</p>

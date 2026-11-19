@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmconn reference — lmconn — lmctl.com tools</title>
+<meta name="description" content="Complete reference for lmconn global flags, all 56 cli.schema.v1 operations, environment variables, error codes, and exit codes.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmconn/">Overview</a></li>
+<li><a href="/tools/lmconn/skill.html">Skill</a></li>
+<li><a href="/tools/lmconn/guide.html">Guide</a></li>
+<li><a href="/tools/lmconn/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmconn reference</h1>
+<p>Complete reference for lmconn global flags and all 56 cli.schema.v1 operations, environment variables, error codes, and exit codes.</p>
+<h2>Global CLI flags</h2>
+<table>
+<thead><tr><th>Flag</th><th>Arguments</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>--version / -v</td><td>none</td><td>Print the lmconn version string (0.2.0) and exit 0.</td></tr>
+<tr><td>--help / -h</td><td>none</td><td>Print command usage summary and exit 0.</td></tr>
+<tr><td>--cli-schema</td><td>--json</td><td>Print the raw cli.schema.v1 JSON document declaring all 56 operations.</td></tr>
+<tr><td>--input-json</td><td>&lt;json></td><td>Execute an operation from a JSON object {"op":"...","params":{...}} (used by lmscript schema imports).</td></tr>
+<tr><td>--readonly</td><td>none</td><td>Refuse any operation whose schema access level is write (error code READONLY, exit code 1).</td></tr>
+</tbody>
+</table>
+<h2>Credential, OAuth2, HTTP, GitHub, and LLM operations</h2>
+<table>
+<thead><tr><th>Operation name</th><th>CLI command</th><th>Access</th><th>Parameters</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>cred_set</td><td>cred set</td><td>write</td><td>service, field, value?, env?, stdin?</td><td>Store a credential from --value, --env VAR, or --stdin.</td></tr>
+<tr><td>cred_get</td><td>cred get</td><td>read</td><td>service, field, reveal?</td><td>Check credential presence; --reveal returns the secret value for legacy entries.</td></tr>
+<tr><td>cred_list</td><td>cred list</td><td>read</td><td>none</td><td>List stored service names, field names, and timestamps without values.</td></tr>
+<tr><td>cred_delete</td><td>cred delete</td><td>write</td><td>service, field</td><td>Remove one credential record from the SQLite store.</td></tr>
+<tr><td>cred_path</td><td>cred path</td><td>read</td><td>none</td><td>Return the active SQLite credential database file path.</td></tr>
+<tr><td>cred_store</td><td>cred store</td><td>write</td><td>service, stdin?</td><td>Store an issuer/origin-bound nonexportable Bearer or OAuth2 grant from JSON stdin.</td></tr>
+<tr><td>cred_oauth_store</td><td>cred oauth-store</td><td>write</td><td>service, stdin?</td><td>Atomically import an OAuth2 token payload from JSON stdin and return its service handle.</td></tr>
+<tr><td>cred_encrypt_existing</td><td>cred encrypt-existing</td><td>write</td><td>all?</td><td>Encrypt legacy plaintext rows and seal the store, or re-encrypt all rows under the current data key (--all).</td></tr>
+<tr><td>key_rotate</td><td>key rotate</td><td>write</td><td>data?</td><td>Rotate the instance key (rewrapping data keys), or start a new data key for writes (--data).</td></tr>
+<tr><td>key_backup</td><td>key backup</td><td>write</td><td>to</td><td>Write a copy of the instance key to a new 0600 file outside the database directory.</td></tr>
+<tr><td>oauth_authorize</td><td>oauth authorize</td><td>write</td><td>service, clientId?, clientSecret?, authUrl?, deviceUrl?, tokenUrl?, scope?, authQuery?, authStyle?, owner?, source?, port?, timeout?, noPkce?, autoFollow?, manual?</td><td>Run OAuth2 authorization-code flow with PKCE and loopback callback or manual redirect stdin.</td></tr>
+<tr><td>oauth_device</td><td>oauth device</td><td>write</td><td>service, clientId?, deviceUrl?, tokenUrl?, scope?, owner?, source?</td><td>Run RFC 8628 OAuth2 device-code authorization and store the resulting token.</td></tr>
+<tr><td>oauth_refresh</td><td>oauth refresh</td><td>write</td><td>service</td><td>Refresh an expired OAuth2 access token using its stored refresh token.</td></tr>
+<tr><td>oauth_status</td><td>oauth status</td><td>read</td><td>service</td><td>Return read-only OAuth2 authorization status, expiry, and refresh-token presence.</td></tr>
+<tr><td>oauth_list</td><td>oauth list</td><td>read</td><td>none</td><td>List all stored OAuth2 service handles, scopes, expiry timestamps, and metadata.</td></tr>
+<tr><td>http_request</td><td>http request</td><td>write</td><td>url, method?, header?, data?, dataFile?, auth?, timeout?</td><td>Send an HTTP/HTTPS request with optional stored credential or OAuth2 --auth injection.</td></tr>
+<tr><td>github_user</td><td>github user</td><td>read</td><td>none</td><td>Fetch the authenticated GitHub user profile ({login, name, id, publicRepos, auth}).</td></tr>
+<tr><td>github_repos</td><td>github repos</td><td>read</td><td>org, limit?</td><td>List repository names for a GitHub organization or user (limit 1..1000, default 30).</td></tr>
+<tr><td>llm_providers</td><td>llm providers</td><td>read</td><td>none</td><td>List configured API and CLI LLM providers, default models, and key sources.</td></tr>
+<tr><td>llm_chat</td><td>llm chat</td><td>write</td><td>provider, model?, system?, prompt?, promptFile?, maxTokens?, stdin?</td><td>Send a single chat completion prompt to an API or agent CLI provider.</td></tr>
+<tr><td>llm_probe</td><td>llm probe</td><td>write</td><td>provider*</td><td>Execute a live reachability check against one or all configured LLM providers.</td></tr>
+</tbody>
+</table>
+<h2>Valkey, LDAPv3, and SAML 2.0 operations</h2>
+<table>
+<thead><tr><th>Operation name</th><th>CLI command</th><th>Access</th><th>Parameters</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>valkey_ping</td><td>valkey ping</td><td>read</td><td>host?, port?, mode?, timeout?</td><td>Ping a Valkey or Redis server via native RESP (--mode resp) or REST (--mode rest).</td></tr>
+<tr><td>valkey_get</td><td>valkey get</td><td>read</td><td>key, host?, port?, mode?, timeout?</td><td>Fetch a key value from Valkey.</td></tr>
+<tr><td>valkey_set</td><td>valkey set</td><td>write</td><td>key, value, host?, port?, mode?, timeout?</td><td>Set a key value in Valkey.</td></tr>
+<tr><td>valkey_del</td><td>valkey del</td><td>write</td><td>key, host?, port?, mode?, timeout?</td><td>Delete a key from Valkey.</td></tr>
+<tr><td>valkey_cmd</td><td>valkey cmd</td><td>write</td><td>command, args*, host?, port?, mode?, timeout?</td><td>Execute an arbitrary Valkey or Redis command with arguments.</td></tr>
+<tr><td>ldap_ping</td><td>ldap ping</td><td>read</td><td>host?, port?, url?, mode?, timeout?</td><td>Ping an LDAPv3 server via Root DSE query or lmldap REST health check.</td></tr>
+<tr><td>ldap_bind</td><td>ldap bind</td><td>read</td><td>dn, password?, host?, port?, url?, mode?, timeout?</td><td>Authenticate against an LDAPv3 server using Simple Bind.</td></tr>
+<tr><td>ldap_whoami</td><td>ldap whoami</td><td>read</td><td>bindDn?, bindPw?, host?, port?, url?, mode?, timeout?</td><td>Execute an RFC 4532 Who Am I? extended operation and return authzId.</td></tr>
+<tr><td>ldap_search</td><td>ldap search</td><td>read</td><td>base?, filter?, scope?, attrs?, sizeLimit?, timeLimit?, format?, bindDn?, bindPw?, host?, port?, url?, mode?, timeout?</td><td>Search LDAPv3 entries by base DN, scope, RFC 4515 filter, or RFC 4516 URL in JSON or LDIF format.</td></tr>
+<tr><td>ldap_get</td><td>ldap get</td><td>read</td><td>dn, attrs?, format?, bindDn?, bindPw?, host?, port?, url?, mode?, timeout?</td><td>Retrieve a single LDAP entry by Distinguished Name.</td></tr>
+<tr><td>ldap_add</td><td>ldap add</td><td>write</td><td>dn, attributes, bindDn?, bindPw?, host?, port?, url?, mode?, timeout?</td><td>Create a new LDAP entry from a JSON attributes object.</td></tr>
+<tr><td>ldap_modify</td><td>ldap modify</td><td>write</td><td>dn, changes, bindDn?, bindPw?, host?, port?, url?, mode?, timeout?</td><td>Modify an existing LDAP entry using a JSON object of add, replace, or delete changes.</td></tr>
+<tr><td>ldap_compare</td><td>ldap compare</td><td>read</td><td>dn, attr, value, bindDn?, bindPw?, host?, port?, url?, mode?, timeout?</td><td>Execute an RFC 4511 CompareRequest on an entry attribute and return match status.</td></tr>
+<tr><td>ldap_del</td><td>ldap del</td><td>write</td><td>dn, bindDn?, bindPw?, host?, port?, url?, mode?, timeout?</td><td>Delete an LDAP entry by Distinguished Name.</td></tr>
+<tr><td>saml_ping</td><td>saml ping</td><td>read</td><td>host?, port?, url?, timeout?</td><td>Ping an lmsaml SAML 2.0 server.</td></tr>
+<tr><td>saml_metadata</td><td>saml metadata</td><td>read</td><td>host?, port?, url?, timeout?</td><td>Fetch SAML 2.0 Identity Provider EntityDescriptor XML metadata.</td></tr>
+<tr><td>saml_sp_metadata</td><td>saml sp-metadata</td><td>read</td><td>host?, port?, url?, timeout?</td><td>Fetch SAML 2.0 Service Provider EntityDescriptor XML metadata.</td></tr>
+<tr><td>saml_users</td><td>saml users</td><td>read</td><td>host?, port?, url?, timeout?</td><td>List registered SAML IdP users.</td></tr>
+<tr><td>saml_user_get</td><td>saml user-get</td><td>read</td><td>user, host?, port?, url?, timeout?</td><td>Fetch a SAML IdP user record by username.</td></tr>
+<tr><td>saml_user_add</td><td>saml user-add</td><td>write</td><td>user, email?, password?, attributes?, host?, port?, url?, timeout?</td><td>Create or update a SAML IdP user with email, password, and custom attributes JSON.</td></tr>
+<tr><td>saml_user_del</td><td>saml user-del</td><td>write</td><td>user, host?, port?, url?, timeout?</td><td>Delete a SAML IdP user by username.</td></tr>
+<tr><td>saml_authn</td><td>saml authn</td><td>read</td><td>user, password, host?, port?, url?, timeout?</td><td>Verify SAML IdP user credentials.</td></tr>
+<tr><td>saml_assertion</td><td>saml assertion</td><td>read</td><td>user, audience?, acsUrl?, requestId?, host?, port?, url?, timeout?</td><td>Issue a cryptographically signed SAML 2.0 Response and Assertion XML payload.</td></tr>
+<tr><td>saml_verify</td><td>saml verify</td><td>read</td><td>response, audience?, acsUrl?, requestId?, host?, port?, url?, timeout?</td><td>Cryptographically verify a signed SAML 2.0 Response and Assertion XML payload.</td></tr>
+</tbody>
+</table>
+<h2>MCP, ACP, and npm operations</h2>
+<table>
+<thead><tr><th>Operation name</th><th>CLI command</th><th>Access</th><th>Parameters</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>mcp_tools</td><td>mcp tools</td><td>read</td><td>command, arg*, cwd?, timeoutMs?</td><td>List available tools exposed by a stdio MCP server.</td></tr>
+<tr><td>mcp_resources</td><td>mcp resources</td><td>read</td><td>command, arg*, cwd?, timeoutMs?</td><td>List available resources exposed by a stdio MCP server.</td></tr>
+<tr><td>mcp_prompts</td><td>mcp prompts</td><td>read</td><td>command, arg*, cwd?, timeoutMs?</td><td>List prompt templates exposed by a stdio MCP server.</td></tr>
+<tr><td>mcp_read</td><td>mcp read</td><td>read</td><td>command, arg*, cwd?, timeoutMs?, uri</td><td>Read a resource URI from a stdio MCP server.</td></tr>
+<tr><td>mcp_prompt</td><td>mcp prompt</td><td>read</td><td>command, arg*, cwd?, timeoutMs?, name, arguments?</td><td>Render a named prompt template with JSON arguments from a stdio MCP server.</td></tr>
+<tr><td>mcp_call</td><td>mcp call</td><td>write</td><td>command, arg*, cwd?, timeoutMs?, tool, arguments?</td><td>Invoke a single tool with JSON arguments on a stdio MCP server.</td></tr>
+<tr><td>mcp_session</td><td>mcp session</td><td>write</td><td>command, arg*, cwd?, timeoutMs?, call+</td><td>Execute an ordered sequence of tool calls within a single persistent MCP stdio session.</td></tr>
+<tr><td>acp_chat</td><td>acp chat</td><td>write</td><td>command, arg*, prompt?, promptsFile?, cwd?, timeoutMs?, autoApprove?</td><td>Run a single or multi-turn conversation with an Agent Client Protocol (ACP) stdio agent.</td></tr>
+<tr><td>npm_pack</td><td>npm pack</td><td>write</td><td>dir?, out?</td><td>Pack a package directory into a tarball with scripts disabled and report its SHA-512 integrity.</td></tr>
+<tr><td>npm_publish</td><td>npm publish</td><td>write</td><td>file, credential?, expectIntegrity?, tag?, access?</td><td>Publish a tarball using a stored credential and return a nonsecret publication receipt.</td></tr>
+<tr><td>npm_whoami</td><td>npm whoami</td><td>read</td><td>credential?</td><td>Return the authenticated npm registry username for a stored credential.</td></tr>
+</tbody>
+</table>
+<h2>Environment variables and exit codes</h2>
+<table>
+<thead><tr><th>Variable or exit code</th><th>Default / value</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>LMCONN_DB</td><td>~/.lmconn/creds.db</td><td>Override the SQLite credential database file location.</td></tr>
+<tr><td>LMCONN_STORE_MODE</td><td>standard (or broker)</td><td>Set to broker to enforce nonexportable, origin-bound credential storage and receipt-only HTTP responses.</td></tr>
+<tr><td>DEEPSEEK_API_KEY / OPENROUTER_API_KEY / OLLAMA_API_KEY</td><td>unset</td><td>Fallback environment variables for API LLM providers when no SQLite credential is stored.</td></tr>
+<tr><td>GITHUB_TOKEN / GH_TOKEN</td><td>unset</td><td>Fallback environment variables for GitHub API authentication.</td></tr>
+<tr><td>&lt;SERVICE>_API_KEY</td><td>unset</td><td>Fallback bearer token environment variable for lmconn http request --auth &lt;service>.</td></tr>
+<tr><td>Exit code 0</td><td>Success</td><td>Operation completed and printed {"ok":true,"result":...} (or raw schema JSON for --cli-schema --json).</td></tr>
+<tr><td>Exit code 1</td><td>Runtime / connector error</td><td>Network failure, timeout, missing credential, authentication rejection, or remote protocol error.</td></tr>
+<tr><td>Exit code 2</td><td>Usage / policy error</td><td>Unknown command or flag, missing positional argument, or invalid JSON input.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmconn">github.com/lmctl-ai/lmconn</a>.</p>
+</footer>
+</body>
+</html>

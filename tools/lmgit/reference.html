@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmgit reference — lmgit — lmctl.com tools</title>
+<meta name="description" content="CLI flags, Git and Repo methods, domain types, standard REST and CLI interfaces, and exit codes for lmgit.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmgit/">Overview</a></li>
+<li><a href="/tools/lmgit/skill.html">Skill</a></li>
+<li><a href="/tools/lmgit/guide.html">Guide</a></li>
+<li><a href="/tools/lmgit/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmgit reference</h1>
+<p>CLI flags, Git and Repo methods, domain types, standard REST and CLI interfaces, and exit codes for lmgit.</p>
+<h2>CLI flags and environment</h2>
+<table>
+<thead>
+<tr><th>Flag or variable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>--version</td><td>Print the exact lmgit build version.</td></tr>
+<tr><td>--lmcode-schema [--json]</td><td>Print the embedded schema/lmgit.dsl.json bytes.</td></tr>
+<tr><td>--lmcode-signatures</td><td>Print sorted SDK and domain registry signatures.</td></tr>
+<tr><td>--lmcode FILE</td><td>Execute a compiled DSLB v6 bytecode file (repeatable for builder invocations).</td></tr>
+<tr><td>LMGIT_GIT</td><td>Environment variable selecting a specific git executable (requires Git >= 2.20).</td></tr>
+<tr><td>LMCODE_INVOCATION_FILE</td><td>Optional version-1 JSON invocation descriptor requiring boolean dry.</td></tr>
+</tbody>
+</table>
+<h2>Git context and Repo methods (lmgit)</h2>
+<table>
+<thead>
+<tr><th>Signature</th><th>Return type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Git.dry_run(enabled: bool) / Git.is_dry_run()</td><td>Git / bool</td><td>Set or query operation-level dry-run mode on the git context.</td></tr>
+<tr><td>Git.version()</td><td>string</td><td>Return the version string reported by the underlying Git executable.</td></tr>
+<tr><td>Git.open(path: string)</td><td>Repo</td><td>Open an existing local Git repository at path.</td></tr>
+<tr><td>Git.clone(url: string, dest: string)</td><td>Repo</td><td>Clone a repository from url into dest and return its Repo handle.</td></tr>
+<tr><td>Repo.path() / Repo.current_branch() / Repo.is_clean()</td><td>string / string / bool</td><td>Repository root path, active branch name, and clean working-tree/index status.</td></tr>
+<tr><td>Repo.status()</td><td>StatusList</td><td>List modified, staged, or untracked working-tree and index entries.</td></tr>
+<tr><td>Repo.branches()</td><td>BranchList</td><td>List local branches and identify the current checked-out branch.</td></tr>
+<tr><td>Repo.log(limit: int)</td><td>CommitList</td><td>Return up to limit commits from HEAD in reverse chronological order.</td></tr>
+<tr><td>Repo.tags() / Repo.remote_names()</td><td>Strings</td><td>List repository tag names or configured remote names.</td></tr>
+<tr><td>Repo.remote_url(name: string) / Repo.config(key: string)</td><td>string</td><td>Read the URL of remote name or the value of a Git configuration key.</td></tr>
+<tr><td>Repo.diff(staged: bool) / Repo.show(rev: string)</td><td>string</td><td>Return the unified diff (unstaged or staged) or inspect object rev.</td></tr>
+<tr><td>Repo.checkout(ref: string) / Repo.branch_create(name: string)</td><td>string</td><td>Check out ref or create a new branch (honors git.dry_run).</td></tr>
+<tr><td>Repo.commit(message: string) / Repo.push(remote: string, ref: string) / Repo.tag_create(name: string, message: string)</td><td>string</td><td>Create a commit, push ref to remote, or create an annotated tag (honors git.dry_run).</td></tr>
+</tbody>
+</table>
+<h2>Domain element types and Report context</h2>
+<table>
+<thead>
+<tr><th>Type</th><th>Methods</th></tr>
+</thead>
+<tbody>
+<tr><td>StatusEntry / StatusList</td><td>StatusEntry: path() -> string, index_status() -> string, work_status() -> string; StatusList: len() -> int, at(int) -> StatusEntry.</td></tr>
+<tr><td>Branch / BranchList</td><td>Branch: name() -> string, is_current() -> bool; BranchList: len() -> int, at(int) -> Branch.</td></tr>
+<tr><td>Commit / CommitList</td><td>Commit: hash() -> string, subject() -> string, author() -> string, date() -> string; CommitList: len() -> int, at(int) -> Commit.</td></tr>
+<tr><td>Strings</td><td>len() -> int, at(int) -> string.</td></tr>
+<tr><td>Report (context report)</td><td>add(code: string, target: string, message: string) -> void, len() -> int, write_text(path: string) -> void, write_json(path: string) -> void, fail_if_any() -> void.</td></tr>
+</tbody>
+</table>
+<h2>Standard REST and CLI interfaces (lmcode_std_v3)</h2>
+<table>
+<thead>
+<tr><th>Interface or function</th><th>Signature</th><th>Role</th></tr>
+</thead>
+<tbody>
+<tr><td>RestGet..RestOptions, RestHandler</td><td>(exchange: RestExchange) -> void</td><td>Interfaces for @"/path" HTTP route handlers.</td></tr>
+<tr><td>CliCommand, CliOption</td><td>(exchange: RestExchange) -> void</td><td>Interfaces for @"cmd" subcommands and @"--opt" options via rest_cli.</td></tr>
+<tr><td>rest_config, rest_route, rest_serve, rest_stop, rest_cli</td><td>rest_config(string, string) -> void; rest_route(string, string, string) -> void; rest_serve() -> void; rest_stop() -> void; rest_cli(StrList) -> string</td><td>Configure and execute in-memory CLI commands or HTTP endpoints inside _lmcode_.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr><th>Code</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>Execution or introspection succeeded.</td></tr>
+<tr><td>2</td><td>CLI flag usage error or malformed LMCODE_INVOCATION_FILE metadata.</td></tr>
+<tr><td>3</td><td>Bytecode load failure, schema mismatch, or runtime Git subprocess error.</td></tr>
+<tr><td>4</td><td>Application failure, including report.fail_if_any() with non-empty findings or unreadable bytecode files.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmgit">github.com/lmctl-ai/lmgit</a>.</p>
+</footer>
+</body>
+</html>

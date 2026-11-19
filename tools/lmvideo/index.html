@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>A second look: CPU Cycles — lmvideo — lmctl.com tools</title>
-<meta name="description" content="Contents">
+<title>lmvideo — lmctl.com tools</title>
+<meta name="description" content="lmvideo is an lmcode host that draws plots, diagrams, processed images, CPU rendered 3D scenes, rigid body motion and video from short LMScript programs.">
 <link rel="stylesheet" href="/tools/style.css">
 
 </head>
@@ -16,6 +16,8 @@
 <li><a href="/skills/">Skills</a></li>
 <li><a href="/tools/lmvideo/">Overview</a></li>
 <li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/guide.html">Guide</a></li>
+<li><a href="/tools/lmvideo/reference.html">Reference</a></li>
 <li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
 <li><a href="/tools/lmvideo/examples/">Examples</a></li>
 <li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
@@ -24,13 +26,131 @@
 <li><a href="/tools/lmvideo/physics/">Physics</a></li>
 </ul>
 </nav>
-<!-- generated tool index -->
-<main>
-<h1>A second look: CPU Cycles</h1>
+<main><h1>lmvideo</h1>
+<p>lmvideo is an lmcode host that draws plots, diagrams, processed images, CPU rendered 3D scenes, rigid body motion and video from short LMScript programs. This page is the quick reference for release v0.1.124: install, host protocol, the main objects, and one complete program.</p>
+<h2 id="install">Install and run</h2>
+<p>Install the LMScript toolchain once. A program names the lmvideo release it wants in its block header and lmscript downloads that host into its tool cache on the first real run. Video output additionally needs ffmpeg and ffprobe on PATH; still images do not.</p>
+<pre><code>npm install -g @lmctl-ai/lmctl@0.2.460
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/main/examples/physics/plinko.lms
 
-<p>Contents</p>
+# or, with a local file
+lmscript --check poster.lms
+lmscript poster.lms</code></pre>
+<p>Release v0.1.124 has binaries for Linux x86_64 and arm64 (glibc 2.35 or newer), macOS x86_64 and arm64 (13 or newer) and Windows x86_64 (10 or newer). Read downloaded scripts before running them and run in a fresh output directory.</p>
+<h2 id="example">Minimal runnable example</h2>
+<p>Save as poster.lms and run lmscript poster.lms. It draws on an off-screen Surface, writes build/dot.png and prints the result envelope. It needs no ffmpeg.</p>
+<pre><code># Still image on an off-screen Surface: no video lifecycle needed.
+mkdir("build");
+prog = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.124";
+let s = surface(160, 100);
+let c = s.canvas();
+c.clear("#1e3c72");
+c.circle(80.0, 50.0, 30.0, paint().color("#ffd166"));
+c.text("lmvideo", 12.0, 92.0, font(14.0), paint().color("#ffffff"));
+s.png("build/dot.png");
+out.print("drew " + str(s.image().width()) + "x" + str(s.image().height()));
+end _lmcode_
+r = run_lmcode(prog);
+println(json_stringify(r));
+assert(r.ok);</code></pre>
+<pre><kbd>lmscript poster.lms</kbd>
+<samp>wrote build/dot.png (160x100)
+{"ok":true,"result":{"output":["drew 160x100"],"file":"build/dot.png","width":160,"height":100,"frames":1,"fps":30,"bytecode_bytes":1253,"instructions":47,"wall_ms":294,"render_calls":0,"phase_ms":{"compose":41.90718,"post":0.000943,"setup":252.409468},"max_frame_ms":0,"max_render_ms":0}}</samp></pre>
+<p>Timing fields vary between runs. For a video, configure the video object and draw inside its frame loop instead.</p>
+<pre><code># A 2 second clip plus a poster frame. Needs ffmpeg on PATH.
+mkdir("build");
+prog = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.124";
+video.size(320, 180);
+video.fps(30);
+video.frames(60);
+video.output("build/clip.mp4");
+video.begin();
+for (f in range(0, video.count())) {
+  video.frame();
+  let w = float(video.width());
+  let h = float(video.height());
+  let t = video.t();
+  canvas.clear(mix("#0b132b", "#5bc0be", ease(t)));
+  canvas.circle(lerp(40.0, w - 40.0, ease(t)), h * 0.5, 18.0, paint().color("#ffd166"));
+  canvas.text("frame " + str(video.index() + 1) + "/" + str(video.count()), 20.0, 30.0, font(18.0), paint().color("#ffffff"));
+  if (video.index() == video.count() - 1) { video.save_frame("build/clip.png"); }
+}
+video.end();
+end _lmcode_
+r = run_lmcode(prog);
+if (!r.ok) { println(r.message); }
+assert(r.ok);
+println("wrote build/clip.mp4");</code></pre>
+<h2 id="protocol">Host protocol and command line</h2>
+<table>
+<thead>
+<tr><th>Command</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>lmscript --check FILE.lms</td><td>Compile the outer script and every _lmcode_ block against the cached host schema. Nothing is rendered. Exit 2 on a compile error.</td></tr>
+<tr><td>lmscript --dry-run FILE.lms</td><td>Print the plan. The host run is simulated and returns ok true, result null, dry true.</td></tr>
+<tr><td>lmscript FILE.lms</td><td>Real run. run_lmcode compiles the block, runs it on the host and returns the envelope.</td></tr>
+<tr><td>lmvideo --version</td><td>Version line, lmvideo 0.1.124.</td></tr>
+<tr><td>lmvideo --lmcode-schema --json</td><td>Host schema JSON, byte identical to schema/lmvideo.dsl.json in the repository.</td></tr>
+<tr><td>lmvideo --lmcode-signatures</td><td>All 814 lines: 3 context objects, 164 functions, 647 methods (host plus standard library).</td></tr>
+<tr><td>lmvideo --lmcode FILE.dslb</td><td>Run compiled block bytecode. Normally invoked by run_lmcode, not by hand.</td></tr>
+<tr><td>lmvideo demo OUT.png</td><td>Write a built in demonstration picture.</td></tr>
+<tr><td>lmvideo render IN.svg OUT.png [--width W] [--height H] [--background COLOR]</td><td>Rasterize an SVG file directly.</td></tr>
+<tr><td>lmvideo render-job DIR [--renderer raster|cycles] [--pass color] [--output OUT.png]</td><td>Render a scene job saved by Scene3D.save_job.</td></tr>
+<tr><td>lmvideo render-job-batch DIR [--renderer raster|cycles] [--pass color] [--output DIR]</td><td>Render a directory of frame jobs.</td></tr>
+<tr><td>lmvideo render-job --capabilities</td><td>Print job options and bounds as JSON.</td></tr>
+</tbody>
+</table>
+<h3>Schema facts</h3>
+<table>
+<thead>
+<tr><th>Fact</th><th>Value in v0.1.124</th></tr>
+</thead>
+<tbody>
+<tr><td>Schema name and format</td><td>lmvideo, dsl.schema 2</td></tr>
+<tr><td>Context objects</td><td>canvas: Canvas, video: Video, out: Output</td></tr>
+<tr><td>Host surface</td><td>74 function names (81 signatures), 55 types, 524 method signatures</td></tr>
+<tr><td>Standard library shipped</td><td>lmcode_std_v3 with 206 signatures (83 functions, 123 methods)</td></tr>
+<tr><td>Block result</td><td>Json, nullable</td></tr>
+<tr><td>Block header</td><td>prog = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.124"; ... end _lmcode_</td></tr>
+<tr><td>Execution</td><td>r = run_lmcode(prog); returns ok and result, or ok false with phase, code, message, line, column</td></tr>
+</tbody>
+</table>
+<p>The current lmcode_std_v3 catalog has 226 signatures, adding the standard REST and CLI interfaces (rest_config, rest_route, rest_serve, rest_stop, rest_cli, RestExchange and ten handler interfaces). lmvideo v0.1.124 does not ship them; it picks them up when a later release is built against the newer catalog. See the reference page for the verified behavior.</p>
+<h2 id="objects">Main objects and functions</h2>
+<table>
+<thead>
+<tr><th>Name</th><th>Kind</th><th>Use</th></tr>
+</thead>
+<tbody>
+<tr><td>video</td><td>context, Video</td><td>size, fps, frames, crf, output, then begin, frame once per iteration, end. Readers: count, index, t, time, width, height. save_frame writes the current frame as an image.</td></tr>
+<tr><td>canvas</td><td>context, Canvas</td><td>clear, rect, round_rect, circle, oval, line, arrow, polyline, path, text, image, svg, picture; plot and panel builders; diagram nodes (box, diamond, cylinder, note, cluster, connector, lifeline, message); save, restore, translate, scale, rotate, clip_rect; target, redraw, png.</td></tr>
+<tr><td>out</td><td>context, Output</td><td>print adds a line to result.output; fail stops the block with code APP_FAIL.</td></tr>
+<tr><td>paint(), path(), font(size)</td><td>functions</td><td>Fill and stroke style, vector outline, text size. Paint has color, alpha, stroke, stroke_width, stroke_cap, gradient, dash, blur.</td></tr>
+<tr><td>font_load, font_catalog, fonts_used</td><td>functions</td><td>Load a Typeface from a path, or from a URL pinned by a SHA-256, and report fonts. DejaVu Sans is bundled.</td></tr>
+<tr><td>surface(w, h), document(w, h), pdf_document(w, h)</td><td>functions</td><td>Off-screen raster Surface with png, svg and pdf export; a recording Document whose finish returns a Picture (png, svg, pdf, skp); a multi-page PDF.</td></tr>
+<tr><td>canvas.plot(x, y, w, h)</td><td>Plot</td><td>title, xlabel, ylabel, x_range, y_range, series(name, kind, color), heatmap, quiver, annotate, vline, hline, inset, draw.</td></tr>
+<tr><td>canvas.panel(x, y, w, h)</td><td>Panel</td><td>Layout manager (grid, border, place, pack) with add_plot, add_text, add_shape, add_image, add_panel, draw.</td></tr>
+<tr><td>image_file, image_create, image_bytes, image_rgba, image_pattern</td><td>functions</td><td>Create an Image. Image has 52 methods: resize, crop, rotate, levels, curves, hsl, blur, sharpen, blend, mask, threshold, perspective, statistics, psnr, ssim, save and more.</td></tr>
+<tr><td>layout_create, layout_sheet, timeline_create</td><td>functions</td><td>Layer or sheet Images into one; collect frames in a Timeline (add, delay, frame, encode_gif, save).</td></tr>
+<tr><td>svg(text), svg_file(path), template_svg(text)</td><td>functions</td><td>Parse SVG for canvas.svg; a template with a render method.</td></tr>
+<tr><td>scene3d(), camera3d()</td><td>functions</td><td>Scene3D: add, camera, lights, shadows, environment, tonemap, render_image, render_depth_image, render_normal_image, import_gltf, import_obj, export_gltf, save_job. Camera3D: look_at, perspective, ortho, lens, dof.</td></tr>
+<tr><td>mesh_box, mesh_sphere, mesh_plane, mesh_cylinder, mesh_cone, mesh_torus, mesh_lathe, mesh_extrude, mesh_text, mesh_load</td><td>functions</td><td>Build a Mesh3D. scene.add(mesh, color or Material) returns a Node3D with position, rotation, scale, material, visible, keyframe.</td></tr>
+<tr><td>material(color, metallic, roughness)</td><td>function</td><td>PBR Material with base_color, metallic, roughness, emissive, transmission, ior, clearcoat, subsurface, texture slots. Textures come from texture_file, texture_from_image and the procedural texture_ functions.</td></tr>
+<tr><td>render_available(name)</td><td>function</td><td>True when the named renderer (raster, cycles) is present in this build.</td></tr>
+<tr><td>physics_world(timestep, seed), physics_material(friction, restitution)</td><td>functions</td><td>Jolt rigid bodies on the CPU: box, sphere, step, bake. PhysicsTake.pose(t, id).sync(node) replays a bake on a Node3D.</td></tr>
+<tr><td>physics_presentation(w, h, seed)</td><td>function</td><td>Physical title tiles, bars, bullets and KPI heaps: title, bar, bullet, kpi, step, tumble, assemble, render.</td></tr>
+</tbody>
+</table>
+<h2 id="pages">Detail pages</h2>
 <ul>
-<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a>: the operating procedure for agents, with worked examples and error handling</li>
+<li><a href="/tools/lmvideo/guide.html">Guide</a>: concepts, architecture, workflow and limits</li>
+<li><a href="/tools/lmvideo/reference.html">Reference</a>: every function, type, method, command, error code and the standard library</li>
+</ul>
+<h2 id="books">Books</h2>
+<p>Six books of runnable chapters are imported from the repository at a pinned commit, each with source, command and preview.</p>
+<ul>
 <li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
 <li><a href="/tools/lmvideo/examples/">Examples</a></li>
 <li><a href="/tools/lmvideo/showcase/">Showcase</a></li>

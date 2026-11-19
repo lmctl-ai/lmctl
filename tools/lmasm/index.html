@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmasm — lmctl.com tools</title>
+<meta name="description" content="lmasm exposes the Java ASM bytecode inspection library as an lmcode host for class discovery and dependency analysis across JARs and class folders.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmasm/">Overview</a></li>
+<li><a href="/tools/lmasm/skill.html">Skill</a></li>
+<li><a href="/tools/lmasm/guide.html">Guide</a></li>
+<li><a href="/tools/lmasm/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmasm</h1>
+<p>lmasm exposes the Java ASM bytecode inspection library as an lmcode host for class discovery and dependency analysis across JARs and class folders.</p>
+<h2>Quick reference</h2>
+<pre><code>lmscript install github:lmctl-ai/lmasm@v0.1.0
+lmasm --version
+lmasm --lmcode-schema --json
+lmasm --lmcode-signatures
+lmscript examples/dep-analysis.lms</code></pre>
+<table>
+<thead>
+<tr><th>Item</th><th>Kind</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>--lmcode FILE</td><td>CLI flag</td><td>Execute compiled lmcode bytecode (repeatable for builders).</td></tr>
+<tr><td>--lmcode-schema [--json]</td><td>CLI flag</td><td>Print the exact embedded lmasm_v1 schema JSON bytes (with or without --json).</td></tr>
+<tr><td>--lmcode-signatures</td><td>CLI flag</td><td>Print canonical host and standard library signatures.</td></tr>
+<tr><td>fn asm_classes(string) -> StrList</td><td>Host function</td><td>Return dotted class names in a JAR, class folder, or .class file.</td></tr>
+<tr><td>fn asm_refs(string, string) -> StrList</td><td>Host function</td><td>Return dotted names of all classes referenced by a given class.</td></tr>
+<tr><td>RestGet..RestOptions, CliCommand, CliOption</td><td>SAM interfaces</td><td>Standard lmcode_std_v3 REST and stateless CLI handler interfaces.</td></tr>
+</tbody>
+</table>
+<pre><code>program = _lmcode_ cli="lmasm" install="github:lmctl-ai/lmasm@v0.1.0";
+for (cn in asm_classes("fixtures/jars/liba.jar")) {
+  let refs = asm_refs("fixtures/jars/liba.jar", cn);
+  print(cn + " -> " + str(refs.len()) + " refs");
+}
+end _lmcode_
+r = run_lmcode(program);
+assert(r.ok);</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmasm/skill.html">Skill</a> for setup, safety rules, and verification commands.</li>
+<li><a href="/tools/lmasm/guide.html">Guide</a> for ASM extraction internals and REST/CLI dispatch patterns.</li>
+<li><a href="/tools/lmasm/reference.html">Reference</a> for CLI flags, schema signatures, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmasm">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmasm">github.com/lmctl-ai/lmasm</a>.</p>
+</footer>
+</body>
+</html>

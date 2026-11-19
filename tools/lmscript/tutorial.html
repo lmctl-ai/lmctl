@@ -18,17 +18,18 @@
 <li><a href="/tools/lmscript/skill.html">Skill</a></li>
 <li><a href="/tools/lmscript/tutorial.html">Tutorial</a></li>
 <li><a href="/tools/lmscript/guide.html">Guide</a></li>
+<li><a href="/tools/lmscript/reference.html">Reference</a></li>
 </ul>
 </nav>
 <main>
 <h1>lmscript tutorial</h1>
-<p>In about twenty minutes you write a handful of small scripts and learn the parts of lmscript you will use every day. You need Node.js 24.15 or later and a terminal. Make an empty directory for the files and run every command from it. The outputs below come from real runs of lmscript 0.2.348; where a line shows a file path, yours will show your own directory.</p>
+<p>In about twenty minutes you write a handful of small scripts and learn the parts of lmscript you will use every day. You need Node.js 24.15 or later and a terminal. Make an empty directory for the files and run every command from it. The outputs below come from real runs of lmscript 0.2.482; where a line shows a file path, yours will show your own directory.</p>
 
 <h2 id="step-1">Step 1: Install and check the version</h2>
 <pre><kbd>npm install -g @lmctl-ai/lmctl</kbd>
 <samp>added 1 package in 366ms</samp></pre>
 <pre><kbd>lmscript --version</kbd>
-<samp>lmscript 0.2.348</samp></pre>
+<samp>lmscript 0.2.482</samp></pre>
 
 <h2 id="step-2">Step 2: Run your first script</h2>
 <p>Save this as hello.lms. Every statement ends with ;; # starts a comment.</p>
@@ -114,13 +115,14 @@ println(f"summary.json count = {data.count}");</code></pre>
 summary.json count = 3</samp></pre>
 
 <h2 id="step-8">Step 8: Data written inside the script</h2>
-<p>A data block puts CSV, JSON, TOML or properties text straight into the script. The statement ends with ; on the marker line and the block closes with a line end _csv_ (or end _json_, …). CSV numbers become numbers. Save as data.lms:</p>
+<p>A data block puts CSV, JSON, TOML or properties text straight into the script. The statement ends with ; on the marker line and the block closes with a line end _csv_ (or end _json_, …). A block is an opaque data object: call value() on it to get the plain list or map. CSV numbers become numbers. Save as data.lms:</p>
 <pre><code>scores = _csv_;
 name,score
 Ada,95
 Grace,88
 Linus,79
 end _csv_
+scores = scores.value();
 best = scores[0];
 for (row in scores) {
   if (row.score > best.score) {
@@ -131,6 +133,7 @@ println(f"{len(scores)} rows; best: {best.name} ({best.score})");
 config = _json_;
 {"retries": 3, "hosts": ["a.example", "b.example"]}
 end _json_
+config = config.value();
 println(f"retries={config.retries} hosts={join(config.hosts, ",")}");</code></pre>
 <pre><kbd>lmscript data.lms</kbd>
 <samp>3 rows; best: Ada (95)
@@ -171,11 +174,11 @@ println("cleaned up");</code></pre>
 <samp>PLAN complete
 1. /home/me/lmscript-tutorial/cleanup.lms:1:1 dummy write_file ["out/report.txt","done\n"]
 2. /home/me/lmscript-tutorial/cleanup.lms:2:1 dummy delete_file ["out/notes.txt"]
-3. /home/me/lmscript-tutorial/cleanup.lms:3:1 handled println ["cleaned up"]</samp></pre>
+3. /home/me/lmscript-tutorial/cleanup.lms:3:1 handled println ["cleaned up"] => "cleaned up"</samp></pre>
 <pre><kbd>ls out</kbd>
 <samp>notes.txt
 summary.json</samp></pre>
-<p>Nothing was written or deleted. A normal run does this dry pass silently first and only then runs for real.</p>
+<p>Nothing was written or deleted. A normal run does not do a dry pass: it checks the script and then runs it once, so use --dry-run yourself when you want the preview.</p>
 
 <h2 id="step-13">Step 13: Put functions in a module</h2>
 <p>A file that starts with package NAME; is a module; import includes it and its functions are called as NAME.fn(). Save as lib/textutil.lms:</p>
@@ -215,14 +218,15 @@ println(read_file(path));</code></pre>
 <samp>3</samp></pre>
 <p>Every built-in function documents itself, and -e runs a one-line program:</p>
 <pre><kbd>lmscript help trim</kbd>
-<samp>Usage: lmscript [--check|--dry-run|--lint] [--no-preflight] [--trace FILE]
-  [--dry-loop-limit N] [--dryrun-timeout MS] [--plan-format text|json]
-  [--resumepoint PATH] [--pref FILE] [--module SPEC=FILE]... [--check-files]
-  [--base-dir dir] [--source-name label] &lt;file>|-| -e &lt;code> [args...]
+<samp>Usage: lmscript [--check|--dry-run|--lint] [--trace FILE] [--dry-loop-limit N] [--plan-format text|json] [--resumepoint PATH] [--pref FILE] [--check-files] [--base-dir dir] [--source-name label] [--saveas FILE] &lt;file>|http(s)://.../x.lms|-| -e &lt;code> [args...]
+       lmscript install github:OWNER/REPO[@TAG] | npm:@lmctl-ai/TOOL@VERSION|latest
+       lmscript --lmcode-signatures SCHEMA [--without-std]
+       lmscript --lmcode-schema SCHEMA [--without-std] [--json]
 Function: trim(s: string): string
 Built-in: core
 Category:    Strings
 Description: Trims whitespace from both ends of a string.
+Returns:     string
 Example: clean = trim("  hello  ");</samp></pre>
 <pre><kbd>lmscript -e 'println(join(reverse(split("a,b,c", ",")), "-"));'</kbd>
 <samp>c-b-a</samp></pre>

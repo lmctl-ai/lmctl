@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmgit authoring skill — lmgit — lmctl.com tools</title>
+<meta name="description" content="lmgit is a native lmcode host that exposes Git repositories, branches, commits, status entries, diffs, and audit reports as type-checked LMScript objects while…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmgit/">Overview</a></li>
+<li><a href="/tools/lmgit/skill.html">Skill</a></li>
+<li><a href="/tools/lmgit/guide.html">Guide</a></li>
+<li><a href="/tools/lmgit/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmgit authoring skill</h1>
+<p>lmgit is a native lmcode host that exposes Git repositories, branches, commits, status entries, diffs, and audit reports as type-checked LMScript objects while executing Git strictly through argv subprocesses.</p>
+<h2>Purpose</h2>
+<p>Use lmgit to inspect working-tree status, audit repository health, enumerate branches, tags, remotes, and commit history, or script dry-run-capable branch, commit, tag, and push workflows from LMScript.</p>
+<h2>When to use it</h2>
+<p>Use lmgit when an LMScript program needs typed local Git repository inspection or controlled working-tree mutations with structured report gates. Use lmgh when querying GitHub issues, pull requests, releases, or Actions workflow runs over the GitHub API.</p>
+<h2>Install</h2>
+<p>Install the LMScript compiler with npm install -g @lmctl-ai/lmctl and ensure Git 2.20 or newer is available (or set LMGIT_GIT=/path/to/git). Install the pinned lmgit release binary with lmscript install.</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmscript install github:lmctl-ai/lmgit@v0.2.14
+lmgit --version
+lmgit --lmcode-schema --json
+lmgit --lmcode-signatures</code></pre>
+<h2>Commands</h2>
+<p>Load the lmgit schema in an LMScript file, interact with the git and report contexts inside _lmcode_, and run the compiled bytecode with run_lmcode:</p>
+<pre><code>schema = load_schema(cli="lmgit" install="github:lmctl-ai/lmgit@v0.2.14");
+program = _lmcode_ schema;
+let repo = git.open(".");
+$return.branch = repo.current_branch();
+$return.clean = repo.is_clean();
+$return.commits = repo.log(5).len();
+end _lmcode_
+result = run_lmcode(program);
+require(result.ok, "git host failed");
+print(json_stringify(result.result));</code></pre>
+<h2>Inputs and outputs</h2>
+<p>The git context accepts repository paths or clone URLs via git.open(path) and git.clone(url, dest) and returns a Repo handle. Repo methods query status, branches, commits, tags, remotes, config values, and diffs, or perform writes (checkout, branch_create, commit, push, tag_create).</p>
+<p>Every invocation writes a single terminal LMCODE_RETURN_BEGIN and LMCODE_RETURN_END JSON frame containing the program's $return value (or per-part results in builder mode). The report context writes text or JSON finding logs and exits with code 4 on report.fail_if_any().</p>
+<h2>Safety rules</h2>
+<p>lmgit invokes git as a separate argv-only process with interactive prompts, terminal color, and pagers disabled, and links no Git library code. Call git.dry_run(true) to make write operations (checkout, branch_create, commit, push, tag_create) record their intent rather than invoking Git.</p>
+<p>When LMCODE_INVOCATION_FILE sets dry: true, the SDK skips all host callbacks and returns typed dummy objects without starting any Git process or writing report files. Calling git.dry_run(false) inside bytecode cannot disable invocation-level dry mode.</p>
+<h2>Worked examples</h2>
+<p>Run the repository examples to inspect uncommitted changes, recent commits, tags, remotes, or repository health:</p>
+<pre><code>lmscript examples/repo-status.lms .
+lmscript examples/uncommitted-changes.lms .
+lmscript examples/recent-commits.lms . 10
+lmscript examples/tags-remotes.lms .
+lmscript examples/repo-health.lms .</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmgit exits with code 0 on success. Code 2 indicates CLI usage errors or malformed LMCODE_INVOCATION_FILE metadata. Code 3 indicates bytecode load failure, schema hash mismatch, or runtime Git execution failure. Code 4 indicates an application failure such as report.fail_if_any() with recorded findings or an unreadable bytecode file.</p>
+<h2>How to verify</h2>
+<p>Verify the host version, schema bytes, canonical signatures, fake-Git regression suite, and real-Git protocol suite.</p>
+<pre><code>lmgit --version
+lmgit --lmcode-schema --json > /tmp/lmgit-schema.json
+cmp /tmp/lmgit-schema.json schema/lmgit.dsl.json
+lmgit --lmcode-signatures
+./test.sh
+python3 tests/protocol.py build/lmgit</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmgit">github.com/lmctl-ai/lmgit</a>.</p>
+</footer>
+</body>
+</html>

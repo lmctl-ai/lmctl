@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmgit guide — lmgit — lmctl.com tools</title>
+<meta name="description" content="Typed Git repository model, dual dry-run architecture, report findings sink, and standard lmcode_std_v3 REST and CLI interfaces in lmgit.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmgit/">Overview</a></li>
+<li><a href="/tools/lmgit/skill.html">Skill</a></li>
+<li><a href="/tools/lmgit/guide.html">Guide</a></li>
+<li><a href="/tools/lmgit/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmgit guide</h1>
+<p>Typed Git repository model, dual dry-run architecture, report findings sink, and standard lmcode_std_v3 REST and CLI interfaces in lmgit.</p>
+<h2>Overview</h2>
+<p>lmgit embeds the reviewed lmcode-go runtime and exposes local Git operations through a strict schema contract (schema/lmgit.dsl.json). Every Git command runs as an isolated subprocess with argument vectors only, eliminating shell interpolation while returning full stdout, stderr, and commit histories without arbitrary output ceilings.</p>
+<h2>Repository, status, branch, and commit objects</h2>
+<p>Inside an _lmcode_ block, the global git context provides git.version(), git.open(path), and git.clone(url, dest). A Repo handle exposes three categories of methods:</p>
+<ul>
+<li>Working-tree and index state: repo.path(), repo.current_branch(), repo.is_clean(), repo.status() (returning a StatusList of StatusEntry objects with path(), index_status(), and work_status()), and repo.diff(staged).</li>
+<li>History and refs: repo.log(limit) (returning a CommitList of Commit objects with hash(), subject(), author(), and date()), repo.branches() (BranchList with name() and is_current()), repo.tags() (Strings), and repo.show(rev).</li>
+<li>Remotes, config, and writes: repo.remote_names(), repo.remote_url(name), repo.config(key), plus write methods repo.checkout(ref), repo.branch_create(name), repo.commit(message), repo.push(remote, ref), and repo.tag_create(name, message).</li>
+</ul>
+<pre><code>p = _lmcode_ cli="lmgit";
+let r = git.open(".");
+let entries = r.status();
+for (i in range(0, entries.len())) {
+  let e = entries.at(i);
+  if (e.work_status() != " ") {
+    report.add("DIRTY_WORKTREE", e.path(), "uncommitted change (" + e.work_status() + ")");
+  }
+}
+report.fail_if_any();
+end _lmcode_</code></pre>
+<h2>Dual dry-run policy</h2>
+<p>lmgit distinguishes two complementary dry-run layers:</p>
+<ol>
+<li>Operation-level dry_run (git.dry_run(true)): Used during live execution so read methods run real Git commands against the repository while write methods (checkout, branch_create, commit, push, tag_create) record their intended actions without modifying the repository.</li>
+<li>Invocation-level dry mode (LMCODE_INVOCATION_FILE with dry: true): Enforced by the lmcode-go SDK before any domain callback executes. All host callbacks return typed dummy values, git.is_dry_run() previews true, and no Git subprocess or report file write occurs.</li>
+</ol>
+<h2>Standard REST and stateless CLI interfaces</h2>
+<p>lmgit includes the full 226-signature lmcode_std_v3 standard catalog, supporting RestGet..RestOptions, RestHandler, CliCommand, CliOption, rest_config, rest_route, rest_serve, rest_stop, and rest_cli.</p>
+<pre><code>p = _lmcode_ cli="lmgit";
+@"--repo"
+fn opt_repo(x: RestExchange) -> void implements CliOption {
+  x.set("repo", x.query("repo"));
+}
+
+@"branch"
+fn cmd_branch(x: RestExchange) -> void implements CliCommand {
+  let r = git.open(x.get("repo"));
+  x.send("branch:" + r.current_branch());
+}
+
+@"/repo/tags"
+fn get_tags(x: RestExchange) -> void implements RestGet {
+  let r = git.open(".");
+  x.json("{\"tags\":" + str(r.tags().len()) + "}");
+}
+
+rest_config("session", "global");
+print(rest_cli(str_split("--repo=. branch", " ")));
+print(rest_cli(str_split("/repo/tags", " ")));
+end _lmcode_</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmgit">github.com/lmctl-ai/lmgit</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-csharp-sample reference — lmcode-csharp-sample — lmctl.com tools</title>
+<meta name="description" content="Reference tables for the lmcode-csharp-sample (C# (.NET 8)) type conversions, 45 Shop/Ledger domain signatures, CLI protocol flags, and exit codes.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-csharp-sample/">Overview</a></li>
+<li><a href="/tools/lmcode-csharp-sample/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-csharp-sample/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-csharp-sample/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-csharp-sample reference</h1>
+<p>Reference tables for the lmcode-csharp-sample (C# (.NET 8)) type conversions, 45 Shop/Ledger domain signatures, CLI protocol flags, and exit codes.</p>
+<h2>Host language type conversions</h2>
+<table><thead><tr><th>lmcode type</th><th>Host representation</th><th>Boundary rule</th></tr></thead><tbody>
+<tr><td>int</td><td>long (Value.AsInt)</td><td>Checked/unchecked signed 64-bit wrapping arithmetic</td></tr>
+<tr><td>float</td><td>double (Value.AsFloat)</td><td>Invariant G15 trace formatting and shortest round-trip JSON result formatting</td></tr>
+<tr><td>bool</td><td>bool (Value.AsBool)</td><td>Strict boolean without numeric coercion</td></tr>
+<tr><td>string</td><td>VmString (Value.AsStr)</td><td>Immutable ReadOnlySpan&lt;byte> preserving raw note bytes and invalid UTF-8</td></tr>
+<tr><td>Money / Items / Shop / Ledger</td><td>ObjRef + Context.Get&lt;T></td><td>Typed handles stored in the per-invocation Context arena</td></tr>
+<tr><td>void</td><td>Value.None</td><td>Distinct from a null JSON result payload</td></tr>
+</tbody></table>
+<h2>Shop and Ledger host schema signatures</h2>
+<table><thead><tr><th>Canonical signature</th><th>Kind</th><th>Description</th></tr></thead><tbody>
+<tr><td>context shop: Shop</td><td>Context object</td><td>Shop domain root owning three initial priced items (125, 250, 375 cents)</td></tr>
+<tr><td>context ledger: Ledger</td><td>Context object</td><td>Ledger domain root recording Money entries and raw byte notes</td></tr>
+<tr><td>enum Currency</td><td>USD | EUR</td><td>Currency enumeration passed across the host boundary as member spelling strings</td></tr>
+<tr><td>interface Adjuster(Money) -> void</td><td>SAM interface</td><td>Rule entry interface for in-place item adjustment (case 067)</td></tr>
+<tr><td>interface Score(Money) -> int</td><td>SAM interface</td><td>Rule entry interface for @item and @total host-dispatched scoring (cases 068-069)</td></tr>
+<tr><td>fn fee(int) -> int</td><td>Host function</td><td>Pure host fee computation helper</td></tr>
+<tr><td>fn money(int) -> Money</td><td>Host function / conversion</td><td>Construct a Money handle in signed int64 cents (also declared int -> Money conversion)</td></tr>
+<tr><td>fn money(float) -> Money</td><td>Host function overload</td><td>Construct a Money handle from finite currency units rounded half away from zero to cents</td></tr>
+<tr><td>fn sample_tmp() -> string</td><td>Host function</td><td>Return the isolated SAMPLE_TMP scratch directory path (opted into dry-mode preview)</td></tr>
+<tr><td>method Money.amount() -> int</td><td>Host method</td><td>Return signed int64 cents stored in this Money handle</td></tr>
+<tr><td>method Money.currency() -> Currency</td><td>Host method</td><td>Return the Currency enum member (such as USD) for this Money handle</td></tr>
+<tr><td>method Money.set(int) -> Money</td><td>Host method (returns: self)</td><td>Update cents in place and return the same Money receiver handle</td></tr>
+<tr><td>method Money.plus(Money) -> Money</td><td>Operator +</td><td>Allocate a Money handle with wrapped int64 sum of cents</td></tr>
+<tr><td>method Money.minus(Money) -> Money</td><td>Operator -</td><td>Allocate a Money handle with wrapped int64 difference of cents</td></tr>
+<tr><td>method Money.times(int) -> Money</td><td>Operator *</td><td>Allocate a Money handle with wrapped int64 product of cents</td></tr>
+<tr><td>method Money.neg() -> Money</td><td>Unary operator -</td><td>Allocate a Money handle with wrapped int64 negated cents</td></tr>
+<tr><td>method Shop.items() -> Items</td><td>Host method</td><td>Return the shop Items collection handle</td></tr>
+<tr><td>method Shop.total() -> Money</td><td>Host method</td><td>Return a Money handle with the sum of all current shop items</td></tr>
+<tr><td>method Items.len() -> int</td><td>Collection protocol</td><td>Return item count to enable for (item in shop.items()) loops</td></tr>
+<tr><td>method Items.at(int) -> Money</td><td>Collection protocol</td><td>Return the existing Money handle at index preserving pointer/handle identity</td></tr>
+<tr><td>method Ledger.record(Money) -> Ledger</td><td>Host method (returns: self)</td><td>Append a Money amount to the ledger and return the Ledger receiver</td></tr>
+<tr><td>method Ledger.note(string) -> void</td><td>Host method</td><td>Append a raw byte string note to the ledger</td></tr>
+<tr><td>method Ledger.balance() -> Money</td><td>Host method</td><td>Return the current ledger balance as a Money handle</td></tr>
+<tr><td>method Ledger.count() -> int</td><td>Host method</td><td>Return the number of recorded ledger entries</td></tr>
+</tbody></table>
+<h2>Structured error codes and exit statuses</h2>
+<table><thead><tr><th>Error code</th><th>Phase</th><th>Exit status</th><th>Trigger condition</th></tr></thead><tbody>
+<tr><td>LOAD_BAD_BYTECODE</td><td>load</td><td>3</td><td>Malformed DSLB v6 header, bad magic or version, truncated section, invalid opcode, or stack depth violation</td></tr>
+<tr><td>LOAD_BAD_SCHEMA</td><td>load</td><td>3</td><td>Host schema JSON fails dsl.schema 2 validation or declares an invalid result contract</td></tr>
+<tr><td>LOAD_SCHEMA_MISMATCH</td><td>load</td><td>3</td><td>32-byte SHA-256 schema hash in DSLB v6 header does not match exact host schema bytes</td></tr>
+<tr><td>LOAD_UNBOUND</td><td>load</td><td>3</td><td>Bytecode imports a context, function, or method signature not registered in the host Registry</td></tr>
+<tr><td>RUN_ERROR</td><td>run</td><td>3</td><td>VM runtime error such as division or remainder by zero</td></tr>
+<tr><td>RUN_HOST</td><td>run</td><td>3</td><td>Host callback failure, invalid encoding, or expired collection handle</td></tr>
+<tr><td>APP_FAIL</td><td>app</td><td>4</td><td>Post-run application domain validation failure or output stream write failure</td></tr>
+</tbody></table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-csharp-sample">github.com/lmctl-ai/lmcode-csharp-sample</a>.</p>
+</footer>
+</body>
+</html>

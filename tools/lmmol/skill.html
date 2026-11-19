@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmmol authoring skill — lmmol — lmctl.com tools</title>
+<meta name="description" content="lmmol is the user guide and access specification for lmmol.com, a cross-referenced biomedical knowledge graph of proteins, clinical trials, diseases, genes,…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmmol/">Overview</a></li>
+<li><a href="/tools/lmmol/skill.html">Skill</a></li>
+<li><a href="/tools/lmmol/guide.html">Guide</a></li>
+<li><a href="/tools/lmmol/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmmol authoring skill</h1>
+<p>lmmol is the user guide and access specification for lmmol.com, a cross-referenced biomedical knowledge graph of proteins, clinical trials, diseases, genes, and Gene Ontology terms accessible via static JSON browsing and semantic vector search.</p>
+<h2>Purpose</h2>
+<p>Use lmmol to look up and traverse cross-referenced biomedical records across UniProt/Swiss-Prot proteins, ClinicalTrials.gov studies, Mondo diseases, genes, ClinVar variant associations, and Gene Ontology terms using standard HTTPS requests.</p>
+<h2>When to use it</h2>
+<p>Use lmmol deterministic JSON browsing when you have an identifier such as a UniProt accession, NCT trial ID, Mondo disease ID, gene symbol, or GO term and want complete, lossless retrieval of the entity and its cross-references without vector RAG truncation. Use the semantic search endpoint only when starting from a fuzzy natural-language concept to discover initial candidate identifiers.</p>
+<h2>Install</h2>
+<p>Accessing lmmol.com data requires no custom client or API key; any HTTP client such as curl, jq, or Python requests works out of the box. For semantic search queries, install sentence-transformers in Python or @xenova/transformers in JavaScript to compute 384-dimensional query vectors locally. To build the mdBook documentation repository locally, install mdbook with Cargo.</p>
+<pre><code>curl -s https://lmmol.com/llms.txt
+pip install requests sentence-transformers
+cargo install mdbook</code></pre>
+<h2>Commands</h2>
+<p>Fetch the root index, shard listings, entity nodes, and bidirectional cross-reference backlinks over HTTPS GET:</p>
+<pre><code>curl -s https://lmmol.com/index.json
+curl -s https://lmmol.com/index/list/protein/root.json
+curl -s https://lmmol.com/index/list/protein/0.json
+curl -s https://lmmol.com/nodes/protein/P38398.json
+curl -s https://lmmol.com/index/disease/MONDO_0016419.json
+curl -s https://lmmol.com/index/gene/BRCA1.json
+curl -s https://lmmol.com/index/clinvar/gene/BRCA1.json
+curl -s https://lmmol.com/index/clinvar/disease/MONDO_0016419.json</code></pre>
+<h2>Inputs and outputs</h2>
+<p>Browse requests take an entity type (protein, trial, disease, gene, or go) and a stable identifier in the URL path, with Mondo IDs formatted using an underscore such as MONDO_0016419. All browse endpoints return UTF-8 application/json payloads representing index counts, 1000-entry shard lists, full node records with forward edges, or backlink arrays.</p>
+<p>Search requests send an HTTP POST with a JSON object containing queryVector (an array of 384 normalized floats from all-MiniLM-L6-v2), topK, indexes (proteins, trials, or both), and optional server-side filters. The response returns a results array sorted by ascending distance along with tookMs.</p>
+<h2>Safety rules</h2>
+<p>Prefer deterministic browse URLs whenever an entity identifier or symbol is known; the semantic search endpoint is metered and may be disabled for cost control, whereas static browse endpoints are CDN-cached and always available. Cache static JSON responses locally when crawling shards in bulk and poll index.json to detect corpus updates.</p>
+<p>Always normalize embeddings with mean pooling using Xenova/all-MiniLM-L6-v2 (or sentence-transformers/all-MiniLM-L6-v2) before posting to the search endpoint, and verify upstream licensing obligations in UniProt, ClinicalTrials.gov, Mondo, and ClinVar before redistributing derived datasets.</p>
+<h2>Worked examples</h2>
+<p>Walk from a Mondo disease ID (hereditary breast carcinoma) to its connected proteins and ClinVar gene associations using curl and jq:</p>
+<pre><code>BASE=https://lmmol.com
+curl -s $BASE/index/disease/MONDO_0016419.json | jq '{proteins: (.proteins | length), trials: (.trials | length)}'
+curl -s $BASE/nodes/protein/P38398.json | jq '{id, name, synonyms}'
+curl -s $BASE/index/clinvar/gene/BRCA1.json | jq -r '.diseases[] | "\(.significance)\t\(.id)\t\(.name)"'</code></pre>
+<p>Embed a concept query in Python, discover candidate proteins via semantic search, and complete the traversal deterministically through the browse layer:</p>
+<pre><code>import requests
+from sentence_transformers import SentenceTransformer
+
+BASE = "https://lmmol.com"
+SEARCH = "https://rtxz9xxyz7.execute-api.us-east-1.amazonaws.com/search"
+model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+
+qv = model.encode("BRCA1 DNA repair and breast cancer risk", normalize_embeddings=True).tolist()
+resp = requests.post(SEARCH, json={
+    "queryVector": qv,
+    "topK": 5,
+    "indexes": ["proteins"],
+    "filters": {"proteins": {"organism": "9606", "has_disease_link": True}}
+}, timeout=30)
+resp.raise_for_status()
+for hit in resp.json()["results"]:
+    node = requests.get(f"{BASE}/nodes/protein/{hit['id']}.json", timeout=30).json()
+    print(hit["distance"], node["id"], node["name"])</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Browse endpoints return HTTP 200 with valid JSON when an entity or shard exists, and HTTP 404 when an identifier, gene symbol, or shard index is not found. Ensure Mondo identifiers use an underscore (MONDO_0016419 rather than MONDO:0016419) and URL-encode special characters in gene symbols.</p>
+<p>The search endpoint is metered and may be disabled for cost control; its error status codes are not documented, so treat any non-200 search response as a signal to fall back to browse paths. When running curl in shell pipelines, pass -f or --fail so HTTP 4xx and 5xx responses return exit code 22 instead of passing an error payload downstream.</p>
+<h2>How to verify</h2>
+<p>Verify connectivity and JSON structure against the root index and a known protein record:</p>
+<pre><code>curl -fsSL https://lmmol.com/index.json | jq .
+curl -fsSL https://lmmol.com/nodes/protein/P38398.json | jq -e '.id == "P38398" and .type == "protein"'</code></pre>
+<p>To verify a local checkout of the lmmol documentation book, run mdbook build and confirm that the HTML book compiles cleanly without broken links.</p></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmmol">github.com/lmctl-ai/lmmol</a>.</p>
+</footer>
+</body>
+</html>

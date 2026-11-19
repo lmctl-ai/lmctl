@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lminstall authoring skill — lminstall — lmctl.com tools</title>
+<meta name="description" content="lminstall is a static Go CLI and GitHub Action that installs, verifies, upgrades, configures, runs, and uninstalls coding provider CLIs from their official…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lminstall/">Overview</a></li>
+<li><a href="/tools/lminstall/skill.html">Skill</a></li>
+<li><a href="/tools/lminstall/guide.html">Guide</a></li>
+<li><a href="/tools/lminstall/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lminstall authoring skill</h1>
+<p>lminstall is a static Go CLI and GitHub Action that installs, verifies, upgrades, configures, runs, and uninstalls coding provider CLIs from their official distribution channels without shelling out to external installers.</p>
+<h2>Purpose</h2>
+<p>Use lminstall to provision coding agent CLIs (claude, codex, gemini, copilot, opencode, kimi, qwen, pi, dsh, lmctl, miniplayer, lmplayer, hermes, agy, muse) into an isolated, checksum-verified prefix and launch them against mock or cloud model backends with credential redaction.</p>
+<h2>When to use it</h2>
+<p>Use lminstall in CI pipelines, container builds, or multi-agent development hosts where you need reproducible, non-interactive installation and isolated execution of coding provider CLIs without relying on curl-pipe-sh scripts, global npm commands, or ambient user credentials.</p>
+<h2>Install</h2>
+<p>Download a static lminstall release binary from GitHub Releases (or build with CGO_ENABLED=0 go build), or invoke the reusable GitHub Action lmctl-ai/lminstall in workflows.</p>
+<pre><code>lmscript install github:lmctl-ai/lminstall@v0.1.22
+lminstall list
+lminstall status --json</code></pre>
+<p>From a Go 1.26 source checkout, build the static binary directly:</p>
+<pre><code>CGO_ENABLED=0 go build -trimpath -o build/lminstall ./cmd/lminstall
+./build/lminstall list --json</code></pre>
+<h2>Commands</h2>
+<p>Manage provider lifecycles under an owned root prefix (--root DIR or LMINSTALL_ROOT) and add the reported bin_dir to PATH:</p>
+<pre><code>lminstall list
+lminstall install claude codex kimi
+lminstall status --json
+lminstall upgrade codex
+lminstall uninstall codex</code></pre>
+<p>Configure an isolated launch profile, run a one-shot ephemeral invocation, or export persistent mock routing for an orchestrator:</p>
+<pre><code>lminstall configure claude --backend mock --base-url http://127.0.0.1:8080 \
+  --model mock-agent --credential-env MOCK_API_KEY --profile-dir /tmp/claude-profile
+lminstall run claude --profile-dir /tmp/claude-profile -- -p "Hello" --tools ""
+lminstall env claude --profile-dir /tmp/claude-profile --runtime-dir /tmp/claude-runtime --format sh</code></pre>
+<h2>Inputs and outputs</h2>
+<p>Subcommands accept one or more provider IDs, --root DIR (defaulting to XDG_DATA_HOME/lminstall or ~/.local/share/lminstall on Unix and LOCALAPPDATA\lminstall on Windows), --json, and --manifest FILE. Configure, run, and env require absolute --profile-dir (and --runtime-dir for env) paths.</p>
+<p>Child process output streams to stderr while structured JSON reports remain on stdout. Every install or upgrade verifies that the installed binary executes --version and reports the expected version token before writing its ownership receipt.</p>
+<h2>Safety rules</h2>
+<p>lminstall never shells out to npm, git, curl, tar, unzip, bash, PowerShell, uv, or vendor .sh/.ps1 installer scripts, and its built-in Go npm client never runs package lifecycle scripts (equivalent to --ignore-scripts). All downloads require HTTPS across every redirect and verify SHA-256 or SHA-512 digests before extraction.</p>
+<p>lminstall never edits user shell profiles or adopts unowned directories. During lminstall run, secrets are read only at runtime from the environment variable named by --credential-env, injected upstream through an in-memory loopback bridge so the child CLI sees only a random placeholder, and redacted across raw, hex, base64, URL, JSON, and UTF-16 encodings.</p>
+<h2>Worked examples</h2>
+<p>Install and run a provider against a local lmmock server or inside a GitHub Actions workflow:</p>
+<pre><code>lminstall install claude --root /tmp/providers
+lminstall configure claude --root /tmp/providers --backend mock \
+  --base-url http://127.0.0.1:8080 --model mock-agent \
+  --profile-dir /tmp/claude-prof
+lminstall env claude --profile-dir /tmp/claude-prof --runtime-dir /tmp/claude-rt --format github-env</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lminstall exits with code 0 when the requested operation (or status query) succeeds. Code 1 indicates an operation, verification, checksum, or runtime launch failure. Code 2 indicates invalid CLI flags, unowned profile directories, or malformed manifest data. Code 3 indicates a declared unavailable distribution (such as the claudemock fixture).</p>
+<h2>How to verify</h2>
+<p>Run the offline Go unit tests, static analysis, and mutation fault controls, or check the installed provider status in JSON mode.</p>
+<pre><code>go test ./...
+go vet ./...
+python3 scripts/mutate.py
+lminstall list --json
+lminstall status --json</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lminstall">github.com/lmctl-ai/lminstall</a>.</p>
+</footer>
+</body>
+</html>

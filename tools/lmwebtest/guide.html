@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmwebtest guide — lmwebtest — lmctl.com tools</title>
+<meta name="description" content="Architecture, tiered acquisition patterns, Web DSL and full Playwright host usage, and offline mock testing for lmwebtest.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmwebtest/">Overview</a></li>
+<li><a href="/tools/lmwebtest/skill.html">Skill</a></li>
+<li><a href="/tools/lmwebtest/guide.html">Guide</a></li>
+<li><a href="/tools/lmwebtest/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmwebtest guide</h1>
+<p>Architecture, tiered acquisition patterns, Web DSL and full Playwright host usage, and offline mock testing for lmwebtest.</p>
+<h2>Overview</h2>
+<p>lmwebtest separates browser navigation and client-side rendering from DOM extraction and test orchestration. Packaged both as a Node.js module and as a standalone Bun-compiled single-file executable for Linux, macOS, and Windows, lmwebtest offers three complementary ways to test web applications: a high-level Web DSL (context web: Web and context report: Report), a complete synchronous worker-thread bridge to the entire Playwright API (lmwebtest playwright), and direct CLI commands for one-shot page audits and screenshots.</p>
+<h2>Tiered acquisition: lmcurl, lmwebtest, and lmhtml</h2>
+<p>In lmscript web workflows, acquisition and extraction are decoupled so each tool does what it is fastest at:</p>
+<ul>
+<li>Static HTTP acquisition (lmcurl): try fetching the target URL with lmcurl first when server-rendered HTML or JSON endpoints may already contain the needed content.</li>
+<li>Client-rendered browser fallback (lmwebtest): when an explicit deterministic check shows that the data is rendered client-side by JavaScript, branch to lmwebtest to load the page in headless Chromium, wait for the target DOM selector, and write the rendered markup to disk with page.save_html(path).</li>
+<li>Fast DOM extraction (lmhtml): pass the saved HTML file to an lmhtml block to query elements with Lexbor CSS selectors, normalize whitespace, and validate structure.</li>
+</ul>
+<pre><code>let acquire = _lmcode_ cli="lmwebtest" install="github:lmctl-ai/lmwebtest@latest";
+let page = web.navigate("https://platform.kimi.ai/docs/pricing/batch");
+page.wait_for("table tbody tr", 15000);
+page.save_html("build/pricing.html");
+web.close();
+end _lmcode_
+require(run_lmcode(acquire).ok, "browser acquisition failed");</code></pre>
+<h2>Concise Web DSL (context web: Web)</h2>
+<p>When invoked via cli="lmwebtest", scripts interact with two built-in context objects matching lmhtml conventions:</p>
+<ul>
+<li>web (type Web): configures browser session defaults (set_timeout, set_viewport, set_user_agent, set_header), opens pages with navigate(url) or navigate(url, timeout_ms), and closes the Chromium browser with close().</li>
+<li>Page, Element, and ElementList: wait for dynamic selectors (wait_for, wait_for_load, wait_for_timeout), inspect page metadata (url, title, status), query the live DOM (select, select_one, has, count, text, inner_html, outer_html), trigger user actions (click, fill, press, eval), and export artifacts (save_html, screenshot).</li>
+<li>report (type Report): accumulates structured findings with report.add(rule, selector, line, message), writes JSON or plain-text audit reports (write_json, write_text), and halts execution with exit code 3 when report.fail_if_any() is called with non-zero findings.</li>
+</ul>
+<h2>Full Playwright lmcode host (lmwebtest playwright)</h2>
+<p>For advanced browser workflows that need multiple browser contexts, frames, locators, multipart file uploads, file choosers, downloads, dialogs, network route interception, HAR replay, APIRequestContext calls, or retrying expect assertions (Locator.expect), bind an _lmcode_ block to cli="lmwebtest playwright". Because the lmcode-js bytecode VM executes synchronously while Playwright is asynchronous, lmwebtest runs Playwright inside a dedicated Node/Bun worker thread and bridges every method call synchronously over a SharedArrayBuffer and MessageChannel.</p>
+<p>The Playwright host exposes fourteen typed object handles (Playwright, Browser, BrowserContext, Page, Frame, Locator, Request, Response, Download, FileChooser, Dialog, ApiContext, ApiResponse, and Object). Options bags are passed as JSON strings (for example, "{\"timeout\":5000}"). File upload methods such as Page.set_input_files or Locator.set_input_files accept a file path, a JSON array of file paths, or a JSON array of in-memory file descriptors ({"name", "mimeType", "text"} or {"name", "mimeType", "base64"}). Every handle also provides reflective call(dottedMethod, argsJson) and call_id(dottedMethod, argsJson) methods to reach any unweighted Playwright property or method (such as keyboard.press or mouse.click). Set LMCODE_HEADED=1 in the environment to watch browser execution in a visible window.</p>
+<h2>CLI health checks and offline mock suites</h2>
+<p>Outside lmscript, running lmwebtest test &lt;url> launches headless Chromium, navigates to the URL, and automatically monitors six failure channels during page load: unexpected main-document HTTP status (default 200), console.error messages, uncaught pageerror exceptions, failed network requests, HTTP 4xx/5xx sub-resource responses, and broken &lt;img> elements (complete &amp;&amp; naturalWidth === 0). Repeating --selector CSS verifies that each selector resolves to a visible element before emitting a JSON summary.</p>
+<p>The repository includes two deterministic offline integration suites powered by lmmock that run in CI on every commit: demo-app (testing session-cookie login, protected routes, and stateful UI transitions) and upload-app (testing single and multi-file multipart uploads, blocked extensions, empty-submit error banners, and round-trip file downloads).</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmwebtest">github.com/lmctl-ai/lmwebtest</a>.</p>
+</footer>
+</body>
+</html>

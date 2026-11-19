@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmimg guide — lmimg — lmctl.com tools</title>
+<meta name="description" content="This guide explains how lmimg thinks about images, how a script reaches the host, and where the limits are.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmimg/">Overview</a></li>
+<li><a href="/tools/lmimg/skill.html">Skill</a></li>
+<li><a href="/tools/lmimg/guide.html">Guide</a></li>
+<li><a href="/tools/lmimg/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmimg guide</h1>
+<p>This guide explains how lmimg thinks about images, how a script reaches the host, and where the limits are. For copy-paste commands see the skill page; for exact signatures see the reference.</p>
+<h2 id="overview">Overview</h2>
+<p>lmimg is a scripting host for raster images. It pairs a static ImageMagick raster and codec engine with a small original implementation of editing ideas known from GIMP: layers, masks, curves, selections, a light healing tool, LUTs, perspective and lens transforms, and selective-focus filters. It does not link GIMP or GEGL and does not use their source. Programs are written in the lmcode block language embedded in an LMScript file, so an image pipeline is a short text file that also checks its own numbers.</p>
+<h2 id="architecture">Architecture</h2>
+<ul>
+<li>The outer LMScript file holds a block written prog = _lmcode_ cli="lmimg" install="github:lmctl-ai/lmimg@latest"; ... end _lmcode_.</li>
+<li>lmscript obtains the lmimg release binary, asks it for its schema (lmimg --lmcode-schema --json) and compiles the block against that schema, so a wrong method name or argument type is a compile error before any pixel is touched.</li>
+<li>run_lmcode(prog) hands the compiled bytecode to the host (lmimg --lmcode FILE) and returns a map with ok and result to the outer script.</li>
+<li>The host is one executable. The pinned codecs zlib, libpng, libjpeg-turbo, libtiff and libwebp, stb_truetype and the Roboto font are linked or embedded statically; every other ImageMagick delegate is configured off.</li>
+<li>The public repository holds the README, examples and images; the implementation source is maintained privately and releases are binaries.</li>
+</ul>
+<h2 id="model">Image model</h2>
+<p>An Image is a rectangle of RGBA pixels. Dimensions and coordinates are in pixels. Channel values are normalized to 0..1 in the API and stored as 8 bits per channel. Operations work directly on gamma-encoded sRGB values and there is no colour management, so grayscale, for example, is the Rec.709 luma of the encoded values.</p>
+<p>Every edit mutates the image it is called on and returns that same image, which is what makes chains such as copy().levels(...).hsl(...).unsharp(...) work. The rule that follows is simple: call copy() whenever you need both the before and the after.</p>
+<h3>Sources of pixels</h3>
+<ul>
+<li>canvas makes a flat colour.</li>
+<li>pattern computes each channel from an expression string over normalized x and y, with hash for white noise and noise for smooth value noise. The whole README gallery is built from patterns and drawing calls, with no photographs.</li>
+<li>open reads a file in a supported format.</li>
+<li>hald builds an identity colour lookup table that you grade like any other image and later apply with clut.</li>
+</ul>
+<h3>Compositing</h3>
+<p>There are two ways to combine images. blend composites one image onto another with a mode, an opacity and an offset. A Layers stack, created with img.layers(w, h), collects several images with add or masked and flattens them with render, the GIMP way. Both use straight-alpha source-over with the opacity applied to the source alpha, and both accept the same ten modes. Selections are rectangles that clear alpha outside; any other shape is expressed as an image mask.</p>
+<h3>Builders</h3>
+<p>Curve, Layers, Montage and Animation are builders: you add points, layers, tiles or frames and then use the result. A Curve is passed to curves or curves_rgb. A Montage renders a grid sheet with a column count, gap and background colour. An Animation saves a GIF whose frame delays are in centiseconds.</p>
+<h3>Measurement</h3>
+<p>lmimg treats numbers as first-class output. mean, stddev, min, max and pixel read values back; histogram exports 256 bins as CSV; psnr and ssim compare two images of equal size. The repository examples use these to assert their own claims, for example that a median filter beats a Gaussian blur on salt-and-pepper noise, or that a barcode reads back module by module.</p>
+<h2 id="workflow">Workflow</h2>
+<ol>
+<li>Create the output directory in the outer script.</li>
+<li>Inside the block, create or open images, copy what must be preserved, and chain edits.</li>
+<li>Assert the properties that matter with img.assert_true and img.assert_close.</li>
+<li>Save files, and pass small facts back with lmcode_return_put.</li>
+<li>In the outer script, check r.ok and use r.result.</li>
+<li>Compile-check with lmscript --check while editing; inspect lmimg --lmcode-signatures when unsure of a parameter list.</li>
+</ol>
+<p>Hosts combine through files: one repository example exports histograms as CSV and plots them with lmplot, another places lmimg thumbnails in an lmdraw diagram.</p>
+<h2 id="limits">Limits</h2>
+<ul>
+<li>8 bits per channel, no colour management.</li>
+<li>rotate by non-right angles yields the ImageMagick shear-based extent, slightly larger than the bounding box.</li>
+<li>perspective and lens resample bilinearly and leave out-of-frame samples transparent.</li>
+<li>heal fits a plane to the ring around the patch: good for skin and gradients, not a texture synthesizer.</li>
+<li>blur feathers alpha (premultiplied); sharpen and edges act on RGB and keep alpha.</li>
+<li>Text is ASCII only in the embedded Roboto font.</li>
+<li>SSIM is a single global luma window, a compact statistic rather than a multiscale perceptual model.</li>
+<li>Morphology radii are 0..16; Hald levels are 2..16.</li>
+<li>Animated output is GIF only; open reads only the first frame of an animated input.</li>
+<li>Memory is budgeted: 4096 MiB by default, changed with LMIMG_MAX_MEMORY_MB.</li>
+<li>The current release provides Linux x64 and arm64 binaries (dynamic glibc 2.35 or newer). Earlier releases may contain macOS and Windows assets.</li>
+</ul>
+<h2 id="license">Licensing</h2>
+<p>The README, docs, images and examples are MIT licensed. Releases up to and including v0.1.3 were published under the MIT License; later binary releases are under the Lattice Systems Binary License 1.0. Third-party components keep their own licenses, printed by lmimg --notices.</p>
+<h2 id="more">Related pages</h2>
+<ul>
+<li><a href="/tools/lmimg/">Quick reference</a></li>
+<li><a href="/tools/lmimg/skill.html">Skill</a></li>
+<li><a href="/tools/lmimg/reference.html">Reference</a></li>
+<li><a href="https://github.com/lmctl-ai/lmimg">GitHub repository lmctl-ai/lmimg</a></li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmimg">github.com/lmctl-ai/lmimg</a>.</p>
+</footer>
+</body>
+</html>

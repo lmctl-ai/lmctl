@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>lmtorch — lmctl.com tools</title>
-<meta name="description" content="lmtorch is a CPU tensor host for LMScript.">
+<meta name="description" content="lmtorch is a CPU tensor host for LMScript: tensor operations, automatic differentiation, model layers, optimizers, and safetensors and CSV input and output…">
 <link rel="stylesheet" href="/tools/style.css">
 <link rel="icon" type="image/png" href="/tools/lmtorch/img/icon.png">
 </head>
@@ -18,14 +18,80 @@
 <li><a href="/tools/lmtorch/skill.html">Skill</a></li>
 <li><a href="/tools/lmtorch/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmtorch/guide.html">Guide</a></li>
+<li><a href="/tools/lmtorch/reference.html">Reference</a></li>
 <li><a href="/tools/lmtorch/examples/">Examples</a></li>
 </ul>
 </nav>
 <main><h1>lmtorch</h1>
-<p>lmtorch is a CPU tensor host for LMScript. It provides tensor operations, automatic differentiation, model layers, optimizers, and safetensors input and output through one released executable.</p>
-<p>Choose the <a href="/tools/lmtorch/get_started.html">quickstart</a> to run a checked example, or use the <a href="/tools/lmtorch/guide.html">API guide</a> to find the host methods.</p>
+<figure><img src="/tools/lmtorch/img/logo.png" alt="lmtorch logo" width="256" height="256"></figure>
+<p>lmtorch is a CPU tensor host for LMScript: tensor operations, automatic differentiation, model layers, optimizers, and safetensors and CSV input and output through one released native executable (version 0.5.1). This page is the quick reference; details are in the linked pages.</p>
+<h2 id="install">Install and run</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmctl init
+lmctl autorun https://lmctl.com/tools/lmtorch/lmtorch_solo.lms</code></pre>
+<p>A block that declares cli="lmtorch" and install="github:lmctl-ai/lmtorch@latest" downloads the release binary when lmtorch is not on PATH; pin a tag such as @v0.5.1 for reproducible runs.</p>
+<h2 id="cli">Host protocol</h2>
+<table>
+<thead><tr><th>Command</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td>lmtorch --version</td><td>Prints lmtorch and the version number, exit 0.</td></tr>
+<tr><td>lmtorch --lmcode-schema</td><td>Prints a readable summary of the host API grouped by type.</td></tr>
+<tr><td>lmtorch --lmcode-schema --json</td><td>Prints the exact embedded host schema bytes (schema 2, name lmtorch) that lmscript compiles against.</td></tr>
+<tr><td>lmtorch --lmcode-signatures</td><td>Prints one canonical signature per line (context, function and method entries).</td></tr>
+<tr><td>lmtorch --lmcode FILE.dslb</td><td>Runs compiled bytecode under the v1 invocation manifest and prints one terminal return frame. Several files may follow one --lmcode.</td></tr>
+<tr><td>--first FILE.dslb, --last FILE.dslb</td><td>Additional bytecode files ordered before or after the --lmcode files in the same invocation.</td></tr>
+</tbody>
+</table>
+<p>Exit codes: 0 success, 2 command-line or manifest error, 3 load or run error, 4 application or output error. Retired flag spellings are rejected.</p>
+<h2 id="api">Context objects and types</h2>
+<table>
+<thead><tr><th>Name</th><th>Kind</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td>torch</td><td>context object of type Torch</td><td>Tensor constructors, seeding, thread count, grad mode, loading of tensors, bundles, models and CSV, handle marks.</td></tr>
+<tr><td>out</td><td>context object of type Out</td><td>Builds the Json result of the block with set and verifies expectations with check.</td></tr>
+<tr><td>Tensor</td><td>type, 88 methods</td><td>CPU tensor: shape, indexing, arithmetic, reductions, activations, autograd, save and CSV output. Operators + - * and unary minus map to add, sub, mul and neg; division is the div method.</td></tr>
+<tr><td>TensorList</td><td>type, 3 methods</td><td>Ordered list of tensors.</td></tr>
+<tr><td>Bundle</td><td>type, 7 methods</td><td>Named tensors, stored as one safetensors file.</td></tr>
+<tr><td>Model</td><td>type, 24 methods</td><td>Sequential model built by chaining layer methods.</td></tr>
+<tr><td>Optimizer</td><td>type, 4 methods</td><td>Optimizer created from a model.</td></tr>
+<tr><td>DType</td><td>enum</td><td>F32, F64, I64, BOOL.</td></tr>
+</tbody>
+</table>
+<h2 id="torch">Most used calls</h2>
+<table>
+<thead><tr><th>Task</th><th>Calls</th></tr></thead>
+<tbody>
+<tr><td>Create tensors</td><td>torch.tensor(json text), torch.zeros, torch.ones, torch.full, torch.rand, torch.randn, torch.randint (shapes are 1 to 4 int arguments)</td></tr>
+<tr><td>Reproducibility</td><td>torch.manual_seed(int), torch.set_num_threads(int)</td></tr>
+<tr><td>Read values</td><td>Tensor.item, Tensor.shape, Tensor.sum, Tensor.mean</td></tr>
+<tr><td>Gradients</td><td>Tensor.requires_grad(true), Tensor.backward, Tensor.grad, Tensor.zero_grad, torch.grad_enabled(bool)</td></tr>
+<tr><td>Files</td><td>Tensor.save, torch.load, torch.load_model, Model.save; paths stay inside the working directory</td></tr>
+<tr><td>Result</td><td>out.set(key, value) chained, out.check(condition, message)</td></tr>
+<tr><td>Memory in long loops</td><td>torch.mark and torch.release</td></tr>
+</tbody>
+</table>
+<h2 id="example">Minimal example</h2>
+<p>A complete lmscript file, taken from examples/tensor-sum-dsl.lms in the repository. run_lmcode compiles the block, runs the host and returns an object with ok and result.</p>
+<pre><code>p = _lmcode_ cli="lmtorch" install="github:lmctl-ai/lmtorch@latest";
+let values = torch.tensor("[[1.0, 2.0], [3.0, 4.0]]");
+let total = values.sum().item();
+out.check(total == 10.0, "sum must be 10");
+out.set("shape", values.shape()).set("sum", total);
+end _lmcode_
+
+run = run_lmcode(p);
+if (!run.ok) { println(f"lmtorch {run.phase} error {run.code}: {run.message}"); exit(1); }
+result = run.result;
+println(f"shape {result.shape}, sum {result.sum}");</code></pre>
+<h2 id="std">Standard library</h2>
+<p>lmtorch 0.5.1 vendors the lmcode_std_v3 catalog of the lmcode-cpp commit pinned in sdk.lock: 206 canonical signatures (83 functions and 123 methods on 16 standard types). The current lmcode_std_v3 catalog has 226 signatures, adding the REST and CLI interfaces; lmtorch picks those up when it syncs its SDK pin and releases.</p>
+<h2 id="more">More</h2>
 <ul>
-<li><a href="/tools/lmtorch/examples/">Examples book</a> with runnable source and compact previews.</li>
+<li><a href="/tools/lmtorch/skill.html">Skill</a>: task-oriented instructions for agents.</li>
+<li><a href="/tools/lmtorch/guide.html">Guide</a>: concepts, autograd, models and files.</li>
+<li><a href="/tools/lmtorch/reference.html">Reference</a>: every host method, flag, exit code and std signature.</li>
+<li><a href="/tools/lmtorch/get_started.html">Get started</a>: checked quickruns.</li>
+<li><a href="/tools/lmtorch/examples/">Examples book</a> with runnable source.</li>
 <li><a href="https://github.com/lmctl-ai/lmtorch">Source repository and releases</a>.</li>
 </ul>
 </main>

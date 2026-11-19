@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmtop reference — lmtop — lmctl.com tools</title>
+<meta name="description" content="Complete command-line flag reference, stdio NDJSON protocol methods, 24-metric catalog across CPU, memory, disk, and network groups, platform backend matrix,…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmtop/">Overview</a></li>
+<li><a href="/tools/lmtop/skill.html">Skill</a></li>
+<li><a href="/tools/lmtop/guide.html">Guide</a></li>
+<li><a href="/tools/lmtop/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmtop reference</h1>
+<p>Complete command-line flag reference, stdio NDJSON protocol methods, 24-metric catalog across CPU, memory, disk, and network groups, platform backend matrix, and exit codes for lmtop (protocol lmtop/1).</p>
+<h2>Server and client CLI flags</h2>
+<table>
+<thead><tr><th>Command or flag</th><th>Arguments</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>--help</td><td>none</td><td>Print usage summary for lmtop server and lmtop client to stdout and exit 0.</td></tr>
+<tr><td>lmtop [server]</td><td>[--interval MS] [--cap-mb N]</td><td>Run the stdio NDJSON monitor server (default command when no subcommand is given).</td></tr>
+<tr><td>--interval (server)</td><td>100..60000</td><td>Sampling period in milliseconds (default 1000 ms). Values outside 100..60000 exit with code 2.</td></tr>
+<tr><td>--cap-mb (server)</td><td>>= 1</td><td>Memory budget in MiB for the in-memory sample history ring buffer (default 100 MiB).</td></tr>
+<tr><td>lmtop client</td><td>[options] &lt;method> [params-json]</td><td>Query a newly spawned private server (default) or a running server via POSIX FIFOs.</td></tr>
+<tr><td>--id (client)</td><td>>= 0</td><td>Request integer identifier placed in the JSON request and matched in the response (default 1).</td></tr>
+<tr><td>--interval (client)</td><td>> 0</td><td>Sampling interval in milliseconds passed to the spawned child server in one-shot mode (default 1000 ms).</td></tr>
+<tr><td>--in / --out (client)</td><td>&lt;fifo-path></td><td>POSIX only: write the request to the --in FIFO and read the matching response from the --out FIFO (must be specified together).</td></tr>
+</tbody>
+</table>
+<h2>Stdio NDJSON protocol methods</h2>
+<table>
+<thead><tr><th>Method</th><th>Request params object</th><th>Response result fields</th></tr></thead>
+<tbody>
+<tr><td>status</td><td>none</td><td>protocol ("lmtop/1"), pid, hostname, platform, supported, uptime_ms, started_unix_ms, interval_ms, samples_kept, missed_ticks, cpu_count, sample_bytes, memory_bytes_used, memory_bytes_cap, metrics (array of 24 {path, unit, kind, group} objects).</td></tr>
+<tr><td>now</td><td>none</td><td>unix_ms, dt_s, cpu_count, group_status ({cpu, mem, disk, net} set to "ok" or reader error string), values (object mapping all 24 metric paths to numeric values or -1).</td></tr>
+<tr><td>history</td><td>{"seconds": int, "max_points": int} (both optional; 0 = all)</td><td>columns (["unix_ms", "dt_s", ...24 metric paths]), stride (downsampling step >= 1), total_rows (samples in window before downsampling), rows (array of value arrays; newest sample always included).</td></tr>
+<tr><td>summary</td><td>{"seconds": int} (optional; 0 = all)</td><td>window_seconds, samples, started_unix_ms, ended_unix_ms, metrics (array of 24 objects with name, unit, kind, n, min, mean, median, p95, p99, max, stddev, first, last, error).</td></tr>
+<tr><td>stop</td><td>none</td><td>{"stopping": true}, after which the server flushes stdout, stops the background monitor thread, and exits 0.</td></tr>
+</tbody>
+</table>
+<h2>Metric catalog (24 metrics)</h2>
+<table>
+<thead><tr><th>Metric path</th><th>Group</th><th>Kind / unit</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>cpu.usage_pct</td><td>cpu</td><td>rate / pct</td><td>Host-normalized total busy CPU percentage across all cores (100 - idle, range 0..100).</td></tr>
+<tr><td>cpu.user_pct</td><td>cpu</td><td>rate / pct</td><td>Host-normalized user-mode (including nice) CPU percentage (0..100).</td></tr>
+<tr><td>cpu.system_pct</td><td>cpu</td><td>rate / pct</td><td>Host-normalized kernel/system CPU percentage, including IRQ, softirq, and steal ticks (0..100).</td></tr>
+<tr><td>cpu.iowait_pct</td><td>cpu</td><td>rate / pct</td><td>Host-normalized I/O wait CPU percentage (0..100; 0 on Windows).</td></tr>
+<tr><td>cpu.max_core_busy_pct</td><td>cpu</td><td>rate / pct</td><td>Busy percentage of the single most loaded logical CPU core over the tick interval (0..100).</td></tr>
+<tr><td>cpu.psi_some_avg10</td><td>cpu</td><td>gauge / pct</td><td>Linux /proc/pressure/cpu some avg10 stall percentage (-1 on macOS and Windows).</td></tr>
+<tr><td>mem.used_pct</td><td>mem</td><td>gauge / pct</td><td>Percentage of physical RAM in use: 100 * (total - available) / total (0..100).</td></tr>
+<tr><td>mem.available_bytes</td><td>mem</td><td>gauge / bytes</td><td>Estimated bytes of physical memory available for starting new applications without swapping.</td></tr>
+<tr><td>mem.swap_used_pct</td><td>mem</td><td>gauge / pct</td><td>Percentage of configured swap space currently used (0..100, or -1 when no swap is configured).</td></tr>
+<tr><td>mem.psi_some_avg10</td><td>mem</td><td>gauge / pct</td><td>Linux /proc/pressure/memory some avg10 stall percentage (-1 on macOS and Windows).</td></tr>
+<tr><td>disk.read_bytes_rate</td><td>disk</td><td>rate / bytes/s</td><td>Aggregate bytes read per second across all eligible non-stacked physical block devices.</td></tr>
+<tr><td>disk.write_bytes_rate</td><td>disk</td><td>rate / bytes/s</td><td>Aggregate bytes written per second across all eligible non-stacked physical block devices.</td></tr>
+<tr><td>disk.read_ops_rate</td><td>disk</td><td>rate / 1/s</td><td>Aggregate read I/O operations completed per second across eligible physical disks.</td></tr>
+<tr><td>disk.write_ops_rate</td><td>disk</td><td>rate / 1/s</td><td>Aggregate write I/O operations completed per second across eligible physical disks.</td></tr>
+<tr><td>disk.max_util_pct</td><td>disk</td><td>rate / pct</td><td>Busy time percentage of the single most utilized physical disk over the tick interval (0..100; -1 on macOS).</td></tr>
+<tr><td>disk.psi_some_avg10</td><td>disk</td><td>gauge / pct</td><td>Linux /proc/pressure/io some avg10 stall percentage (-1 on macOS and Windows).</td></tr>
+<tr><td>net.rx_bytes_rate</td><td>net</td><td>rate / bytes/s</td><td>Aggregate bytes received per second across all non-loopback network interfaces.</td></tr>
+<tr><td>net.tx_bytes_rate</td><td>net</td><td>rate / bytes/s</td><td>Aggregate bytes transmitted per second across all non-loopback network interfaces.</td></tr>
+<tr><td>net.rx_packets_rate</td><td>net</td><td>rate / 1/s</td><td>Aggregate packets received per second across all non-loopback network interfaces.</td></tr>
+<tr><td>net.tx_packets_rate</td><td>net</td><td>rate / 1/s</td><td>Aggregate packets transmitted per second across all non-loopback network interfaces.</td></tr>
+<tr><td>net.rx_errors_rate</td><td>net</td><td>rate / 1/s</td><td>Aggregate receive error count per second across all non-loopback network interfaces.</td></tr>
+<tr><td>net.tx_errors_rate</td><td>net</td><td>rate / 1/s</td><td>Aggregate transmit error count per second across all non-loopback network interfaces.</td></tr>
+<tr><td>net.rx_dropped_rate</td><td>net</td><td>rate / 1/s</td><td>Aggregate inbound dropped packets per second across all non-loopback network interfaces.</td></tr>
+<tr><td>net.tx_dropped_rate</td><td>net</td><td>rate / 1/s</td><td>Aggregate outbound dropped packets per second across all non-loopback network interfaces.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th>Exit code</th><th>Component</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>server / client</td><td>Clean shutdown on stop request, stdin EOF, SIGINT/SIGTERM, --help, or successful client query response.</td></tr>
+<tr><td>1</td><td>server / client</td><td>Runtime error: client failed to spawn server, open/write FIFOs, or receive a matching response id within the timeout.</td></tr>
+<tr><td>2</td><td>server / client</td><td>Command-line usage error: unknown flag, --interval outside 100..60000 ms, --cap-mb &lt; 1, mismatched --in/--out, or invalid params JSON.</td></tr>
+<tr><td>4</td><td>server</td><td>Stdout stream write error while emitting a JSON response line.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmtop">github.com/lmctl-ai/lmtop</a>.</p>
+</footer>
+</body>
+</html>

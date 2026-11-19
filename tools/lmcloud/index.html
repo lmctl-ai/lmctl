@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcloud — lmctl.com tools</title>
+<meta name="description" content="lmcloud defines the shared procedural lmcode schema and Go hostkit implemented by lmaws, lmazure, lmgcp, and lmoci.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcloud/">Overview</a></li>
+<li><a href="/tools/lmcloud/skill.html">Skill</a></li>
+<li><a href="/tools/lmcloud/guide.html">Guide</a></li>
+<li><a href="/tools/lmcloud/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcloud</h1>
+<p>lmcloud defines the shared procedural lmcode schema and Go hostkit implemented by lmaws, lmazure, lmgcp, and lmoci.</p>
+<h2>Quick reference</h2>
+<p>Load the shared lmcloud schema or declare a provider host in an LMScript program, and run conformance checks against the reference fake adapter or local cloud emulators.</p>
+<pre><code>bash scripts/test-hostkit.sh
+bash tests/run-conformance.sh --check
+p = _lmcode_ cli="lmaws" install="github:lmctl-ai/lmaws@latest";</code></pre>
+<table>
+<thead>
+<tr>
+<th>Surface</th>
+<th>Signature or command</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Context</td>
+<td>context cloud: Cloud</td>
+<td>Provider-neutral object storage, queue, tables, permissions, function, userpool, cost, and metrics entry point.</td>
+</tr>
+<tr>
+<td>Object storage</td>
+<td>cloud.bucket_create(name), cloud.object_put(bucket, key, body), cloud.object_get(bucket, key)</td>
+<td>Create buckets and read, write, head, delete, or list objects across AWS, Azure, GCP, and OCI.</td>
+</tr>
+<tr>
+<td>Queues</td>
+<td>cloud.queue_create(name), cloud.queue_send(queue, body), cloud.queue_receive(queue), cloud.queue_ack(queue, receipt)</td>
+<td>Create queues, send and receive messages, acknowledge processing, and adjust visibility timeouts with queue_nack.</td>
+</tr>
+<tr>
+<td>Tables</td>
+<td>cloud.table_create(name, sorted), cloud.item_new(pk, sk), cloud.item_put(table, item), cloud.item_query(table, pk)</td>
+<td>Manage key-only or sorted key-value tables with conditional puts, typed attributes, partition queries, and scans.</td>
+</tr>
+<tr>
+<td>Cost and metrics</td>
+<td>cloud.set_cost_cap_usd(cap), cloud.estimated_cost(), cloud.cost_report(), cloud.metrics()</td>
+<td>Enforce monotone-decreasing run budgets and inspect per-operation request counts, bytes, and latency quantiles.</td>
+</tr>
+<tr>
+<td>Standard REST and CLI</td>
+<td>rest_config(key, val), rest_route(method, pattern, fn), rest_serve(), rest_stop(), rest_cli(args)</td>
+<td>Expose cloud workflows as HTTP routes (:param patterns) and CLI commands or flags via lmcode_std_v3 interfaces.</td>
+</tr>
+</tbody>
+</table>
+<p>Runnable LMScript example using the shared lmcloud schema for object storage, queue delivery, and standard REST and CLI routing:</p>
+<pre><code>p = _lmcode_ cli="lmaws" install="github:lmctl-ai/lmaws@latest";
+  @"/objects/:bucket/:key"
+  fn get_obj(x: RestExchange) -> void implements RestGet {
+    x.send(cloud.object_get(x.param("bucket"), x.param("key")));
+  }
+
+  @"--env"
+  fn opt_env(x: RestExchange) -> void implements CliOption {
+    x.set("env", x.query("env"));
+  }
+
+  @"publish"
+  fn cmd_publish(x: RestExchange) -> void implements CliCommand {
+    cloud.queue_send("jobs-q", x.get("env") + ":" + x.body());
+    x.send("queued");
+  }
+
+  rest_config("prefix", "/v1");
+  cloud.set_cost_cap_usd(0.05);
+  cloud.bucket_create("demo-bkt");
+  cloud.object_put("demo-bkt", "hello.txt", "hello from lmcloud");
+  cloud.queue_create("jobs-q");
+
+  let cli_out = rest_cli(str_split("--env dev publish -- payload-1", " "));
+  let http_out = rest_cli(str_split("/v1/objects/demo-bkt/hello.txt", " "));
+  let msgs = cloud.queue_receive("jobs-q");
+  let first = msgs.at(0);
+  cloud.queue_ack("jobs-q", first.receipt());
+  print(cli_out + " | " + http_out + " | " + first.body());
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, "lmcloud workflow failed");</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmcloud/skill.html">Skill</a> — LLM agent authoring rules, commands, safety gates, and verification steps.</li>
+<li><a href="/tools/lmcloud/guide.html">Guide</a> — Architecture of the shared schema, hostkit, emulator endpoints, live safety foundation, and standard REST/CLI interfaces.</li>
+<li><a href="/tools/lmcloud/reference.html">Reference</a> — Complete tables of shared schema types, Cloud methods, ErrorCode values, standard REST/CLI signatures, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmcloud">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcloud">github.com/lmctl-ai/lmcloud</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>azuresim reference — azuresim — lmctl.com tools</title>
+<meta name="description" content="Reference tables for azuresim CLI flags, environment variables, HTTP storage endpoints, client LMScript standard REST/CLI interfaces, and exit codes.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/azuresim/">Overview</a></li>
+<li><a href="/tools/azuresim/skill.html">Skill</a></li>
+<li><a href="/tools/azuresim/guide.html">Guide</a></li>
+<li><a href="/tools/azuresim/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>azuresim reference</h1>
+<p>Reference tables for azuresim CLI flags, environment variables, HTTP storage endpoints, client LMScript standard REST/CLI interfaces, and exit codes.</p>
+<h2>CLI commands and flags</h2>
+<table>
+<thead>
+<tr>
+<th>Command or flag</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>azuresim --version</td>
+<td>none</td>
+<td>Print azuresim version string (for example azuresim 0.2.1) and exit 0.</td>
+</tr>
+<tr>
+<td>azuresim --help</td>
+<td>none</td>
+<td>Print usage instructions and exit 0.</td>
+</tr>
+<tr>
+<td>azuresim serve | start</td>
+<td>foreground</td>
+<td>Run the local Azure Blob and Queue emulator on 127.0.0.1.</td>
+</tr>
+<tr>
+<td>--port &lt;port></td>
+<td>4577</td>
+<td>Loopback TCP port for the HTTP listener.</td>
+</tr>
+<tr>
+<td>--data-dir &lt;path></td>
+<td>in-memory</td>
+<td>Directory to persist Blob and Queue state across restarts.</td>
+</tr>
+<tr>
+<td>--auth open | enforce</td>
+<td>open</td>
+<td>Select open mode or enforced SharedKey/Bearer and storage policy validation.</td>
+</tr>
+<tr>
+<td>--auth-config &lt;file></td>
+<td>unset</td>
+<td>Path to the JSON authentication and policy configuration file for enforce mode.</td>
+</tr>
+</tbody>
+</table>
+<h2>Environment variables</h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AZURESIM_AUTH</td>
+<td>open</td>
+<td>Set to enforce to enable SharedKey/Bearer and policy checks (overridden by --auth).</td>
+</tr>
+<tr>
+<td>AZURESIM_AUTH_CONFIG</td>
+<td>unset</td>
+<td>Path to the JSON auth configuration file (overridden by --auth-config).</td>
+</tr>
+<tr>
+<td>FLOCI_AZ_*</td>
+<td>loopback defaults</td>
+<td>Upstream Floci-AZ service settings (CLI flags take precedence).</td>
+</tr>
+</tbody>
+</table>
+<h2>HTTP service endpoints</h2>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>Path pattern on 127.0.0.1:4577</th>
+<th>Operations</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Blob containers</td>
+<td>/devstoreaccount1/&lt;container>?restype=container</td>
+<td>PUT (create), GET/HEAD (properties and comp=list), DELETE (delete container).</td>
+</tr>
+<tr>
+<td>Block blobs</td>
+<td>/devstoreaccount1/&lt;container>/&lt;blob></td>
+<td>PUT (upload block blob and metadata), GET (download), HEAD (properties), DELETE (remove).</td>
+</tr>
+<tr>
+<td>Queues</td>
+<td>/devstoreaccount1-queue/&lt;queue></td>
+<td>PUT (create queue), GET/HEAD (metadata), DELETE (delete queue).</td>
+</tr>
+<tr>
+<td>Queue messages</td>
+<td>/devstoreaccount1-queue/&lt;queue>/messages</td>
+<td>POST (send XML message), GET (receive or peekonly=true), DELETE /messages/&lt;id>?popreceipt=..., PUT /messages/&lt;id>?popreceipt=...&amp;visibilitytimeout=... (update visibility).</td>
+</tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces (client hosts)</h2>
+<table>
+<thead>
+<tr>
+<th>Interface or function</th>
+<th>Signature</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RestGet .. RestOptions, RestHandler</td>
+<td>fn h(x: RestExchange) -> void implements RestGet .. RestHandler</td>
+<td>HTTP route handler interfaces in lmazure client scripts bound via @"/path/:param".</td>
+</tr>
+<tr>
+<td>CliCommand, CliOption</td>
+<td>fn c(x: RestExchange) -> void implements CliCommand | CliOption</td>
+<td>CLI subcommand (@"cmd") and flag (@"--opt") interfaces in client scripts.</td>
+</tr>
+<tr>
+<td>rest_config, rest_route, rest_serve, rest_stop, rest_cli</td>
+<td>rest_config(string, string) -> void; rest_route(string, string, string) -> void; rest_serve() -> void; rest_stop() -> void; rest_cli(StrList) -> string</td>
+<td>Configure and invoke REST and CLI handlers driving azuresim storage workflows.</td>
+</tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Clean server exit or --version / --help completed.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Invalid command-line arguments or invalid auth configuration (including --auth-config supplied in open mode).</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Emulator startup failure.</td>
+</tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/azuresim">github.com/lmctl-ai/azuresim</a>.</p>
+</footer>
+</body>
+</html>

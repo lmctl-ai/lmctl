@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmlucene guide — lmlucene — lmctl.com tools</title>
+<meta name="description" content="Lucene 10.5.2 object lifecycle, SAM TokenTransform and FieldWeight callbacks, facet and KNN search, and standard lmcode_std_v3 REST and CLI interfaces in…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmlucene/">Overview</a></li>
+<li><a href="/tools/lmlucene/skill.html">Skill</a></li>
+<li><a href="/tools/lmlucene/guide.html">Guide</a></li>
+<li><a href="/tools/lmlucene/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmlucene guide</h1>
+<p>Lucene 10.5.2 object lifecycle, SAM TokenTransform and FieldWeight callbacks, facet and KNN search, and standard lmcode_std_v3 REST and CLI interfaces in lmlucene.</p>
+<h2>Overview</h2>
+<p>lmlucene embeds Apache Lucene 10.5.2 and the lmcode-java runtime into a single JVM or GraalVM native executable. LMScript programs construct and operate real Java Lucene directories, analyzers, index writers, near-real-time readers, and searchers inside type-checked _lmcode_ blocks.</p>
+<h2>Indexing, directories, and document fields</h2>
+<p>An indexing workflow starts by choosing a storage directory (memory_directory() for in-memory indexes or fs_directory(path) for persistent NIOFSDirectory storage) and an analyzer (standard_analyzer(), english_analyzer(), whitespace_analyzer(), keyword_analyzer(), or a custom rule_analyzer(name)).</p>
+<p>The Document builder supports multi-modal field indexing on each document:</p>
+<ul>
+<li>Full-text and exact terms: doc.text(field, value, stored) tokenizes through the active analyzer; doc.vector_text(field, value, stored) does the same and also stores term vectors with positions and offsets; doc.keyword(field, value, stored) indexes a single untokenized StringField; doc.stored(field, value) stores unindexed metadata.</li>
+<li>Numbers and sorting: doc.number(field, value, stored) indexes a LongPoint for long_range queries; doc.sort_number(field, value) and doc.sort_keyword(field, value) add doc values for IndexSearcher.sorted_search.</li>
+<li>Facets and vectors: doc.facet(dim, value) adds a SortedSetDocValuesFacetField built through facet_config().build(doc); doc.vector(field, floats) indexes a FloatList float vector for knn_query.</li>
+</ul>
+<h2>SAM callbacks: TokenTransform and FieldWeight</h2>
+<p>lmlucene exposes two SAM interfaces that hook directly into Java Lucene extension points using an isolated callback registry:</p>
+<pre><code>program = _lmcode_ cli="lmlucene";
+@analysis
+fn normalize(token: string) -> string implements TokenTransform {
+  if (token == "automobile") { return "car"; }
+  return token;
+}
+
+@similarity
+fn title_weight(stats: CollectionStats) -> float implements FieldWeight {
+  if (stats.field() == "title") { return 10.0; }
+  return 1.0;
+}
+
+let dir = memory_directory();
+let analyzer = rule_analyzer("normalize");
+let w = index_writer(dir, writer_config(analyzer));
+w.add(document().text("title", "automobile guide", true));
+let s = index_searcher(w.reader());
+s.bm25(1.2, 0.75).similarity_rule("title_weight");
+s.search(parse_query("title", "car", analyzer), 5).emit("hits");
+end _lmcode_</code></pre>
+<p>TokenTransform runs inside a custom TokenFilter chained after StandardAnalyzer, rewriting token terms while keeping token offsets and positions intact. FieldWeight runs inside Similarity.scorer, inspecting CollectionStats (field, doc_count, total_terms, doc_freq, boost) to return a nonnegative multiplier for the underlying BM25 scorer.</p>
+<h2>Search, facets, pagination, and explanations</h2>
+<p>IndexSearcher supports Boolean combinations (boolean_query().add(q, Occur.MUST).build()), numeric ranges (long_range), prefix and term queries, QueryParser strings (parse_query), score pagination (search_after), doc-value sorting (sorted_search), flat facet aggregation (facets and drill_down), filtered KNN search (knn_query), and scoring explanations (explain).</p>
+<h2>Standard REST and stateless CLI interfaces</h2>
+<p>Both the primary Host registry and the SAM callback registry include all 226 canonical lmcode_std_v3 signatures on current main, allowing RestGet..RestOptions, RestHandler, CliCommand, and CliOption handlers to build and query Lucene indexes via Program.callIsolated(). This describes current main (a source build); the latest published release at review time, v0.1.19, predates the std upgrade, so run lmlucene --lmcode-signatures to see whether an installed host ships the REST and CLI interfaces.</p>
+<pre><code>program = _lmcode_ cli="lmlucene";
+@"/search/:term"
+fn handle_search(x: RestExchange) -> void implements RestGet {
+  let dir = memory_directory();
+  let w = index_writer(dir, writer_config(standard_analyzer()));
+  w.add(document().text("body", "apache lucene search", true));
+  let hits = index_searcher(w.reader()).search(term_query("body", x.param("term")), 5);
+  x.json("{\"total\":" + str(hits.total()) + "}");
+}
+
+print(rest_cli(str_split("/search/lucene", " ")));
+end _lmcode_</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmlucene">github.com/lmctl-ai/lmlucene</a>.</p>
+</footer>
+</body>
+</html>

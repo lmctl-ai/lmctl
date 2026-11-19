@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-js guide — lmcode-js — lmctl.com tools</title>
+<meta name="description" content="This guide explains the @lmctl-ai/lmcode-js architecture, signature-string registration, BigInt and Buffer boundary options, RestController lifecycle, and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-js/">Overview</a></li>
+<li><a href="/tools/lmcode-js/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-js/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-js/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-js guide</h1>
+<p>This guide explains the @lmctl-ai/lmcode-js architecture, signature-string registration, BigInt and Buffer boundary options, RestController lifecycle, and conformance gates.</p>
+<h2>Overview</h2>
+<p>lmcode-js is an ES module package built entirely on Node.js built-in modules. Program.load consumes wire counts incrementally without preallocating untrusted arrays, checks the 32-byte SHA-256 schema digest, resolves imports against Registry, and verifies instruction boundaries, loop pairing, and reachable operand stack depths across the body and R49 entries.</p>
+<h2>Registry and virtual machine embedding</h2>
+<p>new Registry() starts empty while createRegistry() installs all 226 canonical lmcode_std_v3 signatures via registerStandard(registry). Host functions and methods register directly with their canonical signature string (such as 'fn now() -> string' or 'method Greeter.say(string) -> void'). Callbacks accept an options object supporting { ints: 'bigint' | 'number', rawStrings: boolean, dry: Function }.</p>
+<h2>REST and stateless CLI controller lifecycle</h2>
+<p>The 226-signature standard catalog includes the 20 REST/CLI functions and methods and 10 standard interfaces (RestGet..RestOptions, RestHandler, CliCommand, CliOption). Calling registerRest(registry, options) from @lmctl-ai/lmcode-js/rest binds those 20 signatures to a dedicated RestController. Programs declare routes via path-annotated entries (@"/users/:id" on RestGet, @"status" on CliCommand, @"--verbose" on CliOption) or rest_route(method, path, annotation) using either :param / :rest... or {param} / {rest...} syntax. Calling rest_config configures prefix or max_body_bytes, rest_cli(argv) dispatches stateless CLI commands via program.callIsolated() without disturbing active collection arenas, and await rest.run(program, context) pumps HTTP/1.1 requests over stdin/stdout.</p>
+<pre><code>import { readFileSync } from 'node:fs';
+import { Context, Program, createRegistry } from '@lmctl-ai/lmcode-js';
+import { registerRest } from '@lmctl-ai/lmcode-js/rest';
+
+const registry = createRegistry();
+const rest = registerRest(registry, { maxBodyBytes: 1 &lt;&lt; 20 });
+const bytecode = readFileSync(process.argv[2]);
+const schema = readFileSync(process.argv[3]);
+const program = Program.load(bytecode, schema, registry);
+await rest.run(program, new Context());</code></pre>
+<h2>Invocation result protocol and dry mode</h2>
+<p>Every host invocation reads the optional version-1 manifest from LMCODE_INVOCATION_FILE to determine whether dry mode is active and to allocate one ResultSink per submitted program slot. Inside an _lmcode_ chunk, assignments to $return, $return.field, or $return[key] invoke the 24 standard lmcode_return_* imports on the active slot. After all bodies, R49 rule entries, and application checks complete, WriteFrame emits a single terminal LMCODE_RETURN_BEGIN / LMCODE_RETURN_END envelope on stdout and returns exit code 0 on success, 2 on CLI usage error, 3 on load or runtime error, or 4 on application validation failure.</p>
+<h2>Conformance verification</h2>
+<p>Run npm run check to execute verify:pins, the unit tests including test/rest.test.mjs, the verifier mutation gates, the core, stdlib, return, invocation, and metadata conformance vectors, the REST/CLI conformance scenarios, and the sample suite.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-js">github.com/lmctl-ai/lmcode-js</a>.</p>
+</footer>
+</body>
+</html>

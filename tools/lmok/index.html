@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmok — lmctl.com tools</title>
+<meta name="description" content="lmok embeds tree-sitter 0.27.1 (12 languages), SQLite FTS5 code indexing, JSON and lmcode lint packs, SARIF output, and a REST server in one static CLI.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmok/">Overview</a></li>
+<li><a href="/tools/lmok/skill.html">Skill</a></li>
+<li><a href="/tools/lmok/guide.html">Guide</a></li>
+<li><a href="/tools/lmok/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmok</h1>
+<p>lmok embeds tree-sitter 0.27.1 (12 languages), SQLite FTS5 code indexing, JSON and lmcode lint packs, SARIF output, and a REST server in one static CLI.</p>
+<h2>Quick reference</h2>
+<pre><code>lmscript install github:lmctl-ai/lmok@latest
+lmok --version
+lmok --lmcode-schema --json
+lmok --lmcode-signatures
+lmok parse examples/data/sample.json
+lmok lint rules/c-tier1.json examples/data/sample.c</code></pre>
+<table>
+<thead>
+<tr><th>Item</th><th>Kind</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>parse / query [--pattern]</td><td>CLI verbs</td><td>Print concrete syntax trees or match S-expression and code-shaped patterns.</td></tr>
+<tr><td>lint / check / ci</td><td>CLI verbs</td><td>Run 18 JSON rule packs, compiled @NODE_KIND lmcode rules, or project CI gates.</td></tr>
+<tr><td>facts / index / symbols / refs / find</td><td>CLI verbs</td><td>Extract definitions/references and query the SQLite + FTS5 trigram code database.</td></tr>
+<tr><td>metrics / dup / outline</td><td>CLI verbs</td><td>Measure function counts and nesting, find duplicate tokens, or rank symbol outlines.</td></tr>
+<tr><td>serve / remote</td><td>CLI verbs</td><td>Serve all analysis commands over a caching local REST API and remote client.</td></tr>
+<tr><td>ts.parse* / query* / reparse* / report* and Rule</td><td>Host API</td><td>Incremental tree-sitter parsing, querying, findings sink, and @NODE_KIND SAM rules.</td></tr>
+</tbody>
+</table>
+<pre><code>p = _lmcode_ cli="lmok" install="github:lmctl-ai/lmok@latest";
+let tree = ts.parse("{\"name\": \"lmok\", \"tags\": [\"tree-sitter\", \"json\"]}");
+println(tree.sexp());
+println("has_error -> " + str(tree.has_error()));
+println("nodes -> " + str(tree.node_count()));
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok);</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmok/skill.html">Skill</a> for setup, baseline and SARIF workflows, safety rules, and verification.</li>
+<li><a href="/tools/lmok/guide.html">Guide</a> for 12-language grammars, @NODE_KIND rules, incremental reparsing, and SQLite indexing.</li>
+<li><a href="/tools/lmok/reference.html">Reference</a> for CLI verbs, Ts/Tree/Node methods, SAM interfaces, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmok">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmok">github.com/lmctl-ai/lmok</a>.</p>
+</footer>
+</body>
+</html>

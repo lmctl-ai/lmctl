@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmsearch reference — lmsearch — lmctl.com tools</title>
+<meta name="description" content="CLI subcommands, filter flags, domain types, SAM callback interfaces, standard REST and CLI interfaces, and exit codes for lmsearch.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmsearch/">Overview</a></li>
+<li><a href="/tools/lmsearch/skill.html">Skill</a></li>
+<li><a href="/tools/lmsearch/guide.html">Guide</a></li>
+<li><a href="/tools/lmsearch/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmsearch reference</h1>
+<p>CLI subcommands, filter flags, domain types, SAM callback interfaces, standard REST and CLI interfaces, and exit codes for lmsearch.</p>
+<h2>CLI subcommands and options</h2>
+<table>
+<thead>
+<tr><th>Subcommand or flag</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>lmsearch index &lt;PATHS...> --output FILE.faiss [OPTIONS]</td><td>Embed and index files or directories into a persistent FAISS index file.</td></tr>
+<tr><td>lmsearch search --index FILE.faiss --query TEXT [-k K] [OPTIONS]</td><td>Search a saved FAISS index with CLI metadata filters and optional --lmcode rules.</td></tr>
+<tr><td>lmsearch serve &lt;PATHS...> [--port P] [--timeout S] [--weights-only-cache]</td><td>Start the single-user lazy in-memory REST server with auto-shutdown on idle timeout.</td></tr>
+<tr><td>lmsearch client [--port P | --url URL] query|filter|requery|status|shutdown ...</td><td>Drive a running lmsearch serve instance from the command line.</td></tr>
+<tr><td>lmsearch run --program FILE.dslb [--dryrun] [--readonly]</td><td>Execute or dry-validate a compiled DSLB v6 program via the cli.schema.v1 contract.</td></tr>
+<tr><td>--ext / --path-prefix / --path-contains / --exclude-path / --contains / --field</td><td>Common file extension, path, substring, and key=value metadata filters.</td></tr>
+<tr><td>--min-score / --max-distance / --min-size / --max-size</td><td>Numeric score, distance, and file byte-size range filters.</td></tr>
+<tr><td>--version / --schema [--json] / --lmcode-schema [--json] / --lmcode-signatures</td><td>Inspect build version, CLI schema, embedded lmsearch.dsl.json schema, or the canonical signature list.</td></tr>
+</tbody>
+</table>
+<h2>Host functions, enums, and domain types (lmsearch.dsl.json)</h2>
+<table>
+<thead>
+<tr><th>Type, enum, or function</th><th>Key methods or signature</th></tr>
+</thead>
+<tbody>
+<tr><td>enum Metric / enum Pooling</td><td>Metric: L2, IP, COSINE; Pooling: MEAN, CLS, MAX, NONE.</td></tr>
+<tr><td>fn onnx_embedder / onnx_mlp_embedder / onnx_pretrained / onnx_load</td><td>Construct or load an OnnxModel embedding graph.</td></tr>
+<tr><td>OnnxModel</td><td>opset(), ir_version(), input_dim(), output_dim(), node_count(), node_op(int), pooling(Pooling), normalize(bool), transform_rule(string), check(), summary(), save(path), embed_text(s), embed_tokens(IntList), embed_vector(FloatList), emit(label), model_id(), cache_path(), cached().</td></tr>
+<tr><td>fn autotuner(nb_vectors: int, dim: int) -> AutoTuner</td><td>AutoTuner: metric(Metric), max_memory(string), max_query_ms(float), min_neighbors(int), direct_map(bool), memory_mappable(bool), force_pq(bool), policy_rule(string), plan() -> AutoPlan, candidate_keys() -> StrList.</td></tr>
+<tr><td>AutoPlan / IndexMetrics</td><td>AutoPlan: index_key(), index_type(), metric(), nb_vectors(), dim(), nb_clusters(), train_size(), estimated_bytes(), training_memory_bytes(), max_memory_bytes(), compression_ratio(), recommended_params(), recommended_nprobe(), recommended_ef_search(), description(), emit(label); IndexMetrics: recall_1_at_k(), recall_k_at_k(), reconstruction_error(), size_bytes(), compression_ratio(), ms_per_query(), param_string(), emit(label).</td></tr>
+<tr><td>fn faiss_index / auto_index / flat_index / hnsw_index / ivf_flat_index / ivf_pq_index / load_index</td><td>Construct or load a FaissIndex instance.</td></tr>
+<tr><td>FaissIndex</td><td>dim(), ntotal(), is_trained(), index_key(), metric(), embedder(OnnxModel), set_params(s), nprobe(int), ef_search(int), ef_construction(int), filter_rule(s), rerank_rule(s), file_filter_rule(s), ignore_rule(s), respect_gitignore(bool), include_hidden(bool), filter_ext(s), filter_path_prefix(s), filter_path_contains(s), filter_exclude_path(s), filter_text_contains(s), filter_field(k,v), filter_size_range(min,max), filter_min_score(f), filter_max_distance(f), clear_rules(), train(DocumentList), add(id, vec), add_doc(Document), add_text(id, s), add_file(path), add_dir(path), add_paths(StrList), add_lazy_path(path), add_lazy_paths(StrList), lazy_query(q, k), refine_view(k), search(vec, k), search_text(q, k), range_search(vec, radius), reconstruct(id), autotune(gt, recall), evaluate(gt), save(path).</td></tr>
+<tr><td>Document / SearchResults / SearchHit</td><td>Document: id(), text(), set_text(s), field(k,v), get(k), has(k), number(k,f), get_number(k), vector(FloatList), values(), path(), filename(), ext(), size(), is_dir(), in_git(); SearchResults: len(), at(int), query_text(), params(), ids(), distances(), scores(), emit(label); SearchHit: rank(), id(), distance(), score(), text(), document(), path().</td></tr>
+<tr><td>RestClient (fn rest_client(url: string))</td><td>url(), status(), add_path(p), add_paths(StrList), query(q, k), requery(k), filter_ext(s), filter_path_prefix(s), filter_path_contains(s), filter_exclude_path(s), filter_text_contains(s), filter_field(k,v), filter_min_score(f), filter_max_distance(f), filter_size_range(min,max), filter_dsl(path), clear_filter(), from_cache(), newly_embedded(), cached_broad_hits(), shutdown().</td></tr>
+<tr><td>Vector math &amp; Git helpers</td><td>l2_distance(a,b), inner_product(a,b), cosine_similarity(a,b), l2_normalize(v), synthetic_vector(dim, cluster, seed, noise), git_is_repo(p), git_is_worktree(p), git_worktree_branch(p), git_is_merged(p, target), git_is_clean(p), dir_size_mb(p).</td></tr>
+</tbody>
+</table>
+<h2>SAM callback interfaces and standard REST/CLI interfaces</h2>
+<table>
+<thead>
+<tr><th>Interface</th><th>Annotation</th><th>Signature</th><th>Role</th></tr>
+</thead>
+<tbody>
+<tr><td>EmbeddingTransform</td><td>@embed</td><td>(vec: FloatList, dim: int) -> FloatList</td><td>Post-process ONNX embeddings before indexing or search.</td></tr>
+<tr><td>IndexPolicy</td><td>@policy</td><td>(plan: AutoPlan) -> string</td><td>Select or override the AutoFaiss index factory key.</td></tr>
+<tr><td>AuditRule</td><td>@audit</td><td>(metrics: IndexMetrics) -> void</td><td>Validate recall, latency, or compression metrics after evaluation.</td></tr>
+<tr><td>FileFilter</td><td>@file_filter</td><td>(doc: Document) -> bool</td><td>Gate file ingestion and enrich document metadata before embedding.</td></tr>
+<tr><td>IgnoreRule</td><td>@ignore</td><td>(doc: Document) -> bool</td><td>Prune files or directory subtrees during traversal.</td></tr>
+<tr><td>SearchConfig</td><td>@config</td><td>(index: FaissIndex) -> void</td><td>Configure index parameters, filters, and callbacks programmatically.</td></tr>
+<tr><td>VectorFilter</td><td>@filter</td><td>(id: int, doc: Document) -> bool</td><td>Programmable faiss::IDSelector predicate evaluated during FAISS search.</td></tr>
+<tr><td>Reranker</td><td>@rerank</td><td>(hit: SearchHit, query_text: string) -> float</td><td>Rescore candidate FAISS hits using document fields and query text.</td></tr>
+<tr><td>RestGet..RestOptions, RestHandler, CliCommand, CliOption</td><td>@"/path/:param" / @"cmd" / @"--opt"</td><td>(exchange: RestExchange) -> void</td><td>Standard lmcode_std_v3 REST and stateless CLI interfaces.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr><th>Code</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>Indexing, search, REST server/client command, or bytecode execution succeeded.</td></tr>
+<tr><td>3</td><td>CLI usage error (CLI_USAGE envelope), bytecode load error, schema mismatch, ONNX model check failure, failed assert_true/AuditRule, or --readonly policy refusal.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmsearch">github.com/lmctl-ai/lmsearch</a>.</p>
+</footer>
+</body>
+</html>

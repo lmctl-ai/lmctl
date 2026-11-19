@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmprobe guide — lmprobe — lmctl.com tools</title>
+<meta name="description" content="AST-aware sensor architecture, preview-first editing, GraphQL composition, 63-operation lmcode host catalog, and standard lmcode_std_v3 interfaces in lmprobe.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmprobe/">Overview</a></li>
+<li><a href="/tools/lmprobe/skill.html">Skill</a></li>
+<li><a href="/tools/lmprobe/guide.html">Guide</a></li>
+<li><a href="/tools/lmprobe/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmprobe guide</h1>
+<p>AST-aware sensor architecture, preview-first editing, GraphQL composition, 63-operation lmcode host catalog, and standard lmcode_std_v3 interfaces in lmprobe.</p>
+<h2>Overview</h2>
+<p>lmprobe is a structural code intelligence and refactoring tool built in Rust on top of a fork of ast-grep. It exposes its 63 repository sensors and mutators through three unified surfaces: direct CLI subcommands (--json), a composable GraphQL query engine (--infile), and a native lmcode bytecode host (--lmcode).</p>
+<h2>Structural code navigation and impact analysis</h2>
+<p>Unlike line-oriented grep, lmprobe parses source files into syntax trees to resolve symbol definitions (def), references (ref), symbol search (search), callers (callers), callees (callees), subtype/supertype hierarchies, method overrides, imports, exports, and decorators/annotations (decorations). The impact and context commands assemble transitive call-graph slices and token-budgeted context bundles around target symbols or diffs.</p>
+<h2>Git history, specialized scanners, and read-only AWS queries</h2>
+<p>Beyond live working-tree ASTs, lmprobe integrates three domain sensor layers:</p>
+<ul>
+<li>Git and history sensors: git (status, diff, log, show, blame, branch, remote, rev-parse, ls-files) and history (blame, churn, co-change, commit, diff, evolution, introduced, todos) return machine-readable JSON records without fragile shell parsing.</li>
+<li>Security and architecture scanners: secrets, secrets-recipes, secrets-sources, crypto-sites, async-leaks, guard-sites, resource-sites, http-client-calls, config-keys, route-anchors, and openapi-facts locate high-risk patterns and service boundaries.</li>
+<li>Read-only AWS queries: aws catalog and aws query wrap the installed AWS CLI under a strict read-only operation allowlist and emit results in the standard lmprobe.result.v1 envelope.</li>
+</ul>
+<h2>Preview-first text and AST mutations</h2>
+<p>The edit (line, word, regex capture, prefix/suffix, and JSON script text edits), fix (ast-grep structural pattern rewrites), commands always run in dry-run preview mode unless --apply is supplied, and delete previews unless --force is supplied. When --apply is given, lmprobe verifies that target files reside in a clean Git working tree (unless --force is also passed) and records recovery backups prior to modifying files.</p>
+<h2>The 63-operation lmcode host and standard REST/CLI interfaces</h2>
+<p>Inside an _lmcode_ block, lmprobe registers 63 probe_&lt;operation>(string) -> string functions alongside all 226 canonical lmcode_std_v3 signatures (RestGet..RestOptions, RestHandler, CliCommand, CliOption, :param and {param} route templates, rest_config, rest_route, rest_serve, rest_stop, and rest_cli). Handlers can compose multiple repository sensors and return consolidated JSON reports.</p>
+<pre><code>program = _lmcode_ cli="lmprobe";
+@"--repo"
+fn opt_repo(x: RestExchange) -> void implements CliOption {
+  x.set("repo", x.query("repo"));
+}
+
+@"status"
+fn cmd_status(x: RestExchange) -> void implements CliCommand {
+  let raw = probe_git_status("{\"repo\":\"" + x.get("repo") + "\"}");
+  x.json(raw);
+}
+
+@"/symbols/:name"
+fn get_def(x: RestExchange) -> void implements RestGet {
+  let raw = probe_def_symbol("{\"name\":\"" + x.param("name") + "\"}");
+  x.json(raw);
+}
+
+rest_config("session", "global");
+print(rest_cli(str_split("--repo=. status", " ")));
+end _lmcode_</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmprobe">github.com/lmctl-ai/lmprobe</a>.</p>
+</footer>
+</body>
+</html>

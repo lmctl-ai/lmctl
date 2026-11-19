@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>azuresim guide — azuresim — lmctl.com tools</title>
+<meta name="description" content="azuresim compiles Floci-AZ 0.15.0 together with a semantics and authentication overlay into a single native executable listening on http://127.0.0.1:4577.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/azuresim/">Overview</a></li>
+<li><a href="/tools/azuresim/skill.html">Skill</a></li>
+<li><a href="/tools/azuresim/guide.html">Guide</a></li>
+<li><a href="/tools/azuresim/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>azuresim guide</h1>
+<h2>Overview</h2>
+<p>azuresim compiles Floci-AZ 0.15.0 together with a semantics and authentication overlay into a single native executable listening on http://127.0.0.1:4577. It emulates Azure Blob Storage and Azure Queue Storage in process without Docker containers, a Java runtime, or external network access.</p>
+<h2>Architecture and real Azure semantics overlay</h2>
+<p>The build pipeline (scripts/build.py) verifies the pinned upstream source tarball against upstream.lock.json and applies SHA-256-verified handler overlays (overlay.lock.json) so the emulator matches real Azure Storage behavior expected by official Azure SDKs and lmcloud conformance suites:</p>
+<ul>
+<li>Existence and deletion semantics: deleting a non-existent container or queue returns HTTP 404 (ContainerNotFound / QueueNotFound) rather than silently succeeding; blob operations on missing containers fail with 404.</li>
+<li>Queue creation idempotency: creating a queue returns 201 when new, 204 when it already exists with identical metadata, and 409 QueueAlreadyExists when the metadata differs.</li>
+<li>Empty-body visibility updates: queue_nack visibility timeout updates (PUT /devstoreaccount1-queue/&lt;queue>/messages/&lt;id>?popreceipt=...&amp;visibilitytimeout=...) succeed with an empty request body as sent by the Azure Go SDK.</li>
+<li>Sidecar suppression: Event Hubs startup and Service Bus boot sidecars are disabled by default so the binary binds only 127.0.0.1:4577 and never requires a Docker socket.</li>
+</ul>
+<h2>Open mode versus SharedKey and Bearer enforcement</h2>
+<p>By default, azuresim runs in open mode (--auth open), accepting standard development requests against devstoreaccount1. Passing --auth enforce --auth-config auth.json (or setting AZURESIM_AUTH=enforce and AZURESIM_AUTH_CONFIG=auth.json) enables cryptographic and policy enforcement:</p>
+<ul>
+<li>SharedKey verification: validates Authorization: SharedKey &lt;account>:&lt;signature> headers using HMAC-SHA256 over the canonicalized Azure headers and resource string, requiring x-ms-date / Date within 15 minutes of the server clock and checking account keys configured in auth.json.</li>
+<li>Bearer token verification: matches Authorization: Bearer &lt;token> headers exactly against configured opaque dummy tokens mapped to local principal names; no JWT validation is performed.</li>
+<li>Allow and deny storage policies: evaluates action and resource wildcards across containers, blobs, and queues, enforcing default-deny when policies are attached and giving explicit Deny precedence over Allow.</li>
+</ul>
+<h2>Connecting lmazure and Azure SDK clients</h2>
+<p>Point lmazure at azuresim by calling cloud.set_endpoint("all", "http://127.0.0.1:4577") or exporting LMAZURE_ENDPOINT=http://127.0.0.1:4577. lmazure defaults to LMAZURE_SIM_ACCOUNT=devstoreaccount1 and the standard development SharedKey:</p>
+<pre><code>DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:4577/devstoreaccount1;QueueEndpoint=http://127.0.0.1:4577/devstoreaccount1-queue;</code></pre>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<p>LMScript programs running on lmazure against azuresim can use the lmcode_std_v3 REST and CLI interfaces when the installed lmazure ships the 226-signature catalog (check lmazure --lmcode-signatures); these are RestGet..RestOptions, RestHandler, CliCommand, CliOption, rest_config, rest_route, rest_serve, rest_stop, rest_cli:</p>
+<pre><code>p = _lmcode_ cli="lmazure" install="github:lmctl-ai/lmazure@latest";
+  @"/queues/:queue/dequeue"
+  fn pop_msg(x: RestExchange) -> void implements RestPost {
+    let list = cloud.queue_receive(x.param("queue"), 1, 30, 0);
+    if (list.len() == 0) {
+      x.status(204);
+      return;
+    }
+    let m = list.at(0);
+    cloud.queue_ack(x.param("queue"), m.receipt());
+    x.send(m.body());
+  }
+
+  @"--port"
+  fn opt_port(x: RestExchange) -> void implements CliOption {
+    cloud.set_endpoint("all", "http://127.0.0.1:" + x.query("port"));
+  }
+
+  @"enqueue"
+  fn cmd_enq(x: RestExchange) -> void implements CliCommand {
+    cloud.queue_create("tasks");
+    cloud.queue_send("tasks", x.body());
+    x.send("enqueued");
+  }
+
+  rest_config("prefix", "/v1");
+end _lmcode_</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/azuresim">github.com/lmctl-ai/azuresim</a>.</p>
+</footer>
+</body>
+</html>

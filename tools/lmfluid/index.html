@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmfluid — lmctl.com tools</title>
+<meta name="description" content="lmfluid is a native lmcode host that solves Poisson, heat and linear-elasticity problems with serial MFEM finite elements and 2D low-Mach flow with a D2Q9…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmfluid/">Overview</a></li>
+<li><a href="/tools/lmfluid/skill.html">Skill</a></li>
+<li><a href="/tools/lmfluid/guide.html">Guide</a></li>
+<li><a href="/tools/lmfluid/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmfluid</h1>
+<p>lmfluid is a native lmcode host that solves Poisson, heat and linear-elasticity problems with serial MFEM finite elements and 2D low-Mach flow with a D2Q9 lattice-Boltzmann solver. An lmscript program writes the model in an _lmcode_ block, run_lmcode runs it in the lmfluid binary, and results come back as CSV files and a returned value.</p>
+<h2 id="install">Install and run</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl
+mkdir try-lmfluid &amp;&amp; cd try-lmfluid
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmfluid/main/examples/quickstart.lms
+
+# or write your own script; lmscript downloads the released host named by install=
+lmscript poisson.lms
+lmscript --check poisson.lms</code></pre>
+<p>The latest release is lmfluid 0.2.2 for Linux x64 and arm64 (dynamic glibc 2.35 or newer), macOS arm64 and x64, and Windows x64. The first real run downloads the binary and caches its schema; after that, lmscript --check compiles blocks without running them. Installing @latest asks the GitHub API for the release, so set GITHUB_TOKEN before running many scripts.</p>
+<h2 id="example">Minimal example</h2>
+<pre><code>prog = _lmcode_ cli="lmfluid" install="github:lmctl-ai/lmfluid@latest";
+let field = fluid.poisson(fluid.rect(12, 12, 1.0, 1.0), 2).source("-4").dirichlet(0, "x*x+y*y").solve();
+fluid.assert_close(field.value(0.5, 0.5), 0.5, 0.000001);
+fluid.assert_close(field.l2_error("x*x+y*y"), 0.0, 0.000001);
+field.sample(41, 41).save_csv("poisson.csv");
+lmcode_return_put("center", field.value(0.5, 0.5));
+lmcode_return_put("dofs", field.dofs());
+end _lmcode_
+r = run_lmcode(prog);
+println(json_stringify(r));
+assert(r.ok);</code></pre>
+<pre><kbd>lmscript poisson.lms</kbd>
+<samp>{"ok":true,"result":{"center":0.4999999999940105,"dofs":625}}</samp></pre>
+<h2 id="cli">Host CLI and protocol</h2>
+<table>
+<thead>
+<tr><th>Invocation</th><th>Effect</th><th>Exit</th></tr>
+</thead>
+<tbody>
+<tr><td>lmfluid --version</td><td>Print the name and version, for example lmfluid 0.2.2</td><td>0</td></tr>
+<tr><td>lmfluid --notices</td><td>Print the embedded third-party notices (MFEM, toolchain runtimes)</td><td>0</td></tr>
+<tr><td>lmfluid --lmcode-schema --json</td><td>Print the exact embedded schema JSON (schema version 2) that lmscript compiles against</td><td>0</td></tr>
+<tr><td>lmfluid --lmcode-schema</td><td>Print the signature list, one per line (same as --lmcode-signatures)</td><td>0</td></tr>
+<tr><td>lmfluid --lmcode-signatures</td><td>Print all registered signatures: 60 host lines plus the 206 standard ones</td><td>0</td></tr>
+<tr><td>lmfluid --lmcode FILE.dslb [FILE ...]</td><td>Load every bytecode file, then run them in order; one result frame on stdout</td><td>0, 3 or 4</td></tr>
+<tr><td>lmfluid --dry-run --lmcode FILE.dslb [FILE ...]</td><td>Load and verify bytecode without solving or writing files</td><td>0 or 3</td></tr>
+<tr><td>Anything else, an empty or missing file list, or an invalid LMFLUID_MAX_MEMORY_MB</td><td>Usage text on stderr and a CLI_USAGE failure frame</td><td>2</td></tr>
+</tbody>
+</table>
+<p>Scripts normally never call these directly: run_lmcode compiles the block, invokes the host and returns a map with ok and result, or ok false with phase, code, message, line and column. The environment variable LMFLUID_MAX_MEMORY_MB sets the total memory budget in MiB (default 4096).</p>
+<h2 id="api">Host API quick reference</h2>
+<p>The schema has one context object, fluid of type Fluid, and six types. Expressions are strings in x, y, z and t.</p>
+<table>
+<thead>
+<tr><th>Call</th><th>Returns</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>fluid.rect(nx, ny, lx, ly), fluid.box(nx, ny, nz, lx, ly, lz)</td><td>Mesh</td><td>Cartesian quad or hex mesh</td></tr>
+<tr><td>fluid.load_mesh(path), mesh.save(path)</td><td>Mesh, void</td><td>MFEM mesh v1.0/v1.2 text file input and output</td></tr>
+<tr><td>mesh.dimension(), mesh.elements()</td><td>int</td><td>Mesh metadata</td></tr>
+<tr><td>fluid.poisson(mesh, order), fluid.heat(mesh, order), fluid.elasticity(mesh, order)</td><td>Problem</td><td>Finite-element problem, order 1 to 3</td></tr>
+<tr><td>problem.diffusion(expr), .source(expr), .initial(expr)</td><td>Problem</td><td>Scalar coefficient, source and heat initial condition</td></tr>
+<tr><td>problem.dirichlet(attribute, expr)</td><td>Problem</td><td>Scalar essential boundary condition; attribute 0 selects all boundaries</td></tr>
+<tr><td>problem.lame(lambda, mu), .force(fx, fy, fz), .displacement(attribute, ux, uy, uz)</td><td>Problem</td><td>Elastic material, body force and vector essential boundary condition</td></tr>
+<tr><td>problem.tol(relative_tolerance, max_iterations)</td><td>Problem</td><td>Iterative linear solver controls</td></tr>
+<tr><td>problem.solve(), problem.evolve(end_time, dt)</td><td>Field</td><td>Steady Poisson or elasticity field; heat field at end time</td></tr>
+<tr><td>field.value(x, y), field.value(x, y, z, component)</td><td>float</td><td>Value at a mesh point</td></tr>
+<tr><td>field.gradient(x, y, direction), field.gradient(x, y, z, component, direction)</td><td>float</td><td>Derivative along x (0), y (1) or z (2)</td></tr>
+<tr><td>field.l2_error(exact), field.l2_error_vector(ex, ey, ez)</td><td>float</td><td>Integrated L2 error against an exact expression</td></tr>
+<tr><td>field.sample(nx, ny), field.sample(nx, ny, nz)</td><td>Matrix</td><td>Sample the bounding-box grid</td></tr>
+<tr><td>field.dofs(), .components(), .time()</td><td>int, int, float</td><td>Solution metadata</td></tr>
+<tr><td>fluid.channel(nx, ny, nu, g), fluid.cavity(nx, ny, nu, lid_speed), fluid.periodic(nx, ny, nu)</td><td>LBM</td><td>D2Q9 flow simulation in lattice units</td></tr>
+<tr><td>flow.obstacle(expr), flow.init(ux_expr, uy_expr), flow.run(steps)</td><td>LBM</td><td>Mark solid cells, set velocities, advance lattice steps</td></tr>
+<tr><td>flow.velocity(ix, iy, component), .density(ix, iy), .is_solid(ix, iy)</td><td>float, float, bool</td><td>Cell values, zero-based indices</td></tr>
+<tr><td>flow.solid_force(component), .solid_cells()</td><td>float, int</td><td>Momentum-exchange force on obstacles averaged over the last run; solid cell count</td></tr>
+<tr><td>flow.mass(), .max_speed(), .mach(), .tau(), .kinetic_energy(), .steps()</td><td>float (steps: int)</td><td>Diagnostics over fluid cells</td></tr>
+<tr><td>flow.sample(), flow.vorticity()</td><td>Matrix</td><td>Lattice data x, y, rho, ux, uy, speed; vorticity x, y, omega, solid</td></tr>
+<tr><td>fluid.matrix(rows, cols), matrix.set(row, col, value)</td><td>Matrix</td><td>Zero matrix for recording results</td></tr>
+<tr><td>matrix.rows(), .cols(), .get(row, col), .save_csv(path)</td><td>int, int, float, void</td><td>Matrix access and deterministic headerless CSV</td></tr>
+<tr><td>fluid.eval(expr), fluid.assert_close(a, b, absolute_tolerance), fluid.assert_true(condition), fluid.print(text)</td><td>float, void</td><td>Expression helper, assertions, stderr message</td></tr>
+</tbody>
+</table>
+<p>lmfluid 0.2.2 also ships the standard library lmcode_std_v3 with 206 signatures (strings, math, files, collections, Json, result sink), for example float_list and lmcode_return_put. The current lmcode_std_v3 catalog has 226 signatures including the standard REST and CLI interfaces; lmfluid picks those up when it next syncs its SDK and releases.</p>
+<h2 id="pages">More documentation</h2>
+<ul>
+<li><a href="/tools/lmfluid/skill.html">Skill</a>: install, commands, safety rules, worked examples, exit codes and verification for agents</li>
+<li><a href="/tools/lmfluid/guide.html">Guide</a>: concepts, architecture, domain model, boundary numbering, numerics and limits</li>
+<li><a href="/tools/lmfluid/reference.html">Reference</a>: every type, method, CLI flag, exit code, limit and the standard library tables</li>
+<li><a href="https://github.com/lmctl-ai/lmfluid">GitHub repository</a>: source, 17 example scripts and the picture gallery</li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmfluid">github.com/lmctl-ai/lmfluid</a>.</p>
+</footer>
+</body>
+</html>

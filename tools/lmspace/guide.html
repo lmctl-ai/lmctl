@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmspace guide — lmspace — lmctl.com tools</title>
+<meta name="description" content="Architecture, numerical integration methods, coordinate conventions, SPICE kernel workflows, and the standard catalog for the lmspace host.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmspace/">Overview</a></li>
+<li><a href="/tools/lmspace/skill.html">Skill</a></li>
+<li><a href="/tools/lmspace/guide.html">Guide</a></li>
+<li><a href="/tools/lmspace/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmspace guide</h1>
+<p>Architecture, numerical integration methods, coordinate conventions, SPICE kernel workflows, and the standard catalog for the lmspace host.</p>
+<h2>Overview</h2>
+<p>lmspace embeds a typed bytecode VM (lmcode-cpp), original MIT-licensed orbital mechanics solvers, and static NASA NAIF CSPICE N0067 routines in a single native executable. Every invocation loads and verifies all bytecode slots against the embedded schema before executing the first instruction, shares a single Space context across blocks, and writes exactly one JSON terminal result frame to standard output.</p>
+<h2>Units and coordinate conventions</h2>
+<p>Pure numerical mechanics routines accept any self-consistent unit system as long as lengths, times, velocities, and gravitational parameters agree. When working in kilometers and seconds, positions are in km, velocities in km/s, durations in seconds, and gravitational parameters mu = G * mass are in km^3/s^2 (for example, Earth mu is approximately 398600.4418 km^3/s^2). All angular quantities—inclination i, right ascension of the ascending node raan, argument of periapsis argp, true anomaly nu, and mean anomaly M—are expressed in radians.</p>
+<p>For N-body systems, energy and angular momentum invariants weight each body by its gravitational parameter mu, which corresponds to setting the gravitational constant G = 1. Relative conservation across a trajectory is exact under this convention; converting energy or angular momentum to SI mass-weighted units requires dividing by G. SPICE operations always use kilometers, kilometers per second, and ephemeris time (ET) seconds past the J2000 epoch.</p>
+<h2>Two-body mechanics and orbital transfers</h2>
+<p>Two-body routines convert between Cartesian states (State with position and velocity Vector components) and classical Keplerian orbital elements (Elements with semi-major axis a, eccentricity e, inclination i, raan, argp, and true anomaly nu). Exact two-body propagation via Body.propagate(central_mu, dt) or State.propagate(central_mu, dt) advances elliptic and hyperbolic orbits without numerical step drift; parabolic element conversions (e = 1) are rejected.</p>
+<p>Transfer solvers return Matrix objects for direct inspection or CSV export. Calling hohmann(r1, r2, mu) returns a 1x3 matrix containing the signed departure delta-v, signed arrival delta-v, and half-period transfer duration between coplanar circular orbits of radii r1 and r2. Calling lambert(r1_vec, r2_vec, dt, mu, prograde) solves the zero-revolution universal-variable boundary value problem between two position vectors and returns a 2x3 matrix with the departure velocity vector in row 0 and arrival velocity vector in row 1. Collinear endpoints (0 or 180 degree transfer angles) and non-positive flight times are rejected.</p>
+<pre><code>p = _lmcode_ cli="lmspace" install="github:lmctl-ai/lmspace@latest";
+let mu = 398600.4418;
+let r1 = vector(7000.0, 0.0, 0.0);
+let r2 = vector(0.0, 7000.0, 0.0);
+let dt = period(7000.0, mu) / 4.0;
+let velocities = lambert(r1, r2, dt, mu, true);
+space_assert_close(velocities.get(0, 1), 7.546053290108, 0.00000001);
+space_assert_close(velocities.get(1, 0), -7.546053290108, 0.00000001);
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, "lambert check failed");</code></pre>
+<h2>N-body integration and energy drift</h2>
+<p>Bodies created with space.body(name, mu, x, y, z, vx, vy, vz) are registered in the global Space context and can also be added to isolated System instances created via space.system(). Adding a body to a system copies its initial state, and neither space.propagate(...) nor system.propagate(...) mutates the stored initial states of the bodies.</p>
+<p>Both propagate(duration, points, step, method, tol) methods return a Matrix with points rows spanning t = 0 to t = duration in equal increments, and 1 + 6*N columns ordered as t, x0, y0, z0, vx0, vy0, vz0, x1, y1, z1, vx1, vy1, vz1, and so on. Two original integration schemes are available:</p>
+<ul>
+<li>symplectic: second-order kick-drift-kick leapfrog integration using step as the maximum internal sub-step (shortened automatically to land on each output grid point). Preferred for long-term Hamiltonian conservation when orbits avoid close encounters.</li>
+<li>rk45: adaptive Dormand-Prince 5(4) integration using step as the initial trial step and tol as the combined absolute-plus-relative local error tolerance. Preferred for eccentric orbits, three-body choreographies, and close encounters.</li>
+</ul>
+<p>Every propagation tracks the maximum relative change in system energy from t = 0 across all output rows and stores it in space.energy_drift() or system.energy_drift(). When relative drift exceeds 1e-3, lmspace writes a diagnostic warning to stderr recommending a smaller step or rk45.</p>
+<h2>SPICE kernels, frames, and ephemerides</h2>
+<p>Built-in inertial and body-fixed coordinate rotations that require no external data can be queried immediately with space.frame(from_frame, to_frame, et), which returns a 3x3 rotation Matrix. Ephemeris state lookups and UTC time conversions require user-supplied NAIF SPICE kernels loaded explicitly with space.load_kernel(path).</p>
+<p>To prevent accidental loads of HTML error pages or corrupted files, space.load_kernel(path) verifies that the file is either a binary DAF/DAS kernel or a text kernel containing a \begindata marker. Once kernels are loaded, space.time(text) converts a calendar or UTC timestamp string to ephemeris seconds past J2000 (requiring a leap-second kernel such as naif0012.tls for UTC), and space.ephemeris(target, observer, frame, et) returns a 1x6 geometric state Matrix (x, y, z in km and vx, vy, vz in km/s with aberration correction NONE). Call space.clear_kernels() to unload all kernels in the current process.</p>
+<h2>Visualization and data handoff</h2>
+<p>Because stdout is reserved for the SDK invocation result frame, scripts hand off numerical tables to plotting and rendering hosts (such as lmplot, lmdraw, or lmblender) by writing CSV matrices with Matrix.save_csv(path) or formatted data tables with file_write(path, text) inside the _lmcode_ block, then reading those files in the outer lmscript orchestrator after require(r.ok).</p>
+<h2>Memory budget and resource limits</h2>
+<p>lmspace enforces a process-wide memory budget of 4096 MiB by default across propagation matrices, bodies, systems, and VM arenas. Before allocating an integration grid of points * (1 + 6 * bodies) doubles, the host checks that points is in [2, 1000000], bodies is at most 10,000, total cells are at most 100,000,000, and the allocation fits within the active memory budget. Exceeding the budget raises a deterministic run error (exit code 3) instead of exhausting system RAM. Set the environment variable LMSPACE_MAX_MEMORY_MB to raise or lower the ceiling in MiB.</p>
+<h2>Standard lmcode_std_v3 catalog</h2>
+<p>When compiled with lmscript 0.2.420 or newer, lmspace scripts have access to the shared lmcode_std_v3 standard declarations alongside the orbital domain types: file, string, math, JSON, and collection helpers. The catalog pinned in this repository (cpp/std/lmcode-std.schema.json) has 206 canonical signatures and does not include the REST and CLI interfaces (RestGet, CliCommand, rest_serve and related functions) found in newer catalogs, so do not use them in lmspace blocks.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmspace">github.com/lmctl-ai/lmspace</a>.</p>
+</footer>
+</body>
+</html>

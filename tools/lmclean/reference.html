@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmclean reference — lmclean — lmctl.com tools</title>
+<meta name="description" content="CLI options, --serve endpoints, File methods, SAM interfaces, standard REST/CLI interfaces, and exit codes for lmclean.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmclean/">Overview</a></li>
+<li><a href="/tools/lmclean/skill.html">Skill</a></li>
+<li><a href="/tools/lmclean/guide.html">Guide</a></li>
+<li><a href="/tools/lmclean/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmclean reference</h1>
+<p>CLI options, --serve endpoints, File methods, SAM interfaces, standard REST/CLI interfaces, and exit codes for lmclean.</p>
+<h2>CLI flags and server options</h2>
+<table>
+<thead>
+<tr><th>Flag</th><th>Mode</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>--version</td><td>Introspection</td><td>Print the lmclean build version.</td></tr>
+<tr><td>--lmcode-schema [--json]</td><td>Introspection</td><td>Print the embedded lmclean_v1 schema summary or exact JSON bytes.</td></tr>
+<tr><td>--lmcode-signatures</td><td>Introspection</td><td>Print canonical registry signatures.</td></tr>
+<tr><td>--lmcode FILE.dslb</td><td>CLI / Server</td><td>Load compiled bytecode program (repeatable in --serve mode for program slots).</td></tr>
+<tr><td>--exec</td><td>CLI</td><td>Perform actual deletion or trash moves (default is dry-run).</td></tr>
+<tr><td>--trash DIR</td><td>CLI</td><td>With --exec, move matched entries into DIR and append to DIR/manifest.jsonl.</td></tr>
+<tr><td>--restore</td><td>CLI</td><td>With --trash DIR, replay manifest.jsonl in reverse order to restore entries.</td></tr>
+<tr><td>--hidden</td><td>CLI</td><td>Include dot-prefixed hidden files and directories in the walk.</td></tr>
+<tr><td>--max-depth N</td><td>CLI</td><td>Limit recursion depth relative to each root (direct children are depth 0).</td></tr>
+<tr><td>--param NAME=VALUE</td><td>CLI</td><td>Pass a parameter read by param_int or param_str (repeatable).</td></tr>
+<tr><td>--serve</td><td>Server</td><td>Start the single-connection HTTP/1.1 JSON REST server.</td></tr>
+<tr><td>--listen ADDR:PORT</td><td>Server</td><td>Bind address (default 127.0.0.1:0; non-loopback requires --token).</td></tr>
+<tr><td>--port-file FILE</td><td>Server</td><td>Write the bound ADDR:PORT to FILE once listening.</td></tr>
+<tr><td>--presets FILE / --preset NAME</td><td>Server</td><td>Load named scan setting bundles from FILE and select the initial preset.</td></tr>
+<tr><td>--idle-timeout SECS</td><td>Server</td><td>Exit 0 after SECS without requests (default 300; 0 disables timeout).</td></tr>
+<tr><td>--allow-exec</td><td>Server</td><td>Permit non-dry POST /clean and POST /restore requests.</td></tr>
+<tr><td>--token TOKEN</td><td>Server</td><td>Require Authorization: Bearer TOKEN on every request.</td></tr>
+</tbody>
+</table>
+<h2>File type methods and host functions (lmclean_v1)</h2>
+<table>
+<thead>
+<tr><th>Signature</th><th>Return type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>File.path() / File.name() / File.extension()</td><td>string</td><td>Candidate path, base filename, and dotless extension (empty if none).</td></tr>
+<tr><td>File.size() / File.rsize()</td><td>int</td><td>Own symlink_metadata byte length and deterministic recursive non-directory byte size.</td></tr>
+<tr><td>File.depth()</td><td>int</td><td>Depth relative to the search root (direct children = 0).</td></tr>
+<tr><td>File.is_file() / File.is_dir() / File.is_symlink()</td><td>bool</td><td>Entry type predicates derived from symlink_metadata (symlinks are never followed).</td></tr>
+<tr><td>File.modified() / File.accessed()</td><td>int</td><td>Entry mtime and atime in Unix epoch seconds.</td></tr>
+<tr><td>File.rmodified() / File.raccessed()</td><td>int</td><td>Maximum mtime or atime across non-.git files in a directory subtree.</td></tr>
+<tr><td>File.is_git_repo() / File.is_git_clean() / File.is_git_pushed()</td><td>bool</td><td>Check whether a directory is a Git repo, has a clean tree/index/stash, and has all branches pushed.</td></tr>
+<tr><td>File.git_status()</td><td>string</td><td>One of not-git, dirty, no-remote, unpushed, or clean-pushed.</td></tr>
+<tr><td>fn now()</td><td>int</td><td>Current wall-clock time in Unix epoch seconds.</td></tr>
+<tr><td>fn param_int(name: string, default_val: int)</td><td>int</td><td>Read an integer --param or server setting value with fallback.</td></tr>
+<tr><td>fn param_str(name: string, default_val: string)</td><td>string</td><td>Read a string --param or server setting value with fallback.</td></tr>
+<tr><td>fn print(msg: string)</td><td>void</td><td>Write a diagnostic line to stderr.</td></tr>
+</tbody>
+</table>
+<h2>SAM interfaces and standard REST/CLI interfaces</h2>
+<table>
+<thead>
+<tr><th>Interface</th><th>Annotation</th><th>Signature</th><th>Role</th></tr>
+</thead>
+<tbody>
+<tr><td>Ignore</td><td>@ignore</td><td>(f: File) -> bool</td><td>Pre-filter candidate; returning true skips the entry and prunes directory descent.</td></tr>
+<tr><td>Filter</td><td>@select</td><td>(f: File) -> bool</td><td>Deletion predicate; multiple @select entries are OR-ed.</td></tr>
+<tr><td>Report</td><td>@report</td><td>(f: File) -> void</td><td>Audit callback invoked once for each matched File.</td></tr>
+<tr><td>RestGet..RestOptions, RestHandler</td><td>@"/path/:param"</td><td>(exchange: RestExchange) -> void</td><td>Standard lmcode_std_v3 HTTP route handler interfaces.</td></tr>
+<tr><td>CliCommand, CliOption</td><td>@"cmd" / @"--opt"</td><td>(exchange: RestExchange) -> void</td><td>Standard lmcode_std_v3 stateless CLI handler interfaces for rest_cli.</td></tr>
+</tbody>
+</table>
+<h2>Server REST endpoints and exit codes</h2>
+<table>
+<thead>
+<tr><th>Endpoint or code</th><th>Kind</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>GET /health, GET /presets, GET /settings, PUT /settings</td><td>REST endpoint</td><td>Inspect liveness, presets, and active scan settings or update settings (drops scan cache).</td></tr>
+<tr><td>POST /scan[?query], GET /results[?query]</td><td>REST endpoint</td><td>Walk and cache matches, or slice cached matches through view filters without re-walking.</td></tr>
+<tr><td>POST /clean, POST /restore, POST /shutdown</td><td>REST endpoint</td><td>Delete or trash filtered matches (with dry_run or expect_matched/expect_bytes), restore trash, or stop the server.</td></tr>
+<tr><td>Exit 0</td><td>Exit code</td><td>Success (dry-run, exec, restore, or server shutdown).</td></tr>
+<tr><td>Exit 2</td><td>Exit code</td><td>CLI usage or flag error.</td></tr>
+<tr><td>Exit 3</td><td>Exit code</td><td>Bytecode load, schema verification, or rule runtime error.</td></tr>
+<tr><td>Exit 4</td><td>Exit code</td><td>Application failure (unreadable bytecode/presets file or failed deletions).</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmclean">github.com/lmctl-ai/lmclean</a>.</p>
+</footer>
+</body>
+</html>

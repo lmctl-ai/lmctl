@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>integration reference — integration — lmctl.com tools</title>
+<meta name="description" content="Reference tables for the setup GitHub Action, e2e.yml workflow inputs, T0/T1 scenarios, mono-test inventory classifications, negative control scripts, and exit…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/integration/">Overview</a></li>
+<li><a href="/tools/integration/skill.html">Skill</a></li>
+<li><a href="/tools/integration/guide.html">Guide</a></li>
+<li><a href="/tools/integration/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>integration reference</h1>
+<p>Reference tables for the setup GitHub Action, e2e.yml workflow inputs, T0/T1 scenarios, mono-test inventory classifications, negative control scripts, and exit codes.</p>
+<h2>Action actions/setup inputs and outputs</h2>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Direction</th>
+<th>Values and description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>lmctl</td>
+<td>input</td>
+<td>latest | staging | X.Y.Z | none — version of @lmctl-ai/lmctl to install in a private RUNNER_TEMP prefix.</td>
+</tr>
+<tr>
+<td>tools</td>
+<td>input</td>
+<td>Comma-separated NAME[@TAG][+EXTRA_ASSET...] list (such as lmmock@v0.1.36+examples.tar.gz,lmgit@latest).</td>
+</tr>
+<tr>
+<td>miniplayer</td>
+<td>input</td>
+<td>Full 40-hex commit SHA of lmctl-ai/miniplayer to build from source, or empty string.</td>
+</tr>
+<tr>
+<td>lmctl-version</td>
+<td>output</td>
+<td>Exact resolved semantic version of @lmctl-ai/lmctl installed by the action.</td>
+</tr>
+<tr>
+<td>bin-dir</td>
+<td>output</td>
+<td>Directory holding the installed host binaries.</td>
+</tr>
+<tr>
+<td>INTEGRATION_ASSETS_&lt;NAME></td>
+<td>env export</td>
+<td>Directory containing SHA-256-verified extra release assets for tool &lt;NAME>.</td>
+</tr>
+</tbody>
+</table>
+<h2>Scenario matrix</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Scenario path</th>
+<th>Execution chain</th>
+<th>Assertions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T0</td>
+<td>scenarios/t0-claudemock</td>
+<td>lmscript lm_prompt -> in-process ClaudeMock</td>
+<td>Verifies ok, scripted error, empty-reply rejection, and delayed reply without network calls.</td>
+</tr>
+<tr>
+<td>T0</td>
+<td>scenarios/t0-fanout</td>
+<td>lmscript lm_fanout -> 3 ClaudeMock members</td>
+<td>Verifies deterministic slot ordering, per-slot error capture, and ok-but-empty detection.</td>
+</tr>
+<tr>
+<td>T0</td>
+<td>scenarios/t0-provider-smoke-mock</td>
+<td>lmscript -> ClaudeMock</td>
+<td>Verifies fresh seed, ping, three-turn conversation state, and provider failure handling.</td>
+</tr>
+<tr>
+<td>T1</td>
+<td>scenarios/t1-lmmock-ai</td>
+<td>lmscript -> lmctl -> miniplayer acp -> HTTP -> lmmock llm-api.lms</td>
+<td>Verifies non-empty reply and audits lmmock to confirm model mock-agent was requested.</td>
+</tr>
+<tr>
+<td>T1</td>
+<td>scenarios/t1-lmmock-modes</td>
+<td>lmmock exec per mode -> miniplayer acp -> lmctl</td>
+<td>Verifies ok, retry (429 then 200), unauthorized (401), rate-limit, server-error (500), and bad-json error_class plus GET /__requests counts.</td>
+</tr>
+</tbody>
+</table>
+<h2>Negative control suites and mono-test classifications</h2>
+<table>
+<thead>
+<tr>
+<th>Script or classification</th>
+<th>Target</th>
+<th>Verification contract</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tests/setup-selftest.sh</td>
+<td>actions/setup scripts</td>
+<td>Fails as expected on corrupted SHA256SUMS, corrupted extra asset, missing entry, unknown tag, or branch name pin.</td>
+</tr>
+<tr>
+<td>tests/scenario-controls.sh</td>
+<td>T0 and T1 scenarios</td>
+<td>Fails as expected on wrong reply, empty reply, unscrubbed LMCTL_SELF_SESSIONID, unreachable URL, or wrong request count.</td>
+</tr>
+<tr>
+<td>tests/suite-controls.sh</td>
+<td>suites/mono-test/run.mjs</td>
+<td>Verifies uncovered failure is red, unexpired allowlist is ALLOWED, expired allowlist is red, and code mutations fail.</td>
+</tr>
+<tr>
+<td>run.mjs --control broken-bin</td>
+<td>all ported mono-test suites</td>
+<td>Replaces lmctl with an exit-0 no-op binary; any suite staying green is flagged VACUOUS and fails the gate.</td>
+</tr>
+<tr>
+<td>inventory.tsv classes</td>
+<td>88 mono-test entries</td>
+<td>Classified into ported (executed), support (shared library), skip-host (requires mono checkout), and skip-live (requires live vendor credentials).</td>
+</tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>All scenario assertions, mono-test suites, and negative control checks passed.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Scenario failure, checksum mismatch, vacuous suite detection, or expired allowlist entry.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Usage error: scripts/run-scenario.sh given a directory without run.sh, scripts/hermetic.sh called without a command, or suites/mono-test/run.mjs given an unknown --control value, unknown suite id, or malformed allowlist entry, or unable to find lmctl.</td>
+</tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/integration">github.com/lmctl-ai/integration</a>.</p>
+</footer>
+</body>
+</html>

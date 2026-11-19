@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmok authoring skill — lmok — lmctl.com tools</title>
+<meta name="description" content="lmok embeds tree-sitter 0.27.1 (12 languages), SQLite 3.54.1 with FTS5 trigram search, JSON and lmcode rule packs, SARIF reporting, and a local REST server…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmok/">Overview</a></li>
+<li><a href="/tools/lmok/skill.html">Skill</a></li>
+<li><a href="/tools/lmok/guide.html">Guide</a></li>
+<li><a href="/tools/lmok/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmok authoring skill</h1>
+<p>lmok embeds tree-sitter 0.27.1 (12 languages), SQLite 3.54.1 with FTS5 trigram search, JSON and lmcode rule packs, SARIF reporting, and a local REST server into a single statically-linked CLI and lmcode host.</p>
+<h2>Purpose</h2>
+<p>Use lmok to parse and query concrete syntax trees across 12 languages, run tier-1 JSON rule packs or tier-2 compiled lmcode CST rules, index definitions and references into a local SQLite knowledge database, and gate CI on new or severity-filtered findings.</p>
+<h2>When to use it</h2>
+<p>Use lmok when you need incremental tree-sitter CST parsing, custom @NODE_KIND lmcode lint rules, SQLite FTS5 trigram code indexing, baseline-filtered linting (--new-since, --baseline, --changed), or SARIF 2.1.0 output. Use lmprobe when you need ast-grep structural transformations, call/impact graphs, or Git history churn analysis.</p>
+<h2>Install</h2>
+<p>Install a published release binary with lmscript install or build the standalone binary from source with CMake and Ninja.</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmscript install github:lmctl-ai/lmok@latest
+lmok --version
+lmok --lmcode-schema --json
+lmok --lmcode-signatures</code></pre>
+<p>To build current main from source:</p>
+<pre><code>scripts/sync-deps.sh
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j2
+build/lmok --version</code></pre>
+<h2>Commands</h2>
+<p>Parse syntax trees, run S-expression or code-shaped queries, lint with JSON rule packs, or build and query the SQLite knowledge index:</p>
+<pre><code>lmok parse examples/data/sample.json
+lmok query "(pair key: (string (string_content) @key))" examples/data/sample.json
+lmok query --lang c --pattern "strcpy(\$DST, \$SRC)" examples/data/sample.c
+lmok lint rules/c-tier1.json examples/data/sample.c --sarif build/results.sarif
+lmok index src --db build/lmok.db
+lmok symbols "%" --lang c --db build/lmok.db
+lmok refs helper --db build/lmok.db
+lmok find "helper(" --db build/lmok.db</code></pre>
+<p>Script the tree-sitter engine in an LMScript _lmcode_ block:</p>
+<pre><code>p = _lmcode_ cli="lmok" install="github:lmctl-ai/lmok@latest";
+let tree = ts.parse("{\"name\": \"lmok\", \"tags\": [\"tree-sitter\", \"json\"]}");
+println(tree.sexp());
+println("has_error -> " + str(tree.has_error()));
+println("nodes -> " + str(tree.node_count()));
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok);</code></pre>
+<h2>Inputs and outputs</h2>
+<p>Source-analysis verbs accept --lang (json, c, cpp, python, bash, java, go, javascript, typescript, tsx, lmscript, lmcode) and file or directory arguments. In .lms files, embedded _lmcode_ blocks are automatically extracted and analyzed with absolute source coordinates.</p>
+<p>lint and check emit one JSON finding per line (row, col, end_row, end_col, rule, severity, message, 0-based positions) followed by N findings in FILE, and optionally write SARIF 2.1.0 (1-based positions) via --sarif FILE. Bytecode executions append a terminal LMCODE_RETURN_BEGIN and LMCODE_RETURN_END frame.</p>
+<h2>Safety rules</h2>
+<p>Facts and reference extraction report syntactic definitions and candidate name matches with an explicit confidence field (exact, candidate, unresolved, external); do not treat candidate references as type-resolved call graph edges without verification.</p>
+<p>Regex filters in rule packs and #match? predicates skip node texts over 16 KiB with a stderr notice to prevent backtracking stack overflow. In check mode, every @NODE_KIND annotation is verified against the target language grammar at load time so misspelled node kinds fail fast with exit code 3 (LOAD_UNBOUND) rather than becoming dead rules.</p>
+<h2>Worked examples</h2>
+<p>Record a baseline lint run in SQLite, gate only on newly introduced findings, or dispatch compiled @NODE_KIND rules with lmok check:</p>
+<pre><code>lmok index tests/fixtures/db/index --db build/index.db
+lmok lint rules/c-tier1.json examples/data/sample.c --db build/index.db
+lmok lint rules/c-tier1.json examples/data/sample.c --db build/index.db --new-since last --fail-on-new
+lmok metrics examples/data/sample.c
+lmok dup --tokens 15 examples/data/sample.c</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmok exits with code 0 on success (findings in lint do not fail the run unless --fail-on-new is set). Code 1 is returned by lmok ci when findings meet or exceed the configured severity floor. Code 2 indicates CLI usage errors, unknown languages, missing databases on read verbs, or rule-pack syntax errors. Code 3 indicates unreadable inputs, corrupt databases, invalid tree-sitter queries, or unbound @NODE_KIND rule entries. Code 4 indicates stdout failures or new findings under --fail-on-new.</p>
+<h2>How to verify</h2>
+<p>Verify the binary version, embedded dependency notices, host schema, canonical signatures, and rule self-tests.</p>
+<pre><code>lmok --version
+lmok --notices
+lmok --lmcode-schema --json
+lmok --lmcode-signatures
+lmok test examples/self-test/pack.json examples/self-test/fixture.c</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmok">github.com/lmctl-ai/lmok</a>.</p>
+</footer>
+</body>
+</html>

@@ -19,12 +19,13 @@
 <li><a href="/tools/lmblender/tutorial.html">Tutorial</a></li>
 <li><a href="/tools/lmblender/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmblender/guide.html">Guide</a></li>
+<li><a href="/tools/lmblender/reference.html">Reference</a></li>
 <li><a href="/tools/lmblender/examples/">Examples</a></li>
 </ul>
 </nav>
 <main><h1>lmblender API guide</h1>
 <h2>Overview</h2>
-<p>lmblender executes lmscript DSL v5 bytecode and builds a Cycles CPU scene. Use it when a task needs procedural geometry, materials, lighting, image rendering, animation, or mesh export from a script. It is a standalone renderer, not a Python interface to Blender.</p>
+<p>lmblender executes lmscript DSL v5 bytecode and builds a Cycles CPU scene. Use it when a task needs procedural geometry, materials, lighting, image rendering, animation, or renders of imported meshes from a script. It is a standalone renderer, not a Python interface to Blender.</p>
 <h2>Install and run</h2>
 <p>Declare the host in an lmscript block. This book pins v0.3.6 so every example uses the same released binary:</p>
 <pre><code>p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
@@ -32,10 +33,9 @@ let ball = scene.uv_sphere(1.0, 48, 24, true);
 scene.studio_setup();
 scene.render_png("build/ball.png", 16, 640, 480);
 end _lmcode_
-savedsl(p, "build/ball.dslb");
-r = system ${dsl_cli(p)} --lmcode build/ball.dslb;
-if (r.code != 0) { println(trim(r.stdout)); println(trim(r.stderr)); exit(1); }</code></pre>
-<p>Run the source from an empty working directory with lmscript. Create every output directory before the host writes into it. For a render that may take longer than lmscript's default 60-second system timeout, build an argument list and set an explicit timeout in milliseconds.</p>
+r = run_lmcode(p);
+if (!r.ok) { println("lmblender failed"); exit(1); }</code></pre>
+<p>Run the source from an empty working directory with lmscript. Create every output directory before the host writes into it. run_lmcode compiles the block, runs the host and returns a record with ok and result. For a render that may take longer than lmscript's default 60-second system timeout, save the bytecode with savedsl, build an argument list from dsl_cli(p) plus --lmcode and the file, and call system with an explicit timeout in milliseconds. The host ships lmcode_std_v3 with 206 signatures; the full API is in the <a href="/tools/lmblender/reference.html">reference</a>.</p>
 <h2>Scene coordinates</h2>
 <p>Coordinates are right-handed and Z-up. Units are scene units. Colors passed as float channels are linear RGB values in the range 0 to 1. API methods use positional arguments; there are no implicit unit conversions.</p>
 <h2>Geometry and materials</h2>
@@ -75,12 +75,11 @@ if (r.code != 0) { println(trim(r.stdout)); println(trim(r.stderr)); exit(1); }<
 </tbody>
 </table>
 <p>Still renders use the authored object state. Keyframes are evaluated by sequence and animation render methods. For a loop, make the first and last keyframes match.</p>
-<h2>Import and export</h2>
+<h2>Import and checks</h2>
 <ul>
 <li>scene.import_obj(path), scene.import_ply(path), scene.import_stl(path), and scene.import_gltf(path) load mesh files.</li>
-<li>scene.export_obj(path) and scene.export_stl(path) write meshes from the scene.</li>
 <li>mesh.vertex_count(), mesh.triangle_count(), and bounds methods help verify imported or generated geometry. mesh.material_count() reports stored slots on imported mesh data; it does not count materials assigned to procedural scene objects.</li>
-<li>scene.expect_int(actual, expected) checks an integer result. Use scene.assert_close(actual, expected, tolerance) for numeric values.</li>
+<li>scene.expect_int(actual, expected) checks an integer result.</li>
 </ul>
 <h2>Limits</h2>
 <p>Render dimensions are limited to 4096 per side and 16 million pixels. A scene is limited to 4096 meshes and materials, 10 million vertices, and 20 million triangles. Input images are limited to 64 MiB each and 64 megapixels decoded. APNG output is limited to 240 frames and 64 million total frame-pixels. CPU rendering uses four worker threads by default, capped by available cores; set a different count with scene.set_threads(n).</p>

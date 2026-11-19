@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>claude-ollama-live — lmctl.com tools</title>
+<meta name="description" content="claude-ollama-live qualifies Claude Code (@anthropic-ai/claude-code) against Ollama Cloud and a loopback lmmock Anthropic Messages server in GitHub Actions.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/claude-ollama-live/">Overview</a></li>
+<li><a href="/tools/claude-ollama-live/skill.html">Skill</a></li>
+<li><a href="/tools/claude-ollama-live/guide.html">Guide</a></li>
+<li><a href="/tools/claude-ollama-live/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>claude-ollama-live</h1>
+<p>claude-ollama-live qualifies Claude Code (@anthropic-ai/claude-code) against Ollama Cloud and a loopback lmmock Anthropic Messages server in GitHub Actions.</p>
+<h2>Quick reference</h2>
+<p>Run the offline oracle test suite locally, or configure Claude Code in headless bare mode against Ollama Cloud (https://ollama.com) or a loopback lmmock endpoint.</p>
+<pre><code>npm test
+export ANTHROPIC_BASE_URL=https://ollama.com
+export ANTHROPIC_API_KEY=""
+export ANTHROPIC_MODEL=glm-5.3-flash
+export DISABLE_PROMPT_CACHING=1
+claude --bare -p --output-format json --tools "" --setting-sources "" --no-session-persistence "Reply with exactly OLLAMA_CLAUDE_OK_107. Do not call any tools."</code></pre>
+<table>
+<thead>
+<tr>
+<th>Setting or flag</th>
+<th>Value</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Claude Code version</td>
+<td>@anthropic-ai/claude-code@2.1.316</td>
+<td>Pinned npm package installed in a private prefix with a fresh temporary HOME and CLAUDE_CONFIG_DIR.</td>
+</tr>
+<tr>
+<td>ANTHROPIC_BASE_URL</td>
+<td>https://ollama.com (or loopback lmmock origin)</td>
+<td>Direct Ollama Cloud Messages endpoint (/v1/messages) without a local Ollama daemon.</td>
+</tr>
+<tr>
+<td>ANTHROPIC_MODEL &amp; default slots</td>
+<td>glm-5.3-flash</td>
+<td>Pinned across ANTHROPIC_MODEL and ANTHROPIC_DEFAULT_{OPUS,SONNET,HAIKU,FABLE}_MODEL.</td>
+</tr>
+<tr>
+<td>DISABLE_PROMPT_CACHING</td>
+<td>1</td>
+<td>Disable unsupported Anthropic prompt-cache controls on Ollama's compatibility route.</td>
+</tr>
+<tr>
+<td>Exact oracle token</td>
+<td>OLLAMA_CLAUDE_OK_107</td>
+<td>Required exact text with exit 0, type=result, subtype=success, and is_error=false.</td>
+</tr>
+</tbody>
+</table>
+<p>Runnable offline verification command and headless Claude Code invocation template:</p>
+<pre><code>npm test
+# Local signed-in Ollama server alternative (Ollama 0.15.0+):
+ollama launch claude --model glm-5.3-flash:cloud --yes -- -p "Reply with exactly OLLAMA_CLAUDE_OK_107. Do not call any tools."</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/claude-ollama-live/skill.html">Skill</a> — LLM agent authoring rules, oracle assertions, negative controls, and verification steps.</li>
+<li><a href="/tools/claude-ollama-live/guide.html">Guide</a> — Direct Ollama Cloud configuration, organization-secret boundaries, and lmmock loopback qualification.</li>
+<li><a href="/tools/claude-ollama-live/reference.html">Reference</a> — Environment variables, CLI flags, oracle fields, negative controls, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/claude-ollama-live">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/claude-ollama-live">github.com/lmctl-ai/claude-ollama-live</a>.</p>
+</footer>
+</body>
+</html>

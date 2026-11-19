@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmfluid reference — lmfluid — lmctl.com tools</title>
+<meta name="description" content="Complete reference for lmfluid 0.2.2: the host command line, exit codes and result frame, the context object, all six host types with their 59 method…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmfluid/">Overview</a></li>
+<li><a href="/tools/lmfluid/skill.html">Skill</a></li>
+<li><a href="/tools/lmfluid/guide.html">Guide</a></li>
+<li><a href="/tools/lmfluid/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmfluid reference</h1>
+<p>Complete reference for lmfluid 0.2.2: the host command line, exit codes and result frame, the context object, all six host types with their 59 method signatures, expression syntax, CSV layouts, limits, and the standard library the host ships.</p>
+<h2 id="cli">Command line</h2>
+<table>
+<thead>
+<tr><th>Arguments</th><th>Behavior</th><th>Exit</th></tr>
+</thead>
+<tbody>
+<tr><td>--version</td><td>Print lmfluid and the version on stdout</td><td>0</td></tr>
+<tr><td>--notices</td><td>Print the embedded third-party notices</td><td>0</td></tr>
+<tr><td>--lmcode-schema --json</td><td>Print the exact embedded schema bytes (JSON, dsl.schema 2, name lmfluid)</td><td>0</td></tr>
+<tr><td>--lmcode-schema</td><td>Print the registered signatures, one per line</td><td>0</td></tr>
+<tr><td>--lmcode-signatures</td><td>Print the registered signatures, one per line: 266 lines in 0.2.2 (1 context, 59 host methods, 206 standard)</td><td>0</td></tr>
+<tr><td>--lmcode FILE [FILE ...]</td><td>Load and verify every bytecode file, then run each in order, stopping at the first failure; one result frame on stdout</td><td>0, 3, 4</td></tr>
+<tr><td>--dry-run --lmcode FILE [FILE ...]</td><td>Dry mode: load and verify without numerical work or file effects. --dry-run may also follow the files, but may appear only once</td><td>0, 3</td></tr>
+<tr><td>No arguments, unknown flags, an empty file name, a file name starting with two hyphens, or extra arguments after a query flag</td><td>Usage text on stderr and a failure frame with code CLI_USAGE</td><td>2</td></tr>
+</tbody>
+</table>
+<p>The usage text printed by the host is:</p>
+<pre><samp>usage: lmfluid --version | --notices | --lmcode-schema [--json] | --lmcode-signatures | [--dry-run] --lmcode FILE [FILE ...]
+environment: LMFLUID_MAX_MEMORY_MB  total memory budget in MiB (default 4096); a program that needs more
+             stops with a run error (exit 3) instead of allocating</samp></pre>
+<h3 id="env">Environment variables</h3>
+<table>
+<thead>
+<tr><th>Variable</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>LMFLUID_MAX_MEMORY_MB</td><td>Total memory budget in MiB, default 4096. Must be a positive whole number; anything else is a usage error (exit 2)</td></tr>
+<tr><td>LMCODE_INVOCATION_FILE</td><td>Set by run_lmcode to pass invocation metadata (parts, dry mode) to the host; not set by hand. A standalone --dry-run that contradicts real-mode metadata is refused with exit 2</td></tr>
+<tr><td>GITHUB_TOKEN</td><td>Read by lmscript, not by the host, when install="github:lmctl-ai/lmfluid@latest" resolves the release through the GitHub API</td></tr>
+</tbody>
+</table>
+<h2 id="exit">Exit codes and result frame</h2>
+<table>
+<thead>
+<tr><th>Exit</th><th>Phase in the frame</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td></td><td>Success</td></tr>
+<tr><td>2</td><td>cli</td><td>Command-line or invocation metadata error (code CLI_USAGE)</td></tr>
+<tr><td>3</td><td>load, run</td><td>Bytecode could not be read or verified (for example code LOAD_BAD_BYTECODE), or a program failed while running (for example code RUN_HOST), including the memory budget</td></tr>
+<tr><td>4</td><td>app</td><td>Application or output contract failure (error code APP_FAIL)</td></tr>
+</tbody>
+</table>
+<p>For --lmcode invocations stdout carries exactly one frame between the marker lines LMCODE_RETURN_BEGIN and LMCODE_RETURN_END. A failure frame produced by a real run:</p>
+<pre><kbd>lmfluid --lmcode missing.dslb</kbd>
+<samp>LMCODE_RETURN_BEGIN
+{"ok":false,"phase":"load","code":"LOAD_BAD_BYTECODE","message":"cannot read missing.dslb"}
+LMCODE_RETURN_END</samp></pre>
+<p>In dry mode the same frame additionally carries dry true. run_lmcode parses the frame and returns it to the script as a map: ok and result on success; ok, phase, code, message and, for run errors, line and column on failure.</p>
+<h2 id="block">Block declaration</h2>
+<pre><code>prog = _lmcode_ cli="lmfluid" install="github:lmctl-ai/lmfluid@latest";
+# host program: let, arithmetic, for (k in range(a, b)) { ... }, if, method calls on fluid
+end _lmcode_
+r = run_lmcode(prog);
+assert(r.ok);</code></pre>
+<table>
+<thead>
+<tr><th>Element</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>cli="lmfluid"</td><td>Host binary that supplies the schema and runs the block</td></tr>
+<tr><td>install="github:lmctl-ai/lmfluid@latest"</td><td>Release that lmscript downloads into its tool cache when the host is missing</td></tr>
+<tr><td>run_lmcode(prog)</td><td>Run the compiled block; returns the result map</td></tr>
+<tr><td>lmscript --check FILE.lms</td><td>Compile blocks without running; needs the host schema cached by an earlier real run</td></tr>
+</tbody>
+</table>
+<h2 id="context">Context objects</h2>
+<table>
+<thead>
+<tr><th>Name</th><th>Type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>fluid</td><td>Fluid</td><td>The only context object. The schema declares no free host functions; everything is a method of fluid or of an object it returns</td></tr>
+</tbody>
+</table>
+<h2 id="types">Host types and methods</h2>
+<p>Signatures are quoted from the host schema. Parameter names in descriptions follow the repository documentation; the schema itself records only types.</p>
+<h3 id="type-fluid">Fluid</h3>
+<p>Type of the context object fluid: factory for every other type, plus helpers.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signatures</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>rect</td><td>(int, int, float, float) -> Mesh</td><td>Quadrilateral mesh of nx by ny elements on a rectangle lx by ly; boundary attributes 1 bottom, 2 right, 3 top, 4 left</td></tr>
+<tr><td>box</td><td>(int, int, int, float, float, float) -> Mesh</td><td>Hexahedral mesh of nx by ny by nz elements on a box lx by ly by lz; attributes 1 bottom, 2 front, 3 right, 4 back, 5 left, 6 top</td></tr>
+<tr><td>load_mesh</td><td>(string) -> Mesh</td><td>Read an MFEM mesh v1.0 or v1.2 text file; validated before parsing, other formats rejected</td></tr>
+<tr><td>poisson</td><td>(Mesh, int) -> Problem</td><td>Problem -div(k grad u) = f on the mesh with H1 elements of the given order (1 to 3)</td></tr>
+<tr><td>heat</td><td>(Mesh, int) -> Problem</td><td>Problem u_t - div(k grad u) = f, integrated by backward Euler; order 1 to 3</td></tr>
+<tr><td>elasticity</td><td>(Mesh, int) -> Problem</td><td>Isotropic linear elasticity problem (plane strain in 2D); order 1 to 3</td></tr>
+<tr><td>channel</td><td>(int, int, float, float) -> LBM</td><td>D2Q9 simulation nx by ny, viscosity nu, body acceleration g along x; periodic in x, walls at bottom and top; g must be finite and within ±0.02</td></tr>
+<tr><td>cavity</td><td>(int, int, float, float) -> LBM</td><td>D2Q9 lid-driven cavity nx by ny, viscosity nu, lid speed; magnitude of the lid speed must be below 0.2</td></tr>
+<tr><td>periodic</td><td>(int, int, float) -> LBM</td><td>D2Q9 simulation nx by ny, viscosity nu, periodic in both directions</td></tr>
+<tr><td>assert_close</td><td>(float, float, float) -> void</td><td>Fail the run unless the first two values differ by at most the absolute tolerance; message assert_close failed: a vs b</td></tr>
+<tr><td>assert_true</td><td>(bool) -> void</td><td>Fail the run with assert_true failed when the condition is false</td></tr>
+<tr><td>matrix</td><td>(int, int) -> Matrix</td><td>Zero matrix of rows by cols for recording results; at most 10 million entries</td></tr>
+<tr><td>eval</td><td>(string) -> float</td><td>Evaluate an expression string to a float; the result must be finite</td></tr>
+<tr><td>print</td><td>(string) -> void</td><td>Write a line of text to stderr</td></tr>
+</tbody>
+</table>
+<h3 id="type-mesh">Mesh</h3>
+<p>A quadrilateral or hexahedral mesh.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signatures</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>dimension</td><td>() -> int</td><td>Space dimension of the mesh, 2 or 3</td></tr>
+<tr><td>elements</td><td>() -> int</td><td>Number of elements</td></tr>
+<tr><td>save</td><td>(string) -> void</td><td>Write the mesh as an MFEM mesh text file that load_mesh can read</td></tr>
+</tbody>
+</table>
+<h3 id="type-problem">Problem</h3>
+<p>A finite-element problem builder. Every builder method returns the problem, so calls chain.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signatures</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>diffusion</td><td>(string) -> Problem</td><td>Scalar coefficient k as an expression; must be finite and positive where evaluated</td></tr>
+<tr><td>source</td><td>(string) -> Problem</td><td>Scalar source f as an expression</td></tr>
+<tr><td>initial</td><td>(string) -> Problem</td><td>Initial condition for a heat problem at t = 0</td></tr>
+<tr><td>dirichlet</td><td>(int, string) -> Problem</td><td>Scalar essential boundary data on a boundary attribute; attribute 0 selects all boundaries</td></tr>
+<tr><td>displacement</td><td>(int, string, string, string) -> Problem</td><td>Vector essential boundary data ux, uy, uz on an attribute (all components); the third expression is unused in 2D</td></tr>
+<tr><td>force</td><td>(string, string, string) -> Problem</td><td>Body force expressions fx, fy, fz for elasticity; the third is unused in 2D</td></tr>
+<tr><td>lame</td><td>(float, float) -> Problem</td><td>Lamé parameters lambda and mu of the isotropic material</td></tr>
+<tr><td>tol</td><td>(float, int) -> Problem</td><td>Relative tolerance and maximum iterations of the iterative linear solver</td></tr>
+<tr><td>solve</td><td>() -> Field</td><td>Solve a steady Poisson or elasticity problem and return the field</td></tr>
+<tr><td>evolve</td><td>(float, float) -> Field</td><td>Advance a heat problem from t = 0 to end_time with step dt and return the final field</td></tr>
+</tbody>
+</table>
+<h3 id="type-field">Field</h3>
+<p>A computed finite-element solution. It owns its mesh and space.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signatures</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>value</td><td>(float, float) -> float; (float, float, float, int) -> float</td><td>Value at a mesh point: (x, y) reads component 0 in 2D; (x, y, z, component) takes a zero-based component. Points outside the mesh fail</td></tr>
+<tr><td>gradient</td><td>(float, float, int) -> float; (float, float, float, int, int) -> float</td><td>Derivative at a point along direction 0 (x), 1 (y) or 2 (z): (x, y, direction), or (x, y, z, component, direction)</td></tr>
+<tr><td>l2_error</td><td>(string) -> float</td><td>Integrated L2 error of a scalar field against an exact expression</td></tr>
+<tr><td>l2_error_vector</td><td>(string, string, string) -> float</td><td>Integrated L2 error of a vector field against exact expressions ex, ey, ez</td></tr>
+<tr><td>sample</td><td>(int, int) -> Matrix; (int, int, int) -> Matrix</td><td>Sample the bounding box on an nx by ny (by nz) grid; columns x, y, z, u or x, y, z, ux, uy and uz when present</td></tr>
+<tr><td>dofs</td><td>() -> int</td><td>Number of degrees of freedom of the solution</td></tr>
+<tr><td>components</td><td>() -> int</td><td>Number of solution components (1 for scalar problems)</td></tr>
+<tr><td>time</td><td>() -> float</td><td>Time of the field; the end time for a heat solution</td></tr>
+</tbody>
+</table>
+<h3 id="type-lbm">LBM</h3>
+<p>A D2Q9 lattice-Boltzmann simulation in lattice units. Cell indices are zero-based.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signatures</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>init</td><td>(string, string) -> LBM</td><td>Set the velocity field from expressions ux, uy at cell centres; resets density to one, time to zero and the force average</td></tr>
+<tr><td>run</td><td>(int) -> LBM</td><td>Advance the given number of lattice steps (0 to 10 million per call) from the current state</td></tr>
+<tr><td>velocity</td><td>(int, int, int) -> float</td><td>Velocity component 0 (x) or 1 (y) at cell (ix, iy)</td></tr>
+<tr><td>density</td><td>(int, int) -> float</td><td>Density at cell (ix, iy)</td></tr>
+<tr><td>mass</td><td>() -> float</td><td>Total mass over fluid cells</td></tr>
+<tr><td>max_speed</td><td>() -> float</td><td>Largest speed over fluid cells</td></tr>
+<tr><td>kinetic_energy</td><td>() -> float</td><td>Kinetic energy over fluid cells</td></tr>
+<tr><td>steps</td><td>() -> int</td><td>Number of steps taken since construction or the last init</td></tr>
+<tr><td>sample</td><td>() -> Matrix</td><td>Matrix with one row per cell: x, y, rho, ux, uy, speed at centres ix+0.5, iy+0.5</td></tr>
+<tr><td>obstacle</td><td>(string) -> LBM</td><td>Mark cells whose centre gives expression > 0 as solid (no-slip, halfway bounceback); calls add up; at least one fluid cell must remain</td></tr>
+<tr><td>is_solid</td><td>(int, int) -> bool</td><td>Whether cell (ix, iy) is solid</td></tr>
+<tr><td>solid_cells</td><td>() -> int</td><td>Number of solid cells</td></tr>
+<tr><td>solid_force</td><td>(int) -> float</td><td>Momentum-exchange force component 0 or 1 on all solid cells, averaged over the last run call</td></tr>
+<tr><td>tau</td><td>() -> float</td><td>Relaxation time 0.5 + 3 nu</td></tr>
+<tr><td>mach</td><td>() -> float</td><td>Mach number of the largest speed</td></tr>
+<tr><td>vorticity</td><td>() -> Matrix</td><td>Matrix with columns x, y, omega, solid (central differences, no-slip walls)</td></tr>
+</tbody>
+</table>
+<h3 id="type-matrix">Matrix</h3>
+<p>A dense table of floats with zero-based indices.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signatures</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>rows</td><td>() -> int</td><td>Number of rows</td></tr>
+<tr><td>cols</td><td>() -> int</td><td>Number of columns</td></tr>
+<tr><td>get</td><td>(int, int) -> float</td><td>Entry at zero-based (row, col)</td></tr>
+<tr><td>set</td><td>(int, int, float) -> Matrix</td><td>Set a finite entry at zero-based (row, col); returns the matrix</td></tr>
+<tr><td>save_csv</td><td>(string) -> void</td><td>Write headerless CSV with 17 significant digits; overwrites the path</td></tr>
+</tbody>
+</table>
+<h2 id="enums">Enumerated values</h2>
+<p>The schema defines no enum types. These integer and string arguments take a fixed set of values.</p>
+<table>
+<thead>
+<tr><th>Argument</th><th>Values</th></tr>
+</thead>
+<tbody>
+<tr><td>Finite-element order</td><td>1, 2 or 3</td></tr>
+<tr><td>Boundary attribute</td><td>0 for all boundaries; rect: 1 bottom, 2 right, 3 top, 4 left; box: 1 bottom, 2 front, 3 right, 4 back, 5 left, 6 top; imported meshes: their own attributes, 1 to 100000</td></tr>
+<tr><td>Field component</td><td>Zero-based: 0 for scalar fields; 0, 1 and, in 3D, 2 for displacement</td></tr>
+<tr><td>Gradient direction</td><td>0 x, 1 y, 2 z; must be below the mesh dimension</td></tr>
+<tr><td>LBM velocity and force component</td><td>0 x, 1 y</td></tr>
+<tr><td>Problem kind</td><td>Chosen by the constructor: poisson, heat or elasticity</td></tr>
+</tbody>
+</table>
+<h2 id="expr">Expression strings</h2>
+<table>
+<thead>
+<tr><th>Item</th><th>Supported</th></tr>
+</thead>
+<tbody>
+<tr><td>Variables</td><td>x, y, z, t (z is 0 in 2D; lattice x and y are cell centres ix+0.5, iy+0.5)</td></tr>
+<tr><td>Constants</td><td>Numbers and pi</td></tr>
+<tr><td>Operators</td><td>Arithmetic and the power operator ^</td></tr>
+<tr><td>Functions</td><td>sin, cos, exp, log, sqrt, abs, min, max, sign and similar elementary functions</td></tr>
+<tr><td>Constraints</td><td>Results must be finite; diffusion must be positive; an obstacle expression is solid where it is greater than 0</td></tr>
+</tbody>
+</table>
+<h2 id="csv">CSV layouts</h2>
+<table>
+<thead>
+<tr><th>Source</th><th>Columns</th><th>Rows</th></tr>
+</thead>
+<tbody>
+<tr><td>Scalar field.sample</td><td>x, y, z, u</td><td>One per grid point of the bounding box</td></tr>
+<tr><td>Elasticity field.sample</td><td>x, y, z, ux, uy and, in 3D, uz</td><td>One per grid point</td></tr>
+<tr><td>flow.sample</td><td>x, y, rho, ux, uy, speed</td><td>One per lattice cell</td></tr>
+<tr><td>flow.vorticity</td><td>x, y, omega, solid</td><td>One per lattice cell</td></tr>
+<tr><td>fluid.matrix</td><td>Whatever the script set</td><td>As created</td></tr>
+</tbody>
+</table>
+<p>Files have no header, deterministic order and 17 significant digits.</p>
+<h2 id="limits">Limits and diagnostics</h2>
+<table>
+<thead>
+<tr><th>Limit</th><th>Value</th><th>Message when exceeded</th></tr>
+</thead>
+<tbody>
+<tr><td>Total memory</td><td>4096 MiB by default (LMFLUID_MAX_MEMORY_MB)</td><td>memory budget exceeded, naming the variable; exit 3</td></tr>
+<tr><td>Objects per arena</td><td>100000 each for meshes, problems, fields, simulations, matrices</td><td>object limit exceeded</td></tr>
+<tr><td>Finite-element order</td><td>1 to 3</td><td>FEM order outside allowed range</td></tr>
+<tr><td>Mesh elements</td><td>100000</td><td>mesh element limit exceeded</td></tr>
+<tr><td>Degrees of freedom</td><td>1 million</td><td></td></tr>
+<tr><td>Sample points</td><td>5 million</td><td></td></tr>
+<tr><td>fluid.matrix entries</td><td>10 million</td><td>matrix exceeds 10 million entries</td></tr>
+<tr><td>Lattice size</td><td>At least 3 by 3, at most 1 million cells</td><td>LBM grid must be at least 3 by 3; LBM grid exceeds 1 million cells</td></tr>
+<tr><td>Steps per run call</td><td>0 to 10 million</td><td>LBM steps must be between 0 and 10000000</td></tr>
+<tr><td>Channel acceleration</td><td>Finite, within ±0.02</td><td>LBM acceleration must be finite and within +/-0.02</td></tr>
+<tr><td>Lid speed</td><td>Finite, magnitude below 0.2</td><td>LBM lid speed must be finite and have magnitude below 0.2</td></tr>
+<tr><td>Viscosity</td><td>Finite and positive</td><td>LBM viscosity must be finite, positive, and representable in tau</td></tr>
+<tr><td>Flow speed</td><td>Error at 0.45 or a non-finite value; stderr warning above Mach 0.3; stderr warning when tau is below 0.51</td><td>LBM became numerically unstable</td></tr>
+<tr><td>Point queries</td><td>Inside the mesh</td><td>point is outside mesh</td></tr>
+<tr><td>Matrix access</td><td>Indices in range, finite values</td><td>Matrix index outside range; Matrix value must be finite</td></tr>
+</tbody>
+</table>
+<h2 id="std">Standard library (lmcode_std_v3)</h2>
+<p>lmfluid 0.2.2 vendors the lmcode-cpp SDK at the commit pinned in sdk.lock (93bddf1) and registers its standard library by default. The vendored schema fragment is named lmcode_std_v3 and has 206 canonical signatures: 83 function signatures and 123 method signatures on 16 standard types. They are available in every lmfluid block without a declaration, alongside the fluid context, and appear in lmfluid --lmcode-signatures.</p>
+<p>In lmfluid programs the most useful groups are the result sink (return numbers to the outer script without a file), the float and string collections (collect values in a loop), the string functions (build expression strings and file names), and the file functions. The file functions add no sandbox: relative paths resolve against the working directory and writes overwrite.</p>
+<h3 id="std-groups">Function groups</h3>
+<table>
+<thead>
+<tr><th>Group</th><th>Signatures</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>String</td><td>17</td><td>Byte-string search, slicing, case, split, replace, numeric parsing and glob match</td></tr>
+<tr><td>Encoding</td><td>4</td><td>Base64 and hexadecimal encode and decode</td></tr>
+<tr><td>Math</td><td>16</td><td>Integer and float overloads of abs, ceil, floor, max, min, pow, round and sqrt</td></tr>
+<tr><td>File</td><td>5</td><td>Unrestricted whole-file byte read, write, append, existence test and LF line split</td></tr>
+<tr><td>Collection constructors</td><td>15</td><td>Create empty lists, maps, queues, stacks and priority queues of int, float and string</td></tr>
+<tr><td>JSON and templates</td><td>2</td><td>Parse JSON text into a Json value; render a text template from a Json value</td></tr>
+<tr><td>Result sink</td><td>24</td><td>Set the value that run_lmcode returns as result: one value, or named fields</td></tr>
+<tr><td>Collection and Json methods</td><td>123</td><td>Methods of the 16 standard types listed below</td></tr>
+<tr><td>Total</td><td>206</td><td>83 function signatures plus 123 method signatures</td></tr>
+</tbody>
+</table>
+<h3 id="std-functions">Standard functions</h3>
+<table>
+<thead>
+<tr><th>Group</th><th>Function</th><th>Signatures</th></tr>
+</thead>
+<tbody>
+<tr><td>String</td><td>str_contains</td><td>(string, string) -> bool</td></tr>
+<tr><td>String</td><td>str_ends_with</td><td>(string, string) -> bool</td></tr>
+<tr><td>String</td><td>str_find</td><td>(string, string) -> int</td></tr>
+<tr><td>String</td><td>str_is_float</td><td>(string) -> bool</td></tr>
+<tr><td>String</td><td>str_is_int</td><td>(string) -> bool</td></tr>
+<tr><td>String</td><td>str_len</td><td>(string) -> int</td></tr>
+<tr><td>String</td><td>str_lower</td><td>(string) -> string</td></tr>
+<tr><td>String</td><td>str_match</td><td>(string, string) -> bool</td></tr>
+<tr><td>String</td><td>str_repeat</td><td>(string, int) -> string</td></tr>
+<tr><td>String</td><td>str_replace</td><td>(string, string, string) -> string</td></tr>
+<tr><td>String</td><td>str_split</td><td>(string, string) -> StrList</td></tr>
+<tr><td>String</td><td>str_starts_with</td><td>(string, string) -> bool</td></tr>
+<tr><td>String</td><td>str_substr</td><td>(string, int, int) -> string</td></tr>
+<tr><td>String</td><td>str_to_float</td><td>(string) -> float</td></tr>
+<tr><td>String</td><td>str_to_int</td><td>(string) -> int</td></tr>
+<tr><td>String</td><td>str_trim</td><td>(string) -> string</td></tr>
+<tr><td>String</td><td>str_upper</td><td>(string) -> string</td></tr>
+<tr><td>Encoding</td><td>str_base64_encode</td><td>(string) -> string</td></tr>
+<tr><td>Encoding</td><td>str_base64_decode</td><td>(string) -> string</td></tr>
+<tr><td>Encoding</td><td>str_hex_encode</td><td>(string) -> string</td></tr>
+<tr><td>Encoding</td><td>str_hex_decode</td><td>(string) -> string</td></tr>
+<tr><td>Math</td><td>math_abs</td><td>(int) -> int; (float) -> float</td></tr>
+<tr><td>Math</td><td>math_ceil</td><td>(int) -> int; (float) -> float</td></tr>
+<tr><td>Math</td><td>math_floor</td><td>(int) -> int; (float) -> float</td></tr>
+<tr><td>Math</td><td>math_max</td><td>(int, int) -> int; (float, float) -> float</td></tr>
+<tr><td>Math</td><td>math_min</td><td>(int, int) -> int; (float, float) -> float</td></tr>
+<tr><td>Math</td><td>math_pow</td><td>(int, int) -> int; (float, float) -> float</td></tr>
+<tr><td>Math</td><td>math_round</td><td>(int) -> int; (float) -> float</td></tr>
+<tr><td>Math</td><td>math_sqrt</td><td>(int) -> int; (float) -> float</td></tr>
+<tr><td>File</td><td>file_append</td><td>(string, string) -> void</td></tr>
+<tr><td>File</td><td>file_exists</td><td>(string) -> bool</td></tr>
+<tr><td>File</td><td>file_lines</td><td>(string) -> StrList</td></tr>
+<tr><td>File</td><td>file_read</td><td>(string) -> string</td></tr>
+<tr><td>File</td><td>file_write</td><td>(string, string) -> void</td></tr>
+<tr><td>Collection constructors</td><td>float_list</td><td>() -> FloatList</td></tr>
+<tr><td>Collection constructors</td><td>float_map</td><td>() -> FloatMap</td></tr>
+<tr><td>Collection constructors</td><td>float_pq</td><td>() -> FloatPQ</td></tr>
+<tr><td>Collection constructors</td><td>float_queue</td><td>() -> FloatQueue</td></tr>
+<tr><td>Collection constructors</td><td>float_stack</td><td>() -> FloatStack</td></tr>
+<tr><td>Collection constructors</td><td>int_list</td><td>() -> IntList</td></tr>
+<tr><td>Collection constructors</td><td>int_map</td><td>() -> IntMap</td></tr>
+<tr><td>Collection constructors</td><td>int_pq</td><td>() -> IntPQ</td></tr>
+<tr><td>Collection constructors</td><td>int_queue</td><td>() -> IntQueue</td></tr>
+<tr><td>Collection constructors</td><td>int_stack</td><td>() -> IntStack</td></tr>
+<tr><td>Collection constructors</td><td>str_list</td><td>() -> StrList</td></tr>
+<tr><td>Collection constructors</td><td>str_map</td><td>() -> StrMap</td></tr>
+<tr><td>Collection constructors</td><td>str_pq</td><td>() -> StrPQ</td></tr>
+<tr><td>Collection constructors</td><td>str_queue</td><td>() -> StrQueue</td></tr>
+<tr><td>Collection constructors</td><td>str_stack</td><td>() -> StrStack</td></tr>
+<tr><td>JSON and templates</td><td>json_parse</td><td>(string) -> Json</td></tr>
+<tr><td>JSON and templates</td><td>template_render</td><td>(string, Json) -> string</td></tr>
+<tr><td>Result sink</td><td>lmcode_return_null</td><td>() -> void</td></tr>
+<tr><td>Result sink</td><td>lmcode_return_put</td><td>(string, bool) -> void; (string, float) -> void; (string, FloatList) -> void; (string, FloatMap) -> void; (string, int) -> void; (string, IntList) -> void; (string, IntMap) -> void; (string, Json) -> void; (string, StrList) -> void; (string, StrMap) -> void; (string, string) -> void</td></tr>
+<tr><td>Result sink</td><td>lmcode_return_put_null</td><td>(string) -> void</td></tr>
+<tr><td>Result sink</td><td>lmcode_return_set</td><td>(bool) -> void; (float) -> void; (FloatList) -> void; (FloatMap) -> void; (int) -> void; (IntList) -> void; (IntMap) -> void; (Json) -> void; (StrList) -> void; (StrMap) -> void; (string) -> void</td></tr>
+</tbody>
+</table>
+<h3 id="std-types">Standard types and methods</h3>
+<table>
+<thead>
+<tr><th>Type</th><th>Method</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>FloatList</td><td>add</td><td>(float) -> FloatList</td></tr>
+<tr><td>FloatList</td><td>at</td><td>(int) -> float</td></tr>
+<tr><td>FloatList</td><td>clear</td><td>() -> FloatList</td></tr>
+<tr><td>FloatList</td><td>contains</td><td>(float) -> bool</td></tr>
+<tr><td>FloatList</td><td>index_of</td><td>(float) -> int</td></tr>
+<tr><td>FloatList</td><td>len</td><td>() -> int</td></tr>
+<tr><td>FloatList</td><td>set</td><td>(int, float) -> FloatList</td></tr>
+<tr><td>FloatMap</td><td>len</td><td>() -> int</td></tr>
+<tr><td>FloatMap</td><td>has</td><td>(string) -> bool</td></tr>
+<tr><td>FloatMap</td><td>get</td><td>(string) -> float</td></tr>
+<tr><td>FloatMap</td><td>get_or</td><td>(string, float) -> float</td></tr>
+<tr><td>FloatMap</td><td>set</td><td>(string, float) -> FloatMap</td></tr>
+<tr><td>FloatMap</td><td>key_at</td><td>(int) -> string</td></tr>
+<tr><td>FloatMap</td><td>remove</td><td>(string) -> bool</td></tr>
+<tr><td>FloatMap</td><td>clear</td><td>() -> FloatMap</td></tr>
+<tr><td>FloatMap</td><td>keys</td><td>() -> StrList</td></tr>
+<tr><td>FloatMap</td><td>values</td><td>() -> FloatList</td></tr>
+<tr><td>FloatPQ</td><td>push</td><td>(float, float) -> FloatPQ</td></tr>
+<tr><td>FloatPQ</td><td>pop</td><td>() -> float</td></tr>
+<tr><td>FloatPQ</td><td>peek</td><td>() -> float</td></tr>
+<tr><td>FloatPQ</td><td>len</td><td>() -> int</td></tr>
+<tr><td>FloatPQ</td><td>empty</td><td>() -> bool</td></tr>
+<tr><td>FloatPQ</td><td>clear</td><td>() -> FloatPQ</td></tr>
+<tr><td>FloatQueue</td><td>push</td><td>(float) -> FloatQueue</td></tr>
+<tr><td>FloatQueue</td><td>pop</td><td>() -> float</td></tr>
+<tr><td>FloatQueue</td><td>peek</td><td>() -> float</td></tr>
+<tr><td>FloatQueue</td><td>len</td><td>() -> int</td></tr>
+<tr><td>FloatQueue</td><td>empty</td><td>() -> bool</td></tr>
+<tr><td>FloatQueue</td><td>clear</td><td>() -> FloatQueue</td></tr>
+<tr><td>FloatQueue</td><td>at</td><td>(int) -> float</td></tr>
+<tr><td>FloatStack</td><td>push</td><td>(float) -> FloatStack</td></tr>
+<tr><td>FloatStack</td><td>pop</td><td>() -> float</td></tr>
+<tr><td>FloatStack</td><td>peek</td><td>() -> float</td></tr>
+<tr><td>FloatStack</td><td>len</td><td>() -> int</td></tr>
+<tr><td>FloatStack</td><td>empty</td><td>() -> bool</td></tr>
+<tr><td>FloatStack</td><td>clear</td><td>() -> FloatStack</td></tr>
+<tr><td>FloatStack</td><td>at</td><td>(int) -> float</td></tr>
+<tr><td>IntList</td><td>add</td><td>(int) -> IntList</td></tr>
+<tr><td>IntList</td><td>at</td><td>(int) -> int</td></tr>
+<tr><td>IntList</td><td>clear</td><td>() -> IntList</td></tr>
+<tr><td>IntList</td><td>contains</td><td>(int) -> bool</td></tr>
+<tr><td>IntList</td><td>index_of</td><td>(int) -> int</td></tr>
+<tr><td>IntList</td><td>len</td><td>() -> int</td></tr>
+<tr><td>IntList</td><td>set</td><td>(int, int) -> IntList</td></tr>
+<tr><td>IntMap</td><td>len</td><td>() -> int</td></tr>
+<tr><td>IntMap</td><td>has</td><td>(string) -> bool</td></tr>
+<tr><td>IntMap</td><td>get</td><td>(string) -> int</td></tr>
+<tr><td>IntMap</td><td>get_or</td><td>(string, int) -> int</td></tr>
+<tr><td>IntMap</td><td>set</td><td>(string, int) -> IntMap</td></tr>
+<tr><td>IntMap</td><td>key_at</td><td>(int) -> string</td></tr>
+<tr><td>IntMap</td><td>remove</td><td>(string) -> bool</td></tr>
+<tr><td>IntMap</td><td>clear</td><td>() -> IntMap</td></tr>
+<tr><td>IntMap</td><td>keys</td><td>() -> StrList</td></tr>
+<tr><td>IntMap</td><td>values</td><td>() -> IntList</td></tr>
+<tr><td>IntPQ</td><td>push</td><td>(int, float) -> IntPQ</td></tr>
+<tr><td>IntPQ</td><td>pop</td><td>() -> int</td></tr>
+<tr><td>IntPQ</td><td>peek</td><td>() -> int</td></tr>
+<tr><td>IntPQ</td><td>len</td><td>() -> int</td></tr>
+<tr><td>IntPQ</td><td>empty</td><td>() -> bool</td></tr>
+<tr><td>IntPQ</td><td>clear</td><td>() -> IntPQ</td></tr>
+<tr><td>IntQueue</td><td>push</td><td>(int) -> IntQueue</td></tr>
+<tr><td>IntQueue</td><td>pop</td><td>() -> int</td></tr>
+<tr><td>IntQueue</td><td>peek</td><td>() -> int</td></tr>
+<tr><td>IntQueue</td><td>len</td><td>() -> int</td></tr>
+<tr><td>IntQueue</td><td>empty</td><td>() -> bool</td></tr>
+<tr><td>IntQueue</td><td>clear</td><td>() -> IntQueue</td></tr>
+<tr><td>IntQueue</td><td>at</td><td>(int) -> int</td></tr>
+<tr><td>IntStack</td><td>push</td><td>(int) -> IntStack</td></tr>
+<tr><td>IntStack</td><td>pop</td><td>() -> int</td></tr>
+<tr><td>IntStack</td><td>peek</td><td>() -> int</td></tr>
+<tr><td>IntStack</td><td>len</td><td>() -> int</td></tr>
+<tr><td>IntStack</td><td>empty</td><td>() -> bool</td></tr>
+<tr><td>IntStack</td><td>clear</td><td>() -> IntStack</td></tr>
+<tr><td>IntStack</td><td>at</td><td>(int) -> int</td></tr>
+<tr><td>Json</td><td>kind</td><td>() -> string</td></tr>
+<tr><td>Json</td><td>len</td><td>() -> int</td></tr>
+<tr><td>Json</td><td>at</td><td>(int) -> Json</td></tr>
+<tr><td>Json</td><td>get</td><td>(string) -> Json</td></tr>
+<tr><td>Json</td><td>has</td><td>(string) -> bool</td></tr>
+<tr><td>Json</td><td>keys</td><td>() -> StrList</td></tr>
+<tr><td>Json</td><td>as_string</td><td>() -> string</td></tr>
+<tr><td>Json</td><td>as_int</td><td>() -> int</td></tr>
+<tr><td>Json</td><td>as_float</td><td>() -> float</td></tr>
+<tr><td>Json</td><td>as_bool</td><td>() -> bool</td></tr>
+<tr><td>Json</td><td>to_json</td><td>() -> string</td></tr>
+<tr><td>StrList</td><td>add</td><td>(string) -> StrList</td></tr>
+<tr><td>StrList</td><td>at</td><td>(int) -> string</td></tr>
+<tr><td>StrList</td><td>clear</td><td>() -> StrList</td></tr>
+<tr><td>StrList</td><td>contains</td><td>(string) -> bool</td></tr>
+<tr><td>StrList</td><td>index_of</td><td>(string) -> int</td></tr>
+<tr><td>StrList</td><td>join</td><td>(string) -> string</td></tr>
+<tr><td>StrList</td><td>len</td><td>() -> int</td></tr>
+<tr><td>StrList</td><td>set</td><td>(int, string) -> StrList</td></tr>
+<tr><td>StrMap</td><td>clear</td><td>() -> StrMap</td></tr>
+<tr><td>StrMap</td><td>get</td><td>(string) -> string</td></tr>
+<tr><td>StrMap</td><td>get_or</td><td>(string, string) -> string</td></tr>
+<tr><td>StrMap</td><td>has</td><td>(string) -> bool</td></tr>
+<tr><td>StrMap</td><td>key_at</td><td>(int) -> string</td></tr>
+<tr><td>StrMap</td><td>len</td><td>() -> int</td></tr>
+<tr><td>StrMap</td><td>remove</td><td>(string) -> bool</td></tr>
+<tr><td>StrMap</td><td>set</td><td>(string, string) -> StrMap</td></tr>
+<tr><td>StrMap</td><td>keys</td><td>() -> StrList</td></tr>
+<tr><td>StrMap</td><td>values</td><td>() -> StrList</td></tr>
+<tr><td>StrPQ</td><td>push</td><td>(string, float) -> StrPQ</td></tr>
+<tr><td>StrPQ</td><td>pop</td><td>() -> string</td></tr>
+<tr><td>StrPQ</td><td>peek</td><td>() -> string</td></tr>
+<tr><td>StrPQ</td><td>len</td><td>() -> int</td></tr>
+<tr><td>StrPQ</td><td>empty</td><td>() -> bool</td></tr>
+<tr><td>StrPQ</td><td>clear</td><td>() -> StrPQ</td></tr>
+<tr><td>StrQueue</td><td>push</td><td>(string) -> StrQueue</td></tr>
+<tr><td>StrQueue</td><td>pop</td><td>() -> string</td></tr>
+<tr><td>StrQueue</td><td>peek</td><td>() -> string</td></tr>
+<tr><td>StrQueue</td><td>len</td><td>() -> int</td></tr>
+<tr><td>StrQueue</td><td>empty</td><td>() -> bool</td></tr>
+<tr><td>StrQueue</td><td>clear</td><td>() -> StrQueue</td></tr>
+<tr><td>StrQueue</td><td>at</td><td>(int) -> string</td></tr>
+<tr><td>StrStack</td><td>push</td><td>(string) -> StrStack</td></tr>
+<tr><td>StrStack</td><td>pop</td><td>() -> string</td></tr>
+<tr><td>StrStack</td><td>peek</td><td>() -> string</td></tr>
+<tr><td>StrStack</td><td>len</td><td>() -> int</td></tr>
+<tr><td>StrStack</td><td>empty</td><td>() -> bool</td></tr>
+<tr><td>StrStack</td><td>clear</td><td>() -> StrStack</td></tr>
+<tr><td>StrStack</td><td>at</td><td>(int) -> string</td></tr>
+</tbody>
+</table>
+<h3 id="std-rest">Standard REST and CLI interfaces (current catalog, not yet in this host)</h3>
+<p>The current lmcode_std_v3 catalog in lmcode-cpp has 226 canonical signatures. The 20 signatures beyond the 206 that lmfluid vendors are the former lmcode_std_rest_v1 module: 5 functions and 15 RestExchange methods, together with 10 standard interfaces. lmfluid does not ship them yet; it picks them up when it syncs its pinned lmcode-cpp SDK and publishes a release. Until then a lmfluid program that calls rest_route or declares a RestGet handler does not compile against the lmfluid schema.</p>
+<table>
+<thead>
+<tr><th>Interface</th><th>Signature</th><th>Role</th></tr>
+</thead>
+<tbody>
+<tr><td>RestGet</td><td>(RestExchange exchange) -> void</td><td>Handler for GET routes</td></tr>
+<tr><td>RestPost</td><td>(RestExchange exchange) -> void</td><td>Handler for POST routes</td></tr>
+<tr><td>RestPut</td><td>(RestExchange exchange) -> void</td><td>Handler for PUT routes</td></tr>
+<tr><td>RestDelete</td><td>(RestExchange exchange) -> void</td><td>Handler for DELETE routes</td></tr>
+<tr><td>RestPatch</td><td>(RestExchange exchange) -> void</td><td>Handler for PATCH routes</td></tr>
+<tr><td>RestHead</td><td>(RestExchange exchange) -> void</td><td>Handler for HEAD routes</td></tr>
+<tr><td>RestOptions</td><td>(RestExchange exchange) -> void</td><td>Handler for OPTIONS routes</td></tr>
+<tr><td>RestHandler</td><td>(RestExchange exchange) -> void</td><td>Generic handler bound by rest_route to an annotation name</td></tr>
+<tr><td>CliCommand</td><td>(RestExchange exchange) -> void</td><td>Handler for a command dispatched by rest_cli</td></tr>
+<tr><td>CliOption</td><td>(RestExchange exchange) -> void</td><td>Handler for an option dispatched by rest_cli</td></tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr><th>Function</th><th>Signature</th><th>Behavior</th></tr>
+</thead>
+<tbody>
+<tr><td>rest_config</td><td>(string, string) -> void</td><td>Store a configuration key and value; the keys prefix and base_path set the route prefix and max_body_bytes sets the request body limit</td></tr>
+<tr><td>rest_route</td><td>(string, string, string) -> void</td><td>Register method, path template and handler annotation; templates accept {param} and {rest...} or :param and :rest... placeholders</td></tr>
+<tr><td>rest_serve</td><td>() -> void</td><td>Request serving after the program body; routes are frozen from this call on</td></tr>
+<tr><td>rest_stop</td><td>() -> void</td><td>Stop serving</td></tr>
+<tr><td>rest_cli</td><td>(StrList) -> string</td><td>Stateless CLI mode: dispatch an argument vector to options, commands and REST routes and return the response text</td></tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr><th>RestExchange method</th><th>Signature</th><th>Behavior</th></tr>
+</thead>
+<tbody>
+<tr><td>method</td><td>() -> string</td><td>Request method</td></tr>
+<tr><td>path</td><td>() -> string</td><td>Request path</td></tr>
+<tr><td>query</td><td>(string) -> string</td><td>Query parameter value, empty when absent</td></tr>
+<tr><td>has_query</td><td>(string) -> bool</td><td>Whether a query parameter is present</td></tr>
+<tr><td>param</td><td>(string) -> string</td><td>Route template parameter value, empty when absent</td></tr>
+<tr><td>header</td><td>(string) -> string</td><td>Request header value; repeated headers are joined with a comma and a space</td></tr>
+<tr><td>has_header</td><td>(string) -> bool</td><td>Whether a request header is present</td></tr>
+<tr><td>body</td><td>() -> string</td><td>Request body bytes</td></tr>
+<tr><td>status</td><td>(int) -> void</td><td>Set the response status; values outside 200..599 are a host error</td></tr>
+<tr><td>set_header</td><td>(string, string) -> void</td><td>Set a response header; Content-Length, Connection and Transfer-Encoding are managed by the server</td></tr>
+<tr><td>send</td><td>(string) -> void</td><td>Set the response body</td></tr>
+<tr><td>json</td><td>(string) -> void</td><td>Set the response body and the Content-Type application/json</td></tr>
+<tr><td>get</td><td>(string) -> string</td><td>Read a shared state value, empty when absent</td></tr>
+<tr><td>set</td><td>(string, string) -> void</td><td>Write a shared state value</td></tr>
+<tr><td>increment</td><td>(string) -> int</td><td>Increment a shared named counter and return it</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmfluid">github.com/lmctl-ai/lmfluid</a>.</p>
+</footer>
+</body>
+</html>

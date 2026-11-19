@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcurl authoring skill — lmcurl — lmctl.com tools</title>
+<meta name="description" content="lmcurl is a native C++17 HTTP, LDAPv3, and LLM contract testing CLI and LMScript host built on libcurl.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcurl/">Overview</a></li>
+<li><a href="/tools/lmcurl/skill.html">Skill</a></li>
+<li><a href="/tools/lmcurl/guide.html">Guide</a></li>
+<li><a href="/tools/lmcurl/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcurl authoring skill</h1>
+<p>lmcurl is a native C++17 HTTP, LDAPv3, and LLM contract testing CLI and LMScript host built on libcurl. It executes direct LDAPv3 CLI requests and compiled _lmcode_ programs for HTTP/HTTPS API assertions, LDAPv3 directory operations, bounded load testing, LLM completion contracts, and standard REST and CLI routing.</p>
+<h2>Purpose</h2>
+<p>Use lmcurl to send HTTP, HTTPS, and LDAPv3 requests, validate JSONPath, XPath, JSON Schema, and OpenAPI response contracts, run multi-step session suites with cookies and secret redaction, benchmark endpoint latency percentiles, evaluate LLM completions with cassette replay, and serve or dispatch standard lmcode_std_v3 REST and CLI interfaces.</p>
+<h2>When to use it</h2>
+<p>Choose lmcurl when a workflow requires deterministic HTTP or LDAPv3 client checks, data-driven API test suites, HTML or XML extraction paired with lmhtml, or cost-capped LLM prompt regression tests inside LMScript. Use lmldap when you need an embedded OpenLDAP server, lminspect or lmproxy when intercepting or proxying traffic, or lmnet and lmssl when diagnosing low-level sockets and TLS certificate chains.</p>
+<h2>Install</h2>
+<p>Install the lmctl toolchain with npm install -g @lmctl-ai/lmctl@latest. When an LMScript program declares cli="lmcurl" and install="github:lmctl-ai/lmcurl@latest", the runtime automatically downloads and verifies the release asset for Linux x64 or arm64 (glibc 2.28 or newer). macOS and Windows binaries are metadata stubs that support schema and signature inspection while refusing bytecode execution with exit code 3.</p>
+<pre><code>lmscript --version
+lmcurl --version
+lmcurl --lmcode-schema
+lmcurl --lmcode-signatures</code></pre>
+<h2>Commands</h2>
+<p>lmcurl supports host metadata and bytecode execution flags, direct curl-style ldap:// URL invocations, structured lmcurl ldap subcommands, and _lmcode_ script execution through lmscript.</p>
+<pre><code># Host introspection and bytecode execution
+lmcurl --lmcode-schema
+lmcurl --lmcode-schema --json
+lmcurl --lmcode-signatures
+lmcurl --lmcode build/program.dslb
+
+# Direct curl-style LDAPv3 URL mode
+lmcurl "ldap://127.0.0.1:3389/ping"
+lmcurl -u "cn=admin,dc=example,dc=com:secret" "ldap://127.0.0.1:3389/whoami"
+lmcurl "ldap://127.0.0.1:3389/dc=example,dc=com?cn,mail?sub?(cn=Alice)"
+lmcurl "ldap://127.0.0.1:3389/compare?dn=cn%3DAlice%2Cdc%3Dexample%2Cdc%3Dcom&amp;attr=sn&amp;value=Smith"
+lmcurl -u "cn=admin,dc=example,dc=com:secret" -X PUT -d '{"objectClass":["top","person","inetOrgPerson"],"cn":"Bob","sn":"Jones","mail":"bob@example.com"}' "ldap://127.0.0.1:3389/entry/cn=Bob,dc=example,dc=com"
+
+# Structured LDAPv3 CLI subcommands
+lmcurl ldap ping --host 127.0.0.1 --port 3389
+lmcurl ldap bind --host 127.0.0.1 --port 3389 --dn "cn=admin,dc=example,dc=com" --password secret
+lmcurl ldap whoami --host 127.0.0.1 --port 3389 --bind-dn "cn=admin,dc=example,dc=com" --bind-pw secret
+lmcurl ldap search --host 127.0.0.1 --port 3389 --base-dn "dc=example,dc=com" --filter "(cn=Alice)" --attrs cn,mail
+lmcurl ldap get "cn=Alice,dc=example,dc=com" --host 127.0.0.1 --port 3389
+lmcurl ldap add "cn=Alice,dc=example,dc=com" '{"objectClass":["top","person","inetOrgPerson"],"cn":"Alice","sn":"Smith","mail":"alice@example.com"}' --port 3389 --bind-dn "cn=admin,dc=example,dc=com" --bind-pw secret
+lmcurl ldap modify "cn=Alice,dc=example,dc=com" '{"replace":{"mail":"alice.new@example.com"}}' --port 3389 --bind-dn "cn=admin,dc=example,dc=com" --bind-pw secret
+lmcurl ldap compare "cn=Alice,dc=example,dc=com" sn Smith --port 3389
+lmcurl ldap del "cn=Bob,dc=example,dc=com" --port 3389 --bind-dn "cn=admin,dc=example,dc=com" --bind-pw secret</code></pre>
+<h2>Inputs and outputs</h2>
+<p>In _lmcode_ mode, lmcurl exposes context curl: Curl and context llm: Llm alongside the 226 standard lmcode_std_v3 functions and methods. Sessions accept HTTP, HTTPS, or LDAPv3 base URLs. Responses provide status codes, headers, cookies, timing breakdowns, JSONPath queries via Response.json, and XPath queries via Response.xpath. Direct CLI LDAP invocations emit structured JSON objects on stdout containing ok, count, entries, or result fields, while bytecode execution emits a single-line JSON envelope.</p>
+<h2>Safety rules</h2>
+<p>Respect memory, timeout, cost, and redaction boundaries when authoring lmcurl scripts:</p>
+<ul>
+<li>Register sensitive tokens and passwords with Session.secret or Test.capture_secret, and prefer Request.bearer_env so credentials are redacted from saved reports, snapshots, and error strings.</li>
+<li>Keep responses and regex patterns within host bounds: LMCURL_MAX_MEMORY_MB defaults to 4096 MiB, POSIX ERE assertions accept at most 8192 text bytes and 256 pattern bytes without backreferences or lookarounds, and Request.limit caps individual response payloads.</li>
+<li>Use Request.allow_error(true) when batch crawlers or link checkers should record transport failures as status 0 responses rather than aborting the script.</li>
+<li>Live LLM provider requests require LMCURL_LIVE=1, reserve $0.02 per call by default, and enforce a hard $0.25 process cost ceiling; use llm.mock or Chat.replay for offline deterministic tests.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>The first example runs an HTTP session against the built-in loopback mock service and checks JSONPath projections and a suite report:</p>
+<pre><code>p = _lmcode_ cli="lmcurl" install="github:lmctl-ai/lmcurl@latest";
+let mock = curl.mock();
+let s = curl.session(mock.url());
+let suite = curl.suite("catalog-smoke");
+suite.test_request("fetch-items", s.get("/api/products").timeout(5000))
+  .expect_status(200)
+  .expect_json("$.items[0].sku", "SKU-100");
+let rep = suite.report();
+assert_eq(rep.failed(), 0);
+lmcode_return_put("passed", rep.passed());
+end _lmcode_
+res = run_lmcode(p);
+require(res.ok, json_stringify(res));
+println(json_stringify(res));</code></pre>
+<p>The second example queries an LDAPv3 directory over curl.session("ldap://...") and exposes a stateless CLI lookup command and REST health endpoint using the standard lmcode_std_v3 interfaces:</p>
+<pre><code>p = _lmcode_ cli="lmcurl" install="github:lmctl-ai/lmcurl@latest";
+let l = curl.session("ldap://127.0.0.1:3389");
+assert_eq(l.get("/ping").send().json("$.result").value(), "PONG");
+let who = l.get("/whoami").basic("cn=admin,dc=example,dc=com", "secret").send();
+assert_eq(who.status(), 200);
+
+@"--user"
+fn opt_user(x: RestExchange) -> void implements CliOption {
+  x.set("user", x.query("user"));
+}
+
+@"lookup"
+fn cmd_lookup(x: RestExchange) -> void implements CliCommand {
+  let sess = curl.session("ldap://127.0.0.1:3389");
+  let resp = sess.get("/dc=example,dc=com?cn,mail?sub?(cn=" + x.get("user") + ")").send();
+  x.send(resp.json("$.entries[0].attributes.mail").value());
+}
+
+@"/health"
+fn get_health(x: RestExchange) -> void implements RestGet {
+  x.send("OK");
+}
+
+rest_config("session", "global");
+assert_eq(rest_cli(str_split("/health", " ")), "OK");
+end _lmcode_</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmcurl uses deterministic exit codes across CLI and bytecode execution modes:</p>
+<ul>
+<li>Exit code 0 indicates that the CLI command or bytecode program completed and all assertions passed.</li>
+<li>Exit code 1 indicates a direct CLI LDAP or HTTP operation failure (such as connection refusal, authentication failure, or invalid target response).</li>
+<li>Exit code 2 indicates command-line usage errors, unknown or retired flags, or malformed arguments.</li>
+<li>Exit code 3 indicates a bytecode load error, schema mismatch, unhandled runtime exception, or execution on a non-Linux platform metadata stub.</li>
+<li>Exit code 4 indicates an application assertion or contract failure reported by the script.</li>
+</ul>
+<h2>How to verify</h2>
+<p>Verify the installed lmcurl binary by checking its version, embedded schema JSON, canonical signature table, and a self-contained loopback execution:</p>
+<pre><code>lmcurl --version
+lmcurl --lmcode-schema --json > /tmp/lmcurl-schema.json
+lmcurl --lmcode-signatures > /tmp/lmcurl-sigs.txt
+lmscript --lmcode-signatures /tmp/lmcurl-schema.json > /tmp/lmcurl-compiler-sigs.txt
+diff -u /tmp/lmcurl-compiler-sigs.txt /tmp/lmcurl-sigs.txt</code></pre>
+<p>Compare the schema and signature files against schema/lmcurl.dsl.json and schema/lmcurl.signatures.txt in the repository, or run BUILD_DIR=build bash test.sh in a source checkout to execute the full native, mock HTTP, and live lmldap integration suites.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcurl">github.com/lmctl-ai/lmcurl</a>.</p>
+</footer>
+</body>
+</html>

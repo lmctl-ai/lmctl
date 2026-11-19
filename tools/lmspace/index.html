@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmspace — lmctl.com tools</title>
+<meta name="description" content="lmspace is a native orbital mechanics and astronomy host for lmscript with N-body integration, Kepler propagation, transfers, and NASA NAIF CSPICE frames.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmspace/">Overview</a></li>
+<li><a href="/tools/lmspace/skill.html">Skill</a></li>
+<li><a href="/tools/lmspace/guide.html">Guide</a></li>
+<li><a href="/tools/lmspace/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmspace</h1>
+<p>lmspace is a native orbital mechanics and astronomy host for lmscript with N-body integration, Kepler propagation, transfers, and NASA NAIF CSPICE frames. It packs original MIT numerical algorithms and static CSPICE N0067 support into a single self-contained executable.</p>
+<h2>Quick reference</h2>
+<pre><code>npm i -g @lmctl-ai/lmctl
+lmscript orbit.lms
+lmspace --version
+lmspace --lmcode-schema --json</code></pre>
+<table>
+<thead>
+<tr>
+<th>Object or function</th>
+<th>Signature</th>
+<th>Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>space.body</td>
+<td>space.body(name, mu, x, y, z, vx, vy, vz) -> Body</td>
+<td>Create a body with gravitational parameter mu and Cartesian state</td>
+</tr>
+<tr>
+<td>space.system</td>
+<td>space.system() -> System</td>
+<td>Create an independent N-body system that copies added bodies</td>
+</tr>
+<tr>
+<td>System.propagate</td>
+<td>sys.propagate(duration, points, step, method, tol) -> Matrix</td>
+<td>Integrate N-body trajectories with symplectic leapfrog or rk45</td>
+</tr>
+<tr>
+<td>elements</td>
+<td>elements(a, e, i, raan, argp, nu) -> Elements</td>
+<td>Construct classical orbital elements (angles in radians)</td>
+</tr>
+<tr>
+<td>hohmann</td>
+<td>hohmann(r1, r2, mu) -> Matrix</td>
+<td>Compute 1x3 matrix of departure delta-v, arrival delta-v, transfer time</td>
+</tr>
+<tr>
+<td>lambert</td>
+<td>lambert(r1, r2, dt, mu, prograde) -> Matrix</td>
+<td>Solve zero-revolution Lambert boundary value problem (2x3 velocity matrix)</td>
+</tr>
+<tr>
+<td>space.ephemeris</td>
+<td>space.ephemeris(target, observer, frame, et) -> Matrix</td>
+<td>Query geometric SPICE 1x6 state vector (km and km/s) at ET seconds past J2000</td>
+</tr>
+<tr>
+<td>space.frame</td>
+<td>space.frame(from, to, et) -> Matrix</td>
+<td>Compute 3x3 SPICE coordinate rotation matrix between reference frames</td>
+</tr>
+</tbody>
+</table>
+<pre><code>p = _lmcode_ cli="lmspace" install="github:lmctl-ai/lmspace@latest";
+let mu = 398600.4418;
+let orbit = elements(7000.0, 0.1, 0.2, 0.3, 0.4, 0.5);
+let initial = orbit.to_state(mu);
+let transfer = hohmann(7000.0, 42164.0, mu);
+space_assert_close(period(7000.0, mu), 5828.516637686015, 0.00000001);
+transfer.save_csv("transfer.csv");
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, "transfer failed");</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmspace/skill.html">Authoring skill</a>: purpose, commands, safety rules, worked examples, and verification checks for LLM and human script authors.</li>
+<li><a href="/tools/lmspace/guide.html">Guide</a>: architecture, units, numerical integrators, SPICE kernel workflow, resource limits, and the standard lmcode_std_v3 catalog.</li>
+<li><a href="/tools/lmspace/reference.html">Reference</a>: complete tables of CLI flags, environment variables, host types, methods, functions, standard catalog, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmspace">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmspace">github.com/lmctl-ai/lmspace</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmvideo guide — lmvideo — lmctl.com tools</title>
+<meta name="description" content="How lmvideo is put together and how to think about a program for it: the two languages in one file, the host owned surface and encoder, the retained drawing…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/guide.html">Guide</a></li>
+<li><a href="/tools/lmvideo/reference.html">Reference</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+<li><a href="/tools/lmvideo/migration/">Migration</a></li>
+<li><a href="/tools/lmvideo/physics/">Physics</a></li>
+</ul>
+</nav>
+<main><h1>lmvideo guide</h1>
+<p>How lmvideo is put together and how to think about a program for it: the two languages in one file, the host owned surface and encoder, the retained drawing model, the two 3D render paths, physics as a baked take, and the limits that shape a script. Facts describe release v0.1.124.</p>
+<h2 id="overview">Overview</h2>
+<p>lmvideo combines the lmscript host contract with Skia drawing and media output. A script configures a Canvas, Image, Plot, Panel or Scene3D and then draws still images or video frames through one author facing API. Canvas primitives, retained plots, explicit layout managers, diagrams, images, SVG and PDF documents and CPU rendered 3D scenes all compose on the same output surface.</p>
+<p>The script chooses the dimensions and the output path. The host owns the drawing surface and the output lifecycle, calls ffmpeg from PATH for video encoding, and bundles DejaVu Sans so text metrics are consistent. The public repository holds examples, documentation, the schema and release metadata; the implementation sources are maintained separately and binaries are published as GitHub releases.</p>
+<h2 id="two-languages">Two languages in one file</h2>
+<p>An lmvideo program is an ordinary LMScript file that contains a typed block. The outer script handles arguments, directories, other tools and control flow. The block, between the _lmcode_ header and end _lmcode_, is compiled by lmscript against the schema that the lmvideo binary publishes, and is executed by the host in one process.</p>
+<table>
+<thead>
+<tr><th>Layer</th><th>Runs in</th><th>Typical content</th></tr>
+</thead>
+<tbody>
+<tr><td>Outer LMScript</td><td>lmscript</td><td>ARGV defaults, mkdir, write_file for fixtures, run_lmcode, assert, optional system calls such as an ffmpeg GIF conversion</td></tr>
+<tr><td>_lmcode_ block</td><td>lmvideo host</td><td>let bindings, loops, typed functions, calls on canvas, video, out and the host functions</td></tr>
+<tr><td>Splice ${name}</td><td>compile time</td><td>Copies an outer value into the block, for example an output path or a frame count</td></tr>
+</tbody>
+</table>
+<p>Older documents and scripts used a block marker named _dsl_, a manual compile to a .dslb file and a direct lmvideo --lmcode run. The current form is the _lmcode_ block executed with run_lmcode; the bytecode stays internal. The host flags --lmcode-schema --json, --lmcode-signatures and --lmcode FILE remain the protocol that lmscript speaks to the host underneath.</p>
+<pre><code>png = ARGV.len() > 0 ? ARGV[0] : "images/image.png";
+width = ARGV.len() > 1 ? num(ARGV[1]) : 640;
+height = ARGV.len() > 2 ? num(ARGV[2]) : 360;
+mkdir("images");
+program = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.124";
+video.size(${width}, ${height});
+video.frames(1);
+video.output(${png});
+video.begin();
+video.frame();
+canvas.clear("#101820");
+canvas.circle(float(video.width()) * 0.75, float(video.height()) * 0.35, 60.0, paint().color("#ffd166"));
+video.end();
+end _lmcode_
+r = run_lmcode(program);
+assert(r.ok);</code></pre>
+<h2 id="lifecycle">The video lifecycle</h2>
+<p>The lifecycle is explicit. Configure the video object, call begin, call frame once per loop iteration, draw, then call end. begin allocates the host owned surface; frame selects the next frame; end finishes the file. Calling frame outside begin and end is a host error.</p>
+<ol>
+<li>video.size, video.fps, video.frames, optionally video.crf, and video.output.</li>
+<li>video.begin.</li>
+<li>For each index up to video.count: video.frame, then drawing on canvas. video.t is the normalized position used by the examples for easing; video.time is the authored time in seconds; video.index is the frame number.</li>
+<li>Optionally video.save_frame to keep a poster image of the current frame.</li>
+<li>video.end.</li>
+</ol>
+<p>A still image uses the same lifecycle with one frame and a PNG output path. Work that needs no frame at all can skip the lifecycle: a Surface, an Image or a recorded Document writes its own files.</p>
+<h2 id="drawing">Drawing model</h2>
+<h3>Immediate canvas calls and retained objects</h3>
+<p>Canvas has immediate primitives (clear, rect, circle, line, path, text, image, svg) and transform state (save, restore, translate, scale, rotate, clip_rect). Paint, Path and Font values are built with fluent calls and passed to those primitives.</p>
+<p>Plots, panels and diagrams are retained. canvas.plot returns a Plot that keeps its title, ranges and Series; drawing happens when draw is called. An animation therefore keeps one Plot outside the frame loop, clears and refills its series per frame, and calls draw, as the damped oscillator example does. A Panel arranges plots, text, shapes and images with a layout manager and draws them together.</p>
+<p>Diagram shapes follow the vocabulary of the earlier lmdraw host: box, diamond, cylinder, note, cluster, connector, lifeline, message and group create nodes, attributes are adjusted with set_attr, and redraw followed by png renders the retained drawing. canvas.target points the canvas at a Surface for that workflow.</p>
+<h3>Images</h3>
+<p>Image is a mutable fluent value with processing, drawing, measurement and comparison methods. Layout composes several images in layers or as a sheet, and Timeline holds frames with per frame delays for GIF output. An Image returned by a renderer is not on screen until it is painted with canvas.image.</p>
+<h3>Vector and document output</h3>
+<p>document(width, height) records drawing into a Picture, which replays to PNG at a chosen scale, SVG, PDF or a serialized Skia picture. pdf_document collects pictures as pages. surface(width, height) is an off-screen raster target that can also export SVG and PDF. The vector outputs example in the repository round trips an emitted SVG through svg_file and a Surface.</p>
+<h3>SVG input</h3>
+<p>svg(text) and svg_file(path) parse SVG and canvas.svg places it in a target rectangle. The host parses and validates the supported SVG elements and attributes before rendering. Keep one explicit default namespace on the root and a viewBox; width and height are inferred from the viewBox.</p>
+<h2 id="three-d">3D: one scene, two render paths</h2>
+<p>A Scene3D holds meshes as nodes, materials, a camera, lights, shadows and an environment. The world is right handed with Y up. Meshes come from primitive builders, lathe, extrusion, text, heightfields, triangles or files; materials are PBR values with optional textures.</p>
+<table>
+<thead>
+<tr><th>Path</th><th>Call</th><th>Use</th></tr>
+</thead>
+<tbody>
+<tr><td>Raster</td><td>scene.render_image(width, height, samples)</td><td>Fast CPU preview for shaping a scene, checking a camera or scrubbing an animation. Depth and normal images are raster passes.</td></tr>
+<tr><td>Cycles</td><td>scene.render_image(width, height, "cycles", samples, bounces, seed, denoise)</td><td>CPU path tracing for the final image, with optional Open Image Denoise.</td></tr>
+</tbody>
+</table>
+<p>Keep one scene and change only the render call when comparing the two. Camera, meshes, transforms, materials, lights, environment and animation time are shared. A beauty image comparison between the paths is descriptive: differences in indirect light and denoising are expected. The renderer name is explicit, so a build without Cycles reports an error instead of substituting a raster image; render_available("cycles") lets a script check first.</p>
+<p>For a moving scene, set scene.time(video.time()) before each render. For long sequences, scene.save_job writes a bounded, versioned job that the lmvideo render-job and render-job-batch commands render outside the script; batch output is atomic, frame IDs are numeric and stable, and a result manifest records each frame's settings and checksum.</p>
+<p>The Cycles profile rejects input it does not support instead of dropping it: screen space Gaussian sprites, non-opaque materials, mixed U and V wrapping, non-unit occlusion maps and per object shadow overrides. Keep those on the raster path. scene.threads sets the worker count; keep it fixed for repeatability checks.</p>
+<h2 id="physics">Physics as a baked take</h2>
+<p>lmvideo uses Jolt Physics on the CPU. Boxes and spheres live in a fixed step world that shares its coordinates with Scene3D. Units are metres, kilograms and seconds; mass zero makes a body static; friction and restitution range from 0 to 1. world.planar(true), chosen before bodies are added, constrains motion to X and Y translation and Z rotation.</p>
+<p>Render geometry is separate from colliders: the script adds a mesh node for each body and matches its dimensions to the collider, floors and ramps included. body.sync(node) or pose.sync(node) copies position and rotation onto the node without squashing its mesh. Parented, keyframed or detached nodes refuse synchronization.</p>
+<p>world.bake(frames, stride) records the current poses and advances the world forward; the resulting PhysicsTake is immutable. take.pose(t, body_id) interpolates for t between 0 and 1. The repository loops replay a take through a smooth periodic phase, the square of sin(pi * frame / frame_count). That is time replayed physics with forward and backward playback: the solver never integrates backwards, and a duplicated first frame after a discontinuous last frame is not a seamless loop.</p>
+<p>physics_presentation builds presentation content from physical parts in top left pixel coordinates: letter tiles, stacked bar units, bullet balls and KPI heaps. step advances it, render returns an Image, tumble removes the floor and launches the content, assemble restores the authored poses.</p>
+<h2 id="workflow">A working rhythm</h2>
+<ol>
+<li>Start from the closest repository example or book chapter and keep its block header.</li>
+<li>Compile with lmscript --check after each edit. The compiler names unknown methods and lists the valid ones.</li>
+<li>Run small: low resolution, few frames, raster rendering, few samples.</li>
+<li>Look at the PNG, or a saved poster frame of the video, before raising quality.</li>
+<li>Switch the render call to Cycles and raise samples only for the final still or bounded batch.</li>
+<li>Record what matters with out.print and assert on r.ok in the outer script.</li>
+</ol>
+<h2 id="std">Standard library and the newer REST and CLI interfaces</h2>
+<p>Every lmcode host carries the shared standard catalog next to its own functions. lmvideo v0.1.124 pins the lmcode_std_v3 edition with 206 signatures: string, math, file, JSON, template and result envelope functions and the typed list, map, queue, stack and priority queue containers. They need no import.</p>
+<p>The current lmcode_std_v3 catalog has grown to 226 signatures by absorbing the former lmcode_std_rest_v1 module: the interfaces RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand and CliOption, the functions rest_config, rest_route, rest_serve, rest_stop and rest_cli, and the RestExchange type. lmvideo v0.1.124 does not provide these. A program that calls one of them is refused by the host at load time with code LOAD_UNBOUND. They become available in lmvideo when a later release is built against the 226 signature catalog; the reference page lists them with that status.</p>
+<h2 id="limits">Limits and caveats</h2>
+<table>
+<thead>
+<tr><th>Area</th><th>Limit</th></tr>
+</thead>
+<tbody>
+<tr><td>Video encoding</td><td>Requires user supplied ffmpeg and ffprobe on PATH. Stills, SVG, PDF and GIF do not.</td></tr>
+<tr><td>Platforms</td><td>Linux x86_64 and arm64 with glibc 2.35 or newer, macOS x86_64 and arm64 from version 13, Windows x86_64 from version 10.</td></tr>
+<tr><td>Physics shapes</td><td>Boxes and spheres only. Capsules, convex hulls and joints are not exposed.</td></tr>
+<tr><td>Physics budgets</td><td>2048 bodies per world, four simultaneous worlds, one million fixed updates per world, 10,000 updates per step call or bake, 2 to 512 samples and stride 1 to 1000 per bake, 262,144 stored poses per bake and 524,288 across retained takes.</td></tr>
+<tr><td>Render jobs</td><td>The capabilities command of v0.1.124 reports at most 32 frames and 4,194,304 pixels, renderers raster and cycles, pass color.</td></tr>
+<tr><td>Cycles</td><td>CPU only and slow relative to raster; unsupported material and sprite features are rejected, not approximated.</td></tr>
+<tr><td>Pixel identity</td><td>Preview images document upstream output and are not a cross platform pixel identity guarantee.</td></tr>
+<tr><td>Legacy hosts</td><td>lmdraw, lmimg, lmmagnum and lmfilament are maintenance only; lmvideo is the canonical host. 3D output migrated from lmmagnum is equivalent in geometry, camera and colors, not pixel equal.</td></tr>
+<tr><td>Licensing</td><td>Examples, documentation and pictures are MIT licensed. Binary releases after v0.1.35 use the Lattice Systems Binary License; third party notices ship with each release.</td></tr>
+</tbody>
+</table>
+<h2 id="where-next">Where to go next</h2>
+<ul>
+<li><a href="/tools/lmvideo/skill.html">Skill</a> for the step by step procedure, tested examples and error table</li>
+<li><a href="/tools/lmvideo/reference.html">Reference</a> for every signature</li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started book</a> and <a href="/tools/lmvideo/examples/">Examples book</a></li>
+<li><a href="/tools/lmvideo/physics/">Physics book</a>, <a href="/tools/lmvideo/cycles/">Cycles book</a> and <a href="/tools/lmvideo/showcase/">Showcase book</a></li>
+<li><a href="/tools/lmvideo/migration/">Migration book</a> for scripts written for the legacy hosts</li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

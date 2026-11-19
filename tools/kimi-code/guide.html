@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kimi-code guide — kimi-code — lmctl.com tools</title>
+<meta name="description" content="kimi-code (lmctl-ai/kimi-code) is the lmctl-maintained fork of Moonshot AI's Kimi Code CLI.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/kimi-code/">Overview</a></li>
+<li><a href="/tools/kimi-code/skill.html">Skill</a></li>
+<li><a href="/tools/kimi-code/guide.html">Guide</a></li>
+<li><a href="/tools/kimi-code/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>kimi-code guide</h1>
+<h2>Overview</h2>
+<p>kimi-code (lmctl-ai/kimi-code) is the lmctl-maintained fork of Moonshot AI's Kimi Code CLI. It serves as an AI coding agent in the terminal (kimi), a headless JSON-streaming CLI (kimi -p), and an Agent Client Protocol backend (kimi acp) for lmctl, Zed, and JetBrains IDEs. The fork resolves a critical session-restore wedge across ACP and non-ACP hosts and introduces batched delivery of queued prompts.</p>
+<h2>Fork fix 1: Healing acp-runtime-after-reap on session restore</h2>
+<p>In stock Kimi Code CLI, when an ACP session (kimi acp) runs, it persists an agent runtime binding of the form acp:&lt;sessionId> inside the session state. If that session is later resumed by a non-ACP host — such as the interactive TUI, kap-server, or headless kimi -p after the ACP process was reaped — the non-ACP host never registers the acp:&lt;sessionId> runtime. As a result, the model continues to chat, but every tool invocation and subagent spawn (coder, explore, plan) fails permanently with runtime &lt;id> does not exist in workspace &lt;id>.</p>
+<p>The patch in packages/agent-core-v2/src/agent/runtimeBinding/agentRuntime.ts (submitted upstream as PR #3563 for issue #3562) detects an unregistered runtime binding on first use after session restore and automatically rebinds the session to the host's active local runtime, restoring full tool and subagent execution seamlessly.</p>
+<h2>Fork fix 2: Batched delivery of queued prompts</h2>
+<p>In upstream Kimi Code CLI, prompts sent while the agent is busy executing a turn are delivered strictly one at a time, triggering a separate model turn for each queued message. In lmctl multi-agent workflows where coordinators or peers enqueue multiple follow-up instructions during an active turn, single-message delivery causes unnecessary turn churn and partial answers.</p>
+<p>This fork (submitted upstream as PR #4052 for issue #4051) delivers all prompts queued at the moment a turn finishes together in the very next turn in FIFO order (each preserved as a distinct user message), allowing the model to read and address the entire batch in a single response. Prompts sent while the agent is idle behave identically to upstream.</p>
+<h2>Configuration, custom providers, and auto-update protection</h2>
+<p>The current v2 JavaScript CLI stores its configuration under ~/.kimi-code/ (not legacy ~/.kimi/):</p>
+<ul>
+<li>Preventing silent overwrite (~/.kimi-code/tui.toml): set auto_install = false under [upgrade] so background auto-updates do not replace your patched binary with an unpatched release.</li>
+<li>Custom provider routing (~/.kimi-code/config.toml): declare default_model, a [providers.&lt;name>] section (with type = "openai", base_url, and api_key), and a [models.&lt;name>] section (with provider, model, and max_context_size).</li>
+<li>Headless JSON streaming: run kimi -p "&lt;prompt>" --output-format stream-json and parse JSONL lines for the object with role == "assistant" to extract the exact content without decorative TUI bullets.</li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/kimi-code">github.com/lmctl-ai/kimi-code</a>.</p>
+</footer>
+</body>
+</html>

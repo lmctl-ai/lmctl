@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmoci — lmctl.com tools</title>
+<meta name="description" content="lmoci is the Oracle Cloud Infrastructure scripting host for LMScript, providing both the shared lmcloud procedural schema and a 16-section OCI SDK and CLI…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmoci/">Overview</a></li>
+<li><a href="/tools/lmoci/skill.html">Skill</a></li>
+<li><a href="/tools/lmoci/guide.html">Guide</a></li>
+<li><a href="/tools/lmoci/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmoci</h1>
+<p>lmoci is the Oracle Cloud Infrastructure scripting host for LMScript, providing both the shared lmcloud procedural schema and a 16-section OCI SDK and CLI surface.</p>
+<h2>Quick reference</h2>
+<p>Declare lmoci in an LMScript program or invoke its direct CLI subcommands against offline demo fixtures, the local ocisim emulator on 127.0.0.1:4599, or guarded live tenancies.</p>
+<pre><code>lmoci --version
+lmoci --lmcode-schema --json
+lmoci --lmcode-signatures
+lmoci inventory all --demo
+lmoci os namespace --endpoint http://127.0.0.1:4599
+p = _lmcode_ cli="lmoci" install="github:lmctl-ai/lmoci@latest";</code></pre>
+<table>
+<thead>
+<tr>
+<th>Surface</th>
+<th>Command or method</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Shared cloud context</td>
+<td>context cloud: Cloud</td>
+<td>Provider-neutral OCI Object Storage, OCI Queue, tables, IAM permissions, Functions, user directories, cost caps, and metrics.</td>
+</tr>
+<tr>
+<td>OCI SDK context</td>
+<td>context oci: Oci; oci.connect("demo"), oci.with_sandbox(name, fn)</td>
+<td>16-section OCI inventory, Object Storage, Queue, Streaming cursors, Vault/KMS/Secrets metadata, IAM policy lint, and ledger-tracked sandboxes.</td>
+</tr>
+<tr>
+<td>Direct CLI subcommands</td>
+<td>lmoci cred | inventory | os | iam | queue | stream | vault</td>
+<td>Deterministic JSON envelope commands for shell automation against --demo or --endpoint http://127.0.0.1:4599.</td>
+</tr>
+<tr>
+<td>Standard REST and CLI</td>
+<td>rest_config, rest_route, rest_serve, rest_stop, rest_cli</td>
+<td>Expose OCI storage and queue workflows as HTTP routes (:param patterns) and CLI commands via lmcode_std_v3 interfaces.</td>
+</tr>
+</tbody>
+</table>
+<p>Runnable LMScript example using lmoci with OCI Object Storage, OCI Queue, and standard REST/CLI routing:</p>
+<pre><code>p = _lmcode_ cli="lmoci" install="github:lmctl-ai/lmoci@latest";
+  @"/os/:bucket/:object"
+  fn get_os(x: RestExchange) -> void implements RestGet {
+    x.send(cloud.object_get(x.param("bucket"), x.param("object")));
+  }
+
+  @"enqueue-work"
+  fn cmd_work(x: RestExchange) -> void implements CliCommand {
+    let id = cloud.queue_send("lmoci-work", x.body());
+    x.send("msg:" + id);
+  }
+
+  rest_config("prefix", "/v1");
+  cloud.set_cost_cap_usd(0.05);
+  cloud.bucket_create("lmoci-bkt");
+  cloud.object_put("lmoci-bkt", "readme.txt", "hello from lmoci");
+  cloud.queue_create("lmoci-work");
+
+  let w_out = rest_cli(str_split("enqueue-work -- job-99", " "));
+  let o_out = rest_cli(str_split("/v1/os/lmoci-bkt/readme.txt", " "));
+  print(w_out + " | " + o_out);
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, "lmoci workflow failed");</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmoci/skill.html">Skill</a> — LLM agent authoring rules, commands, ocisim signing behavior, safety gates, and verification steps.</li>
+<li><a href="/tools/lmoci/guide.html">Guide</a> — Architecture, shared lmcloud and direct OCI CLI subcommands, ocisim open/enforce modes, and standard REST/CLI interfaces.</li>
+<li><a href="/tools/lmoci/reference.html">Reference</a> — CLI flags, environment variables, Cloud and Oci methods, direct CLI subcommands, standard REST/CLI interfaces, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmoci">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmoci">github.com/lmctl-ai/lmoci</a>.</p>
+</footer>
+</body>
+</html>

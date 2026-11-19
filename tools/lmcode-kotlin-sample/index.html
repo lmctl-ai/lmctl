@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-kotlin-sample — lmctl.com tools</title>
+<meta name="description" content="lmcode-kotlin-sample is the idiomatic Kotlin reference Shop and Ledger host built on the vendored lmcode-java SDK and passing the canonical sample suite.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-kotlin-sample/">Overview</a></li>
+<li><a href="/tools/lmcode-kotlin-sample/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-kotlin-sample/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-kotlin-sample/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-kotlin-sample</h1>
+<p>lmcode-kotlin-sample is the idiomatic Kotlin reference Shop and Ledger host built on the vendored lmcode-java SDK and passing the canonical sample suite. It demonstrates Kotlin SAM lambda bindings, byte-exact VmString handling, R49 @item and @total rule entry dispatch, and LMCODE_RETURN framing.</p>
+<h2>Quick reference</h2>
+<pre><code>git clone https://github.com/lmctl-ai/lmcode-kotlin-sample.git
+cd lmcode-kotlin-sample
+python3 scripts/sync.py check
+mvn package -DskipTests
+./test.sh</code></pre>
+<table><thead><tr><th>Aspect</th><th>Value</th><th>Role</th></tr></thead><tbody>
+<tr><td>Language &amp; toolchain</td><td>Kotlin (JDK 21)</td><td>Reference host implementation embedding lmcode-java (vendor/lmcode-java)</td></tr>
+<tr><td>Domain schema</td><td>45 host signatures</td><td>Shop, Items, Money, Ledger, Currency enum, operators, and Adjuster/Score interfaces</td></tr>
+<tr><td>Standard catalog</td><td>lmcode_std_v3</td><td>Preloaded standard catalog plus opt-in print and assert_close testing helpers</td></tr>
+<tr><td>--lmcode-schema [--json]</td><td>Discovery flag</td><td>Print human summary or exact embedded dsl.schema: 2 JSON bytes (exit 0)</td></tr>
+<tr><td>--lmcode-signatures</td><td>Discovery flag</td><td>Print sorted canonical host and standard signatures (exit 0)</td></tr>
+<tr><td>--lmcode / --first / --last</td><td>Execution flags</td><td>Run one or more compiled DSLB v6 chunks, dispatch @item/@total entries, and frame results</td></tr>
+</tbody></table>
+<pre><code>./bin/lmcode-kotlin-sample --version
+./bin/lmcode-kotlin-sample --lmcode-schema --json
+./bin/lmcode-kotlin-sample --lmcode-signatures
+./bin/lmcode-kotlin-sample --lmcode sample-suite/bytecode/001-literals.dslb</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmcode-kotlin-sample/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-kotlin-sample/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-kotlin-sample/reference.html">Reference</a></li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmcode-kotlin-sample">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-kotlin-sample">github.com/lmctl-ai/lmcode-kotlin-sample</a>.</p>
+</footer>
+</body>
+</html>

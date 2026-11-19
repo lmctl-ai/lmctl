@@ -18,6 +18,7 @@
 <li><a href="/tools/lmpy/skill.html">Skill</a></li>
 <li><a href="/tools/lmpy/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmpy/guide.html">Guide</a></li>
+<li><a href="/tools/lmpy/reference.html">Reference</a></li>
 <li><a href="/tools/lmpy/examples/">Examples</a></li>
 </ul>
 </nav>
@@ -33,15 +34,15 @@ let q = dist("norm").ppf(0.975);
 out.close("normal quantile", q, 1.959963984540054, 0.00000000000001);
 out.put("quantile", q);
 end _lmcode_
-savedsl(p, "build/normal-quantile.dslb");
-r = system ${dsl_cli(p)} --lmcode build/normal-quantile.dslb;
-if (r.code != 0) { println(r.stderr); exit(r.code); }
-println(r.stdout);</code></pre>
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));
+println("97.5% standard normal quantile: " + str(r.result.values.quantile));</code></pre>
 <h2>2. Run the program</h2>
 <p>Save the file as normal-quantile.lms and run it with lmscript. The first run may download the release binary for your operating system and processor.</p>
 <pre><code>lmscript normal-quantile.lms</code></pre>
 <h2>3. Check the result</h2>
-<p>A successful run prints the checked result. A failed out.close or out.check assertion makes the host command fail and identifies the check in its diagnostic.</p>
+<pre><samp>97.5% standard normal quantile: 1.959963984540054</samp></pre>
+<p>A successful run prints the checked result. A failed out.close or out.check assertion makes run_lmcode return ok false with a message that identifies the check, and require stops the program.</p>
 <p>See the <a href="/tools/lmpy/examples/normal-quantile.html">normal quantile example</a> for a complete runnable source and preview.</p>
 <h2>Run provider sessions</h2>
 <p>Use an lmctl build that supports autorun; check with lmctl help autorun before running these commands.</p>

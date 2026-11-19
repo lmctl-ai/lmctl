@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmclient authoring skill — lmclient — lmctl.com tools</title>
+<meta name="description" content="lmclient is a scriptable protocol client and lmcode host in one native executable covering JDBC databases (SQLite, DuckDB, H2, PostgreSQL, SQL Server) plus…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmclient/">Overview</a></li>
+<li><a href="/tools/lmclient/skill.html">Skill</a></li>
+<li><a href="/tools/lmclient/guide.html">Guide</a></li>
+<li><a href="/tools/lmclient/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmclient authoring skill</h1>
+<p>lmclient is a scriptable protocol client and lmcode host in one native executable covering JDBC databases (SQLite, DuckDB, H2, PostgreSQL, SQL Server) plus Redis, SMTP/IMAP mail, AMQP queues, MQTT, and MongoDB.</p>
+<h2>Purpose</h2>
+<p>Use lmclient to query databases, inspect or diff JDBC schemas, export CSV or JSON datasets for plotting, and interact with Redis, mail, RabbitMQ, MQTT, and MongoDB endpoints under a unified JSON envelope and credential-redaction contract.</p>
+<h2>When to use it</h2>
+<p>Use lmclient when an LMScript workflow or CLI task needs non-HTTP data connectors, in-memory analytical SQL over SQLite, DuckDB, or H2, or JDBC metadata introspection. Use lmconn for HTTP APIs and LLM providers, and lmaws for AWS cloud service operations.</p>
+<h2>Install</h2>
+<p>Install the LMScript and lmctl toolchain with npm install -g @lmctl-ai/lmctl. An _lmcode_ block with cli="lmclient" install="github:lmctl-ai/lmclient@latest" automatically downloads and verifies the native platform binary.</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmscript install github:lmctl-ai/lmclient@latest
+lmclient --version
+lmclient --lmcode-schema --json
+lmclient --lmcode-signatures</code></pre>
+<h2>Commands</h2>
+<p>Query JDBC databases or protocol areas directly from the CLI, or script connections inside an _lmcode_ block:</p>
+<pre><code>lmclient --url jdbc:sqlite:app.db --sql "SELECT * FROM orders" --format json
+lmclient --url jdbc:sqlite:app.db --metadata tables --format json
+lmclient --url jdbc:sqlite:app.db --diff-url jdbc:sqlite:reference.db --format json
+lmclient redis set greeting hello --url redis://127.0.0.1:6379/0 --ttl 60
+lmclient mongo find --url mongodb://127.0.0.1:27017 --db shop --collection orders --filter "{\"qty\":{\"\$gt\":5}}"</code></pre>
+<p>Inside an LMScript program, bind lmclient as an _lmcode_ host:</p>
+<pre><code>dbhost = _lmcode_ cli="lmclient" install="github:lmctl-ai/lmclient@latest";
+let c = connect("jdbc:sqlite::memory:");
+c.exec("CREATE TABLE sales(month TEXT, revenue REAL); INSERT INTO sales VALUES ('Jan',12000),('Feb',14500);");
+let q = c.query("SELECT month, revenue FROM sales ORDER BY revenue DESC");
+q.csv("data/sales.csv");
+c.close();
+end _lmcode_
+r = run_lmcode(dbhost);
+assert(r.ok);</code></pre>
+<h2>Inputs and outputs</h2>
+<p>CLI commands accept --url (or LMCLIENT_AREA_URL environment variables), --credentials-file, --sql or --file, --metadata, --explain, --diff-url, --format (json, csv, table), --output, and --max-rows (default 10000, maximum 1000000). In _lmcode_ mode, connect(url) and connect_file(url, path) return typed Connection handles whose queries return Result objects.</p>
+<p>Every CLI protocol area emits a single JSON envelope on stdout with ok and result or error fields. Result objects in _lmcode_ can export directly to CSV or JSON files or return cell values via text(row, col), number(row, col), and is_null(row, col).</p>
+<h2>Safety rules</h2>
+<p>Never pass database or broker passwords on the command line where process listings can expose them; supply credentials through environment variables or a protected UTF-8 --credentials-file (or connect_file in _lmcode_). lmclient redacts credentials from stdout, stderr, and error diagnostics.</p>
+<p>LMCLIENT_MAX_MEMORY_MB bounds memory allocation (default 4096 MiB, minimum 16 MiB), and scripts may hold at most 2 open native-engine (SQLite/DuckDB) connections and 64 total connections at once. Close connections with c.close() to release slots promptly.</p>
+<h2>Worked examples</h2>
+<p>Run any of the self-contained repository examples with lmctl to query SQLite, H2, or DuckDB, export CSV results, and render charts or schema diagrams:</p>
+<pre><code>lmctl https://raw.githubusercontent.com/lmctl-ai/lmclient/main/examples/sqlite_sales_trend.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmclient/main/examples/duckdb_energy.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmclient/main/examples/er_diagram.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmclient/main/examples/schema_map.lms</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmclient exits with code 0 on success. Code 2 indicates a CLI usage error, invalid flag combination, or invalid LMCLIENT_MAX_MEMORY_MB setting. Code 3 indicates a runtime failure such as a SQL error, connection failure, row-limit breach, or memory-budget violation.</p>
+<h2>How to verify</h2>
+<p>Verify the binary version, schema JSON, canonical signatures, and an in-memory SQLite query from the command line.</p>
+<pre><code>lmclient --version
+lmclient --lmcode-schema --json
+lmclient --lmcode-signatures
+lmclient --url jdbc:sqlite::memory: --sql "SELECT 1 AS ok" --format json</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmclient">github.com/lmctl-ai/lmclient</a>.</p>
+</footer>
+</body>
+</html>

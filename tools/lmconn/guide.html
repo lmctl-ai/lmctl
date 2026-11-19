@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmconn guide — lmconn — lmctl.com tools</title>
+<meta name="description" content="lmconn provides a unified connector layer for AI-agent workflows without requiring a persistent daemon or external npm dependencies.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmconn/">Overview</a></li>
+<li><a href="/tools/lmconn/skill.html">Skill</a></li>
+<li><a href="/tools/lmconn/guide.html">Guide</a></li>
+<li><a href="/tools/lmconn/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmconn guide</h1>
+<h2>Overview</h2>
+<p>lmconn provides a unified connector layer for AI-agent workflows without requiring a persistent daemon or external npm dependencies. Built on modern ESM JavaScript and Node.js built-in node:sqlite (and distributed as standalone single-file binaries across five platforms), it combines a local credential and OAuth2 token vault with ten protocol command areas and an auto-generated cli.schema.v1 interface that lmscript imports directly as typed functions.</p>
+<h2>Architecture and schema bridge</h2>
+<p>Each connector area lives in its own module under src/cmd-*.js and exports both an async run(args) handler and a declarative ops array of cli.schema.v1 operation descriptors:</p>
+<ul>
+<li>Deterministic envelope protocol: src/result.js guarantees that every invocation writes a single JSON object to stdout with ok: true and result, or ok: false and an error object containing code and message. Diagnostic prompts never pollute stdout.</li>
+<li>Schema generation and --input-json dispatch: src/schema.js aggregates all exported ops into schema/lmconn.cli.schema.v1.json (56 operations). When an LMScript script imports the schema and calls lmconn.ldap_search(options), the compiler invokes lmconn ldap_search --input-json '{"op":"ldap_search","params":...}'. The bridge validates access policy (enforcing --readonly when requested), translates camelCase parameter keys back into canonical CLI flags, and invokes the underlying command handler.</li>
+</ul>
+<h2>SQLite credential store and broker mode</h2>
+<p>Credentials are stored in a local SQLite database at ~/.lmconn/creds.db (overridable via the LMCONN_DB environment variable) with strict file permission checks:</p>
+<ul>
+<li>Encryption at rest (AES-256-GCM): Credential rows are encrypted with AES-256-GCM using an instance key stored outside the database directory (default ~/.config/lmconn/instance.key, or LMCONN_KEY_FILE, or LMCONN_KEY) and wrapped data keys whose additional authenticated data (AAD) binds service, field, and key ID. Use lmconn key rotate [--data], lmconn key backup --to FILE, and lmconn cred encrypt-existing [--all] to rotate keys and seal stores against downgrade.</li>
+<li>Standard credential resolution: Connectors resolve secrets in deterministic order: stored SQLite credential first, service-specific environment variable second (for example, DEEPSEEK_API_KEY, GITHUB_TOKEN, or &lt;SERVICE>_API_KEY), and stored OAuth2 access token third.</li>
+<li>OAuth2 lifecycle and 69 vendor presets: src/oauth-presets.json embeds endpoint and auth-style presets for 69 services derived from n8n credential definitions. oauth authorize runs a temporary loopback listener with PKCE S256 and state verification (or accepts redirect URLs over stdin with --manual), while oauth device implements RFC 8628 device-code polling. When http request --auth SERVICE encounters an expired OAuth2 access token and a refresh token is present, lmconn refreshes and rotates the token automatically before sending the request.</li>
+<li>Broker store mode (lmauth integration): Passing cred store SERVICE --stdin or running with LMCONN_STORE_MODE=broker imports issuer-bound and origin-bound grants as nonexportable records. Secret material enters over private stdin and cannot be extracted via cred get --reveal. Furthermore, authenticated HTTP calls using a broker-protected grant validate the target origin and return receipt metadata rather than raw response bodies, preventing prompt-injection exfiltration of bearer tokens or protected payloads.</li>
+</ul>
+<h2>Directory, identity, and cache connectors (LDAPv3, SAML 2.0, Valkey)</h2>
+<p>Version 0.2.0 expands lmconn beyond REST and OAuth2 to cover enterprise directory, single sign-on, and in-memory data protocols:</p>
+<ul>
+<li>LDAPv3 connector (src/cmd-ldap.js): Operates in dual transport modes (--mode ldap for native ASN.1 BER wire frames over TCP, or --mode rest against an lmldap REST port). It supports ping, bind, whoami (RFC 4532 ExtendedRequest), search, get, add, modify (with add, replace, and delete attribute maps), compare (RFC 4511 CompareRequest returning match: true|false), and del. Search accepts full RFC 4516 LDAP URLs (--url ldap://host:port/dn?attrs?scope?filter), attribute projection (--attrs), size and time limits, and either structured JSON or RFC 2849 LDIF output (--format json|ldif).</li>
+<li>SAML 2.0 connector (src/cmd-saml.js): Connects to lmsaml identity and service provider endpoints to check health (saml ping), fetch IdP or SP EntityDescriptor XML metadata (saml metadata, saml sp-metadata), manage directory users (saml users, saml user-get, saml user-add, saml user-del), authenticate credentials (saml authn), and issue or cryptographically verify XML-DSig signed SAML 2.0 assertions (saml assertion, saml verify).</li>
+<li>Valkey and Redis connector (src/cmd-valkey.js): Supports ping, get, set, del, and arbitrary command execution (valkey cmd) over either native RESP sockets (--mode resp) or lmvalkey HTTP REST endpoints (--mode rest).</li>
+</ul>
+<h2>Agent and package ecosystem connectors (LLM, MCP, ACP, npm)</h2>
+<p>lmconn also bridges local AI agent protocols and software publishing:</p>
+<ul>
+<li>LLM providers (src/cmd-llm.js): Unifies OpenAI-compatible HTTPS APIs (deepseek, openrouter, ollama-cloud) with local agent CLI executables discovered on PATH (claude, codex, agy, kimi) under a single llm chat and llm probe interface.</li>
+<li>Model Context Protocol and Agent Client Protocol (src/cmd-mcp.js, src/cmd-acp.js): Spawns stdio MCP servers to list or invoke tools, resources, prompts, and multi-call sessions (mcp_tools, mcp_resources, mcp_prompts, mcp_read, mcp_prompt, mcp_call, mcp_session), and runs multi-turn stdio conversations with ACP agents (acp_chat).</li>
+<li>Protected npm publishing (src/cmd-npm.js): Packs tarballs with lifecycle scripts disabled (npm_pack) and publishes packages or checks registry identity (npm_publish, npm_whoami) using protected credentials so npm tokens never leak into shell environments or build logs.</li>
+</ul>
+<h2>Standard lmcode_std_v3 interoperability</h2>
+<p>When lmconn talks to companion lmctl servers such as lmldap, lmsaml, lmvalkey, or lmmock, those C++ and Go hosts expose endpoints built on the 226-signature lmcode_std_v3 REST and CLI standard (RestGet..RestOptions, RestHandler, CliCommand, CliOption, rest_config, rest_route, rest_serve, rest_stop, rest_cli). This allows LMScript orchestrations to spin up an in-memory mock or protocol server with _lmcode_ and immediately drive it through lmconn's typed cli.schema.v1 operations.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmconn">github.com/lmctl-ai/lmconn</a>.</p>
+</footer>
+</body>
+</html>

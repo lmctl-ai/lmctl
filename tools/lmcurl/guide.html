@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcurl guide — lmcurl — lmctl.com tools</title>
+<meta name="description" content="lmcurl combines an upstream libcurl HTTP/HTTPS engine, a pure C++17 BER/ASN.1 LDAPv3 client, a JSONPath/XPath/JSON Schema contract assertion layer, a…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcurl/">Overview</a></li>
+<li><a href="/tools/lmcurl/skill.html">Skill</a></li>
+<li><a href="/tools/lmcurl/guide.html">Guide</a></li>
+<li><a href="/tools/lmcurl/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcurl guide</h1>
+<h2>Overview</h2>
+<p>lmcurl combines an upstream libcurl HTTP/HTTPS engine, a pure C++17 BER/ASN.1 LDAPv3 client, a JSONPath/XPath/JSON Schema contract assertion layer, a cost-bounded LLM evaluation harness, and the 226-signature lmcode_std_v3 standard library inside a single native executable. Programs can run as standalone command-line utilities or as compiled _lmcode_ bytecode modules orchestrated by lmscript.</p>
+<h2>Architecture and protocol modes</h2>
+<p>The host divides network and assertion workloads into composable layers so scripts remain concise and deterministic:</p>
+<ul>
+<li>HTTP and HTTPS transport: Curl.session creates a Session with persistent cookies, base URL resolution, custom headers, and scoped variables. Request objects configure methods, query parameters, URL-encoded forms, multipart uploads, basic or digest authentication, environment-backed bearer tokens, TLS client certificates, custom CA bundles, redirect following, HTTP/2, proxy overrides, timeouts, payload limits, and retry policies.</li>
+<li>Built-in loopback mock service: Curl.mock starts or attaches to a deterministic localhost fixture server supporting product catalogs, HTML pages, sitemaps, RSS/Atom feeds, login forms with CSRF tokens, redirects, and transient failure endpoints. Mock.serve coordinates cross-process readiness and stop files with a hard 120-second deadline ceiling.</li>
+<li>Pure C++17 LDAPv3 engine: When a session base URL or CLI target uses the ldap:// scheme, lmcurl dispatches requests through its native BER/ASN.1 wire implementation (cpp/ldap_wire.hpp). It supports anonymous and simple DN/password binds, RFC 4532 Who Am I? extended operations (/whoami), RFC 4511 Compare requests (/compare), RFC 4516 search URLs with base DN, attributes, scope (base, one, sub), and filter parsing, plus entry creation, modification ({add, replace, delete}), and deletion.</li>
+<li>Query and contract engine: Response.json and Curl.query_json evaluate JSONPath expressions, while Response.xpath evaluates XPath expressions over XML or HTML bodies. Query objects chain string, numeric, regex, collection, formatting, date, and URL-decoding transforms. Response.assert_json_schema and Response.assert_openapi validate structural contracts, and Response.snapshot compares responses against stored golden files.</li>
+<li>Load and latency benchmarking: Curl.load executes concurrent virtual-user requests over a fixed duration and returns a LoadResult with total request count, error rate, and p50, p95, and p99 latency percentiles in milliseconds.</li>
+</ul>
+<h2>Security, redaction, and resource boundaries</h2>
+<p>Automated network and LLM testing often handles credentials and untrusted payloads. lmcurl enforces strict runtime safeguards:</p>
+<ul>
+<li>Secret redaction: Values registered via Session.secret, Test.capture_secret, or Request.bearer_env, along with credential-shaped patterns, are automatically scrubbed from console output, JUnit/TAP/JSON/HTML reports, snapshots, and transport error diagnostics.</li>
+<li>Memory and payload caps: The host enforces a process memory budget configured by LMCURL_MAX_MEMORY_MB (default 4096 MiB) as well as per-request response byte limits via Request.limit. Oversized payloads fail their contract cleanly without exhausting host memory.</li>
+<li>Safe regular expressions: Query.matches and Query.regex compile patterns using POSIX Extended Regular Expressions without backreferences or lookarounds, bounded to 8192 input bytes and 256 pattern bytes to prevent catastrophic backtracking.</li>
+<li>LLM cost guardrails: The Llm context supports OpenRouter, DeepSeek, Ollama, and local mock fixtures. Live network calls are blocked unless LMCURL_LIVE=1 is set in the environment (and are prohibited in CI). Every live request reserves $0.02 prior to dispatch by default and aborts if cumulative process spend reaches the hard $0.25 ceiling. Cassettes recorded with Chat.cassette can be replayed offline with Chat.replay.</li>
+</ul>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<p>In addition to its client contexts, lmcurl embeds the full 226-signature lmcode_std_v3 standard library (cpp/stdlib/rest.hpp). Any _lmcode_ function annotated with a route or flag string can implement one of the standard interfaces:</p>
+<ul>
+<li>HTTP method interfaces: RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, and the method-agnostic RestHandler. Route annotations support static paths (such as @"/health") and colon-prefixed path parameters (such as @"/users/:id/roles/:role"), extracted at runtime via RestExchange.param.</li>
+<li>Stateless CLI interfaces: CliOption (annotated with @"--flag") and CliCommand (annotated with @"command"). rest_cli(args) tokenizes and dispatches a StrList of command-line arguments through matching CliOption handlers before invoking the target CliCommand or path route, returning the response body as a string.</li>
+<li>Stateful and ephemeral server lifecycle: rest_config("port", "8080") and rest_config("host", "127.0.0.1") configure the embedded HTTP listener. Setting rest_config("session", "global") preserves key-value state written via RestExchange.set and RestExchange.increment across calls, whereas the default ephemeral mode isolates state per invocation. Explicit routes can also be bound dynamically with rest_route(method, path, handler_name), served with rest_serve(), and halted with rest_stop().</li>
+</ul>
+<pre><code>p = _lmcode_ cli="lmcurl" install="github:lmctl-ai/lmcurl@latest";
+@"--env"
+fn opt_env(x: RestExchange) -> void implements CliOption {
+  x.set("env", x.query("env"));
+}
+
+@"status"
+fn cmd_status(x: RestExchange) -> void implements CliCommand {
+  let count = x.increment("hits");
+  x.send(x.get("env") + ":" + str_from_int(count));
+}
+
+@"/items/:id"
+fn get_item(x: RestExchange) -> void implements RestGet {
+  x.set_header("X-Item-Id", x.param("id"));
+  x.json("{\"id\":\"" + x.param("id") + "\"}");
+}
+
+rest_config("session", "global");
+assert_eq(rest_cli(str_split("--env=staging status", " ")), "staging:1");
+assert_eq(rest_cli(str_split("/items/42", " ")), "{\"id\":\"42\"}");
+end _lmcode_</code></pre>
+<h2>Combining lmcurl with lmhtml and lmldap</h2>
+<p>In multi-host LMScript workflows, lmcurl downloads pages or queries directory services and writes structured JSON, CSV, or HTML artifacts that downstream hosts consume. For example, web scraping workflows fetch HTML documents with lmcurl using parallel download batches and Request.proxy(""), then invoke lmhtml to select DOM nodes, verify links, or diff structural snapshots. Similarly, identity integration tests start an ephemeral lmldap server and exercise both RFC 4516 search URLs and authenticated modify or compare operations from lmcurl.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcurl">github.com/lmctl-ai/lmcurl</a>.</p>
+</footer>
+</body>
+</html>

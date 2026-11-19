@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>lmcode-cpp — lmctl.com tools</title>
-<meta name="description" content="A C++17 header-only SDK for embedding the lmscript bytecode verifier and virtual machine in native hosts.">
+<meta name="description" content="Quick reference for lmcode-cpp, the C++17 header-only runtime for lmscript _lmcode_ bytecode.">
 <link rel="stylesheet" href="/tools/style.css">
 <link rel="icon" type="image/png" href="/tools/lmcode-cpp/img/icon.png">
 </head>
@@ -23,13 +23,85 @@
 <main>
 <h1>lmcode-cpp</h1>
 <figure><img src="/tools/lmcode-cpp/img/logo.png" alt="lmcode-cpp logo" width="256" height="256"><figcaption>lmcode-cpp logo</figcaption></figure>
-<p>This lmcode-cpp page is also kept at its former address for existing links.</p>
-
-<h2>Overview</h2>
-<p>Experimental. lmcode-cpp is a C++17, standard-library-only header for loading, verifying and executing lmscript bytecode inside a host application.</p>
-<p>Start with the <a href="/tools/lmcode-cpp/tutorial.html">tutorial</a>, use the <a href="/tools/lmcode-cpp/guide.html">user guide</a> for API and format details, or give the <a href="/tools/lmcode-cpp/skill.html">skill page</a> to an assistant writing host bindings.</p>
-<p>Install by copying include/dslvm.hpp into your project or pinning the SDK source commit. There is no compiled library or third-party dependency. The standard function schema is included by each Registry, so hosts do not register standard functions.</p>
-<ul><li><a href="https://github.com/lmctl-ai/lmcode-cpp">Source repository</a></li><li><a href="https://github.com/lmctl-ai/lmcode-cpp/releases/latest">Latest release</a></li><li><a href="https://github.com/lmctl-ai/lmcode-cpp/issues">Report an issue</a></li><li><a href="https://github.com/lmctl-ai/lmcode-cpp/blob/main/README.md">README and API example</a></li><li><a href="https://github.com/lmctl-ai/lmcode-cpp/blob/main/LICENSE">MIT license</a></li></ul>
+<p>lmcode-cpp (formerly the C++ DSL SDK) is the experimental C++17, standard-library-only runtime for lmscript _lmcode_ bytecode: loader, verifier, VM and host registry in one header, include/dslvm.hpp. This quick reference is kept at the former address; the same tool is documented at <a href="/tools/lmcode-cpp/">/tools/lmcode-cpp/</a>.</p>
+<h2 id="install">Install and build</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl
+git clone https://github.com/lmctl-ai/lmcode-cpp
+g++ -std=c++17 -Ilmcode-cpp/include host.cpp -o host</code></pre>
+<p>The SDK is header-only. Hosts vendor include/dslvm.hpp with all stdlib/*.hpp files by pinned hash. The published compiler requires Node.js 24.15.0 or later.</p>
+<h2 id="protocol">Host protocol and schema</h2>
+<table>
+<thead><tr><th>Item</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>Bytecode</td><td>Version 6 only (DSLB v6); older and newer versions are refused.</td></tr>
+<tr><td>Schema</td><td>A dsl.schema 2 JSON document with name, types, functions, context and interfaces. Program::load takes its exact bytes for the SHA-256 binding; the SDK never reads its content.</td></tr>
+<tr><td>host --lmcode-schema --json</td><td>Host protocol flag: print the exact schema JSON the compiler uses.</td></tr>
+<tr><td>host --lmcode-signatures</td><td>Host protocol flag: print Registry::signatures(), diffed against lmscript --lmcode-signatures schema.json.</td></tr>
+<tr><td>host --lmcode FILE.dslb</td><td>Host protocol flag: load and run a compiled program file.</td></tr>
+<tr><td>Exit codes</td><td>2 for compilation or argument errors, 3 for bytecode load or run errors, 4 for application failures.</td></tr>
+<tr><td>Result</td><td>One standard JSON result line, for example {"ok": true, "result": ...}, which run_lmcode returns as ok and result.</td></tr>
+</tbody>
+</table>
+<h2 id="api">SDK API</h2>
+<table>
+<thead><tr><th>SDK name</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td>dslvm::Registry</td><td>Declares context types, functions and methods with exact argument and return type strings and stores the C++ callbacks. Default construction includes lmcode_std_v3.</td></tr>
+<tr><td>Registry(StdMode::Disabled)</td><td>Registry without the standard catalog.</td></tr>
+<tr><td>dslvm::register_std(registry)</td><td>Idempotently registers the complete standard catalog.</td></tr>
+<tr><td>registry.context(name, type)</td><td>Declares a schema context variable and its host type.</td></tr>
+<tr><td>registry.method(type, name, params, returns, callback)</td><td>Binds a host method; the callback receives void* self and dslvm::Args.</td></tr>
+<tr><td>registry.function(name, params, returns, callback)</td><td>Binds a host function; the callback receives dslvm::Args.</td></tr>
+<tr><td>registry.signatures()</td><td>All registered signatures including std.</td></tr>
+<tr><td>registry.host_signatures()</td><td>Registered signatures excluding std.</td></tr>
+<tr><td>registry.matches_schema_signatures(...)</td><td>Accepts host-only or already merged declarations and rejects host drift.</td></tr>
+<tr><td>registry.std_collections()</td><td>Arena for standard collection values returned by native callbacks (make_* helpers); cleared at entry and exit of each Program::run.</td></tr>
+<tr><td>dslvm::Program::load(bytecode, schema, registry)</td><td>Verifies format, schema binding and imports, then returns a runnable program.</td></tr>
+<tr><td>program.run(context, registry)</td><td>Runs the chunk with live host objects.</td></tr>
+<tr><td>dslvm::Context, context.set(name, pointer)</td><td>Maps schema context variable names to host-owned object pointers.</td></tr>
+<tr><td>dslvm::Value</td><td>INT (int64), FLOAT (binary64), STR, BOOL, VOID or OBJ (host pointer plus schema type name); Value::none() and Value::string(...) construct values.</td></tr>
+<tr><td>dslvm::Error</td><td>Thrown by load and run; catch it around both.</td></tr>
+<tr><td>dslvm::read_file(path)</td><td>Reads a file as bytes without text conversion.</td></tr>
+<tr><td>dslvm::report_ok(json), dslvm::json_escape(text)</td><td>Emit the standard JSON result line.</td></tr>
+</tbody>
+</table>
+<h2 id="std">Standard catalog</h2>
+<p>Every default dslvm::Registry includes the lmcode_std_v3 standard catalog: 226 canonical signatures (88 functions and 138 methods on 17 standard types), pinned in std.lock as version 3 of std/lmcode-std.schema.json. Registry(StdMode::Disabled) opts out and dslvm::register_std(registry) enables it idempotently.</p>
+<p>The catalog includes the standard REST and CLI surface: the 10 interfaces RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand and CliOption (each takes one RestExchange and returns void), the functions rest_config, rest_route, rest_serve, rest_stop and rest_cli, and 15 RestExchange methods.</p>
+<table>
+<thead><tr><th>Signature</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>rest_config(string, string) -> void</td><td>Sets a named REST configuration value.</td></tr>
+<tr><td>rest_route(string, string, string) -> void</td><td>Registers a route; route templates accept {param} and {rest...} as well as :param and :rest... placeholders.</td></tr>
+<tr><td>rest_serve() -> void</td><td>Starts serving the registered routes.</td></tr>
+<tr><td>rest_stop() -> void</td><td>Stops the server.</td></tr>
+<tr><td>rest_cli(StrList) -> string</td><td>Stateless CLI mode: dispatches options, commands and REST routes from an argument list without resetting outer run state.</td></tr>
+</tbody>
+</table>
+<h2 id="example">Minimal example</h2>
+<p>A host author compiles a block against the schema file of the host under development and saves bytecode for the host to load:</p>
+<pre><code>p = _lmcode_ schema="schema.json";
+g.say("Hello from lmcode");
+end _lmcode_
+savedsl(p, "demo.dslb");</code></pre>
+<pre><code>lmscript demo.lms demo.dslb
+./host --lmcode demo.dslb</code></pre>
+<p>Users of a released host X name it on the block and run it directly; run_lmcode returns ok and result:</p>
+<pre><code>prog = _lmcode_ cli="X" install="github:lmctl-ai/X@latest";
+...
+end _lmcode_
+r = run_lmcode(prog);</code></pre>
+<h2 id="pages">Pages</h2>
+<ul>
+<li><a href="/tools/cpp-dsl-sdk/skill.html">Skill: host authoring procedure</a></li>
+<li><a href="/tools/cpp-dsl-sdk/guide.html">Guide: concepts, ownership and limits</a></li>
+<li><a href="/tools/cpp-dsl-sdk/reference.html">Reference: SDK API, exit codes and the standard catalog</a></li>
+<li><a href="/tools/cpp-dsl-sdk/tutorial.html">Tutorial: build a greeter host</a></li>
+<li><a href="/tools/lmcode-cpp/">lmcode-cpp at its current address</a></li>
+<li><a href="https://github.com/lmctl-ai/lmcode-cpp">GitHub repository lmctl-ai/lmcode-cpp</a></li>
+<li><a href="https://github.com/lmctl-ai/lmcode-cpp/blob/main/docs/std.md">Generated std reference (docs/std.md)</a></li>
+<li><a href="https://github.com/lmctl-ai/lmcode-cpp-sample">lmcode-cpp-sample teaching host</a></li>
+</ul>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-cpp">github.com/lmctl-ai/lmcode-cpp</a>.</p>

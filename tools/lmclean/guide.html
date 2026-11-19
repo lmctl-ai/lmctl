@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmclean guide — lmclean — lmctl.com tools</title>
+<meta name="description" content="Rule execution lifecycle, File domain methods, interactive --serve REST mode, and standard lmcode_std_v3 interfaces for lmclean.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmclean/">Overview</a></li>
+<li><a href="/tools/lmclean/skill.html">Skill</a></li>
+<li><a href="/tools/lmclean/guide.html">Guide</a></li>
+<li><a href="/tools/lmclean/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmclean guide</h1>
+<p>Rule execution lifecycle, File domain methods, interactive --serve REST mode, and standard lmcode_std_v3 interfaces for lmclean.</p>
+<h2>Overview</h2>
+<p>lmclean combines a deterministic native Rust filesystem walker with the lmcode bytecode virtual machine. Instead of hard-coding file-matching heuristics or shelling out to du and git, lmclean exposes a rich File object and three SAM callback interfaces (Ignore, Filter, and Report) that run inside verified DSLB v6 bytecode.</p>
+<h2>Walker pipeline and SAM interfaces</h2>
+<p>For each entry visited under the search roots, the walker runs a three-stage callback pipeline:</p>
+<ol>
+<li>Pruning (@ignore, implements Ignore): Every @ignore entry runs first. If any returns true, the candidate is skipped completely and, if it is a directory, its subtree is never traversed. lmclean has no implicit .gitignore rules; pruning is controlled explicitly by @ignore callbacks, --hidden, and --max-depth.</li>
+<li>Selection (@select, implements Filter): Every @select entry runs next. Multiple @select entries are combined with logical OR. When a directory matches, its recursive byte size (rsize) is computed once and the walker does not descend into its children.</li>
+<li>Auditing (@report, implements Report): When a candidate matches, each @report entry runs once with the matched File handle so rules can emit custom audit notes to stderr via print().</li>
+</ol>
+<h2>Deterministic recursive sizes and Git inspection</h2>
+<p>The File type distinguishes own metadata length (size()) from recursive content bytes (rsize()). Recursive size sums only non-directory entries inside a directory subtree, excluding filesystem-dependent directory inode sizes, counting symlinks by link length without following them, and skipping unreadable subtrees without aborting.</p>
+<p>For workspace cleanup rules, File also provides recursive subtree timestamps (rmodified() and raccessed(), scanning non-.git descendants) and Git repository inspection methods: is_git_repo(), is_git_clean() (clean working tree, index, and stash), is_git_pushed() (all local branches pushed to a remote), and git_status() (returning not-git, dirty, no-remote, unpushed, or clean-pushed).</p>
+<h2>Interactive REST server mode (--serve)</h2>
+<p>Launching lmclean with --serve wraps the rule engine in a single-connection HTTP/1.1 JSON server so clients can scan once, slice the cached matches with view filters (min_size, max_size, ext, kind, name, path, older_than_days, newer_than_days, exclude, sort, order, limit, offset), preview summaries by extension or root, and execute guarded deletes with expect_matched and expect_bytes.</p>
+<pre><code>curl -sX POST http://127.0.0.1:PORT/scan?view=summary
+curl -s "http://127.0.0.1:PORT/results?ext=log,tmp&amp;min_size=1048576&amp;sort=size&amp;limit=20"
+curl -sX PUT http://127.0.0.1:PORT/settings -d '{"params":{"stale_days":3}}'
+curl -sX POST http://127.0.0.1:PORT/clean -d '{"filter":{"ext":"log"},"dry_run":true}'
+curl -sX POST http://127.0.0.1:PORT/clean -d '{"filter":{"ext":"log"},"expect_matched":12,"expect_bytes":3489192}'
+curl -sX POST http://127.0.0.1:PORT/shutdown</code></pre>
+<h2>Standard REST and stateless CLI interfaces</h2>
+<p>In addition to --serve mode, lmclean embeds the 226-signature lmcode_std_v3 standard catalog, supporting RestGet..RestOptions, RestHandler, CliCommand, CliOption, :param and {param} route templates, rest_config, rest_route, rest_serve, rest_stop, and rest_cli inside _lmcode_ programs.</p>
+<pre><code>program = _lmcode_ cli="lmclean" install="github:lmctl-ai/lmclean@latest";
+@"--exts"
+fn opt_exts(x: RestExchange) -> void implements CliOption {
+  x.set("exts", x.query("exts"));
+}
+
+@"policy"
+fn cmd_policy(x: RestExchange) -> void implements CliCommand {
+  let days = param_int("stale_days", 7);
+  x.send("policy:exts=" + x.get("exts") + ":days=" + str(days));
+}
+
+@"/policy/:profile"
+fn get_policy(x: RestExchange) -> void implements RestGet {
+  x.json("{\"profile\":\"" + x.param("profile") + "\",\"exts\":\"" + x.get("exts") + "\"}");
+}
+
+rest_config("session", "global");
+print(rest_cli(str_split("--exts=tmp,log policy", " ")));
+print(rest_cli(str_split("--exts=tmp,log /policy/default", " ")));
+end _lmcode_</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmclean">github.com/lmctl-ai/lmclean</a>.</p>
+</footer>
+</body>
+</html>

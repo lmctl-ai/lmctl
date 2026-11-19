@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmfinance reference — lmfinance — lmctl.com tools</title>
+<meta name="description" content="Complete reference for lmfinance 0.1.4: command-line flags, exit codes, environment, the seven context objects, every host type and method of the embedded…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmfinance/">Overview</a></li>
+<li><a href="/tools/lmfinance/skill.html">Skill</a></li>
+<li><a href="/tools/lmfinance/guide.html">Guide</a></li>
+<li><a href="/tools/lmfinance/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmfinance reference</h1>
+<p>Complete reference for lmfinance 0.1.4: command-line flags, exit codes, environment, the seven context objects, every host type and method of the embedded schema, and the standard lmcode_std_v3 library the host vendors. Signatures are taken from schema/lmfinance.dsl.json in the repository.</p>
+<h2 id="cli">Command line</h2>
+<table>
+<thead>
+<tr><th>Flag</th><th>Behavior</th></tr>
+</thead>
+<tbody>
+<tr><td>--version</td><td>Print lmfinance X.Y.Z</td></tr>
+<tr><td>--notices</td><td>Print the embedded third-party notices</td></tr>
+<tr><td>--lmcode-schema --json</td><td>Print the embedded effective schema as JSON (host declarations merged with the standard library)</td></tr>
+<tr><td>--lmcode-schema</td><td>Print the registry signatures as text</td></tr>
+<tr><td>--lmcode-signatures</td><td>Print the registry signatures as text: context, method and function lines</td></tr>
+<tr><td>--lmcode FILE [FILE ...]</td><td>Load and verify every compiled program, run them in order, stop at the first failure, write one result frame to standard output</td></tr>
+<tr><td>--dry-run --lmcode FILE [FILE ...]</td><td>Load and verify every program without running any; must come first; contradicting real-mode invocation metadata is a usage error</td></tr>
+</tbody>
+</table>
+<h3 id="exit-codes">Exit codes</h3>
+<table>
+<thead>
+<tr><th>Code</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>Success</td></tr>
+<tr><td>2</td><td>Command-line or invocation metadata error (failure phase cli, code CLI_USAGE); usage text on stderr</td></tr>
+<tr><td>3</td><td>Program load error (phase load) or run error (phase run), including failed assertions, QuantLib errors and an exceeded memory budget</td></tr>
+<tr><td>4</td><td>Application failure (phase app, code APP_FAIL) or failure writing output</td></tr>
+</tbody>
+</table>
+<h3 id="environment">Environment</h3>
+<table>
+<thead>
+<tr><th>Variable</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>LMFINANCE_MAX_MEMORY_MB</td><td>Total memory budget in MiB, a positive whole number; default 4096. An invalid value is a usage error (exit 2)</td></tr>
+<tr><td>LMCODE_INVOCATION_FILE</td><td>Set by run_lmcode to pass invocation metadata, including dry mode; not set by hand</td></tr>
+</tbody>
+</table>
+<h3 id="envelope">Result envelope</h3>
+<table>
+<thead>
+<tr><th>Field</th><th>Present</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>ok</td><td>always</td><td>true on success, false on failure</td></tr>
+<tr><td>result</td><td>success</td><td>Value set with lmcode_return_set or lmcode_return_put, else null</td></tr>
+<tr><td>phase</td><td>failure</td><td>cli, load, run or app</td></tr>
+<tr><td>code</td><td>failure</td><td>Error code such as CLI_USAGE, LOAD_BAD_BYTECODE or RUN_HOST</td></tr>
+<tr><td>message</td><td>failure</td><td>Diagnostic text; run errors start with the block line and column</td></tr>
+<tr><td>line, column</td><td>run failure</td><td>Position in the block</td></tr>
+</tbody>
+</table>
+<h2 id="contexts">Context objects</h2>
+<table>
+<thead>
+<tr><th>Name</th><th>Type</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>market</td><td>MarketApi</td><td>evaluation date and yield curves.</td></tr>
+<tr><td>instrument</td><td>InstrumentApi</td><td>payoffs and fixed-income instruments.</td></tr>
+<tr><td>model</td><td>ModelApi</td><td>equity market models.</td></tr>
+<tr><td>pricing</td><td>PricingApi</td><td>engines and valuations.</td></tr>
+<tr><td>risk</td><td>RiskApi</td><td>bumped Greeks, rate risk, value at risk.</td></tr>
+<tr><td>calibration</td><td>CalibrationApi</td><td>implied volatility and Heston fitting.</td></tr>
+<tr><td>lmf</td><td>LmfApi</td><td>checks and output.</td></tr>
+</tbody>
+</table>
+<h2 id="types">Host types and methods</h2>
+<p>The host schema declares 19 types with 107 method signatures and no free functions. Float parameters must be finite. Objects live until the host exits; at most 4000000 objects of each kind can be created.</p>
+<h3 id="type-marketapi">MarketApi</h3>
+<p>Context object market: evaluation date and yield curves.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>set_date</td><td>(string) -> void</td><td>Set the evaluation date from a YYYY-MM-DD string (years 1901 to 2199). Set it before building curves</td></tr>
+<tr><td>date</td><td>() -> string</td><td>Current evaluation date as YYYY-MM-DD; default 2024-01-02</td></tr>
+<tr><td>flat_curve</td><td>(float) -> Curve</td><td>Flat continuously compounded curve at the given rate</td></tr>
+<tr><td>zero_curve</td><td>() -> CurveBuilder</td><td>Builder for a curve from zero-rate nodes; add nodes with zero</td></tr>
+<tr><td>bootstrap_curve</td><td>() -> CurveBuilder</td><td>Builder for a curve bootstrapped from deposit and swap quotes</td></tr>
+</tbody>
+</table>
+<h3 id="type-curvebuilder">CurveBuilder</h3>
+<p>Returned by market.zero_curve and market.bootstrap_curve; methods chain.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>zero</td><td>(float, float) -> CurveBuilder</td><td>Add a node (years, zero rate); zero_curve builders only; nodes must be at distinct maturities</td></tr>
+<tr><td>deposit</td><td>(string, float) -> CurveBuilder</td><td>Add a deposit quote (tenor such as 3M, rate); bootstrap builders only</td></tr>
+<tr><td>swap</td><td>(string, float) -> CurveBuilder</td><td>Add a swap quote (tenor such as 5Y, rate); bootstrap builders only</td></tr>
+<tr><td>build</td><td>() -> Curve</td><td>Build the Curve; needs at least one node or quote</td></tr>
+</tbody>
+</table>
+<h3 id="type-curve">Curve</h3>
+<p>An immutable yield curve anchored to the evaluation date at which it was built.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>discount</td><td>(float) -> float</td><td>Discount factor at t years</td></tr>
+<tr><td>zero</td><td>(float) -> float</td><td>Continuously compounded zero rate at t years; t must be positive</td></tr>
+<tr><td>forward</td><td>(float, float) -> float</td><td>Continuously compounded forward rate between t1 and t2 years; needs 0 &lt;= t1 &lt; t2</td></tr>
+<tr><td>bumped</td><td>(float) -> Curve</td><td>New curve with dr added to every continuously compounded zero rate</td></tr>
+<tr><td>save_csv</td><td>(string, float, int) -> void</td><td>Write (path, max years, points): space-separated rows of time, zero rate, discount factor, forward rate; 2 to 1000000 points</td></tr>
+</tbody>
+</table>
+<h3 id="type-instrumentapi">InstrumentApi</h3>
+<p>Context object instrument: payoffs and fixed-income instruments.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>european_call</td><td>(float, float) -> Option</td><td>(strike, years) European call</td></tr>
+<tr><td>european_put</td><td>(float, float) -> Option</td><td>(strike, years) European put</td></tr>
+<tr><td>american_call</td><td>(float, float) -> Option</td><td>(strike, years) American call</td></tr>
+<tr><td>american_put</td><td>(float, float) -> Option</td><td>(strike, years) American put</td></tr>
+<tr><td>barrier_call</td><td>(float, float, float, string) -> Option</td><td>(strike, years, barrier, type) barrier call; type is up-in, up-out, down-in or down-out</td></tr>
+<tr><td>barrier_put</td><td>(float, float, float, string) -> Option</td><td>(strike, years, barrier, type) barrier put; same types</td></tr>
+<tr><td>asian_call</td><td>(float, float, string, int) -> Option</td><td>(strike, years, averaging, fixings) Asian call; averaging is geometric or arithmetic; 1 to 10000 equally spaced fixings ending at expiry</td></tr>
+<tr><td>asian_put</td><td>(float, float, string, int) -> Option</td><td>(strike, years, averaging, fixings) Asian put</td></tr>
+<tr><td>cap</td><td>(float, float, float) -> CapFloor</td><td>(notional, strike, years) cap on Euribor 6M; maturity in whole half years, 1 to 100 years</td></tr>
+<tr><td>floor</td><td>(float, float, float) -> CapFloor</td><td>(notional, strike, years) floor on Euribor 6M</td></tr>
+<tr><td>swaption</td><td>(Swap, float) -> Swaption</td><td>(swap, expiry years) option to enter the swap; expiry a whole number of months up to 50 years</td></tr>
+<tr><td>bond</td><td>(float, float, float, int) -> Bond</td><td>(face, coupon, years, frequency) fixed-rate bond; frequency 1, 2, 4 or 12; maturity a whole number of coupon periods, at most 100 years</td></tr>
+<tr><td>zero_bond</td><td>(float, float) -> Bond</td><td>(face, years) zero-coupon bond</td></tr>
+<tr><td>swap</td><td>(float, float, float) -> Swap</td><td>(notional, fixed rate, years) payer swap; maturity in whole years, 1 to 100</td></tr>
+</tbody>
+</table>
+<h3 id="type-capfloor">CapFloor</h3>
+<p>A cap or floor.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>strike</td><td>() -> float</td><td>Strike rate</td></tr>
+<tr><td>years</td><td>() -> float</td><td>Maturity in years</td></tr>
+</tbody>
+</table>
+<h3 id="type-swaption">Swaption</h3>
+<p>A swaption.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>expiry</td><td>() -> float</td><td>Expiry in years</td></tr>
+</tbody>
+</table>
+<h3 id="type-option">Option</h3>
+<p>An option payoff and exercise style.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>strike</td><td>() -> float</td><td>Strike</td></tr>
+<tr><td>years</td><td>() -> float</td><td>Maturity in years</td></tr>
+</tbody>
+</table>
+<h3 id="type-bond">Bond</h3>
+<p>A fixed-rate or zero-coupon bond.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>years</td><td>() -> float</td><td>Maturity in years</td></tr>
+</tbody>
+</table>
+<h3 id="type-swap">Swap</h3>
+<p>A fixed-for-floating swap; the methods modify the swap and return it.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>receiver</td><td>() -> Swap</td><td>Make it a receiver swap (receives fixed)</td></tr>
+<tr><td>payer</td><td>() -> Swap</td><td>Make it a payer swap (pays fixed); the default</td></tr>
+<tr><td>spread</td><td>(float) -> Swap</td><td>Set the floating-leg spread; ignored inside a swaption</td></tr>
+</tbody>
+</table>
+<h3 id="type-modelapi">ModelApi</h3>
+<p>Context object model: equity market models.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>black_scholes</td><td>(float, float, float, float) -> Model</td><td>(spot, rate, dividend yield, volatility) Black-Scholes-Merton model; spot and volatility positive</td></tr>
+<tr><td>heston</td><td>(float, float, float, float, float, float, float, float) -> Model</td><td>(spot, rate, dividend yield, v0, kappa, theta, sigma, rho) Heston model; v0, kappa, theta, sigma positive, rho inside (-1, 1)</td></tr>
+</tbody>
+</table>
+<h3 id="type-model">Model</h3>
+<p>A Black-Scholes-Merton or Heston market.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>spot</td><td>() -> float</td><td>Spot price</td></tr>
+<tr><td>param</td><td>(string) -> float</td><td>Parameter by name: spot, rate, dividend; vol for Black-Scholes; v0, kappa, theta, sigma, rho for Heston</td></tr>
+<tr><td>with_spot</td><td>(float) -> Model</td><td>Copy with another spot</td></tr>
+<tr><td>with_rate</td><td>(float) -> Model</td><td>Copy with another rate</td></tr>
+<tr><td>with_vol</td><td>(float) -> Model</td><td>Copy with another volatility; Black-Scholes models only</td></tr>
+</tbody>
+</table>
+<h3 id="type-pricingapi">PricingApi</h3>
+<p>Context object pricing: engines and valuations.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>analytic</td><td>() -> Engine</td><td>Closed-form engine: European options under Black-Scholes or Heston, barrier and geometric Asian options</td></tr>
+<tr><td>baw</td><td>() -> Engine</td><td>Barone-Adesi-Whaley approximation engine</td></tr>
+<tr><td>binomial</td><td>(int) -> Engine</td><td>Binomial tree engine (Cox-Ross-Rubinstein) with 2 to 20000 steps</td></tr>
+<tr><td>binomial_tree</td><td>(string, int) -> Engine</td><td>(tree, steps) binomial engine; tree is crr, jr, tian or lr</td></tr>
+<tr><td>finite_diff</td><td>(int, int) -> Engine</td><td>(time steps, grid points) finite-difference engine; 2 to 100000 time steps, 10 to 100000 grid points</td></tr>
+<tr><td>monte_carlo</td><td>(int, int) -> Engine</td><td>(paths, seed) Monte Carlo engine; 16 to 100000000 paths, seed at least 1</td></tr>
+<tr><td>price</td><td>(Option, Model, Engine) -> Result</td><td>Price an option under a model with an engine</td></tr>
+<tr><td>bond_clean_price</td><td>(Bond, Curve) -> float</td><td>Clean price per 100 face on the curve</td></tr>
+<tr><td>bond_npv</td><td>(Bond, Curve) -> float</td><td>Dirty value in currency on the curve</td></tr>
+<tr><td>bond_accrued</td><td>(Bond) -> float</td><td>Accrued amount</td></tr>
+<tr><td>bond_price_from_yield</td><td>(Bond, float) -> float</td><td>(bond, yield) clean price per 100 face</td></tr>
+<tr><td>bond_yield</td><td>(Bond, float) -> float</td><td>(bond, clean price) yield compounded at the coupon frequency</td></tr>
+<tr><td>bond_duration</td><td>(Bond, float) -> float</td><td>(bond, yield) modified duration</td></tr>
+<tr><td>bond_macaulay_duration</td><td>(Bond, float) -> float</td><td>(bond, yield) Macaulay duration</td></tr>
+<tr><td>bond_convexity</td><td>(Bond, float) -> float</td><td>(bond, yield) convexity</td></tr>
+<tr><td>swap_npv</td><td>(Swap, Curve) -> float</td><td>Net present value on the curve</td></tr>
+<tr><td>swap_par_rate</td><td>(Swap, Curve) -> float</td><td>Fair fixed rate on the curve</td></tr>
+<tr><td>swap_annuity</td><td>(Swap, Curve) -> float</td><td>Fixed-leg annuity on the curve</td></tr>
+<tr><td>capfloor_npv</td><td>(CapFloor, Curve, float) -> float</td><td>(cap or floor, curve, volatility) Black value with a flat lognormal volatility</td></tr>
+<tr><td>capfloor_implied_vol</td><td>(CapFloor, Curve, float) -> float</td><td>(cap or floor, curve, price) Black implied volatility</td></tr>
+<tr><td>capfloor_atm_rate</td><td>(CapFloor, Curve) -> float</td><td>At-the-money strike rate, where cap and floor have equal value</td></tr>
+<tr><td>swaption_npv</td><td>(Swaption, Curve, float) -> float</td><td>(swaption, curve, volatility) Black value with a flat lognormal volatility</td></tr>
+<tr><td>swaption_implied_vol</td><td>(Swaption, Curve, float) -> float</td><td>(swaption, curve, price) Black implied volatility</td></tr>
+<tr><td>swaption_forward_rate</td><td>(Swaption, Curve) -> float</td><td>Fair rate of the forward-starting underlying swap</td></tr>
+</tbody>
+</table>
+<h3 id="type-engine">Engine</h3>
+<p>A numerical method.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>name</td><td>() -> string</td><td>One of analytic, binomial, finite_diff, monte_carlo, baw</td></tr>
+</tbody>
+</table>
+<h3 id="type-result">Result</h3>
+<p>Returned by pricing.price. A Greek the engine does not provide is a run error.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>price</td><td>() -> float</td><td>Price</td></tr>
+<tr><td>stderr</td><td>() -> float</td><td>Monte Carlo standard error</td></tr>
+<tr><td>delta</td><td>() -> float</td><td>Delta</td></tr>
+<tr><td>gamma</td><td>() -> float</td><td>Gamma</td></tr>
+<tr><td>vega</td><td>() -> float</td><td>Vega per 1.00 of volatility</td></tr>
+<tr><td>theta</td><td>() -> float</td><td>Theta per year</td></tr>
+<tr><td>rho</td><td>() -> float</td><td>Rho per 1.00 of rate</td></tr>
+</tbody>
+</table>
+<h3 id="type-riskapi">RiskApi</h3>
+<p>Context object risk: bumped Greeks, rate risk, value at risk.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>delta</td><td>(Option, Model, Engine) -> float</td><td>Central-difference delta (1% spot bump) with any engine; Black-Scholes model</td></tr>
+<tr><td>gamma</td><td>(Option, Model, Engine) -> float</td><td>Central-difference gamma</td></tr>
+<tr><td>vega</td><td>(Option, Model, Engine) -> float</td><td>Central-difference vega (volatility bump 0.001)</td></tr>
+<tr><td>rho</td><td>(Option, Model, Engine) -> float</td><td>Central-difference rho (rate bump 0.0001)</td></tr>
+<tr><td>theta</td><td>(Option, Model, Engine) -> float</td><td>Finite-difference theta over one day; needs more than two days to expiry</td></tr>
+<tr><td>save_profile</td><td>(Option, Model, Engine, float, float, int, string) -> void</td><td>(option, model, engine, low spot, high spot, points, path) write space-separated rows of spot, price, delta, gamma; 2 to 100000 points</td></tr>
+<tr><td>bond_dv01</td><td>(Bond, Curve) -> float</td><td>Fall in bond value for +1 basis point of continuous zero rate</td></tr>
+<tr><td>swap_dv01</td><td>(Swap, Curve) -> float</td><td>Signed NPV change for +1 basis point; positive for a payer swap</td></tr>
+<tr><td>var_normal</td><td>(float, float, float, float) -> float</td><td>(value, annual volatility, confidence, horizon days) parametric normal value at risk; 252 days per year</td></tr>
+<tr><td>es_normal</td><td>(float, float, float, float) -> float</td><td>(value, annual volatility, confidence, horizon days) parametric normal expected shortfall</td></tr>
+<tr><td>series</td><td>(string) -> Series</td><td>Read numbers from a file (whitespace or comma separated, one header line allowed) into a Series</td></tr>
+</tbody>
+</table>
+<h3 id="type-series">Series</h3>
+<p>A set of samples read by risk.series; up to 100000000 values.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>size</td><td>() -> int</td><td>Number of samples</td></tr>
+<tr><td>get</td><td>(int) -> float</td><td>Sample at a zero-based index, in file order</td></tr>
+<tr><td>mean</td><td>() -> float</td><td>Mean</td></tr>
+<tr><td>std</td><td>() -> float</td><td>Sample standard deviation; needs at least 2 values</td></tr>
+<tr><td>min</td><td>() -> float</td><td>Minimum</td></tr>
+<tr><td>max</td><td>() -> float</td><td>Maximum</td></tr>
+<tr><td>quantile</td><td>(float) -> float</td><td>Quantile for p in [0, 1], linear interpolation between order statistics</td></tr>
+<tr><td>var</td><td>(float) -> float</td><td>Empirical value at risk: minus the quantile at 1 - confidence; confidence inside (0.5, 1)</td></tr>
+<tr><td>es</td><td>(float) -> float</td><td>Empirical expected shortfall: minus the mean of the samples at or below that quantile</td></tr>
+</tbody>
+</table>
+<h3 id="type-calibrationapi">CalibrationApi</h3>
+<p>Context object calibration: implied volatility and Heston fitting.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>implied_vol</td><td>(Option, Model, Engine, float) -> float</td><td>(option, model, engine, price) Black-Scholes implied volatility by Brent search in 0.0001 to 5</td></tr>
+<tr><td>heston</td><td>(float, float, float) -> HestonFit</td><td>(spot, rate, dividend yield) start a Heston fit</td></tr>
+</tbody>
+</table>
+<h3 id="type-hestonfit">HestonFit</h3>
+<p>A Heston calibration job; quote and guess chain.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>quote</td><td>(float, float, float) -> HestonFit</td><td>(strike, years, implied volatility) add a quote; at least 5 are needed</td></tr>
+<tr><td>guess</td><td>(float, float, float, float, float) -> HestonFit</td><td>(v0, kappa, theta, sigma, rho) starting point; the default is 0.04, 1.5, 0.04, 0.5, -0.5</td></tr>
+<tr><td>fit</td><td>() -> Model</td><td>Run Levenberg-Marquardt and return the fitted Heston Model; non-convergence is a run error</td></tr>
+<tr><td>error</td><td>() -> float</td><td>Calibration error after fit</td></tr>
+</tbody>
+</table>
+<h3 id="type-lmfapi">LmfApi</h3>
+<p>Context object lmf: checks and output.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>assert_close</td><td>(float, float, float) -> void</td><td>(a, b, tolerance) run error unless the absolute difference is within the tolerance</td></tr>
+<tr><td>check</td><td>(bool, string) -> void</td><td>(condition, message) run error with the message when the condition is false</td></tr>
+<tr><td>save_text</td><td>(string, string) -> void</td><td>(path, text) write a text file</td></tr>
+<tr><td>print</td><td>(string) -> void</td><td>Write a line to standard output</td></tr>
+<tr><td>version</td><td>() -> string</td><td>The string lmfinance X.Y.Z</td></tr>
+</tbody>
+</table>
+<h2 id="enums">String enumerations</h2>
+<table>
+<thead>
+<tr><th>Used by</th><th>Accepted values</th></tr>
+</thead>
+<tbody>
+<tr><td>instrument.barrier_call, barrier_put (type)</td><td>up-in, up-out, down-in, down-out</td></tr>
+<tr><td>instrument.asian_call, asian_put (averaging)</td><td>geometric, arithmetic</td></tr>
+<tr><td>pricing.binomial_tree (tree)</td><td>crr, jr, tian, lr</td></tr>
+<tr><td>Model.param (name)</td><td>spot, rate, dividend, vol (Black-Scholes); spot, rate, dividend, v0, kappa, theta, sigma, rho (Heston)</td></tr>
+<tr><td>Engine.name (return value)</td><td>analytic, binomial, finite_diff, monte_carlo, baw</td></tr>
+<tr><td>CurveBuilder.deposit, swap (tenor)</td><td>Period strings such as 3M, 6M, 2Y, 30Y</td></tr>
+<tr><td>market.set_date (date)</td><td>YYYY-MM-DD</td></tr>
+</tbody>
+</table>
+<h2 id="std">Standard library (lmcode_std_v3)</h2>
+<p>lmfinance 0.1.4 vendors the lmcode_std_v3 schema from lmcode-cpp at the commit pinned in sdk.lock. That vendored catalog has 206 canonical signatures: 83 function signatures and 123 method signatures on 16 standard types. They are available in every lmfinance block without declaration, next to the host types above. The file functions are unrestricted byte operations relative to the working directory.</p>
+<h3 id="std-groups">Function groups</h3>
+<table>
+<thead>
+<tr><th>Group</th><th>Signatures</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>String</td><td>17</td><td>Byte-string search, slicing, case, split, replace, numeric parsing and glob match</td></tr>
+<tr><td>Encoding</td><td>4</td><td>Base64 and hexadecimal encode and decode</td></tr>
+<tr><td>Math</td><td>16</td><td>Integer and float overloads of abs, ceil, floor, max, min, pow, round and sqrt</td></tr>
+<tr><td>File</td><td>5</td><td>Unrestricted whole-file byte read, write, append, existence test and LF line split</td></tr>
+<tr><td>Collection constructors</td><td>15</td><td>Create empty lists, maps, queues, stacks and priority queues of int, float and string</td></tr>
+<tr><td>JSON and templates</td><td>2</td><td>Parse JSON text into a Json value; render a text template from a Json value</td></tr>
+<tr><td>Result sink</td><td>24</td><td>Set the value that run_lmcode returns as result: one value, or named fields</td></tr>
+<tr><td>Collection and Json methods</td><td>123</td><td>Methods of the 16 standard types listed below</td></tr>
+<tr><td>Total</td><td>206</td><td>83 function signatures plus 123 method signatures</td></tr>
+</tbody>
+</table>
+<h3 id="std-functions">Standard functions</h3>
+<table>
+<thead>
+<tr><th>Group</th><th>Function</th><th>Signatures</th></tr>
+</thead>
+<tbody>
+<tr><td>String</td><td>str_contains</td><td>(string, string) -> bool</td></tr>
+<tr><td>String</td><td>str_ends_with</td><td>(string, string) -> bool</td></tr>
+<tr><td>String</td><td>str_find</td><td>(string, string) -> int</td></tr>
+<tr><td>String</td><td>str_is_float</td><td>(string) -> bool</td></tr>
+<tr><td>String</td><td>str_is_int</td><td>(string) -> bool</td></tr>
+<tr><td>String</td><td>str_len</td><td>(string) -> int</td></tr>
+<tr><td>String</td><td>str_lower</td><td>(string) -> string</td></tr>
+<tr><td>String</td><td>str_match</td><td>(string, string) -> bool</td></tr>
+<tr><td>String</td><td>str_repeat</td><td>(string, int) -> string</td></tr>
+<tr><td>String</td><td>str_replace</td><td>(string, string, string) -> string</td></tr>
+<tr><td>String</td><td>str_split</td><td>(string, string) -> StrList</td></tr>
+<tr><td>String</td><td>str_starts_with</td><td>(string, string) -> bool</td></tr>
+<tr><td>String</td><td>str_substr</td><td>(string, int, int) -> string</td></tr>
+<tr><td>String</td><td>str_to_float</td><td>(string) -> float</td></tr>
+<tr><td>String</td><td>str_to_int</td><td>(string) -> int</td></tr>
+<tr><td>String</td><td>str_trim</td><td>(string) -> string</td></tr>
+<tr><td>String</td><td>str_upper</td><td>(string) -> string</td></tr>
+<tr><td>Encoding</td><td>str_base64_encode</td><td>(string) -> string</td></tr>
+<tr><td>Encoding</td><td>str_base64_decode</td><td>(string) -> string</td></tr>
+<tr><td>Encoding</td><td>str_hex_encode</td><td>(string) -> string</td></tr>
+<tr><td>Encoding</td><td>str_hex_decode</td><td>(string) -> string</td></tr>
+<tr><td>Math</td><td>math_abs</td><td>(int) -> int; (float) -> float</td></tr>
+<tr><td>Math</td><td>math_ceil</td><td>(int) -> int; (float) -> float</td></tr>
+<tr><td>Math</td><td>math_floor</td><td>(int) -> int; (float) -> float</td></tr>
+<tr><td>Math</td><td>math_max</td><td>(int, int) -> int; (float, float) -> float</td></tr>
+<tr><td>Math</td><td>math_min</td><td>(int, int) -> int; (float, float) -> float</td></tr>
+<tr><td>Math</td><td>math_pow</td><td>(int, int) -> int; (float, float) -> float</td></tr>
+<tr><td>Math</td><td>math_round</td><td>(int) -> int; (float) -> float</td></tr>
+<tr><td>Math</td><td>math_sqrt</td><td>(int) -> int; (float) -> float</td></tr>
+<tr><td>File</td><td>file_append</td><td>(string, string) -> void</td></tr>
+<tr><td>File</td><td>file_exists</td><td>(string) -> bool</td></tr>
+<tr><td>File</td><td>file_lines</td><td>(string) -> StrList</td></tr>
+<tr><td>File</td><td>file_read</td><td>(string) -> string</td></tr>
+<tr><td>File</td><td>file_write</td><td>(string, string) -> void</td></tr>
+<tr><td>Collection constructors</td><td>float_list</td><td>() -> FloatList</td></tr>
+<tr><td>Collection constructors</td><td>float_map</td><td>() -> FloatMap</td></tr>
+<tr><td>Collection constructors</td><td>float_pq</td><td>() -> FloatPQ</td></tr>
+<tr><td>Collection constructors</td><td>float_queue</td><td>() -> FloatQueue</td></tr>
+<tr><td>Collection constructors</td><td>float_stack</td><td>() -> FloatStack</td></tr>
+<tr><td>Collection constructors</td><td>int_list</td><td>() -> IntList</td></tr>
+<tr><td>Collection constructors</td><td>int_map</td><td>() -> IntMap</td></tr>
+<tr><td>Collection constructors</td><td>int_pq</td><td>() -> IntPQ</td></tr>
+<tr><td>Collection constructors</td><td>int_queue</td><td>() -> IntQueue</td></tr>
+<tr><td>Collection constructors</td><td>int_stack</td><td>() -> IntStack</td></tr>
+<tr><td>Collection constructors</td><td>str_list</td><td>() -> StrList</td></tr>
+<tr><td>Collection constructors</td><td>str_map</td><td>() -> StrMap</td></tr>
+<tr><td>Collection constructors</td><td>str_pq</td><td>() -> StrPQ</td></tr>
+<tr><td>Collection constructors</td><td>str_queue</td><td>() -> StrQueue</td></tr>
+<tr><td>Collection constructors</td><td>str_stack</td><td>() -> StrStack</td></tr>
+<tr><td>JSON and templates</td><td>json_parse</td><td>(string) -> Json</td></tr>
+<tr><td>JSON and templates</td><td>template_render</td><td>(string, Json) -> string</td></tr>
+<tr><td>Result sink</td><td>lmcode_return_null</td><td>() -> void</td></tr>
+<tr><td>Result sink</td><td>lmcode_return_put</td><td>(string, bool) -> void; (string, float) -> void; (string, FloatList) -> void; (string, FloatMap) -> void; (string, int) -> void; (string, IntList) -> void; (string, IntMap) -> void; (string, Json) -> void; (string, StrList) -> void; (string, StrMap) -> void; (string, string) -> void</td></tr>
+<tr><td>Result sink</td><td>lmcode_return_put_null</td><td>(string) -> void</td></tr>
+<tr><td>Result sink</td><td>lmcode_return_set</td><td>(bool) -> void; (float) -> void; (FloatList) -> void; (FloatMap) -> void; (int) -> void; (IntList) -> void; (IntMap) -> void; (Json) -> void; (StrList) -> void; (StrMap) -> void; (string) -> void</td></tr>
+</tbody>
+</table>
+<h3 id="std-types">Standard types and methods</h3>
+<table>
+<thead>
+<tr><th>Type</th><th>Method</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>FloatList</td><td>add</td><td>(float) -> FloatList</td></tr>
+<tr><td>FloatList</td><td>at</td><td>(int) -> float</td></tr>
+<tr><td>FloatList</td><td>clear</td><td>() -> FloatList</td></tr>
+<tr><td>FloatList</td><td>contains</td><td>(float) -> bool</td></tr>
+<tr><td>FloatList</td><td>index_of</td><td>(float) -> int</td></tr>
+<tr><td>FloatList</td><td>len</td><td>() -> int</td></tr>
+<tr><td>FloatList</td><td>set</td><td>(int, float) -> FloatList</td></tr>
+<tr><td>FloatMap</td><td>len</td><td>() -> int</td></tr>
+<tr><td>FloatMap</td><td>has</td><td>(string) -> bool</td></tr>
+<tr><td>FloatMap</td><td>get</td><td>(string) -> float</td></tr>
+<tr><td>FloatMap</td><td>get_or</td><td>(string, float) -> float</td></tr>
+<tr><td>FloatMap</td><td>set</td><td>(string, float) -> FloatMap</td></tr>
+<tr><td>FloatMap</td><td>key_at</td><td>(int) -> string</td></tr>
+<tr><td>FloatMap</td><td>remove</td><td>(string) -> bool</td></tr>
+<tr><td>FloatMap</td><td>clear</td><td>() -> FloatMap</td></tr>
+<tr><td>FloatMap</td><td>keys</td><td>() -> StrList</td></tr>
+<tr><td>FloatMap</td><td>values</td><td>() -> FloatList</td></tr>
+<tr><td>FloatPQ</td><td>push</td><td>(float, float) -> FloatPQ</td></tr>
+<tr><td>FloatPQ</td><td>pop</td><td>() -> float</td></tr>
+<tr><td>FloatPQ</td><td>peek</td><td>() -> float</td></tr>
+<tr><td>FloatPQ</td><td>len</td><td>() -> int</td></tr>
+<tr><td>FloatPQ</td><td>empty</td><td>() -> bool</td></tr>
+<tr><td>FloatPQ</td><td>clear</td><td>() -> FloatPQ</td></tr>
+<tr><td>FloatQueue</td><td>push</td><td>(float) -> FloatQueue</td></tr>
+<tr><td>FloatQueue</td><td>pop</td><td>() -> float</td></tr>
+<tr><td>FloatQueue</td><td>peek</td><td>() -> float</td></tr>
+<tr><td>FloatQueue</td><td>len</td><td>() -> int</td></tr>
+<tr><td>FloatQueue</td><td>empty</td><td>() -> bool</td></tr>
+<tr><td>FloatQueue</td><td>clear</td><td>() -> FloatQueue</td></tr>
+<tr><td>FloatQueue</td><td>at</td><td>(int) -> float</td></tr>
+<tr><td>FloatStack</td><td>push</td><td>(float) -> FloatStack</td></tr>
+<tr><td>FloatStack</td><td>pop</td><td>() -> float</td></tr>
+<tr><td>FloatStack</td><td>peek</td><td>() -> float</td></tr>
+<tr><td>FloatStack</td><td>len</td><td>() -> int</td></tr>
+<tr><td>FloatStack</td><td>empty</td><td>() -> bool</td></tr>
+<tr><td>FloatStack</td><td>clear</td><td>() -> FloatStack</td></tr>
+<tr><td>FloatStack</td><td>at</td><td>(int) -> float</td></tr>
+<tr><td>IntList</td><td>add</td><td>(int) -> IntList</td></tr>
+<tr><td>IntList</td><td>at</td><td>(int) -> int</td></tr>
+<tr><td>IntList</td><td>clear</td><td>() -> IntList</td></tr>
+<tr><td>IntList</td><td>contains</td><td>(int) -> bool</td></tr>
+<tr><td>IntList</td><td>index_of</td><td>(int) -> int</td></tr>
+<tr><td>IntList</td><td>len</td><td>() -> int</td></tr>
+<tr><td>IntList</td><td>set</td><td>(int, int) -> IntList</td></tr>
+<tr><td>IntMap</td><td>len</td><td>() -> int</td></tr>
+<tr><td>IntMap</td><td>has</td><td>(string) -> bool</td></tr>
+<tr><td>IntMap</td><td>get</td><td>(string) -> int</td></tr>
+<tr><td>IntMap</td><td>get_or</td><td>(string, int) -> int</td></tr>
+<tr><td>IntMap</td><td>set</td><td>(string, int) -> IntMap</td></tr>
+<tr><td>IntMap</td><td>key_at</td><td>(int) -> string</td></tr>
+<tr><td>IntMap</td><td>remove</td><td>(string) -> bool</td></tr>
+<tr><td>IntMap</td><td>clear</td><td>() -> IntMap</td></tr>
+<tr><td>IntMap</td><td>keys</td><td>() -> StrList</td></tr>
+<tr><td>IntMap</td><td>values</td><td>() -> IntList</td></tr>
+<tr><td>IntPQ</td><td>push</td><td>(int, float) -> IntPQ</td></tr>
+<tr><td>IntPQ</td><td>pop</td><td>() -> int</td></tr>
+<tr><td>IntPQ</td><td>peek</td><td>() -> int</td></tr>
+<tr><td>IntPQ</td><td>len</td><td>() -> int</td></tr>
+<tr><td>IntPQ</td><td>empty</td><td>() -> bool</td></tr>
+<tr><td>IntPQ</td><td>clear</td><td>() -> IntPQ</td></tr>
+<tr><td>IntQueue</td><td>push</td><td>(int) -> IntQueue</td></tr>
+<tr><td>IntQueue</td><td>pop</td><td>() -> int</td></tr>
+<tr><td>IntQueue</td><td>peek</td><td>() -> int</td></tr>
+<tr><td>IntQueue</td><td>len</td><td>() -> int</td></tr>
+<tr><td>IntQueue</td><td>empty</td><td>() -> bool</td></tr>
+<tr><td>IntQueue</td><td>clear</td><td>() -> IntQueue</td></tr>
+<tr><td>IntQueue</td><td>at</td><td>(int) -> int</td></tr>
+<tr><td>IntStack</td><td>push</td><td>(int) -> IntStack</td></tr>
+<tr><td>IntStack</td><td>pop</td><td>() -> int</td></tr>
+<tr><td>IntStack</td><td>peek</td><td>() -> int</td></tr>
+<tr><td>IntStack</td><td>len</td><td>() -> int</td></tr>
+<tr><td>IntStack</td><td>empty</td><td>() -> bool</td></tr>
+<tr><td>IntStack</td><td>clear</td><td>() -> IntStack</td></tr>
+<tr><td>IntStack</td><td>at</td><td>(int) -> int</td></tr>
+<tr><td>Json</td><td>kind</td><td>() -> string</td></tr>
+<tr><td>Json</td><td>len</td><td>() -> int</td></tr>
+<tr><td>Json</td><td>at</td><td>(int) -> Json</td></tr>
+<tr><td>Json</td><td>get</td><td>(string) -> Json</td></tr>
+<tr><td>Json</td><td>has</td><td>(string) -> bool</td></tr>
+<tr><td>Json</td><td>keys</td><td>() -> StrList</td></tr>
+<tr><td>Json</td><td>as_string</td><td>() -> string</td></tr>
+<tr><td>Json</td><td>as_int</td><td>() -> int</td></tr>
+<tr><td>Json</td><td>as_float</td><td>() -> float</td></tr>
+<tr><td>Json</td><td>as_bool</td><td>() -> bool</td></tr>
+<tr><td>Json</td><td>to_json</td><td>() -> string</td></tr>
+<tr><td>StrList</td><td>add</td><td>(string) -> StrList</td></tr>
+<tr><td>StrList</td><td>at</td><td>(int) -> string</td></tr>
+<tr><td>StrList</td><td>clear</td><td>() -> StrList</td></tr>
+<tr><td>StrList</td><td>contains</td><td>(string) -> bool</td></tr>
+<tr><td>StrList</td><td>index_of</td><td>(string) -> int</td></tr>
+<tr><td>StrList</td><td>join</td><td>(string) -> string</td></tr>
+<tr><td>StrList</td><td>len</td><td>() -> int</td></tr>
+<tr><td>StrList</td><td>set</td><td>(int, string) -> StrList</td></tr>
+<tr><td>StrMap</td><td>clear</td><td>() -> StrMap</td></tr>
+<tr><td>StrMap</td><td>get</td><td>(string) -> string</td></tr>
+<tr><td>StrMap</td><td>get_or</td><td>(string, string) -> string</td></tr>
+<tr><td>StrMap</td><td>has</td><td>(string) -> bool</td></tr>
+<tr><td>StrMap</td><td>key_at</td><td>(int) -> string</td></tr>
+<tr><td>StrMap</td><td>len</td><td>() -> int</td></tr>
+<tr><td>StrMap</td><td>remove</td><td>(string) -> bool</td></tr>
+<tr><td>StrMap</td><td>set</td><td>(string, string) -> StrMap</td></tr>
+<tr><td>StrMap</td><td>keys</td><td>() -> StrList</td></tr>
+<tr><td>StrMap</td><td>values</td><td>() -> StrList</td></tr>
+<tr><td>StrPQ</td><td>push</td><td>(string, float) -> StrPQ</td></tr>
+<tr><td>StrPQ</td><td>pop</td><td>() -> string</td></tr>
+<tr><td>StrPQ</td><td>peek</td><td>() -> string</td></tr>
+<tr><td>StrPQ</td><td>len</td><td>() -> int</td></tr>
+<tr><td>StrPQ</td><td>empty</td><td>() -> bool</td></tr>
+<tr><td>StrPQ</td><td>clear</td><td>() -> StrPQ</td></tr>
+<tr><td>StrQueue</td><td>push</td><td>(string) -> StrQueue</td></tr>
+<tr><td>StrQueue</td><td>pop</td><td>() -> string</td></tr>
+<tr><td>StrQueue</td><td>peek</td><td>() -> string</td></tr>
+<tr><td>StrQueue</td><td>len</td><td>() -> int</td></tr>
+<tr><td>StrQueue</td><td>empty</td><td>() -> bool</td></tr>
+<tr><td>StrQueue</td><td>clear</td><td>() -> StrQueue</td></tr>
+<tr><td>StrQueue</td><td>at</td><td>(int) -> string</td></tr>
+<tr><td>StrStack</td><td>push</td><td>(string) -> StrStack</td></tr>
+<tr><td>StrStack</td><td>pop</td><td>() -> string</td></tr>
+<tr><td>StrStack</td><td>peek</td><td>() -> string</td></tr>
+<tr><td>StrStack</td><td>len</td><td>() -> int</td></tr>
+<tr><td>StrStack</td><td>empty</td><td>() -> bool</td></tr>
+<tr><td>StrStack</td><td>clear</td><td>() -> StrStack</td></tr>
+<tr><td>StrStack</td><td>at</td><td>(int) -> string</td></tr>
+</tbody>
+</table>
+<h3 id="std-rest">Standard REST and CLI interfaces (current catalog, not yet in this host)</h3>
+<p>The current lmcode_std_v3 catalog in lmcode-cpp has 226 canonical signatures. The 20 signatures beyond the 206 that lmfinance vendors are the former lmcode_std_rest_v1 module: 5 functions and 15 RestExchange methods, together with 10 standard interfaces. lmfinance does not ship them yet; it picks them up when it syncs its pinned lmcode-cpp SDK and publishes a release. Until then a lmfinance program that calls rest_route or declares a RestGet handler does not compile against the lmfinance schema.</p>
+<table>
+<thead>
+<tr><th>Interface</th><th>Signature</th><th>Role</th></tr>
+</thead>
+<tbody>
+<tr><td>RestGet</td><td>(RestExchange exchange) -> void</td><td>Handler for GET routes</td></tr>
+<tr><td>RestPost</td><td>(RestExchange exchange) -> void</td><td>Handler for POST routes</td></tr>
+<tr><td>RestPut</td><td>(RestExchange exchange) -> void</td><td>Handler for PUT routes</td></tr>
+<tr><td>RestDelete</td><td>(RestExchange exchange) -> void</td><td>Handler for DELETE routes</td></tr>
+<tr><td>RestPatch</td><td>(RestExchange exchange) -> void</td><td>Handler for PATCH routes</td></tr>
+<tr><td>RestHead</td><td>(RestExchange exchange) -> void</td><td>Handler for HEAD routes</td></tr>
+<tr><td>RestOptions</td><td>(RestExchange exchange) -> void</td><td>Handler for OPTIONS routes</td></tr>
+<tr><td>RestHandler</td><td>(RestExchange exchange) -> void</td><td>Generic handler bound by rest_route to an annotation name</td></tr>
+<tr><td>CliCommand</td><td>(RestExchange exchange) -> void</td><td>Handler for a command dispatched by rest_cli</td></tr>
+<tr><td>CliOption</td><td>(RestExchange exchange) -> void</td><td>Handler for an option dispatched by rest_cli</td></tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr><th>Function</th><th>Signature</th><th>Behavior</th></tr>
+</thead>
+<tbody>
+<tr><td>rest_config</td><td>(string, string) -> void</td><td>Store a configuration key and value; the keys prefix and base_path set the route prefix and max_body_bytes sets the request body limit</td></tr>
+<tr><td>rest_route</td><td>(string, string, string) -> void</td><td>Register method, path template and handler annotation; templates accept {param} and {rest...} or :param and :rest... placeholders</td></tr>
+<tr><td>rest_serve</td><td>() -> void</td><td>Request serving after the program body; routes are frozen from this call on</td></tr>
+<tr><td>rest_stop</td><td>() -> void</td><td>Stop serving</td></tr>
+<tr><td>rest_cli</td><td>(StrList) -> string</td><td>Stateless CLI mode: dispatch an argument vector to options, commands and REST routes and return the response text</td></tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr><th>RestExchange method</th><th>Signature</th><th>Behavior</th></tr>
+</thead>
+<tbody>
+<tr><td>method</td><td>() -> string</td><td>Request method</td></tr>
+<tr><td>path</td><td>() -> string</td><td>Request path</td></tr>
+<tr><td>query</td><td>(string) -> string</td><td>Query parameter value, empty when absent</td></tr>
+<tr><td>has_query</td><td>(string) -> bool</td><td>Whether a query parameter is present</td></tr>
+<tr><td>param</td><td>(string) -> string</td><td>Route template parameter value, empty when absent</td></tr>
+<tr><td>header</td><td>(string) -> string</td><td>Request header value; repeated headers are joined with a comma and a space</td></tr>
+<tr><td>has_header</td><td>(string) -> bool</td><td>Whether a request header is present</td></tr>
+<tr><td>body</td><td>() -> string</td><td>Request body bytes</td></tr>
+<tr><td>status</td><td>(int) -> void</td><td>Set the response status; values outside 200..599 are a host error</td></tr>
+<tr><td>set_header</td><td>(string, string) -> void</td><td>Set a response header; Content-Length, Connection and Transfer-Encoding are managed by the server</td></tr>
+<tr><td>send</td><td>(string) -> void</td><td>Set the response body</td></tr>
+<tr><td>json</td><td>(string) -> void</td><td>Set the response body and the Content-Type application/json</td></tr>
+<tr><td>get</td><td>(string) -> string</td><td>Read a shared state value, empty when absent</td></tr>
+<tr><td>set</td><td>(string, string) -> void</td><td>Write a shared state value</td></tr>
+<tr><td>increment</td><td>(string) -> int</td><td>Increment a shared named counter and return it</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmfinance">github.com/lmctl-ai/lmfinance</a>.</p>
+</footer>
+</body>
+</html>

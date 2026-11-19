@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gcpsim guide — gcpsim — lmctl.com tools</title>
+<meta name="description" content="gcpsim packages floci-gcp 0.11.0 together with a deterministic CLI, Pub/Sub ack-deadline overlay, and OAuth/IAM enforcement filter into a single native GraalVM…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/gcpsim/">Overview</a></li>
+<li><a href="/tools/gcpsim/skill.html">Skill</a></li>
+<li><a href="/tools/gcpsim/guide.html">Guide</a></li>
+<li><a href="/tools/gcpsim/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>gcpsim guide</h1>
+<h2>Overview</h2>
+<p>gcpsim packages floci-gcp 0.11.0 together with a deterministic CLI, Pub/Sub ack-deadline overlay, and OAuth/IAM enforcement filter into a single native GraalVM executable. In open mode, REST and gRPC share loopback port 4588, enabling in-process Google Cloud Storage (GCS) and Cloud Pub/Sub testing without Docker containers, a Java runtime, or a GCP account.</p>
+<h2>Architecture and provenance overlays</h2>
+<p>The build script (scripts/build.py) verifies the upstream floci-gcp archive against upstream.lock.json and applies SHA-256-locked source overlays (overlay.lock.json):</p>
+<ul>
+<li>Shared port 4588: serves GCS JSON/multipart/resumable REST APIs, Pub/Sub v1 REST APIs, gRPC endpoints, and GET /health on 127.0.0.1:4588 with default project gcpsim-local.</li>
+<li>Pub/Sub modifyAckDeadline overlay: ensures queue_nack visibility updates and ack-deadline extensions or zero-second resets behave deterministically for Google Cloud SDKs and lmcloud queue conformance tests.</li>
+<li>Mock-by-default container services: Docker-backed services remain in in-process mock mode unless explicitly overridden via FLOCI_GCP_SERVICES_&lt;SERVICE>_MOCK=false.</li>
+</ul>
+<h2>Authentication and IAM permission enforcement (--auth enforce)</h2>
+<p>By default, gcpsim runs in open mode (--auth open). Passing --auth enforce --auth-config auth.json (or setting SIM_AUTH=enforce and SIM_AUTH_CONFIG=auth.json) enables two-layer security checks:</p>
+<ul>
+<li>Dummy OAuth Bearer validation: inspects Authorization: Bearer &lt;token> headers against tokens declared in auth.json, rejecting missing or unknown tokens with HTTP 401.</li>
+<li>GCP IAM permission evaluation: checks the authenticated principal's granted permissions (such as storage.buckets.create, storage.objects.get, pubsub.topics.publish, pubsub.subscriptions.consume) against the target project, bucket, topic, or subscription resource, rejecting unauthorized calls with HTTP 403 and redacting token values from logs.</li>
+</ul>
+<h2>Connecting lmgcp, lmgcp cloud, and gcloud</h2>
+<p>You can drive gcpsim from three different client surfaces:</p>
+<ul>
+<li>Native lmgcp host: export LMGCP_ENDPOINT=http://127.0.0.1:4588 (and LMGCP_ACCESS_TOKEN=&lt;token> for enforce mode) before running lmgcp or lmscript.</li>
+<li>Shared lmcloud mode (lmgcp cloud): call cloud.set_endpoint("all", "http://127.0.0.1:4588") or export LMCLOUD_ENDPOINT=http://127.0.0.1:4588.</li>
+<li>Google Cloud SDK (gcloud): set CLOUDSDK_CORE_PROJECT=gcpsim-local, CLOUDSDK_AUTH_ACCESS_TOKEN=gcpsim-local-token, CLOUDSDK_API_ENDPOINT_OVERRIDES_STORAGE=http://127.0.0.1:4588/storage/v1/, and CLOUDSDK_API_ENDPOINT_OVERRIDES_PUBSUB=http://127.0.0.1:4588/.</li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/gcpsim">github.com/lmctl-ai/gcpsim</a>.</p>
+</footer>
+</body>
+</html>

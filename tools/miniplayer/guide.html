@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>miniplayer guide — miniplayer — lmctl.com tools</title>
+<meta name="description" content="miniplayer is a fast, minimal language-model CLI harness built around a strict separation of concerns: LMScript or shell pipelines execute deterministic tools…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/miniplayer/">Overview</a></li>
+<li><a href="/tools/miniplayer/skill.html">Skill</a></li>
+<li><a href="/tools/miniplayer/guide.html">Guide</a></li>
+<li><a href="/tools/miniplayer/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>miniplayer guide</h1>
+<h2>Overview</h2>
+<p>miniplayer is a fast, minimal language-model CLI harness built around a strict separation of concerns: LMScript or shell pipelines execute deterministic tools and probes, while miniplayer turns prompts into text or classification JSON (PROMPT IN, TEXT OUT). Because pure run and classify modes send zero tool schemas, miniplayer works reliably across cloud frontier models and small local Ollama models alike.</p>
+<h2>Online-first model catalog and zero-config routing</h2>
+<p>miniplayer resolves models from the published schema-version-1 dataset at https://lmctl.com/dataset/model_list.json, cached locally in ~/.cache/miniplayer/catalog (permissions 0o700 directory, 0o600 files):</p>
+<ul>
+<li>6-hour TTL and ETag revalidation: within the 6-hour TTL (MINIPLAYER_PRICE_TTL, default 21600 seconds), miniplayer makes zero network calls. Outside the TTL, it sends a 1,000 ms HEAD request to check the ETag and downloads a fresh catalog (10,000 ms timeout) only when the ETag changes, promoting it atomically after schema validation.</li>
+<li>Offline resilience and local pinning: any network error or malformed response falls back silently to the existing cached catalog. Setting MINIPLAYER_CATALOG=/path/to/model_list.json disables network and cache lookups completely for hermetic testing.</li>
+<li>Zero-config route fields: each routed catalog record carries a miniplayer route object ({id, provider, model, sdk, base_url, key_env}) selecting the SDK adapter (anthropic, openai, google, or openai-compatible), base URL, and API key environment variable automatically.</li>
+</ul>
+<h2>Four interaction modes and system prompt precedence</h2>
+<p>miniplayer offers four distinct execution modes governed by a four-level system-prompt precedence rule:</p>
+<ul>
+<li>Level 1 — Explicit caller override (--system or --system-file): replaces all built-in system material across run, classify, chat, and acp. No cwd preamble, tool outlines, or context files are added.</li>
+<li>Level 2 — Context files (AGENTS.md and durable-memory/index.md): always OFF in pure run and classify modes; ON by default in interactive chat and acp modes unless disabled via --no-context-files or "contextFiles": false.</li>
+<li>Level 3 — External tool outlines (&lt;command> --list): gathered in parallel only in chat and acp modes when the config.json tools array is non-empty and the model supports function calling.</li>
+<li>Level 4 — Default fallback: pure run and classify send no system prompt at all when no override is supplied.</li>
+</ul>
+<h2>External child-process tools, session resume, and compaction</h2>
+<p>When external tools are declared in ~/.config/miniplayer/config.json (or MINIPLAYER_CONFIG) for chat or acp sessions, miniplayer spawns them directly via child_process.spawn(command, args, { shell: false }) in isolated process groups (SIGTERM followed by SIGKILL after 250 ms on cancellation) with bounded output buffers (256 KiB stdout, 64 KiB stderr). If a model's catalog record sets capabilities.supports_function_calling to false, miniplayer prints a warning to stderr and runs tool-free.</p>
+<p>One-shot runs support multi-turn continuation via --session new --json and --session &lt;id>. Live chat and acp sessions automatically compact context when estimated tokens exceed 70% of the context window (compact.thresholdRatio: 0.7), retaining the last two user turns verbatim and writing durable notes to durable-memory/&lt;timestamp>-session-notes.md.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/miniplayer">github.com/lmctl-ai/miniplayer</a>.</p>
+</footer>
+</body>
+</html>

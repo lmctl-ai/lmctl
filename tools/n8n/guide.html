@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>n8n guide — n8n — lmctl.com tools</title>
+<meta name="description" content="Clean-room workflow runtime architecture, structural validation, typed LMCode graph execution, neutral connector specifications, and bounded transport.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/n8n/">Overview</a></li>
+<li><a href="/tools/n8n/skill.html">Skill</a></li>
+<li><a href="/tools/n8n/guide.html">Guide</a></li>
+<li><a href="/tools/n8n/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>n8n guide</h1>
+<p>Clean-room workflow runtime architecture, structural validation, typed LMCode graph execution, neutral connector specifications, and bounded transport.</p>
+<h2>Overview</h2>
+<p>The lmctl-ai/n8n repository is a clean-room, MIT-licensed workflow engine that executes n8n-style workflow JSON documents as data without importing any upstream n8n code. It splits workflow execution across three layers: LMScript (src/validate.lms and src/run.lms) for pre-flight JSON Schema and graph-topology validation, LMCode bytecode for typed node traversal and expression resolution, and a compact Go host executable (./build/lmflow-host built on lmcode-go) for credential injection and bounded JSON HTTP transport.</p>
+<h2>Ten-step workflow execution path</h2>
+<p>Every invocation of src/run.lms follows a strict ten-step pipeline:</p>
+<ol>
+<li>Schema validation: src/validate.lms validates WORKFLOW.json against schema/workflow-v1.schema.json and CONNECTOR.json against schema/connector-v1.schema.json.</li>
+<li>Graph and parameter validation: LMScript verifies node IDs and names, confirms that node 0 is n8n-nodes-base.manualTrigger, checks that every subsequent node matches the connector nodeType and has exactly one incoming main connection and at most one outgoing main branch, verifies required operation parameters, and validates expression syntax.</li>
+<li>Bytecode compilation: src/run.lms compiles the embedded _lmcode_ block against internal/host/schema.json (lmflow_host_v1).</li>
+<li>Graph traversal: the LMCode program loads input("workflow") and input("connector"), seeds a string map of node outputs with the manual trigger parameters, and steps along main connections within a bounded node budget (nodes.len() + 1).</li>
+<li>Whole-field expression resolution: parameter strings matching ={{ $json.path.to.value }} are resolved against the immediately preceding node output JSON while preserving exact scalar types (integer, float, string, or boolean).</li>
+<li>Parameter mapping: n8n-style nodeField names (such as chatId) are mapped to provider JSON body keys (such as chat_id) using json_put.</li>
+<li>External credential lookup: the Go host resolves credential(id, field) from the separate CREDENTIALS.json file and substitutes the placeholder (such as {token}) in the operation path.</li>
+<li>Bounded HTTP transport: http_post_json(url, body) sends an application/json POST request and returns an HttpResponse handle exposing status() and json().</li>
+<li>Envelope verification: the LMCode program verifies that status() is in [200, 299] and that the provider successField (such as ok) is a boolean true; otherwise it extracts the provider errorField (such as description) and calls workflow_fail(message).</li>
+<li>Result contract handoff: the final node JSON response is assigned to $return, verified against the non-nullable Json result contract of lmflow_host_v1, and formatted to stdout.</li>
+</ol>
+<pre><code># Run a validated workflow with an explicit local mock or base URL override
+LMFLOW_BASE_URL=http://127.0.0.1:8080 lmscript src/run.lms \
+  examples/telegram.workflow.json \
+  connectors/telegram.json \
+  tests/fixtures/credentials.json</code></pre>
+<h2>Supported expression subset and type preservation</h2>
+<p>Unlike upstream n8n, which evaluates arbitrary JavaScript inside expressions, this runtime accepts only deterministic whole-field dot-path selectors of the form ={{ $json.field.subfield }} matching the regular expression ^=\{\{ \$json(\.[A-Za-z_][A-Za-z0-9_]*)+ \}\}$.</p>
+<p>Expressions always read the JSON response of the immediately preceding node in the linear chain and must resolve to a non-null scalar JSON value (string, number, or boolean); arrays, objects, and null values are rejected with workflow_fail. In the reference Telegram workflow (Manual Trigger -> Telegram sendMessage -> Telegram getChat), the manual trigger starts with chatId 41, the mocked sendMessage response returns chat.id 42, and getChat receives numeric 42 via ={{ $json.result.chat.id }}, proving both dynamic propagation and numeric type fidelity.</p>
+<h2>Neutral connector specifications</h2>
+<p>Connector behavior is driven entirely by declarative JSON files under connectors/ authored from public provider specifications (for example, connectors/telegram.json from the public Telegram Bot API contract). A connector specification declares specVersion (1), name, documentation URL, baseUrl, nodeType, credentialType, credentialField, successField, errorField, and an array of operations. Each operation maps a pair of (resource, nodeOperation) values to an HTTP method (POST), a path containing the credential placeholder (/{credentialField}), and a parameters dictionary mapping provider field names to {nodeField, required} descriptors.</p>
+<h2>Credential isolation and transport bounds</h2>
+<p>Workflow files store only symbolic credential references (for example, {"telegramApi": {"id": "telegram-bot"}}). Actual secret values live in a separate file passed as the third CLI argument (use git-ignored credentials.local.json for local development). Because providers like Telegram embed the secret token in the request URL path, the Go HTTP client sanitizes all transport error messages so resolved request URLs are never printed or logged.</p>
+<p>The Go transport enforces strict safety bounds on every outbound request: HTTP POST with Content-Type: application/json only, a 10-second client timeout, a 1 MiB maximum request body size, a 1 MiB maximum response body size, HTTP redirects disabled, and strict JSON response decoding with UseNumber().</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/n8n">github.com/lmctl-ai/n8n</a>.</p>
+</footer>
+</body>
+</html>

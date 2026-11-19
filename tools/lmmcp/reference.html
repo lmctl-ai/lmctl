@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmmcp reference — lmmcp — lmctl.com tools</title>
+<meta name="description" content="Complete command-line subcommand and flag reference, HTTP and JSON-lines stdio REST routes, mcpServers configuration fields, _lmcode_ host functions and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmmcp/">Overview</a></li>
+<li><a href="/tools/lmmcp/skill.html">Skill</a></li>
+<li><a href="/tools/lmmcp/guide.html">Guide</a></li>
+<li><a href="/tools/lmmcp/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmmcp reference</h1>
+<p>Complete command-line subcommand and flag reference, HTTP and JSON-lines stdio REST routes, mcpServers configuration fields, _lmcode_ host functions and MCPServer methods, standard lmcode_std_v3 interfaces, and exit codes for lmmcp v0.1.0.</p>
+<h2>Host and CLI commands and flags</h2>
+<table>
+<thead><tr><th>Command or flag</th><th>Arguments and options</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>--version</td><td>none</td><td>Print {"name":"lmmcp","version":"0.1.0"} as JSON on stdout and exit 0.</td></tr>
+<tr><td>--lmcode-schema</td><td>[--json]</td><td>Print the embedded lmmcp schema JSON to stdout and exit 0.</td></tr>
+<tr><td>--lmcode-signatures</td><td>none</td><td>Print all 242 canonical signatures (16 host + 226 standard lmcode_std_v3) and exit 0.</td></tr>
+<tr><td>--lmcode</td><td>&lt;file.dslb> [--lmcode &lt;file2.dslb> ...] --config &lt;config.json></td><td>Load and execute compiled LMScript bytecode files against the configured MCP servers and emit an LMCODE_RETURN frame.</td></tr>
+<tr><td>openapi</td><td>none</td><td>Print the OpenAPI 3.1 JSON document describing the lmmcp REST API and exit 0.</td></tr>
+<tr><td>serve</td><td>--config &lt;file> [--listen 127.0.0.1:8080] [--read-only] [--token-env NAME | --token-file FILE]</td><td>Start the HTTP REST gateway bound to a literal loopback IP address and print {"ok":true,"url":"http://..."} once ready.</td></tr>
+<tr><td>stdio</td><td>--config &lt;file> [--read-only]</td><td>Run the concurrent JSON-lines REST dispatcher over stdin and stdout ({id,method,path,query,body} -> {id,status,headers,body}).</td></tr>
+<tr><td>servers</td><td>--config &lt;file> | --url &lt;origin> [--read-only] [--token-env NAME | --token-file FILE]</td><td>List configured MCP servers as a JSON envelope on stdout.</td></tr>
+<tr><td>tools</td><td>&lt;server> (--config &lt;file> | --url &lt;origin>) [--read-only]</td><td>List available tools and discovery schemas for &lt;server>.</td></tr>
+<tr><td>call</td><td>&lt;server> &lt;tool> [--arg k=v ... | --json '{...}'] (--config &lt;file> | --url &lt;origin>) [--read-only]</td><td>Invoke an MCP tool with string arguments (--arg) or typed JSON arguments (--json); exits 3 if the tool returns isError:true.</td></tr>
+<tr><td>resources / templates</td><td>resources &lt;server> | templates &lt;server> (--config &lt;file> | --url &lt;origin>)</td><td>List static MCP resources or RFC 6570 resource URI templates exposed by &lt;server>.</td></tr>
+<tr><td>read</td><td>&lt;server> &lt;uri> (--config &lt;file> | --url &lt;origin>)</td><td>Read a text or base64-encoded resource by URI from &lt;server>.</td></tr>
+<tr><td>prompts / prompt</td><td>prompts &lt;server> | prompt &lt;server> &lt;name> [--arg k=v ... | --json '{...}'] (--config &lt;file> | --url &lt;origin>)</td><td>List available prompts or render a named prompt with string argument values.</td></tr>
+</tbody>
+</table>
+<h2>HTTP REST and JSON-lines stdio endpoints</h2>
+<table>
+<thead><tr><th>Method</th><th>Path and query</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>GET</td><td>/health</td><td>Return gateway health status JSON envelope.</td></tr>
+<tr><td>GET</td><td>/v1/openapi.json</td><td>Return the OpenAPI 3.1 specification document.</td></tr>
+<tr><td>GET</td><td>/v1/servers</td><td>List configured MCP server names and metadata.</td></tr>
+<tr><td>GET</td><td>/v1/servers/{server}/tools</td><td>List tools and input/output schemas for {server}.</td></tr>
+<tr><td>POST</td><td>/v1/servers/{server}/tools/{tool}/call</td><td>Call {tool} on {server} with a JSON argument object body; returns HTTP 200 with error.code:"TOOL_ERROR" on MCP isError.</td></tr>
+<tr><td>GET</td><td>/v1/servers/{server}/resources</td><td>List resources exposed by {server}.</td></tr>
+<tr><td>GET</td><td>/v1/servers/{server}/resources/read?uri=&lt;encoded_uri></td><td>Read resource content (text or base64 blob with MIME type) for the specified URI.</td></tr>
+<tr><td>GET</td><td>/v1/servers/{server}/resources/templates</td><td>List resource URI templates exposed by {server}.</td></tr>
+<tr><td>GET</td><td>/v1/servers/{server}/prompts</td><td>List prompt definitions exposed by {server}.</td></tr>
+<tr><td>POST</td><td>/v1/servers/{server}/prompts/{prompt}</td><td>Render {prompt} on {server} with a JSON object of string arguments.</td></tr>
+<tr><td>DELETE</td><td>/v1/requests/{id}</td><td>Cancel an active in-flight HTTP request (named via X-Request-ID) or stdio JSON-line request ID.</td></tr>
+</tbody>
+</table>
+<h2>Host schema functions and MCPServer methods</h2>
+<table>
+<thead><tr><th>Type / function</th><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>global function</td><td>mcp_server(name: string) -> MCPServer</td><td>Return a lightweight MCPServer handle bound to the configured server name (rejects null receivers on method calls).</td></tr>
+<tr><td>global function</td><td>mcp_servers() -> Json</td><td>Dispatch GET /v1/servers and return the {ok, data|error} Json envelope.</td></tr>
+<tr><td>global function</td><td>mcp_tools(server: string) -> Json</td><td>Dispatch GET /v1/servers/{server}/tools and return the Json envelope.</td></tr>
+<tr><td>global function</td><td>mcp_call(server: string, tool: string, args: Json) -> Json</td><td>Dispatch POST /v1/servers/{server}/tools/{tool}/call with args and return the Json envelope.</td></tr>
+<tr><td>global function</td><td>mcp_resources(server: string) -> Json</td><td>Dispatch GET /v1/servers/{server}/resources and return the Json envelope.</td></tr>
+<tr><td>global function</td><td>mcp_templates(server: string) -> Json</td><td>Dispatch GET /v1/servers/{server}/resources/templates and return the Json envelope.</td></tr>
+<tr><td>global function</td><td>mcp_read(server: string, uri: string) -> Json</td><td>Dispatch GET /v1/servers/{server}/resources/read?uri=... and return the Json envelope.</td></tr>
+<tr><td>global function</td><td>mcp_prompts(server: string) -> Json</td><td>Dispatch GET /v1/servers/{server}/prompts and return the Json envelope.</td></tr>
+<tr><td>global function</td><td>mcp_prompt(server: string, name: string, args: Json) -> Json</td><td>Dispatch POST /v1/servers/{server}/prompts/{name} with string-valued Json args and return the Json envelope.</td></tr>
+<tr><td>MCPServer</td><td>srv.tools() -> Json | srv.call(tool: string, args: Json) -> Json</td><td>List tools or call a tool on the target MCPServer handle.</td></tr>
+<tr><td>MCPServer</td><td>srv.resources() -> Json | srv.templates() -> Json | srv.read(uri: string) -> Json</td><td>List resources, list URI templates, or read a resource URI on the target MCPServer handle.</td></tr>
+<tr><td>MCPServer</td><td>srv.prompts() -> Json | srv.prompt(name: string, args: Json) -> Json</td><td>List prompts or render a named prompt on the target MCPServer handle.</td></tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<table>
+<thead><tr><th>Interface or function</th><th>Signature / annotation</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>RestGet .. RestOptions</td><td>@"/path/:param" fn h(x: RestExchange) -> void implements RestGet</td><td>Bind an HTTP GET, POST, PUT, DELETE, PATCH, HEAD, or OPTIONS route handler.</td></tr>
+<tr><td>RestHandler</td><td>@"/path" fn h(x: RestExchange) -> void implements RestHandler</td><td>Bind a method-agnostic HTTP route handler.</td></tr>
+<tr><td>CliCommand</td><td>@"cmd" fn h(x: RestExchange) -> void implements CliCommand</td><td>Bind a named CLI subcommand dispatched by rest_cli.</td></tr>
+<tr><td>CliOption</td><td>@"--flag" fn h(x: RestExchange) -> void implements CliOption</td><td>Bind a CLI option flag (--flag=val or --flag val) evaluated before the command handler.</td></tr>
+<tr><td>rest_config / rest_route</td><td>rest_config(key: string, val: string) -> void | rest_route(method: string, path: string, handler: string) -> void</td><td>Configure host, port, or session (ephemeral or global) and dynamically register HTTP route handlers.</td></tr>
+<tr><td>rest_serve / rest_stop / rest_cli</td><td>rest_serve() -> void | rest_stop() -> void | rest_cli(args: StrList) -> string</td><td>Start or stop the embedded standard HTTP server or dispatch CLI options, commands, and routes in-process.</td></tr>
+<tr><td>RestExchange</td><td>x.method() | x.path() | x.body() | x.param(string) | x.query(string) | x.header(string) | x.get(string) -> string | x.has_query(string) | x.has_header(string) -> bool | x.status(int) | x.set_header(string, string) | x.send(string) | x.json(string) | x.set(string, string) -> void | x.increment(string) -> int</td><td>Inspect request metadata, emit plain text or JSON responses, and read or mutate ephemeral/global session state.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th>Exit code</th><th>Category</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success</td><td>CLI action, HTTP/stdio server shutdown, or _lmcode_ bytecode program succeeded.</td></tr>
+<tr><td>2</td><td>Usage / config error</td><td>Invalid CLI arguments, unreadable or malformed config.json, unknown config keys, literal credential headers, or non-loopback --listen address.</td></tr>
+<tr><td>3</td><td>Tool / upstream / VM error</td><td>MCP tool returned isError:true on the CLI, upstream transport/auth/policy/secret-suppression error, broken stdout, or bytecode load/VM error in host mode.</td></tr>
+<tr><td>4</td><td>Cancelled / app error</td><td>Operation interrupted by SIGINT, SIGTERM, or SIGHUP in CLI/server modes, or application/host failure in _lmcode_ mode.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmmcp">github.com/lmctl-ai/lmmcp</a>.</p>
+</footer>
+</body>
+</html>

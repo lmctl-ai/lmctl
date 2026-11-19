@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmtop authoring skill — lmtop — lmctl.com tools</title>
+<meta name="description" content="lmtop is a non-interactive host resource monitor for Linux, macOS, and Windows that exposes CPU, memory, disk, and network telemetry as a newline-delimited…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmtop/">Overview</a></li>
+<li><a href="/tools/lmtop/skill.html">Skill</a></li>
+<li><a href="/tools/lmtop/guide.html">Guide</a></li>
+<li><a href="/tools/lmtop/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmtop authoring skill</h1>
+<p>lmtop is a non-interactive host resource monitor for Linux, macOS, and Windows that exposes CPU, memory, disk, and network telemetry as a newline-delimited JSON (NDJSON) server over stdin and stdout. It samples 24 host-normalized metrics on a deterministic tick schedule, retains history in a fixed-cap memory ring buffer, and serves instant snapshots, downsampled time series, and percentile summaries.</p>
+<h2>Purpose</h2>
+<p>Use lmtop to collect machine-readable CPU, memory, block I/O, and network interface metrics during benchmarks, load tests, or production diagnostics without parsing human-oriented top or vmstat terminal output. It supports both ephemeral one-shot queries via lmtop client and long-running background telemetry collection via lmtop server connected to pipes or FIFOs.</p>
+<h2>When to use it</h2>
+<p>Choose lmtop whenever an automated agent or test harness needs host-level CPU utilization, hottest-core saturation, available memory, swap usage, deduplicated physical disk throughput/IOPS, network packet/byte/drop rates, or Linux Pressure Stall Information (PSI) over a time window. Use lmdebug when debugging or profiling specific target processes and threads, and use lmcurl or lmnet when measuring endpoint or socket latency.</p>
+<h2>Install</h2>
+<p>Download the pre-built standalone binary for your platform (lmtop-linux-x86_64, lmtop-linux-arm64, lmtop-macos-x86_64, lmtop-macos-arm64, lmtop-windows-x86_64.exe, or lmtop-windows-arm64.exe) from GitHub Releases and place it on your PATH, or build from source with CMake and a C++17 toolchain. Linux binaries are fully static with zero external runtime dependencies.</p>
+<pre><code>cmake -B build &amp;&amp; cmake --build build -j
+./build/lmtop --help</code></pre>
+<h2>Commands</h2>
+<p>lmtop provides two subcommands: server (the default when no subcommand is given) and client (supporting both automatic child-spawn mode and POSIX named-pipe FIFO mode).</p>
+<pre><code># Run the stdio NDJSON server (default 1000 ms interval, 100 MiB ring buffer cap)
+lmtop server --interval 500 --cap-mb 100
+
+# One-shot CLI client queries (spawns a private server, queries, and stops it)
+lmtop client status
+lmtop client --interval 250 now
+lmtop client --interval 250 summary
+
+# Supervised background server with POSIX FIFOs for continuous history accumulation
+mkfifo /tmp/lmtop.in /tmp/lmtop.out
+lmtop server --interval 1000 &lt; /tmp/lmtop.in > /tmp/lmtop.out 2>/tmp/lmtop.log &amp;
+sleep 3
+lmtop client --id 10 --in /tmp/lmtop.in --out /tmp/lmtop.out now
+lmtop client --id 11 --in /tmp/lmtop.in --out /tmp/lmtop.out summary '{"seconds": 60}'
+lmtop client --id 12 --in /tmp/lmtop.in --out /tmp/lmtop.out history '{"seconds": 60, "max_points": 30}'
+lmtop client --id 13 --in /tmp/lmtop.in --out /tmp/lmtop.out stop</code></pre>
+<h2>Inputs and outputs</h2>
+<p>In server mode, lmtop reads one UTF-8 JSON object per line on stdin ({"id": &lt;int>, "method": "&lt;name>", "params": {...}}) and writes one JSON response line per request on stdout ({"id": &lt;int>, "result": {...}} or {"id": &lt;int>, "error": "&lt;msg>"}). All human-readable startup warnings and diagnostics are written strictly to stderr. Missing or unavailable metrics (such as counter resets, hot-plugged devices on their first tick, or Linux PSI on macOS and Windows) are emitted as -1.</p>
+<h2>Safety rules</h2>
+<p>Follow these operational rules when integrating lmtop into scripts and agent workflows:</p>
+<ul>
+<li>Keep --interval within the enforced 100 to 60000 ms range (default 1000 ms) and --cap-mb at 1 MiB or greater (default 100 MiB); values outside these bounds cause an immediate exit code 2 usage refusal.</li>
+<li>In POSIX FIFO mode (--in and --out), assign a distinct --id N on every lmtop client call so the reader matches the fresh response line rather than an earlier buffered reply.</li>
+<li>Pass max_points in history queries (for example, {"seconds": 300, "max_points": 60}) when feeding time series into LLM context windows so responses remain compact while still guaranteeing that the newest sample row is included.</li>
+<li>Treat -1 metric values as missing data rather than zero: lmtop already excludes -1 samples from summary aggregations (min, mean, median, p95, p99, max, stddev) so missing values never skew statistics downward.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>The first example drives lmtop server over bidirectional stdio pipes from a shell pipeline to inspect the server catalog, capture a live sample, and shut down cleanly:</p>
+<pre><code>printf '{"id":1,"method":"status"}\n{"id":2,"method":"now"}\n{"id":3,"method":"stop"}\n' \
+  | lmtop server --interval 200</code></pre>
+<p>The second example supervises a background lmtop server across a workload run and queries both the window summary statistics and a downsampled 10-point history trace:</p>
+<pre><code>mkfifo /tmp/bench.in /tmp/bench.out
+lmtop server --interval 200 --cap-mb 32 &lt; /tmp/bench.in > /tmp/bench.out 2>/tmp/bench.err &amp;
+SERVER_PID=$!
+sleep 2
+lmtop client --id 1 --in /tmp/bench.in --out /tmp/bench.out now
+lmtop client --id 2 --in /tmp/bench.in --out /tmp/bench.out summary '{"seconds": 10}'
+lmtop client --id 3 --in /tmp/bench.in --out /tmp/bench.out history '{"seconds": 10, "max_points": 10}'
+lmtop client --id 4 --in /tmp/bench.in --out /tmp/bench.out stop
+wait $SERVER_PID
+rm -f /tmp/bench.in /tmp/bench.out</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmtop uses distinct exit codes for clean execution, runtime I/O or communication failures, and CLI argument errors:</p>
+<ul>
+<li>Exit code 0 indicates clean completion (the server exited via stop, stdin EOF, SIGINT, or SIGTERM, or the client received a matching response).</li>
+<li>Exit code 1 indicates a client runtime failure (such as inability to open FIFOs, broken server pipe, or no matching response id within the timeout).</li>
+<li>Exit code 2 indicates a command-line usage error (such as unknown flags, --interval outside 100..60000 ms, --cap-mb &lt; 1, --in without --out, or non-object params JSON).</li>
+<li>Exit code 4 indicates a server stdout write failure while emitting a JSON response line.</li>
+</ul>
+<h2>How to verify</h2>
+<p>Verify an installed or newly built lmtop binary by checking --help, running a one-shot status and now query, and running the cross-platform integration suite:</p>
+<pre><code>lmtop --help
+lmtop client status
+lmtop client --interval 200 now
+python3 tests/integration.py build</code></pre>
+<p>The integration test launches a live server at a 200 ms sampling interval, generates synthetic CPU and fsync disk load over 10 seconds, verifies all 24 metric bounds, CPU slice identities, Welford summary statistics, stride downsampling, error envelopes on malformed JSON, and clean stop shutdown.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmtop">github.com/lmctl-ai/lmtop</a>.</p>
+</footer>
+</body>
+</html>

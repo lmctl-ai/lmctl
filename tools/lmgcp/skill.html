@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmgcp authoring skill — lmgcp — lmctl.com tools</title>
+<meta name="description" content="lmgcp is the single-binary Google Cloud Platform scripting host for LMScript, built on lmcode-go and official Google Cloud Go SDKs with an in-process fake GCP…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmgcp/">Overview</a></li>
+<li><a href="/tools/lmgcp/skill.html">Skill</a></li>
+<li><a href="/tools/lmgcp/guide.html">Guide</a></li>
+<li><a href="/tools/lmgcp/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmgcp authoring skill</h1>
+<p>lmgcp is the single-binary Google Cloud Platform scripting host for LMScript, built on lmcode-go and official Google Cloud Go SDKs with an in-process fake GCP server, local gcpsim support, and a shared lmcloud mode.</p>
+<h2>Purpose</h2>
+<p>Use lmgcp to script 16 Google Cloud services (Compute Engine, VPC/Subnets/Firewalls, Cloud Storage, Pub/Sub, Cloud Run v2, Cloud SQL, Firestore, BigQuery, IAM, Secret Manager metadata, Cloud KMS, GKE, Artifact Registry, Cloud DNS, Cloud Logging, and Cloud Monitoring) or to execute portable lmcloud programs via lmgcp cloud.</p>
+<h2>When to use it</h2>
+<p>Choose the default lmgcp schema when authoring multi-service GCP inventory audits, CIS posture scorecards, VPC topology graphs, or ephemeral GCP sandboxes across the 16 supported GCP services. Choose the lmgcp cloud subcommand when running provider-neutral lmcloud programs against GCS, Pub/Sub, and gcpsim on 127.0.0.1:4588.</p>
+<h2>Install</h2>
+<p>Declare lmgcp in an LMScript _lmcode_ block so the compiler downloads and verifies the platform release binary and compiles against its embedded schema.</p>
+<pre><code>p = _lmcode_ cli="lmgcp" install="github:lmctl-ai/lmgcp@latest";</code></pre>
+<h2>Commands</h2>
+<p>Run LMScript cloud stories via lmscript or lmctl, or invoke lmgcp directly for schema inspection, signature listing, shared lmcloud execution, and orphan sweeping.</p>
+<pre><code>lmgcp --version
+lmgcp --help
+lmgcp --notices
+lmgcp --lmcode-schema
+lmgcp --lmcode-schema --json
+lmgcp --lmcode-signatures
+lmgcp --lmcode-signatures --without-std
+lmgcp --sweep --older-than-hours 1
+lmgcp --sweep --older-than-hours 1 --delete
+lmgcp cloud --lmcode-schema --json
+lmgcp cloud --lmcode-signatures
+lmscript examples/01_project_inventory_overview.lms</code></pre>
+<h2>Inputs and outputs</h2>
+<p>In native GCP mode, programs access context gcp: Gcp (20 host types and 299 host signatures plus 226 lmcode_std_v3 standard signatures = 525 total signatures). In shared cloud mode (lmgcp cloud), programs access context cloud: Cloud from schema/lmcloud.dsl.json. Project IDs are masked in all outputs, secret values are never exposed (Secret Manager is metadata-only), and every run tracks estimated USD cost through RunLedger.</p>
+<h2>Safety rules</h2>
+<p>By default (LMGCP_LIVE=0 and LMGCP_ENDPOINT unset), lmgcp starts an in-process fake GCP REST server seeded with 43 deterministic resources and makes zero external network calls. Setting LMGCP_ENDPOINT=http://127.0.0.1:4588 routes traffic to a local gcpsim emulator and is mutually exclusive with LMGCP_LIVE=1. Every mutating call auto-prefixes resource names with lmgcp_&lt;runId>_ or lmgcp-&lt;runId>-, stamps the lmgcp_test=&lt;runId> label, enforces shape allowlists (only e2-micro/e2-small VMs, ≤20 GB disks, db-f1-micro/db-g1-small SQL), checks the per-run cost cap (default $0.05, hard ceiling $0.25) before creation, records an fsynced recovery journal entry, and performs automatic LIFO teardown on exit or failure.</p>
+<h2>Worked examples</h2>
+<p>Example 1: Ephemeral GCS bucket, Pub/Sub topic, and cost ledger check on the default Gcp schema.</p>
+<pre><code>p = _lmcode_ cli="lmgcp" install="github:lmctl-ai/lmgcp@latest";
+  gcp.set_cost_cap_usd(0.05);
+  let bkt = gcp.storage_create_bucket("lmgcp-pipeline", "us-central1", "STANDARD");
+  gcp.storage_put_object(bkt.name(), "events/e1.json", "{\"step\":1}", "text/plain");
+
+  let topic = gcp.pubsub_create_topic("lmgcp_jobs");
+  assert(gcp.storage_read_object(bkt.name(), "events/e1.json") == "{\"step\":1}", "object round-trip failed");
+  assert(gcp.ledger_count() >= 2, "expected ledger entries for bucket and topic");
+
+  gcp.cleanup_ledger();
+  print("ledger cleaned, estimated cost: $" + str(gcp.estimated_cost_usd()));
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, "GCP pipeline failed");</code></pre>
+<p>Example 2: Standard lmcode_std_v3 REST and CLI interfaces over Firestore listings.</p>
+<pre><code>p = _lmcode_ cli="lmgcp" install="github:lmctl-ai/lmgcp@latest";
+  @"/docs/:collection/:id"
+  fn get_doc(x: RestExchange) -> void implements RestGet {
+    x.json("{\"collection\":\"" + x.param("collection") + "\",\"count\":" + str(gcp.firestore_list_docs(x.param("collection")).len()) + "}");
+  }
+
+  @"collections"
+  fn cmd_cols(x: RestExchange) -> void implements CliCommand {
+    x.send(str(gcp.firestore_list_collections().len()));
+  }
+
+  rest_config("prefix", "/v1");
+  let w = rest_cli(str_split("collections", " "));
+  let g = rest_cli(str_split("/v1/docs/locks/leader", " "));
+  print(w + " -> " + g);
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, "Firestore REST/CLI example failed");</code></pre>
+<h2>Errors and exit codes</h2>
+<p>All error strings pass through safety.RedactSecrets to scrub Bearer tokens, private keys, and credentials before output. Exit code 0 indicates normal completion; exit code 2 indicates CLI usage error, invalid invocation manifest, or invalid LMGCP_MAX_MEMORY_MB setting; exit code 3 indicates host runtime failure, cost cap refusal, shape allowlist rejection, or memory ceiling breach (triggering CleanupLedger before exit); exit code 4 indicates bytecode load or stdout write error.</p>
+<h2>How to verify</h2>
+<p>Verify the installed binary version, the signature count (525 total, 299 without std), and the offline test suite.</p>
+<pre><code>lmgcp --version
+lmgcp --lmcode-signatures | wc -l
+lmgcp --lmcode-signatures --without-std | wc -l
+bash test.sh</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmgcp">github.com/lmctl-ai/lmgcp</a>.</p>
+</footer>
+</body>
+</html>

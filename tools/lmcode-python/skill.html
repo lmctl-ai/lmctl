@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-python skill — lmcode-python — lmctl.com tools</title>
+<meta name="description" content="Use lmcode-python to embed the DSLB v6 bytecode verifier, 206-signature standard catalog, and opt-in REST controller into Python 3.9+ applications.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-python/">Overview</a></li>
+<li><a href="/tools/lmcode-python/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-python/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-python/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-python skill</h1>
+<p>Use lmcode-python to embed the DSLB v6 bytecode verifier, 206-signature standard catalog, and opt-in REST controller into Python 3.9+ applications.</p>
+<h2>Purpose</h2>
+<p>Execute schema-bound lmcode DSLB v6 bytecode in pure Python with zero third-party runtime dependencies, opt-in REST dispatch, and LMCODE_RETURN framing.</p>
+<h2>When to use it</h2>
+<p>Use lmcode-python when authoring a Python CLI, service, or test harness that exposes Python objects or REST endpoints to compiled lmcode chunks.</p>
+<h2>Install</h2>
+<p>Install with python -m pip install lmcode-python (or pip install -e . from a checkout) on Python 3.9 or newer.</p>
+<h2>Commands</h2>
+<pre><code>python3 -m unittest discover -s tests
+python3 scripts/check-verifier-mutations.py
+python3 -m lmcode.conformance conformance/vectors
+python3 scripts/run-rest-suite.py
+python3 -m lmcode.rest app.dslb host.schema.json</code></pre>
+<h2>Inputs and outputs</h2>
+<ul>
+<li>Input: bytes DSLB v6 bytecode, bytes dsl.schema: 2 JSON, and optional LMCODE_INVOCATION_FILE manifest.</li>
+<li>Output: mutated Python objects in Context, HTTP/1.1 responses on stdout via RestController, or a terminal LMCODE_RETURN frame.</li>
+<li>Strings: callbacks receive UTF-8 str by default; pass raw_strings=True to receive latin1 one-codepoint-per-byte raw strings.</li>
+</ul>
+<h2>Safety rules</h2>
+<ul>
+<li>Set raw_strings=True on Registry.function or Registry.method when callbacks handle arbitrary binary bytes or invalid UTF-8.</li>
+<li>Wrap dry-mode preview callbacks with lmcode.dry(fn) so mutating callbacks remain skipped during dry runs.</li>
+<li>Keep stdout clean while RestController is serving HTTP/1.1 over sys.stdout.buffer; direct diagnostics to sys.stderr.</li>
+</ul>
+<h2>Worked examples</h2>
+<pre><code>from pathlib import Path
+from lmcode import Context, Registry, dry, load
+
+registry = Registry()
+registry.function(
+    "double_it", ["int"], "int",
+    lambda ctx, args: (args[0] * 2) &amp; 0xFFFFFFFFFFFFFFFF,
+    dry_callback=dry(lambda ctx, args: 0),
+)
+program = load(Path("chunk.dslb").read_bytes(), Path("host.schema.json").read_bytes(), registry)
+program.run(Context(), registry)</code></pre>
+<h2>Errors and exit codes</h2>
+<table><thead><tr><th>Code</th><th>Phase</th><th>Exit</th><th>Condition</th></tr></thead><tbody>
+<tr><td>LOAD_BAD_BYTECODE</td><td>load</td><td>3</td><td>Malformed DSLB v6 header, bad magic or version, truncated section, invalid opcode, or stack depth violation</td></tr>
+<tr><td>LOAD_BAD_SCHEMA</td><td>load</td><td>3</td><td>Host schema JSON fails dsl.schema 2 validation or declares an invalid result contract</td></tr>
+<tr><td>LOAD_SCHEMA_MISMATCH</td><td>load</td><td>3</td><td>32-byte SHA-256 schema hash in DSLB v6 header does not match exact host schema bytes</td></tr>
+<tr><td>LOAD_UNBOUND</td><td>load</td><td>3</td><td>Bytecode imports a context, function, or method signature not registered in the host Registry</td></tr>
+<tr><td>RUN_ERROR</td><td>run</td><td>3</td><td>VM division or remainder by zero, or loop-free operand stack underflow</td></tr>
+<tr><td>RUN_HOST</td><td>run</td><td>3</td><td>Host callback failure, invalid encoding, expired collection handle, or REST route validation failure</td></tr>
+<tr><td>APP_FAIL</td><td>app</td><td>4</td><td>Post-run application domain validation failure or output stream write failure</td></tr>
+</tbody></table>
+<h2>How to verify</h2>
+<pre><code>bash scripts/sync-std.sh --verify
+python3 scripts/sync-rest.py --verify
+python3 -m unittest discover -s tests
+python3 scripts/run-rest-suite.py</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-python">github.com/lmctl-ai/lmcode-python</a>.</p>
+</footer>
+</body>
+</html>

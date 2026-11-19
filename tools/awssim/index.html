@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>awssim — lmctl.com tools</title>
+<meta name="description" content="awssim is a single-binary local AWS emulator on 127.0.0.1:4566 that runs S3, DynamoDB, and SQS in-process without Java or Docker at runtime.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/awssim/">Overview</a></li>
+<li><a href="/tools/awssim/skill.html">Skill</a></li>
+<li><a href="/tools/awssim/guide.html">Guide</a></li>
+<li><a href="/tools/awssim/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>awssim</h1>
+<p>awssim is a single-binary local AWS emulator on 127.0.0.1:4566 that runs S3, DynamoDB, and SQS in-process without Java or Docker at runtime.</p>
+<h2>Quick reference</h2>
+<p>Start awssim on loopback port 4566 in open mode or with SigV4 and IAM policy enforcement, then connect lmaws or the AWS CLI.</p>
+<pre><code>awssim --version
+awssim serve
+awssim serve --port 4566 --data-dir ./state
+awssim serve --auth enforce --auth-config examples/auth.json
+curl http://127.0.0.1:4566/_floci/health</code></pre>
+<table>
+<thead>
+<tr>
+<th>Command or option</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>awssim serve | start</td>
+<td>127.0.0.1:4566, in-memory</td>
+<td>Run the foreground loopback AWS emulator for S3, DynamoDB, and SQS.</td>
+</tr>
+<tr>
+<td>--port &lt;port></td>
+<td>4566</td>
+<td>Override the loopback TCP listening port.</td>
+</tr>
+<tr>
+<td>--data-dir &lt;path></td>
+<td>in-memory</td>
+<td>Persist bucket, table, and queue state across emulator restarts.</td>
+</tr>
+<tr>
+<td>--auth open | enforce</td>
+<td>open (SIM_AUTH)</td>
+<td>Run in permissive open mode or enforce SigV4 authentication and IAM policies.</td>
+</tr>
+<tr>
+<td>--auth-config &lt;file></td>
+<td>SIM_AUTH_CONFIG</td>
+<td>JSON file declaring dummy accessKeyId, secretAccessKey, and IAM Statement policies.</td>
+</tr>
+<tr>
+<td>GET /_floci/health</td>
+<td>anonymous</td>
+<td>Readiness probe endpoint available in both open and enforce modes.</td>
+</tr>
+</tbody>
+</table>
+<p>Runnable LMScript example driving awssim on 127.0.0.1:4566 through lmaws and the shared lmcloud schema:</p>
+<pre><code>p = _lmcode_ cli="lmaws" install="github:lmctl-ai/lmaws@latest";
+  @"/awssim/:bucket/:key"
+  fn get_item(x: RestExchange) -> void implements RestGet {
+    x.send(cloud.object_get(x.param("bucket"), x.param("key")));
+  }
+
+  cloud.set_endpoint("all", "http://127.0.0.1:4566");
+  cloud.bucket_create("hello-awssim");
+  cloud.object_put("hello-awssim", "greeting.txt", "hello from awssim");
+  cloud.queue_create("awssim-jobs");
+  cloud.queue_send("awssim-jobs", "job-1");
+
+  rest_config("prefix", "/v1");
+  let val = rest_cli(str_split("/v1/awssim/hello-awssim/greeting.txt", " "));
+  print(val);
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, "awssim client run failed");</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/awssim/skill.html">Skill</a> — LLM agent authoring rules, startup flags, auth config schema, and verification steps for awssim.</li>
+<li><a href="/tools/awssim/guide.html">Guide</a> — Architecture, SigV4 and IAM enforcement rules, LMScript template integration, and standard REST/CLI client workflows.</li>
+<li><a href="/tools/awssim/reference.html">Reference</a> — CLI flags, environment variables, enforced S3/DynamoDB/SQS operations, auth.json schema, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/awssim">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/awssim">github.com/lmctl-ai/awssim</a>.</p>
+</footer>
+</body>
+</html>

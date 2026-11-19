@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmaudio guide — lmaudio — lmctl.com tools</title>
+<meta name="description" content="This guide explains how lmaudio is put together and how to think about a program for it: the split between LMScript and the host, the buffer model, the…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmaudio/">Overview</a></li>
+<li><a href="/tools/lmaudio/skill.html">Skill</a></li>
+<li><a href="/tools/lmaudio/guide.html">Guide</a></li>
+<li><a href="/tools/lmaudio/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmaudio guide</h1>
+<p>This guide explains how lmaudio is put together and how to think about a program for it: the split between LMScript and the host, the buffer model, the families of operations, and the limits you should plan around.</p>
+<h2>Overview</h2>
+<p>lmaudio is one static executable that embeds an lmcode virtual machine and an audio engine. The engine combines DaisySP and Soundpipe modules, both MIT licensed, with original DSP, FFT, loudness and WAV code. Everything is rendered offline: a program describes sound as a chain of typed calls, the host computes it as fast as it can, and the results come back as numbers, CSV tables and WAV files. The same program gives the same output on every run.</p>
+<h2>Architecture</h2>
+<ol>
+<li>You write an LMScript file. The audio part is a block that starts with a line such as a = _lmcode_ cli="lmaudio" install="github:lmctl-ai/lmaudio@latest"; and ends with end _lmcode_.</li>
+<li>lmscript asks the lmaudio binary for its schema (lmaudio --lmcode-schema --json) and type-checks the block against exactly those bytes.</li>
+<li>run_lmcode(a) compiles the block, hands the program to that same binary in a private file through lmaudio --lmcode, and waits.</li>
+<li>The host runs the whole block in one process. Buffers stay in host memory; only what you save or return leaves the process.</li>
+<li>The host prints one result envelope, and run_lmcode returns it as a map with ok and result, or with ok false and the failure details.</li>
+</ol>
+<p>The script keeps loops, numbers and strings; lmaudio keeps the audio. One script can hold several blocks for different hosts: the repository examples render their figures with lmplot and most draw a diagram with lmdraw, passing CSV files between the blocks.</p>
+<h2>The language inside a block</h2>
+<p>A block is typed lmcode: let bindings, if and else, for loops over range(start, end) or over a standard list, while loops, and top-level fn definitions that the compiler inlines. Integers and floats do not mix implicitly, so write 440.0 for a frequency and widen an int with float(i). Sample rates and seeds are ints. str(x) formats a number and + joins strings. LMScript values are spliced into a block with ${...} before it is compiled.</p>
+<h2>Domain model</h2>
+<table>
+<thead><tr><th>Type</th><th>Role</th><th>Created by</th></tr></thead>
+<tbody>
+<tr><td>Audio</td><td>The context object named audio. It makes buffers and filter designs and holds pitch and level helpers, printing, text output and assertions.</td><td>Provided by the host</td></tr>
+<tr><td>Buffer</td><td>Mono or stereo 32-bit float audio at one sample rate. Processing methods return a new buffer, so calls chain.</td><td>audio generators, audio.load_wav, audio.stereo, any Buffer method, Spectrum.ifft, Biquad.apply</td></tr>
+<tr><td>Spectrum</td><td>One FFT of a buffer: magnitude, level and phase per bin, with peak and centroid queries.</td><td>Buffer.spectrum</td></tr>
+<tr><td>Spectrogram</td><td>A short-time Fourier transform grid of frames by bins.</td><td>Buffer.spectrogram</td></tr>
+<tr><td>Biquad</td><td>One designed second-order filter with its coefficients and exact response.</td><td>audio.biquad_design</td></tr>
+</tbody>
+</table>
+<p>Units are consistent across the API: durations in seconds, frequencies in Hz, linear amplitudes unless a name ends in db. The sample rate is always the last argument of a generator and may be omitted, in which case it is 44100. Valid sample rates run from 100 to 384000 Hz.</p>
+<h2>Workflow</h2>
+<h3>Make sound</h3>
+<p>Start from a generator: test signals (sine, cosine, saw, square, triangle, chirp, impulse, noise, silence), a formula in t with audio.expr, additive and FM synthesis, physical models (karplus, pluck, modal, bar), drum voices, or a whole phrase with audio.sequence. Sawtooth and square oscillators and additive synthesis are band-limited, so their spectra contain harmonics and no aliasing products between them.</p>
+<p>audio.sequence takes notes as text. Each token is a note name and a length in beats, R is a rest, and names joined with + form a chord, as in C4:1 E4:0.5 R:0.5 C4+E4+G4:2. The instrument is one of sine, saw, square, triangle, fm, pluck, karplus, modal or pad.</p>
+<h3>Shape, edit and mix</h3>
+<p>Level methods (gain, normalize, normalize_rms, normalize_lufs), envelopes (fade, adsr, multiply) and editing methods (slice, pad, concat, mix, reverse, resample) build an arrangement. Buffer.pattern turns one hit into a rhythm from a step string: X is an accent, x a hit, o a ghost note, a digit from 1 to 9 a gain step, a dot a rest and | a bar line. Buffer.granular produces grain clouds and time-stretching.</p>
+<h3>Filter and add space</h3>
+<p>RBJ biquads, a state-variable filter and a Moog ladder cover tone shaping; audio.biquad_design gives the same biquad as an object whose response can be queried exactly. convolve applies an impulse response by FFT convolution, reverb and zitarev are feedback-delay-network reverbs, and delay, chorus, flanger and phaser are modulation effects. compress, overdrive, wavefold and bitcrush cover dynamics and distortion.</p>
+<h3>Measure and assert</h3>
+<p>Measurement methods return plain numbers: rms, peak, pitch (YIN), lufs (ITU-R BS.1770-4 with gating), rt60 (T30 with a T20 fallback), centroid, thd and snr_db. A script states what it expects with audio.assert_close(actual, expected, tol), which stops the run when the value is off. This is the pattern every repository example follows: synthesize the input, assert a known answer, then write the files.</p>
+<h3>Deliver</h3>
+<p>save_wav writes 16, 24 or 32 bit WAV. The CSV writers produce data for a plotting host, and lmcode_return_put sends numbers back to LMScript for decisions and reports.</p>
+<h2>Values that cross the boundary</h2>
+<p>lmaudio has no host-specific result object. Use the standard return functions: each lmcode_return_put(name, value) adds a field to r.result, and standard lists and maps are returned as JSON arrays and objects. A block that returns nothing gives r.result null. The standard library also provides strings, math, collections, JSON parsing and file functions inside the block.</p>
+<pre><code>a = _lmcode_ cli="lmaudio" install="github:lmctl-ai/lmaudio@latest";
+let names = str_split("A3 C#4 E4", " ");
+let freqs = float_list();
+for (n in names) { freqs.add(audio.note_freq(n)); }
+let doc = json_parse("{\"bpm\": 120}");
+lmcode_return_put("notes", names);
+lmcode_return_put("freqs", freqs);
+lmcode_return_put("bpm", doc.get("bpm").as_int());
+lmcode_return_put("upper", str_upper("ok"));
+end _lmcode_
+r = run_lmcode(a);
+println(json_stringify(r));</code></pre>
+<pre><kbd>lmscript notes.lms</kbd>
+<samp>{"ok":true,"result":{"notes":["A3","C#4","E4"],"freqs":[220,277.1826309768721,329.6275569128699],"bpm":120,"upper":"OK"}}</samp></pre>
+<h2>Dry runs and resource limits</h2>
+<p>lmaudio --dry-run --lmcode FILE runs a program without writing any file; its envelope has dry set to true and a null result. A program may use at most 4096 MiB in total for buffers, spectra, FFT scratch space and the allocations of the Soundpipe modules. Beyond that it stops with a run error that names the limit. Set LMAUDIO_MAX_MEMORY_MB to a positive whole number to change the budget.</p>
+<h2>Limits</h2>
+<ul>
+<li>Offline only: no sound card, no real-time playback and no MIDI input. Output audio is WAV; there is no MP3, FLAC or Ogg.</li>
+<li>Mono and stereo only. pan downmixes stereo to mono first. lufs weights both channels 1.0 with no surround weighting and needs a sample rate of at least 8 kHz. K-weighting is exact at 48 kHz and drifts by about 0.03 dB at 22.05 kHz.</li>
+<li>pitch is one YIN estimate per call, taken from the most energetic window. For tones with slightly inharmonic overtones, such as plucked strings, read the fundamental from spectrum and peak_freq_in instead.</li>
+<li>spectrum(window, nfft) with nfft smaller than the buffer analyses only the first nfft samples; a larger nfft zero-pads.</li>
+<li>bar stiffness is limited by the stable grid at the chosen sample rate, and an error says so. Mode frequencies of very stiff bars carry a finite-difference error of a few percent.</li>
+<li>zitarev is a clean-room feedback delay network with zita-rev1-style controls, not zita-rev1. Its broadband RT60 comes out a few percent below rt60_mid because of the high-frequency damping.</li>
+<li>WAV writing clips samples outside -1 to 1 for 16 and 24 bit output, with a warning on stderr that gives the count, and refuses NaN and infinity. Save 32 bit float to keep overs.</li>
+<li>Buffers hold at most 200 million frames.</li>
+<li>The schema carries types only. Parameter names for some effects (svf, delay, chorus, flanger, phaser, overdrive, bitcrush, paulstretch, pluck, modal) are not published in the public repository; copy their use from the repository examples.</li>
+</ul>
+<h2>Where to go next</h2>
+<ul>
+<li><a href="/tools/lmaudio/skill.html">The lmaudio skill</a> for commands, worked examples and error handling.</li>
+<li><a href="/tools/lmaudio/reference.html">The lmaudio reference</a> for every signature.</li>
+<li><a href="https://github.com/lmctl-ai/lmaudio#gallery">The README gallery</a> for pictures and sounds of all 22 examples.</li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmaudio">github.com/lmctl-ai/lmaudio</a>.</p>
+</footer>
+</body>
+</html>

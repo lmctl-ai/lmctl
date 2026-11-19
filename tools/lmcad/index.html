@@ -19,30 +19,103 @@
 <li><a href="/tools/lmcad/tutorial.html">Tutorial</a></li>
 <li><a href="/tools/lmcad/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmcad/guide.html">Guide</a></li>
+<li><a href="/tools/lmcad/reference.html">Reference</a></li>
 <li><a href="/tools/lmcad/examples/">Examples</a></li>
 </ul>
 </nav>
 <main>
 <h1>lmcad</h1>
 <figure><img src="/tools/lmcad/img/logo.png" alt="lmcad logo" width="256" height="256"></figure>
-<h2>Overview</h2>
-<p>lmcad is an experimental native CAD host that models OpenCASCADE solids, renders PNG and APNG images, and exports STL and OBJ meshes.</p>
-<p><a href="https://github.com/lmctl-ai/lmcad/releases/latest">Download the latest release</a> for Linux x64 or Linux arm64. Confirm the binary with lmcad --version and lmcad --lmcode-schema --json. For source builds, use the <a href="https://github.com/lmctl-ai/lmcad#build-opencascade-once">OCCT build instructions</a>; they build OpenCASCADE 8.0.1 into a reusable prefix before configuring lmcad.</p>
-<ul>
-<li><a href="https://github.com/lmctl-ai/lmcad">Source repository</a></li>
-<li><a href="https://github.com/lmctl-ai/lmcad/issues">Report an issue</a></li>
-<li><a href="https://github.com/lmctl-ai/lmcad/blob/main/LICENSE">MIT license</a></li>
-<li><a href="/tools/lmcad/tutorial.html">Tutorial</a>: compile a script, render a looped scene and create a tween animation.</li>
-<li><a href="/tools/lmcad/guide.html">User guide</a>: CLI, schema, outputs, limits and troubleshooting.</li>
-<li><a href="/tools/lmcad/skill.html">Skill</a>: practical guidance for generating and checking lmcad scripts.</li>
-<li><a href="/tools/lmcad/get_started.html">Quickruns</a>: run lmcad tasks with a solo Lead or a Lead, Coder and Reviewer.</li>
-<li><a href="/tools/lmcad/examples/">Examples</a>: tested scripts for volume checks and loops.</li>
-</ul>
+<p>lmcad is a native lmcode host for parametric 3D solids: OpenCASCADE B-rep modelling, volume checks, and a built-in software renderer that writes PNG, APNG, STL and OBJ with no GPU or display. This page is the quick reference for lmcad 0.1.5; programs are lmscript files with a _lmcode_ block run by run_lmcode.</p>
+<h2 id="install">Install and run</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl        # lmscript + lmctl (Node.js >= 24)
+export GITHUB_TOKEN=$(gh auth token)  # optional: avoids GitHub API rate limits on first install
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmcad/main/examples/gear-train.lms
+lmscript --check model.lms            # compile the blocks only
+lmscript model.lms                    # compile and run</code></pre>
+<h2 id="example">Minimal program</h2>
+<pre><code>mkdir("images");
+p = _lmcode_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
+let shape = scene.box(2.0, 3.0, 4.0, material().color(0.2, 0.55, 0.85));
+scene.assert_close(shape.volume(), 24.0, 0.000001);
+scene.fit_camera(42.0, 1.2);
+scene.directional_light(-0.5, -1.0, -0.4, 0.8);
+scene.ambient(0.2);
+scene.render_png("images/box-volume.png", 320, 240);
+end _lmcode_
+r = run_lmcode(p);
+if (!r.ok) { println(r.stderr + r.stdout); }
+assert(r.ok);
+println("wrote images/box-volume.png");</code></pre>
+<h2 id="cli">Host protocol</h2>
+<table>
+<thead><tr><th>Command</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td>lmcad --version</td><td>Prints lmcad X.Y.Z. The release tag vX.Y.Z and the binary version must agree for install="github:lmctl-ai/lmcad@latest".</td></tr>
+<tr><td>lmcad --lmcode-schema</td><td>Prints a compact summary: the context line, then free functions, then members grouped by type.</td></tr>
+<tr><td>lmcad --lmcode-schema --json</td><td>Prints the embedded schema bytes exactly (dsl.schema 2, name lmcad). This is the compiler input.</td></tr>
+<tr><td>lmcad --lmcode-signatures</td><td>Prints the canonical signature list of the host registry, host and standard: 271 lines in 0.1.5.</td></tr>
+<tr><td>lmcad --lmcode FILE [FILE ...]</td><td>Runs compiled program files in argument order. Objects and scene state persist between files; locals are fresh for each file. The first failure stops execution.</td></tr>
+</tbody>
+</table>
+<table>
+<thead><tr><th>Exit code</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success; one JSON result line per completed block.</td></tr>
+<tr><td>2</td><td>Invalid command line. The host prints its usage line and a CLI_USAGE result (phase cli).</td></tr>
+<tr><td>3</td><td>Program file load failure or a block or host run failure.</td></tr>
+<tr><td>4</td><td>Another application failure.</td></tr>
+</tbody>
+</table>
+<h2 id="api">Context, types and functions</h2>
+<table>
+<thead><tr><th>Name</th><th>Kind</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td>scene</td><td>Context object of type Scene</td><td>The one entry point of a block.</td></tr>
+<tr><td>Scene</td><td>Host type</td><td>Solids, sketches, lights, cameras, renders, exports and assertions.</td></tr>
+<tr><td>Shape</td><td>Host type</td><td>Handle to an OpenCASCADE solid: transforms, booleans, edge treatment, volume and bounds.</td></tr>
+<tr><td>Sketch</td><td>Host type</td><td>Straight-segment 2D polygon to extrude or revolve.</td></tr>
+<tr><td>Material</td><td>Host type</td><td>Display color and Blinn-Phong surface parameters.</td></tr>
+<tr><td>Camera</td><td>Host type</td><td>View returned by camera and fit_camera.</td></tr>
+<tr><td>Light</td><td>Host type</td><td>Directional or fill light.</td></tr>
+<tr><td>Animation</td><td>Host type</td><td>APNG writer.</td></tr>
+<tr><td>Keyframes</td><td>Host type</td><td>Collection read from CSV; supports len, at and for-in iteration.</td></tr>
+<tr><td>Keyframe</td><td>Host type</td><td>One CSV row: time, position and color.</td></tr>
+<tr><td>material()</td><td>Host function</td><td>Returns a Material.</td></tr>
+<tr><td>read_keyframes_csv(string)</td><td>Host function</td><td>Returns Keyframes.</td></tr>
+</tbody>
+</table>
+<h3 id="methods">Main methods</h3>
+<table>
+<thead><tr><th>Task</th><th>Calls</th></tr></thead>
+<tbody>
+<tr><td>Primitives</td><td>scene.box, scene.sphere, scene.cylinder, scene.tube_between</td></tr>
+<tr><td>Sketch solids</td><td>scene.sketch().point(x, y) ... close(), then scene.extrude or scene.revolve_y</td></tr>
+<tr><td>Booleans</td><td>shape.union, shape.cut, shape.intersect</td></tr>
+<tr><td>Edges and shells</td><td>shape.fillet, shape.chamfer, shape.hollow, shape.hollow_top</td></tr>
+<tr><td>Transforms</td><td>shape.position, translate, rotate, scale, mirror</td></tr>
+<tr><td>Measure and assert</td><td>shape.volume, min_x to max_z, scene.assert_close(actual, expected, tolerance)</td></tr>
+<tr><td>View and light</td><td>scene.camera, scene.fit_camera(fov, margin), directional_light, fill_light, ambient, background, supersample</td></tr>
+<tr><td>Output</td><td>scene.render_png, render_ppm, export_stl, export_obj, scene.animation with add_frame and finish</td></tr>
+</tbody>
+</table>
+<p>lmcad 0.1.5 ships 206 standard-library signatures (the lmcode_std_v3 catalog at 206). The current lmcode_std_v3 catalog has 226 signatures, adding the REST and CLI interfaces; lmcad picks those up when it syncs and releases, and the 0.1.5 binary does not register them. Full signatures are in the reference.</p>
+<h2 id="gallery">Gallery</h2>
 <figure><img src="/tools/lmcad/img/plate-with-holes.png" alt="Gray rectangular plate with eight round through-holes" width="720" height="540"><figcaption>A plate cut with a loop of cylinder bores.</figcaption></figure>
 <figure><img src="/tools/lmcad/img/brick.png" alt="Red rectangular brick with two rows of raised cylindrical studs" width="720" height="540"><figcaption>A patterned brick built by looping over unions.</figcaption></figure>
 <figure><img src="/tools/lmcad/img/vase.png" alt="Blue tapered hollow vase with an open top" width="560" height="420"><figcaption>A hollow vessel made from a revolved sketch.</figcaption></figure>
 <figure><img src="/tools/lmcad/img/mug.png" alt="Blue hollow mug with a rounded handle" width="500" height="375"><figcaption>A revolved cup body with a fused handle.</figcaption></figure>
 <figure><img src="/tools/lmcad/img/tween-frame.png" alt="Shaded sphere at an intermediate animation position" width="320" height="240"><figcaption>One frame from a CSV-keyframed tween.</figcaption></figure>
+<h2 id="more">More</h2>
+<ul>
+<li><a href="/tools/lmcad/skill.html">Skill</a>: rules for generating and checking lmcad scripts.</li>
+<li><a href="/tools/lmcad/guide.html">User guide</a>: concepts, outputs, limits and troubleshooting.</li>
+<li><a href="/tools/lmcad/reference.html">Reference</a>: every flag, exit code, type, method and standard signature.</li>
+<li><a href="/tools/lmcad/tutorial.html">Tutorial</a>: render a scene, a range loop and a tween animation.</li>
+<li><a href="/tools/lmcad/get_started.html">Quickruns</a>: run lmcad tasks with a solo Lead or a Lead, Coder and Reviewer.</li>
+<li><a href="/tools/lmcad/examples/">Examples</a>: tested scripts.</li>
+<li><a href="https://github.com/lmctl-ai/lmcad">GitHub repository</a> and <a href="https://github.com/lmctl-ai/lmcad/releases/latest">latest release</a> (Linux x64 and Linux arm64).</li>
+</ul>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmcad">github.com/lmctl-ai/lmcad</a>.</p>

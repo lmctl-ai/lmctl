@@ -18,18 +18,19 @@
 <li><a href="/tools/lmscript/skill.html">Skill</a></li>
 <li><a href="/tools/lmscript/tutorial.html">Tutorial</a></li>
 <li><a href="/tools/lmscript/guide.html">Guide</a></li>
+<li><a href="/tools/lmscript/reference.html">Reference</a></li>
 </ul>
 </nav>
 <main>
 <h1>lmscript user guide</h1>
-<p>Everything here was checked against lmscript 0.2.348. For a guided first session see the <a href="/tools/lmscript/tutorial.html">tutorial</a>.</p>
+<p>This guide describes lmscript 0.2.482. For a guided first session see the <a href="/tools/lmscript/tutorial.html">tutorial</a>.</p>
 
 <h2 id="overview">Overview</h2>
 <p>lmscript is a dynamically typed scripting language for automation. A script is a .lms text file run by the lmscript command. The language is deliberately small: statements, functions, lists and maps, a large standard library of plain functions, built-in blocks for CSV/JSON/TOML/properties/GraphQL/command data, and direct process execution without a shell.</p>
 <p>Two properties shape how you work with it:</p>
 <ul>
 <li>Check before run. Every run first checks the whole script (syntax, undeclared names, wrong argument counts, unknown functions and methods, bad data blocks), including code in branches that will not run. Errors stop the script with exit code 2 before anything happens.</li>
-<li>Dry run before run. After the check, a normal run executes the script once in a simulation in which file writes, deletes and program runs are recorded instead of performed. Only if that pass finds no fatal failure does the real run start. --dry-run shows that plan instead of running.</li>
+<li>Dry run on request. --dry-run executes the script in a simulation in which file writes, deletes and program runs are recorded instead of performed, and prints that record as a plan. A normal run does not do this: it checks and then runs once.</li>
 </ul>
 <p>Scripts run with your full local permissions. There is no sandbox: run only scripts you trust.</p>
 
@@ -37,7 +38,7 @@
 <p>lmscript is in the npm package @lmctl-ai/lmctl, together with lmctl. It needs Node.js 24.15 or later.</p>
 <pre><kbd>npm install -g @lmctl-ai/lmctl</kbd></pre>
 <pre><kbd>lmscript --version</kbd>
-<samp>lmscript 0.2.348</samp></pre>
+<samp>lmscript 0.2.482</samp></pre>
 <p>Update with the same command; npm view @lmctl-ai/lmctl version shows the latest published version.</p>
 <p>For GitHub host installation failures when installing a native host, see <a href="#install-troubleshooting">Troubleshooting GitHub host installation</a>.</p>
 
@@ -52,8 +53,8 @@
 <dd>A UTF-8 text file, conventionally NAME.lms, run as lmscript NAME.lms [args…]. Top-level statements run in order; functions are hoisted.</dd>
 <dt>Check</dt>
 <dd>Static analysis of the whole file and its imports. Diagnostics have the form error:FILE:LINE:COLUMN: message.</dd>
-<dt>Dry pass and plan</dt>
-<dd>A simulated execution. Effects are recorded as dummy calls with typed placeholder results (true, 0, empty string/list/map or null); read-only calls really run. The record is the plan.</dd>
+<dt>Dry run and plan</dt>
+<dd>A simulated execution, done only under --dry-run. Effects are recorded as dummy calls with typed placeholder results instead of being performed. The record is the plan.</dd>
 <dt>Strict access</dt>
 <dd>Reading a missing map key or list index is an error, not undefined. Use m.has(k), m.get(k, default) or l.get(i, default) when something may be absent.</dd>
 <dt>Module</dt>
@@ -75,19 +76,19 @@
 <tr><td>--check</td><td>Check only; run nothing. Exit 0 or 2.</td></tr>
 <tr><td>--lint</td><td>Like --check.</td></tr>
 <tr><td>--check-files</td><td>Also verify path literals (i"…", o"…") against the file system, read-only.</td></tr>
-<tr><td>--dry-run</td><td>Run only the simulation and print the plan on stdout; findings go to stderr.</td></tr>
-<tr><td>--plan-format text|json</td><td>Plan format for --dry-run.</td></tr>
-<tr><td>--dry-loop-limit N</td><td>Loop iterations simulated per loop in the dry pass (default 10).</td></tr>
-<tr><td>--dryrun-timeout MS</td><td>Time limit of the dry pass (default 100 ms before a normal run, 5000 ms for --dry-run).</td></tr>
-<tr><td>--no-preflight</td><td>Skip the dry pass before a normal run (the check still runs).</td></tr>
+<tr><td>--dry-run</td><td>Check, then run only the simulation and print the plan on stdout; findings go to stderr.</td></tr>
+<tr><td>--plan-format text|json</td><td>Plan format; accepted only together with --dry-run.</td></tr>
+<tr><td>--dry-loop-limit N</td><td>With --dry-run, stop the simulation when a loop has entered its body N times; the plan status is loop-limited and the exit code 0. Without it, dry loops run in full.</td></tr>
 <tr><td>--trace FILE</td><td>Write an execution trace to FILE.</td></tr>
 <tr><td>--resumepoint PATH</td><td>Start a recover block at the named resume point.</td></tr>
 <tr><td>--pref FILE</td><td>Overlay a TOML properties file on PROPS.</td></tr>
-<tr><td>--module SPEC=FILE</td><td>Use a local file for a schema-module import.</td></tr>
 <tr><td>--base-dir DIR, --source-name LABEL</td><td>Import resolution base and the file name used in diagnostics (useful with - and -e).</td></tr>
-<tr><td>--lmcode-signatures SCHEMA</td><td>Print a DSL schema's canonical signatures (see <a href="#dsl">DSL blocks</a>).</td></tr>
+<tr><td>--lmcode-signatures SCHEMA [--without-std]</td><td>Print a host schema's canonical signatures, with the standard catalog unless --without-std (see <a href="#dsl">lmcode blocks</a>).</td></tr>
+<tr><td>--lmcode-schema SCHEMA [--without-std] [--json]</td><td>Print a schema summary, or the exact schema as JSON.</td></tr>
+<tr><td>--saveas FILE</td><td>Listed in the usage line of lmscript --help.</td></tr>
+<tr><td>install github:OWNER/REPO[@TAG]</td><td>Attended one-off install of a native host; also npm:@lmctl-ai/TOOL@VERSION|latest.</td></tr>
 <tr><td>--version, -v</td><td>Print the version.</td></tr>
-<tr><td>help, help NAME, help topics</td><td>List all functions by category, explain one function or built-in, list or show language topics.</td></tr>
+<tr><td>--help, --help NAME</td><td>List all functions by category and the topics, or explain one function, built-in or topic.</td></tr>
 </tbody>
 </table>
 
@@ -95,9 +96,9 @@
 <table>
 <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
 <tbody>
-<tr><td>0</td><td>Success (also a complete or truncated dry run).</td></tr>
-<tr><td>1</td><td>Run-time failure: a run-time error, a failed require or assert, recorded error() calls, a usage error.</td></tr>
-<tr><td>2</td><td>Check error (syntax, undeclared name, bad block, missing path literal); also a failed dry run under --dry-run.</td></tr>
+<tr><td>0</td><td>Success; also a dry run whose plan is complete, needs-real-result or loop-limited, including one that reached exit(N).</td></tr>
+<tr><td>1</td><td>Run-time failure: a run-time error, a failed require or assert, recorded error() calls, an unknown option or other usage error, a script file that cannot be read.</td></tr>
+<tr><td>2</td><td>Check error (syntax, undeclared name, bad block, removed import); also a dry run that fails before any simulated effect (PLAN failed).</td></tr>
 <tr><td>N</td><td>exit(N) with N from 0 to 255.</td></tr>
 <tr><td>130 / 143</td><td>Interrupted by SIGINT / SIGTERM.</td></tr>
 </tbody>
@@ -200,7 +201,7 @@ println(textutil.shout("hi"));</code></pre>
 <ul>
 <li>import "path"; includes another lmscript file (relative to the importing file) or an https:// URL at that point. Each location loads once; import order matters (import a module before using it).</li>
 <li>Without package, the imported functions and variables are used unqualified. With package NAME; at the top, callers write NAME.fn().</li>
-<li>import "native:git"; loads the built-in native git module. A JSON tool schema (import "./tool.cli.schema.v1.json";) turns a command-line tool's published operations into functions.</li>
+<li>import "native:git"; is removed and is a check error (exit 2); call the tool with system, or use an lmcode host.</li>
 <li>JavaScript and npm packages cannot be imported.</li>
 </ul>
 
@@ -267,7 +268,8 @@ r = system(argv, 10000);            # computed argv, 10 s timeout</code></pre>
 </ul>
 
 <h3 id="dry-run">Check, dry run and run in detail</h3>
-<p>A normal run is: check, then a silent dry pass, then the real run. The dry pass simulates up to 10 iterations per loop and gives up after 100 ms; a cut-short dry pass still allows the real run. If the dry pass hits a fatal error before any simulated effect, the real run does not start (exit 1). The dry pass is not a proof: data read at run time can differ, and untaken branches are not simulated. --dry-run --plan-format json prints one JSON report:</p>
+<p>A normal run is: check, then one real run. There is no silent dry pass before it: a script that prints, writes a file and then reads a missing map key prints, writes the file and stops at the error with exit code 1. The options --no-preflight, --dryrun-timeout and --module no longer exist; each is rejected as an unknown option with exit code 1.</p>
+<p>--dry-run checks the script and then evaluates it with effects off. The first line of the plan gives the status. PLAN complete means the simulation reached the end or an exit(N); the exit code is 0 either way. PLAN needs-real-result means a fatal error came after a simulated effect, so the placeholder results may be the cause; it is reported as a warning and the exit code is 0. PLAN failed means a fatal error came before any simulated effect; the exit code is 2. PLAN loop-limited appears only with --dry-loop-limit N: the simulation stops at the loop and the statements after it are not simulated. There is no time limit and no default loop limit on a dry run. A plan is a prediction, not a proof: data read at run time can differ. --dry-run --plan-format json prints one JSON report on a single line (shown here indented):</p>
 <pre><kbd>lmscript --dry-run --plan-format json pj.lms</kbd>
 <samp>{
   "version": 1,
@@ -301,12 +303,9 @@ r = system(argv, 10000);            # computed argv, 10 s timeout</code></pre>
 <dd>Returns value or stops with message (exit 1) when it is null or empty.</dd>
 </dl>
 
-<h3 id="dsl">Experimental: native code blocks for native hosts</h3>
-<p>Experimental. The syntax and the bytecode format may change without compatibility. An LMCode block is not lmscript: its body is code in a small, statically typed language that lmscript compiles for a native host. For tool users, cli and install on the native host declaration let lmscript obtain the host schema automatically. Schema-file input remains available for SDK authors. lmscript saves the program; the host loads and runs it. Hosts include <a href="/tools/lmhtml/skill.html">lmhtml</a> (HTML checking) and <a href="/tools/lmcad/index.html">lmcad</a> (3D shapes and images). They can use any runtime in the five-language <a href="/tools/lmcode-cpp/index.html">LMCode SDK family</a>: <a href="https://github.com/lmctl-ai/lmcode-cpp">C++</a>, <a href="https://github.com/lmctl-ai/lmcode-rust">Rust</a>, <a href="https://github.com/lmctl-ai/lmcode-go">Go</a>, <a href="https://github.com/lmctl-ai/lmcode-csharp">C#</a>, or <a href="https://github.com/lmctl-ai/lmcode-java">Java</a>.</p>
-<p>Rename note: the marker _lmcode_ replaces _dsl_; the earlier _dsl_ marker still works. Minimum lmctl version: 0.2.420.</p><p>The automatic tool workflow requires lmscript 0.2.420 or newer:</p>
-<ol>
-<li>For lmhtml, use the automatic tool declaration shown below. To inspect its contexts and methods, consult the lmhtml documentation.</li>
-<li>Write a script with an LMCode block and savedsl: <pre><code>check = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+<h3 id="dsl">lmcode blocks for native hosts</h3>
+<p>An _lmcode_ block is not lmscript: its body is code in a small, statically typed language that lmscript compiles for a native host. The literal constructs an opaque immutable program and does not execute; only run_lmcode executes it. Hosts include <a href="/tools/lmhtml/skill.html">lmhtml</a> (HTML checking) and <a href="/tools/lmcad/index.html">lmcad</a> (3D shapes and images), built with the <a href="/tools/lmcode-cpp/index.html">LMCode SDK family</a>. The removed forms _dsl_, savedsl and dsl_cli are check errors in current lmscript.</p>
+<pre><code>check = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 let pages = html.load_dir("site");
 for (i in range(0, pages.len())) {
   let page = pages.at(i);
@@ -320,22 +319,89 @@ for (i in range(0, pages.len())) {
 }
 report.write_text("broken.txt");
 end _lmcode_
-savedsl(check, "links.dslb");</code></pre></li>
-<li>Compile by running the script: lmscript links.lms writes links.dslb.</li>
-<li>Run it in the host: lmhtml --lmcode links.dslb prints one JSON result line, {"ok": true, "result": null}, and writes broken.txt.</li>
+r = run_lmcode(check);
+require(r.ok, "host failed");
+println(r.result);</code></pre>
+<ol>
+<li>The header names the host: cli="lmhtml" finds the program, and the optional install="github:lmctl-ai/lmhtml@latest" (or npm:@lmctl-ai/TOOL@VERSION|latest) binds an installed binary. The header semicolon belongs to the literal, the body follows, and end _lmcode_ at column one closes it.</li>
+<li>lmscript --check links.lms compiles the block against the host schema. Check never starts the host for execution and never downloads.</li>
+<li>lmscript links.lms runs it: run_lmcode starts the host once and returns the whole envelope, {ok, result}. Here it prints null and the host writes broken.txt.</li>
 </ol>
+<h4>load_schema</h4>
+<p>load_schema(cli="PROGRAM") discovers the schema once and retains the host; load_schema(schema="FILE") creates a file-only descriptor, which needs an explicit command or builder host to run. The clauses must be literals, and cli and schema are exclusive. Use the descriptor as the block header: p = _lmcode_ s;. Inline cli/schema headers use the same resolver.</p>
+<h4>run_lmcode</h4>
+<p>Signature: run_lmcode(program_or_builder: lmcode, options?: map): map. For one program the options are args (a string list) and command (a string or argv list). The default argv is the retained host prefix, --lmcode, a private file, then args. An explicit command template has exactly one $DSLFILE outside argv[0]; there is no shell, glob or environment expansion. The call returns the terminal envelope, including controlled host failures, so test r.ok. Malformed frames or unexpected exits are located runtime errors. Under --dry-run the host is invoked once with dry metadata and its simulated envelope is recorded in PLAN as a dry host run (simulated).</p>
+<h4>lmcode_build</h4>
+<p>Signature: lmcode_build(host: lmcode schema | string | string list): lmcode_builder. The host is a host-bound load_schema descriptor or an explicit command prefix. builder.add(program, fragment=["--lmcode", "$DSLFILE"]) appends a program with one argv fragment and returns the builder. The first run seals the builder; the host processes all slots in one process and success is {ok: true, result: [...], parts: N}, even for one slot. The example passes a file-only fragment for the second program because lmhtml takes --lmcode FILE [FILE ...]; it prints 2 and [3,"two"].</p>
+<pre><code>s = load_schema(cli="lmhtml");
+a = _lmcode_ s;
+$return = 1 + 2;
+end _lmcode_
+b = _lmcode_ s;
+$return = "two";
+end _lmcode_
+builder = lmcode_build(s);
+builder.add(a);
+builder.add(b, fragment=["$DSLFILE"]);
+r = run_lmcode(builder);
+require(r.ok, "host failed");
+println(r.parts);
+println(r.result);</code></pre>
 <p>The language inside the block:</p>
 <ul>
-<li>Statements: let x = expr; (type inferred, no annotations), x = expr;, if (c) { } else if (c) { } else { }, for (i in range(a, b)) { } (int bounds, end excluded), while (c) { } with break;/continue;, and calls. Every statement ends with ;, every body is a block.</li>
-<li>Types: int (64-bit, wraps), float (literals need a fraction: 1.0), string, bool, and the object types the schema defines. Arithmetic never mixes int and float; float(i) converts. "a" + "b" concatenates strings; str(x) converts a number or bool to text.</li>
-<li>The schema's context objects (for lmhtml: html and report) and functions are the only API. Host collections are walked with range(0, xs.len()) and xs.at(i).</li>
-<li>Not available: lmscript functions, lists and maps, user functions and types.</li>
-<li>${expr} in the body inserts an lmscript value as a typed literal before compiling (string, int, float or bool).</li>
-<li>Type errors are check errors at the exact position, before anything runs: <pre><samp>error:/home/me/bad.lms:2:27: _dsl_: method Html.load_dir expects string for argument 1; found int</samp></pre></li>
-<li>The compiled value is opaque: printing it is an error; savedsl(value, path) is the only use (atomic write; nothing is written under --dry-run).</li>
-<li>lmscript --lmcode-signatures SCHEMA prints the schema's functions and methods, one per line.</li>
+<li>Statements: let x = expr; (type inferred), assignment, if/else, for (i in range(a, b)) (end excluded), for (item in collection), while with break; and continue;, switch on int, string or enum values without fallthrough, and calls. Every statement ends with ; and every body is a block.</li>
+<li>Top-level fn name(param: TYPE) -> TYPE definitions are type-checked and inlined; nested functions and recursion are rejected.</li>
+<li>Types: int, float (literals need a fraction: 1.0), string, bool, and the object types and enums the schema declares. Arithmetic never mixes int and float; float(i) converts. "a" + "b" concatenates strings; str(x) formats a primitive.</li>
+<li>The schema's context objects (for lmhtml: html and report), its functions and the standard catalog are the API. Collections are host objects with len() and at(i).</li>
+<li>${expr} in the body splices an lmscript value as a typed literal: scalars, lists (qw, qi, qf) and homogeneous maps. Writing it inside a quoted string is a check error.</li>
+<li>Type errors are check errors at the exact position, before anything runs.</li>
+<li>The program value is opaque (type(p) is lmcode); it can be stored and passed to helpers but not serialized.</li>
+<li>Host protocol: hosts provide --lmcode-schema, --lmcode-schema --json, --lmcode-signatures and --lmcode FILE.dslb; run_lmcode drives it for you.</li>
 </ul>
-<p>The bytecode records the SHA-256 of the exact schema bytes; a host refuses a file compiled against a different schema. Note: the built-in lmscript help dsl text in 0.2.348 still describes the previous version (no while, bytecode v4); the released compiler supports while/break/continue and writes bytecode v5, which current hosts require.</p>
+<p>The host contract binds the exact schema bytes used to compile. The accepted schema is version 2 ("dsl.schema": 2) and bytecode version 6 is accepted by matching hosts.</p>
+<h3 id="lmcode-std">Standard catalog: lmcode_std_v3 (226 signatures)</h3>
+<p>Besides the host's own types and context objects, every _lmcode_ block can call the standard catalog lmcode_std_v3. The current catalog has 226 canonical signatures (206 before the REST and CLI module was merged in; 72 in std v1). lmscript 0.2.482 adds exactly these 226 signatures when it compiles a block: lmscript --lmcode-signatures SCHEMA lists host plus standard signatures, and --without-std lists only the host's own.</p>
+<p>The 20 newest signatures are the former lmcode_std_rest_v1 module: five functions and 15 RestExchange methods, together with 10 standard interfaces.</p>
+<table>
+<thead><tr><th>Standard function</th><th>Signature</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>rest_config</td><td>rest_config(string, string) -> void</td><td>Set one REST configuration value by name.</td></tr>
+<tr><td>rest_route</td><td>rest_route(string, string, string) -> void</td><td>Register a route; route templates accept {param} and {rest...} as well as :param and :rest... placeholders.</td></tr>
+<tr><td>rest_serve</td><td>rest_serve() -> void</td><td>Start serving the registered routes.</td></tr>
+<tr><td>rest_stop</td><td>rest_stop() -> void</td><td>Stop serving.</td></tr>
+<tr><td>rest_cli</td><td>rest_cli(StrList) -> string</td><td>Stateless CLI mode: dispatches options, commands and REST routes for one argv list without resetting the outer run state.</td></tr>
+</tbody>
+</table>
+<table>
+<thead><tr><th>Standard interface</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td>RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions</td><td>One interface per HTTP method for REST endpoint handlers.</td></tr>
+<tr><td>RestHandler</td><td>General REST handler interface.</td></tr>
+<tr><td>CliCommand</td><td>A command of the stateless CLI dispatched by rest_cli.</td></tr>
+<tr><td>CliOption</td><td>An option of the stateless CLI dispatched by rest_cli.</td></tr>
+</tbody>
+</table>
+<table>
+<thead><tr><th>RestExchange method</th><th>Signature</th></tr></thead>
+<tbody>
+<tr><td>method</td><td>RestExchange.method() -> string</td></tr>
+<tr><td>path</td><td>RestExchange.path() -> string</td></tr>
+<tr><td>param</td><td>RestExchange.param(string) -> string</td></tr>
+<tr><td>query</td><td>RestExchange.query(string) -> string</td></tr>
+<tr><td>has_query</td><td>RestExchange.has_query(string) -> bool</td></tr>
+<tr><td>header</td><td>RestExchange.header(string) -> string</td></tr>
+<tr><td>has_header</td><td>RestExchange.has_header(string) -> bool</td></tr>
+<tr><td>body</td><td>RestExchange.body() -> string</td></tr>
+<tr><td>get</td><td>RestExchange.get(string) -> string</td></tr>
+<tr><td>set</td><td>RestExchange.set(string, string) -> void</td></tr>
+<tr><td>increment</td><td>RestExchange.increment(string) -> int</td></tr>
+<tr><td>status</td><td>RestExchange.status(int) -> void</td></tr>
+<tr><td>set_header</td><td>RestExchange.set_header(string, string) -> void</td></tr>
+<tr><td>send</td><td>RestExchange.send(string) -> void</td></tr>
+<tr><td>json</td><td>RestExchange.json(string) -> void</td></tr>
+</tbody>
+</table>
+<p>Whether a given host actually serves REST routes depends on that host and on the std release it vendors; check HOST --lmcode-signatures before relying on them.</p>
 <h3 id="install-cache">Native host install cache</h3>
 <p>A declaration using install with @latest checks for a newer release at most once every six hours per exact install string. The verified binary and the last successful release check are stored in the lmscript tool cache. A fresh check uses the cached binary when GitHub is temporarily unavailable and prints a warning. An exact release tag needs no release lookup after its binary is cached and SHA-256 verified.</p>
 <p>Set LMSCRIPT_INSTALL_CACHE_TTL_MS to a non-negative number of milliseconds to change the @latest check interval. Set it to 0 to check on every real run. Leave it unset for the six-hour default. CI jobs with fresh runners should pin an exact release tag so every run uses a deliberate release and does not depend on the mutable latest endpoint.</p>
@@ -364,7 +430,7 @@ println(f"commit {trim(r.stdout)}");</code></pre>
 <li>Loops: 1,000,000 iterations; call depth: 1000; program output captured by system: 10 MiB; default system timeout: 60 s.</li>
 <li>No classes, closures, anonymous functions, nested function declarations, ++ or compound assignment.</li>
 <li>Numbers are 64-bit floats (exact integers up to 2^53).</li>
-<li>The dry pass simulates at most 10 iterations per loop and 100 ms by default; it cannot predict data that only exists at run time.</li>
+<li>A dry run has no default loop or time limit (--dry-loop-limit N sets a loop limit); it cannot predict data that only exists at run time.</li>
 <li>LMCode blocks are experimental.</li>
 </ul>
 
@@ -382,8 +448,8 @@ println(f"commit {trim(r.stdout)}");</code></pre>
 <dd>system runs no shell. Do the piping in lmscript or call bash -c explicitly.</dd>
 <dt>path literal i"x" (resolved ./x) does not exist</dt>
 <dd>The input file is missing relative to the working directory; this check runs before any effect.</dd>
-<dt>The real run did not start after a failure</dt>
-<dd>The dry pass hit a fatal error first. Run lmscript --dry-run script.lms to see where.</dd>
+<dt>error: Unknown option --no-preflight (or --dryrun-timeout, --module)</dt>
+<dd>These options were removed. A normal run no longer does a dry pass, so there is nothing to skip or time out; delete the option.</dd>
 <dt>LMCode error, or the host says LOAD_SCHEMA_MISMATCH</dt>
 <dd>Recompile against the exact schema the host prints with --schema --json; the bytecode embeds the schema hash.</dd>
 </dl>

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmparticle — lmctl.com tools</title>
+<meta name="description" content="lmparticle is a seeded Monte Carlo photon transport host for LMScript with embedded NIST XCOM cross sections.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmparticle/">Overview</a></li>
+<li><a href="/tools/lmparticle/skill.html">Skill</a></li>
+<li><a href="/tools/lmparticle/guide.html">Guide</a></li>
+<li><a href="/tools/lmparticle/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmparticle</h1>
+<p>lmparticle is a seeded Monte Carlo photon transport host for LMScript with embedded NIST XCOM cross sections. It simulates shielding, detector spectra, radiographic contrast, and collision kerma from 1 keV to 20 MeV in a self-contained 2.5 MB executable.</p>
+<h2>Quick reference</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmparticle --version
+lmparticle --lmcode-schema --json
+lmctl autorun examples/depth_dose.lms</code></pre>
+<table>
+<thead><tr><th>Object or method</th><th>Signature or syntax</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>context rad: Rad</td><td>rad.builtin(name) | rad.material(name, density)</td><td>Load 15 built-in materials or define custom mixtures from 19 NIST XCOM elements or custom element_table data.</td></tr>
+<tr><td>Material</td><td>m.mu(E), m.mu_mass(E), m.mu_partial(E, proc), m.mfp(E), m.hvl(E)</td><td>Query linear and mass attenuation coefficients, partial cross sections, mean free paths, and half-value layers.</td></tr>
+<tr><td>Geometry</td><td>g.box(...), g.slab(...), g.sphere(...), g.cylinder(...)</td><td>Build multi-region 3D geometries where earlier regions take priority on overlap and outside is vacuum.</td></tr>
+<tr><td>Source</td><td>s.point(...), s.disc(r), s.beam(...), s.cone(...), s.isotropic(), s.energy(E), s.line(E, w)</td><td>Configure spatial origin, angular distribution, and monoenergetic or multi-line photon energies in MeV.</td></tr>
+<tr><td>Sim / Result</td><td>rad.simulation(g, s).plane(...).spectrum(...).pulse_height(...).seed(n).run(N)</td><td>Run seeded xoshiro256** transport and query collision kerma, plane crossings, spectra, and standard errors.</td></tr>
+</tbody>
+</table>
+<pre><code>p = _lmcode_ cli="lmparticle" install="github:lmctl-ai/lmparticle@latest";
+let pb = rad.builtin("lead");
+let g = rad.geometry().slab("shield", pb, 0.0, 1.0);
+let s = rad.source().point(0.0, 0.0, -1.0).beam(0.0, 0.0, 1.0).energy(0.662);
+let r = rad.simulation(g, s).plane("exit", "z", 1.0).seed(1).run(200000);
+rad.assert_close(r.plane_uncollided("exit"), pow(2.718281828459045, -pb.mu(0.662)), 0.005);
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmparticle/skill.html">Skill</a> — authoring rules, CLI commands, unit conventions, safety rules, worked examples, and verification steps.</li>
+<li><a href="/tools/lmparticle/guide.html">Guide</a> — photon physics models, collision kerma vs dose, geometry priority, variance reduction, and the standard lmcode_std_v3 library.</li>
+<li><a href="/tools/lmparticle/reference.html">Reference</a> — complete CLI flags, Rad/Material/Geometry/Source/Sim/Result method tables, standard library catalog, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmparticle">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmparticle">github.com/lmctl-ai/lmparticle</a>.</p>
+</footer>
+</body>
+</html>

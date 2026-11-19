@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>claude-ollama-live reference — claude-ollama-live — lmctl.com tools</title>
+<meta name="description" content="Reference tables for claude-ollama-live environment variables, Claude Code CLI switches, oracle assertion fields, negative controls, standard lmcode_std_v3…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/claude-ollama-live/">Overview</a></li>
+<li><a href="/tools/claude-ollama-live/skill.html">Skill</a></li>
+<li><a href="/tools/claude-ollama-live/guide.html">Guide</a></li>
+<li><a href="/tools/claude-ollama-live/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>claude-ollama-live reference</h1>
+<p>Reference tables for claude-ollama-live environment variables, Claude Code CLI switches, oracle assertion fields, negative controls, and exit codes.</p>
+<h2>Environment variables</h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Required value</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ANTHROPIC_BASE_URL</td>
+<td>https://ollama.com (live) or http://127.0.0.1:PORT (mock)</td>
+<td>Target origin for Anthropic Messages requests (/v1/messages).</td>
+</tr>
+<tr>
+<td>ANTHROPIC_AUTH_TOKEN</td>
+<td>OLLAMA_API_KEY secret (live) or dummy token (mock)</td>
+<td>Bearer token sent to Ollama Cloud or loopback lmmock.</td>
+</tr>
+<tr>
+<td>ANTHROPIC_API_KEY</td>
+<td>"" (empty string)</td>
+<td>Cleared so Claude Code uses ANTHROPIC_AUTH_TOKEN bearer routing without conflict.</td>
+</tr>
+<tr>
+<td>ANTHROPIC_MODEL</td>
+<td>glm-5.3-flash</td>
+<td>Primary hosted Ollama Cloud model identifier.</td>
+</tr>
+<tr>
+<td>ANTHROPIC_DEFAULT_OPUS_MODEL, ANTHROPIC_DEFAULT_SONNET_MODEL, ANTHROPIC_DEFAULT_HAIKU_MODEL, ANTHROPIC_DEFAULT_FABLE_MODEL</td>
+<td>glm-5.3-flash</td>
+<td>Pinned default model tier slots preventing incidental alias routing.</td>
+</tr>
+<tr>
+<td>DISABLE_PROMPT_CACHING</td>
+<td>1</td>
+<td>Disable unsupported prompt-caching headers on Ollama Cloud.</td>
+</tr>
+<tr>
+<td>HOME, CLAUDE_CONFIG_DIR</td>
+<td>fresh temporary directories per invocation</td>
+<td>Ensure zero inheritance from user ~/.claude settings and zero session persistence.</td>
+</tr>
+</tbody>
+</table>
+<h2>Claude Code headless CLI switches</h2>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Value</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>--bare</td>
+<td>flag</td>
+<td>Run in minimal non-interactive bare mode.</td>
+</tr>
+<tr>
+<td>-p</td>
+<td>"Reply with exactly OLLAMA_CLAUDE_OK_107. Do not call any tools."</td>
+<td>Execute the one-shot verification prompt with stdin closed.</td>
+</tr>
+<tr>
+<td>--output-format</td>
+<td>json</td>
+<td>Emit structured final JSON envelope for oracle validation.</td>
+</tr>
+<tr>
+<td>--tools</td>
+<td>""</td>
+<td>Disable all built-in tools so no permission bypass flags are required.</td>
+</tr>
+<tr>
+<td>--setting-sources</td>
+<td>""</td>
+<td>Ignore user, project, and local settings files.</td>
+</tr>
+<tr>
+<td>--no-session-persistence</td>
+<td>flag</td>
+<td>Do not write session state to disk.</td>
+</tr>
+</tbody>
+</table>
+<h2>Oracle checks and negative controls</h2>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Expected client exit</th>
+<th>Expected oracle verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Live positive (glm-5.3-flash)</td>
+<td>0</td>
+<td>PASS (type=result, subtype=success, is_error=false, result=="OLLAMA_CLAUDE_OK_107").</td>
+</tr>
+<tr>
+<td>Live invalid-bearer control</td>
+<td>1</td>
+<td>PASS (rejected by live server without using the real secret).</td>
+</tr>
+<tr>
+<td>Mock positive (lmmock v0.1.94)</td>
+<td>0</td>
+<td>PASS (exact reply + verified POST /v1/messages HTTP 200 in lmmock audit).</td>
+</tr>
+<tr>
+<td>Mock wrong-reply control</td>
+<td>0</td>
+<td>PASS (HTTP 200 and client exit 0, rejected semantically by exact-reply oracle).</td>
+</tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>All positive oracle assertions, request audits, and negative controls passed.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Client transport error, wrong reply text, missing HTTP 200 audit record, or failed negative control.</td>
+</tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/claude-ollama-live">github.com/lmctl-ai/claude-ollama-live</a>.</p>
+</footer>
+</body>
+</html>

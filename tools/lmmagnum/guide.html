@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmmagnum guide: scenes, the software rasterizer and its limits — lmmagnum — lmctl.com tools</title>
+<meta name="description" content="This guide explains how lmmagnum is put together and how to think about a scene script.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmmagnum/">Overview</a></li>
+<li><a href="/tools/lmmagnum/skill.html">Skill</a></li>
+<li><a href="/tools/lmmagnum/guide.html">Guide</a></li>
+<li><a href="/tools/lmmagnum/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmmagnum guide: scenes, the software rasterizer and its limits</h1>
+<p>This guide explains how lmmagnum is put together and how to think about a scene script. For commands and safety rules read the skill page; for exact signatures read the reference.</p>
+<h2 id="overview">Overview</h2>
+<p>lmmagnum connects two things: the Magnum graphics library, which supplies the primitive meshes, and lmscript, which supplies the language. A script describes a scene inside an _lmcode_ block; lmscript compiles the block against the schema embedded in the host and run_lmcode executes it. The host renders with its own software rasterizer, so the same script produces a picture on a laptop, a container or a CI runner without a GPU or a window system.</p>
+<p>The repository gallery shows what this covers: headless analogues of the Magnum example index and of the Magnum Python examples, ports of lmfilament examples, and molecule, DNA, Cornell box, Saturn and truss scenes shared with lmblender and lmcad.</p>
+<h2 id="architecture">Architecture</h2>
+<table>
+<thead>
+<tr><th>Layer</th><th>Role</th></tr>
+</thead>
+<tbody>
+<tr><td>Outer lmscript program</td><td>Creates directories, holds the _lmcode_ block, calls run_lmcode, checks r.ok, and may call ffmpeg or other hosts afterwards</td></tr>
+<tr><td>_lmcode_ block</td><td>Statically typed code compiled to bytecode against the lmmagnum schema; loops, variables and the standard library are available</td></tr>
+<tr><td>lmmagnum host</td><td>One static executable: runs the bytecode, owns the scene, rasterizes on the CPU, writes image and mesh files</td></tr>
+<tr><td>Magnum and Corrade</td><td>Linked into the host; supply the primitives. magnum_version() reports the embedded build</td></tr>
+</tbody>
+</table>
+<p>The public repository holds the README, documentation images and examples; binary releases are published on its releases page, and the implementation source is maintained privately.</p>
+<h2 id="workflow">Workflow</h2>
+<ol>
+<li>Create output directories in the outer script, for example mkdir("images").</li>
+<li>Open a block with cli="lmmagnum" and the install attribute.</li>
+<li>Set the scene: background, ambient level, shadows.</li>
+<li>Create materials with material() and, if needed, textures.</li>
+<li>Add shapes with the scene constructors and place them with translate, rotate and scale; group them when a hierarchy helps.</li>
+<li>Set one camera and at least one directional light.</li>
+<li>Render to PNG or PPM, export a mesh if wanted, and return counts with lmcode_return_put.</li>
+<li>Outside the block call run_lmcode, test r.ok and use the files.</li>
+</ol>
+<pre><code>mkdir("images");
+p = _lmcode_ cli="lmmagnum" install="github:lmctl-ai/lmmagnum@latest";
+scene.background(0.08, 0.09, 0.12);
+let c = material().color(0.85, 0.45, 0.2).specular(0.4);
+scene.cylinder(0.5, 1.2, c).translate(-1.0, 0.0, 0.0);
+scene.cone(0.5, 1.2, c).translate(1.0, 0.0, 0.0);
+scene.camera(40.0, 0.0, 1.5, 9.0, 0.0, -0.5, 0.0);
+scene.directional_light(-0.5, -1.0, -0.4, 0.9);
+scene.render_png("images/pair.png", 800, 400);
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok);</code></pre>
+<h2 id="domain-model">Domain model</h2>
+<h3 id="scene">Scene</h3>
+<p>There is one scene per host process, reached through the context object scene. It owns every shape, group, texture, the camera and the lights, plus global settings: background colour, ambient level and the shadow map switch.</p>
+<h3 id="shapes">Shapes and primitives</h3>
+<p>Every constructor takes its dimensions and a material and returns a Shape. The solids are cube, box, sphere, icosphere, cylinder, cone and capsule; the flat and helper shapes are plane, ring, triangle, tube_between and text, which builds voxel text from a 5x7 font. A shape can be moved, rotated and scaled, recoloured, textured, named, hidden with visible(false) and parented to a group.</p>
+<h3 id="groups">Groups and the scene graph</h3>
+<p>scene.group() creates a node with its own translate, rotate and scale. Shapes and groups attach to it with parent, so a transform on a group carries everything below it. The primitives-scene-graph and model-viewer examples build a posed toy robot this way.</p>
+<h3 id="materials">Materials and textures</h3>
+<p>A material carries a colour and the shading parameters specular, shininess and roughness, and optionally a texture. Textures are created blank and painted with pixel, generated as a checker, or loaded from a PNG, JPEG, BMP or TGA file. A texture multiplies the material colour, so use white to show the image as is. Sampling uses trilinear mip filtering, nearest filtering on request, and repeat, clamp or mirror wrapping. Cubes, spheres, cylinders, cones, capsules, planes, text, rings, tubes and triangles carry UVs.</p>
+<h3 id="camera-lights">Camera and lights</h3>
+<p>scene.camera sets the view and returns a Camera whose look_at method re-aims it, which is how the arcball example orbits a scene over 12 frames. scene.directional_light adds a light and returns a Light whose intensity can be changed later. scene.ambient sets the fill level and scene.shadows(true) turns on a shadow map, as in the shadows example.</p>
+<h3 id="output">Rendering, accumulation and export</h3>
+<p>render_png and render_ppm rasterize the current scene at the requested size. The accumulation methods sum several renders and save the result, which the motion blur example uses for a 16-frame accumulation. export_obj, export_stl and export_ply write the scene geometry as a mesh.</p>
+<h2 id="animation">Animation</h2>
+<p>The host renders still frames. An animation is a loop inside the block that updates transforms or visibility and renders one numbered PNG per step; the outer script then encodes the frames with ffmpeg. The gallery uses this for a 24-frame bounce GIF, a 36-frame textured planet turn and the four 240-frame homepage clips.</p>
+<h2 id="limits">Limits</h2>
+<ul>
+<li>Software rasterizer only: no GPU shaders, no ray tracing (the raytracing example is a rasterized sphere field), no real-time window.</li>
+<li>No physics engine: the bullet example uses closed-form ballistics computed in the script.</li>
+<li>Geometry comes from the built-in primitives; the schema has no mesh import, only texture image import.</li>
+<li>Lights are directional; the area-lights example approximates soft light with them.</li>
+<li>Video and GIF encoding is not built in; examples call ffmpeg from the outer script.</li>
+<li>Each bytecode input is limited to 16 MiB.</li>
+<li>The current release lane publishes Linux x64 and arm64 binaries only.</li>
+<li>Release 0.2.15 ships 206 standard library signatures; the 20 REST and CLI signatures of the current 226-signature catalog are not in this release.</li>
+</ul>
+<h2 id="license">Licensing</h2>
+<p>The README, docs, images and examples are MIT licensed under LICENSE-examples. Releases up to and including v0.2.14 were published under the MIT License; later binary releases use the Lattice Systems Binary License 1.0 in LICENSE. Third-party components keep their own licenses.</p>
+<h2 id="next">Where to go next</h2>
+<ul>
+<li><a href="/tools/lmmagnum/">Quick reference</a></li>
+<li><a href="/tools/lmmagnum/skill.html">Skill</a></li>
+<li><a href="/tools/lmmagnum/reference.html">Reference</a></li>
+<li><a href="https://github.com/lmctl-ai/lmmagnum">GitHub repository lmctl-ai/lmmagnum</a></li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmmagnum">github.com/lmctl-ai/lmmagnum</a>.</p>
+</footer>
+</body>
+</html>

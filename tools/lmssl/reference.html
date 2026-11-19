@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmssl reference — lmssl — lmctl.com tools</title>
+<meta name="description" content="Complete command-line flag reference, host schema contexts and methods, X.509 and TLS types, standard lmcode_std_v3 REST and CLI interfaces, and exit codes for…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmssl/">Overview</a></li>
+<li><a href="/tools/lmssl/skill.html">Skill</a></li>
+<li><a href="/tools/lmssl/guide.html">Guide</a></li>
+<li><a href="/tools/lmssl/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmssl reference</h1>
+<p>Complete command-line flag reference, host schema contexts and methods, X.509 and TLS types, standard lmcode_std_v3 REST and CLI interfaces, and exit codes for lmssl v0.2.1 (bundling OpenSSL 4.0.3).</p>
+<h2>Host and CLI flags</h2>
+<table>
+<thead><tr><th>Flag or command</th><th>Arguments</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>--version</td><td>none</td><td>Print the lmssl and embedded OpenSSL version string (lmssl 0.2.1 (OpenSSL 4.0.3 29 Sep 2026)) and exit 0.</td></tr>
+<tr><td>--lmcode</td><td>&lt;file.dslb> [args...]</td><td>Validate and execute a compiled LMScript bytecode part; repeatable for multi-part runs with per-part ssl.args().</td></tr>
+<tr><td>--dry-run</td><td>--lmcode &lt;file.dslb></td><td>Validate bytecode loading and run in dry mode without key generation, file writes, or socket operations.</td></tr>
+<tr><td>--json</td><td>--lmcode &lt;file.dslb></td><td>Compatibility flag accepted for _lmcode_ invocations (all _lmcode_ runs emit a terminal JSON SDK frame on stdout).</td></tr>
+<tr><td>--lmcode-schema</td><td>[--json]</td><td>Print a human-readable schema summary, or exact embedded schema JSON bytes when --json is passed.</td></tr>
+<tr><td>--lmcode-signatures</td><td>none</td><td>Print all 360 canonical context, function, and method signatures (134 host + 226 standard library).</td></tr>
+<tr><td>&lt;openssl-cmd></td><td>[openssl-args...]</td><td>Any other command (version, req, x509, ca, s_client, enc, dgst, pkcs12, cms, ocsp, ...) runs OpenSSL 4.0.3 directly.</td></tr>
+</tbody>
+</table>
+<h2>Ssl, Key, Csr, and Cert methods</h2>
+<table>
+<thead><tr><th>Type / context</th><th>Method signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context ssl: Ssl</td><td>ssl.version() -> string | ssl.args() -> StrList | ssl.now() -> string | ssl.monotonic_us() -> int</td><td>Return the OpenSSL version string, per-part CLI arguments, current UTC timestamp string, or monotonic microseconds.</td></tr>
+<tr><td>Ssl (encoding / random)</td><td>ssl.hex(string) | ssl.unhex(string) | ssl.b64(string) | ssl.unb64(string) -> string | ssl.rand_bytes(int) | ssl.rand_hex(int) -> string</td><td>Convert between raw byte strings and lowercase hex or Base64, or generate cryptographically secure random bytes/hex.</td></tr>
+<tr><td>Ssl (crypto)</td><td>ssl.digest(string, string) -> string | ssl.hmac(string, string, string) -> string | ssl.pbkdf2(string, string, int, string, int) -> string</td><td>Compute lowercase hex message digest (alg, data), HMAC (alg, key, data), or PBKDF2 key (alg, pass, iter, salt_hex, len).</td></tr>
+<tr><td>Ssl (AEAD)</td><td>ssl.seal(string, string, string, string, string) -> string | ssl.open(string, string, string, string, string) -> string</td><td>Encrypt or decrypt with AES-128-GCM, AES-256-GCM, or ChaCha20-Poly1305 (cipher, key_hex, iv_hex, aad, plain_or_ct_hex).</td></tr>
+<tr><td>Ssl (keys)</td><td>ssl.gen_rsa(int) | ssl.gen_ec(string) | ssl.gen_ed25519() -> Key | ssl.load_key(string[, string]) | ssl.parse_key(string) -> Key</td><td>Generate RSA (bits), EC (P-256, P-384, P-521), or Ed25519 keys, or load/parse a PEM private key (with optional passphrase).</td></tr>
+<tr><td>Ssl (certs / CSRs)</td><td>ssl.new_cert(Key, string) | ssl.cert_from_csr(Csr) | ssl.load_cert(string) | ssl.parse_cert(string) -> Cert</td><td>Create an X.509 certificate template from a key and subject DN or CSR, or load/parse an existing PEM certificate.</td></tr>
+<tr><td>Ssl (CSR / TLS ctx)</td><td>ssl.new_csr(Key, string) | ssl.load_csr(string) -> Csr | ssl.client_ctx() -> TlsCtx | ssl.server_ctx(Cert, Key) -> TlsCtx</td><td>Create or load a PKCS#10 CSR, or create a client or server TLS context.</td></tr>
+<tr><td>Key</td><td>k.type() | k.curve() | k.pem() | k.public_pem() | k.text() | k.fingerprint() -> string | k.bits() -> int</td><td>Inspect key algorithm, curve name, private/public PEM, human-readable OpenSSL dump, SHA-256 public key fingerprint, or bit size.</td></tr>
+<tr><td>Key</td><td>k.save(string) | k.save_encrypted(string, string) -> void | k.sign(string, string) -> string | k.verify(string, string, string) -> bool</td><td>Save private key PEM with 0600 permissions (plain or passphrase-encrypted), or sign/verify data with digest and hex signature.</td></tr>
+<tr><td>Csr</td><td>csr.san(string) | csr.sign(Key, string) -> Csr | csr.verify() -> bool | csr.subject() | csr.pem() | csr.text() -> string | csr.save(string) -> void</td><td>Add Subject Alternative Names, sign or verify the CSR, inspect subject/PEM/text, or save to disk.</td></tr>
+<tr><td>Cert (builders)</td><td>c.serial(int) | c.valid_days(int) | c.valid_between(string, string) | c.san(string) | c.ca(bool) | c.ext(string, string) -> Cert</td><td>Configure serial number, validity window, comma-separated SANs (DNS:...,IP:...), CA basicConstraint, or arbitrary X.509v3 extensions.</td></tr>
+<tr><td>Cert (signing)</td><td>c.sign_self(Key, string) -> Cert | c.sign_with(Cert, Key, string) -> Cert</td><td>Finalize standard extensions (SKI, AKI, basicConstraints) and self-sign or sign with an issuer Cert and Key.</td></tr>
+<tr><td>Cert (inspectors)</td><td>c.subject() | c.issuer() | c.serial_hex() | c.not_before() | c.not_after() | c.san_text() | c.sig_alg() | c.key_type() | c.fingerprint(string) | c.pem() | c.text() -> string</td><td>Inspect certificate DNs, serial, validity timestamps, SANs, signature/key algorithms, digest fingerprint, PEM, or full text dump.</td></tr>
+<tr><td>Cert (predicates)</td><td>c.is_ca() | c.self_signed() | c.expired() | c.matches_host(string) | c.verify_with(Cert) -> bool | c.save(string) -> void</td><td>Check CA flag, self-signed status, expiration, hostname/SAN match, cryptographic signature by an issuer Cert, or write PEM to disk.</td></tr>
+</tbody>
+</table>
+<h2>Net, Conn, Listener, TlsCtx, Tls, Fs, and Out methods</h2>
+<table>
+<thead><tr><th>Type / context</th><th>Method signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context net: Net</td><td>net.resolve(string) -> StrList | net.connect(string, int) -> Conn | net.listen(int) -> Listener | net.timeout(int) -> void</td><td>Resolve a hostname to IP strings, open a TCP connection, bind a local TCP listener (port 0 chooses an ephemeral port), or set socket timeout seconds.</td></tr>
+<tr><td>Conn</td><td>conn.peer() | conn.local() -> string | conn.write(string) -> int | conn.read(int) | conn.read_until(string, int) -> string | conn.close() -> void</td><td>Inspect remote/local address:port, read or write plain TCP bytes, read until delimiter up to max bytes, or close the connection.</td></tr>
+<tr><td>Listener</td><td>l.port() -> int | l.accept() -> Conn | l.close() -> void</td><td>Return the bound TCP port, accept an incoming TCP connection, or close the listener.</td></tr>
+<tr><td>TlsCtx</td><td>ctx.min_version(string) | ctx.max_version(string) | ctx.alpn(string) | ctx.ciphers(string) | ctx.suites(string) | ctx.groups(string) -> TlsCtx</td><td>Configure TLS protocol bounds (TLS1.2, TLS1.3), comma-separated ALPN protocols, TLS 1.2 ciphers, TLS 1.3 cipher suites, or key-share groups.</td></tr>
+<tr><td>TlsCtx</td><td>ctx.verify(bool) | ctx.ca_file(string) | ctx.add_ca(Cert) | ctx.system_roots() | ctx.chain(Cert) | ctx.client_cert(Cert, Key) | ctx.require_client(bool) | ctx.trace(bool) -> TlsCtx</td><td>Configure peer verification, trust anchors, intermediate chain certs, client mTLS certificate, mandatory client auth, or handshake message tracing.</td></tr>
+<tr><td>TlsCtx</td><td>ctx.connect(Conn, string) -> Tls | ctx.accept(Conn) -> Tls</td><td>Perform a client TLS handshake (with SNI and hostname verification) or server TLS handshake over an open Conn.</td></tr>
+<tr><td>Tls</td><td>tls.version() | tls.cipher() | tls.group() | tls.peer_sigalg() | tls.alpn() | tls.server_name() | tls.verify_result() | tls.trace() -> string | tls.verified() -> bool</td><td>Inspect negotiated TLS version, cipher, key-exchange group, signature scheme, ALPN, SNI, X.509 verification status, or recorded handshake trace.</td></tr>
+<tr><td>Tls</td><td>tls.peer() -> Cert | tls.chain_len() -> int | tls.chain_at(int) -> Cert</td><td>Retrieve the peer's leaf certificate or inspect certificates in the presented peer chain.</td></tr>
+<tr><td>Tls</td><td>tls.write(string) -> int | tls.read(int) | tls.read_until(string, int) | tls.read_all(int) -> string | tls.shutdown() -> void</td><td>Write or read application data over the encrypted TLS stream or send a close_notify alert.</td></tr>
+<tr><td>context fs: Fs</td><td>fs.read(string) -> string | fs.write(string, string) | fs.write_private(string, string) | fs.mkdir(string) | fs.remove(string) -> void | fs.exists(string) -> bool</td><td>Read and write files (write_private enforces mode 0600), check path existence, create directories, or remove paths.</td></tr>
+<tr><td>context out: Out / functions</td><td>out.line(string) | out.text(string) | out.warn(string) | out.fail(string) | print(string) | assert_close(float, float, float) -> void</td><td>Write diagnostic output to stderr, abort execution with APP_FAIL (exit code 4), print to stdout, or assert floating-point tolerance.</td></tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<table>
+<thead><tr><th>Interface or function</th><th>Signature / annotation</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>RestGet .. RestOptions</td><td>@"/path/:param" fn h(x: RestExchange) -> void implements RestGet</td><td>Bind an HTTP GET, POST, PUT, DELETE, PATCH, HEAD, or OPTIONS route handler.</td></tr>
+<tr><td>RestHandler</td><td>@"/path" fn h(x: RestExchange) -> void implements RestHandler</td><td>Bind a method-agnostic HTTP route handler.</td></tr>
+<tr><td>CliCommand</td><td>@"cmd" fn h(x: RestExchange) -> void implements CliCommand</td><td>Bind a named CLI subcommand dispatched by rest_cli.</td></tr>
+<tr><td>CliOption</td><td>@"--flag" fn h(x: RestExchange) -> void implements CliOption</td><td>Bind a CLI option flag (--flag=val or --flag val) evaluated before the command handler.</td></tr>
+<tr><td>rest_config</td><td>rest_config(key: string, value: string) -> void</td><td>Configure server or CLI settings such as host, port, and session (ephemeral or global).</td></tr>
+<tr><td>rest_route</td><td>rest_route(method: string, path: string, handler: string) -> void</td><td>Dynamically register an HTTP method and route pattern to a handler function name.</td></tr>
+<tr><td>rest_serve / rest_stop</td><td>rest_serve() -> void | rest_stop() -> void</td><td>Start or stop the embedded standard HTTP server loop.</td></tr>
+<tr><td>rest_cli</td><td>rest_cli(args: StrList) -> string</td><td>Dispatch CLI options, commands, or path requests in-process without opening a socket.</td></tr>
+<tr><td>RestExchange</td><td>x.method() | x.path() | x.body() | x.param(string) | x.query(string) | x.header(string) -> string</td><td>Read request method, path, body, :param segment, query parameter, or header.</td></tr>
+<tr><td>RestExchange</td><td>x.has_query(string) | x.has_header(string) -> bool</td><td>Check whether a query parameter or request header is present.</td></tr>
+<tr><td>RestExchange</td><td>x.status(int) | x.set_header(string, string) | x.send(string) | x.json(string) -> void</td><td>Set response status code and headers, and emit plain text or application/json bodies.</td></tr>
+<tr><td>RestExchange</td><td>x.get(string) -> string | x.set(string, string) -> void | x.increment(string) -> int</td><td>Read, write, or atomically increment session state keys across global or ephemeral exchanges.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th>Exit code</th><th>Category</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success</td><td>All _lmcode_ bytecode parts or introspection commands succeeded and all assertions passed.</td></tr>
+<tr><td>2</td><td>CLI / metadata error</td><td>Malformed host command-line invocation or missing required --lmcode argument.</td></tr>
+<tr><td>3</td><td>Load / host run error</td><td>Bytecode load failure, schema SHA-256 mismatch, or runtime host error (RUN_HOST, such as TLS handshake failure or invalid cipher input).</td></tr>
+<tr><td>4</td><td>Application failure</td><td>Script called out.fail(msg) or failed an assertion contract (code APP_FAIL).</td></tr>
+<tr><td>0..255</td><td>Native OpenSSL CLI mode</td><td>When invoked with an OpenSSL subcommand (req, x509, s_client, ...), returns OpenSSL 4.0.3's native exit code.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmssl">github.com/lmctl-ai/lmssl</a>.</p>
+</footer>
+</body>
+</html>

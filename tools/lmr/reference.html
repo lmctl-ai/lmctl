@@ -1,0 +1,1187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmr reference — lmr — lmctl.com tools</title>
+<meta name="description" content="Every command-line flag, exit code, context object, host type, method and function of the lmr host, generated from the schema embedded in the repository…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmr/">Overview</a></li>
+<li><a href="/tools/lmr/skill.html">Skill</a></li>
+<li><a href="/tools/lmr/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmr/guide.html">Guide</a></li>
+<li><a href="/tools/lmr/reference.html">Reference</a></li>
+<li><a href="/tools/lmr/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>lmr reference</h1>
+<p>Every command-line flag, exit code, context object, host type, method and function of the lmr host, generated from the schema embedded in the repository (native/schema/lmr.dsl.json, dsl.schema 2, name lmr) and from native/src/host/main.cpp. The host schema declares 166 functions with 234 signatures and 50 types with 604 method signatures; the vendored standard library adds 206 more signatures.</p>
+<h2 id="cli">Command line</h2>
+<table>
+<thead><tr><th>Command</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td>lmr --version</td><td>Prints lmr followed by the release version and exits 0.</td></tr>
+<tr><td>lmr --lmcode-schema</td><td>Prints a readable summary of the registry: context and function signatures, then each type with its methods.</td></tr>
+<tr><td>lmr --lmcode-schema --json</td><td>Writes the embedded schema JSON byte for byte; this is what lmscript compiles against.</td></tr>
+<tr><td>lmr --schema</td><td>Accepted as an alias of --lmcode-schema, with the same optional --json.</td></tr>
+<tr><td>lmr --lmcode-signatures</td><td>Prints one canonical signature per line from the live registry.</td></tr>
+<tr><td>lmr --generate-schema</td><td>Prints schema JSON generated from the live registry (used to maintain the schema file).</td></tr>
+<tr><td>lmr --lmcode FILE [FILE ...]</td><td>Loads and verifies every compiled program file, then runs them in order and writes one result frame to stdout.</td></tr>
+<tr><td>lmr --lmcode FILE --lmcode FILE</td><td>The repeated-flag form is also accepted for multi-file runs.</td></tr>
+</tbody>
+</table>
+<p>Any other argument shape prints the usage line to stderr and is reported as a usage error. All program files are loaded and verified before any of them runs, so a broken later file leaves no output from an earlier one.</p>
+<h2 id="exit-codes">Exit codes</h2>
+<table>
+<thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success: the program ran and every out.check assertion passed.</td></tr>
+<tr><td>2</td><td>Command-line usage error (error code CLI_USAGE).</td></tr>
+<tr><td>3</td><td>Load or run error, for example bytecode that fails verification (LOAD_BAD_BYTECODE) or a registry error.</td></tr>
+<tr><td>4</td><td>Application failure: one or more out.check calls failed (APP_FAIL).</td></tr>
+</tbody>
+</table>
+<h2 id="result">Run result</h2>
+<p>From LMScript, run_lmcode(prog) returns an object with ok and result. For lmr the result holds values (everything stored with out.set, in first-set order), checks (the number of out.check calls) and failures (the number that failed). Non-finite numbers serialize as JSON null.</p>
+<h2 id="context">Context objects</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th></tr></thead>
+<tbody>
+<tr><td>out</td><td>Out</td></tr>
+</tbody>
+</table>
+<h2 id="functions">Host functions</h2>
+<table>
+<thead><tr><th>Function</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>acos</td><td>acos(float) -> float</td></tr>
+<tr><td>anova</td><td>anova(Lm, Lm) -> Anova</td></tr>
+<tr><td>approx_fun</td><td>approx_fun(Vec, Vec) -> ApproxFun; approx_fun(Vec, Vec, string, int) -> ApproxFun; approx_fun(Vec, Vec, string, int, float) -> ApproxFun</td></tr>
+<tr><td>arima</td><td>arima(int, int, int) -> ArimaSpec</td></tr>
+<tr><td>arima_sim</td><td>arima_sim(Rng, int, Vec, Vec, float) -> Vec; arima_sim(Rng, int, Vec, Vec, float, int) -> Vec</td></tr>
+<tr><td>as_matrix</td><td>as_matrix(Frame) -> Mat</td></tr>
+<tr><td>asin</td><td>asin(float) -> float</td></tr>
+<tr><td>atan</td><td>atan(float) -> float</td></tr>
+<tr><td>atan2</td><td>atan2(float, float) -> float</td></tr>
+<tr><td>bessel_i</td><td>bessel_i(float, float) -> float; bessel_i(float, float, bool) -> float</td></tr>
+<tr><td>bessel_j</td><td>bessel_j(float, float) -> float</td></tr>
+<tr><td>bessel_k</td><td>bessel_k(float, float) -> float; bessel_k(float, float, bool) -> float</td></tr>
+<tr><td>bessel_y</td><td>bessel_y(float, float) -> float</td></tr>
+<tr><td>beta</td><td>beta(float, float) -> float</td></tr>
+<tr><td>beta_dist</td><td>beta_dist(float, float) -> Dist</td></tr>
+<tr><td>beta_inc</td><td>beta_inc(float, float, float) -> float</td></tr>
+<tr><td>binom</td><td>binom(int, float) -> Dist</td></tr>
+<tr><td>bw</td><td>bw(Vec, string) -> float</td></tr>
+<tr><td>cauchy</td><td>cauchy(float, float) -> Dist</td></tr>
+<tr><td>ceil</td><td>ceil(float) -> float</td></tr>
+<tr><td>chisq</td><td>chisq(float) -> Dist; chisq(float, float) -> Dist</td></tr>
+<tr><td>choose</td><td>choose(float, float) -> float</td></tr>
+<tr><td>cmdscale</td><td>cmdscale(Mat, int) -> Mds</td></tr>
+<tr><td>cosh</td><td>cosh(float) -> float</td></tr>
+<tr><td>cvec</td><td>cvec(Vec, Vec) -> CVec</td></tr>
+<tr><td>density</td><td>density(Vec) -> Density; density(Vec, float, string) -> Density; density(Vec, string) -> Density; density(Vec, string, string) -> Density; density(Vec, string, string, float) -> Density</td></tr>
+<tr><td>diag</td><td>diag(Vec) -> Mat</td></tr>
+<tr><td>digamma</td><td>digamma(float) -> float</td></tr>
+<tr><td>dist</td><td>dist(string, float) -> Dist; dist(string, float, float) -> Dist; dist(string, float, float, float) -> Dist</td></tr>
+<tr><td>ecdf</td><td>ecdf(Vec) -> Ecdf</td></tr>
+<tr><td>erf</td><td>erf(float) -> float</td></tr>
+<tr><td>erfc</td><td>erfc(float) -> float</td></tr>
+<tr><td>exp</td><td>exp(float) -> float</td></tr>
+<tr><td>exp_dist</td><td>exp_dist(float) -> Dist</td></tr>
+<tr><td>expm1</td><td>expm1(float) -> float</td></tr>
+<tr><td>f_dist</td><td>f_dist(float, float) -> Dist; f_dist(float, float, float) -> Dist</td></tr>
+<tr><td>factorial</td><td>factorial(float) -> float</td></tr>
+<tr><td>fft</td><td>fft(Vec) -> CVec</td></tr>
+<tr><td>file_append</td><td>file_append(string, string) -> void</td></tr>
+<tr><td>file_exists</td><td>file_exists(string) -> bool</td></tr>
+<tr><td>file_lines</td><td>file_lines(string) -> StrList</td></tr>
+<tr><td>file_read</td><td>file_read(string) -> string</td></tr>
+<tr><td>file_write</td><td>file_write(string, string) -> void</td></tr>
+<tr><td>float_list</td><td>float_list() -> FloatList</td></tr>
+<tr><td>float_map</td><td>float_map() -> FloatMap</td></tr>
+<tr><td>float_pq</td><td>float_pq() -> FloatPQ</td></tr>
+<tr><td>float_queue</td><td>float_queue() -> FloatQueue</td></tr>
+<tr><td>float_stack</td><td>float_stack() -> FloatStack</td></tr>
+<tr><td>fmt</td><td>fmt(string, float) -> string; fmt(string, int) -> string; fmt(string, string) -> string</td></tr>
+<tr><td>frame</td><td>frame() -> Frame</td></tr>
+<tr><td>gamma</td><td>gamma(float) -> float</td></tr>
+<tr><td>gamma_dist</td><td>gamma_dist(float, float) -> Dist</td></tr>
+<tr><td>gamma_p</td><td>gamma_p(float, float) -> float</td></tr>
+<tr><td>geom</td><td>geom(float) -> Dist</td></tr>
+<tr><td>glm</td><td>glm(Frame, string, string) -> Glm; glm(Frame, string, string, string) -> Glm; glm(Frame, string, string, string, Vec) -> Glm; glm(Frame, string, string, string, Vec, Vec) -> Glm</td></tr>
+<tr><td>hclust</td><td>hclust(Frame, string) -> Hclust; hclust(Frame, string, string) -> Hclust; hclust(Frame, string, string, float) -> Hclust</td></tr>
+<tr><td>hist</td><td>hist(Vec) -> Hist; hist(Vec, Vec) -> Hist; hist(Vec, string) -> Hist</td></tr>
+<tr><td>hyper</td><td>hyper(int, int, int) -> Dist</td></tr>
+<tr><td>identity</td><td>identity(int) -> Mat</td></tr>
+<tr><td>inf</td><td>inf() -> float</td></tr>
+<tr><td>int_list</td><td>int_list() -> IntList</td></tr>
+<tr><td>int_map</td><td>int_map() -> IntMap</td></tr>
+<tr><td>int_pq</td><td>int_pq() -> IntPQ</td></tr>
+<tr><td>int_queue</td><td>int_queue() -> IntQueue</td></tr>
+<tr><td>int_stack</td><td>int_stack() -> IntStack</td></tr>
+<tr><td>integrate</td><td>integrate(float, float) -> Integral</td></tr>
+<tr><td>is_finite</td><td>is_finite(float) -> bool</td></tr>
+<tr><td>is_kept</td><td>is_kept(string) -> bool</td></tr>
+<tr><td>is_nan</td><td>is_nan(float) -> bool</td></tr>
+<tr><td>json_parse</td><td>json_parse(string) -> Json</td></tr>
+<tr><td>keep</td><td>keep(string, Frame) -> void; keep(string, Vec) -> void</td></tr>
+<tr><td>kept_frame</td><td>kept_frame(string) -> Frame</td></tr>
+<tr><td>kept_vec</td><td>kept_vec(string) -> Vec</td></tr>
+<tr><td>kmeans</td><td>kmeans(Frame, int, Rng) -> Kmeans; kmeans(Frame, int, Rng, int) -> Kmeans; kmeans(Frame, int, Rng, int, int, string) -> Kmeans</td></tr>
+<tr><td>lbeta</td><td>lbeta(float, float) -> float</td></tr>
+<tr><td>lchoose</td><td>lchoose(float, float) -> float</td></tr>
+<tr><td>lfactorial</td><td>lfactorial(float) -> float</td></tr>
+<tr><td>lgamma</td><td>lgamma(float) -> float</td></tr>
+<tr><td>linspace</td><td>linspace(float, float, int) -> Vec</td></tr>
+<tr><td>lm</td><td>lm(Frame, string) -> Lm; lm(Frame, string, Vec) -> Lm</td></tr>
+<tr><td>lmcode_return_null</td><td>lmcode_return_null() -> void</td></tr>
+<tr><td>lmcode_return_put</td><td>lmcode_return_put(string, FloatList) -> void; lmcode_return_put(string, FloatMap) -> void; lmcode_return_put(string, IntList) -> void; lmcode_return_put(string, IntMap) -> void; lmcode_return_put(string, Json) -> void; lmcode_return_put(string, StrList) -> void; lmcode_return_put(string, StrMap) -> void; lmcode_return_put(string, bool) -> void; lmcode_return_put(string, float) -> void; lmcode_return_put(string, int) -> void; lmcode_return_put(string, string) -> void</td></tr>
+<tr><td>lmcode_return_put_null</td><td>lmcode_return_put_null(string) -> void</td></tr>
+<tr><td>lmcode_return_set</td><td>lmcode_return_set(FloatList) -> void; lmcode_return_set(FloatMap) -> void; lmcode_return_set(IntList) -> void; lmcode_return_set(IntMap) -> void; lmcode_return_set(Json) -> void; lmcode_return_set(StrList) -> void; lmcode_return_set(StrMap) -> void; lmcode_return_set(bool) -> void; lmcode_return_set(float) -> void; lmcode_return_set(int) -> void; lmcode_return_set(string) -> void</td></tr>
+<tr><td>lnorm</td><td>lnorm(float, float) -> Dist</td></tr>
+<tr><td>loess</td><td>loess(Vec, Vec) -> Loess; loess(Vec, Vec, float) -> Loess; loess(Vec, Vec, float, int) -> Loess; loess(Vec, Vec, float, int, string) -> Loess</td></tr>
+<tr><td>log</td><td>log(float) -> float</td></tr>
+<tr><td>log10</td><td>log10(float) -> float</td></tr>
+<tr><td>log1p</td><td>log1p(float) -> float</td></tr>
+<tr><td>log2</td><td>log2(float) -> float</td></tr>
+<tr><td>logis</td><td>logis(float, float) -> Dist</td></tr>
+<tr><td>lpad</td><td>lpad(string, int) -> string</td></tr>
+<tr><td>mahalanobis</td><td>mahalanobis(Mat, Vec, Mat) -> Vec</td></tr>
+<tr><td>math_abs</td><td>math_abs(float) -> float; math_abs(int) -> int</td></tr>
+<tr><td>math_ceil</td><td>math_ceil(float) -> float; math_ceil(int) -> int</td></tr>
+<tr><td>math_floor</td><td>math_floor(float) -> float; math_floor(int) -> int</td></tr>
+<tr><td>math_max</td><td>math_max(float, float) -> float; math_max(int, int) -> int</td></tr>
+<tr><td>math_min</td><td>math_min(float, float) -> float; math_min(int, int) -> int</td></tr>
+<tr><td>math_pow</td><td>math_pow(float, float) -> float; math_pow(int, int) -> int</td></tr>
+<tr><td>math_round</td><td>math_round(float) -> float; math_round(int) -> int</td></tr>
+<tr><td>math_sqrt</td><td>math_sqrt(float) -> float; math_sqrt(int) -> int</td></tr>
+<tr><td>matrix</td><td>matrix(Vec, int, bool) -> Mat</td></tr>
+<tr><td>minimize</td><td>minimize(Vec, string) -> Minimizer</td></tr>
+<tr><td>nan</td><td>nan() -> float</td></tr>
+<tr><td>nbinom</td><td>nbinom(float, float) -> Dist</td></tr>
+<tr><td>nls</td><td>nls(Vec) -> Nls</td></tr>
+<tr><td>norm</td><td>norm() -> Dist; norm(float, float) -> Dist</td></tr>
+<tr><td>optimize</td><td>optimize(float, float) -> Optimizer1; optimize(float, float, bool) -> Optimizer1</td></tr>
+<tr><td>parse_vec</td><td>parse_vec(string) -> Vec</td></tr>
+<tr><td>pi</td><td>pi() -> float</td></tr>
+<tr><td>pois</td><td>pois(float) -> Dist</td></tr>
+<tr><td>prcomp</td><td>prcomp(Frame, bool) -> Pca; prcomp(Frame, bool, bool) -> Pca; prcomp(Mat, bool) -> Pca</td></tr>
+<tr><td>pretty</td><td>pretty(float, float, int) -> Vec</td></tr>
+<tr><td>read_csv</td><td>read_csv(string) -> Frame</td></tr>
+<tr><td>rep</td><td>rep(float, int) -> Vec</td></tr>
+<tr><td>rng</td><td>rng(int) -> Rng</td></tr>
+<tr><td>round</td><td>round(float) -> float; round(float, int) -> float</td></tr>
+<tr><td>rpad</td><td>rpad(string, int) -> string</td></tr>
+<tr><td>seq</td><td>seq(float, float, float) -> Vec</td></tr>
+<tr><td>seq_len</td><td>seq_len(int) -> Vec</td></tr>
+<tr><td>sinh</td><td>sinh(float) -> float</td></tr>
+<tr><td>smooth_spline</td><td>smooth_spline(Vec, Vec) -> SmoothSpline; smooth_spline(Vec, Vec, bool) -> SmoothSpline</td></tr>
+<tr><td>smooth_spline_df</td><td>smooth_spline_df(Vec, Vec, float) -> SmoothSpline</td></tr>
+<tr><td>smooth_spline_lambda</td><td>smooth_spline_lambda(Vec, Vec, float) -> SmoothSpline</td></tr>
+<tr><td>spline_fun</td><td>spline_fun(Vec, Vec) -> Spline; spline_fun(Vec, Vec, string) -> Spline</td></tr>
+<tr><td>stl</td><td>stl(Vec, int, int) -> Stl; stl(Vec, int, int, bool) -> Stl</td></tr>
+<tr><td>stl_periodic</td><td>stl_periodic(Vec, int) -> Stl; stl_periodic(Vec, int, bool) -> Stl</td></tr>
+<tr><td>str_base64_decode</td><td>str_base64_decode(string) -> string</td></tr>
+<tr><td>str_base64_encode</td><td>str_base64_encode(string) -> string</td></tr>
+<tr><td>str_contains</td><td>str_contains(string, string) -> bool</td></tr>
+<tr><td>str_ends_with</td><td>str_ends_with(string, string) -> bool</td></tr>
+<tr><td>str_find</td><td>str_find(string, string) -> int</td></tr>
+<tr><td>str_hex_decode</td><td>str_hex_decode(string) -> string</td></tr>
+<tr><td>str_hex_encode</td><td>str_hex_encode(string) -> string</td></tr>
+<tr><td>str_is_float</td><td>str_is_float(string) -> bool</td></tr>
+<tr><td>str_is_int</td><td>str_is_int(string) -> bool</td></tr>
+<tr><td>str_len</td><td>str_len(string) -> int</td></tr>
+<tr><td>str_list</td><td>str_list() -> StrList</td></tr>
+<tr><td>str_lower</td><td>str_lower(string) -> string</td></tr>
+<tr><td>str_map</td><td>str_map() -> StrMap</td></tr>
+<tr><td>str_match</td><td>str_match(string, string) -> bool</td></tr>
+<tr><td>str_pq</td><td>str_pq() -> StrPQ</td></tr>
+<tr><td>str_queue</td><td>str_queue() -> StrQueue</td></tr>
+<tr><td>str_repeat</td><td>str_repeat(string, int) -> string</td></tr>
+<tr><td>str_replace</td><td>str_replace(string, string, string) -> string</td></tr>
+<tr><td>str_split</td><td>str_split(string, string) -> StrList</td></tr>
+<tr><td>str_stack</td><td>str_stack() -> StrStack</td></tr>
+<tr><td>str_starts_with</td><td>str_starts_with(string, string) -> bool</td></tr>
+<tr><td>str_substr</td><td>str_substr(string, int, int) -> string</td></tr>
+<tr><td>str_to_float</td><td>str_to_float(string) -> float</td></tr>
+<tr><td>str_to_int</td><td>str_to_int(string) -> int</td></tr>
+<tr><td>str_trim</td><td>str_trim(string) -> string</td></tr>
+<tr><td>str_upper</td><td>str_upper(string) -> string</td></tr>
+<tr><td>t_dist</td><td>t_dist(float) -> Dist; t_dist(float, float) -> Dist</td></tr>
+<tr><td>tan</td><td>tan(float) -> float</td></tr>
+<tr><td>tanh</td><td>tanh(float) -> float</td></tr>
+<tr><td>template_render</td><td>template_render(string, Json) -> string</td></tr>
+<tr><td>test</td><td>test(string) -> Test</td></tr>
+<tr><td>trigamma</td><td>trigamma(float) -> float</td></tr>
+<tr><td>trunc</td><td>trunc(float) -> float</td></tr>
+<tr><td>tukey</td><td>tukey(float, float) -> Dist; tukey(float, float, float) -> Dist</td></tr>
+<tr><td>unif</td><td>unif(float, float) -> Dist</td></tr>
+<tr><td>uniroot</td><td>uniroot(float, float) -> RootFinder</td></tr>
+<tr><td>vec</td><td>vec() -> Vec</td></tr>
+<tr><td>weibull</td><td>weibull(float, float) -> Dist</td></tr>
+<tr><td>zeros</td><td>zeros(int) -> Vec</td></tr>
+</tbody>
+</table>
+<h2 id="types">Host types and methods</h2>
+<p>The schema declares these 50 types: Anova, ApproxFun, Arima, ArimaSpec, CVec, Density, Dist, Ecdf, Eigen, FloatList, FloatMap, FloatPQ, FloatQueue, FloatStack, Forecast, Frame, Glm, Hclust, Hist, Htest, IntList, IntMap, IntPQ, IntQueue, IntStack, Integral, Json, Kmeans, Lm, Loess, Mat, Mds, Minimizer, Nls, Optimizer1, Out, Pca, Rng, RootFinder, SmoothSpline, Spline, Stl, StrList, StrMap, StrPQ, StrQueue, StrStack, Svd, Test, Vec.</p>
+<h3 id="type-anova">Anova</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>at</td><td>at(int, string) -> float; at(string, string) -> float</td></tr>
+<tr><td>col</td><td>col(string) -> Vec</td></tr>
+<tr><td>columns</td><td>columns() -> StrList</td></tr>
+<tr><td>n_rows</td><td>n_rows() -> int</td></tr>
+<tr><td>row_name</td><td>row_name(int) -> string</td></tr>
+<tr><td>table</td><td>table() -> string</td></tr>
+</tbody>
+</table>
+<h3 id="type-approxfun">ApproxFun</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>at</td><td>at(float) -> float</td></tr>
+<tr><td>eval</td><td>eval(Vec) -> Vec</td></tr>
+</tbody>
+</table>
+<h3 id="type-arima">Arima</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>aic</td><td>aic() -> float</td></tr>
+<tr><td>convergence</td><td>convergence() -> int</td></tr>
+<tr><td>estimate</td><td>estimate(int) -> float; estimate(string) -> float</td></tr>
+<tr><td>forecast</td><td>forecast(int) -> Forecast</td></tr>
+<tr><td>has_coef</td><td>has_coef(string) -> bool</td></tr>
+<tr><td>loglik</td><td>loglik() -> float</td></tr>
+<tr><td>n_coef</td><td>n_coef() -> int</td></tr>
+<tr><td>name</td><td>name(int) -> string</td></tr>
+<tr><td>nobs</td><td>nobs() -> int</td></tr>
+<tr><td>p_value</td><td>p_value(int) -> float; p_value(string) -> float</td></tr>
+<tr><td>residuals</td><td>residuals() -> Vec</td></tr>
+<tr><td>se</td><td>se(int) -> float; se(string) -> float</td></tr>
+<tr><td>sigma2</td><td>sigma2() -> float</td></tr>
+<tr><td>statistic</td><td>statistic(int) -> float; statistic(string) -> float</td></tr>
+</tbody>
+</table>
+<h3 id="type-arimaspec">ArimaSpec</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>fit</td><td>fit(Vec) -> Arima</td></tr>
+<tr><td>include_mean</td><td>include_mean(bool) -> ArimaSpec</td></tr>
+<tr><td>method</td><td>method(string) -> ArimaSpec</td></tr>
+<tr><td>seasonal</td><td>seasonal(int, int, int, int) -> ArimaSpec</td></tr>
+</tbody>
+</table>
+<h3 id="type-cvec">CVec</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>arg</td><td>arg(int) -> float</td></tr>
+<tr><td>fft</td><td>fft(bool) -> CVec</td></tr>
+<tr><td>im</td><td>im(int) -> float</td></tr>
+<tr><td>im_vec</td><td>im_vec() -> Vec</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>mod</td><td>mod(int) -> float</td></tr>
+<tr><td>mod_vec</td><td>mod_vec() -> Vec</td></tr>
+<tr><td>re</td><td>re(int) -> float</td></tr>
+<tr><td>re_vec</td><td>re_vec() -> Vec</td></tr>
+<tr><td>scale</td><td>scale(float) -> CVec</td></tr>
+</tbody>
+</table>
+<h3 id="type-density">Density</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>at</td><td>at(float) -> float</td></tr>
+<tr><td>bw</td><td>bw() -> float</td></tr>
+<tr><td>eval</td><td>eval(Vec) -> Vec</td></tr>
+<tr><td>kernel</td><td>kernel() -> string</td></tr>
+<tr><td>x</td><td>x() -> Vec</td></tr>
+<tr><td>y</td><td>y() -> Vec</td></tr>
+</tbody>
+</table>
+<h3 id="type-dist">Dist</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>d</td><td>d(float) -> float</td></tr>
+<tr><td>d_vec</td><td>d_vec(Vec) -> Vec</td></tr>
+<tr><td>is_discrete</td><td>is_discrete() -> bool</td></tr>
+<tr><td>log_d</td><td>log_d(float) -> float</td></tr>
+<tr><td>log_p</td><td>log_p(float) -> float</td></tr>
+<tr><td>log_p_upper</td><td>log_p_upper(float) -> float</td></tr>
+<tr><td>mean</td><td>mean() -> float</td></tr>
+<tr><td>name</td><td>name() -> string</td></tr>
+<tr><td>p</td><td>p(float) -> float</td></tr>
+<tr><td>p_upper</td><td>p_upper(float) -> float</td></tr>
+<tr><td>p_vec</td><td>p_vec(Vec) -> Vec</td></tr>
+<tr><td>q</td><td>q(float) -> float</td></tr>
+<tr><td>q_log</td><td>q_log(float) -> float</td></tr>
+<tr><td>q_upper</td><td>q_upper(float) -> float</td></tr>
+<tr><td>q_vec</td><td>q_vec(Vec) -> Vec</td></tr>
+<tr><td>sd</td><td>sd() -> float</td></tr>
+<tr><td>var</td><td>var() -> float</td></tr>
+</tbody>
+</table>
+<h3 id="type-ecdf">Ecdf</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>at</td><td>at(float) -> float</td></tr>
+<tr><td>eval</td><td>eval(Vec) -> Vec</td></tr>
+<tr><td>knots</td><td>knots() -> Vec</td></tr>
+<tr><td>quantile</td><td>quantile(float) -> float</td></tr>
+</tbody>
+</table>
+<h3 id="type-eigen">Eigen</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>values</td><td>values() -> Vec</td></tr>
+<tr><td>vectors</td><td>vectors() -> Mat</td></tr>
+</tbody>
+</table>
+<h3 id="type-floatlist">FloatList</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>add</td><td>add(float) -> FloatList</td></tr>
+<tr><td>at</td><td>at(int) -> float</td></tr>
+<tr><td>clear</td><td>clear() -> FloatList</td></tr>
+<tr><td>contains</td><td>contains(float) -> bool</td></tr>
+<tr><td>index_of</td><td>index_of(float) -> int</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>set</td><td>set(int, float) -> FloatList</td></tr>
+</tbody>
+</table>
+<h3 id="type-floatmap">FloatMap</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>clear</td><td>clear() -> FloatMap</td></tr>
+<tr><td>get</td><td>get(string) -> float</td></tr>
+<tr><td>get_or</td><td>get_or(string, float) -> float</td></tr>
+<tr><td>has</td><td>has(string) -> bool</td></tr>
+<tr><td>key_at</td><td>key_at(int) -> string</td></tr>
+<tr><td>keys</td><td>keys() -> StrList</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>remove</td><td>remove(string) -> bool</td></tr>
+<tr><td>set</td><td>set(string, float) -> FloatMap</td></tr>
+<tr><td>values</td><td>values() -> FloatList</td></tr>
+</tbody>
+</table>
+<h3 id="type-floatpq">FloatPQ</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>clear</td><td>clear() -> FloatPQ</td></tr>
+<tr><td>empty</td><td>empty() -> bool</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>peek</td><td>peek() -> float</td></tr>
+<tr><td>pop</td><td>pop() -> float</td></tr>
+<tr><td>push</td><td>push(float, float) -> FloatPQ</td></tr>
+</tbody>
+</table>
+<h3 id="type-floatqueue">FloatQueue</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>at</td><td>at(int) -> float</td></tr>
+<tr><td>clear</td><td>clear() -> FloatQueue</td></tr>
+<tr><td>empty</td><td>empty() -> bool</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>peek</td><td>peek() -> float</td></tr>
+<tr><td>pop</td><td>pop() -> float</td></tr>
+<tr><td>push</td><td>push(float) -> FloatQueue</td></tr>
+</tbody>
+</table>
+<h3 id="type-floatstack">FloatStack</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>at</td><td>at(int) -> float</td></tr>
+<tr><td>clear</td><td>clear() -> FloatStack</td></tr>
+<tr><td>empty</td><td>empty() -> bool</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>peek</td><td>peek() -> float</td></tr>
+<tr><td>pop</td><td>pop() -> float</td></tr>
+<tr><td>push</td><td>push(float) -> FloatStack</td></tr>
+</tbody>
+</table>
+<h3 id="type-forecast">Forecast</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>lower</td><td>lower(int, float) -> float</td></tr>
+<tr><td>mean</td><td>mean() -> Vec</td></tr>
+<tr><td>mean_at</td><td>mean_at(int) -> float</td></tr>
+<tr><td>se</td><td>se() -> Vec</td></tr>
+<tr><td>se_at</td><td>se_at(int) -> float</td></tr>
+<tr><td>upper</td><td>upper(int, float) -> float</td></tr>
+</tbody>
+</table>
+<h3 id="type-frame">Frame</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>col</td><td>col(string) -> Vec</td></tr>
+<tr><td>drop</td><td>drop(string) -> Frame</td></tr>
+<tr><td>drop_nan</td><td>drop_nan() -> Frame</td></tr>
+<tr><td>has</td><td>has(string) -> bool</td></tr>
+<tr><td>head</td><td>head(int) -> Frame</td></tr>
+<tr><td>is_text</td><td>is_text(string) -> bool</td></tr>
+<tr><td>names</td><td>names() -> StrList</td></tr>
+<tr><td>ncol</td><td>ncol() -> int</td></tr>
+<tr><td>nrow</td><td>nrow() -> int</td></tr>
+<tr><td>select</td><td>select(string) -> Frame</td></tr>
+<tr><td>set</td><td>set(string, StrList) -> Frame; set(string, Vec) -> Frame</td></tr>
+<tr><td>text</td><td>text(string) -> StrList</td></tr>
+<tr><td>where</td><td>where(Vec) -> Frame</td></tr>
+<tr><td>write_csv</td><td>write_csv(string) -> void</td></tr>
+</tbody>
+</table>
+<h3 id="type-glm">Glm</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>aic</td><td>aic() -> float</td></tr>
+<tr><td>aliased</td><td>aliased(int) -> bool; aliased(string) -> bool</td></tr>
+<tr><td>anova</td><td>anova(string) -> Anova</td></tr>
+<tr><td>coef_table</td><td>coef_table() -> string</td></tr>
+<tr><td>conf_high</td><td>conf_high(int, float) -> float; conf_high(string, float) -> float</td></tr>
+<tr><td>conf_low</td><td>conf_low(int, float) -> float; conf_low(string, float) -> float</td></tr>
+<tr><td>converged</td><td>converged() -> bool</td></tr>
+<tr><td>deviance</td><td>deviance() -> float</td></tr>
+<tr><td>df_null</td><td>df_null() -> int</td></tr>
+<tr><td>df_residual</td><td>df_residual() -> int</td></tr>
+<tr><td>dispersion</td><td>dispersion() -> float</td></tr>
+<tr><td>estimate</td><td>estimate(int) -> float; estimate(string) -> float</td></tr>
+<tr><td>estimates</td><td>estimates() -> Vec</td></tr>
+<tr><td>family</td><td>family() -> string</td></tr>
+<tr><td>fitted</td><td>fitted() -> Vec</td></tr>
+<tr><td>has_coef</td><td>has_coef(string) -> bool</td></tr>
+<tr><td>iter</td><td>iter() -> int</td></tr>
+<tr><td>linear_predictors</td><td>linear_predictors() -> Vec</td></tr>
+<tr><td>link</td><td>link() -> string</td></tr>
+<tr><td>n</td><td>n() -> int</td></tr>
+<tr><td>n_coef</td><td>n_coef() -> int</td></tr>
+<tr><td>name</td><td>name(int) -> string</td></tr>
+<tr><td>names</td><td>names() -> StrList</td></tr>
+<tr><td>null_deviance</td><td>null_deviance() -> float</td></tr>
+<tr><td>p_value</td><td>p_value(int) -> float; p_value(string) -> float</td></tr>
+<tr><td>predict</td><td>predict(Frame, string) -> Vec</td></tr>
+<tr><td>residuals</td><td>residuals(string) -> Vec</td></tr>
+<tr><td>se</td><td>se(int) -> float; se(string) -> float</td></tr>
+<tr><td>statistic</td><td>statistic(int) -> float; statistic(string) -> float</td></tr>
+</tbody>
+</table>
+<h3 id="type-hclust">Hclust</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>cut</td><td>cut(int) -> Vec</td></tr>
+<tr><td>height</td><td>height(int) -> float</td></tr>
+<tr><td>heights</td><td>heights() -> Vec</td></tr>
+<tr><td>merge_a</td><td>merge_a(int) -> int</td></tr>
+<tr><td>merge_b</td><td>merge_b(int) -> int</td></tr>
+<tr><td>n</td><td>n() -> int</td></tr>
+<tr><td>order</td><td>order() -> Vec</td></tr>
+</tbody>
+</table>
+<h3 id="type-hist">Hist</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>breaks</td><td>breaks() -> Vec</td></tr>
+<tr><td>counts</td><td>counts() -> Vec</td></tr>
+<tr><td>density</td><td>density() -> Vec</td></tr>
+<tr><td>mids</td><td>mids() -> Vec</td></tr>
+</tbody>
+</table>
+<h3 id="type-htest">Htest</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>alternative</td><td>alternative() -> string</td></tr>
+<tr><td>conf_high</td><td>conf_high() -> float</td></tr>
+<tr><td>conf_level</td><td>conf_level() -> float</td></tr>
+<tr><td>conf_low</td><td>conf_low() -> float</td></tr>
+<tr><td>df</td><td>df() -> float</td></tr>
+<tr><td>estimate</td><td>estimate() -> float; estimate(int) -> float</td></tr>
+<tr><td>estimate_name</td><td>estimate_name(int) -> string</td></tr>
+<tr><td>expected</td><td>expected() -> Vec</td></tr>
+<tr><td>has_ci</td><td>has_ci() -> bool</td></tr>
+<tr><td>method</td><td>method() -> string</td></tr>
+<tr><td>n_estimates</td><td>n_estimates() -> int</td></tr>
+<tr><td>n_params</td><td>n_params() -> int</td></tr>
+<tr><td>null_value</td><td>null_value() -> float</td></tr>
+<tr><td>p_value</td><td>p_value() -> float</td></tr>
+<tr><td>param</td><td>param(int) -> float; param(string) -> float</td></tr>
+<tr><td>param_name</td><td>param_name(int) -> string</td></tr>
+<tr><td>statistic</td><td>statistic() -> float</td></tr>
+<tr><td>statistic_name</td><td>statistic_name() -> string</td></tr>
+<tr><td>summary</td><td>summary() -> string</td></tr>
+</tbody>
+</table>
+<h3 id="type-intlist">IntList</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>add</td><td>add(int) -> IntList</td></tr>
+<tr><td>at</td><td>at(int) -> int</td></tr>
+<tr><td>clear</td><td>clear() -> IntList</td></tr>
+<tr><td>contains</td><td>contains(int) -> bool</td></tr>
+<tr><td>index_of</td><td>index_of(int) -> int</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>set</td><td>set(int, int) -> IntList</td></tr>
+</tbody>
+</table>
+<h3 id="type-intmap">IntMap</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>clear</td><td>clear() -> IntMap</td></tr>
+<tr><td>get</td><td>get(string) -> int</td></tr>
+<tr><td>get_or</td><td>get_or(string, int) -> int</td></tr>
+<tr><td>has</td><td>has(string) -> bool</td></tr>
+<tr><td>key_at</td><td>key_at(int) -> string</td></tr>
+<tr><td>keys</td><td>keys() -> StrList</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>remove</td><td>remove(string) -> bool</td></tr>
+<tr><td>set</td><td>set(string, int) -> IntMap</td></tr>
+<tr><td>values</td><td>values() -> IntList</td></tr>
+</tbody>
+</table>
+<h3 id="type-intpq">IntPQ</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>clear</td><td>clear() -> IntPQ</td></tr>
+<tr><td>empty</td><td>empty() -> bool</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>peek</td><td>peek() -> int</td></tr>
+<tr><td>pop</td><td>pop() -> int</td></tr>
+<tr><td>push</td><td>push(int, float) -> IntPQ</td></tr>
+</tbody>
+</table>
+<h3 id="type-intqueue">IntQueue</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>at</td><td>at(int) -> int</td></tr>
+<tr><td>clear</td><td>clear() -> IntQueue</td></tr>
+<tr><td>empty</td><td>empty() -> bool</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>peek</td><td>peek() -> int</td></tr>
+<tr><td>pop</td><td>pop() -> int</td></tr>
+<tr><td>push</td><td>push(int) -> IntQueue</td></tr>
+</tbody>
+</table>
+<h3 id="type-intstack">IntStack</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>at</td><td>at(int) -> int</td></tr>
+<tr><td>clear</td><td>clear() -> IntStack</td></tr>
+<tr><td>empty</td><td>empty() -> bool</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>peek</td><td>peek() -> int</td></tr>
+<tr><td>pop</td><td>pop() -> int</td></tr>
+<tr><td>push</td><td>push(int) -> IntStack</td></tr>
+</tbody>
+</table>
+<h3 id="type-integral">Integral</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>abs_error</td><td>abs_error() -> float</td></tr>
+<tr><td>abs_tol</td><td>abs_tol(float) -> Integral</td></tr>
+<tr><td>evaluations</td><td>evaluations() -> int</td></tr>
+<tr><td>ier</td><td>ier() -> int</td></tr>
+<tr><td>message</td><td>message() -> string</td></tr>
+<tr><td>next</td><td>next() -> bool</td></tr>
+<tr><td>ok</td><td>ok() -> bool</td></tr>
+<tr><td>rel_tol</td><td>rel_tol(float) -> Integral</td></tr>
+<tr><td>subdivisions</td><td>subdivisions(int) -> Integral</td></tr>
+<tr><td>subdivisions_used</td><td>subdivisions_used() -> int</td></tr>
+<tr><td>tell</td><td>tell(float) -> void</td></tr>
+<tr><td>value</td><td>value() -> float</td></tr>
+<tr><td>x</td><td>x() -> float</td></tr>
+</tbody>
+</table>
+<h3 id="type-json">Json</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>as_bool</td><td>as_bool() -> bool</td></tr>
+<tr><td>as_float</td><td>as_float() -> float</td></tr>
+<tr><td>as_int</td><td>as_int() -> int</td></tr>
+<tr><td>as_string</td><td>as_string() -> string</td></tr>
+<tr><td>at</td><td>at(int) -> Json</td></tr>
+<tr><td>get</td><td>get(string) -> Json</td></tr>
+<tr><td>has</td><td>has(string) -> bool</td></tr>
+<tr><td>keys</td><td>keys() -> StrList</td></tr>
+<tr><td>kind</td><td>kind() -> string</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>to_json</td><td>to_json() -> string</td></tr>
+</tbody>
+</table>
+<h3 id="type-kmeans">Kmeans</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>betweenss</td><td>betweenss() -> float</td></tr>
+<tr><td>center</td><td>center(int, int) -> float; center(int, string) -> float</td></tr>
+<tr><td>cluster</td><td>cluster(int) -> int</td></tr>
+<tr><td>clusters</td><td>clusters() -> Vec</td></tr>
+<tr><td>ifault</td><td>ifault() -> int</td></tr>
+<tr><td>iter</td><td>iter() -> int</td></tr>
+<tr><td>k</td><td>k() -> int</td></tr>
+<tr><td>n</td><td>n() -> int</td></tr>
+<tr><td>size</td><td>size(int) -> int</td></tr>
+<tr><td>tot_withinss</td><td>tot_withinss() -> float</td></tr>
+<tr><td>totss</td><td>totss() -> float</td></tr>
+<tr><td>withinss</td><td>withinss(int) -> float</td></tr>
+</tbody>
+</table>
+<h3 id="type-lm">Lm</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>adj_r_squared</td><td>adj_r_squared() -> float</td></tr>
+<tr><td>aic</td><td>aic() -> float</td></tr>
+<tr><td>aliased</td><td>aliased(int) -> bool; aliased(string) -> bool</td></tr>
+<tr><td>anova</td><td>anova() -> Anova</td></tr>
+<tr><td>bic</td><td>bic() -> float</td></tr>
+<tr><td>coef_table</td><td>coef_table() -> string</td></tr>
+<tr><td>conf_high</td><td>conf_high(int, float) -> float; conf_high(string, float) -> float</td></tr>
+<tr><td>conf_low</td><td>conf_low(int, float) -> float; conf_low(string, float) -> float</td></tr>
+<tr><td>df_residual</td><td>df_residual() -> int</td></tr>
+<tr><td>estimate</td><td>estimate(int) -> float; estimate(string) -> float</td></tr>
+<tr><td>estimates</td><td>estimates() -> Vec</td></tr>
+<tr><td>f_df1</td><td>f_df1() -> float</td></tr>
+<tr><td>f_df2</td><td>f_df2() -> float</td></tr>
+<tr><td>f_p_value</td><td>f_p_value() -> float</td></tr>
+<tr><td>f_statistic</td><td>f_statistic() -> float</td></tr>
+<tr><td>fitted</td><td>fitted() -> Vec</td></tr>
+<tr><td>has_coef</td><td>has_coef(string) -> bool</td></tr>
+<tr><td>loglik</td><td>loglik() -> float</td></tr>
+<tr><td>n</td><td>n() -> int</td></tr>
+<tr><td>n_coef</td><td>n_coef() -> int</td></tr>
+<tr><td>name</td><td>name(int) -> string</td></tr>
+<tr><td>names</td><td>names() -> StrList</td></tr>
+<tr><td>p_value</td><td>p_value(int) -> float; p_value(string) -> float</td></tr>
+<tr><td>predict</td><td>predict(Frame) -> Vec</td></tr>
+<tr><td>predict_se</td><td>predict_se(Frame) -> Vec</td></tr>
+<tr><td>r_squared</td><td>r_squared() -> float</td></tr>
+<tr><td>rank</td><td>rank() -> int</td></tr>
+<tr><td>residuals</td><td>residuals() -> Vec</td></tr>
+<tr><td>rss</td><td>rss() -> float</td></tr>
+<tr><td>se</td><td>se(int) -> float; se(string) -> float</td></tr>
+<tr><td>sigma</td><td>sigma() -> float</td></tr>
+<tr><td>statistic</td><td>statistic(int) -> float; statistic(string) -> float</td></tr>
+</tbody>
+</table>
+<h3 id="type-loess">Loess</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>at</td><td>at(float) -> float</td></tr>
+<tr><td>enp</td><td>enp() -> float</td></tr>
+<tr><td>eval</td><td>eval(Vec) -> Vec</td></tr>
+<tr><td>fitted</td><td>fitted() -> Vec</td></tr>
+<tr><td>one_delta</td><td>one_delta() -> float</td></tr>
+<tr><td>residuals</td><td>residuals() -> Vec</td></tr>
+<tr><td>robustness_weights</td><td>robustness_weights() -> Vec</td></tr>
+<tr><td>s</td><td>s() -> float</td></tr>
+<tr><td>trace_hat</td><td>trace_hat() -> float</td></tr>
+<tr><td>two_delta</td><td>two_delta() -> float</td></tr>
+</tbody>
+</table>
+<h3 id="type-mat">Mat</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>add</td><td>add(Mat) -> Mat</td></tr>
+<tr><td>at</td><td>at(int, int) -> float</td></tr>
+<tr><td>chol</td><td>chol() -> Mat</td></tr>
+<tr><td>col</td><td>col(int) -> Vec</td></tr>
+<tr><td>cor</td><td>cor() -> Mat</td></tr>
+<tr><td>cov</td><td>cov() -> Mat</td></tr>
+<tr><td>det</td><td>det() -> float</td></tr>
+<tr><td>diag</td><td>diag() -> Vec</td></tr>
+<tr><td>dist</td><td>dist(string) -> Mat</td></tr>
+<tr><td>eigen</td><td>eigen() -> Eigen</td></tr>
+<tr><td>format</td><td>format(string) -> string</td></tr>
+<tr><td>inverse</td><td>inverse() -> Mat</td></tr>
+<tr><td>mul</td><td>mul(Mat) -> Mat</td></tr>
+<tr><td>mul_vec</td><td>mul_vec(Vec) -> Vec</td></tr>
+<tr><td>ncol</td><td>ncol() -> int</td></tr>
+<tr><td>nrow</td><td>nrow() -> int</td></tr>
+<tr><td>row</td><td>row(int) -> Vec</td></tr>
+<tr><td>scale</td><td>scale(float) -> Mat</td></tr>
+<tr><td>set</td><td>set(int, int, float) -> Mat</td></tr>
+<tr><td>solve</td><td>solve(Vec) -> Vec</td></tr>
+<tr><td>str</td><td>str() -> string</td></tr>
+<tr><td>sub</td><td>sub(Mat) -> Mat</td></tr>
+<tr><td>svd</td><td>svd() -> Svd</td></tr>
+<tr><td>t</td><td>t() -> Mat</td></tr>
+<tr><td>to_frame</td><td>to_frame() -> Frame</td></tr>
+<tr><td>values</td><td>values() -> Vec</td></tr>
+</tbody>
+</table>
+<h3 id="type-mds">Mds</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>eig</td><td>eig() -> Vec</td></tr>
+<tr><td>gof</td><td>gof() -> Vec</td></tr>
+<tr><td>points</td><td>points() -> Mat</td></tr>
+<tr><td>warning</td><td>warning() -> string</td></tr>
+</tbody>
+</table>
+<h3 id="type-minimizer">Minimizer</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>convergence</td><td>convergence() -> int</td></tr>
+<tr><td>evaluations</td><td>evaluations() -> int</td></tr>
+<tr><td>fn_count</td><td>fn_count() -> int</td></tr>
+<tr><td>gr_count</td><td>gr_count() -> int</td></tr>
+<tr><td>hessian</td><td>hessian(bool) -> Minimizer; hessian(int, int) -> float</td></tr>
+<tr><td>lower</td><td>lower(Vec) -> Minimizer</td></tr>
+<tr><td>maxit</td><td>maxit(int) -> Minimizer</td></tr>
+<tr><td>message</td><td>message() -> string</td></tr>
+<tr><td>ndeps</td><td>ndeps(float) -> Minimizer</td></tr>
+<tr><td>next</td><td>next() -> bool</td></tr>
+<tr><td>par</td><td>par(int) -> float</td></tr>
+<tr><td>pars</td><td>pars() -> Vec</td></tr>
+<tr><td>point</td><td>point() -> Vec</td></tr>
+<tr><td>reltol</td><td>reltol(float) -> Minimizer</td></tr>
+<tr><td>seed</td><td>seed(int) -> Minimizer</td></tr>
+<tr><td>tell</td><td>tell(float) -> void</td></tr>
+<tr><td>upper</td><td>upper(Vec) -> Minimizer</td></tr>
+<tr><td>value</td><td>value() -> float</td></tr>
+<tr><td>x</td><td>x(int) -> float</td></tr>
+</tbody>
+</table>
+<h3 id="type-nls">Nls</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>algorithm</td><td>algorithm(string) -> Nls</td></tr>
+<tr><td>aliased</td><td>aliased(int) -> bool; aliased(string) -> bool</td></tr>
+<tr><td>coef_table</td><td>coef_table() -> string</td></tr>
+<tr><td>conf_high</td><td>conf_high(int, float) -> float; conf_high(string, float) -> float</td></tr>
+<tr><td>conf_low</td><td>conf_low(int, float) -> float; conf_low(string, float) -> float</td></tr>
+<tr><td>conv_criterion</td><td>conv_criterion() -> float</td></tr>
+<tr><td>converged</td><td>converged() -> bool</td></tr>
+<tr><td>df_residual</td><td>df_residual() -> int</td></tr>
+<tr><td>estimate</td><td>estimate(int) -> float; estimate(string) -> float</td></tr>
+<tr><td>estimates</td><td>estimates() -> Vec</td></tr>
+<tr><td>evaluations</td><td>evaluations() -> int</td></tr>
+<tr><td>fitted</td><td>fitted() -> Vec</td></tr>
+<tr><td>has_coef</td><td>has_coef(string) -> bool</td></tr>
+<tr><td>iterations</td><td>iterations() -> int</td></tr>
+<tr><td>lower</td><td>lower(string, float) -> Nls</td></tr>
+<tr><td>maxiter</td><td>maxiter(int) -> Nls</td></tr>
+<tr><td>message</td><td>message() -> string</td></tr>
+<tr><td>n</td><td>n() -> int</td></tr>
+<tr><td>n_coef</td><td>n_coef() -> int</td></tr>
+<tr><td>name</td><td>name(int) -> string</td></tr>
+<tr><td>names</td><td>names() -> StrList</td></tr>
+<tr><td>next</td><td>next() -> bool</td></tr>
+<tr><td>p_value</td><td>p_value(int) -> float; p_value(string) -> float</td></tr>
+<tr><td>par</td><td>par(int) -> float; par(string) -> float</td></tr>
+<tr><td>param</td><td>param(string, float) -> Nls</td></tr>
+<tr><td>residuals</td><td>residuals() -> Vec</td></tr>
+<tr><td>rss</td><td>rss() -> float</td></tr>
+<tr><td>se</td><td>se(int) -> float; se(string) -> float</td></tr>
+<tr><td>sigma</td><td>sigma() -> float</td></tr>
+<tr><td>statistic</td><td>statistic(int) -> float; statistic(string) -> float</td></tr>
+<tr><td>tell</td><td>tell(int, float) -> void</td></tr>
+<tr><td>tol</td><td>tol(float) -> Nls</td></tr>
+<tr><td>upper</td><td>upper(string, float) -> Nls</td></tr>
+</tbody>
+</table>
+<h3 id="type-optimizer1">Optimizer1</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>argmin</td><td>argmin() -> float</td></tr>
+<tr><td>evaluations</td><td>evaluations() -> int</td></tr>
+<tr><td>next</td><td>next() -> bool</td></tr>
+<tr><td>objective</td><td>objective() -> float</td></tr>
+<tr><td>tell</td><td>tell(float) -> void</td></tr>
+<tr><td>tol</td><td>tol(float) -> Optimizer1</td></tr>
+<tr><td>x</td><td>x() -> float</td></tr>
+</tbody>
+</table>
+<h3 id="type-out">Out</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>check</td><td>check(bool, string) -> bool</td></tr>
+<tr><td>check_close</td><td>check_close(float, float, float, string) -> bool</td></tr>
+<tr><td>fail</td><td>fail(string) -> void</td></tr>
+<tr><td>failures</td><td>failures() -> int</td></tr>
+<tr><td>print</td><td>print(string) -> void</td></tr>
+<tr><td>set</td><td>set(string, StrList) -> void; set(string, Vec) -> void; set(string, bool) -> void; set(string, float) -> void; set(string, int) -> void; set(string, string) -> void</td></tr>
+</tbody>
+</table>
+<h3 id="type-pca">Pca</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>center</td><td>center() -> Vec</td></tr>
+<tr><td>cumulative</td><td>cumulative() -> Vec</td></tr>
+<tr><td>loading</td><td>loading(string, int) -> float</td></tr>
+<tr><td>proportion</td><td>proportion() -> Vec</td></tr>
+<tr><td>rotation</td><td>rotation() -> Mat</td></tr>
+<tr><td>scale</td><td>scale() -> Vec</td></tr>
+<tr><td>scores</td><td>scores() -> Mat</td></tr>
+<tr><td>sdev</td><td>sdev() -> Vec</td></tr>
+<tr><td>summary</td><td>summary() -> string</td></tr>
+</tbody>
+</table>
+<h3 id="type-rng">Rng</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>below</td><td>below(int) -> int</td></tr>
+<tr><td>draw</td><td>draw(Dist) -> float; draw(Dist, int) -> Vec</td></tr>
+<tr><td>norm</td><td>norm() -> float</td></tr>
+<tr><td>permutation</td><td>permutation(int) -> Vec</td></tr>
+<tr><td>sample</td><td>sample(Vec, int, bool) -> Vec; sample(Vec, int, bool, Vec) -> Vec</td></tr>
+<tr><td>unif</td><td>unif() -> float</td></tr>
+</tbody>
+</table>
+<h3 id="type-rootfinder">RootFinder</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>converged</td><td>converged() -> bool</td></tr>
+<tr><td>estim_prec</td><td>estim_prec() -> float</td></tr>
+<tr><td>evaluations</td><td>evaluations() -> int</td></tr>
+<tr><td>extend</td><td>extend(string) -> RootFinder</td></tr>
+<tr><td>f_root</td><td>f_root() -> float</td></tr>
+<tr><td>init_it</td><td>init_it() -> int</td></tr>
+<tr><td>iter</td><td>iter() -> int</td></tr>
+<tr><td>maxiter</td><td>maxiter(int) -> RootFinder</td></tr>
+<tr><td>next</td><td>next() -> bool</td></tr>
+<tr><td>root</td><td>root() -> float</td></tr>
+<tr><td>tell</td><td>tell(float) -> void</td></tr>
+<tr><td>tol</td><td>tol(float) -> RootFinder</td></tr>
+<tr><td>x</td><td>x() -> float</td></tr>
+</tbody>
+</table>
+<h3 id="type-smoothspline">SmoothSpline</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>at</td><td>at(float) -> float</td></tr>
+<tr><td>cv_crit</td><td>cv_crit() -> float</td></tr>
+<tr><td>deriv</td><td>deriv(float, int) -> float</td></tr>
+<tr><td>df</td><td>df() -> float</td></tr>
+<tr><td>eval</td><td>eval(Vec) -> Vec</td></tr>
+<tr><td>lambda</td><td>lambda() -> float</td></tr>
+<tr><td>leverages</td><td>leverages() -> Vec</td></tr>
+<tr><td>pen_crit</td><td>pen_crit() -> float</td></tr>
+<tr><td>x</td><td>x() -> Vec</td></tr>
+<tr><td>y</td><td>y() -> Vec</td></tr>
+</tbody>
+</table>
+<h3 id="type-spline">Spline</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>at</td><td>at(float) -> float</td></tr>
+<tr><td>deriv</td><td>deriv(float, int) -> float</td></tr>
+<tr><td>eval</td><td>eval(Vec) -> Vec</td></tr>
+<tr><td>method</td><td>method() -> string</td></tr>
+</tbody>
+</table>
+<h3 id="type-stl">Stl</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>remainder</td><td>remainder() -> Vec</td></tr>
+<tr><td>seasonal</td><td>seasonal() -> Vec</td></tr>
+<tr><td>trend</td><td>trend() -> Vec</td></tr>
+<tr><td>weights</td><td>weights() -> Vec</td></tr>
+</tbody>
+</table>
+<h3 id="type-strlist">StrList</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>add</td><td>add(string) -> StrList</td></tr>
+<tr><td>clear</td><td>clear() -> StrList</td></tr>
+<tr><td>index_of</td><td>index_of(string) -> int</td></tr>
+<tr><td>set</td><td>set(int, string) -> StrList</td></tr>
+</tbody>
+</table>
+<h3 id="type-strmap">StrMap</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>clear</td><td>clear() -> StrMap</td></tr>
+<tr><td>get</td><td>get(string) -> string</td></tr>
+<tr><td>get_or</td><td>get_or(string, string) -> string</td></tr>
+<tr><td>has</td><td>has(string) -> bool</td></tr>
+<tr><td>key_at</td><td>key_at(int) -> string</td></tr>
+<tr><td>keys</td><td>keys() -> StrList</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>remove</td><td>remove(string) -> bool</td></tr>
+<tr><td>set</td><td>set(string, string) -> StrMap</td></tr>
+<tr><td>values</td><td>values() -> StrList</td></tr>
+</tbody>
+</table>
+<h3 id="type-strpq">StrPQ</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>clear</td><td>clear() -> StrPQ</td></tr>
+<tr><td>empty</td><td>empty() -> bool</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>peek</td><td>peek() -> string</td></tr>
+<tr><td>pop</td><td>pop() -> string</td></tr>
+<tr><td>push</td><td>push(string, float) -> StrPQ</td></tr>
+</tbody>
+</table>
+<h3 id="type-strqueue">StrQueue</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>at</td><td>at(int) -> string</td></tr>
+<tr><td>clear</td><td>clear() -> StrQueue</td></tr>
+<tr><td>empty</td><td>empty() -> bool</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>peek</td><td>peek() -> string</td></tr>
+<tr><td>pop</td><td>pop() -> string</td></tr>
+<tr><td>push</td><td>push(string) -> StrQueue</td></tr>
+</tbody>
+</table>
+<h3 id="type-strstack">StrStack</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>at</td><td>at(int) -> string</td></tr>
+<tr><td>clear</td><td>clear() -> StrStack</td></tr>
+<tr><td>empty</td><td>empty() -> bool</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>peek</td><td>peek() -> string</td></tr>
+<tr><td>pop</td><td>pop() -> string</td></tr>
+<tr><td>push</td><td>push(string) -> StrStack</td></tr>
+</tbody>
+</table>
+<h3 id="type-svd">Svd</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>d</td><td>d() -> Vec</td></tr>
+<tr><td>u</td><td>u() -> Mat</td></tr>
+<tr><td>v</td><td>v() -> Mat</td></tr>
+</tbody>
+</table>
+<h3 id="type-test">Test</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>alt</td><td>alt(string) -> Test</td></tr>
+<tr><td>blocks</td><td>blocks(StrList) -> Test; blocks(Vec) -> Test</td></tr>
+<tr><td>conf</td><td>conf(float) -> Test</td></tr>
+<tr><td>conf_int</td><td>conf_int(bool) -> Test</td></tr>
+<tr><td>correct</td><td>correct(bool) -> Test</td></tr>
+<tr><td>counts</td><td>counts(Vec) -> Test</td></tr>
+<tr><td>dist</td><td>dist(Dist) -> Test</td></tr>
+<tr><td>exact</td><td>exact(bool) -> Test</td></tr>
+<tr><td>groups</td><td>groups(StrList) -> Test; groups(Vec) -> Test</td></tr>
+<tr><td>method</td><td>method(string) -> Test</td></tr>
+<tr><td>mu</td><td>mu(float) -> Test</td></tr>
+<tr><td>odds_ratio</td><td>odds_ratio(float) -> Test</td></tr>
+<tr><td>p</td><td>p(Vec) -> Test; p(float) -> Test</td></tr>
+<tr><td>paired</td><td>paired(bool) -> Test</td></tr>
+<tr><td>probs</td><td>probs(Vec) -> Test</td></tr>
+<tr><td>ratio</td><td>ratio(float) -> Test</td></tr>
+<tr><td>run</td><td>run() -> Htest</td></tr>
+<tr><td>successes</td><td>successes(Vec) -> Test; successes(float) -> Test</td></tr>
+<tr><td>table</td><td>table(Vec, int, bool) -> Test</td></tr>
+<tr><td>trials</td><td>trials(Vec) -> Test; trials(float) -> Test</td></tr>
+<tr><td>var_equal</td><td>var_equal(bool) -> Test</td></tr>
+<tr><td>x</td><td>x(Vec) -> Test</td></tr>
+<tr><td>y</td><td>y(Vec) -> Test</td></tr>
+</tbody>
+</table>
+<h3 id="type-vec">Vec</h3>
+<p>Operators: * (mul), + (add), - (sub), neg (neg), r* (mul), r+ (add), r- (rsub).</p>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>abs</td><td>abs() -> Vec</td></tr>
+<tr><td>acf</td><td>acf() -> Vec; acf(int) -> Vec</td></tr>
+<tr><td>add</td><td>add(Vec) -> Vec; add(float) -> Vec</td></tr>
+<tr><td>append</td><td>append(Vec) -> Vec</td></tr>
+<tr><td>at</td><td>at(int) -> float</td></tr>
+<tr><td>copy</td><td>copy() -> Vec</td></tr>
+<tr><td>cor</td><td>cor(Vec) -> float; cor(Vec, string) -> float</td></tr>
+<tr><td>count_nan</td><td>count_nan() -> int</td></tr>
+<tr><td>cov</td><td>cov(Vec) -> float</td></tr>
+<tr><td>cumsum</td><td>cumsum() -> Vec</td></tr>
+<tr><td>diff</td><td>diff() -> Vec; diff(int) -> Vec</td></tr>
+<tr><td>div</td><td>div(Vec) -> Vec; div(float) -> Vec</td></tr>
+<tr><td>dot</td><td>dot(Vec) -> float</td></tr>
+<tr><td>drop_nan</td><td>drop_nan() -> Vec</td></tr>
+<tr><td>exp</td><td>exp() -> Vec</td></tr>
+<tr><td>format</td><td>format(string, string) -> string</td></tr>
+<tr><td>head</td><td>head(int) -> Vec</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>log</td><td>log() -> Vec</td></tr>
+<tr><td>mad</td><td>mad() -> float</td></tr>
+<tr><td>max</td><td>max() -> float</td></tr>
+<tr><td>mean</td><td>mean() -> float</td></tr>
+<tr><td>median</td><td>median() -> float</td></tr>
+<tr><td>min</td><td>min() -> float</td></tr>
+<tr><td>mul</td><td>mul(Vec) -> Vec; mul(float) -> Vec</td></tr>
+<tr><td>neg</td><td>neg() -> Vec</td></tr>
+<tr><td>order</td><td>order() -> Vec</td></tr>
+<tr><td>pacf</td><td>pacf() -> Vec; pacf(int) -> Vec</td></tr>
+<tr><td>pow</td><td>pow(float) -> Vec</td></tr>
+<tr><td>prod</td><td>prod() -> float</td></tr>
+<tr><td>push</td><td>push(float) -> Vec</td></tr>
+<tr><td>quantile</td><td>quantile(float) -> float; quantile(float, int) -> float</td></tr>
+<tr><td>quantiles</td><td>quantiles(Vec, int) -> Vec</td></tr>
+<tr><td>rank</td><td>rank() -> Vec</td></tr>
+<tr><td>rdiv</td><td>rdiv(float) -> Vec</td></tr>
+<tr><td>rev</td><td>rev() -> Vec</td></tr>
+<tr><td>round</td><td>round(int) -> Vec</td></tr>
+<tr><td>rsub</td><td>rsub(float) -> Vec</td></tr>
+<tr><td>sd</td><td>sd() -> float</td></tr>
+<tr><td>set</td><td>set(int, float) -> Vec</td></tr>
+<tr><td>slice</td><td>slice(int, int) -> Vec</td></tr>
+<tr><td>sort</td><td>sort() -> Vec</td></tr>
+<tr><td>sqrt</td><td>sqrt() -> Vec</td></tr>
+<tr><td>standardize</td><td>standardize() -> Vec</td></tr>
+<tr><td>str</td><td>str() -> string</td></tr>
+<tr><td>sub</td><td>sub(Vec) -> Vec; sub(float) -> Vec</td></tr>
+<tr><td>sum</td><td>sum() -> float</td></tr>
+<tr><td>tail</td><td>tail(int) -> Vec</td></tr>
+<tr><td>take</td><td>take(Vec) -> Vec</td></tr>
+<tr><td>var</td><td>var() -> float</td></tr>
+<tr><td>where</td><td>where(Vec) -> Vec</td></tr>
+<tr><td>which_max</td><td>which_max() -> int</td></tr>
+<tr><td>which_min</td><td>which_min() -> int</td></tr>
+</tbody>
+</table>
+<h2 id="std">Standard library (lmcode_std_v3)</h2>
+<p>The lmcode-cpp SDK pinned in native/sdk.lock vendors the lmcode_std_v3 schema with 206 canonical signatures: 83 function signatures and 123 method signatures across 16 types. They are available in every lmr block without appearing in the host schema. The current lmcode_std_v3 catalog upstream has 226 signatures; lmr picks up the additional 20 when it syncs its SDK pin and releases.</p>
+<h3 id="std-functions">Standard functions</h3>
+<table>
+<thead><tr><th>Function</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>file_append</td><td>file_append(string, string) -> void</td></tr>
+<tr><td>file_exists</td><td>file_exists(string) -> bool</td></tr>
+<tr><td>file_lines</td><td>file_lines(string) -> StrList</td></tr>
+<tr><td>file_read</td><td>file_read(string) -> string</td></tr>
+<tr><td>file_write</td><td>file_write(string, string) -> void</td></tr>
+<tr><td>float_list</td><td>float_list() -> FloatList</td></tr>
+<tr><td>float_map</td><td>float_map() -> FloatMap</td></tr>
+<tr><td>float_pq</td><td>float_pq() -> FloatPQ</td></tr>
+<tr><td>float_queue</td><td>float_queue() -> FloatQueue</td></tr>
+<tr><td>float_stack</td><td>float_stack() -> FloatStack</td></tr>
+<tr><td>int_list</td><td>int_list() -> IntList</td></tr>
+<tr><td>int_map</td><td>int_map() -> IntMap</td></tr>
+<tr><td>int_pq</td><td>int_pq() -> IntPQ</td></tr>
+<tr><td>int_queue</td><td>int_queue() -> IntQueue</td></tr>
+<tr><td>int_stack</td><td>int_stack() -> IntStack</td></tr>
+<tr><td>json_parse</td><td>json_parse(string) -> Json</td></tr>
+<tr><td>lmcode_return_null</td><td>lmcode_return_null() -> void</td></tr>
+<tr><td>lmcode_return_put</td><td>lmcode_return_put(string, bool) -> void; lmcode_return_put(string, float) -> void; lmcode_return_put(string, FloatList) -> void; lmcode_return_put(string, FloatMap) -> void; lmcode_return_put(string, int) -> void; lmcode_return_put(string, IntList) -> void; lmcode_return_put(string, IntMap) -> void; lmcode_return_put(string, Json) -> void; lmcode_return_put(string, StrList) -> void; lmcode_return_put(string, StrMap) -> void; lmcode_return_put(string, string) -> void</td></tr>
+<tr><td>lmcode_return_put_null</td><td>lmcode_return_put_null(string) -> void</td></tr>
+<tr><td>lmcode_return_set</td><td>lmcode_return_set(bool) -> void; lmcode_return_set(float) -> void; lmcode_return_set(FloatList) -> void; lmcode_return_set(FloatMap) -> void; lmcode_return_set(int) -> void; lmcode_return_set(IntList) -> void; lmcode_return_set(IntMap) -> void; lmcode_return_set(Json) -> void; lmcode_return_set(StrList) -> void; lmcode_return_set(StrMap) -> void; lmcode_return_set(string) -> void</td></tr>
+<tr><td>math_abs</td><td>math_abs(int) -> int; math_abs(float) -> float</td></tr>
+<tr><td>math_ceil</td><td>math_ceil(int) -> int; math_ceil(float) -> float</td></tr>
+<tr><td>math_floor</td><td>math_floor(int) -> int; math_floor(float) -> float</td></tr>
+<tr><td>math_max</td><td>math_max(int, int) -> int; math_max(float, float) -> float</td></tr>
+<tr><td>math_min</td><td>math_min(int, int) -> int; math_min(float, float) -> float</td></tr>
+<tr><td>math_pow</td><td>math_pow(int, int) -> int; math_pow(float, float) -> float</td></tr>
+<tr><td>math_round</td><td>math_round(int) -> int; math_round(float) -> float</td></tr>
+<tr><td>math_sqrt</td><td>math_sqrt(int) -> int; math_sqrt(float) -> float</td></tr>
+<tr><td>str_base64_decode</td><td>str_base64_decode(string) -> string</td></tr>
+<tr><td>str_base64_encode</td><td>str_base64_encode(string) -> string</td></tr>
+<tr><td>str_contains</td><td>str_contains(string, string) -> bool</td></tr>
+<tr><td>str_ends_with</td><td>str_ends_with(string, string) -> bool</td></tr>
+<tr><td>str_find</td><td>str_find(string, string) -> int</td></tr>
+<tr><td>str_hex_decode</td><td>str_hex_decode(string) -> string</td></tr>
+<tr><td>str_hex_encode</td><td>str_hex_encode(string) -> string</td></tr>
+<tr><td>str_is_float</td><td>str_is_float(string) -> bool</td></tr>
+<tr><td>str_is_int</td><td>str_is_int(string) -> bool</td></tr>
+<tr><td>str_len</td><td>str_len(string) -> int</td></tr>
+<tr><td>str_list</td><td>str_list() -> StrList</td></tr>
+<tr><td>str_lower</td><td>str_lower(string) -> string</td></tr>
+<tr><td>str_map</td><td>str_map() -> StrMap</td></tr>
+<tr><td>str_match</td><td>str_match(string, string) -> bool</td></tr>
+<tr><td>str_pq</td><td>str_pq() -> StrPQ</td></tr>
+<tr><td>str_queue</td><td>str_queue() -> StrQueue</td></tr>
+<tr><td>str_repeat</td><td>str_repeat(string, int) -> string</td></tr>
+<tr><td>str_replace</td><td>str_replace(string, string, string) -> string</td></tr>
+<tr><td>str_split</td><td>str_split(string, string) -> StrList</td></tr>
+<tr><td>str_stack</td><td>str_stack() -> StrStack</td></tr>
+<tr><td>str_starts_with</td><td>str_starts_with(string, string) -> bool</td></tr>
+<tr><td>str_substr</td><td>str_substr(string, int, int) -> string</td></tr>
+<tr><td>str_to_float</td><td>str_to_float(string) -> float</td></tr>
+<tr><td>str_to_int</td><td>str_to_int(string) -> int</td></tr>
+<tr><td>str_trim</td><td>str_trim(string) -> string</td></tr>
+<tr><td>str_upper</td><td>str_upper(string) -> string</td></tr>
+<tr><td>template_render</td><td>template_render(string, Json) -> string</td></tr>
+</tbody>
+</table>
+<h3 id="std-types">Standard types</h3>
+<table>
+<thead><tr><th>Type</th><th>Methods</th></tr></thead>
+<tbody>
+<tr><td>FloatList</td><td>add(float) -> FloatList; at(int) -> float; clear() -> FloatList; contains(float) -> bool; index_of(float) -> int; len() -> int; set(int, float) -> FloatList</td></tr>
+<tr><td>FloatMap</td><td>clear() -> FloatMap; get(string) -> float; get_or(string, float) -> float; has(string) -> bool; key_at(int) -> string; keys() -> StrList; len() -> int; remove(string) -> bool; set(string, float) -> FloatMap; values() -> FloatList</td></tr>
+<tr><td>FloatPQ</td><td>clear() -> FloatPQ; empty() -> bool; len() -> int; peek() -> float; pop() -> float; push(float, float) -> FloatPQ</td></tr>
+<tr><td>FloatQueue</td><td>at(int) -> float; clear() -> FloatQueue; empty() -> bool; len() -> int; peek() -> float; pop() -> float; push(float) -> FloatQueue</td></tr>
+<tr><td>FloatStack</td><td>at(int) -> float; clear() -> FloatStack; empty() -> bool; len() -> int; peek() -> float; pop() -> float; push(float) -> FloatStack</td></tr>
+<tr><td>IntList</td><td>add(int) -> IntList; at(int) -> int; clear() -> IntList; contains(int) -> bool; index_of(int) -> int; len() -> int; set(int, int) -> IntList</td></tr>
+<tr><td>IntMap</td><td>clear() -> IntMap; get(string) -> int; get_or(string, int) -> int; has(string) -> bool; key_at(int) -> string; keys() -> StrList; len() -> int; remove(string) -> bool; set(string, int) -> IntMap; values() -> IntList</td></tr>
+<tr><td>IntPQ</td><td>clear() -> IntPQ; empty() -> bool; len() -> int; peek() -> int; pop() -> int; push(int, float) -> IntPQ</td></tr>
+<tr><td>IntQueue</td><td>at(int) -> int; clear() -> IntQueue; empty() -> bool; len() -> int; peek() -> int; pop() -> int; push(int) -> IntQueue</td></tr>
+<tr><td>IntStack</td><td>at(int) -> int; clear() -> IntStack; empty() -> bool; len() -> int; peek() -> int; pop() -> int; push(int) -> IntStack</td></tr>
+<tr><td>Json</td><td>as_bool() -> bool; as_float() -> float; as_int() -> int; as_string() -> string; at(int) -> Json; get(string) -> Json; has(string) -> bool; keys() -> StrList; kind() -> string; len() -> int; to_json() -> string</td></tr>
+<tr><td>StrList</td><td>add(string) -> StrList; at(int) -> string; clear() -> StrList; contains(string) -> bool; index_of(string) -> int; join(string) -> string; len() -> int; set(int, string) -> StrList</td></tr>
+<tr><td>StrMap</td><td>clear() -> StrMap; get(string) -> string; get_or(string, string) -> string; has(string) -> bool; key_at(int) -> string; keys() -> StrList; len() -> int; remove(string) -> bool; set(string, string) -> StrMap; values() -> StrList</td></tr>
+<tr><td>StrPQ</td><td>clear() -> StrPQ; empty() -> bool; len() -> int; peek() -> string; pop() -> string; push(string, float) -> StrPQ</td></tr>
+<tr><td>StrQueue</td><td>at(int) -> string; clear() -> StrQueue; empty() -> bool; len() -> int; peek() -> string; pop() -> string; push(string) -> StrQueue</td></tr>
+<tr><td>StrStack</td><td>at(int) -> string; clear() -> StrStack; empty() -> bool; len() -> int; peek() -> string; pop() -> string; push(string) -> StrStack</td></tr>
+</tbody>
+</table>
+<h2 id="rest">Standard REST and CLI interfaces</h2>
+<p>These do not apply to lmr today. The std schema vendored in this repository contains no rest_ functions and none of the RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand or CliOption interfaces. They belong to the 226-signature lmcode_std_v3 catalog (rest_config, rest_route, rest_serve, rest_stop, rest_cli and the RestExchange methods) and become available to lmr blocks only after lmr updates its SDK pin and ships a release with it. Confirm with lmr --lmcode-signatures on the binary you run.</p>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/tools/lmr/">Quick reference</a></li>
+<li><a href="/tools/lmr/skill.html">Skill</a></li>
+<li><a href="/tools/lmr/guide.html">API guide</a></li>
+<li><a href="/tools/lmr/examples/">Examples</a></li>
+<li><a href="https://github.com/lmctl-ai/lmr">github.com/lmctl-ai/lmr</a></li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmr">github.com/lmctl-ai/lmr</a>.</p>
+</footer>
+</body>
+</html>

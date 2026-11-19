@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmasm reference — lmasm — lmctl.com tools</title>
+<meta name="description" content="Command-line flags, schema functions, standard REST and CLI interfaces, and exit codes for lmasm.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmasm/">Overview</a></li>
+<li><a href="/tools/lmasm/skill.html">Skill</a></li>
+<li><a href="/tools/lmasm/guide.html">Guide</a></li>
+<li><a href="/tools/lmasm/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmasm reference</h1>
+<p>Command-line flags, schema functions, standard REST and CLI interfaces, and exit codes for lmasm.</p>
+<h2>CLI flags</h2>
+<table>
+<thead>
+<tr><th>Flag</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>--version</td><td>Print the lmasm build version and exit 0.</td></tr>
+<tr><td>--lmcode-schema [--json]</td><td>Print the exact embedded JSON bytes of schema/lmasm.schema.json.</td></tr>
+<tr><td>--lmcode-signatures</td><td>Print sorted canonical signatures for domain functions and the standard catalog.</td></tr>
+<tr><td>--lmcode FILE</td><td>Execute a compiled DSLB v6 bytecode file (repeatable for multi-part builder invocations).</td></tr>
+</tbody>
+</table>
+<h2>Domain host functions (lmasm_v1)</h2>
+<table>
+<thead>
+<tr><th>Signature</th><th>Return type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>fn asm_classes(container_path: string)</td><td>StrList</td><td>List dotted class names found in a .jar archive, classes directory, or .class file (skips module-info and package-info).</td></tr>
+<tr><td>fn asm_refs(container_path: string, class_name: string)</td><td>StrList</td><td>List dotted class names referenced by class_name in container_path via constant-pool CONSTANT_Class entries and an ASM ClassNode tree walk.</td></tr>
+<tr><td>fn print(message: string)</td><td>void</td><td>Write a line of diagnostic or report text during bytecode execution.</td></tr>
+<tr><td>fn assert_close(actual: float, expected: float, tol: float)</td><td>void</td><td>Fail execution if actual and expected differ by more than tol.</td></tr>
+</tbody>
+</table>
+<h2>Standard REST and CLI interfaces (lmcode_std_v3)</h2>
+<table>
+<thead>
+<tr><th>Interface or function</th><th>Signature</th><th>Role</th></tr>
+</thead>
+<tbody>
+<tr><td>RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler</td><td>(exchange: RestExchange) -> void</td><td>SAM interfaces for @"/path/:param" or @"/{param}" HTTP route handlers.</td></tr>
+<tr><td>CliCommand, CliOption</td><td>(exchange: RestExchange) -> void</td><td>SAM interfaces for @"command" subcommands and @"--flag" options dispatched by rest_cli.</td></tr>
+<tr><td>fn rest_config(key: string, value: string)</td><td>void</td><td>Set a router configuration key such as prefix, base_path, or max_body_bytes.</td></tr>
+<tr><td>fn rest_route(method: string, path: string, entry: string)</td><td>void</td><td>Register an explicit HTTP method and route template to an entry function.</td></tr>
+<tr><td>fn rest_serve()</td><td>void</td><td>Serve registered REST endpoints over HTTP/1.1.</td></tr>
+<tr><td>fn rest_stop()</td><td>void</td><td>Stop the active REST server loop.</td></tr>
+<tr><td>fn rest_cli(argv: StrList)</td><td>string</td><td>Dispatch CLI options, commands, or route paths in-memory and return the response payload.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr><th>Code</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>Execution or introspection succeeded.</td></tr>
+<tr><td>2</td><td>Invalid CLI flags or malformed LMCODE_INVOCATION_FILE manifest.</td></tr>
+<tr><td>3</td><td>Bytecode load failure, schema hash mismatch, or runtime error reading class containers.</td></tr>
+<tr><td>4</td><td>Application failure or failed assertion.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmasm">github.com/lmctl-ai/lmasm</a>.</p>
+</footer>
+</body>
+</html>

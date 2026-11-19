@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmok guide — lmok — lmctl.com tools</title>
+<meta name="description" content="Incremental tree-sitter parsing, JSON and lmcode rule dispatch, SQLite knowledge indexing, and standard lmcode_std_v3 REST and CLI interfaces in lmok.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmok/">Overview</a></li>
+<li><a href="/tools/lmok/skill.html">Skill</a></li>
+<li><a href="/tools/lmok/guide.html">Guide</a></li>
+<li><a href="/tools/lmok/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmok guide</h1>
+<p>Incremental tree-sitter parsing, JSON and lmcode rule dispatch, SQLite knowledge indexing, and standard lmcode_std_v3 REST and CLI interfaces in lmok.</p>
+<h2>Overview</h2>
+<p>lmok combines tree-sitter 0.27.1 (with 12 compiled grammars), SQLite 3.54.1 (with FTS5 trigram full-text search), and the C++ lmcode virtual machine in a single binary. It supports both declarative JSON rule packs (18 bundled packs with 126 rules) and programmatic lmcode CST rules (16 bundled rule programs).</p>
+<h2>Embedded grammars and LMScript injection</h2>
+<p>lmok ships grammars for json, c, cpp, python, bash, java, go, javascript, typescript, tsx, lmscript, and lmcode. When analyzing .lms files, lmok parses the outer LMScript grammar and automatically extracts embedded _lmcode_ bodies, parsing them with the lmcode grammar while mapping their row, column, and byte offsets back to the enclosing .lms file.</p>
+<h2>Tier-1 JSON packs and Tier-2 lmcode @NODE_KIND rules</h2>
+<p>Rule authoring is split into two tiers:</p>
+<ul>
+<li>Tier-1 JSON packs (lmok lint): Each rule specifies an id, message, severity, optional text_matches regex, and exactly one selector: on (named CST node kind), query (tree-sitter S-expression with #eq?, #match?, #any-of? predicates), or pattern (semgrep-style code pattern with $METAVAR, ..., pattern-inside, and pattern-not-inside).</li>
+<li>Tier-2 lmcode rule programs (lmok check): Top-level functions in an _lmcode_ block carry a @NODE_KIND annotation and implement the SAM interface Rule(n: Node) -> void. At load time, lmok validates every annotation against the active grammar's named and anonymous symbols, runs the program body once, and walks each file's CST in pre-order to dispatch matching rule callbacks.</li>
+</ul>
+<pre><code>p = _lmcode_ cli="lmok";
+@call_expression
+fn check_gets(n: Node) -> void implements Rule {
+  if (n.child_count() > 0 &amp;&amp; n.child(0).text() == "gets") {
+    ts.report(n, "unsafe call to gets", "LBC001", "critical");
+  }
+}
+end _lmcode_</code></pre>
+<h2>Incremental reparsing and the SQLite knowledge tree</h2>
+<p>Inside _lmcode_ scripts, Tree.edit(start_byte, old_end_byte, new_end_byte) records a byte edit on a parsed tree, ts.reparse(old_tree, new_text) (and language-specific ts.reparse_c, ts.reparse_cpp, ts.reparse_python, ts.reparse_bash, ts.reparse_java) incrementally re-parses, and ts.changed_ranges(old_tree, new_tree) returns the modified syntax ranges as JSON.</p>
+<p>On the CLI, lmok index extracts definitions, candidate references, and include/import edges using embedded queries/&lt;lang>/facts.scm files and stores them alongside an FTS5 trigram source index in SQLite. Stored facts can be queried from the CLI (symbols, refs, find, findings, outline, status) or from _lmcode_ rules via ts.db_files(pattern), ts.db_symbols(pattern), and ts.db_refs(name) for cross-file checks.</p>
+<h2>REST server (lmok serve) and standard lmcode_std_v3 interfaces</h2>
+<p>Running lmok serve exposes every CLI analysis verb over a local HTTP/1.1 JSON API with configurable presets, an input-hash result cache, and an lmok remote client. In addition, the embedded lmcode VM registers all 226 canonical lmcode_std_v3 signatures, including RestGet..RestOptions, RestHandler, CliCommand, CliOption, :param and {param} route templates, rest_config, rest_route, rest_serve, rest_stop, and rest_cli. This describes current main; a released host only has these if its pinned std catalog does, so check lmok --lmcode-signatures on the installed binary.</p>
+<pre><code>p = _lmcode_ cli="lmok";
+@"/parse/:lang"
+fn handle_parse(x: RestExchange) -> void implements RestGet {
+  let t = ts.parse("{\"ok\":true}");
+  x.json("{\"lang\":\"" + x.param("lang") + "\",\"nodes\":" + str(t.node_count()) + "}");
+}
+
+print(rest_cli(str_split("/parse/json", " ")));
+end _lmcode_</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmok">github.com/lmctl-ai/lmok</a>.</p>
+</footer>
+</body>
+</html>

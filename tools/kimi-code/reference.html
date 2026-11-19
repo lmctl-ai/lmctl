@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kimi-code reference — kimi-code — lmctl.com tools</title>
+<meta name="description" content="Reference tables for kimi-code CLI commands, flags, config.toml and tui.toml settings, built-in subagents, and exit codes.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/kimi-code/">Overview</a></li>
+<li><a href="/tools/kimi-code/skill.html">Skill</a></li>
+<li><a href="/tools/kimi-code/guide.html">Guide</a></li>
+<li><a href="/tools/kimi-code/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>kimi-code reference</h1>
+<p>Reference tables for kimi-code CLI commands, flags, config.toml and tui.toml settings, built-in subagents, and exit codes.</p>
+<h2>CLI commands and flags</h2>
+<table>
+<thead>
+<tr>
+<th>Command or flag</th>
+<th>Usage</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>kimi --version, -V</td>
+<td>kimi --version</td>
+<td>Print installed Kimi Code CLI version string (such as 2.4.1).</td>
+</tr>
+<tr>
+<td>kimi</td>
+<td>kimi</td>
+<td>Start the interactive terminal user interface in the current project directory.</td>
+</tr>
+<tr>
+<td>kimi -p</td>
+<td>kimi -p "&lt;prompt>" [--output-format stream-json]</td>
+<td>Execute a headless one-shot prompt; stream-json emits structured JSONL events without TUI formatting.</td>
+</tr>
+<tr>
+<td>kimi acp</td>
+<td>kimi acp</td>
+<td>Start the Agent Client Protocol server over stdio for lmctl, Zed, or JetBrains IDEs.</td>
+</tr>
+<tr>
+<td>/login, /mcp-config</td>
+<td>interactive slash commands</td>
+<td>Authenticate via Kimi Code OAuth or Moonshot API key, or configure MCP servers conversationally.</td>
+</tr>
+</tbody>
+</table>
+<h2>Configuration files (~/.kimi-code/)</h2>
+<table>
+<thead>
+<tr>
+<th>File and key</th>
+<th>Example value</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>config.toml: default_model</td>
+<td>"mock"</td>
+<td>Select the default model key from the [models.*] table.</td>
+</tr>
+<tr>
+<td>config.toml: [providers.&lt;id>]</td>
+<td>type = "openai", base_url = "http://127.0.0.1:PORT/v1", api_key = "..."</td>
+<td>Register an OpenAI-compatible or custom model provider endpoint.</td>
+</tr>
+<tr>
+<td>config.toml: [models.&lt;id>]</td>
+<td>provider = "mock", model = "mock-agent", max_context_size = 128000</td>
+<td>Bind a named model profile to a registered provider and context window size.</td>
+</tr>
+<tr>
+<td>tui.toml: [upgrade] auto_install</td>
+<td>false</td>
+<td>Disable automatic background binary replacement so fork patches remain intact.</td>
+</tr>
+<tr>
+<td>KIMI_SHELL_PATH (Windows)</td>
+<td>C:\Program Files\Git\bin\bash.exe</td>
+<td>Override the Git Bash executable path on Windows systems.</td>
+</tr>
+</tbody>
+</table>
+<h2>Built-in subagents and fork patches</h2>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Location or name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>acp-runtime-after-reap fix</td>
+<td>packages/agent-core-v2/src/agent/runtimeBinding/agentRuntime.ts</td>
+<td>Heals stale acp:&lt;sessionId> bindings on restore by rebinding to the host's local runtime (PR #3563).</td>
+</tr>
+<tr>
+<td>Batched queued prompt delivery</td>
+<td>see FORK-NOTES.md</td>
+<td>Delivers all prompts queued during a busy turn together in FIFO order in the next turn (PR #4052).</td>
+</tr>
+<tr>
+<td>Built-in subagents</td>
+<td>coder, explore, plan</td>
+<td>Isolated subagents for parallel coding, codebase exploration, and implementation planning.</td>
+</tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Headless prompt, ACP session, or TUI exited cleanly.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Invalid CLI flags, missing provider configuration, or upstream model request failure.</td>
+</tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/kimi-code">github.com/lmctl-ai/kimi-code</a>.</p>
+</footer>
+</body>
+</html>

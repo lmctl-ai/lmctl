@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>miniplayer — lmctl.com tools</title>
+<meta name="description" content="miniplayer is a fast, lightweight CLI harness for language models built on the principle of prompt in, text out, with zero built-in tool dependencies.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/miniplayer/">Overview</a></li>
+<li><a href="/tools/miniplayer/skill.html">Skill</a></li>
+<li><a href="/tools/miniplayer/guide.html">Guide</a></li>
+<li><a href="/tools/miniplayer/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>miniplayer</h1>
+<p>miniplayer is a fast, lightweight CLI harness for language models built on the principle of prompt in, text out, with zero built-in tool dependencies.</p>
+<h2>Quick reference</h2>
+<p>Run pure one-shot prompts, classify responses into compact JSON, inspect routed catalog models and providers, or start an interactive chat or ACP session.</p>
+<pre><code>miniplayer --version
+miniplayer providers
+miniplayer models --routed
+miniplayer run -m ollama/qwen2.5:14b "Summarize this repository in three bullets"
+printf '%s\n' "The fix is complete." | miniplayer classify -m claude-haiku-4-5
+miniplayer chat -m ollama/qwen2.5:14b
+miniplayer acp -m deepseek/deepseek-flash</code></pre>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Usage</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>miniplayer run</td>
+<td>miniplayer run -m &lt;model> [--file F] [--system S] [--session new|ID] [prompt]</td>
+<td>Pure one-shot execution: sends zero tools, no cwd preamble, and no context files.</td>
+</tr>
+<tr>
+<td>miniplayer classify</td>
+<td>miniplayer classify -m &lt;model> [--file F] [--system S]</td>
+<td>Pure response classifier emitting {"label":"...","reason":"...","confidence":0.96}.</td>
+</tr>
+<tr>
+<td>miniplayer chat</td>
+<td>miniplayer chat -m &lt;model> [--no-context-files] [--no-wrapup]</td>
+<td>Interactive REPL with /exit, /help, /compact, Ctrl-C turn cancel, and optional external tools.</td>
+</tr>
+<tr>
+<td>miniplayer acp</td>
+<td>miniplayer acp -m &lt;model> [--no-context-files] [--system-file F]</td>
+<td>Agent Client Protocol JSON-RPC server over stdio for lmctl Teamfiles and IDEs.</td>
+</tr>
+<tr>
+<td>miniplayer models</td>
+<td>miniplayer models [--routed] [--provider P] [--source S] [--max-input-price N] [--json]</td>
+<td>Query the ETag-cached lmctl.com model catalog and inspect API key readiness.</td>
+</tr>
+<tr>
+<td>miniplayer providers</td>
+<td>miniplayer providers [--json]</td>
+<td>List every routed provider, its SDK type, base URL, key environment variable, and key_set status.</td>
+</tr>
+</tbody>
+</table>
+<p>Runnable CLI example using miniplayer for pure one-shot interpretation and response classification:</p>
+<pre><code>export OLLAMA_HOST=http://127.0.0.1:11434
+miniplayer run -m ollama/qwen2.5:14b --system "Reply in one line." "Explain prompt-in text-out"
+printf '%s\n' "All unit tests passed; ready for review." | miniplayer classify -m ollama/qwen2.5:14b</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/miniplayer/skill.html">Skill</a> — LLM agent authoring rules, pure run/classify modes, catalog caching, and verification steps.</li>
+<li><a href="/tools/miniplayer/guide.html">Guide</a> — Architecture, system prompt precedence, zero-config catalog routing, external child-process tools, session resume, and compaction.</li>
+<li><a href="/tools/miniplayer/reference.html">Reference</a> — Subcommands, flags, config.json options, environment variables, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/miniplayer">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/miniplayer">github.com/lmctl-ai/miniplayer</a>.</p>
+</footer>
+</body>
+</html>

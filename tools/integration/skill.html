@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>integration authoring skill — integration — lmctl.com tools</title>
+<meta name="description" content="integration (lmctl-ai/integration) is the public E2E verification repository and reusable GitHub Actions harness for published @lmctl-ai/lmctl npm releases and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/integration/">Overview</a></li>
+<li><a href="/tools/integration/skill.html">Skill</a></li>
+<li><a href="/tools/integration/guide.html">Guide</a></li>
+<li><a href="/tools/integration/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>integration authoring skill</h1>
+<p>integration (lmctl-ai/integration) is the public E2E verification repository and reusable GitHub Actions harness for published @lmctl-ai/lmctl npm releases and SHA-256-verified lmcode host binaries.</p>
+<h2>Purpose</h2>
+<p>Use integration to test published lmctl, lmscript, lmmock, miniplayer, and lmcode host releases end-to-end across T0 in-process ClaudeMock scenarios, T1 loopback lmmock ACP chains, and the ported 88-entry mono-test suite, with mandatory red-control verification.</p>
+<h2>When to use it</h2>
+<p>Choose integration when validating a new @lmctl-ai/lmctl@latest or @staging package against pinned or latest lmcode hosts, when embedding lmctl-ai/integration/actions/setup@&lt;sha> or .github/workflows/e2e.yml@&lt;sha> in another repository's CI workflow, or when running hermetic regression and mutation controls.</p>
+<h2>Install</h2>
+<p>Clone lmctl-ai/integration locally to run scenarios and self-tests, or reference actions/setup and .github/workflows/e2e.yml by full 40-character commit SHA in GitHub Actions.</p>
+<pre><code>git clone https://github.com/lmctl-ai/integration.git
+cd integration
+bash tests/setup-selftest.sh</code></pre>
+<h2>Commands</h2>
+<p>Run the setup self-tests, individual T0 and T1 scenarios via scripts/run-scenario.sh, scenario negative controls, the ported mono-test runner, and suite mutation controls.</p>
+<pre><code>bash tests/setup-selftest.sh
+bash scripts/run-scenario.sh scenarios/t0-claudemock
+bash scripts/run-scenario.sh scenarios/t0-fanout
+bash scripts/run-scenario.sh scenarios/t0-provider-smoke-mock
+bash scripts/run-scenario.sh scenarios/t1-lmmock-ai
+bash scripts/run-scenario.sh scenarios/t1-lmmock-modes
+bash tests/scenario-controls.sh
+node suites/mono-test/run.mjs
+node suites/mono-test/run.mjs --control broken-bin
+bash tests/suite-controls.sh</code></pre>
+<h2>Inputs and outputs</h2>
+<p>The setup action accepts lmctl (latest, staging, X.Y.Z, or none), tools (comma-separated NAME[@TAG][+EXTRA_ASSET...] entries such as lmmock@v0.1.30+examples.tar.gz,lmgit@latest), and miniplayer (full 40-hex commit SHA or empty). It outputs lmctl-version and bin-dir, prepends the private bin directory to PATH, and exports INTEGRATION_ASSETS_&lt;NAME> for extra verified release assets. Scenarios execute in isolated temporary directories and exit 0 on pass or non-zero with diagnostic logs on failure.</p>
+<h2>Safety rules</h2>
+<p>Always run scenarios through scripts/run-scenario.sh (which runs the scenario under scripts/hermetic.sh) so each scenario gets a private HOME, LMCTL_DB, and cache, and scrubs active session markers such as LMCTL_SELF_SESSIONID (which otherwise causes nested lm_prompt calls to fail). Never install lmctl globally (-g) or touch ~/.lmctl in CI; setup installs exclusively under RUNNER_TEMP. Always start and stop lmmock via lmmock exec ... -- &lt;test command> on an OS-assigned port rather than leaving background daemons running. Always pass --no-preflight to lmscript in integration scenarios so dry preflight does not run side effects twice, and always verify both status == "ok" and non-empty expected reply content.</p>
+<h2>Worked examples</h2>
+<p>Example: Using the reusable setup action and e2e workflow pinned by full commit SHA in GitHub Actions.</p>
+<pre><code># Step usage in a job:
+- uses: lmctl-ai/integration/actions/setup@&lt;full-40-char-commit-sha>
+  with:
+    lmctl: latest
+    tools: lmmock@v0.1.36+examples.tar.gz,lmgit@latest
+    miniplayer: ""
+
+# Running a hermetic scenario and broken-binary vacuity control locally:
+bash scripts/run-scenario.sh scenarios/t0-claudemock
+node suites/mono-test/run.mjs --control broken-bin</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Exit code 0 indicates all scenario assertions, request count audits (via lmmock GET /__requests), and negative controls succeeded. Any checksum mismatch in SHA256SUMS, unresolved npm or GitHub release tag, non-40-hex miniplayer pin, empty model reply, expired allowlist.json entry, or vacuous suite that stays green under --control broken-bin exits non-zero and turns the single required PR check job (gate) red.</p>
+<h2>How to verify</h2>
+<p>Run the three self-test and negative-control scripts to confirm both positive scenarios and deliberate-break controls pass.</p>
+<pre><code>bash tests/setup-selftest.sh
+bash tests/scenario-controls.sh
+bash tests/suite-controls.sh</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/integration">github.com/lmctl-ai/integration</a>.</p>
+</footer>
+</body>
+</html>

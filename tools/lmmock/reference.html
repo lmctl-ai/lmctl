@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmmock reference — lmmock — lmctl.com tools</title>
+<meta name="description" content="Complete command-line subcommands and flags, HTTP Exchange and host functions, stdio RPC and wire Session interfaces, standard lmcode_std_v3 REST and CLI…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmmock/">Overview</a></li>
+<li><a href="/tools/lmmock/skill.html">Skill</a></li>
+<li><a href="/tools/lmmock/guide.html">Guide</a></li>
+<li><a href="/tools/lmmock/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmmock reference</h1>
+<p>Complete command-line subcommands and flags, HTTP Exchange and host functions, stdio RPC and wire Session interfaces, standard lmcode_std_v3 REST and CLI interfaces, and exit codes for lmmock.</p>
+<h2>CLI subcommands and flags</h2>
+<table>
+<thead><tr><th>Command or flag</th><th>Arguments</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>--version | version</td><td>none</td><td>Print the lmmock version string and exit 0.</td></tr>
+<tr><td>schema | --lmcode-schema --json</td><td>none</td><td>Write the embedded HTTP host schema JSON (lmmock_v5) to stdout.</td></tr>
+<tr><td>--lmcode-signatures</td><td>none</td><td>Print all canonical host and standard library (lmcode_std_v3) signatures.</td></tr>
+<tr><td>--lmcode</td><td>&lt;file> [cli-args...]</td><td>Load and validate compiled bytecode, and optionally dispatch stateless CLI arguments via engine.CLI.</td></tr>
+<tr><td>exec</td><td>--lmcode FILE | --builtin NAME [flags] -- CMD...</td><td>Start a loopback mock server, run CMD with LMMOCK_URL set, and close the server when CMD exits.</td></tr>
+<tr><td>serve</td><td>--lmcode FILE | --builtin NAME [flags]</td><td>Start a loopback mock server, print readiness JSON to stdout, and serve until SIGINT or SIGTERM.</td></tr>
+<tr><td>--builtin</td><td>llm-api | oauth-codex-device</td><td>Use an embedded precompiled mock program instead of --lmcode FILE.</td></tr>
+<tr><td>--listen</td><td>&lt;loopback-ip:port></td><td>Loopback bind address for serve, exec, proto, or wire (default 127.0.0.1:0).</td></tr>
+<tr><td>--config</td><td>&lt;file.json></td><td>Trusted JSON configuration file exposed to scripts via config() or to protocol/wire engines.</td></tr>
+<tr><td>--ready-file</td><td>&lt;path></td><td>Atomically write readiness JSON to disk once listening and remove it on graceful shutdown.</td></tr>
+<tr><td>--tls / --tls-host</td><td>[--tls] [--tls-host DNS_OR_IP]...</td><td>Enable HTTPS with a per-run CA certificate and optional SAN DNS/IP identities.</td></tr>
+<tr><td>--upstream</td><td>&lt;http(s)://host/base/></td><td>Forward requests with no matching mock route to a fixed upstream HTTP/1.1 origin.</td></tr>
+<tr><td>--upstream-timeout / --upstream-read-only</td><td>[duration] [bool]</td><td>Set total upstream request deadline (default 2m) or restrict passthrough to GET/HEAD without credentials.</td></tr>
+<tr><td>--audit-log</td><td>&lt;file.jsonl></td><td>Append redacted JSONL records for mocked, forwarded, and unmatched requests.</td></tr>
+<tr><td>--request-log / --request-log-bodies</td><td>none</td><td>Enable in-memory redacted request history (and optional 1 MiB bodies) for Exchange.request_log().</td></tr>
+<tr><td>check</td><td>--suite &lt;file.json> [--url URL]</td><td>Run declarative HTTP assertion steps against --url or LMMOCK_URL and print a JSON pass summary.</td></tr>
+<tr><td>proto</td><td>--list | &lt;name> [--listen IP:P] [--config F] [--ready-file F]</td><td>List or run in-memory wire servers: amqp, imap, kafka, mongodb, mqtt, postgres, redis, smtp.</td></tr>
+<tr><td>stdio</td><td>--schema | acp|mcp|mcp-client|agent|once|rpc --scenario F [flags]</td><td>Export stdio RPC schema or run stdio JSON-RPC / agent scenario mocks (--preset, --lmcode, --alias, --state, --framing, --fake-bin, --stdin-prompt).</td></tr>
+<tr><td>wire</td><td>--list | schema KIND | serve|exec KIND --config F [--listen IP:P]</td><td>List, inspect schema/signatures, or run frame-level mocks for ws, http2, grpc, and line protocols.</td></tr>
+<tr><td>scenario</td><td>scrub | import | verify --input FILE [--output FILE | --target URL]</td><td>Scrub credentials from raw lminspect JSONL captures, compile scenario JSON, or verify replay fidelity.</td></tr>
+</tbody>
+</table>
+<h2>HTTP host schema: Handler, Exchange, and functions</h2>
+<table>
+<thead><tr><th>Type / function</th><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>interface Handler</td><td>fn h(x: Exchange) -> void implements Handler</td><td>Annotated HTTP request handler bound to a method and path pattern via route().</td></tr>
+<tr><td>Exchange (request)</td><td>x.method() | x.path() | x.body() | x.request_json() -> string</td><td>Read the HTTP method, decoded URL path, raw request body bytes, or full request summary JSON.</td></tr>
+<tr><td>Exchange (lookup)</td><td>x.query(string) | x.param(string) | x.header(string) -> string</td><td>Read a query parameter, route path parameter, or request header ("" when absent).</td></tr>
+<tr><td>Exchange (response)</td><td>x.status(int) | x.set_header(string, string) | x.send(string) | x.json(string) -> void</td><td>Set HTTP status (200-599), response header, raw body bytes, or application/json body.</td></tr>
+<tr><td>Exchange (timing/faults)</td><td>x.delay(int) -> void | x.pause(int) -> bool | x.disconnect() -> void</td><td>Delay response (0-60000 ms), pause execution while respecting client cancellation, or drop the connection.</td></tr>
+<tr><td>Exchange (streaming)</td><td>x.stream_event(string) -> void | x.stream_fault(string) -> void</td><td>Flush ordered chunk bytes immediately, or inject disconnect, truncated-chunk, or malformed-chunk HTTP/1 faults.</td></tr>
+<tr><td>Exchange (state/queues)</td><td>x.get(string) -> string | x.set(string, string) -> void | x.take(string) -> string | x.increment(string) -> int</td><td>Read, write, atomically pop shared string state, or atomically increment an integer counter (starting at 1).</td></tr>
+<tr><td>Exchange (queue/admin)</td><td>x.queue_response(string) -> void | x.next_queued_response(string) -> string | x.request_log() -> string | x.reset() -> void</td><td>Enqueue/dequeue per-key responses, inspect redacted request log JSON, or clear all shared server state and logs.</td></tr>
+<tr><td>route / config</td><td>route(method: string, path: string, annotation: string) -> void | config() -> string</td><td>Register a startup HTTP route handler or read the raw JSON string from --config.</td></tr>
+<tr><td>Encoding and form helpers</td><td>form_get(body: string, key: string) -> string | url_encode(string) -> string | url_decode(string) -> string | json_quote(string) -> string</td><td>Extract URL-encoded form values, percent-encode/decode strings, or quote a raw string as a JSON string literal.</td></tr>
+<tr><td>Auth and crypto helpers</td><td>basic_id(string) -> string | basic_secret(string) -> string | random_token() -> string | sha256_url(string) -> string | secure_equal(string, string) -> bool | now_ms() -> int</td><td>Parse HTTP Basic auth headers, generate random tokens, compute base64url SHA-256 PKCE digests, compare secrets in constant time, or read epoch ms.</td></tr>
+<tr><td>JSON, templates, and zstd</td><td>json_with(Json, string, Json) -> Json | template_render(string, Json) -> string | append_zstd(string, string) -> void | read_zstd(string) -> string</td><td>Apply immutable JSON Pointer updates, render one-pass templates, or read/append zstd-compressed session files.</td></tr>
+</tbody>
+</table>
+<h2>Stdio RPC and wire protocol schemas</h2>
+<table>
+<thead><tr><th>Schema family</th><th>Interface / type</th><th>Methods and functions</th></tr></thead>
+<tbody>
+<tr><td>lmmock stdio (--schema)</td><td>interface RPCHandler(x: RPC) -> void</td><td>bind(method, annotation), x.message(), x.method(), x.params(), x.alias(), x.get(k), x.set(k, v), x.next(k), x.reply(json), x.error(code, msg), x.notify(method, json), x.request(method, json), x.emit(json), x.write_text(bytes), x.forward(key), x.close(), x.abort(msg).</td></tr>
+<tr><td>lmmock wire schema ws|http2|grpc|line</td><td>WebSocketHandler | HTTP2Handler | GRPCHandler | LineHandler (s: Session) -> void</td><td>bind(key, annotation), s.receive() -> string, s.send(string) -> void, s.close() -> void, s.metadata(string) -> string, s.set_metadata(string, string) -> void.</td></tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<table>
+<thead><tr><th>Interface or function</th><th>Signature / annotation</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>RestGet .. RestOptions</td><td>@"/path/:param" fn h(x: RestExchange) -> void implements RestGet</td><td>Bind an HTTP GET, POST, PUT, DELETE, PATCH, HEAD, or OPTIONS route handler (normalizing :param to {param}).</td></tr>
+<tr><td>RestHandler</td><td>@"/path" fn h(x: RestExchange) -> void implements RestHandler</td><td>Bind a method-agnostic HTTP route handler across all supported methods.</td></tr>
+<tr><td>CliCommand</td><td>@"cmd" fn h(x: RestExchange) -> void implements CliCommand</td><td>Bind a named CLI subcommand dispatched by rest_cli or lmmock --lmcode FILE cmd.</td></tr>
+<tr><td>CliOption</td><td>@"--flag" fn h(x: RestExchange) -> void implements CliOption</td><td>Bind a CLI option flag evaluated before the target CliCommand or route handler.</td></tr>
+<tr><td>rest_config</td><td>rest_config(key: string, value: string) -> void</td><td>Configure route prefix (prefix or base_path), session mode, or initial shared state keys.</td></tr>
+<tr><td>rest_route</td><td>rest_route(method: string, path: string, handler: string) -> void</td><td>Explicitly bind an HTTP method and route pattern to an annotated handler function.</td></tr>
+<tr><td>rest_serve / rest_stop</td><td>rest_serve() -> void | rest_stop() -> void</td><td>No-op compatibility hooks inside lmmock (the host serve/exec lifecycle owns the HTTP listener).</td></tr>
+<tr><td>rest_cli</td><td>rest_cli(args: StrList) -> string</td><td>Dispatch CLI options, commands, and HTTP routes in-process and return the response payload string.</td></tr>
+<tr><td>RestExchange</td><td>x.method() | x.path() | x.body() | x.param(string) | x.query(string) | x.header(string) -> string</td><td>Read request method, path, body, path parameter, query parameter, or request header.</td></tr>
+<tr><td>RestExchange</td><td>x.has_query(string) | x.has_header(string) -> bool</td><td>Check whether a query parameter or request header is present on the exchange.</td></tr>
+<tr><td>RestExchange</td><td>x.status(int) | x.set_header(string, string) | x.send(string) | x.json(string) -> void</td><td>Set response status code and headers, and emit plain text or application/json bodies.</td></tr>
+<tr><td>RestExchange</td><td>x.get(string) -> string | x.set(string, string) -> void | x.increment(string) -> int</td><td>Read, write, or atomically increment shared server state across requests and CLI invocations.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th>Exit code</th><th>Category</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success</td><td>Server shutdown, dry-run check, CLI command, check suite, or wrapped client process completed cleanly.</td></tr>
+<tr><td>1</td><td>Operation / check failure</td><td>Standalone runtime error, check suite assertion failure, or scenario verification mismatch.</td></tr>
+<tr><td>2</td><td>Usage error</td><td>Invalid CLI flags, non-loopback --listen address, retired flag spelling, or missing command arguments.</td></tr>
+<tr><td>3</td><td>Host / load error</td><td>Bytecode validation failure, schema mismatch, missing/duplicate route annotation, or unhandled VM runtime error.</td></tr>
+<tr><td>4</td><td>Application failure</td><td>Wrapped client command exited non-zero under run_lmcode (standalone exec returns the child's exact exit code).</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmmock">github.com/lmctl-ai/lmmock</a>.</p>
+</footer>
+</body>
+</html>

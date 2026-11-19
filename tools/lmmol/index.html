@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmmol — lmctl.com tools</title>
+<meta name="description" content="lmmol documents and specifies lmmol.com, a cross-referenced biomedical knowledge graph of proteins, clinical trials, diseases, genes, and Gene Ontology terms.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmmol/">Overview</a></li>
+<li><a href="/tools/lmmol/skill.html">Skill</a></li>
+<li><a href="/tools/lmmol/guide.html">Guide</a></li>
+<li><a href="/tools/lmmol/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmmol</h1>
+<p>lmmol documents and specifies lmmol.com, a cross-referenced biomedical knowledge graph of proteins, clinical trials, diseases, genes, and Gene Ontology terms.</p>
+<h2>Quick reference</h2>
+<p>Query the no-auth JSON browse layer directly over HTTPS with curl or any HTTP client, or bootstrap an LLM agent from llms.txt.</p>
+<pre><code>curl -s https://lmmol.com/llms.txt
+curl -s https://lmmol.com/index.json
+curl -s https://lmmol.com/nodes/protein/P38398.json</code></pre>
+<table>
+<thead><tr><th>Endpoint or path</th><th>Method</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>https://lmmol.com/llms.txt</td><td>GET</td><td>Concise machine-readable navigation guide for LLM agents</td></tr>
+<tr><td>https://lmmol.com/index.json</td><td>GET</td><td>Root corpus index listing entity types, counts, and shard entry points</td></tr>
+<tr><td>https://lmmol.com/index/list/TYPE/root.json</td><td>GET</td><td>Shard count and shard list for TYPE (protein, trial, disease, gene, go)</td></tr>
+<tr><td>https://lmmol.com/index/list/TYPE/N.json</td><td>GET</td><td>Shard N containing up to 1000 id and name pairs</td></tr>
+<tr><td>https://lmmol.com/nodes/TYPE/ID.json</td><td>GET</td><td>Complete entity record with attributes, source links, and forward edges</td></tr>
+<tr><td>https://lmmol.com/index/disease/MONDO_ID.json</td><td>GET</td><td>Backlink index returning all proteins and trials linked to a Mondo disease</td></tr>
+<tr><td>https://lmmol.com/index/gene/SYMBOL.json</td><td>GET</td><td>Backlink index returning all proteins linked to a gene symbol</td></tr>
+<tr><td>https://lmmol.com/index/clinvar/gene/SYMBOL.json</td><td>GET</td><td>ClinVar clinical significance associations from a gene to diseases</td></tr>
+<tr><td>https://lmmol.com/index/clinvar/disease/MONDO_ID.json</td><td>GET</td><td>ClinVar clinical significance associations from a disease to genes</td></tr>
+<tr><td>https://rtxz9xxyz7.execute-api.us-east-1.amazonaws.com/search</td><td>POST</td><td>Semantic vector search across proteins and trials using 384-float embeddings</td></tr>
+</tbody>
+</table>
+<p>Retrieve all proteins and clinical trials connected to hereditary breast carcinoma (MONDO_0016419):</p>
+<pre><code>curl -s https://lmmol.com/index/disease/MONDO_0016419.json | jq '{proteins: (.proteins | length), trials: (.trials | length)}'</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmmol/skill.html">Skill</a>: commands, browse and search workflows, safety rules, and verification steps for LLM agents.</li>
+<li><a href="/tools/lmmol/guide.html">Guide</a>: knowledge graph data model, deterministic browsing vs vector RAG, and client-side embedding patterns.</li>
+<li><a href="/tools/lmmol/reference.html">Reference</a>: entity types, URL path templates, node and edge schemas, search filters, and HTTP status codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmmol">Source repository and releases</a></p></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmmol">github.com/lmctl-ai/lmmol</a>.</p>
+</footer>
+</body>
+</html>

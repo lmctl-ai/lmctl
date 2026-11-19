@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>deepseek-harness authoring skill — deepseek-harness — lmctl.com tools</title>
+<meta name="description" content="deepseek-harness (dsh) is the lmctl-ai reference fork of deepseek-ai/deepseek-harness, an open-source agent harness built on the Cordis plugin framework and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/deepseek-harness/">Overview</a></li>
+<li><a href="/tools/deepseek-harness/skill.html">Skill</a></li>
+<li><a href="/tools/deepseek-harness/guide.html">Guide</a></li>
+<li><a href="/tools/deepseek-harness/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>deepseek-harness authoring skill</h1>
+<p>deepseek-harness (dsh) is the lmctl-ai reference fork of deepseek-ai/deepseek-harness, an open-source agent harness built on the Cordis plugin framework and supported as the dsh provider in lmctl.</p>
+<h2>Purpose</h2>
+<p>Use deepseek-harness to build and run the dsh CLI and Web UI on both x64 and arm64 platforms, execute headless prompts (dsh --profile headless), and integrate or test lmctl's dsh provider adapter against live or mocked Anthropic Messages endpoints.</p>
+<h2>When to use it</h2>
+<p>Choose deepseek-harness when running the dsh provider in lmctl, when building dsh from source on arm64 Linux machines where the published @deepseek-ai/dsh npm package fails to install, or when qualifying dsh in provider-mock-e2e.</p>
+<h2>Install</h2>
+<p>Build from the lmctl-ai/deepseek-harness checkout with Node.js and pnpm (recommended for arm64 compatibility), or launch via npx @deepseek-ai/dsh on supported x64 platforms.</p>
+<pre><code>git clone https://github.com/lmctl-ai/deepseek-harness.git
+cd deepseek-harness
+pnpm install
+pnpm run build</code></pre>
+<h2>Commands</h2>
+<p>Run dsh in headless CLI mode, start the Web UI server on 127.0.0.1:3080, or run the development watcher.</p>
+<pre><code>dsh --version
+dsh --profile headless "Explain the plugin lifecycle"
+pnpm dsh web --no-open
+npx @deepseek-ai/dsh web --no-open
+pnpm run dev:web</code></pre>
+<h2>Inputs and outputs</h2>
+<p>In headless mode (dsh --profile headless "&lt;prompt>"), dsh reads configuration from DSH_HOME and environment variables (DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, DSH_TELEMETRY_DISABLED), sends Anthropic Messages requests (POST /v1/messages) to the configured base URL, and prints the plain-text reply on stdout. In web mode (dsh web), it serves the browser UI on http://127.0.0.1:3080.</p>
+<h2>Safety rules</h2>
+<p>Always review SAFETY.md before granting dsh access to sensitive workspaces; DeepSeek Harness is in developer preview. In automated tests and CI, always isolate state with a temporary DSH_HOME directory, set DSH_TELEMETRY_DISABLED=1, and pass --no-open when starting dsh web on headless or SSH hosts. Remember that DEEPSEEK_BASE_URL is a trusted environment-tier override and that the default dsh transport sends POST /v1/messages (Anthropic Messages wire format) rather than an OpenAI /v1/chat/completions payload.</p>
+<h2>Worked examples</h2>
+<p>Example 1: Running dsh --profile headless in an isolated environment against a loopback mock server.</p>
+<pre><code>export DSH_HOME="$(mktemp -d)"
+export DSH_TELEMETRY_DISABLED=1
+export DEEPSEEK_API_KEY="synthetic-mock-key-129"
+export DEEPSEEK_BASE_URL="http://127.0.0.1:4567/v1"
+dsh --version
+dsh --profile headless "Reply with exactly PROVIDER_MOCK_OK_129. Do not call any tools."</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Exit code 0 indicates the headless prompt or command succeeded and printed a response. Non-zero exit codes indicate missing credentials, unreachable DEEPSEEK_BASE_URL endpoints, native addon mismatches on unbuilt npm installs, or runtime plugin errors.</p>
+<h2>How to verify</h2>
+<p>Verify the source build completes cleanly and that dsh --version and a loopback headless probe return exit code 0.</p>
+<pre><code>dsh --version</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/deepseek-harness">github.com/lmctl-ai/deepseek-harness</a>.</p>
+</footer>
+</body>
+</html>

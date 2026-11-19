@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ocisim guide — ocisim — lmctl.com tools</title>
+<meta name="description" content="ocisim compiles floci-oci 0.5.0 together with a native CLI and two-layer OCI authentication and IAM policy engine (Main, AuthConfig, OciAuthFilter,…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/ocisim/">Overview</a></li>
+<li><a href="/tools/ocisim/skill.html">Skill</a></li>
+<li><a href="/tools/ocisim/guide.html">Guide</a></li>
+<li><a href="/tools/ocisim/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>ocisim guide</h1>
+<h2>Overview</h2>
+<p>ocisim compiles floci-oci 0.5.0 together with a native CLI and two-layer OCI authentication and IAM policy engine (Main, AuthConfig, OciAuthFilter, OciPolicyEngine) into a single standalone executable on 127.0.0.1:4599. Object Storage, Identity (IAM), Queue, Streaming, Vault, KMS, and Secrets run in-process without Java, Docker, or an Oracle Cloud tenancy.</p>
+<h2>Architecture and multi-tenancy isolation</h2>
+<p>Even in default open mode (--auth open), ocisim parses the tenancy OCID from the keyId parameter of incoming Authorization: Signature headers so buckets, compartments, and queues are isolated per tenancy. When a client such as lmoci connects without explicit credentials, it uses the default local identity (namespace floci-local, region us-ashburn-1, tenancy ocid1.tenancy.oc1..flocilocaltenancy0000000000000000000000000000000000000000) and synthesizes an ephemeral RSA-2048 signing keypair.</p>
+<h2>Two-layer enforcement (--auth enforce)</h2>
+<p>Passing --auth enforce --auth-config auth.json (or setting OCISIM_AUTH=enforce / SIM_AUTH=enforce and OCISIM_AUTH_CONFIG / SIM_AUTH_CONFIG) activates OciAuthFilter and OciPolicyEngine on every request except GET /_floci-oci/health:</p>
+<ul>
+<li>Layer 1 — Draft-cavage RSA-SHA256 signature verification (HTTP 401 NotAuthenticated): validates Authorization: Signature version="1",keyId="&lt;tenancy>/&lt;user>/&lt;fingerprint>",algorithm="rsa-sha256",headers="...",signature="&lt;base64>" against the caller's configured 2048-bit RSA public key PEM file, and verifies the signed x-content-sha256 header against the actual SHA-256 digest of the request body.</li>
+<li>Layer 2 — Dual OCI IAM and JSON policy evaluation (HTTP 403 NotAuthorizedOrNotFound): evaluates both native OCI IAM statements (Allow|Deny group &lt;G> to &lt;inspect|read|use|manage> &lt;resource-family> in tenancy|compartment &lt;C> [where ...]) and structured JSON statements (Statement[{Effect, Action, Resource}]). Policies default to deny when present, explicit Deny overrides Allow, and * / ? wildcards match actions, verbs, resource types and families, and resource identifiers.</li>
+<li>Why denials return 403 instead of 404: returning HTTP 403 NotAuthorizedOrNotFound guarantees that idempotent SDK probes (HeadBucket, HeadObject, DeleteBucket, DeleteObject) raise an explicit authorization error rather than misreporting a denied probe as exists=false or deleted=true.</li>
+</ul>
+<h2>Template-driven LMScript integration (examples/templates.lms)</h2>
+<p>examples/templates.lms demonstrates end-to-end LMScript integration against ocisim across both open and enforce modes:</p>
+<ul>
+<li>_json_ blocks generate the auth.json configuration document and structured Object Storage and Queue event payloads containing quotes and Unicode characters with automatic JSON escaping.</li>
+<li>expand() templates build non-JSON strings including endpoint URLs, hierarchical object keys, keyId triples, and OCI IAM Allow/Deny statements.</li>
+<li>Embedded _lmcode_ blocks executed via run_lmcode verify allowed writes, allowed reads, 403 policy denials, and 401 signature rejections.</li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/ocisim">github.com/lmctl-ai/ocisim</a>.</p>
+</footer>
+</body>
+</html>

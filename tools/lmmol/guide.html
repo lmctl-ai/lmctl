@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmmol guide — lmmol — lmctl.com tools</title>
+<meta name="description" content="This guide explains the architecture of the lmmol.com biomedical knowledge graph, how its static browse tree and semantic search API complement each other, and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmmol/">Overview</a></li>
+<li><a href="/tools/lmmol/skill.html">Skill</a></li>
+<li><a href="/tools/lmmol/guide.html">Guide</a></li>
+<li><a href="/tools/lmmol/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmmol guide</h1>
+<p>This guide explains the architecture of the lmmol.com biomedical knowledge graph, how its static browse tree and semantic search API complement each other, and how to build reliable retrieval pipelines.</p>
+<h2>Overview</h2>
+<p>lmmol unifies open public biomedical data into a single normalized JSON graph served over HTTPS: curated proteins from UniProt/Swiss-Prot, clinical studies from ClinicalTrials.gov, diseases normalized to the Mondo ontology, genes, and Gene Ontology terms, enriched with ClinVar pathogenic and likely-pathogenic variant associations.</p>
+<h2>Deterministic browsing vs vector RAG</h2>
+<p>Standard retrieval-augmented generation embeds a prompt, fetches the top-k vector chunks, and risks omitting records that fall outside the similarity cutoff. lmmol separates discovery from retrieval:</p>
+<ul>
+<li>Use the static browse tree when an entity identifier exists or once a candidate node has been found. Following index.json to shard listings, node files, and backlink indexes retrieves 100 percent of connected records deterministically without embeddings or ranking loss.</li>
+<li>Use semantic vector search only as an entry point when the user query is an unstructured clinical or biological description. Once search returns candidate protein accessions or trial NCT IDs, switch immediately to deterministic browse paths.</li>
+</ul>
+<h2>Graph data model: nodes, forward edges, and backlinks</h2>
+<p>Every entity resides at nodes/TYPE/ID.json. A node document contains identifying fields (id, type, name, synonyms), descriptive text (search_text), provenance links (native_xrefs, outbound_source_links), domain attributes (such as organism for proteins or phase and overall_status for trials), a boolean normalized flag on disease records, and an edges array.</p>
+<pre><code>{
+  "type": "protein",
+  "id": "P38398",
+  "name": "Breast cancer type 1 susceptibility protein",
+  "synonyms": ["BRCA1", "RNF53"],
+  "attributes": { "organism": "9606" },
+  "normalized": true,
+  "edges": [
+    {
+      "relation": "protein_disease",
+      "source": { "type": "protein", "id": "P38398" },
+      "target": { "type": "disease", "id": "MONDO_0016419" }
+    }
+  ]
+}</code></pre>
+<p>Because edges stored inside a node only list forward references (such as protein_disease, protein_has_gene, protein_annotated_with_go, and trial_disease), lmmol publishes precomputed reverse indexes under index/disease/, index/gene/, and index/clinvar/. Normalizing both protein disease annotations and clinical trial conditions to Mondo IDs allows index/disease/MONDO_ID.json to join proteins and trials on a single disease node.</p>
+<h2>Traversing sharded listings</h2>
+<p>With more than 575,000 proteins and 589,000 trials, full entity listings are partitioned into shards of at most 1,000 compact id and name objects. To enumerate an entity type without downloading full node files, inspect index/list/TYPE/root.json first and then iterate through index/list/TYPE/0.json, 1.json, and so on:</p>
+<pre><code>BASE=https://lmmol.com
+shards=$(curl -s $BASE/index/list/go/root.json | jq -r '.shards | length')
+for n in $(seq 0 $((shards - 1))); do
+  curl -s $BASE/index/list/go/$n.json | jq -r '.[] | "\(.id)\t\(.name)"'
+done</code></pre>
+<h2>Client-side query embedding for semantic search</h2>
+<p>The search service matches caller-computed embeddings against the indexed vectors. Queries must be embedded with the exact model and normalization settings used to build the index: Xenova/all-MiniLM-L6-v2 at revision 751bff37182d3f1213fa05d7196b954e230abad9 with mean pooling and L2 normalization enabled, producing 384 floats.</p>
+<p>In JavaScript or browser applications using Transformers.js:</p>
+<pre><code>import { pipeline } from '@xenova/transformers';
+
+const embed = await pipeline(
+  'feature-extraction',
+  'Xenova/all-MiniLM-L6-v2',
+  { revision: '751bff37182d3f1213fa05d7196b954e230abad9' }
+);
+const out = await embed('homologous recombination DNA repair', {
+  pooling: 'mean',
+  normalize: true
+});
+const queryVector = Array.from(out.data);</code></pre>
+<h2>Building the documentation book locally</h2>
+<p>The lmctl-ai/lmmol repository contains the mdBook source in src/ covering concepts, data access, browsing, searching, recipes, and upstream data sources. Build or preview the book locally with mdBook:</p>
+<pre><code>mdbook build
+mdbook serve</code></pre></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmmol">github.com/lmctl-ai/lmmol</a>.</p>
+</footer>
+</body>
+</html>

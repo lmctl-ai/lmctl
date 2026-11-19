@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Render scenes and animation with lmdraw — lmdraw — lmctl.com tools</title>
-<meta name="description" content="These commands were run from the lmdraw source root with lmdraw v0.1.0 and lmscript 0.2.359.">
+<meta name="description" content="These commands were run in an empty directory on Linux arm64 with lmscript 0.2.482 and the lmdraw v0.2.7 release binary.">
 <link rel="stylesheet" href="/tools/style.css">
 <link rel="icon" type="image/png" href="/tools/lmdraw/img/icon.png">
 </head>
@@ -19,53 +19,133 @@
 <li><a href="/tools/lmdraw/tutorial.html">Tutorial</a></li>
 <li><a href="/tools/lmdraw/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmdraw/guide.html">Guide</a></li>
+<li><a href="/tools/lmdraw/reference.html">Reference</a></li>
 <li><a href="/tools/lmdraw/examples/">Examples</a></li>
 </ul>
 </nav>
 <main><h1>Render scenes and animation with lmdraw</h1>
-<p>These commands were run from the lmdraw source root with lmdraw v0.1.0 and lmscript 0.2.359. The SVG example uses the bundled homepage automation-ladder drawing. Paths are shown relative to that root.</p>
-<h2>1. Compile a title card</h2>
-<p>Compile the included title-card program against the schema path embedded in the script.</p>
-<pre><kbd>lmscript examples/title-card.lms build/title-card.dslb</kbd>
-<samp>wrote build/title-card.dslb</samp></pre>
-<h2>2. Render and inspect the still</h2>
-<p>The host writes PNG output below build/rendered/ and prints a success result.</p>
-<pre><kbd>./build/lmdraw --lmcode build/title-card.dslb</kbd>
-<samp>{"ok": true, "result": null}</samp>
-<kbd>file build/rendered/title-card.png</kbd>
-<samp>build/rendered/title-card.png: PNG image data, 960 x 540, 8-bit/color RGBA, non-interlaced</samp></pre>
+<p>These commands were run in an empty directory on Linux arm64 with lmscript 0.2.482 and the lmdraw v0.2.7 release binary. The tool cache path in step 1 is shortened to CACHE; everything else is real output.</p>
+<h2>1. Install the tools</h2>
+<p>lmctl from npm provides lmscript. lmscript install fetches the lmdraw release into the tool cache; a script with an install declaration does the same on first run.</p>
+<pre><code>npm install -g @lmctl-ai/lmctl</code></pre>
+<pre><kbd>lmscript --version</kbd>
+<samp>lmscript 0.2.482</samp>
+<kbd>lmscript install github:lmctl-ai/lmdraw@latest</kbd>
+<samp>tag: v0.2.7
+path: CACHE/lmscript/tools/github/lmctl-ai/lmdraw/latest/lmdraw
+sha256: 16b9198594de4462333a2af21df43b14ec8a4dcf6db4e213174eb19b32e66f45
+source: tool cache</samp></pre>
+<h2>2. Run a published example</h2>
+<p>Every example in the repository is a self-contained script. lmscript can run one straight from its URL; it writes the PNG below images/ in the current directory.</p>
+<pre><kbd>lmscript https://raw.githubusercontent.com/lmctl-ai/lmdraw/main/examples/title-card.lms</kbd>
+<samp>wrote images/title-card.png</samp>
+<kbd>file images/title-card.png</kbd>
+<samp>images/title-card.png: PNG image data, 960 x 540, 8-bit/color RGBA, non-interlaced</samp></pre>
 <figure><img src="/tools/lmdraw/img/title-card.png" alt="The rendered lmdraw title card with a dark blue panel and large white heading." width="480" height="270"><figcaption>The title-card example output.</figcaption></figure>
-<h2>3. Load an SVG and change an attribute</h2>
-<p>The included example loads the bundled homepage automation-ladder SVG fixture by id, changes opacity on the retained handle, and renders it. It also demonstrates loading multiple SVG assets in one program.</p>
-<pre><kbd>lmscript examples/render-assets.lms build/render-assets.dslb</kbd>
-<samp>wrote six SVG renders</samp>
-<kbd>./build/lmdraw --lmcode build/render-assets.dslb</kbd>
-<samp>{"ok": true, "result": null}</samp>
-<kbd>file build/rendered/svg-automation-ladder.png</kbd>
-<samp>build/rendered/svg-automation-ladder.png: PNG image data, 960 x 360, 8-bit/color RGBA, non-interlaced</samp></pre>
-<figure><img src="/tools/lmdraw/img/automation-ladder.png" alt="A four-stage rising automation ladder illustration rendered from SVG." width="480" height="180"><figcaption>The same source drawing is included as an example render.</figcaption></figure>
-<h2>4. Render a 24-frame tween</h2>
-<p>The animation script updates an SVG opacity and a marker position in a range loop. It writes 24 numbered PNG frames.</p>
-<pre><kbd>lmscript examples/animated-ladder.lms build/animated-ladder.dslb</kbd>
-<samp>wrote 24 deterministic numbered frames</samp>
-<kbd>./build/lmdraw --lmcode build/animated-ladder.dslb</kbd>
-<samp>wrote 24 deterministic numbered frames</samp>
-<kbd>ls build/rendered/ladder-*.png | wc -l</kbd>
-<samp>24</samp></pre>
-<figure><img src="/tools/lmdraw/img/animated-ladder-frame.png" alt="A frame from the automation ladder tween, showing a gold marker on the right." width="480" height="180"><figcaption>A representative numbered frame.</figcaption></figure>
-<h2>5. Encode the frames as MP4</h2>
+<h2>3. Write and check your own scene</h2>
+<p>Save this as card.lms. The outer script holds the title; the block measures it, centers the heading, underlines it to the measured width and returns that width to the script.</p>
+<pre><code>mkdir("images");
+title = "Quarterly review";
+p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(640, 360, "#152438");
+let card = scene.rect(36.0, 36.0, 568.0, 288.0, "#1f344b");
+card.set_attr("stroke", "#6fbdb4");
+card.set_attr("stroke-width", "2");
+let w = scene.measure_text(${title}, 38.0, true);
+let heading = scene.text(320.0, 170.0, 38.0, ${title}, "#f5f8fb");
+heading.set_attr("text-anchor", "middle");
+heading.set_attr("font-weight", "700");
+scene.line(320.0 - w / 2.0, 190.0, 320.0 + w / 2.0, 190.0, "#f5c16c", 3.0);
+scene.render_png("images/card.png", 640, 360, 2);
+lmcode_return_set(w);
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));
+println(json_stringify(r));</code></pre>
+<p>Compile-check the block against the host schema without running it, then run it. The render scale of 2 doubles the pixel dimensions.</p>
+<pre><kbd>lmscript --check card.lms &amp;&amp; echo checked</kbd>
+<samp>checked</samp>
+<kbd>lmscript card.lms</kbd>
+<samp>{"ok":true,"result":321.5179748535156}</samp>
+<kbd>file images/card.png</kbd>
+<samp>images/card.png: PNG image data, 1280 x 720, 8-bit/color RGBA, non-interlaced</samp></pre>
+<h2>4. Draw a diagram with shapes and connectors</h2>
+<p>Save this as flow.lms. A grid supplies cell anchors, boxes and a diamond carry their own labels, and connectors join named anchors.</p>
+<pre><code>mkdir("images");
+p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(600, 360, "#101820");
+let slots = scene.grid(60.0, 60.0, 480.0, 240.0, 2, 3, 20.0, 20.0);
+let order = scene.box(slots.cell(0, 0), "c", 120.0, 44.0, "order", "#1e3247", "#4a6a88", 8.0, 14.0);
+let gate = scene.diamond(300.0, 120.0, 130.0, 70.0, "in stock?", "#1e3247", "#f5c16c", 13.0);
+let ship = scene.box(slots.cell(2, 1), "c", 120.0, 44.0, "ship", "#1e3247", "#6fbdb4", 22.0, 14.0);
+scene.connector(order, "e", gate, "w", "straight", "none", "arrow", "none", "#8fb4d9", 2.0, "", 0.5, 0.0, 0.0);
+scene.connector(gate, "s", ship, "n", "elbow", "none", "arrow", "6 5", "#8fb4d9", 2.0, "yes", 0.4, 8.0, 0.0);
+scene.render_png("images/flow.png", 600, 360, 1);
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));
+println("wrote images/flow.png");</code></pre>
+<pre><kbd>lmscript flow.lms</kbd>
+<samp>wrote images/flow.png</samp>
+<kbd>file images/flow.png</kbd>
+<samp>images/flow.png: PNG image data, 600 x 360, 8-bit/color RGBA, non-interlaced</samp></pre>
+<h2>5. Load an SVG and render a 24-frame tween</h2>
+<p>Save this as tween.lms. The script writes a small SVG under assets/, the only folder load_svg reads. The block takes a retained handle to the element with id dot, recolors it, and moves it across 24 numbered frames.</p>
+<pre><code>mkdir("images");
+mkdir("assets");
+svg = "&lt;svg xmlns=\"http://www.w3.org/2000/svg\" width=\"320\" height=\"120\" viewBox=\"0 0 320 120\">";
+svg = svg + "&lt;rect id=\"plate\" x=\"10\" y=\"10\" width=\"300\" height=\"100\" rx=\"12\" fill=\"#1f344b\"/>";
+svg = svg + "&lt;circle id=\"dot\" cx=\"60\" cy=\"60\" r=\"24\" fill=\"#f5c16c\"/>&lt;/svg>";
+write_file("assets/badge.svg", svg);
+p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+let dot = scene.load_svg("assets/badge.svg", "dot");
+dot.set_attr("fill", "#6fbdb4");
+for (i in range(0, 24)) {
+  let t = float(i) / 23.0;
+  dot.set_attr("cx", str(lerp(60.0, 260.0, ease(t))));
+  scene.render_png("images/badge-" + str(i) + ".png", 320, 120, 1);
+}
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));
+println("wrote 24 frames");</code></pre>
+<pre><kbd>lmscript tween.lms</kbd>
+<samp>wrote 24 frames</samp>
+<kbd>ls images/badge-*.png | wc -l</kbd>
+<samp>24</samp>
+<kbd>file images/badge-23.png</kbd>
+<samp>images/badge-23.png: PNG image data, 320 x 120, 8-bit/color RGBA, non-interlaced</samp></pre>
+<h2>6. Encode the frames as MP4</h2>
 <p>ffmpeg combines the numbered PNGs into a one-second H.264 video at 24 frames per second. ffprobe confirms its codec and dimensions.</p>
-<pre><kbd>ffmpeg -hide_banner -loglevel error -framerate 24 -start_number 0 -i 'build/rendered/ladder-%d.png' -frames:v 24 -c:v libx264 -pix_fmt yuv420p -movflags +faststart -y build/animated-ladder.mp4</kbd>
-<samp>(no output; exit 0)</samp>
-<kbd>ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height,r_frame_rate -show_entries format=duration -of default=noprint_wrappers=1 build/animated-ladder.mp4</kbd>
+<pre><kbd>ffmpeg -hide_banner -loglevel error -framerate 24 -start_number 0 -i 'images/badge-%d.png' -frames:v 24 -c:v libx264 -pix_fmt yuv420p -movflags +faststart -y badge.mp4 &amp;&amp; echo encoded</kbd>
+<samp>encoded</samp>
+<kbd>ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height,r_frame_rate -show_entries format=duration -of default=noprint_wrappers=1 badge.mp4</kbd>
 <samp>codec_name=h264
-width=640
-height=240
+width=320
+height=120
 r_frame_rate=24/1
 duration=1.000000</samp></pre>
-<p>To run these commands with a release install, replace ./build/lmdraw with the path to the downloaded lmdraw executable. The example scripts and generated frames remain the same.</p>
+<h2>7. Read a host refusal</h2>
+<p>Save this as bad.lms. It renders to a folder the host does not allow. run_lmcode does not throw; it returns the refusal as data, with the line and column inside the block.</p>
+<pre><code>p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(320, 120, "#101820");
+scene.render_png("out/card.png", 320, 120, 1);
+end _lmcode_
+r = run_lmcode(p);
+println(json_stringify(r));</code></pre>
+<pre><kbd>lmscript bad.lms</kbd>
+<samp>dsl line 3:7: PNG output must be a .png file directly under build/rendered/ or images/
+{"ok":false,"phase":"run","code":"RUN_HOST","message":"dsl line 3:7: PNG output must be a .png file directly under build/rendered/ or images/","line":3,"column":7}</samp></pre>
+<h2>8. Confirm the render is repeatable</h2>
+<p>The same binary writes the same bytes for the same script. Hash the card, run it again and hash it again.</p>
+<pre><kbd>sha256sum images/card.png</kbd>
+<samp>5e82d80122d3da543aa5231832368ec5a1de077c993309583b74acbb25ddca80  images/card.png</samp>
+<kbd>lmscript card.lms</kbd>
+<samp>{"ok":true,"result":321.5179748535156}</samp>
+<kbd>sha256sum images/card.png</kbd>
+<samp>5e82d80122d3da543aa5231832368ec5a1de077c993309583b74acbb25ddca80  images/card.png</samp></pre>
 <h2>What you learned</h2>
-<p>Compile each scene against lmdraw's embedded schema, run the bytecode with the host, inspect the generated PNG, and use a deterministic numbered sequence as input to ffmpeg.</p>
+<p>Declare the host on an _lmcode_ block, check it with lmscript --check, run it with run_lmcode and test r.ok. Scenes are retained: keep handles, change attributes and render again for each frame. Outputs go under images/ or build/rendered/, SVG input comes from assets/, and numbered frames are the input to ffmpeg. The <a href="/tools/lmdraw/guide.html">guide</a> explains the model and the <a href="/tools/lmdraw/reference.html">reference</a> lists every method.</p>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmdraw">github.com/lmctl-ai/lmdraw</a>.</p>

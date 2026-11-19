@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>n8n reference — n8n — lmctl.com tools</title>
+<meta name="description" content="Complete reference for n8n orchestrator commands, lmflow-host CLI flags, environment variables, lmflow_host_v1 schema types and functions, JSON schemas,…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/n8n/">Overview</a></li>
+<li><a href="/tools/n8n/skill.html">Skill</a></li>
+<li><a href="/tools/n8n/guide.html">Guide</a></li>
+<li><a href="/tools/n8n/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>n8n reference</h1>
+<p>Complete reference for n8n orchestrator commands, lmflow-host CLI flags, environment variables, lmflow_host_v1 schema types and functions, JSON schemas, and exit codes.</p>
+<h2>Orchestrator commands and npm scripts</h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>npm ci --ignore-scripts --no-audit --no-fund</td>
+<td>Install pinned @lmctl-ai/lmctl (0.2.454) and @lmctl-ai/lmmock (0.1.117) dependencies</td>
+</tr>
+<tr>
+<td>npm run build</td>
+<td>Compile ./cmd/lmflow-host to ./build/lmflow-host with CGO_ENABLED=0 and -trimpath</td>
+</tr>
+<tr>
+<td>npm run demo</td>
+<td>Build lmflow-host and run examples/telegram.workflow.json through tests/telegram-mock.lms (lmmock)</td>
+</tr>
+<tr>
+<td>npm test</td>
+<td>Run static lmscript syntax checks, Go unit tests, schema parity checks, and all 63 integration scenarios</td>
+</tr>
+<tr>
+<td>npm run check</td>
+<td>Syntax-check all .lms files (src/run.lms, test.lms, and tests/*.lms) with lmscript --check</td>
+</tr>
+<tr>
+<td>npm run test:unit</td>
+<td>Run Go unit tests across ./internal/host and ./cmd/lmflow-host</td>
+</tr>
+<tr>
+<td>npm run test:integration</td>
+<td>Build lmflow-host and run the full LMScript test driver test.lms</td>
+</tr>
+<tr>
+<td>npm run check:memory</td>
+<td>Verify durable-memory index and formatting constraints</td>
+</tr>
+<tr>
+<td>lmscript src/run.lms WORKFLOW.json CONNECTOR.json CREDENTIALS.json</td>
+<td>Validate and execute a linear workflow with the specified connector and credentials JSON files</td>
+</tr>
+</tbody>
+</table>
+<h2>lmflow-host CLI flags</h2>
+<table>
+<thead>
+<tr>
+<th>Flag or invocation</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>./build/lmflow-host --lmcode-schema --json</td>
+<td>Print exact embedded internal/host/schema.json (lmflow_host_v1) bytes to stdout and exit 0</td>
+</tr>
+<tr>
+<td>./build/lmflow-host --lmcode-signatures</td>
+<td>Print canonical sorted registry signatures (including lmcode_std_v3 and lmflow_host_v1) and exit 0</td>
+</tr>
+<tr>
+<td>./build/lmflow-host --lmcode FILE --workflow WF.json --connector CONN.json --credentials CRED.json [--base-url URL]</td>
+<td>Load workflow, connector, and credentials JSON, verify bytecode against lmflow_host_v1, and execute the workflow</td>
+</tr>
+</tbody>
+</table>
+<h2>Environment variables</h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LMFLOW_HOST</td>
+<td>./build/lmflow-host</td>
+<td>Path to the compiled Go LMCode host executable invoked by src/run.lms</td>
+</tr>
+<tr>
+<td>LMFLOW_BASE_URL</td>
+<td>unset</td>
+<td>Explicit base URL override passed to lmflow-host via --base-url (takes precedence over LMMOCK_URL)</td>
+</tr>
+<tr>
+<td>LMMOCK_URL</td>
+<td>unset</td>
+<td>Loopback mock server URL supplied automatically by lmmock during integration tests and demos</td>
+</tr>
+<tr>
+<td>NODE</td>
+<td>node</td>
+<td>Node.js executable used by test.lms to invoke lmscript and lmmock</td>
+</tr>
+<tr>
+<td>LMCODE_INVOCATION_FILE</td>
+<td>unset</td>
+<td>Internal SDK invocation envelope path supplied automatically by run_lmcode</td>
+</tr>
+</tbody>
+</table>
+<h2>Host types and methods (lmflow_host_v1)</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Method signature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HttpResponse</td>
+<td>HttpResponse.status() -> int</td>
+<td>Return the HTTP status code of the provider response</td>
+</tr>
+<tr>
+<td>HttpResponse</td>
+<td>HttpResponse.json() -> Json</td>
+<td>Return the parsed JSON body of the provider response</td>
+</tr>
+</tbody>
+</table>
+<h2>Host global functions (lmflow_host_v1)</h2>
+<table>
+<thead>
+<tr>
+<th>Function signature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>input(name: string) -> Json</td>
+<td>Return the loaded "workflow" or "connector" JSON document supplied via CLI flags</td>
+</tr>
+<tr>
+<td>credential(id: string, field: string) -> string</td>
+<td>Return the non-empty secret string for credential ID and field name from the credentials JSON file</td>
+</tr>
+<tr>
+<td>base_url(default_url: string) -> string</td>
+<td>Return the active base URL (--base-url override if set, otherwise default_url)</td>
+</tr>
+<tr>
+<td>json_put(object: Json, key: string, value: Json) -> Json</td>
+<td>Return a copy of JSON object with key set to scalar Json value</td>
+</tr>
+<tr>
+<td>http_post_json(url: string, body: Json) -> HttpResponse</td>
+<td>Execute a bounded 10s, 1 MiB HTTP POST request with application/json body and no redirects</td>
+</tr>
+<tr>
+<td>workflow_fail(message: string) -> void</td>
+<td>Halt workflow execution immediately with a run-phase failure carrying message</td>
+</tr>
+</tbody>
+</table>
+<h2>Validation schemas and result contract</h2>
+<table>
+<thead>
+<tr>
+<th>Schema or contract</th>
+<th>Path</th>
+<th>Rules enforced</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Workflow schema v1</td>
+<td>schema/workflow-v1.schema.json</td>
+<td>Requires name, non-empty nodes array (id, name, type, parameters, optional credentials), and connections object</td>
+</tr>
+<tr>
+<td>Connector schema v1</td>
+<td>schema/connector-v1.schema.json</td>
+<td>Requires specVersion: 1, name, documentation, baseUrl (https://), nodeType, credentialType, credentialField, successField, errorField, and POST operations</td>
+</tr>
+<tr>
+<td>Host result contract</td>
+<td>internal/host/schema.json</td>
+<td>Requires $return to be assigned a non-nullable Json value representing the final node output</td>
+</tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Exit code</th>
+<th>Component</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>src/run.lms and lmflow-host</td>
+<td>Workflow validation, bytecode execution, HTTP status checks, and result contract verification succeeded</td>
+</tr>
+<tr>
+<td>1</td>
+<td>lmscript (src/run.lms)</td>
+<td>Pre-flight workflow/connector validation failed or require(result.ok) rejected a host failure</td>
+</tr>
+<tr>
+<td>2</td>
+<td>lmflow-host (cli phase)</td>
+<td>Missing or invalid CLI flags (--lmcode, --workflow, --connector, --credentials) or invocation envelope error</td>
+</tr>
+<tr>
+<td>3</td>
+<td>lmflow-host (load / run phase)</td>
+<td>Bytecode load error, malformed JSON config/credentials, missing credential ID/field, HTTP transport error, or workflow_fail()</td>
+</tr>
+<tr>
+<td>4</td>
+<td>lmflow-host (app / I/O)</td>
+<td>Application failure or stdout write error</td>
+</tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/n8n">github.com/lmctl-ai/n8n</a>.</p>
+</footer>
+</body>
+</html>

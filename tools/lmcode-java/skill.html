@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-java skill — lmcode-java — lmctl.com tools</title>
+<meta name="description" content="Use lmcode-java to embed the DSLB v6 verifier and virtual machine into Java 21 or GraalVM Native Image host applications.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-java/">Overview</a></li>
+<li><a href="/tools/lmcode-java/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-java/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-java/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-java skill</h1>
+<p>Use lmcode-java to embed the DSLB v6 verifier and virtual machine into Java 21 or GraalVM Native Image host applications.</p>
+<h2>Purpose</h2>
+<p>Provide a JDK-only bytecode loader, stack VM, 226-signature standard library, stdio REST/CLI controller, and invocation result framer for JVM and native executables.</p>
+<h2>When to use it</h2>
+<p>Use lmcode-java when building a Java, Kotlin, or Scala host application or GraalVM native binary that executes schema-bound lmcode programs.</p>
+<h2>Install</h2>
+<p>Build with JDK 21 and Maven 3.6.3+ (mvn -q verify), or vendor src/main/java/io/lmctl/lmcode directly into your project.</p>
+<h2>Commands</h2>
+<pre><code>mvn -q verify
+./scripts/build-native.sh
+lmctl autorun examples/byte_strings.lms</code></pre>
+<h2>Inputs and outputs</h2>
+<ul>
+<li>Input: byte[] bytecode (DSLB v6), byte[] schema (dsl.schema: 2), and optional LMCODE_INVOCATION_FILE manifest.</li>
+<li>Output: mutated Java objects in Context, HTTP/1.1 responses on stdout via RestController, or a terminal LMCODE_RETURN frame.</li>
+<li>Strings: VmString wraps an immutable byte[] so arbitrary bytes and interior NULs never corrupt through UTF-16 String decoding.</li>
+</ul>
+<h2>Safety rules</h2>
+<ul>
+<li>Use VmString.bytes() for raw byte payloads rather than converting arbitrary binary strings through java.lang.String.</li>
+<li>Use Java long arithmetic (+, -, *, unary -) for two's-complement int64 wrapping and Formatting.formatG15 for VM float text.</li>
+<li>Supply Registry.dry(callback) only for side-effect-free preview logic when dry mode is active.</li>
+</ul>
+<h2>Worked examples</h2>
+<pre><code>Registry registry = new Registry();
+registry.function("greet", List.of("string"), "string", (ctx, self, args) ->
+    Value.ofString(VmString.fromString("hello " + args[0].asString().toString()))
+);
+Program program = Program.load(bytecodeBytes, schemaBytes, registry);
+Context context = new Context();
+program.run(context, registry);</code></pre>
+<h2>Errors and exit codes</h2>
+<table><thead><tr><th>Code</th><th>Phase</th><th>Exit</th><th>Condition</th></tr></thead><tbody>
+<tr><td>LOAD_BAD_BYTECODE</td><td>load</td><td>3</td><td>Malformed DSLB v6 header, bad magic or version, truncated section, invalid opcode, or stack depth violation</td></tr>
+<tr><td>LOAD_BAD_SCHEMA</td><td>load</td><td>3</td><td>Host schema JSON fails dsl.schema 2 validation or declares an invalid result contract</td></tr>
+<tr><td>LOAD_SCHEMA_MISMATCH</td><td>load</td><td>3</td><td>32-byte SHA-256 schema hash in DSLB v6 header does not match exact host schema bytes</td></tr>
+<tr><td>LOAD_UNBOUND</td><td>load</td><td>3</td><td>Bytecode imports a context, function, or method signature not registered in the host Registry</td></tr>
+<tr><td>RUN_ERROR</td><td>run</td><td>3</td><td>VM division or remainder by zero, or loop-free operand stack underflow</td></tr>
+<tr><td>RUN_HOST</td><td>run</td><td>3</td><td>Host callback failure, invalid encoding, expired collection handle, or REST route validation failure</td></tr>
+<tr><td>APP_FAIL</td><td>app</td><td>4</td><td>Post-run application domain validation failure or output stream write failure</td></tr>
+</tbody></table>
+<h2>How to verify</h2>
+<pre><code>mvn -q verify
+lmscript test.lms</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-java">github.com/lmctl-ai/lmcode-java</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmclean authoring skill — lmclean — lmctl.com tools</title>
+<meta name="description" content="lmclean is a native lmcode host for scriptable filesystem search and cleanup, evaluating compiled @ignore, @select, and @report rule callbacks over candidate…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmclean/">Overview</a></li>
+<li><a href="/tools/lmclean/skill.html">Skill</a></li>
+<li><a href="/tools/lmclean/guide.html">Guide</a></li>
+<li><a href="/tools/lmclean/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmclean authoring skill</h1>
+<p>lmclean is a native lmcode host for scriptable filesystem search and cleanup, evaluating compiled @ignore, @select, and @report rule callbacks over candidate files and directories with dry-run safety by default.</p>
+<h2>Purpose</h2>
+<p>Use lmclean to find and reclaim stale build directories, temporary artifacts, regenerable dependency trees, or clean pushed Git checkouts using programmable File predicates, reversible trash manifests, or an interactive REST scan-and-filter server.</p>
+<h2>When to use it</h2>
+<p>Use lmclean when cleanup rules depend on recursive subtree sizes, subtree modification timestamps, Git working-tree and push status, or multi-stage interactive review before deletion. Use basic shell rm only for single fixed file paths that need no traversal policy or dry-run audit trail.</p>
+<h2>Install</h2>
+<p>Install the LMScript compiler with npm install -g @lmctl-ai/lmctl. An _lmcode_ declaration with cli="lmclean" install="github:lmctl-ai/lmclean@latest" downloads and verifies the platform release binary on first run, or you can install it explicitly.</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmscript install github:lmctl-ai/lmclean@v0.1.20
+lmclean --version
+lmclean --lmcode-schema --json
+lmclean --lmcode-signatures</code></pre>
+<h2>Commands</h2>
+<p>Author cleanup rules in an LMScript file with an _lmcode_ block implementing Ignore, Filter, and Report SAM interfaces, and invoke lmclean through run_lmcode.</p>
+<pre><code>program = _lmcode_ cli="lmclean" install="github:lmctl-ai/lmclean@latest";
+@ignore
+fn skip_vcs(f: File) -> bool implements Ignore {
+  return f.is_dir() &amp;&amp; f.name() == ".git";
+}
+@select
+fn stale_junk(f: File) -> bool implements Filter {
+  let days = param_int("stale_days", 7);
+  let ext = f.extension();
+  return f.is_file() &amp;&amp; (now() - f.modified() > days * 86400) &amp;&amp; (ext == "tmp" || ext == "log");
+}
+end _lmcode_
+r = run_lmcode(program);
+print(json_stringify(r));</code></pre>
+<p>Run the bundled driver scripts directly with lmscript:</p>
+<pre><code>lmscript examples/clean-regen-dirs.lms /path/to/workspaces
+lmscript examples/clean-regen-dirs.lms --exec --trash /tmp/lmclean-trash /path/to/workspaces
+lmclean --trash /tmp/lmclean-trash --restore</code></pre>
+<h2>Inputs and outputs</h2>
+<p>In CLI mode, lmclean accepts --lmcode FILE.dslb, optional flags (--exec, --trash DIR, --restore, --hidden, --max-depth N, --param NAME=VALUE), and one or more root paths (defaulting to the current directory). In server mode (--serve), it accepts --listen, --port-file, --presets, --preset, --idle-timeout, --allow-exec, and --token.</p>
+<p>Stdout emits one JSON line per event (plan, deleted, or restored), with plan and deleted lines carrying the path and its recursive byte size, followed by a terminal LMCODE_RETURN_BEGIN and LMCODE_RETURN_END frame with total matched count, bytes, and dry_run status.</p>
+<h2>Safety rules</h2>
+<p>Dry-run is the default: without --exec (or --allow-exec in --serve mode), lmclean never removes or moves any file. Symlinks are reported via is_symlink() but never followed into target directories. Once a directory matches a @select predicate, the walker does not descend inside it.</p>
+<p>Prefer --exec --trash DIR over direct unlinking so moves are recorded in DIR/manifest.jsonl and can be reversed with --trash DIR --restore. In --serve mode, pin expect_matched and expect_bytes on POST /clean requests so the server returns HTTP 409 if the selection changed since review.</p>
+<h2>Worked examples</h2>
+<p>Apart from clean-regen-dirs.lms, the repository example scripts take the path of a built lmclean host as their first argument. Clean stale temporary files or pushed Git checkouts, or launch the REST server to slice cached scan results before deleting:</p>
+<pre><code>lmscript examples/clean-tmp.lms target/release/lmclean /var/tmp/myapp
+lmscript examples/clean-tmp.lms target/release/lmclean --exec --param stale_days=3 /var/tmp/myapp
+lmscript examples/clean-stale-git-repos.lms target/release/lmclean ~/projects
+lmscript examples/serve-all.lms target/release/lmclean --serve --presets examples/serve-presets.json --port-file /tmp/lmclean.port</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmclean follows the R42 host exit protocol: code 0 on success, code 2 on CLI usage or flag errors, code 3 on bytecode load, schema mismatch, or runtime execution errors, and code 4 on application failures such as unreadable bytecode files, bad preset files, or failed deletions.</p>
+<h2>How to verify</h2>
+<p>Verify the host binary version, schema bytes, canonical signatures, and full dry-run, exec, trash, restore, and server test suites.</p>
+<pre><code>lmclean --version
+lmclean --lmcode-schema --json > /tmp/lmclean-schema.json
+cmp /tmp/lmclean-schema.json clean.dsl.json
+lmclean --lmcode-signatures
+bash test.sh</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmclean">github.com/lmctl-ai/lmclean</a>.</p>
+</footer>
+</body>
+</html>

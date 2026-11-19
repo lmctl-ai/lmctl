@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmssh authoring skill — lmssh — lmctl.com tools</title>
+<meta name="description" content="lmssh is a static single-file executable embedding OpenSSH 10.6p1 client tools (ssh, sftp, scp, ssh-keygen) and the lmcode-cpp bytecode VM.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmssh/">Overview</a></li>
+<li><a href="/tools/lmssh/skill.html">Skill</a></li>
+<li><a href="/tools/lmssh/guide.html">Guide</a></li>
+<li><a href="/tools/lmssh/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmssh authoring skill</h1>
+<p>lmssh is a static single-file executable embedding OpenSSH 10.6p1 client tools (ssh, sftp, scp, ssh-keygen) and the lmcode-cpp bytecode VM. It executes direct OpenSSH client commands as well as compiled _lmcode_ automation scripts for parallel fleet execution, atomic file deployment, SSH key and CA lifecycle management, and standard REST and CLI routing.</p>
+<h2>Purpose</h2>
+<p>Use lmssh to automate remote shell execution across single hosts or parallel server fleets, upload and download files or directories over SCP and SFTP, verify SHA-256 digests before atomic remote renames, generate Ed25519 or RSA keys, mint SSH CA user or host certificates, sign and verify artifacts with ssh-keygen -Y, maintain known_hosts inventories, and expose SSH operations through standard lmcode_std_v3 REST and CLI interfaces.</p>
+<h2>When to use it</h2>
+<p>Choose lmssh whenever a workflow needs deterministic SSH command execution, unattended SFTP/SCP file synchronization, SSH certificate authority issuance, or artifact signature verification without depending on a system OpenSSH installation. Use lmssl when working with X.509 certificates, TLS handshakes, or raw libcrypto primitives, and use lmcurl when testing HTTP, HTTPS, or LDAPv3 endpoints.</p>
+<h2>Install</h2>
+<p>Install the lmctl toolchain with npm install -g @lmctl-ai/lmctl@latest. Pre-built static Linux binaries (musl x64 and arm64) and macOS binaries (x64 and arm64) are published on GitHub Releases and resolved automatically when an LMScript program declares cli="lmssh" and install="github:lmctl-ai/lmssh@latest". Windows is not supported because OpenSSH-portable does not target native Windows.</p>
+<pre><code>lmscript --version
+lmssh --version
+lmssh ssh -V
+lmssh --lmcode-schema
+lmssh --lmcode-signatures</code></pre>
+<h2>Commands</h2>
+<p>lmssh operates both as a direct multi-call wrapper around OpenSSH 10.6p1 client programs and as an LMScript bytecode host supporting dry-run inspection and script argument forwarding.</p>
+<pre><code># Host introspection and bytecode execution
+lmssh --version
+lmssh --lmcode-schema
+lmssh --lmcode-schema --json
+lmssh --lmcode-signatures
+lmssh --lmcode examples/compiled/fleet-check.dslb
+lmssh --dry-run --lmcode examples/compiled/fleet-check.dslb
+lmssh --lmcode job.dslb -- web1 web2
+
+# Direct OpenSSH client modes (or via symlinks named ssh, sftp, scp, ssh-keygen)
+lmssh ssh -p 2222 -J bastion user@host "uname -a"
+lmssh sftp user@host
+lmssh scp -r build/ user@host:/srv/app/
+lmssh ssh-keygen -t ed25519 -f /tmp/id_ed25519 -N "" -C "ops@example.com"</code></pre>
+<h2>Inputs and outputs</h2>
+<p>In _lmcode_ mode, lmssh exposes four host contexts (ssh: Ssh, keys: Keys, io: Io, and report: Report) together with the 226 standard lmcode_std_v3 functions and methods. Script arguments passed after -- are read via io.args(). Remote commands run via Session.exec or Ssh.each return Result and ResultList objects carrying exit status, stdout, stderr, destination name, and timeout flags. At termination, bytecode execution prints any io.print lines followed by a terminal JSON result envelope on stdout.</p>
+<h2>Safety rules</h2>
+<p>Follow these operational and security boundaries when authoring lmssh scripts:</p>
+<ul>
+<li>Keep strict host-key verification enabled in production: unknown host keys are rejected by default even when Session.password is set, unless the script explicitly configures strict_host_key("accept-new") or strict_host_key("no").</li>
+<li>Never embed newlines, carriage returns, or NUL bytes in remote paths, destinations, usernames, jump hosts, or option strings; lmssh 0.1.1+ immediately aborts with RUN_HOST (exit code 3) on control characters, terminates tool options with --, and neutralizes glob wildcards (*, ?, [, ], {, }) on remote paths.</li>
+<li>Use --dry-run --lmcode before running fleet-wide mutations to inspect every generated ssh, scp, sftp, and ssh-keygen command on stderr without starting processes or modifying local files.</li>
+<li>When chaining multiple operations on a single target, enable s.reuse(true) so OpenSSH multiplexes over a private /tmp/lmssh-XXXXXX ControlMaster socket that is automatically torn down when the script exits.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>The first example generates a Certificate Authority key, a user key, and an SSH user certificate, then signs and verifies a payload file in an isolated temporary directory:</p>
+<pre><code>p = _lmcode_ cli="lmssh" install="github:lmctl-ai/lmssh@latest";
+let dir = io.temp_dir();
+let ca = keys.generate(dir + "/ca_key", "ed25519", "ca@example.com", "");
+let user = keys.generate(dir + "/user_key", "ed25519", "alice@example.com", "");
+let cert_path = keys.certify(ca.path(), user.path() + ".pub", "alice-id", "alice,deploy", "+52w");
+assert_eq(io.exists(cert_path), true);
+
+let payload = dir + "/artifact.txt";
+io.write(payload, "release-v1.0.0\n");
+let sig_path = keys.sign(user.path(), "file", payload);
+let allowed = dir + "/allowed_signers";
+io.write(allowed, "alice@example.com " + user.public() + "\n");
+assert_eq(keys.verify(allowed, "alice@example.com", "file", sig_path, payload), true);
+end _lmcode_
+res = run_lmcode(p);
+require(res.ok, json_stringify(res));</code></pre>
+<p>The second example combines SSH key management with the standard lmcode_std_v3 CliOption, CliCommand, and RestGet interfaces:</p>
+<pre><code>p = _lmcode_ cli="lmssh" install="github:lmctl-ai/lmssh@latest";
+@"--comment"
+fn opt_comment(x: RestExchange) -> void implements CliOption {
+  x.set("comment", x.query("comment"));
+}
+
+@"keygen"
+fn cmd_keygen(x: RestExchange) -> void implements CliCommand {
+  let dir = io.temp_dir();
+  let k = keys.generate(dir + "/cli-key", x.body(), x.get("comment"), "");
+  x.send(k.type() + ":" + k.comment() + ":" + str(k.bits()));
+}
+
+@"/keys/ed25519"
+fn get_ed25519(x: RestExchange) -> void implements RestGet {
+  let dir = io.temp_dir();
+  let k = keys.generate(dir + "/rest-key", "ed25519", "rest@lmssh", "");
+  x.json("{\"type\":\"" + k.type() + "\",\"bits\":" + str(k.bits()) + "}");
+}
+
+rest_config("session", "global");
+assert_eq(rest_cli(str_split("--comment=cli@lmssh keygen -- ed25519", " ")), "ed25519:cli@lmssh:256");
+assert_eq(rest_cli(str_split("/keys/ed25519", " ")), "{\"type\":\"ed25519\",\"bits\":256}");
+end _lmcode_
+res = run_lmcode(p);
+require(res.ok, json_stringify(res));</code></pre>
+<h2>Errors and exit codes</h2>
+<p>In direct OpenSSH mode (lmssh ssh, sftp, scp, ssh-keygen), lmssh returns the exact exit status of the underlying OpenSSH program. In _lmcode_ and host modes, it uses deterministic exit codes:</p>
+<ul>
+<li>Exit code 0 indicates that the bytecode program or introspection command completed and all assertions passed.</li>
+<li>Exit code 2 indicates a command-line usage error, unknown flag, or missing required argument.</li>
+<li>Exit code 3 indicates a bytecode load error, schema hash mismatch, or runtime host error (RUN_HOST, such as an unverified failure in Session.output/put/get or a rejected control character in a path).</li>
+<li>Exit code 4 indicates an explicit application verdict reported via io.fail(msg) or report.fail_if_any() (code APP_FAIL).</li>
+</ul>
+<h2>How to verify</h2>
+<p>Verify the lmssh binary by checking its host version, embedded OpenSSH version, schema JSON, and canonical signature list against the compiler:</p>
+<pre><code>lmssh --version
+lmssh ssh -V
+lmssh --lmcode-schema --json > /tmp/lmssh-schema.json
+lmssh --lmcode-signatures > /tmp/lmssh-sigs.txt
+lmscript --lmcode-signatures /tmp/lmssh-schema.json > /tmp/lmssh-compiler-sigs.txt
+diff -u /tmp/lmssh-compiler-sigs.txt /tmp/lmssh-sigs.txt</code></pre>
+<p>In a source checkout, run ./test.sh to execute all 29 verification checks, including schema parity, dry-run tracing, path injection rejection, and live loopback sshd integration tests.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmssh">github.com/lmctl-ai/lmssh</a>.</p>
+</footer>
+</body>
+</html>

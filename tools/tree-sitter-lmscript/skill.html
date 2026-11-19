@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tree-sitter-lmscript skill — tree-sitter-lmscript — lmctl.com tools</title>
+<meta name="description" content="Use tree-sitter-lmscript to parse outer .lms programs, locate _lmcode_ data block boundaries, and inject the companion lmscript_lmcode grammar.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/tree-sitter-lmscript/">Overview</a></li>
+<li><a href="/tools/tree-sitter-lmscript/skill.html">Skill</a></li>
+<li><a href="/tools/tree-sitter-lmscript/guide.html">Guide</a></li>
+<li><a href="/tools/tree-sitter-lmscript/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>tree-sitter-lmscript skill</h1>
+<p>Use tree-sitter-lmscript to parse outer .lms programs, locate _lmcode_ data block boundaries, and inject the companion lmscript_lmcode grammar.</p>
+<h2>Purpose</h2>
+<p>Parse LMScript statements, imports, packages, recover points, command literals, formatted strings, and queued _lmcode_ / data blocks with accurate byte ranges.</p>
+<h2>When to use it</h2>
+<p>Use tree-sitter-lmscript when building editor highlighting, code navigation, or static analysis tools for .lms files and their embedded _lmcode_ blocks.</p>
+<h2>Install</h2>
+<p>Use Node 24+, a C compiler, and tree-sitter-cli 0.27.1 installed in a private prefix, then run npm test.</p>
+<h2>Commands</h2>
+<pre><code>npm install --prefix /tmp/lmscript-tree-sitter tree-sitter-cli@0.27.1
+export TREE_SITTER=/tmp/lmscript-tree-sitter/node_modules/.bin/tree-sitter
+npm test
+node scripts/conformance.mjs</code></pre>
+<h2>Inputs and outputs</h2>
+<ul>
+<li>Input: .lms source files containing outer LMScript statements and queued _lmcode_ or _dsl_ blocks.</li>
+<li>Output: outer LMScript syntax tree with lmcode_body byte ranges ready for tree-sitter-lmcode or lmscript_lmcode injection.</li>
+<li>Manifest: MONO-PIN and corpus-manifest.json recording 119 verified .lms file hashes.</li>
+</ul>
+<h2>Safety rules</h2>
+<ul>
+<li>Do not use tree-sitter-lmscript as a substitute for the authoritative lmscript type-checker or runtime.</li>
+<li>Reparse lmcode_body byte ranges with lmscript_lmcode (or tree-sitter-lmcode) and rebase node positions in the host tool.</li>
+<li>Keep f"..." body templates in the companion lmscript_lmcode parser rather than standalone tree-sitter-lmcode.</li>
+</ul>
+<h2>Worked examples</h2>
+<pre><code># Run live corpus verification when local mono and skills-scripts checkouts are present
+export MONO_ROOT=/path/to/lmctl-mono
+export SKILLS_ROOT=/path/to/skills-scripts
+node scripts/conformance.mjs --live</code></pre>
+<h2>Errors and exit codes</h2>
+<table><thead><tr><th>Exit code</th><th>Stage</th><th>Result</th><th>Condition</th></tr></thead><tbody>
+<tr><td>0</td><td>parse / test</td><td>Exit 0</td><td>Grammar generation, the generated-file freshness check and the corpus conformance cases all pass</td></tr>
+<tr><td>1</td><td>conformance</td><td>Exit 1</td><td>A corpus conformance case fails; the failing case is printed with a FAIL prefix</td></tr>
+<tr><td>1</td><td>freshness</td><td>Exit 1</td><td>Generated src/parser.c, grammar.json, or node-types.json differs from grammar.js after tree-sitter generate</td></tr>
+</tbody></table>
+<h2>How to verify</h2>
+<pre><code>export TREE_SITTER=/tmp/lmscript-tree-sitter/node_modules/.bin/tree-sitter
+npm test</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/tree-sitter-lmscript">github.com/lmctl-ai/tree-sitter-lmscript</a>.</p>
+</footer>
+</body>
+</html>

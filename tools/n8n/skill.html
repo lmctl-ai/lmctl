@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>n8n authoring skill — n8n — lmctl.com tools</title>
+<meta name="description" content="Guidance for authoring, validating, running, and verifying independent n8n-style workflows with LMScript, LMCode, the Go lmflow-host binary, and lmmock.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/n8n/">Overview</a></li>
+<li><a href="/tools/n8n/skill.html">Skill</a></li>
+<li><a href="/tools/n8n/guide.html">Guide</a></li>
+<li><a href="/tools/n8n/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>n8n authoring skill</h1>
+<p>Guidance for authoring, validating, running, and verifying independent n8n-style workflows with LMScript, LMCode, the Go lmflow-host binary, and lmmock.</p>
+<h2>Purpose</h2>
+<p>Help author, validate, and execute linear n8n-style JSON workflows and neutral connector specifications using src/validate.lms, src/run.lms, and the lmcode-go based lmflow-host runtime, verified deterministically against lmmock without upstream n8n code or live secrets.</p>
+<h2>When to use it</h2>
+<p>Use this tool when building or testing declarative n8n-style linear workflow graphs (starting from n8n-nodes-base.manualTrigger through connector nodes such as n8n-nodes-base.telegram), propagating scalar JSON fields via whole-field ={{ $json.path.to.value }} expressions, or adding neutral JSON POST connector operations backed by bounded Go HTTP transport.</p>
+<h2>Install</h2>
+<p>Install Node.js 24.15 or newer and Go 1.26 or newer on Linux or macOS, clone the repository, install the pinned npm toolchain (@lmctl-ai/lmctl 0.2.454 and @lmctl-ai/lmmock 0.1.117) with npm ci --ignore-scripts --no-audit --no-fund, and compile the Go host to ./build/lmflow-host with npm run build.</p>
+<h2>Commands</h2>
+<pre><code>npm ci --ignore-scripts --no-audit --no-fund
+npm run build
+npm run demo
+npm test
+npm run check
+go test ./...
+./build/lmflow-host --lmcode-schema --json
+./build/lmflow-host --lmcode-signatures
+lmscript src/run.lms examples/telegram.workflow.json connectors/telegram.json tests/fixtures/credentials.json</code></pre>
+<h2>Inputs and outputs</h2>
+<ul>
+<li>Inputs to src/run.lms are three positional JSON file paths: WORKFLOW.json (validated against schema/workflow-v1.schema.json), CONNECTOR.json (validated against schema/connector-v1.schema.json), and CREDENTIALS.json (mapped by credential ID and field name).</li>
+<li>Optional environment variables LMFLOW_HOST, LMFLOW_BASE_URL, and LMMOCK_URL override the host executable path and provider base URL for local mock testing.</li>
+<li>Outputs are the final node non-nullable Json response printed as formatted JSON on stdout by src/run.lms, backed by the single SDK terminal result frame from lmflow-host.</li>
+</ul>
+<h2>Safety rules</h2>
+<ul>
+<li>Never store secret credential values in workflow JSON or connector JSON; workflow nodes reference only a credential ID, and real secrets belong in untracked credentials.local.json.</li>
+<li>Never log resolved request URLs in transport errors or diagnostics because connectors such as Telegram place the bot token in the URL path (/bot{token}/...).</li>
+<li>Keep workflows strictly linear: node 0 must be n8n-nodes-base.manualTrigger, every subsequent node must have exactly one incoming main connection, and each node may have at most one outgoing main branch.</li>
+<li>Use only whole-field expressions of the exact form ={{ $json.field.subfield }} that resolve to scalar JSON values (string, number, or boolean); JavaScript evaluation, string interpolation, and array indexing are intentionally excluded.</li>
+<li>Respect host HTTP bounds: POST with application/json only, 10-second timeout, 1 MiB request and response size limits, and no HTTP redirects.</li>
+</ul>
+<h2>Worked examples</h2>
+<pre><code># Build lmflow-host and run the Telegram sendMessage -> getChat workflow against lmmock
+npm run demo
+
+# Validate a workflow and connector directly in LMScript before running lmflow-host
+import "./src/validate.lms";
+let wf = read_json("examples/telegram.workflow.json");
+let conn = read_json("connectors/telegram.json");
+flow.validate_all(wf, conn);</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Exit 0 indicates that structural validation, LMCode graph traversal, HTTP status checks (200..299), and provider success-envelope checks (such as ok: true) all succeeded. When src/run.lms fails pre-flight validation or require(result.ok), lmscript exits nonzero (1) with a diagnostic on stderr. The Go host ./build/lmflow-host exits 0 on success, 2 on CLI flag errors (--lmcode, --workflow, --connector, --credentials required), 3 on bytecode load, config/credential load, or runtime workflow_fail / HTTP errors, and 4 on stdout write or application failures.</p>
+<h2>How to verify</h2>
+<ol>
+<li>Run ./build/lmflow-host --lmcode-schema --json and ./build/lmflow-host --lmcode-signatures and confirm exact byte and signature parity with internal/host/schema.json and lmscript --lmcode-signatures.</li>
+<li>Run npm test to execute lmscript static syntax checks, Go unit tests, and all 63 LMScript integration scenarios (32 structural validation cases, 26 runtime cases, and 5 lifecycle/parity checks).</li>
+<li>Run npm run check:memory to verify durable-memory index and formatting integrity.</li>
+</ol>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/n8n">github.com/lmctl-ai/n8n</a>.</p>
+</footer>
+</body>
+</html>

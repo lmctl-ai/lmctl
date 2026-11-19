@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmauth — lmctl.com tools</title>
+<meta name="description" content="lmauth is a guided, LLM-drivable authorization helper that collects operator tokens and stores them write-only in lmconn without exposing secrets to the caller.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmauth/">Overview</a></li>
+<li><a href="/tools/lmauth/skill.html">Skill</a></li>
+<li><a href="/tools/lmauth/guide.html">Guide</a></li>
+<li><a href="/tools/lmauth/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmauth</h1>
+<p>lmauth is a guided, LLM-drivable authorization helper that collects operator tokens and stores them write-only in lmconn without exposing secrets to the caller.</p>
+<h2>Quick reference</h2>
+<pre><code>lmscript install github:lmctl-ai/lmauth@v0.1.15
+lmauth --version
+lmauth --lmcode-schema --json
+lmauth --lmcode-signatures
+lmauth plan --owner lmctl-ai --repos lmoffice</code></pre>
+<table>
+<thead>
+<tr><th>Item</th><th>Kind</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>plan --owner O --repos R</td><td>CLI subcommand</td><td>Print a fine-grained GitHub token setup recipe for the target repositories.</td></tr>
+<tr><td>present --owner O --repos R ...</td><td>CLI subcommand</td><td>Collect a token via browser or TTY, verify identity, and store write-only in lmconn.</td></tr>
+<tr><td>--lmcode FILE</td><td>CLI flag</td><td>Execute compiled lmcode bytecode with dry-manifest validation.</td></tr>
+<tr><td>fn auth_plan(string, string) -> string</td><td>Host function</td><td>Create a repository authorization recipe inside an _lmcode_ block.</td></tr>
+<tr><td>fn auth_present(string) -> string</td><td>Host function</td><td>Start an operator token collection session.</td></tr>
+<tr><td>fn auth_collect / auth_verify / auth_store</td><td>Host functions</td><td>Collect, verify, and store a token in lmconn, returning a nonsecret JSON receipt.</td></tr>
+</tbody>
+</table>
+<pre><code>program = _lmcode_ cli="lmauth" install="github:lmctl-ai/lmauth@v0.1.15";
+let recipe = auth_plan("lmctl-ai", "lmpdf");
+let session = auth_present(recipe);
+let credential = auth_collect(session);
+let verification = auth_verify(credential);
+$return = auth_store(credential);
+end _lmcode_</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmauth/skill.html">Skill</a> for setup, operator workflow, safety rules, and verification.</li>
+<li><a href="/tools/lmauth/guide.html">Guide</a> for the secret-isolated broker architecture and dry-mode guarantees.</li>
+<li><a href="/tools/lmauth/reference.html">Reference</a> for CLI flags, host schema signatures, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmauth">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmauth">github.com/lmctl-ai/lmauth</a>.</p>
+</footer>
+</body>
+</html>

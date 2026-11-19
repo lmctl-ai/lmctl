@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmmcp guide — lmmcp — lmctl.com tools</title>
+<meta name="description" content="lmmcp is a thin, deterministic Go gateway and LMScript host built on the official Go MCP SDK and github.com/lmctl-ai/lmcode-go.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmmcp/">Overview</a></li>
+<li><a href="/tools/lmmcp/skill.html">Skill</a></li>
+<li><a href="/tools/lmmcp/guide.html">Guide</a></li>
+<li><a href="/tools/lmmcp/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmmcp guide</h1>
+<h2>Overview</h2>
+<p>lmmcp is a thin, deterministic Go gateway and LMScript host built on the official Go MCP SDK and github.com/lmctl-ai/lmcode-go. It bridges local stdio child processes and remote Streamable HTTP or legacy HTTP+SSE MCP servers into a uniform REST API, single-document JSON CLI commands, concurrent JSON-lines over stdio, and bytecode-compiled _lmcode_ scripts without introducing an external database, web UI, or background daemon registry.</p>
+<h2>MCP transports, session lifecycle, and protocol revisions</h2>
+<p>Each entry under mcpServers in config.json configures either a local child process or a remote HTTP/SSE endpoint managed through a lazy per-server session:</p>
+<ul>
+<li>Local stdio processes: Configured with command, args, env, cwd, and optional envAllowlist, allowTools, and denyTools. By default, stdio children inherit only PATH from the parent environment (or nothing when envAllowlist is []). Environment entries using ${NAME} syntax read only that specific variable. Stdio uses IOTransport with unbounded line length (MaxLineLength=-1), discards child stderr, terminates owned process groups on shutdown, and sets Linux Pdeathsig: SIGKILL so children never outlive the parent.</li>
+<li>Streamable HTTP and legacy HTTP+SSE: Remote entries specify url, optional headers, type (or transport) set to http, streamable-http, sse, or auto, and optional protocolVersion (2026-07-28, 2025-11-25, or 2024-11-05). Legacy SSE requires a URL ending in /sse and protocol revision 2024-11-05. Transport mode auto attempts a Streamable HTTP POST initialize first and falls back to /sse only on a non-auth 4xx response (never on 401/403), whereas explicit http never silently downgrades to legacy SSE.</li>
+<li>Session rotation and retry discipline: Each configured server maintains one lazy MCP session. A call is retried at most once if nothing was written to a failed session or if a session-bearing POST receives HTTP 404 (triggering one re-initialization attempt; a second 404 returns SESSION_EXPIRED and a failed re-init returns SESSION_REINITIALIZE_FAILED). List-change notifications mark the session for refresh on its next idle use without interrupting active in-flight calls.</li>
+<li>End-to-end cancellation: HTTP callers can supply an X-Request-ID header and cancel an active operation by sending DELETE /v1/requests/{id}. In lmmcp stdio mode, sending a JSON line with method DELETE and path /v1/requests/{id} cancels the matching in-flight request ID. HTTP client disconnects and SIGINT/SIGTERM/SIGHUP signals propagate MCP notifications/cancelled upstream before closing the session.</li>
+</ul>
+<h2>Security, secret suppression, and network policy</h2>
+<p>lmmcp enforces strict input and output boundaries across configuration parsing, outbound dialing, and response serialization:</p>
+<ul>
+<li>Loopback-only listener and strict origin checks: lmmcp serve binds only literal loopback IP addresses (such as 127.0.0.1 or ::1), validates Host and Origin headers to block browser cross-origin requests, disables CORS, and reads optional REST bearer tokens exclusively from --token-env NAME or --token-file FILE.</li>
+<li>SSRF and destination filtering: Remote server URLs reject userinfo, query strings, fragments, and invalid ports, ignore proxy environment variables, and refuse HTTP redirects and cross-origin SSE endpoint announcements. Plaintext http:// is permitted only for literal loopback IPs. Every dial validates both the literal host and all DNS-resolved IP addresses, unconditionally refusing link-local and cloud-metadata ranges (169.254.0.0/16, fe80::/10, fd00:ec2::254, 0.0.0.0, ::). Setting "allowPrivateAddresses": false additionally refuses RFC 1918, CGNAT (100.64.0.0/10), IPv6 ULA (fc00::/7), and DNS-resolved loopback addresses.</li>
+<li>Known-secret suppression: All environment variable values referenced via ${NAME} and configured bearer tokens of length 8 bytes or longer are registered as protected secrets. Before any REST, CLI, stdio, or _lmcode_ response is emitted, lmmcp scans serialized strings and JSON numbers (including JSON-escaped forms) and blocks the response if a known secret appears, taking precedence over content preservation.</li>
+<li>Tool filtering and read-only enforcement: allowTools and denyTools match exact tool names with deny taking precedence (an empty allowTools array permits no tools). Passing --read-only permits only tools whose MCP annotations declare readOnlyHint=true without destructiveHint=true.</li>
+<li>Dry-run bytecode execution: When _lmcode_ runs in dry mode, mcp_* functions and MCPServer methods return structured preview envelopes ({"ok":true,"dry":true,"action":...,"started":false}) without spawning stdio processes, dialing remote URLs, or reading credential environment variables.</li>
+</ul>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<p>In addition to MCPServer and the mcp_* global functions, lmmcp embeds the 226-signature lmcode_std_v3 standard catalog via github.com/lmctl-ai/lmcode-go. Scripts can wrap MCP operations inside standard REST routes and stateless CLI commands:</p>
+<ul>
+<li>HTTP route interfaces: Implement RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, or RestHandler on functions annotated with @"/path" or @"/path/:param".</li>
+<li>Stateless CLI options and commands: Implement CliOption (@"--flag") and CliCommand (@"cmd") and dispatch argument vectors in-process via rest_cli(args).</li>
+<li>Session state and lifecycle: Use rest_config("session", "global") to share state keys across RestExchange.get, RestExchange.set, and RestExchange.increment invocations, or register dynamic routes with rest_route(method, path, handler).</li>
+</ul>
+<pre><code>p = _lmcode_ schema="examples/schema.json";
+@"--server"
+fn opt_server(x: RestExchange) -> void implements CliOption {
+  x.set("server", x.query("server"));
+}
+
+@"resources"
+fn cmd_resources(x: RestExchange) -> void implements CliCommand {
+  let srv = mcp_server(x.get("server"));
+  x.json(srv.resources().to_json());
+}
+
+@"/read/:server"
+fn get_read(x: RestExchange) -> void implements RestGet {
+  let res = mcp_read(x.param("server"), "mock://readme");
+  x.json(res.to_json());
+}
+
+rest_config("session", "global");
+let list_out = rest_cli(str_split("--server=fixture resources", " "));
+let read_out = rest_cli(str_split("/read/fixture", " "));
+$return = json_parse("{\"resources\":" + list_out + ",\"read\":" + read_out + "}");
+end _lmcode_</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmmcp">github.com/lmctl-ai/lmmcp</a>.</p>
+</footer>
+</body>
+</html>

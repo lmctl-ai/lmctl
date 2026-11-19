@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmgallery — lmctl.com tools</title>
+<meta name="description" content="lmgallery is a showcase of 50 runnable LMScript compositions across 16 native hosts that compute scientific, financial, or engineering results and render…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmgallery/">Overview</a></li>
+<li><a href="/tools/lmgallery/skill.html">Skill</a></li>
+<li><a href="/tools/lmgallery/guide.html">Guide</a></li>
+<li><a href="/tools/lmgallery/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmgallery</h1>
+<p>lmgallery is a showcase of 50 runnable LMScript compositions across 16 native hosts that compute scientific, financial, or engineering results and render visual outputs.</p>
+<h2>Quick reference</h2>
+<p>Install lmctl and run any composition directly from its public URL in an empty directory, or clone the repository to run the test suite and regenerate previews.</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/01-oscillator-ode-plot.lms</code></pre>
+<table>
+<thead><tr><th>Command or file</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>lmctl URL</td><td>Download and execute a self-contained multi-host composition in the current directory</td></tr>
+<tr><td>./test.sh</td><td>Run offline checks for image headers, CRCs, size budgets, attribution, and local links</td></tr>
+<tr><td>./test.sh --network</td><td>Verify published HTTP links and raw GitHub URLs</td></tr>
+<tr><td>./test.sh --run</td><td>Execute all 50 local composition scripts in fresh temporary directories</td></tr>
+<tr><td>./test.sh --urls</td><td>Execute all 50 public raw autorun URLs in fresh temporary directories</td></tr>
+<tr><td>./examples/render-all.sh</td><td>Regenerate all 50 composition preview images (use --only NN for one example)</td></tr>
+<tr><td>python3 scripts/build-readme.py</td><td>Rebuild README.md, examples/README.md, and docs/ATTRIBUTION.md from JSON manifests</td></tr>
+</tbody>
+</table>
+<p>Run a two-host composition (lmspace to lmplot) from the command line:</p>
+<pre><code>mkdir -p /tmp/kepler-run &amp;&amp; cd /tmp/kepler-run
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/16-kepler-conservation.lms
+ls -la images/</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmgallery/skill.html">Skill</a>: commands, safety rules, verification steps, and worked multi-host examples for LLM agents.</li>
+<li><a href="/tools/lmgallery/guide.html">Guide</a>: multi-host composition architecture, cross-host data formats, and manifest maintenance.</li>
+<li><a href="/tools/lmgallery/reference.html">Reference</a>: complete tables of showcase hosts, composition pipelines, manifest schemas, test flags, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmgallery">Source repository and releases</a></p></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmgallery">github.com/lmctl-ai/lmgallery</a>.</p>
+</footer>
+</body>
+</html>

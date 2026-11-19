@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmsaml guide — lmsaml — lmctl.com tools</title>
+<meta name="description" content="lmsaml packages a complete SAML 2.0 Identity Provider (IdP), a built-in Service Provider (SP), a JSON REST management and assertion API, a hardened Go SAML 2.0…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmsaml/">Overview</a></li>
+<li><a href="/tools/lmsaml/skill.html">Skill</a></li>
+<li><a href="/tools/lmsaml/guide.html">Guide</a></li>
+<li><a href="/tools/lmsaml/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmsaml guide</h1>
+<h2>Overview</h2>
+<p>lmsaml packages a complete SAML 2.0 Identity Provider (IdP), a built-in Service Provider (SP), a JSON REST management and assertion API, a hardened Go SAML 2.0 and XML-DSig/XML-Enc engine, and the lmcode-go bytecode virtual machine with the 226-signature lmcode_std_v3 standard library inside a single zero-dependency executable (CGO_ENABLED=0).</p>
+<h2>Turnkey SAML 2.0 IdP and SP architecture</h2>
+<p>Setting up a traditional SAML 2.0 test environment requires generating OpenSSL keypairs, authoring IdP and SP EntityDescriptor XML documents, exchanging metadata files, and configuring an LDAP or SQL backing store. lmsaml automates the entire federation loop at startup:</p>
+<ul>
+<li>Automatic X.509 keypair generation: At startup, SamlEngine generates two independent 2048-bit RSA keypairs and self-signed X.509 certificates in memory—one for the Identity Provider (CN=lmsaml-idp.example.com) and one for the built-in Service Provider (CN=lmsaml-sp.example.com)—valid for 365 days with DigitalSignature and KeyEncipherment key usages.</li>
+<li>Pre-wired metadata and trust: The IdP serves its EntityDescriptor XML at GET /idp/metadata and GET /metadata, while the built-in SP serves its EntityDescriptor XML at GET /sp/metadata and its Assertion Consumer Service at POST /sp/acs. The built-in SP is automatically registered in the IdP service store under /services/sp-default so SP-initiated flows work immediately without manual metadata uploads.</li>
+<li>End-to-end SSO and SLO flows: Requesting GET /sp/hello on the built-in SP triggers an SP-initiated SAML 2.0 AuthnRequest HTTP 302 redirect to /idp/sso?SAMLRequest=.... The IdP supports HTTP-Redirect and HTTP-POST Single Sign-On bindings (/idp/sso and /sso), interactive login forms (/idp/login and /login), and Single Logout (/idp/slo, /slo, /idp/logout, and /logout).</li>
+<li>Dual-port REST and SAML serving: By default, SAML 2.0 protocol endpoints and REST management endpoints share --port (default 8080). Passing --rest-port binds an additional dedicated HTTP listener for administrative REST traffic.</li>
+</ul>
+<h2>XML-DSig, XML-Enc, and SAML 2.0 security hardening</h2>
+<p>Both the lmsaml executable and its underlying Go packages implement strict cryptographic defenses against common SAML and XML vulnerabilities:</p>
+<ul>
+<li>Enveloped RSA-SHA256 signatures and Exclusive C14N: Issued assertions sign both the inner &lt;saml:Assertion> and the outer &lt;samlp:Response> using RSA-SHA256 (http://www.w3.org/2001/04/xmldsig-more#rsa-sha256) and Exclusive XML Canonicalization (C14N10Exclusive).</li>
+<li>XML Signature Wrapping (XSW) and SHA-1 defenses: Verification validates signature Reference URIs, enforces signed element structural isolation, rejects weak SHA-1 signatures by default (sha1_policy.go), and verifies NotBefore, NotOnOrAfter, AudienceRestriction, Destination, Recipient, and InResponseTo attributes.</li>
+<li>XML Encryption and untrusted XML budgets: The xmlenc package supports AES-128/256-CBC, AES-128/256-GCM, RSA-OAEP, and RSA-PKCS1v15 for EncryptedAssertion and EncryptedID elements while enforcing encrypted key recipient caps, constant-time decryption error handling, DEFLATE bomb limits, and untrusted XML structure budgets.</li>
+</ul>
+<h2>In-process and remote LMScript host execution</h2>
+<p>When executing compiled _lmcode_ bytecode via lmsaml --lmcode, the host initializes context saml: Saml and a fluent Batch builder:</p>
+<ul>
+<li>Dual in-process or REST client dispatch: If SAML_REST_URL, SAML_REST_PORT, or SAML_PORT is present in the environment, SamlHostClient forwards context operations (ping, metadata, sp_metadata, add_user, get_user, del_user, list_users, authenticate, issue_assertion, verify_assertion) to the running lmsaml HTTP server. When no environment variable is set, it executes directly against an embedded in-memory SamlEngine with zero network setup.</li>
+<li>OID attribute mapping: Assertions issued via POST /assertion or saml.issue_assertion populate standard SAML 2.0 URI attributes for uid (urn:oid:0.9.2342.19200300.100.1.1), mail (urn:oid:0.9.2342.19200300.100.1.3), cn (urn:oid:2.5.4.3), sn (urn:oid:2.5.4.4), givenName (urn:oid:2.5.4.42), and memberOf group values, which saml.verify_assertion extracts into a structured JSON attributes map.</li>
+<li>Batch execution: saml.batch() queues sequences of ping, add_user, get_user, del_user, list_users, and issue_assertion operations and executes them in order via Batch.exec(), returning a JSON array of results.</li>
+</ul>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<p>lmsaml embeds the full 226-signature lmcode_std_v3 catalog from lmcode-go. Any _lmcode_ script can define custom REST routes and stateless CLI commands that orchestrate SAML user provisioning and assertion verification:</p>
+<ul>
+<li>HTTP route interfaces: RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, and RestHandler with colon-prefixed path parameters (@"/users/:id/assertion").</li>
+<li>Stateless CLI interfaces: CliOption (@"--flag") and CliCommand (@"cmd"), dispatched in-process via rest_cli(args).</li>
+<li>Session state and server lifecycle: rest_config("session", "global") shares RestExchange state (get, set, increment) across invocations, while rest_route, rest_serve, and rest_stop manage standalone standard REST listeners.</li>
+</ul>
+<pre><code>p = _lmcode_ cli="lmsaml" install="github:lmctl-ai/lmsaml@latest";
+@"--audience"
+fn opt_aud(x: RestExchange) -> void implements CliOption {
+  x.set("aud", x.query("audience"));
+}
+
+@"mint"
+fn cmd_mint(x: RestExchange) -> void implements CliCommand {
+  let u = x.query("user");
+  saml.add_user(u, "{\"email\":\"" + u + "@example.com\",\"password\":\"pass123\"}");
+  let issued = json_parse(saml.issue_assertion(u, x.get("aud")));
+  let verified = json_parse(saml.verify_assertion(issued.get("xml").as_string()));
+  x.send(verified.get("subject").as_string() + ":" + str(verified.get("valid").as_bool()));
+}
+
+@"/directory/:user"
+fn get_dir_user(x: RestExchange) -> void implements RestGet {
+  x.json(saml.get_user(x.param("user")));
+}
+
+rest_config("session", "global");
+assert_eq(rest_cli(str_split("--audience=http://127.0.0.1:8080/sp/metadata mint --user=dave", " ")), "dave@example.com:true");
+end _lmcode_</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmsaml">github.com/lmctl-ai/lmsaml</a>.</p>
+</footer>
+</body>
+</html>

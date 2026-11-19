@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmsearch — lmctl.com tools</title>
+<meta name="description" content="lmsearch is a native C++ vector and neural search CLI and lmcode host unifying ONNX embeddings, AutoFaiss index tuning, and FAISS search.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmsearch/">Overview</a></li>
+<li><a href="/tools/lmsearch/skill.html">Skill</a></li>
+<li><a href="/tools/lmsearch/guide.html">Guide</a></li>
+<li><a href="/tools/lmsearch/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmsearch</h1>
+<p>lmsearch is a native C++ vector and neural search CLI and lmcode host unifying ONNX embeddings, AutoFaiss index tuning, and FAISS search.</p>
+<h2>Quick reference</h2>
+<pre><code>lmscript install github:lmctl-ai/lmsearch@v0.1.16
+lmsearch --version
+lmsearch --lmcode-schema --json
+lmsearch --lmcode-signatures
+lmsearch index README.md examples --output build/docs.faiss --model all-MiniLM-L6-v2
+lmsearch search --index build/docs.faiss --query "ONNX and FAISS vector search" -k 3</code></pre>
+<table>
+<thead>
+<tr><th>Item</th><th>Kind</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>index / search</td><td>CLI subcommands</td><td>Embed and index files with ONNX into FAISS and search with metadata filters.</td></tr>
+<tr><td>serve / client</td><td>CLI subcommands</td><td>Single-user lazy in-memory REST server with broad-query cache and fast requery views.</td></tr>
+<tr><td>onnx_embedder / onnx_pretrained / OnnxModel</td><td>ONNX layer</td><td>Build, validate, cache, and execute ONNX embedding graphs.</td></tr>
+<tr><td>autotuner / AutoPlan / IndexMetrics</td><td>AutoFaiss layer</td><td>Select memory-bounded FAISS index keys and autotune query hyperparameters.</td></tr>
+<tr><td>faiss_index / auto_index / FaissIndex</td><td>FAISS layer</td><td>Index vectors or documents, run filtered KNN or range search, and evaluate recall.</td></tr>
+<tr><td>VectorFilter, Reranker, FileFilter, IgnoreRule, IndexPolicy</td><td>SAM interfaces</td><td>Customize file pruning, ingestion, AutoFaiss selection, ID filtering, and reranking.</td></tr>
+</tbody>
+</table>
+<pre><code>program = _lmcode_ cli="lmsearch" install="github:lmctl-ai/lmsearch@v0.1.16";
+let model = onnx_embedder(128, 32, 16).pooling(Pooling.MEAN).normalize(true);
+let plan = autotuner(1000, 16).metric(Metric.COSINE).max_memory("16MB").plan();
+let idx = auto_index(plan).embedder(model);
+idx.add_doc(document(1, "ONNX and FAISS vector search"));
+idx.search_text("vector search", 1).emit("hits");
+end _lmcode_
+r = run_lmcode(program);
+assert(r.ok);</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmsearch/skill.html">Skill</a> for setup, ONNX check and lazy-server timeout rules, and verification.</li>
+<li><a href="/tools/lmsearch/guide.html">Guide</a> for ONNX/AutoFaiss/FAISS layers, SAM callbacks, and lazy REST caching.</li>
+<li><a href="/tools/lmsearch/reference.html">Reference</a> for CLI subcommands, schema types and methods, SAM interfaces, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmsearch">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmsearch">github.com/lmctl-ai/lmsearch</a>.</p>
+</footer>
+</body>
+</html>

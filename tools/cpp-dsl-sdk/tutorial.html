@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>lmcode-cpp tutorial — lmcode-cpp — lmctl.com tools</title>
-<meta name="description" content="Build a small C++ host, compile a schema-bound DSL block and run it through the SDK.">
+<meta name="description" content="Build a small C++ host, compile a schema-bound _lmcode_ block and run it through the SDK.">
 <link rel="stylesheet" href="/tools/style.css">
 <link rel="icon" type="image/png" href="/tools/lmcode-cpp/img/icon.png">
 </head>
@@ -23,7 +23,7 @@
 <main>
 <h1>lmcode-cpp tutorial</h1>
 <p>This lmcode-cpp page is also kept at its former address for existing links.</p>
-<p>This walkthrough uses a small host with one object method. Save the schema, DSL and C++ source below in one directory. Copy include/dslvm.hpp from the SDK into a local include/ directory.</p>
+<p>This walkthrough uses a small host with one object method. Save the schema, lmscript and C++ source below in one directory. Copy include/dslvm.hpp from the SDK into a local include/ directory.</p>
 <h2>1. Declare the host schema</h2>
 <pre><code>{
   "dsl.schema": 2,
@@ -41,9 +41,9 @@
   "context": { "g": "Greeter" }
 }</code></pre>
 <p>This schema= declaration is the SDK-author flow; tool users should use cli and install on the LMCode declaration.</p>
-<h2>2. Compile a DSL call</h2>
+<h2>2. Compile an _lmcode_ block</h2>
 <pre><code>p = _lmcode_ schema="schema.json";
-g.say("Hello from the DSL");
+g.say("Hello from lmcode");
 end _lmcode_
 savedsl(p, "demo.dslb");</code></pre>
 <p>Run the compiler:</p>
@@ -79,9 +79,17 @@ method Greeter.say(string) -> void</samp></pre>
 <pre><kbd>diff -u &lt;(npx --yes --package=@lmctl-ai/lmctl -- lmscript --lmcode-signatures schema.json) &lt;(./greeter --signatures)</kbd>
 <samp>signature parity: 0</samp></pre>
 <pre><kbd>./greeter demo.dslb schema.json</kbd>
-<samp>{"ok": true, "result": "Hello from the DSL"}</samp></pre>
+<samp>{"ok": true, "result": "Hello from lmcode"}</samp></pre>
 <h2>What you learned</h2>
 <p>The compiler binds imports to the schema bytes; the host registers matching signatures, loads the program, provides owned objects through a context and executes the verified bytecode.</p>
+<p>Every default dslvm::Registry includes the lmcode_std_v3 standard catalog: 226 canonical signatures (88 functions and 138 methods on 17 standard types), pinned in std.lock as version 3 of std/lmcode-std.schema.json. Registry(StdMode::Disabled) opts out and dslvm::register_std(registry) enables it idempotently.</p>
+<p>The catalog includes the standard REST and CLI surface: the 10 interfaces RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand and CliOption (each takes one RestExchange and returns void), the functions rest_config, rest_route, rest_serve, rest_stop and rest_cli, and 15 RestExchange methods.</p>
+<p>Once a host is released, users write the block with cli and install instead of schema and execute it with run_lmcode:</p>
+<pre><code>prog = _lmcode_ cli="X" install="github:lmctl-ai/X@latest";
+...
+end _lmcode_
+r = run_lmcode(prog);</code></pre>
+<p>The <a href="/tools/cpp-dsl-sdk/reference.html">reference</a> lists the API and the catalog.</p>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-cpp">github.com/lmctl-ai/lmcode-cpp</a>.</p>

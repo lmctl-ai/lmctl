@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-cpp-sample — lmctl.com tools</title>
+<meta name="description" content="lmcode-cpp-sample is the canonical C++17 reference Shop and Ledger host that defines the 123-case portable sample suite for all lmcode runtimes.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-cpp-sample/">Overview</a></li>
+<li><a href="/tools/lmcode-cpp-sample/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-cpp-sample/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-cpp-sample/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-cpp-sample</h1>
+<p>lmcode-cpp-sample is the canonical C++17 reference Shop and Ledger host that defines the 123-case portable sample suite for all lmcode runtimes. It embeds the header-only lmcode-cpp SDK, binds 45 host signatures plus lmcode_std_v3, dispatches @item and @total rule entries, and emits LMCODE_RETURN frames.</p>
+<h2>Quick reference</h2>
+<pre><code>git clone https://github.com/lmctl-ai/lmcode-cpp-sample.git
+cd lmcode-cpp-sample
+python3 scripts/sync.py check
+./test.sh</code></pre>
+<table><thead><tr><th>Aspect</th><th>Value</th><th>Role</th></tr></thead><tbody>
+<tr><td>Language &amp; toolchain</td><td>C++17</td><td>Reference host implementation embedding lmcode-cpp (include/dslvm.hpp)</td></tr>
+<tr><td>Domain schema</td><td>45 host signatures</td><td>Shop, Items, Money, Ledger, Currency enum, operators, and Adjuster/Score interfaces</td></tr>
+<tr><td>Standard catalog</td><td>lmcode_std_v3</td><td>Preloaded standard catalog plus opt-in print and assert_close testing helpers</td></tr>
+<tr><td>--lmcode-schema [--json]</td><td>Discovery flag</td><td>Print human summary or exact embedded dsl.schema: 2 JSON bytes (exit 0)</td></tr>
+<tr><td>--lmcode-signatures</td><td>Discovery flag</td><td>Print sorted canonical host and standard signatures (exit 0)</td></tr>
+<tr><td>--lmcode / --first / --last</td><td>Execution flags</td><td>Run one or more compiled DSLB v6 chunks, dispatch @item/@total entries, and frame results</td></tr>
+</tbody></table>
+<pre><code>./build/lmcode-cpp-sample --version
+./build/lmcode-cpp-sample --lmcode-schema --json
+./build/lmcode-cpp-sample --lmcode-signatures
+./build/lmcode-cpp-sample --lmcode sample-suite/bytecode/001-literals.dslb</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmcode-cpp-sample/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-cpp-sample/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-cpp-sample/reference.html">Reference</a></li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmcode-cpp-sample">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-cpp-sample">github.com/lmctl-ai/lmcode-cpp-sample</a>.</p>
+</footer>
+</body>
+</html>

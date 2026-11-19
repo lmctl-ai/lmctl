@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmfilament skill: build Google Filament scenes from LMScript — lmfilament — lmctl.com tools</title>
+<meta name="description" content="Use this page to write, run and verify an lmfilament program on the first try.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmfilament/">Overview</a></li>
+<li><a href="/tools/lmfilament/skill.html">Skill</a></li>
+<li><a href="/tools/lmfilament/guide.html">Guide</a></li>
+<li><a href="/tools/lmfilament/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmfilament skill: build Google Filament scenes from LMScript</h1>
+<p>Use this page to write, run and verify an lmfilament program on the first try. Every command and output below was produced with lmscript 0.2.482 and the released lmfilament 0.3.21 on Linux.</p>
+<h2 id="purpose">Purpose</h2>
+<p>lmfilament is a native host for the lmscript _lmcode_ statement that embeds Google Filament 1.78.1: the material compiler, the engine and the geometry tools, in one static executable with no runtime dependency. Inside a block you compile materials, create procedural or OBJ meshes and textures, assemble a scene with lights, a camera and a node hierarchy, drive the Filament render loop and write a preview PNG.</p>
+<h2 id="when">When to use it</h2>
+<ul>
+<li>Use it to compile Filament material source into a filamat package and check that it compiles.</li>
+<li>Use it to build headless 3D scenes from primitives, OBJ files, text and tubes, and to save a preview picture or a numbered frame sequence for a video.</li>
+<li>Use it to import and export OBJ meshes and compute tangent frames.</li>
+<li>Do not use it when you need Filament pixels. A fully static binary cannot load a GPU driver, so Filament runs on its noop backend and render_frames drives the render loop without output. Pictures come from the small CPU preview rasterizer behind Scene.render_png: Lambert shading from the scene lights, base color from the material parameters or the albedo texture, unlit vertex colors and an optional shadow map. It is a preview, not the Filament PBR renderer.</li>
+</ul>
+<h2 id="install">Install</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmscript --version</code></pre>
+<p>Nothing else is installed by hand. A block that starts with cli="lmfilament" install="github:lmctl-ai/lmfilament@latest" makes lmscript download the release binary into its tool cache and read the embedded schema from it. The current release lane publishes Linux x64 and arm64 binaries (glibc 2.35 or newer); macOS and Windows are not produced by the current lane.</p>
+<h2 id="commands">Commands</h2>
+<table>
+<thead>
+<tr><th>Command</th><th>Use</th></tr>
+</thead>
+<tbody>
+<tr><td>lmscript FILE.lms</td><td>Compile the block, start the host, return the result envelope to the script</td></tr>
+<tr><td>lmscript --check FILE.lms</td><td>Compile and type-check the block against the lmfilament schema without running</td></tr>
+<tr><td>lmctl autorun FILE.lms or URL</td><td>Run a script or a raw GitHub example URL, as the repository README does</td></tr>
+<tr><td>lmfilament --version</td><td>Version line</td></tr>
+<tr><td>lmfilament --lmcode-schema --json</td><td>Embedded schema JSON</td></tr>
+<tr><td>lmfilament --lmcode-signatures</td><td>All callable signatures as text, standard library included</td></tr>
+<tr><td>lmfilament --lmcode FILE [FILE ...]</td><td>The host protocol that run_lmcode drives; rarely typed by hand</td></tr>
+</tbody>
+</table>
+<pre><kbd>lmfilament --version</kbd>
+<samp>lmfilament 0.3.21</samp></pre>
+<h2 id="io">Inputs and outputs</h2>
+<ul>
+<li>Input is the block text plus any files it names: Filament material source through fil.material_file, OBJ meshes through fil.mesh_obj, and PNG, JPEG, BMP or TGA images through fil.texture_file.</li>
+<li>Material source can also be passed inline as a string to fil.material(name, source), which keeps a script self-contained; the repository examples do this.</li>
+<li>Outer values enter a block through ${expr} interpolation. Numeric literals passed to float parameters need a decimal point: write 2.0, not 2.</li>
+<li>Outputs are files written by Scene.render_png(path, width, height), Texture.save_png(path), Mesh.save_obj(path) and Material.save(path). Create output directories first with mkdir in the outer script.</li>
+<li>run_lmcode returns a map. On success ok is true and result holds what the block set with lmcode_return_set or lmcode_return_put. On failure ok is false; the examples print r.stderr and r.stdout.</li>
+<li>Filament engine log lines such as the resolved backend are printed while the host runs; stdout of the host carries the result frame.</li>
+</ul>
+<h2 id="safety">Safety rules</h2>
+<ul>
+<li>Always test r.ok after run_lmcode, and assert on it, as every repository example does.</li>
+<li>Never present a render_png picture as Filament output. It is the CPU preview; maps other than the albedo (roughness, metallic, normal, ao) are uploaded but not used for shading.</li>
+<li>Set texture filtering and wrapping before the material is added to a scene. The image is uploaded to Filament when the material is added with Scene.add, add_at or add_part.</li>
+<li>render_png, save_png, save_obj and Material.save write files at the path you give; write into a build or images directory.</li>
+<li>The standard file_write, file_append and file_read functions are byte file access relative to the working directory; treat a block from an untrusted source like any other program.</li>
+<li>Meshes carry UVs with v = 0 at the top row of the image; OBJ vt is flipped on import.</li>
+</ul>
+<h2 id="examples">Worked examples</h2>
+<h3 id="ex-triangle">A vertex-colored triangle with returned facts</h3>
+<p>This is the repository hellotriangle example with result fields added. It compiles the unlit bakedColor material inline, renders two frames on the noop backend and writes a preview PNG.</p>
+<pre><code>mkdir("build");
+prog = _lmcode_ cli="lmfilament" install="github:lmctl-ai/lmfilament@latest";
+let mat = fil.material("bakedColor", "material {\n    name : BakedColor,\n    requires : [\n        color\n    ],\n    shadingModel : unlit,\n    culling : none,\n    featureLevel : 0\n}\n\nfragment {\n    void material(inout MaterialInputs material) {\n        prepareMaterial(material);\n        material.baseColor = getColor();\n    }\n}\n");
+let s = fil.scene();
+s.skybox(0.1, 0.125, 0.25);
+s.camera(45.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0);
+let tri = fil.triangle();
+s.add(tri, mat);
+let frames = s.render_frames(2);
+s.render_png("build/triangle.png", 800, 600);
+lmcode_return_put("filament", fil.version());
+lmcode_return_put("frames", frames);
+lmcode_return_put("vertices", tri.vertex_count());
+lmcode_return_put("renderables", s.renderable_count());
+lmcode_return_put("package_bytes", mat.package_size());
+end _lmcode_
+r = run_lmcode(prog);
+if (!r.ok) { println(r.stderr + r.stdout); }
+assert(r.ok);
+println(r.result);</code></pre>
+<pre><kbd>lmscript triangle.lms</kbd>
+<samp>Using 'soft' CircularBuffer (12288 KiB)
+FEngine (64 bits) created at 0x94eb860 (threading is enabled)
+FEngine resolved backend: Noop
+Backend feature level: 1
+FEngine feature level: 1
+{"filament":"1.78.1","frames":2,"vertices":3,"renderables":1,"package_bytes":152462}</samp></pre>
+<h3 id="ex-lit">Lit primitives with a shadow map</h3>
+<p>From the repository shadows example. The material mat is a lit material with baseColor, metallic and roughness parameters, compiled as above. Parameters are set before each add, add_part returns a Part that can be moved, and shadows(true) turns on the preview shadow map.</p>
+<pre><code>let s = fil.scene();
+s.skybox(0.55, 0.7, 0.9);
+mat.set_float3("baseColor", 0.75, 0.75, 0.72);
+s.add_at(fil.plane(14.0, 14.0), mat, 0.0, -1.0, 0.0);
+mat.set_float3("baseColor", 0.85, 0.3, 0.25);
+s.add_at(fil.sphere(1.0, 48), mat, -2.8, 0.0, 0.0);
+mat.set_float3("baseColor", 0.25, 0.6, 0.85);
+s.add_part(fil.box(1.8, 1.8, 1.8), mat).translate(-0.4, -0.1, 0.8).rotate(0.0, 25.0, 0.0);
+s.shadows(true);
+s.directional_light(1.0, 1.0, 1.0, 110000.0, 0.6, -0.55, -0.45);
+s.camera(38.0, 0.0, 4.5, 9.5, 0.0, -0.3, 0.0);
+s.render_frames(1);
+s.render_png("images/shadows.png", 900, 560);</code></pre>
+<h3 id="ex-repo">Run a repository example</h3>
+<pre><code>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmfilament/main/examples/ball-stick.lms</code></pre>
+<h2 id="errors">Errors and exit codes</h2>
+<table>
+<thead>
+<tr><th>Exit</th><th>Phase and code</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>none</td><td>Success, also for --version and the schema flags</td></tr>
+<tr><td>2</td><td>cli, CLI_USAGE</td><td>Usage error: the host prints the usage line and a failure frame</td></tr>
+<tr><td>3</td><td>load, LOAD_BAD_BYTECODE</td><td>A compiled program file could not be read</td></tr>
+</tbody>
+</table>
+<pre><kbd>lmfilament --lmcode missing.dslb</kbd>
+<samp>LMCODE_RETURN_BEGIN
+{"ok":false,"phase":"load","code":"LOAD_BAD_BYTECODE","message":"cannot read missing.dslb"}
+LMCODE_RETURN_END</samp></pre>
+<p>Compile errors come from lmscript before the host starts, with exit 2. Calling a name that is not in the schema looks like this:</p>
+<pre><kbd>lmscript --check t.lms</kbd>
+<samp>error:/tmp/lmfil-work/t.lms:11:1: _lmcode_: undefined name 'lmcode_return_put_string' (locals are declared with let; the schema provides: fil; built-ins: float, str, sin, cos, sqrt, abs, floor, pow, min, max, clamp, lerp, ease, ease_in, ease_out, int)</samp></pre>
+<h2 id="verify">How to verify</h2>
+<ul>
+<li>Run lmscript --check FILE.lms; exit 0 means every call matches the schema.</li>
+<li>Run the script and assert r.ok; then check that the output PNG or OBJ file exists and is not empty.</li>
+<li>Return facts from the block and assert on them: Scene.renderable_count, Scene.light_count, Mesh.vertex_count, Mesh.triangle_count, Material.package_size, and the int returned by render_frames.</li>
+<li>Check the embedded engine version with fil.version(), which returned 1.78.1 for lmfilament 0.3.21.</li>
+<li>See the <a href="/tools/lmfilament/reference.html">reference</a> for every signature and the <a href="/tools/lmfilament/guide.html">guide</a> for the concepts.</li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmfilament">github.com/lmctl-ai/lmfilament</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmazure authoring skill — lmazure — lmctl.com tools</title>
+<meta name="description" content="lmazure is the Azure scripting host for LMScript, providing both the shared lmcloud procedural schema on Go hostkit and a 72-example Azure ARM metadata and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmazure/">Overview</a></li>
+<li><a href="/tools/lmazure/skill.html">Skill</a></li>
+<li><a href="/tools/lmazure/guide.html">Guide</a></li>
+<li><a href="/tools/lmazure/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmazure authoring skill</h1>
+<p>lmazure is the Azure scripting host for LMScript, providing both the shared lmcloud procedural schema on Go hostkit and a 72-example Azure ARM metadata and owned-resource gallery.</p>
+<h2>Purpose</h2>
+<p>Use lmazure to script Azure Blob Storage, Azure Queue Storage, Table Storage, permissions, functions, user directories, and 12 read-only ARM inventory domains from LMScript against deterministic in-process fakes or the local azuresim emulator on 127.0.0.1:4577.</p>
+<h2>When to use it</h2>
+<p>Choose lmazure when writing cross-cloud lmcloud programs tested against Azure semantics, when running Blob and Queue workflows against azuresim in open or SharedKey/Bearer enforce mode, or when generating Azure resource inventory, tagging compliance, security posture, and cost breakdown reports.</p>
+<h2>Install</h2>
+<p>Declare lmazure in an LMScript _lmcode_ block so the compiler downloads and verifies the release asset and binds its embedded schema.</p>
+<pre><code>p = _lmcode_ cli="lmazure" install="github:lmctl-ai/lmazure@latest";</code></pre>
+<h2>Commands</h2>
+<p>Execute LMScript programs through lmscript or lmctl, or run lmazure directly to inspect its version, schema, canonical signatures, notices, and sweeper.</p>
+<pre><code>lmazure --version
+lmazure --help
+lmazure --notices
+lmazure [cloud] --lmcode-schema --json
+lmazure [cloud] --lmcode-signatures
+lmazure [cloud] --lmcode-signatures --without-std
+lmazure --sweep
+lmscript examples/resource_inventory.lms</code></pre>
+<h2>Inputs and outputs</h2>
+<p>In shared lmcloud mode, programs operate on the cloud context (type Cloud) and receive typed objects (ObjectMeta, ObjectListPage, QueueMessage, QueueMessageList, TableItem, TablePage, Policy, LintReport, FunctionConfig, FunctionInvokeResult, User, UserPage, Session, CostReport, MetricsReport, CloudError). In ARM inventory gallery scripts, mock() returns a deterministic session whose inventory(kind) tables export masked rows to CSV, JSON, and rendered figures without printing subscription IDs or credentials.</p>
+<h2>Safety rules</h2>
+<p>By default, lmazure uses its offline in-process fake adapter and makes zero network requests. Plain HTTP endpoints are permitted only on loopback (127.0.0.1:4577 for azuresim). Non-loopback HTTP endpoints are rejected with INVALID_ARGUMENT, and live cloud calls without explicit authorization fail closed with UNAUTHENTICATED. Run-owned containers and queues enforce the lmazure-&lt;run-id>- prefix and lmazure_test metadata, cap estimated spend at $0.05 by default ($0.25 maximum ceiling), and cap memory allocation via LMAZURE_MAX_MEMORY_MB (default 4096 MiB).</p>
+<h2>Worked examples</h2>
+<p>Example 1: Blob container and Queue Storage round-trip with cost reporting.</p>
+<pre><code>p = _lmcode_ cli="lmazure" install="github:lmctl-ai/lmazure@latest";
+  # Optional: target local azuresim on port 4577
+  # cloud.set_endpoint("all", "http://127.0.0.1:4577");
+  cloud.set_cost_cap_usd(0.05);
+  cloud.bucket_create("lmazure-blobs");
+  let meta = cloud.object_put("lmazure-blobs", "reports/summary.txt", "azure-ok");
+  assert(meta.exists() &amp;&amp; meta.size() == 8, "blob put failed");
+
+  cloud.queue_create("lmazure-work-q");
+  cloud.queue_send("lmazure-work-q", cloud.object_get("lmazure-blobs", "reports/summary.txt"));
+  let msgs = cloud.queue_receive("lmazure-work-q", 1, 30, 0);
+  assert(msgs.len() == 1, "expected 1 queue message");
+  cloud.queue_ack("lmazure-work-q", msgs.at(0).receipt());
+
+  cloud.object_delete("lmazure-blobs", "reports/summary.txt");
+  cloud.bucket_delete("lmazure-blobs");
+  cloud.queue_delete("lmazure-work-q");
+  print(cloud.cost_report().summary());
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, "Blob and Queue lifecycle failed");</code></pre>
+<p>Example 2: Standard lmcode_std_v3 REST and CLI handlers over Azure Table items.</p>
+<pre><code>p = _lmcode_ cli="lmazure" install="github:lmctl-ai/lmazure@latest";
+  @"/entities/:table/:pk"
+  fn get_entity(x: RestExchange) -> void implements RestGet {
+    let item = cloud.item_get(x.param("table"), x.param("pk"));
+    x.json("{\"exists\":" + str(item.exists()) + ",\"status\":\"" + item.get_string("status") + "\"}");
+  }
+
+  @"init-table"
+  fn cmd_init(x: RestExchange) -> void implements CliCommand {
+    cloud.table_create("deployments");
+    let row = cloud.item_new("dep-01").set_string("status", x.body());
+    cloud.item_put("deployments", row);
+    x.send("initialized");
+  }
+
+  rest_config("prefix", "/v1");
+  let init_out = rest_cli(str_split("init-table -- healthy", " "));
+  let get_out = rest_cli(str_split("/v1/entities/deployments/dep-01", " "));
+  print(init_out + " | " + get_out);
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, "Azure table REST/CLI workflow failed");</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Errors in the shared schema map to ErrorCode (OK, INVALID_ARGUMENT, NOT_FOUND, CONFLICT, PRECONDITION_FAILED, UNAUTHENTICATED, PERMISSION_DENIED, COST_CAP_EXCEEDED, INTERNAL) and are accessible via cloud.last_error() when abort_on_error is false. Exit code 0 indicates success; exit code 2 indicates invalid CLI arguments or invalid LMAZURE_MAX_MEMORY_MB configuration; exit code 3 indicates runtime failure, cost cap breach, or memory budget exhaustion; exit code 4 indicates bytecode or schema load failure.</p>
+<h2>How to verify</h2>
+<p>Check the host binary version, schema output, and Go conformance test suite.</p>
+<pre><code>lmazure --version
+lmazure --lmcode-signatures
+bash test-go.sh</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmazure">github.com/lmctl-ai/lmazure</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmfinance guide — lmfinance — lmctl.com tools</title>
+<meta name="description" content="This guide explains how lmfinance is put together and how to think in its domain model: the evaluation date, curves, instruments, models, engines and results,…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmfinance/">Overview</a></li>
+<li><a href="/tools/lmfinance/skill.html">Skill</a></li>
+<li><a href="/tools/lmfinance/guide.html">Guide</a></li>
+<li><a href="/tools/lmfinance/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmfinance guide</h1>
+<p>This guide explains how lmfinance is put together and how to think in its domain model: the evaluation date, curves, instruments, models, engines and results, the market conventions that are fixed inside the host, and its limits. For commands and copyable recipes see the skill page; for every signature see the reference.</p>
+<h2 id="overview">Overview</h2>
+<p>lmfinance is one statically linked executable that contains QuantLib 1.44 and the lmcode-cpp virtual machine. It has no user-facing subcommands. An LMScript program contains a block that starts with the _lmcode_ marker naming cli="lmfinance"; lmscript compiles the block against the schema embedded in the binary, and run_lmcode hands the compiled program to the host, which executes it and returns one result envelope. Because the schema is typed, a wrong method name or argument type is a compile error before any pricing happens.</p>
+<p>The host is part of a family of scripted scientific hosts. It computes numbers and writes text tables; drawing is left to other hosts such as lmplot and lmdraw, which a script can call from further _lmcode_ blocks in the same file. The gallery in the repository works this way: lmfinance writes data files, a second block draws them.</p>
+<h2 id="workflow">Workflow</h2>
+<ol>
+<li>Write a .lms script with one _lmcode_ block for lmfinance, declaring install="github:lmctl-ai/lmfinance@latest" so the release binary is fetched when it is missing.</li>
+<li>Inside the block, set the evaluation date if the default is not wanted, build market objects, instruments, models and engines, and compute values.</li>
+<li>Assert expected relations with lmf.assert_close and lmf.check, so a wrong number stops the run.</li>
+<li>Export what the rest of the script needs: text tables through save_csv, save_profile or lmf.save_text, or values through lmcode_return_set and lmcode_return_put.</li>
+<li>After the block, call run_lmcode, test ok, and continue in LMScript: read the files, hand them to a plotting host, or report the returned values.</li>
+</ol>
+<h2 id="domain">Domain model</h2>
+<p>The seven context objects are namespaces over one shared host instance. Objects they return are plain values: every pricing call builds the QuantLib objects it needs and discards them, so each call is a pure function of its arguments and the evaluation date. Only yield curves keep QuantLib state, as immutable term structures.</p>
+<table>
+<thead>
+<tr><th>Concept</th><th>Type</th><th>Created by</th><th>Role</th></tr>
+</thead>
+<tbody>
+<tr><td>Evaluation date</td><td>host state</td><td>market.set_date</td><td>The valuation date for everything; default 2024-01-02</td></tr>
+<tr><td>Yield curve</td><td>Curve</td><td>market.flat_curve, or a CurveBuilder from market.zero_curve or market.bootstrap_curve</td><td>Discounting and forward rates for bonds, swaps, caps, floors and swaptions</td></tr>
+<tr><td>Payoff and exercise</td><td>Option</td><td>instrument.european_*, american_*, barrier_*, asian_*</td><td>What the option pays; carries no market data</td></tr>
+<tr><td>Equity market</td><td>Model</td><td>model.black_scholes, model.heston, HestonFit.fit</td><td>Spot, rate, dividend yield and volatility dynamics</td></tr>
+<tr><td>Numerical method</td><td>Engine</td><td>pricing.analytic, binomial, binomial_tree, finite_diff, monte_carlo, baw</td><td>How the option is priced</td></tr>
+<tr><td>Valuation</td><td>Result</td><td>pricing.price(option, model, engine)</td><td>Price plus the Greeks that engine provides</td></tr>
+<tr><td>Fixed income</td><td>Bond, Swap, CapFloor, Swaption</td><td>instrument.bond, zero_bond, swap, cap, floor, swaption</td><td>Valued by pricing functions that take a Curve (and a flat Black volatility for caps, floors and swaptions)</td></tr>
+<tr><td>Sample set</td><td>Series</td><td>risk.series(path)</td><td>Empirical quantiles, value at risk and expected shortfall of a P/L or return file</td></tr>
+<tr><td>Calibration job</td><td>HestonFit</td><td>calibration.heston(spot, rate, dividend)</td><td>Collects volatility quotes and fits the five Heston parameters</td></tr>
+</tbody>
+</table>
+<p>Option, Model and Engine are deliberately separate. The same option can be priced under two models or by several engines, and Model.with_spot, with_rate and with_vol return modified copies, which is how scenario grids and profiles are written in a loop.</p>
+<h2 id="conventions">Market conventions</h2>
+<ul>
+<li>Rates are decimals, volatility is annual, maturities are in years and one year is 365 days (Actual/365 Fixed). An option with maturity T expires round(365 T) days after the evaluation date, so identities such as put-call parity hold to the precision of that rounding.</li>
+<li>market.flat_curve(r) is continuously compounded. A zero_curve builder takes (years, zero rate) nodes, interpolates linearly in the zero rate and extrapolates flat from the first node. Curve.zero and Curve.forward return continuously compounded rates.</li>
+<li>A bootstrap_curve builder takes deposit quotes (Actual/360, two days to spot, TARGET calendar) and swap quotes (annual 30/360 fixed leg against Euribor 6M, TARGET, Modified Following). Discount factors are interpolated log-linearly, so forward rates are piecewise constant. Swaps valued by the pricing functions use the same conventions with the one curve for both discounting and forwards, so a bootstrapped curve reprices its input swaps.</li>
+<li>Curve.bumped(dr) adds dr to every continuously compounded zero rate and returns a new curve.</li>
+<li>Bonds are issued and settled on the evaluation date, with a null calendar, unadjusted dates and 30/360 bond basis. Coupon frequency is 1, 2, 4 or 12 per year and the maturity must be a whole number of coupon periods. Yields compound at the coupon frequency (annually for a zero bond). Prices are clean per 100 face, except bond_npv which is the dirty value in currency. bond_duration is modified duration; bond_macaulay_duration is Macaulay.</li>
+<li>Swaps are payer swaps by default (pay fixed) with a maturity in whole years from 1 to 100; receiver() flips the direction and spread(x) adds a floating spread.</li>
+<li>Caps and floors are on Euribor 6M, semiannual, with maturities in whole half years. Swaption expiry is a whole number of months up to 50 years. Both are priced with the Black formula and a flat lognormal volatility. A swap spread is ignored inside a swaption.</li>
+<li>risk.bond_dv01 is the fall in value, in currency, for a rise of one basis point in the continuous zero rates, so it equals Macaulay duration times price times one basis point. risk.swap_dv01 is the signed change in NPV for a rise of one basis point, positive for a payer swap.</li>
+<li>risk.var_normal and risk.es_normal take position value, annual volatility, confidence inside (0.5, 1) and a horizon in trading days, scaled by the square root of horizon over 252.</li>
+</ul>
+<h2 id="engines">Engines and Greeks</h2>
+<table>
+<thead>
+<tr><th>Engine</th><th>Prices</th><th>Greeks on the Result</th></tr>
+</thead>
+<tbody>
+<tr><td>analytic()</td><td>European options under Black-Scholes and Heston; barrier options (Reiner-Rubinstein closed form, continuous monitoring, no rebate, Black-Scholes only); geometric Asian options</td><td>For European Black-Scholes options: delta, gamma, vega, theta, rho. Barrier options have no engine Greeks</td></tr>
+<tr><td>binomial(steps), binomial_tree(tree, steps)</td><td>European and American options; trees crr, jr, tian and lr (Leisen-Reimer, which uses an odd step count); 2 to 20000 steps</td><td>delta, gamma, theta</td></tr>
+<tr><td>finite_diff(time_steps, grid_points)</td><td>European and American options</td><td>delta, gamma, theta</td></tr>
+<tr><td>monte_carlo(paths, seed)</td><td>European options and arithmetic Asian options (with the geometric option as control variate); 16 to 100000000 paths</td><td>None; stderr gives the standard error</td></tr>
+<tr><td>baw()</td><td>Barone-Adesi-Whaley approximation for American options</td><td>None</td></tr>
+</tbody>
+</table>
+<p>Asking a Result for a Greek its engine did not produce is a run error that points to the risk functions. risk.delta, gamma, vega, rho and theta are central finite differences that work with any engine on a Black-Scholes model: the spot is bumped by 1%, volatility by 0.001, the rate by 0.0001 and theta uses one day. With Monte Carlo the bumped runs reuse the same seed, so they share random numbers. Units are vega per 1.00 of volatility, rho per 1.00 of rate and theta per year.</p>
+<p>Monte Carlo uses QuantLib pseudo-random numbers (Mersenne Twister with the inverse cumulative normal), antithetic paths and one time step. The same seed reproduces the same result; the seed must be at least 1.</p>
+<h2 id="calibration">Calibration</h2>
+<p>calibration.implied_vol(option, model, engine, price) solves for the Black-Scholes volatility with Brent's method in the range 0.0001 to 5, using the chosen engine; a price outside the reachable range is an error. calibration.heston collects quotes of strike, maturity and implied volatility (at least five, since the model has five parameters), optionally takes a starting guess, and fit() runs Levenberg-Marquardt on implied-volatility errors with the analytic Heston engine. fit() returns a Heston Model and error() the remaining error. A fit that stops without converging is a run error, not a silent result.</p>
+<h2 id="architecture">Architecture</h2>
+<ul>
+<li>The schema file in the repository (schema/lmfinance.dsl.json) lists only host declarations and is generated from the method registrations in the C++ source. At build time it is merged with the vendored standard library schema and embedded in the binary; lmfinance --lmcode-schema --json prints those exact bytes, and the loader checks compiled programs against them.</li>
+<li>The lmcode-cpp runtime (the virtual machine header and the standard library headers) is vendored at a pinned commit recorded in sdk.lock. QuantLib is pinned by git commit and the Boost headers by tarball SHA-256 in deps.lock.</li>
+<li>For an invocation with several program files, every file is loaded and verified before any runs, so a broken later file cannot leave earlier output behind. Programs then run in order and the first failure stops the invocation. One frame, delimited by LMCODE_RETURN_BEGIN and LMCODE_RETURN_END lines on standard output, carries the result or the failure with its phase (cli, load, run or app).</li>
+<li>Dry mode is invocation-wide. Under lmscript --dry-run, or with the standalone --dry-run flag, programs are loaded but none is run, because a valuation has no effect-free mode.</li>
+<li>Release binaries exist for Linux x64 and arm64, macOS arm64 and x64, and Windows x64. Linux uses only dynamic glibc (2.35 or newer); macOS links system libraries only; Windows links the MinGW runtime statically.</li>
+</ul>
+<h2 id="limits">Limits</h2>
+<ul>
+<li>Memory: a program may use at most 4096 MiB in total by default; LMFINANCE_MAX_MEMORY_MB changes the budget. Exceeding it stops the program with a message that names the limit. Monte Carlo keeps every sample, so a path count that cannot fit is refused before simulating.</li>
+<li>Objects live until the host exits and each kind is capped at 4000000 instances.</li>
+<li>All float inputs must be finite; NaN or infinity is rejected at the call.</li>
+<li>Heston models are priced with the analytic engine and European options only, and the bumped risk functions and implied_vol need a Black-Scholes model.</li>
+<li>Not available: calendars and business-day adjustment for bonds, floating-rate and callable bonds, short-rate models, multi-curve (OIS) discounting, volatility cubes or surfaces as inputs, double barriers, lookbacks, rebates, and Heston or Monte Carlo pricing of barrier options.</li>
+<li>risk.series reads only from a file; there is no way to build a Series from values inside the block.</li>
+<li>The block language has no exp or log, no ternary operator and no exponent literals; use pow and decimal notation.</li>
+<li>Standard library: lmfinance 0.1.4 vendors 206 lmcode_std_v3 signatures. The REST and CLI interfaces of the current 226-signature catalog are not in this host yet.</li>
+</ul>
+<h2 id="more">Related pages</h2>
+<ul>
+<li><a href="/tools/lmfinance/">Quick reference</a></li>
+<li><a href="/tools/lmfinance/skill.html">Skill</a></li>
+<li><a href="/tools/lmfinance/reference.html">Reference</a></li>
+<li><a href="https://github.com/lmctl-ai/lmfinance/tree/main/examples">Examples in the repository</a></li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmfinance">github.com/lmctl-ai/lmfinance</a>.</p>
+</footer>
+</body>
+</html>

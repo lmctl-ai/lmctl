@@ -19,6 +19,7 @@
 <li><a href="/tools/lmblender/tutorial.html">Tutorial</a></li>
 <li><a href="/tools/lmblender/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmblender/guide.html">Guide</a></li>
+<li><a href="/tools/lmblender/reference.html">Reference</a></li>
 <li><a href="/tools/lmblender/examples/">Examples</a></li>
 </ul>
 </nav>
@@ -28,7 +29,7 @@
 <p>Goal: confirm lmscript can download lmblender and render one image.</p>
 <p>First check that lmscript is installed (see the <a href="/tools/lmblender/">index</a> for the install command):</p>
 <pre><kbd>lmscript --version</kbd></pre>
-<p>It should print a version line such as lmscript 0.2.388.</p>
+<p>It should print a version line such as lmscript 0.2.482. The scripts on this page are the repository tutorial files: they save the bytecode with savedsl and call the host with --lmcode, which is the host protocol. The shorter equivalent for quick renders is r = run_lmcode(p), which returns a record with ok and result.</p>
 <p>Save this as 01-first-render.lms in an empty directory, or download it:</p>
 <pre><kbd>curl -O https://raw.githubusercontent.com/lmctl-ai/lmblender/main/docs/tutorial/code/01-first-render.lms</kbd></pre>
 <pre><code>p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";

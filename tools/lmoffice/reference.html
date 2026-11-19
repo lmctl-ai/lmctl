@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmoffice reference — lmoffice — lmctl.com tools</title>
+<meta name="description" content="Complete CLI subcommands, flags, Word/Excel/PowerPoint schema types and methods, standard lmcode_std_v3 catalog functions, and exit codes for…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmoffice/">Overview</a></li>
+<li><a href="/tools/lmoffice/skill.html">Skill</a></li>
+<li><a href="/tools/lmoffice/guide.html">Guide</a></li>
+<li><a href="/tools/lmoffice/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmoffice reference</h1>
+<p>Complete CLI subcommands, flags, Word/Excel/PowerPoint schema types and methods, standard lmcode_std_v3 catalog functions, and exit codes for lmoffice.</p>
+<h2>CLI subcommands and flags</h2>
+<table>
+<thead><tr><th>Command or flag</th><th>Arguments</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>lmoffice --version</td><td>none</td><td>Print the lmoffice version string and exit 0.</td></tr>
+<tr><td>lmoffice docx</td><td>--help | --lmcode-schema [--json] | --lmcode-signatures | --lmcode FILE</td><td>Word (.docx) host route: inspect embedded schema, print canonical signatures, or execute compiled bytecode.</td></tr>
+<tr><td>lmoffice xlsx</td><td>--help | --lmcode-schema [--json] | --lmcode-signatures | --lmcode FILE</td><td>Excel (.xlsx) host route: inspect embedded schema, print canonical signatures, or execute compiled bytecode.</td></tr>
+<tr><td>lmoffice pptx</td><td>--help | --lmcode-schema [--json] | --lmcode-signatures | --lmcode FILE</td><td>PowerPoint (.pptx) host route: inspect embedded schema, print canonical signatures, or execute compiled bytecode.</td></tr>
+<tr><td>lmoffice inspect</td><td>FILE [--markdown]</td><td>Validate a .docx, .xlsx, or .pptx file with OpenXmlValidator and print a JSON summary (or extracted Markdown with --markdown).</td></tr>
+</tbody>
+</table>
+<h2>Word schema (lmoffice docx)</h2>
+<table>
+<thead><tr><th>Type / context</th><th>Method signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context docx: DocxHost</td><td>docx.create(string) -> Docx</td><td>Create a new Word document builder targeting the given output path.</td></tr>
+<tr><td>DocxHost</td><td>docx.inspect(string) -> string | docx.to_markdown(string) -> string</td><td>Inspect an existing .docx package as JSON or extract its content as Markdown.</td></tr>
+<tr><td>DocxHost</td><td>docx.sample_image(string) -> void</td><td>Write a self-contained 64x64 sample PNG image to the given path.</td></tr>
+<tr><td>Docx</td><td>d.heading(string, int) -> Paragraph | d.paragraph(string) -> Paragraph</td><td>Append a heading at level 1..6 or a body paragraph and return its Paragraph handle.</td></tr>
+<tr><td>Docx</td><td>d.bullet(string) -> Paragraph | d.numbered(string) -> Paragraph</td><td>Append a bulleted or numbered list item paragraph.</td></tr>
+<tr><td>Docx</td><td>d.clause(string, int) -> Paragraph | d.signature(string) -> Paragraph</td><td>Append a numbered legal clause at level 1..3 or a signature block line.</td></tr>
+<tr><td>Docx</td><td>d.table(int, int) -> Table | d.image(string, int, int) -> Docx</td><td>Append a rows-by-cols table or an inline image with width and height in pixels.</td></tr>
+<tr><td>Docx</td><td>d.page_break() -> Docx | d.section_break(string) -> Docx</td><td>Insert a page break or a section break (such as nextPage, continuous, landscape).</td></tr>
+<tr><td>Docx</td><td>d.header(string) -> Docx | d.footer(string) -> Docx</td><td>Set plain text running header or footer.</td></tr>
+<tr><td>Docx</td><td>d.header_fields(string) -> Docx | d.footer_fields(string) -> Docx</td><td>Set running header or footer supporting {PAGE} and {NUMPAGES} fields.</td></tr>
+<tr><td>Docx</td><td>d.title(string) -> Docx | d.author(string) -> Docx</td><td>Set package metadata title and author properties.</td></tr>
+<tr><td>Docx</td><td>d.font(string) -> Docx | d.font_size(float) -> Docx</td><td>Set default document font family and size in points.</td></tr>
+<tr><td>Docx</td><td>d.page_size(float, float) -> Docx | d.orientation(string) -> Docx | d.margins(float, float, float, float) -> Docx</td><td>Configure page width and height in points, orientation (portrait or landscape), and top/right/bottom/left margins.</td></tr>
+<tr><td>Docx</td><td>d.columns(int, float) -> Docx | d.text_box(string, float, float) -> Docx</td><td>Configure multi-column section layout (count, space_pt) or insert a bordered text box.</td></tr>
+<tr><td>Docx</td><td>d.toc(string, int) -> Docx | d.heading_numbering(bool) -> Docx</td><td>Insert a table of contents with title and max depth, or enable hierarchical heading numbering.</td></tr>
+<tr><td>Docx</td><td>d.markdown(string) -> Docx | d.markdown_file(string) -> Docx</td><td>Append document content parsed from an inline Markdown string or a UTF-8 Markdown file.</td></tr>
+<tr><td>Docx</td><td>d.html_doc(string, string) -> Docx | d.html_xml(string, string) -> Docx</td><td>Append content from html-doc@1 / css-doc@1 strings or legacy html-subset@1 / css-subset@1 strings.</td></tr>
+<tr><td>Docx</td><td>d.save() -> void</td><td>Write and close the .docx package on disk.</td></tr>
+<tr><td>Paragraph</td><td>p.bold(bool) | p.italic(bool) | p.size(float) | p.color(string) | p.align(string) | p.font(string) -> Paragraph</td><td>Style paragraph text runs and alignment (left, center, right, justify).</td></tr>
+<tr><td>Paragraph</td><td>p.spacing(float, float, float) | p.indent(float, float, float) | p.keep_with_next(bool) | p.tab_stop(float, string) -> Paragraph</td><td>Set before/after/line spacing, left/right/first-line indent, pagination keep, or tab stop position and alignment.</td></tr>
+<tr><td>Paragraph</td><td>p.hyperlink(string, string) | p.footnote(string) | p.comment(string, string) | p.inserted(string, string) | p.deleted(string, string) -> Paragraph</td><td>Append a hyperlink (text, url), footnote, author comment, or tracked insertion/deletion.</td></tr>
+<tr><td>Table</td><td>t.cell(int, int, string) -> Table | t.paragraph(int, int, string) -> Paragraph</td><td>Set 1-based cell text or create a stylable Paragraph inside a cell.</td></tr>
+<tr><td>Table</td><td>t.borders(bool) | t.column_width(int, float) | t.shade(int, int, string) | t.merge(int, int, int, int) | t.cell_border(int, int, string, string, int) -> Table</td><td>Configure table borders, column width in points, hex cell shading, rectangular cell merge, or individual cell border side/color/size.</td></tr>
+</tbody>
+</table>
+<h2>Excel schema (lmoffice xlsx)</h2>
+<table>
+<thead><tr><th>Type / context</th><th>Method signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context xlsx: XlsxHost</td><td>xlsx.create(string) -> Xlsx | xlsx.inspect(string) -> string | xlsx.to_markdown(string) -> string | xlsx.sample_image(string) -> void</td><td>Create a workbook, inspect or convert an existing .xlsx file to Markdown, or generate a 64x64 sample PNG.</td></tr>
+<tr><td>Xlsx</td><td>wb.sheet(string) -> Sheet | wb.sheet_from_markdown_table(string, string) -> Sheet | wb.sheet_from_csv(string, string) -> Sheet</td><td>Create an empty worksheet or populate a typed worksheet from a Markdown table or CSV string.</td></tr>
+<tr><td>Xlsx</td><td>wb.named_range(string, string, int, int, int, int) -> Xlsx | wb.image(string, int, int, int, int) -> Xlsx | wb.save() -> void</td><td>Define a workbook-level named range, embed an image on the active sheet, or save the .xlsx file.</td></tr>
+<tr><td>Sheet</td><td>s.set(int, int, string|int|float|bool) -> Sheet | s.formula(int, int, string) -> Sheet</td><td>Set a 1-based (row, col) cell value or store an Excel formula expression.</td></tr>
+<tr><td>Sheet</td><td>s.bold(int, int) | s.italic(int, int) | s.font_size(int, int, float) | s.font_color(int, int, string) | s.font_name(int, int, string) -> Sheet</td><td>Apply font styling to a cell at (row, col).</td></tr>
+<tr><td>Sheet</td><td>s.fill(int, int, string) | s.number_format(int, int, string) | s.align(int, int, string) | s.valign(int, int, string) | s.wrap(int, int, bool) -> Sheet</td><td>Set cell background fill color, number format string, horizontal/vertical alignment, or text wrapping.</td></tr>
+<tr><td>Sheet</td><td>s.border(int, int, string, string) | s.border_box(int, int, int, int, string, string) -> Sheet</td><td>Apply cell or range outline borders with style and hex color.</td></tr>
+<tr><td>Sheet</td><td>s.col_width(int, float) | s.row_height(int, float) | s.col_hide(int, bool) | s.row_hide(int, bool) | s.col_group(int, int, bool) -> Sheet</td><td>Configure column widths, row heights, hidden rows/columns, or collapsible column outline groups.</td></tr>
+<tr><td>Sheet</td><td>s.freeze(int, int) | s.merge(int, int, int, int) | s.tab_color(string) | s.page_orientation(string) | s.fit_to_page(int, int) | s.repeat_rows(int, int) -> Sheet</td><td>Freeze top rows and left columns, merge cell ranges, or configure worksheet tab color and print setup.</td></tr>
+<tr><td>Sheet</td><td>s.autofilter(int, int, int, int) | s.table(int, int, int, int, string) | s.data_validation_list(int, int, int, int, string) | s.named_range(string, int, int, int, int) -> Sheet</td><td>Add an autofilter, formatted table, comma-separated dropdown validation list, or sheet named range.</td></tr>
+<tr><td>Sheet</td><td>s.hyperlink(int, int, string, string) | s.comment(int, int, string, string) | s.image(string, int, int, int, int) -> Sheet</td><td>Attach a hyperlink, author comment, or anchored image to a cell.</td></tr>
+<tr><td>Sheet</td><td>s.conditional_cell_is(int, int, int, int, string, string, string, string) | s.conditional_color_scale(int, int, int, int, string, string) | s.conditional_color_scale3(int, int, int, int, string, string, string) | s.conditional_icon_set(int, int, int, int, string) -> Sheet</td><td>Add conditional formatting rules (operator/formula/fill/font, 2-color or 3-color scales, or icon sets).</td></tr>
+<tr><td>Sheet</td><td>s.bar_chart(int, int, int, int, string, string, string) | s.line_chart(int, int, int, int, string, string, string) | s.pie_chart(int, int, int, int, string, string, string) -> Sheet</td><td>Embed a native DrawingML bar, line, or pie chart anchored at (row1, col1, row2, col2) with title, category range, and value range.</td></tr>
+</tbody>
+</table>
+<h2>PowerPoint schema (lmoffice pptx)</h2>
+<table>
+<thead><tr><th>Type / context</th><th>Method signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context pptx: PptxHost</td><td>pptx.create(string) -> Pptx | pptx.inspect(string) -> string | pptx.to_markdown(string) -> string | pptx.sample_image(string) -> void</td><td>Create a presentation, inspect or convert an existing .pptx file to Markdown, or generate a 64x64 sample PNG.</td></tr>
+<tr><td>Pptx</td><td>p.slide() -> Slide | p.theme(string, string, string, string) -> Pptx | p.markdown(string) -> Pptx | p.save() -> void</td><td>Add a slide, configure theme palette (primary, accent, background, text hex colors), build slides from Markdown, or save the .pptx package.</td></tr>
+<tr><td>Slide</td><td>s.title(string) | s.title_slide(string, string) | s.section_header(string, string, string) | s.two_content(string, string, string) -> Slide</td><td>Set slide title or populate standard title, section-header, or two-column layouts.</td></tr>
+<tr><td>Slide</td><td>s.text(float, float, float, float, string) | s.bullet(float, float, float, float, string) | s.hyperlink(float, float, float, float, string, string) -> Slide</td><td>Place a positioned text box, bullet list box, or hyperlink box at (x, y, w, h) in pixels.</td></tr>
+<tr><td>Slide</td><td>s.image(string, float, float, float, float) | s.rect(float, float, float, float, string) | s.rounded_rect(float, float, float, float, string, string) | s.ellipse(float, float, float, float, string, string) -> Slide</td><td>Place an image, filled rectangle, or labeled rounded rectangle / ellipse at (x, y, w, h).</td></tr>
+<tr><td>Slide</td><td>s.line(float, float, float, float, string, float) | s.arrow(float, float, float, float, string, float) -> Slide</td><td>Draw a line or arrow from (x1, y1) to (x2, y2) with hex color and stroke width.</td></tr>
+<tr><td>Slide</td><td>s.notes(string) | s.footer(string) | s.slide_number(bool) | s.transition(string) -> Slide</td><td>Set speaker notes, slide footer text, slide number visibility, or slide transition effect.</td></tr>
+<tr><td>Slide</td><td>s.table(float, float, float, float, int, int) -> PptxTable</td><td>Create a table at (x, y, w, h) with the specified row and column counts.</td></tr>
+<tr><td>Slide</td><td>s.bar_chart(float, float, float, float, string, string, string, string) | s.line_chart(float, float, float, float, string, string, string, string) | s.pie_chart(float, float, float, float, string, string, string) -> Slide</td><td>Place a native bar, line, or pie chart at (x, y, w, h) with title, categories, values, and series name.</td></tr>
+<tr><td>PptxTable</td><td>t.cell(int, int, string) | t.cell_bg(int, int, string) | t.cell_color(int, int, string) | t.bold(int, int, bool) | t.font_size(int, int, float) | t.align(int, int, string) | t.header_row(string, string) -> PptxTable</td><td>Populate and style 1-based PowerPoint table cells and header rows.</td></tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 catalog</h2>
+<table>
+<thead><tr><th>Category</th><th>Functions, types, or signatures</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Strings and encodings</td><td>str_len, str_substr, str_find, str_contains, str_starts_with, str_ends_with, str_lower, str_upper, str_trim, str_replace, str_repeat, str_split, str_match, str_to_int, str_is_int, str_to_float, str_is_float, str_base64_encode, str_base64_decode, str_hex_encode, str_hex_decode</td><td>UTF-8 byte string inspection, manipulation, numeric parsing, and base64/hex encoding.</td></tr>
+<tr><td>Math and files</td><td>math_abs, math_min, math_max, math_floor, math_ceil, math_round, math_sqrt, math_pow, file_read, file_write, file_append, file_exists, file_lines</td><td>Overloaded int/float math helpers and UTF-8 file I/O.</td></tr>
+<tr><td>Collections, JSON, and return framing</td><td>IntList, FloatList, StrList, IntMap, FloatMap, StrMap, IntStack, FloatStack, StrStack, IntQueue, FloatQueue, StrQueue, IntPQ, FloatPQ, StrPQ, Json (json_parse, template_render), lmcode_return_set, lmcode_return_put, lmcode_return_put_null, lmcode_return_null</td><td>Typed containers, JSON parsing, Mustache-style template rendering, and structured LMCODE_RETURN payload builders.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th>Exit code</th><th>Phase</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>success</td><td>Command, inspection, or _lmcode_ document generation succeeded.</td></tr>
+<tr><td>2</td><td>cli</td><td>Invalid command-line flags, unknown subcommand, or malformed invocation manifest.</td></tr>
+<tr><td>3</td><td>load / run</td><td>Bytecode loading failure, schema mismatch, or unhandled VM/runtime error.</td></tr>
+<tr><td>4</td><td>app</td><td>Document validation failure, invalid table/cell coordinate, missing input file, or Open XML package write error.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmoffice">github.com/lmctl-ai/lmoffice</a>.</p>
+</footer>
+</body>
+</html>

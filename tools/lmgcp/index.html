@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmgcp — lmctl.com tools</title>
+<meta name="description" content="lmgcp is the Google Cloud Platform scripting host for LMScript, exposing a 16-service GCP schema alongside the shared lmcloud procedural schema.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmgcp/">Overview</a></li>
+<li><a href="/tools/lmgcp/skill.html">Skill</a></li>
+<li><a href="/tools/lmgcp/guide.html">Guide</a></li>
+<li><a href="/tools/lmgcp/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmgcp</h1>
+<p>lmgcp is the Google Cloud Platform scripting host for LMScript, exposing a 16-service GCP schema alongside the shared lmcloud procedural schema.</p>
+<h2>Quick reference</h2>
+<p>Declare lmgcp in an LMScript program or run its CLI directly against the in-process fake GCP REST server, the local gcpsim emulator on 127.0.0.1:4588, or live Google Cloud credentials.</p>
+<pre><code>lmgcp --version
+lmgcp --lmcode-schema --json
+lmgcp --lmcode-signatures
+lmgcp cloud --lmcode-schema --json
+lmgcp --sweep --older-than-hours 1
+p = _lmcode_ cli="lmgcp" install="github:lmctl-ai/lmgcp@latest";</code></pre>
+<table>
+<thead>
+<tr>
+<th>Surface</th>
+<th>Command or method</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Native 16-service GCP context</td>
+<td>context gcp: Gcp (299 host signatures + 226 standard signatures)</td>
+<td>Script Compute Engine, VPC/Firewalls, GCS, Pub/Sub, Cloud Run v2, Cloud SQL, Firestore, BigQuery, IAM, Secret Manager, KMS, GKE, Artifact Registry, DNS, Logging, and Monitoring.</td>
+</tr>
+<tr>
+<td>Shared lmcloud mode</td>
+<td>lmgcp cloud --lmcode FILE (context cloud: Cloud)</td>
+<td>Execute provider-neutral lmcloud programs against GCS, Pub/Sub, Firestore tables, permissions, Cloud Run functions, and cost/metrics.</td>
+</tr>
+<tr>
+<td>Emulator endpoint</td>
+<td>LMGCP_ENDPOINT=http://127.0.0.1:4588 or cloud.set_endpoint("all", "http://127.0.0.1:4588")</td>
+<td>Route GCS and Pub/Sub calls to a local gcpsim instance over loopback HTTP.</td>
+</tr>
+<tr>
+<td>Recovery and sweeper</td>
+<td>lmgcp --sweep [--older-than-hours N] [--delete] [--run-id ID] [--ledger PATH]</td>
+<td>Inspect or delete run-owned lmgcp_ and lmgcp- resources tracked in the durable RunLedger journal.</td>
+</tr>
+<tr>
+<td>Standard REST and CLI</td>
+<td>rest_config, rest_route, rest_serve, rest_stop, rest_cli</td>
+<td>Expose GCP workflows as HTTP routes (:param patterns) and CLI commands via lmcode_std_v3 interfaces.</td>
+</tr>
+</tbody>
+</table>
+<p>Runnable LMScript example using lmgcp with GCS buckets, Pub/Sub topics, cost ledger verification, and standard REST/CLI routing:</p>
+<pre><code>p = _lmcode_ cli="lmgcp" install="github:lmctl-ai/lmgcp@latest";
+  @"/gcs/:bucket/:object"
+  fn get_gcs(x: RestExchange) -> void implements RestGet {
+    x.send(gcp.storage_read_object(x.param("bucket"), x.param("object")));
+  }
+
+  @"publish-event"
+  fn cmd_pub(x: RestExchange) -> void implements CliCommand {
+    let t = gcp.pubsub_create_topic("lmgcp_events");
+    x.send("topic:" + t.name());
+  }
+
+  rest_config("prefix", "/v1");
+  gcp.set_cost_cap_usd(0.05);
+  let bkt = gcp.storage_create_bucket("lmgcp-demo-bkt", "us-central1", "STANDARD");
+  gcp.storage_put_object(bkt.name(), "hello.txt", "hello from lmgcp", "text/plain");
+
+  let pub_out = rest_cli(str_split("publish-event -- job-ready", " "));
+  let gcs_out = rest_cli(str_split("/v1/gcs/" + bkt.name() + "/hello.txt", " "));
+  print(pub_out + " | " + gcs_out + " | cost=$" + str(gcp.estimated_cost_usd()));
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, "lmgcp run failed");</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmgcp/skill.html">Skill</a> — LLM agent authoring rules, commands, RunLedger safety gates, and verification steps for lmgcp.</li>
+<li><a href="/tools/lmgcp/guide.html">Guide</a> — Architecture, 16-domain service catalog, shared lmgcp cloud subcommand, gcpsim setup, and standard REST/CLI interfaces.</li>
+<li><a href="/tools/lmgcp/reference.html">Reference</a> — CLI flags, environment variables, Gcp and Cloud methods, price table, standard REST/CLI interfaces, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmgcp">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmgcp">github.com/lmctl-ai/lmgcp</a>.</p>
+</footer>
+</body>
+</html>

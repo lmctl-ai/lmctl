@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>lmdraw — lmctl.com tools</title>
-<meta name="description" content="lmdraw is a native host for retained 2D scenes written in lmscript.">
+<meta name="description" content="lmdraw is a native host for retained 2D scenes written in lmscript: an _lmcode_ block builds a scene from shapes, text, diagram blocks and imported SVG, and…">
 <link rel="stylesheet" href="/tools/style.css">
 <link rel="icon" type="image/png" href="/tools/lmdraw/img/icon.png">
 </head>
@@ -19,20 +19,104 @@
 <li><a href="/tools/lmdraw/tutorial.html">Tutorial</a></li>
 <li><a href="/tools/lmdraw/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmdraw/guide.html">Guide</a></li>
+<li><a href="/tools/lmdraw/reference.html">Reference</a></li>
 <li><a href="/tools/lmdraw/examples/">Examples</a></li>
 </ul>
 </nav>
 <main><h1>lmdraw</h1>
-<p>lmdraw is a native host for retained 2D scenes written in lmscript. Build a scene from editable nodes or load a supported SVG, then render deterministic PNGs and numbered frames with real text and vector paths.</p>
+<figure><img src="/tools/lmdraw/img/logo.png" alt="lmdraw logo" width="256" height="256"></figure>
+<p>lmdraw is a native host for retained 2D scenes written in lmscript: an _lmcode_ block builds a scene from shapes, text, diagram blocks and imported SVG, and the host renders deterministic PNG files or numbered frames. This page is the quick reference for lmdraw 0.2.7; the linked pages hold the details.</p>
 <figure><img src="/tools/lmdraw/img/title-card.png" alt="A dark title card with gold and teal accents, rendered by lmdraw." width="480" height="270"><figcaption>A title card made from retained shapes and text nodes.</figcaption></figure>
-<p>The schema uses a small, author-friendly API. Scripts create rectangles, circles, paths, text, groups and gradients; imported SVG elements become the same editable nodes. Loops can update attributes and write one PNG per frame for later encoding with ffmpeg.</p>
+<h2 id="install">Install and run</h2>
+<p>Install lmctl, which provides the lmscript compiler and runner. A script that declares the lmdraw host downloads the release binary into the lmscript tool cache on first use. Release binaries are built for Linux x86-64 and arm64 with glibc 2.35 or newer.</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmscript install github:lmctl-ai/lmdraw@latest
+lmscript --check scene.lms
+lmscript scene.lms
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmdraw/main/examples/hohmann-transfer.lms</code></pre>
+<h2 id="example">Minimal example</h2>
+<p>Save this as scene.lms and run it with lmscript scene.lms. It writes images/card.png at 1280 by 720 pixels and prints the result envelope returned by run_lmcode.</p>
+<pre><code>mkdir("images");
+title = "Quarterly review";
+p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(640, 360, "#152438");
+let card = scene.rect(36.0, 36.0, 568.0, 288.0, "#1f344b");
+card.set_attr("stroke", "#6fbdb4");
+card.set_attr("stroke-width", "2");
+let w = scene.measure_text(${title}, 38.0, true);
+let heading = scene.text(320.0, 170.0, 38.0, ${title}, "#f5f8fb");
+heading.set_attr("text-anchor", "middle");
+heading.set_attr("font-weight", "700");
+scene.line(320.0 - w / 2.0, 190.0, 320.0 + w / 2.0, 190.0, "#f5c16c", 3.0);
+scene.render_png("images/card.png", 640, 360, 2);
+lmcode_return_set(w);
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));
+println(json_stringify(r));</code></pre>
+<pre><kbd>lmscript scene.lms</kbd>
+<samp>{"ok":true,"result":321.5179748535156}</samp></pre>
+<h2 id="protocol">Host protocol and CLI flags</h2>
+<p>Scripts normally reach the host through run_lmcode. The flags below are the protocol the compiler and runner use, and they are useful for inspection.</p>
+<table>
+<thead><tr><th>Command</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td>lmdraw --version</td><td>Prints the version, for example lmdraw 0.2.7.</td></tr>
+<tr><td>lmdraw --lmcode-schema --json</td><td>Prints the embedded schema JSON the compiler checks blocks against: dsl.schema 2, name lmdraw, context scene of type Scene, six host types.</td></tr>
+<tr><td>lmdraw --lmcode-schema</td><td>Prints the compact per-type summary of host members.</td></tr>
+<tr><td>lmdraw --schema and lmdraw --schema --json</td><td>Earlier spellings of the same two outputs; still accepted.</td></tr>
+<tr><td>lmdraw --lmcode-signatures</td><td>Prints every registered signature, one per line: 1 context, 46 host methods and 206 standard signatures in 0.2.7.</td></tr>
+<tr><td>lmdraw --lmcode FILE.dslb [FILE.dslb ...]</td><td>Verifies every compiled program file, then runs them in order in one process. run_lmcode calls this for you.</td></tr>
+</tbody>
+</table>
+<table>
+<thead><tr><th>Exit code</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success.</td></tr>
+<tr><td>2</td><td>Invalid command line (code CLI_USAGE).</td></tr>
+<tr><td>3</td><td>Program file load or verification failed, or a host call failed while running.</td></tr>
+<tr><td>4</td><td>Another application failure.</td></tr>
+</tbody>
+</table>
+<h2 id="api">Scene API at a glance</h2>
+<p>The block has one context object, scene, of type Scene. Coordinates are float CSS pixels with the origin at the upper left and y growing down; text y is the baseline. Write float arguments with a decimal point.</p>
+<table>
+<thead><tr><th>Type</th><th>Members</th><th>Use</th></tr></thead>
+<tbody>
+<tr><td>Scene (context scene)</td><td>canvas, load_svg, render_png</td><td>Start a scene with a size and background or from an SVG file under assets/, and write a PNG under images/ or build/rendered/.</td></tr>
+<tr><td>Scene</td><td>rect, circle, ellipse, line, arrow, polyline, path, text, image</td><td>Primitive constructors; each returns a Node.</td></tr>
+<tr><td>Scene</td><td>box, diamond, cylinder, note, cluster, grid, connector</td><td>Labeled diagram shapes (Shape), an invisible layout grid (Grid) and routed edges between coordinates or shape anchors.</td></tr>
+<tr><td>Scene</td><td>lifeline, message, activation, self_message</td><td>Sequence-diagram notation; each returns a Group.</td></tr>
+<tr><td>Scene</td><td>axes, log_axes, legend</td><td>Linear and logarithmic plot axes and a multi-series legend; each returns a Group.</td></tr>
+<tr><td>Scene</td><td>group, linear_gradient, load_font, measure_text</td><td>Grouping, gradient paint, TrueType fonts from assets/fonts/, and text width in pixels.</td></tr>
+<tr><td>Node</td><td>set_attr(name, value)</td><td>Update an SVG-style attribute such as fill, stroke, opacity, transform, font-weight, text-anchor, marker-end or stroke-dasharray. Values are strings.</td></tr>
+<tr><td>Shape</td><td>set_attr, cx, cy</td><td>Style the shape body and read its center. Anchors are n, s, e, w, ne, nw, se, sw and c.</td></tr>
+<tr><td>Grid</td><td>cell(col, row)</td><td>Returns the cell as a Shape for placing boxes and connectors.</td></tr>
+<tr><td>Group</td><td>add(Node), add(Group), set_attr</td><td>Collect children and style them together.</td></tr>
+<tr><td>Gradient</td><td>stop(offset, color)</td><td>Add color stops; paint with a fill or stroke of the form url(#id).</td></tr>
+</tbody>
+</table>
+<table>
+<thead><tr><th>Limit</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Canvas</td><td>1 to 4096 pixels per side and at most 8,000,000 pixels.</td></tr>
+<tr><td>Render scale</td><td>Integer 1 to 4; scaled output at most 8,000,000 pixels.</td></tr>
+<tr><td>Output</td><td>A .png file directly under images/ or build/rendered/.</td></tr>
+<tr><td>Inputs</td><td>SVG directly under assets/ (at most 2 MiB); TrueType fonts directly under assets/fonts/ (at most 8 MiB); images only as embedded PNG data URIs.</td></tr>
+<tr><td>Scene size</td><td>At most 10,000 nodes, 1,024 gradients and 128 stops per gradient.</td></tr>
+</tbody>
+</table>
+<h2 id="std">Standard library</h2>
+<p>lmdraw 0.2.7 registers 206 lmcode_std_v3 signatures: strings, encoding, math, collections, queues, stacks, priority queues, Json, templates, files and the lmcode_return functions. The current lmcode_std_v3 catalog has 226 signatures; the 20 added REST and CLI signatures are not in the 0.2.7 binary and arrive when lmdraw next syncs the standard library and releases. The reference page lists both sets.</p>
+<h2 id="more">More</h2>
 <ul>
-<li><a href="/tools/lmdraw/skill.html">Authoring skill</a></li>
-<li><a href="/tools/lmdraw/tutorial.html">Run the tutorial</a></li>
-<li><a href="/tools/lmdraw/guide.html">API and SVG guide</a></li>
-<li><a href="/tools/lmdraw/get_started.html">Get started with solo and trio quickruns</a></li>
-<li><a href="/tools/lmdraw/examples/">Browse the example book</a></li>
-<li><a href="https://github.com/lmctl-ai/lmdraw">Source and releases</a></li>
+<li><a href="/tools/lmdraw/skill.html">Skill: the authoring rules for agents</a></li>
+<li><a href="/tools/lmdraw/tutorial.html">Tutorial: render stills, a diagram and frames</a></li>
+<li><a href="/tools/lmdraw/guide.html">Guide: concepts, attributes, SVG subset and limits</a></li>
+<li><a href="/tools/lmdraw/reference.html">Reference: every type, method, flag and standard signature</a></li>
+<li><a href="/tools/lmdraw/get_started.html">Quickruns: solo and trio team scripts</a></li>
+<li><a href="/tools/lmdraw/examples/">Example book</a></li>
+<li><a href="https://github.com/lmctl-ai/lmdraw">GitHub repository, examples and releases</a></li>
 </ul>
 </main>
 <footer>

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmaws guide — lmaws — lmctl.com tools</title>
+<meta name="description" content="lmaws connects LMScript programs to Amazon Web Services through two complementary layers: the shared provider-neutral lmcloud schema implemented in Go on…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmaws/">Overview</a></li>
+<li><a href="/tools/lmaws/skill.html">Skill</a></li>
+<li><a href="/tools/lmaws/guide.html">Guide</a></li>
+<li><a href="/tools/lmaws/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmaws guide</h1>
+<h2>Overview</h2>
+<p>lmaws connects LMScript programs to Amazon Web Services through two complementary layers: the shared provider-neutral lmcloud schema implemented in Go on hostkit and AWS SDK for Go v2, and a rich library of self-contained AWS inventory, spend-reporting, IAM policy-building, and sandbox recipes. By default, every program runs offline against deterministic synthetic fixtures without requiring an AWS account or credentials.</p>
+<h2>Architecture and execution modes</h2>
+<p>lmaws selects its execution backend deterministically based on endpoint configuration and environment gates:</p>
+<ul>
+<li>Offline fake mode (default): when no endpoint override is set and live mode is not enabled, lmaws routes all calls to hostkit/fakeadapter in memory. Offline cost reports compute request estimates from the embedded regional price table while actual AWS billing remains $0.00.</li>
+<li>Local emulator mode (awssim): when a loopback HTTP endpoint such as http://127.0.0.1:4566 is configured via cloud.set_endpoint, LMCLOUD_ENDPOINT, LMAWS_ENDPOINT, or AWS_ENDPOINT_URL, lmaws signs requests with SigV4 using LMAWS_SIM_ACCESS_KEY_ID (default test), LMAWS_SIM_SECRET_ACCESS_KEY (default test), and LMAWS_SIM_REGION (default us-east-1). By default LMAWS_COMPAT_STRIP_S3_XID=1 strips the SDK ?x-id= query parameter for compatibility with older awssim binaries.</li>
+<li>Guarded live mode: when LMCLOUD_LIVE=1 and LMAWS_LIVE=1 are both set, endpoint overrides are forbidden and lmaws authenticates against real AWS in LMAWS_LIVE_REGION (us-east-1) after verifying STS GetCallerIdentity matches LMAWS_LIVE_ACCOUNT.</li>
+</ul>
+<h2>Live safety gates, ownership, and cost caps</h2>
+<p>Live mode separates read-only discovery from state-changing sandbox operations:</p>
+<ul>
+<li>Stage 1 read-only inventory and spend analysis: uses the default profile, masks account identifiers, caps Cost Explorer and CloudWatch queries (default $0.25 spend-report query cap, checked before each page dispatch), and writes real outputs only to gitignored .lmaws-local/spend/ files.</li>
+<li>Stage 2 owned mutations: requires LMAWS_LIVE_MUTATE=1 and AWS_PROFILE=lmaws. Every created S3 bucket must carry the lmaws-&lt;run-id>- prefix and lmaws_test=&lt;run-id> tag; other resources use the lmaws_&lt;run-id>_ prefix. Before each request, CostMeter reserves the worst-case unit and byte charge against LMAWS_LIVE_COST_CAP_USD (default $0.05, maximum $0.25).</li>
+<li>Journaled LIFO teardown and sweeper: pre-create intent records are fsynced to a flock-protected recovery journal before any AWS mutation call. On completion or failure, owned resources are deleted in reverse creation order. Stale leftovers from interrupted runs can be inspected with lmaws --sweep --dry-run and removed with lmaws --sweep --apply --all-stale.</li>
+</ul>
+<h2>Spend analysis, IAM policy builder, and service coverage</h2>
+<p>Beyond the shared lmcloud slices (S3 object storage, SQS queues, DynamoDB tables, IAM permissions, Lambda functions, and user pools), the lmaws recipe catalog covers:</p>
+<ul>
+<li>Detailed spend reporting: daily stacked service spend, idle public IPv4 and unattached EBS volume audits, gp2-to-gp3 migration candidates, Savings Plan and Reserved Instance coverage gauges, NAT/inter-AZ/internet data-transfer breakdowns, Lambda GB-second analysis, and DynamoDB provisioned-versus-on-demand break-even hints.</li>
+<li>CloudFront and EC2 fleet cost analysis: read-only CloudFront request and download trend discovery and tag-selected EC2 fleet amortization combining compute, gp3 disks, public IPv4, CPU surplus charges, and Savings Plans.</li>
+<li>Fluent IAM policy builder: action catalog validation, wildcard compaction, denial/ledger synthesis, PassRole linting, and local policy simulation against awssim --auth enforce.</li>
+</ul>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<p>lmaws embeds lmcode-go with the 226-signature lmcode_std_v3 standard library, providing all 10 standard REST and CLI SAM interfaces (RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand, CliOption) and the 5 lifecycle functions (rest_config, rest_route, rest_serve, rest_stop, rest_cli).</p>
+<pre><code>p = _lmcode_ cli="lmaws" install="github:lmctl-ai/lmaws@latest";
+  @"/buckets/:bucket/keys"
+  fn list_keys(x: RestExchange) -> void implements RestGet {
+    let keys = cloud.object_list_all(x.param("bucket"), x.query("prefix"));
+    x.send(keys.join(","));
+  }
+
+  @"--bucket"
+  fn opt_bucket(x: RestExchange) -> void implements CliOption {
+    x.set("bucket", x.query("bucket"));
+  }
+
+  @"upload"
+  fn cmd_upload(x: RestExchange) -> void implements CliCommand {
+    let b = x.get("bucket");
+    cloud.bucket_create(b);
+    cloud.object_put(b, "index.html", x.body());
+    x.send("uploaded:" + b);
+  }
+
+  rest_config("prefix", "/api");
+  let out1 = rest_cli(str_split("--bucket site-bkt upload -- hello", " "));
+  let out2 = rest_cli(str_split("/api/buckets/site-bkt/keys", " "));
+  print(out1 + " " + out2);
+end _lmcode_</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmaws">github.com/lmctl-ai/lmaws</a>.</p>
+</footer>
+</body>
+</html>

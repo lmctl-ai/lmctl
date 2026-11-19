@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmplayer reference — lmplayer — lmctl.com tools</title>
+<meta name="description" content="Reference tables for lmplayer CLI commands, flags, configuration properties, built-in agent profiles, model-facing tools, and exit codes.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmplayer/">Overview</a></li>
+<li><a href="/tools/lmplayer/skill.html">Skill</a></li>
+<li><a href="/tools/lmplayer/guide.html">Guide</a></li>
+<li><a href="/tools/lmplayer/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmplayer reference</h1>
+<p>Reference tables for lmplayer CLI commands, flags, configuration properties, built-in agent profiles, model-facing tools, and exit codes.</p>
+<h2>CLI subcommands and flags</h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Flags and arguments</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>lmplayer [prompt]</td>
+<td>positional prompt or piped stdin</td>
+<td>Run a non-interactive prompt with default settings; bare invocation on a TTY prints help.</td>
+</tr>
+<tr>
+<td>lmplayer run</td>
+<td>--model &lt;provider/model>, --effort &lt;tier>, --agent &lt;name>, --format json, --remote-poll</td>
+<td>Execute a single prompt non-interactively or poll an outbound HTTP operator mailbox.</td>
+</tr>
+<tr>
+<td>lmplayer serve</td>
+<td>--hostname &lt;addr>, --port &lt;port></td>
+<td>Start the single-user REST service with a process-wide FIFO execution gate.</td>
+</tr>
+<tr>
+<td>lmplayer tui</td>
+<td>optional workspace path</td>
+<td>Launch the interactive terminal user interface (sidebar hidden by default).</td>
+</tr>
+<tr>
+<td>lmplayer config</td>
+<td>get [key], set &lt;key> &lt;val>, unset &lt;key>, verify</td>
+<td>Read, mutate, or validate configuration in ~/.config/lmplayer/opencode.json.</td>
+</tr>
+<tr>
+<td>lmplayer models</td>
+<td>--json, --test &lt;provider>, verify &lt;provider/model></td>
+<td>List available models and effort tiers, probe a provider live, or verify model resolution.</td>
+</tr>
+<tr>
+<td>lmplayer providers</td>
+<td>login, list --json</td>
+<td>Configure provider credentials or list registered providers as JSON.</td>
+</tr>
+<tr>
+<td>lmplayer session</td>
+<td>ls --json, tail &lt;id>, report &lt;id>, health &lt;id> --json, metrics &lt;id> --json</td>
+<td>Inspect session history, health diagnostics, and session-metrics/v1 usage and cost telemetry.</td>
+</tr>
+</tbody>
+</table>
+<h2>Configuration keys and environment variables</h2>
+<table>
+<thead>
+<tr>
+<th>Key or variable</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>compaction.mode</td>
+<td>"organize"</td>
+<td>Select durable-memory Markdown organization ("organize") or summary compaction ("summary").</td>
+</tr>
+<tr>
+<td>permission_ask</td>
+<td>"deny"</td>
+<td>Resolve residual ask permission rules automatically in non-interactive run/serve modes ("deny" or "allow").</td>
+</tr>
+<tr>
+<td>tool_workdir.extra_roots</td>
+<td>unrestricted (omit) or []</td>
+<td>List of allowed external working directory roots for structured Linux tools; [] confines to workspace.</td>
+</tr>
+<tr>
+<td>OPENCODE_CONFIG</td>
+<td>~/.config/lmplayer/opencode.json</td>
+<td>Explicit path to a JSON/JSONC configuration file override.</td>
+</tr>
+<tr>
+<td>OLLAMA_HOST</td>
+<td>http://localhost:11434</td>
+<td>Ollama server origin for zero-config ollama/&lt;model> and ollama/&lt;model>+tools selectors.</td>
+</tr>
+<tr>
+<td>OPENCODE_DISABLE_AUTOUPDATE, OPENCODE_DISABLE_DEFAULT_PLUGINS</td>
+<td>unset</td>
+<td>Set to true in hermetic or mock E2E test runs to prevent external network traffic.</td>
+</tr>
+</tbody>
+</table>
+<h2>Agent profiles and model-facing tools</h2>
+<table>
+<thead>
+<tr>
+<th>Profile or tool</th>
+<th>Scope</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>default agent</td>
+<td>full coding toolset</td>
+<td>Standard coding agent with filesystem, search, bash, job, cron, and subagent task tools.</td>
+</tr>
+<tr>
+<td>lean agent</td>
+<td>bash-only provision</td>
+<td>Short system prompt and positive provisioning restricted to the bash tool.</td>
+</tr>
+<tr>
+<td>secured agent</td>
+<td>structured Linux tools</td>
+<td>Restricted profile using operation-checked structured tools (git, gh, rg, find, tar, unzip).</td>
+</tr>
+<tr>
+<td>bash &amp; job tools</td>
+<td>run / serve runtime</td>
+<td>Execute commands synchronously or with background: true; inspect via job list, get, output, stop.</td>
+</tr>
+<tr>
+<td>cron tool</td>
+<td>in-memory session schedule</td>
+<td>Create, list, or delete 5-field cron prompt schedules (recurring or one-shot, 7-day max lifetime).</td>
+</tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Prompt execution, configuration validation, or session command succeeded.</td>
+</tr>
+<tr>
+<td>non-zero</td>
+<td>Runtime execution failure, provider error, or failed config/model verification.</td>
+</tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmplayer">github.com/lmctl-ai/lmplayer</a>.</p>
+</footer>
+</body>
+</html>

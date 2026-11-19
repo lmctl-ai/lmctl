@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmnum reference — lmnum — lmctl.com tools</title>
+<meta name="description" content="Complete reference tables for lmnum CLI flags, environment variables, Num, Matrix, Func, Ode, and System methods, standard lmcode_std_v3 interfaces, and exit…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmnum/">Overview</a></li>
+<li><a href="/tools/lmnum/skill.html">Skill</a></li>
+<li><a href="/tools/lmnum/guide.html">Guide</a></li>
+<li><a href="/tools/lmnum/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmnum reference</h1>
+<p>Complete reference tables for lmnum CLI flags, environment variables, Num, Matrix, Func, Ode, and System methods, and exit codes.</p>
+<h2>Command-line flags and environment variables</h2>
+<table>
+<thead><tr><th>Flag or variable</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>--lmcode FILE [FILE ...]</td><td>Execute compiled LMScript bytecode FILE and print the JSON result envelope</td></tr>
+<tr><td>--dry-run --lmcode FILE</td><td>Validate bytecode FILE without running numerical solvers or writing files</td></tr>
+<tr><td>--lmcode-schema</td><td>Print human-readable host schema summary</td></tr>
+<tr><td>--lmcode-schema --json</td><td>Print the embedded JSON DSL schema (lmnum + lmcode_std_v3)</td></tr>
+<tr><td>--lmcode-signatures</td><td>Print canonical type, method, and function signatures</td></tr>
+<tr><td>--version</td><td>Print the lmnum release version</td></tr>
+<tr><td>--notices</td><td>Print embedded third-party license notices (Eigen MPL-2.0, SUNDIALS BSD-3-Clause)</td></tr>
+<tr><td>LMNUM_MAX_MEMORY_MB</td><td>Override the default 4096 MiB process memory budget</td></tr>
+</tbody>
+</table>
+<h2>Num methods (context object num)</h2>
+<table>
+<thead><tr><th>Method</th><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>matrix</td><td>(rows: int, cols: int) -> Matrix</td><td>Create a zero-initialized dense rows x cols matrix</td></tr>
+<tr><td>identity</td><td>(n: int) -> Matrix</td><td>Create an n x n identity matrix</td></tr>
+<tr><td>parse</td><td>(text: string) -> Matrix</td><td>Parse matrix text with rows separated by ; or newline and entries by space or comma</td></tr>
+<tr><td>linspace</td><td>(a: float, b: float, n: int) -> Matrix</td><td>Create an n x 1 column vector of equally spaced points from a to b inclusive</td></tr>
+<tr><td>random</td><td>(rows: int, cols: int, seed: int) -> Matrix</td><td>Create a deterministic uniform [0, 1) random matrix using mt19937-64</td></tr>
+<tr><td>normal</td><td>(rows: int, cols: int, seed: int) -> Matrix</td><td>Create a deterministic standard normal N(0, 1) random matrix using mt19937-64</td></tr>
+<tr><td>load_csv</td><td>(path: string) -> Matrix</td><td>Load a whitespace- or comma-separated numeric file (skipping one alphabetic header line)</td></tr>
+<tr><td>eval</td><td>(expr: string) -> float</td><td>Evaluate a mathematical expression string with constants pi and e</td></tr>
+<tr><td>func</td><td>(expr: string, vars: string) -> Func</td><td>Compile a 1D or 2D expression over comma-separated variable names</td></tr>
+<tr><td>ode</td><td>(n: int) -> Ode</td><td>Create an n-equation initial-value ODE system builder for SUNDIALS CVODE</td></tr>
+<tr><td>system</td><td>(n: int) -> System</td><td>Create an n-equation nonlinear algebraic system builder for SUNDIALS KINSOL</td></tr>
+<tr><td>integrate</td><td>(expr: string, var: string, a: float, b: float) -> float</td><td>Integrate expr over var from a to b using adaptive Gauss-Kronrod quadrature (tol 1e-10)</td></tr>
+<tr><td>integrate_tol</td><td>(expr: string, var: string, a: float, b: float, tol: float) -> float</td><td>Integrate expr over var from a to b with user tolerance tol</td></tr>
+<tr><td>root</td><td>(expr: string, var: string, a: float, b: float) -> float</td><td>Find a root of expr in [a, b] using Brent's method (requires sign change at endpoints)</td></tr>
+<tr><td>minimize</td><td>(expr: string, vars: string, guess: Matrix) -> Matrix</td><td>Minimize multivariate expr from initial column vector guess using Nelder-Mead</td></tr>
+<tr><td>minimize_path</td><td>(expr: string, vars: string, guess: Matrix) -> Matrix</td><td>Return all Nelder-Mead simplex iterations as rows x0, ..., x{n-1}, f</td></tr>
+<tr><td>polyfit</td><td>(x: Matrix, y: Matrix, deg: int) -> Matrix</td><td>Fit a degree-deg polynomial by least squares and return coefficients</td></tr>
+<tr><td>polyval</td><td>(coeffs: Matrix, x: float) -> float</td><td>Evaluate a polynomial returned by polyfit at scalar x</td></tr>
+<tr><td>interp</td><td>(x: Matrix, y: Matrix, xq: float) -> float</td><td>Evaluate piecewise linear interpolation of (x, y) at xq (requires strictly increasing x)</td></tr>
+<tr><td>assert_close</td><td>(actual: float, expected: float, tol: float) -> void</td><td>Assert that |actual - expected| &lt;= tol, exiting with code 3 on failure or NaN</td></tr>
+<tr><td>print</td><td>(msg: string) -> void</td><td>Write a diagnostic line to stderr</td></tr>
+<tr><td>version</td><td>() -> string</td><td>Return the lmnum version string</td></tr>
+</tbody>
+</table>
+<h2>Matrix methods</h2>
+<table>
+<thead><tr><th>Method</th><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>rows / cols</td><td>() -> int</td><td>Return row count or column count</td></tr>
+<tr><td>get</td><td>(i: int, j: int) -> float</td><td>Read entry at 0-based row i, column j</td></tr>
+<tr><td>set</td><td>(i: int, j: int, val: float) -> Matrix</td><td>Write val at 0-based row i, column j in place and return receiver</td></tr>
+<tr><td>copy</td><td>() -> Matrix</td><td>Return an independent deep copy of the matrix</td></tr>
+<tr><td>add / sub / hadamard</td><td>(other: Matrix) -> Matrix</td><td>Elementwise addition, subtraction, or Hadamard product</td></tr>
+<tr><td>mul</td><td>(other: Matrix) -> Matrix</td><td>Matrix multiplication</td></tr>
+<tr><td>scale / shift</td><td>(s: float) -> Matrix</td><td>Multiply all entries by s or add s to all entries</td></tr>
+<tr><td>transpose</td><td>() -> Matrix</td><td>Return the matrix transpose</td></tr>
+<tr><td>inverse</td><td>() -> Matrix</td><td>Return the matrix inverse (errors if singular)</td></tr>
+<tr><td>det / trace / norm</td><td>() -> float</td><td>Return determinant, trace, or Frobenius/Euclidean norm</td></tr>
+<tr><td>solve</td><td>(rhs: Matrix) -> Matrix</td><td>Solve A * X = rhs with Eigen FullPivLU (errors if numerically singular)</td></tr>
+<tr><td>lstsq</td><td>(rhs: Matrix) -> Matrix</td><td>Solve linear least-squares min ||A * X - rhs||_2</td></tr>
+<tr><td>eig_sym</td><td>() -> Matrix</td><td>Return ascending eigenvalues of a symmetric matrix as an n x 1 column</td></tr>
+<tr><td>eigvec_sym</td><td>() -> Matrix</td><td>Return orthonormal eigenvectors of a symmetric matrix as columns</td></tr>
+<tr><td>svd_values</td><td>() -> Matrix</td><td>Return singular values in descending order as a column vector</td></tr>
+<tr><td>svd_u / svd_v</td><td>() -> Matrix</td><td>Return thin left (U) or right (V) singular vector matrices</td></tr>
+<tr><td>cholesky</td><td>() -> Matrix</td><td>Return lower triangular Cholesky factor L of a symmetric positive-definite matrix</td></tr>
+<tr><td>block</td><td>(i: int, j: int, r: int, c: int) -> Matrix</td><td>Extract an r x c submatrix starting at (i, j)</td></tr>
+<tr><td>sorted</td><td>() -> Matrix</td><td>Flatten all entries and sort ascending into a column vector</td></tr>
+<tr><td>col / row</td><td>(k: int) -> Matrix</td><td>Extract 0-based column k (n x 1) or row k (1 x m)</td></tr>
+<tr><td>hstack / vstack</td><td>(other: Matrix) -> Matrix</td><td>Concatenate matrices horizontally or vertically</td></tr>
+<tr><td>sum / mean / min / max / std</td><td>() -> float</td><td>Compute scalar reductions across all entries</td></tr>
+<tr><td>map</td><td>(fn: Func) -> Matrix</td><td>Apply a 1-argument Func to every matrix entry</td></tr>
+<tr><td>to_text</td><td>() -> string</td><td>Format matrix as human-readable text</td></tr>
+<tr><td>save_csv</td><td>(path: string) -> void</td><td>Write space-separated rows with exact round-trip double precision and no header</td></tr>
+</tbody>
+</table>
+<h2>Func, Ode, and System methods</h2>
+<table>
+<thead><tr><th>Type and method</th><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Func.eval</td><td>(x: float) -> float</td><td>Evaluate a 1-variable compiled expression at x</td></tr>
+<tr><td>Func.eval2</td><td>(x: float, y: float) -> float</td><td>Evaluate a 2-variable compiled expression at (x, y)</td></tr>
+<tr><td>Ode.rhs</td><td>(i: int, expr: string) -> Ode</td><td>Set right-hand side expression for dy_i/dt in terms of t, y0..y{n-1}, and params</td></tr>
+<tr><td>Ode.init</td><td>(i: int, val: float) -> Ode</td><td>Set initial value y_i(t0) = val</td></tr>
+<tr><td>Ode.param</td><td>(name: string, val: float) -> Ode</td><td>Bind a named scalar parameter for use in rhs expressions</td></tr>
+<tr><td>Ode.tol</td><td>(rtol: float, atol: float) -> Ode</td><td>Set relative and absolute integration tolerances (default 1e-8, 1e-10)</td></tr>
+<tr><td>Ode.stiff</td><td>() -> Ode</td><td>Switch CVODE solver from Adams-Moulton to BDF for stiff systems</td></tr>
+<tr><td>Ode.solve</td><td>(t0: float, t1: float, points: int) -> Matrix</td><td>Integrate from t0 to t1 at points equally spaced times, returning columns t, y0..y{n-1}</td></tr>
+<tr><td>System.eq</td><td>(i: int, expr: string) -> System</td><td>Set residual expression F_i(x0..x{n-1}) = 0 for equation i</td></tr>
+<tr><td>System.solve</td><td>(guess: Matrix, tol: float) -> Matrix</td><td>Solve nonlinear system from column vector guess with KINSOL to residual tolerance tol</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th>Code</th><th>Phase</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>run</td><td>Execution and all numerical assertions succeeded</td></tr>
+<tr><td>2</td><td>cli</td><td>Invalid CLI argument or metadata flag error</td></tr>
+<tr><td>3</td><td>load / run</td><td>Bytecode load failure, singular matrix, solver non-convergence, NaN evaluation, failed assert_close, or memory limit exceeded</td></tr>
+<tr><td>4</td><td>app</td><td>Application or output verification failure</td></tr>
+</tbody>
+</table></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmnum">github.com/lmctl-ai/lmnum</a>.</p>
+</footer>
+</body>
+</html>

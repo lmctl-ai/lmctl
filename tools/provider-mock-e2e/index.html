@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>provider-mock-e2e — lmctl.com tools</title>
+<meta name="description" content="provider-mock-e2e runs unmodified coding agent CLIs installed by lminstall against a checksum-verified loopback lmmock server with zero vendor credentials.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/provider-mock-e2e/">Overview</a></li>
+<li><a href="/tools/provider-mock-e2e/skill.html">Skill</a></li>
+<li><a href="/tools/provider-mock-e2e/guide.html">Guide</a></li>
+<li><a href="/tools/provider-mock-e2e/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>provider-mock-e2e</h1>
+<p>provider-mock-e2e runs unmodified coding agent CLIs installed by lminstall against a checksum-verified loopback lmmock server with zero vendor credentials.</p>
+<h2>Quick reference</h2>
+<p>Prepare the verified lmmock loopback fixture, run the end-to-end probe for any of the 13 qualified coding agent CLIs in an isolated temporary HOME, and verify the exact reply and request audit.</p>
+<pre><code>npm install --prefix /tmp/compiler --no-audit --no-fund @lmctl-ai/lmctl@0.2.448
+export LMSCRIPT_JS=/tmp/compiler/node_modules/@lmctl-ai/lmctl/bin/lmscript
+python3 scripts/prepare.py
+python3 scripts/run.py claude --settings /tmp/provider-mock-tools/settings.json --out build/claude-result
+python3 scripts/run.py miniplayer --settings /tmp/provider-mock-tools/settings.json --out build/miniplayer-result
+python3 scripts/run.py lmplayer --settings /tmp/provider-mock-tools/settings.json --out build/lmplayer-result</code></pre>
+<table>
+<thead>
+<tr>
+<th>Script or provider</th>
+<th>Wire API on loopback lmmock</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>scripts/prepare.py</td>
+<td>lmmock + llm-api.lms fixture</td>
+<td>Verify lmmock release checksum and compile the no-forced-tool smoke policy alongside the stock handler.</td>
+</tr>
+<tr>
+<td>scripts/run.py &lt;provider></td>
+<td>lminstall status &lt;provider> --json</td>
+<td>Resolve the lminstall-owned provider binary (never falling back to global PATH) and invoke probe.py.</td>
+</tr>
+<tr>
+<td>scripts/probe.py</td>
+<td>Isolated HOME + LMMOCK_URL</td>
+<td>Configure the provider, send the exact prompt, assert exit 0 and PROVIDER_MOCK_OK_129, and run the wrong-reply control.</td>
+</tr>
+<tr>
+<td>claude, dsh</td>
+<td>POST /v1/messages (Anthropic Messages SSE)</td>
+<td>Qualify Claude Code (--bare -p) and DeepSeek Harness (dsh headless) over loopback HTTP.</td>
+</tr>
+<tr>
+<td>codex, miniplayer</td>
+<td>POST /v1/responses (OpenAI Responses)</td>
+<td>Qualify Codex (exec --skip-git-repo-check --json) and Miniplayer (run --model openai/mock-agent).</td>
+</tr>
+<tr>
+<td>gemini, agy</td>
+<td>POST /v1beta/models/*:streamGenerateContent?alt=sse</td>
+<td>Qualify Gemini CLI (gemini-2.5-flash) and Antigravity CLI (gemini-3.8-flash) with GOOGLE_GEMINI_BASE_URL.</td>
+</tr>
+<tr>
+<td>copilot, opencode, kimi, qwen, pi, lmplayer, hermes</td>
+<td>POST /v1/chat/completions</td>
+<td>Qualify OpenAI Chat Completions coding tools in isolated HOME directories with cleanup-hermes.py PID reaping.</td>
+</tr>
+</tbody>
+</table>
+<p>Runnable probe workflow verifying an installed provider binary against the loopback lmmock that scripts/probe.py starts itself:</p>
+<pre><code>lminstall status miniplayer --json
+python3 scripts/run.py miniplayer --settings /tmp/provider-mock-tools/settings.json --out build/out</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/provider-mock-e2e/skill.html">Skill</a> — LLM agent authoring rules, hermetic HOME configuration, oracle assertions, and verification steps.</li>
+<li><a href="/tools/provider-mock-e2e/guide.html">Guide</a> — Complete 13-provider routing matrix, batch-wrapper bypass on Windows, and Hermes gateway reaping.</li>
+<li><a href="/tools/provider-mock-e2e/reference.html">Reference</a> — Provider configuration table, scripts and flags, environment isolation keys, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/provider-mock-e2e">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/provider-mock-e2e">github.com/lmctl-ai/provider-mock-e2e</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmtorch reference — lmtorch — lmctl.com tools</title>
+<meta name="description" content="Command-line flags, exit codes, context objects, host types and methods, and standard-library signatures of lmtorch 0.5.1, generated from the repository schema…">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmtorch/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmtorch/">Overview</a></li>
+<li><a href="/tools/lmtorch/skill.html">Skill</a></li>
+<li><a href="/tools/lmtorch/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmtorch/guide.html">Guide</a></li>
+<li><a href="/tools/lmtorch/reference.html">Reference</a></li>
+<li><a href="/tools/lmtorch/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>lmtorch reference</h1>
+<p>Command-line flags, exit codes, context objects, host types and methods, and standard-library signatures of lmtorch 0.5.1, generated from the repository schema (schema/lmtorch.host.json), the host source and the vendored lmcode std schema. The host schema declares 214 method signatures on 7 types. Parameter and return types are int, float, string, bool, void and the host or standard types named here.</p>
+<h2 id="cli">Command line</h2>
+<table>
+<thead><tr><th>Command</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td>lmtorch --version</td><td>Prints lmtorch and the version number, exit 0.</td></tr>
+<tr><td>lmtorch --lmcode-schema</td><td>Prints a readable summary of the host API grouped by type.</td></tr>
+<tr><td>lmtorch --lmcode-schema --json</td><td>Prints the exact embedded host schema bytes (schema 2, name lmtorch) that lmscript compiles against.</td></tr>
+<tr><td>lmtorch --lmcode-signatures</td><td>Prints one canonical signature per line (context, function and method entries).</td></tr>
+<tr><td>lmtorch --lmcode FILE.dslb</td><td>Runs compiled bytecode under the v1 invocation manifest and prints one terminal return frame. Several files may follow one --lmcode.</td></tr>
+<tr><td>--first FILE.dslb, --last FILE.dslb</td><td>Additional bytecode files ordered before or after the --lmcode files in the same invocation.</td></tr>
+</tbody>
+</table>
+<h3 id="exit-codes">Exit codes</h3>
+<table>
+<thead><tr><th>Exit code</th><th>Phase</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>none</td><td>Success.</td></tr>
+<tr><td>2</td><td>cli</td><td>Usage error (CLI_USAGE), retired or unknown flag, invalid invocation manifest, or a missing or nonboolean dry value; no host work is done.</td></tr>
+<tr><td>3</td><td>load or run</td><td>Bytecode failed verification against the embedded schema (for example LOAD_BAD_BYTECODE), or a program failed while running (host errors are reported as RUN_HOST).</td></tr>
+<tr><td>4</td><td>app</td><td>Application-phase failure, or the result could not be written to standard output.</td></tr>
+</tbody>
+</table>
+<h3 id="lmscript">Used from lmscript</h3>
+<pre><code>p = _lmcode_ cli="lmtorch" install="github:lmctl-ai/lmtorch@latest";
+let values = torch.tensor("[[1.0, 2.0], [3.0, 4.0]]");
+let total = values.sum().item();
+out.check(total == 10.0, "sum must be 10");
+out.set("shape", values.shape()).set("sum", total);
+end _lmcode_
+
+run = run_lmcode(p);
+if (!run.ok) { println(f"lmtorch {run.phase} error {run.code}: {run.message}"); exit(1); }
+result = run.result;
+println(f"shape {result.shape}, sum {result.sum}");</code></pre>
+<h2 id="types">Context and host types</h2>
+<table>
+<thead><tr><th>Name</th><th>Kind</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td>torch</td><td>context object of type Torch</td><td>Tensor constructors, seeding, thread count, grad mode, loading of tensors, bundles, models and CSV, handle marks.</td></tr>
+<tr><td>out</td><td>context object of type Out</td><td>Builds the Json result of the block with set and verifies expectations with check.</td></tr>
+<tr><td>Tensor</td><td>type, 88 methods</td><td>CPU tensor: shape, indexing, arithmetic, reductions, activations, autograd, save and CSV output. Operators + - * and unary minus map to add, sub, mul and neg; division is the div method.</td></tr>
+<tr><td>TensorList</td><td>type, 3 methods</td><td>Ordered list of tensors.</td></tr>
+<tr><td>Bundle</td><td>type, 7 methods</td><td>Named tensors, stored as one safetensors file.</td></tr>
+<tr><td>Model</td><td>type, 24 methods</td><td>Sequential model built by chaining layer methods.</td></tr>
+<tr><td>Optimizer</td><td>type, 4 methods</td><td>Optimizer created from a model.</td></tr>
+<tr><td>DType</td><td>enum</td><td>F32, F64, I64, BOOL.</td></tr>
+</tbody>
+</table>
+<h3 id="enums">Enum DType</h3>
+<table>
+<thead><tr><th>Value</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>F32</td><td>32-bit float</td></tr>
+<tr><td>F64</td><td>64-bit float</td></tr>
+<tr><td>I64</td><td>64-bit integer</td></tr>
+<tr><td>BOOL</td><td>boolean, one byte in safetensors</td></tr>
+</tbody>
+</table>
+<h3 id="operators">Tensor operators</h3>
+<table>
+<thead><tr><th>Operator key</th><th>Tensor method</th></tr></thead>
+<tbody>
+<tr><td>+</td><td>add</td></tr>
+<tr><td>-</td><td>sub</td></tr>
+<tr><td>*</td><td>mul</td></tr>
+<tr><td>neg</td><td>neg</td></tr>
+<tr><td>r+</td><td>add</td></tr>
+<tr><td>r-</td><td>rsub</td></tr>
+<tr><td>r*</td><td>mul</td></tr>
+</tbody>
+</table>
+<p>Keys beginning with r apply when the tensor is the right operand. There is no operator for division; call div.</p>
+<h2 id="torch">Torch methods</h2>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>version</td><td>version() -> string</td></tr>
+<tr><td>manual_seed</td><td>manual_seed(int) -> void</td></tr>
+<tr><td>set_num_threads</td><td>set_num_threads(int) -> void</td></tr>
+<tr><td>grad_enabled</td><td>grad_enabled(bool) -> void</td></tr>
+<tr><td>is_grad_enabled</td><td>is_grad_enabled() -> bool</td></tr>
+<tr><td>zeros</td><td>zeros(int) -> Tensor; zeros(int, int) -> Tensor; zeros(int, int, int) -> Tensor; zeros(int, int, int, int) -> Tensor</td></tr>
+<tr><td>ones</td><td>ones(int) -> Tensor; ones(int, int) -> Tensor; ones(int, int, int) -> Tensor; ones(int, int, int, int) -> Tensor</td></tr>
+<tr><td>full</td><td>full(int, float) -> Tensor; full(int, int, float) -> Tensor; full(int, int, int, float) -> Tensor; full(int, int, int, int, float) -> Tensor</td></tr>
+<tr><td>rand</td><td>rand(int) -> Tensor; rand(int, int) -> Tensor; rand(int, int, int) -> Tensor; rand(int, int, int, int) -> Tensor</td></tr>
+<tr><td>randn</td><td>randn(int) -> Tensor; randn(int, int) -> Tensor; randn(int, int, int) -> Tensor; randn(int, int, int, int) -> Tensor</td></tr>
+<tr><td>randint</td><td>randint(int, int, int) -> Tensor; randint(int, int, int, int) -> Tensor</td></tr>
+<tr><td>randperm</td><td>randperm(int) -> Tensor</td></tr>
+<tr><td>arange</td><td>arange(int) -> Tensor; arange(float, float, float) -> Tensor</td></tr>
+<tr><td>linspace</td><td>linspace(float, float, int) -> Tensor</td></tr>
+<tr><td>eye</td><td>eye(int) -> Tensor</td></tr>
+<tr><td>scalar</td><td>scalar(float) -> Tensor</td></tr>
+<tr><td>tensor</td><td>tensor(string) -> Tensor; tensor(string, DType) -> Tensor</td></tr>
+<tr><td>where</td><td>where(Tensor, Tensor, Tensor) -> Tensor</td></tr>
+<tr><td>list</td><td>list() -> TensorList</td></tr>
+<tr><td>cat</td><td>cat(TensorList, int) -> Tensor</td></tr>
+<tr><td>stack</td><td>stack(TensorList, int) -> Tensor</td></tr>
+<tr><td>load</td><td>load(string) -> Tensor; load(string, string) -> Tensor</td></tr>
+<tr><td>save</td><td>save(string, Tensor) -> void</td></tr>
+<tr><td>bundle</td><td>bundle() -> Bundle</td></tr>
+<tr><td>open</td><td>open(string) -> Bundle</td></tr>
+<tr><td>read_csv</td><td>read_csv(string, bool) -> Tensor</td></tr>
+<tr><td>sequential</td><td>sequential() -> Model</td></tr>
+<tr><td>load_model</td><td>load_model(string) -> Model</td></tr>
+<tr><td>sgd</td><td>sgd(Model, float) -> Optimizer; sgd(Model, float, float) -> Optimizer; sgd(TensorList, float) -> Optimizer</td></tr>
+<tr><td>adam</td><td>adam(Model, float) -> Optimizer; adam(TensorList, float) -> Optimizer</td></tr>
+<tr><td>adamw</td><td>adamw(Model, float, float) -> Optimizer</td></tr>
+<tr><td>mark</td><td>mark() -> int</td></tr>
+<tr><td>release</td><td>release(int) -> int</td></tr>
+<tr><td>live_tensors</td><td>live_tensors() -> int</td></tr>
+</tbody>
+</table>
+<h2 id="tensor">Tensor methods</h2>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>numel</td><td>numel() -> int</td></tr>
+<tr><td>dim</td><td>dim() -> int</td></tr>
+<tr><td>size</td><td>size(int) -> int</td></tr>
+<tr><td>shape</td><td>shape() -> string</td></tr>
+<tr><td>dtype</td><td>dtype() -> DType</td></tr>
+<tr><td>item</td><td>item() -> float</td></tr>
+<tr><td>item_int</td><td>item_int() -> int</td></tr>
+<tr><td>value</td><td>value(int) -> float</td></tr>
+<tr><td>value_int</td><td>value_int(int) -> int</td></tr>
+<tr><td>set</td><td>set(int, float) -> self</td></tr>
+<tr><td>to_text</td><td>to_text() -> string</td></tr>
+<tr><td>to_json</td><td>to_json() -> string</td></tr>
+<tr><td>to</td><td>to(DType) -> Tensor</td></tr>
+<tr><td>add</td><td>add(Tensor) -> Tensor; add(float) -> Tensor</td></tr>
+<tr><td>sub</td><td>sub(Tensor) -> Tensor; sub(float) -> Tensor</td></tr>
+<tr><td>rsub</td><td>rsub(float) -> Tensor</td></tr>
+<tr><td>mul</td><td>mul(Tensor) -> Tensor; mul(float) -> Tensor</td></tr>
+<tr><td>div</td><td>div(Tensor) -> Tensor; div(float) -> Tensor</td></tr>
+<tr><td>pow</td><td>pow(float) -> Tensor</td></tr>
+<tr><td>neg</td><td>neg() -> Tensor</td></tr>
+<tr><td>matmul</td><td>matmul(Tensor) -> Tensor</td></tr>
+<tr><td>maximum</td><td>maximum(Tensor) -> Tensor</td></tr>
+<tr><td>minimum</td><td>minimum(Tensor) -> Tensor</td></tr>
+<tr><td>abs</td><td>abs() -> Tensor</td></tr>
+<tr><td>exp</td><td>exp() -> Tensor</td></tr>
+<tr><td>log</td><td>log() -> Tensor</td></tr>
+<tr><td>sqrt</td><td>sqrt() -> Tensor</td></tr>
+<tr><td>square</td><td>square() -> Tensor</td></tr>
+<tr><td>sin</td><td>sin() -> Tensor</td></tr>
+<tr><td>cos</td><td>cos() -> Tensor</td></tr>
+<tr><td>sign</td><td>sign() -> Tensor</td></tr>
+<tr><td>floor</td><td>floor() -> Tensor</td></tr>
+<tr><td>round</td><td>round() -> Tensor</td></tr>
+<tr><td>clamp</td><td>clamp(float, float) -> Tensor</td></tr>
+<tr><td>relu</td><td>relu() -> Tensor</td></tr>
+<tr><td>sigmoid</td><td>sigmoid() -> Tensor</td></tr>
+<tr><td>tanh</td><td>tanh() -> Tensor</td></tr>
+<tr><td>gelu</td><td>gelu() -> Tensor</td></tr>
+<tr><td>leaky_relu</td><td>leaky_relu(float) -> Tensor</td></tr>
+<tr><td>softmax</td><td>softmax(int) -> Tensor</td></tr>
+<tr><td>log_softmax</td><td>log_softmax(int) -> Tensor</td></tr>
+<tr><td>gt</td><td>gt(Tensor) -> Tensor; gt(float) -> Tensor</td></tr>
+<tr><td>lt</td><td>lt(Tensor) -> Tensor; lt(float) -> Tensor</td></tr>
+<tr><td>ge</td><td>ge(float) -> Tensor</td></tr>
+<tr><td>le</td><td>le(float) -> Tensor</td></tr>
+<tr><td>eq</td><td>eq(Tensor) -> Tensor; eq(float) -> Tensor</td></tr>
+<tr><td>sum</td><td>sum() -> Tensor; sum(int) -> Tensor; sum(int, bool) -> Tensor</td></tr>
+<tr><td>mean</td><td>mean() -> Tensor; mean(int) -> Tensor; mean(int, bool) -> Tensor</td></tr>
+<tr><td>std</td><td>std() -> Tensor; std(int, bool) -> Tensor</td></tr>
+<tr><td>var</td><td>var() -> Tensor</td></tr>
+<tr><td>norm</td><td>norm() -> Tensor</td></tr>
+<tr><td>max</td><td>max() -> Tensor</td></tr>
+<tr><td>min</td><td>min() -> Tensor</td></tr>
+<tr><td>amax</td><td>amax(int) -> Tensor</td></tr>
+<tr><td>amin</td><td>amin(int) -> Tensor</td></tr>
+<tr><td>argmax</td><td>argmax() -> Tensor; argmax(int) -> Tensor</td></tr>
+<tr><td>argmin</td><td>argmin(int) -> Tensor</td></tr>
+<tr><td>reshape</td><td>reshape(int) -> Tensor; reshape(int, int) -> Tensor; reshape(int, int, int) -> Tensor; reshape(int, int, int, int) -> Tensor</td></tr>
+<tr><td>flatten</td><td>flatten() -> Tensor</td></tr>
+<tr><td>t</td><td>t() -> Tensor</td></tr>
+<tr><td>transpose</td><td>transpose(int, int) -> Tensor</td></tr>
+<tr><td>unsqueeze</td><td>unsqueeze(int) -> Tensor</td></tr>
+<tr><td>squeeze</td><td>squeeze() -> Tensor; squeeze(int) -> Tensor</td></tr>
+<tr><td>slice</td><td>slice(int, int, int) -> Tensor</td></tr>
+<tr><td>select</td><td>select(int, int) -> Tensor</td></tr>
+<tr><td>index_select</td><td>index_select(int, Tensor) -> Tensor</td></tr>
+<tr><td>linear</td><td>linear(Tensor) -> Tensor; linear(Tensor, Tensor) -> Tensor</td></tr>
+<tr><td>mse_loss</td><td>mse_loss(Tensor) -> Tensor</td></tr>
+<tr><td>l1_loss</td><td>l1_loss(Tensor) -> Tensor</td></tr>
+<tr><td>smooth_l1_loss</td><td>smooth_l1_loss(Tensor) -> Tensor</td></tr>
+<tr><td>cross_entropy</td><td>cross_entropy(Tensor) -> Tensor</td></tr>
+<tr><td>nll_loss</td><td>nll_loss(Tensor) -> Tensor</td></tr>
+<tr><td>bce_with_logits</td><td>bce_with_logits(Tensor) -> Tensor</td></tr>
+<tr><td>allclose</td><td>allclose(Tensor, float, float) -> bool</td></tr>
+<tr><td>equal</td><td>equal(Tensor) -> bool</td></tr>
+<tr><td>is_finite</td><td>is_finite() -> bool</td></tr>
+<tr><td>any</td><td>any() -> bool</td></tr>
+<tr><td>all</td><td>all() -> bool</td></tr>
+<tr><td>requires_grad</td><td>requires_grad() -> bool; requires_grad(bool) -> self</td></tr>
+<tr><td>backward</td><td>backward() -> void</td></tr>
+<tr><td>grad</td><td>grad() -> Tensor</td></tr>
+<tr><td>has_grad</td><td>has_grad() -> bool</td></tr>
+<tr><td>zero_grad</td><td>zero_grad() -> self</td></tr>
+<tr><td>detach</td><td>detach() -> Tensor</td></tr>
+<tr><td>clone</td><td>clone() -> Tensor</td></tr>
+<tr><td>keep</td><td>keep() -> self</td></tr>
+<tr><td>save</td><td>save(string) -> self</td></tr>
+<tr><td>write_csv</td><td>write_csv(string) -> self</td></tr>
+</tbody>
+</table>
+<h2 id="tensorlist">TensorList methods</h2>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>add</td><td>add(Tensor) -> self</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>at</td><td>at(int) -> Tensor</td></tr>
+</tbody>
+</table>
+<h2 id="bundle">Bundle methods</h2>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>put</td><td>put(string, Tensor) -> self</td></tr>
+<tr><td>get</td><td>get(string) -> Tensor</td></tr>
+<tr><td>has</td><td>has(string) -> bool</td></tr>
+<tr><td>keys</td><td>keys() -> StrList</td></tr>
+<tr><td>meta</td><td>meta(string) -> string; meta(string, string) -> self</td></tr>
+<tr><td>has_meta</td><td>has_meta(string) -> bool</td></tr>
+<tr><td>save</td><td>save(string) -> void</td></tr>
+</tbody>
+</table>
+<h2 id="model">Model methods</h2>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>linear</td><td>linear(int, int) -> self</td></tr>
+<tr><td>conv2d</td><td>conv2d(int, int, int) -> self; conv2d(int, int, int, int, int) -> self</td></tr>
+<tr><td>max_pool2d</td><td>max_pool2d(int) -> self</td></tr>
+<tr><td>flatten</td><td>flatten() -> self</td></tr>
+<tr><td>relu</td><td>relu() -> self</td></tr>
+<tr><td>tanh</td><td>tanh() -> self</td></tr>
+<tr><td>sigmoid</td><td>sigmoid() -> self</td></tr>
+<tr><td>gelu</td><td>gelu() -> self</td></tr>
+<tr><td>leaky_relu</td><td>leaky_relu(float) -> self</td></tr>
+<tr><td>softmax</td><td>softmax(int) -> self</td></tr>
+<tr><td>log_softmax</td><td>log_softmax(int) -> self</td></tr>
+<tr><td>dropout</td><td>dropout(float) -> self</td></tr>
+<tr><td>layer_norm</td><td>layer_norm(int) -> self</td></tr>
+<tr><td>forward</td><td>forward(Tensor) -> Tensor</td></tr>
+<tr><td>parameters</td><td>parameters() -> TensorList</td></tr>
+<tr><td>param</td><td>param(string) -> Tensor</td></tr>
+<tr><td>num_parameters</td><td>num_parameters() -> int</td></tr>
+<tr><td>layers</td><td>layers() -> int</td></tr>
+<tr><td>summary</td><td>summary() -> string</td></tr>
+<tr><td>train</td><td>train() -> self</td></tr>
+<tr><td>eval</td><td>eval() -> self</td></tr>
+<tr><td>zero_grad</td><td>zero_grad() -> self</td></tr>
+<tr><td>save</td><td>save(string) -> void</td></tr>
+<tr><td>load</td><td>load(string) -> self</td></tr>
+</tbody>
+</table>
+<h2 id="optimizer">Optimizer methods</h2>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>zero_grad</td><td>zero_grad() -> void</td></tr>
+<tr><td>step</td><td>step() -> void</td></tr>
+<tr><td>lr</td><td>lr() -> float</td></tr>
+<tr><td>set_lr</td><td>set_lr(float) -> self</td></tr>
+</tbody>
+</table>
+<h2 id="out">Out methods</h2>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>set</td><td>set(string, float) -> self; set(string, int) -> self; set(string, string) -> self; set(string, bool) -> self; set(string, Tensor) -> self</td></tr>
+<tr><td>append</td><td>append(string, float) -> self; append(string, int) -> self</td></tr>
+<tr><td>log</td><td>log(string) -> void</td></tr>
+<tr><td>check</td><td>check(bool, string) -> void</td></tr>
+<tr><td>fail</td><td>fail(string) -> void</td></tr>
+<tr><td>write_text</td><td>write_text(string, string) -> void</td></tr>
+</tbody>
+</table>
+<h2 id="std">Standard library in lmtorch 0.5.1</h2>
+<p>lmtorch 0.5.1 vendors the lmcode_std_v3 catalog of the lmcode-cpp commit pinned in sdk.lock: 206 canonical signatures (83 functions and 123 methods on 16 standard types). The current lmcode_std_v3 catalog has 226 signatures, adding the REST and CLI interfaces; lmtorch picks those up when it syncs its SDK pin and releases. lmtorch implements none of it; the embedded VM registers it. Std file functions are not confined to the working directory.</p>
+<h3 id="std-file">Functions: file (5 signatures)</h3>
+<table>
+<thead><tr><th>Function</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>file_append</td><td>file_append(string, string) -> void</td></tr>
+<tr><td>file_exists</td><td>file_exists(string) -> bool</td></tr>
+<tr><td>file_lines</td><td>file_lines(string) -> StrList</td></tr>
+<tr><td>file_read</td><td>file_read(string) -> string</td></tr>
+<tr><td>file_write</td><td>file_write(string, string) -> void</td></tr>
+</tbody>
+</table>
+<h3 id="std-float">Functions: float (5 signatures)</h3>
+<table>
+<thead><tr><th>Function</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>float_list</td><td>float_list() -> FloatList</td></tr>
+<tr><td>float_map</td><td>float_map() -> FloatMap</td></tr>
+<tr><td>float_pq</td><td>float_pq() -> FloatPQ</td></tr>
+<tr><td>float_queue</td><td>float_queue() -> FloatQueue</td></tr>
+<tr><td>float_stack</td><td>float_stack() -> FloatStack</td></tr>
+</tbody>
+</table>
+<h3 id="std-int">Functions: int (5 signatures)</h3>
+<table>
+<thead><tr><th>Function</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>int_list</td><td>int_list() -> IntList</td></tr>
+<tr><td>int_map</td><td>int_map() -> IntMap</td></tr>
+<tr><td>int_pq</td><td>int_pq() -> IntPQ</td></tr>
+<tr><td>int_queue</td><td>int_queue() -> IntQueue</td></tr>
+<tr><td>int_stack</td><td>int_stack() -> IntStack</td></tr>
+</tbody>
+</table>
+<h3 id="std-lmcode">Functions: lmcode (24 signatures)</h3>
+<table>
+<thead><tr><th>Function</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>lmcode_return_null</td><td>lmcode_return_null() -> void</td></tr>
+<tr><td>lmcode_return_put</td><td>lmcode_return_put(string, bool) -> void; lmcode_return_put(string, float) -> void; lmcode_return_put(string, FloatList) -> void; lmcode_return_put(string, FloatMap) -> void; lmcode_return_put(string, int) -> void; lmcode_return_put(string, IntList) -> void; lmcode_return_put(string, IntMap) -> void; lmcode_return_put(string, Json) -> void; lmcode_return_put(string, StrList) -> void; lmcode_return_put(string, StrMap) -> void; lmcode_return_put(string, string) -> void</td></tr>
+<tr><td>lmcode_return_put_null</td><td>lmcode_return_put_null(string) -> void</td></tr>
+<tr><td>lmcode_return_set</td><td>lmcode_return_set(bool) -> void; lmcode_return_set(float) -> void; lmcode_return_set(FloatList) -> void; lmcode_return_set(FloatMap) -> void; lmcode_return_set(int) -> void; lmcode_return_set(IntList) -> void; lmcode_return_set(IntMap) -> void; lmcode_return_set(Json) -> void; lmcode_return_set(StrList) -> void; lmcode_return_set(StrMap) -> void; lmcode_return_set(string) -> void</td></tr>
+</tbody>
+</table>
+<h3 id="std-math">Functions: math (16 signatures)</h3>
+<table>
+<thead><tr><th>Function</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>math_abs</td><td>math_abs(int) -> int; math_abs(float) -> float</td></tr>
+<tr><td>math_ceil</td><td>math_ceil(int) -> int; math_ceil(float) -> float</td></tr>
+<tr><td>math_floor</td><td>math_floor(int) -> int; math_floor(float) -> float</td></tr>
+<tr><td>math_max</td><td>math_max(int, int) -> int; math_max(float, float) -> float</td></tr>
+<tr><td>math_min</td><td>math_min(int, int) -> int; math_min(float, float) -> float</td></tr>
+<tr><td>math_pow</td><td>math_pow(int, int) -> int; math_pow(float, float) -> float</td></tr>
+<tr><td>math_round</td><td>math_round(int) -> int; math_round(float) -> float</td></tr>
+<tr><td>math_sqrt</td><td>math_sqrt(int) -> int; math_sqrt(float) -> float</td></tr>
+</tbody>
+</table>
+<h3 id="std-str">Functions: str (26 signatures)</h3>
+<table>
+<thead><tr><th>Function</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>str_contains</td><td>str_contains(string, string) -> bool</td></tr>
+<tr><td>str_ends_with</td><td>str_ends_with(string, string) -> bool</td></tr>
+<tr><td>str_find</td><td>str_find(string, string) -> int</td></tr>
+<tr><td>str_is_float</td><td>str_is_float(string) -> bool</td></tr>
+<tr><td>str_is_int</td><td>str_is_int(string) -> bool</td></tr>
+<tr><td>str_len</td><td>str_len(string) -> int</td></tr>
+<tr><td>str_list</td><td>str_list() -> StrList</td></tr>
+<tr><td>str_lower</td><td>str_lower(string) -> string</td></tr>
+<tr><td>str_map</td><td>str_map() -> StrMap</td></tr>
+<tr><td>str_match</td><td>str_match(string, string) -> bool</td></tr>
+<tr><td>str_pq</td><td>str_pq() -> StrPQ</td></tr>
+<tr><td>str_queue</td><td>str_queue() -> StrQueue</td></tr>
+<tr><td>str_repeat</td><td>str_repeat(string, int) -> string</td></tr>
+<tr><td>str_replace</td><td>str_replace(string, string, string) -> string</td></tr>
+<tr><td>str_split</td><td>str_split(string, string) -> StrList</td></tr>
+<tr><td>str_stack</td><td>str_stack() -> StrStack</td></tr>
+<tr><td>str_starts_with</td><td>str_starts_with(string, string) -> bool</td></tr>
+<tr><td>str_substr</td><td>str_substr(string, int, int) -> string</td></tr>
+<tr><td>str_to_float</td><td>str_to_float(string) -> float</td></tr>
+<tr><td>str_to_int</td><td>str_to_int(string) -> int</td></tr>
+<tr><td>str_trim</td><td>str_trim(string) -> string</td></tr>
+<tr><td>str_upper</td><td>str_upper(string) -> string</td></tr>
+<tr><td>str_base64_encode</td><td>str_base64_encode(string) -> string</td></tr>
+<tr><td>str_base64_decode</td><td>str_base64_decode(string) -> string</td></tr>
+<tr><td>str_hex_encode</td><td>str_hex_encode(string) -> string</td></tr>
+<tr><td>str_hex_decode</td><td>str_hex_decode(string) -> string</td></tr>
+</tbody>
+</table>
+<h3 id="std-other">Functions: other (2 signatures)</h3>
+<table>
+<thead><tr><th>Function</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>json_parse</td><td>json_parse(string) -> Json</td></tr>
+<tr><td>template_render</td><td>template_render(string, Json) -> string</td></tr>
+</tbody>
+</table>
+<h3 id="std-floatlist">FloatList (7 signatures)</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>add</td><td>add(float) -> FloatList</td></tr>
+<tr><td>at</td><td>at(int) -> float</td></tr>
+<tr><td>clear</td><td>clear() -> FloatList</td></tr>
+<tr><td>contains</td><td>contains(float) -> bool</td></tr>
+<tr><td>index_of</td><td>index_of(float) -> int</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>set</td><td>set(int, float) -> FloatList</td></tr>
+</tbody>
+</table>
+<h3 id="std-floatmap">FloatMap (10 signatures)</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>has</td><td>has(string) -> bool</td></tr>
+<tr><td>get</td><td>get(string) -> float</td></tr>
+<tr><td>get_or</td><td>get_or(string, float) -> float</td></tr>
+<tr><td>set</td><td>set(string, float) -> FloatMap</td></tr>
+<tr><td>key_at</td><td>key_at(int) -> string</td></tr>
+<tr><td>remove</td><td>remove(string) -> bool</td></tr>
+<tr><td>clear</td><td>clear() -> FloatMap</td></tr>
+<tr><td>keys</td><td>keys() -> StrList</td></tr>
+<tr><td>values</td><td>values() -> FloatList</td></tr>
+</tbody>
+</table>
+<h3 id="std-floatpq">FloatPQ (6 signatures)</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>push</td><td>push(float, float) -> FloatPQ</td></tr>
+<tr><td>pop</td><td>pop() -> float</td></tr>
+<tr><td>peek</td><td>peek() -> float</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>empty</td><td>empty() -> bool</td></tr>
+<tr><td>clear</td><td>clear() -> FloatPQ</td></tr>
+</tbody>
+</table>
+<h3 id="std-floatqueue">FloatQueue (7 signatures)</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>push</td><td>push(float) -> FloatQueue</td></tr>
+<tr><td>pop</td><td>pop() -> float</td></tr>
+<tr><td>peek</td><td>peek() -> float</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>empty</td><td>empty() -> bool</td></tr>
+<tr><td>clear</td><td>clear() -> FloatQueue</td></tr>
+<tr><td>at</td><td>at(int) -> float</td></tr>
+</tbody>
+</table>
+<h3 id="std-floatstack">FloatStack (7 signatures)</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>push</td><td>push(float) -> FloatStack</td></tr>
+<tr><td>pop</td><td>pop() -> float</td></tr>
+<tr><td>peek</td><td>peek() -> float</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>empty</td><td>empty() -> bool</td></tr>
+<tr><td>clear</td><td>clear() -> FloatStack</td></tr>
+<tr><td>at</td><td>at(int) -> float</td></tr>
+</tbody>
+</table>
+<h3 id="std-intlist">IntList (7 signatures)</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>add</td><td>add(int) -> IntList</td></tr>
+<tr><td>at</td><td>at(int) -> int</td></tr>
+<tr><td>clear</td><td>clear() -> IntList</td></tr>
+<tr><td>contains</td><td>contains(int) -> bool</td></tr>
+<tr><td>index_of</td><td>index_of(int) -> int</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>set</td><td>set(int, int) -> IntList</td></tr>
+</tbody>
+</table>
+<h3 id="std-intmap">IntMap (10 signatures)</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>has</td><td>has(string) -> bool</td></tr>
+<tr><td>get</td><td>get(string) -> int</td></tr>
+<tr><td>get_or</td><td>get_or(string, int) -> int</td></tr>
+<tr><td>set</td><td>set(string, int) -> IntMap</td></tr>
+<tr><td>key_at</td><td>key_at(int) -> string</td></tr>
+<tr><td>remove</td><td>remove(string) -> bool</td></tr>
+<tr><td>clear</td><td>clear() -> IntMap</td></tr>
+<tr><td>keys</td><td>keys() -> StrList</td></tr>
+<tr><td>values</td><td>values() -> IntList</td></tr>
+</tbody>
+</table>
+<h3 id="std-intpq">IntPQ (6 signatures)</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>push</td><td>push(int, float) -> IntPQ</td></tr>
+<tr><td>pop</td><td>pop() -> int</td></tr>
+<tr><td>peek</td><td>peek() -> int</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>empty</td><td>empty() -> bool</td></tr>
+<tr><td>clear</td><td>clear() -> IntPQ</td></tr>
+</tbody>
+</table>
+<h3 id="std-intqueue">IntQueue (7 signatures)</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>push</td><td>push(int) -> IntQueue</td></tr>
+<tr><td>pop</td><td>pop() -> int</td></tr>
+<tr><td>peek</td><td>peek() -> int</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>empty</td><td>empty() -> bool</td></tr>
+<tr><td>clear</td><td>clear() -> IntQueue</td></tr>
+<tr><td>at</td><td>at(int) -> int</td></tr>
+</tbody>
+</table>
+<h3 id="std-intstack">IntStack (7 signatures)</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>push</td><td>push(int) -> IntStack</td></tr>
+<tr><td>pop</td><td>pop() -> int</td></tr>
+<tr><td>peek</td><td>peek() -> int</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>empty</td><td>empty() -> bool</td></tr>
+<tr><td>clear</td><td>clear() -> IntStack</td></tr>
+<tr><td>at</td><td>at(int) -> int</td></tr>
+</tbody>
+</table>
+<h3 id="std-json">Json (11 signatures)</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>kind</td><td>kind() -> string</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>at</td><td>at(int) -> Json</td></tr>
+<tr><td>get</td><td>get(string) -> Json</td></tr>
+<tr><td>has</td><td>has(string) -> bool</td></tr>
+<tr><td>keys</td><td>keys() -> StrList</td></tr>
+<tr><td>as_string</td><td>as_string() -> string</td></tr>
+<tr><td>as_int</td><td>as_int() -> int</td></tr>
+<tr><td>as_float</td><td>as_float() -> float</td></tr>
+<tr><td>as_bool</td><td>as_bool() -> bool</td></tr>
+<tr><td>to_json</td><td>to_json() -> string</td></tr>
+</tbody>
+</table>
+<h3 id="std-strlist">StrList (8 signatures)</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>add</td><td>add(string) -> StrList</td></tr>
+<tr><td>at</td><td>at(int) -> string</td></tr>
+<tr><td>clear</td><td>clear() -> StrList</td></tr>
+<tr><td>contains</td><td>contains(string) -> bool</td></tr>
+<tr><td>index_of</td><td>index_of(string) -> int</td></tr>
+<tr><td>join</td><td>join(string) -> string</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>set</td><td>set(int, string) -> StrList</td></tr>
+</tbody>
+</table>
+<h3 id="std-strmap">StrMap (10 signatures)</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>clear</td><td>clear() -> StrMap</td></tr>
+<tr><td>get</td><td>get(string) -> string</td></tr>
+<tr><td>get_or</td><td>get_or(string, string) -> string</td></tr>
+<tr><td>has</td><td>has(string) -> bool</td></tr>
+<tr><td>key_at</td><td>key_at(int) -> string</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>remove</td><td>remove(string) -> bool</td></tr>
+<tr><td>set</td><td>set(string, string) -> StrMap</td></tr>
+<tr><td>keys</td><td>keys() -> StrList</td></tr>
+<tr><td>values</td><td>values() -> StrList</td></tr>
+</tbody>
+</table>
+<h3 id="std-strpq">StrPQ (6 signatures)</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>push</td><td>push(string, float) -> StrPQ</td></tr>
+<tr><td>pop</td><td>pop() -> string</td></tr>
+<tr><td>peek</td><td>peek() -> string</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>empty</td><td>empty() -> bool</td></tr>
+<tr><td>clear</td><td>clear() -> StrPQ</td></tr>
+</tbody>
+</table>
+<h3 id="std-strqueue">StrQueue (7 signatures)</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>push</td><td>push(string) -> StrQueue</td></tr>
+<tr><td>pop</td><td>pop() -> string</td></tr>
+<tr><td>peek</td><td>peek() -> string</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>empty</td><td>empty() -> bool</td></tr>
+<tr><td>clear</td><td>clear() -> StrQueue</td></tr>
+<tr><td>at</td><td>at(int) -> string</td></tr>
+</tbody>
+</table>
+<h3 id="std-strstack">StrStack (7 signatures)</h3>
+<table>
+<thead><tr><th>Method</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>push</td><td>push(string) -> StrStack</td></tr>
+<tr><td>pop</td><td>pop() -> string</td></tr>
+<tr><td>peek</td><td>peek() -> string</td></tr>
+<tr><td>len</td><td>len() -> int</td></tr>
+<tr><td>empty</td><td>empty() -> bool</td></tr>
+<tr><td>clear</td><td>clear() -> StrStack</td></tr>
+<tr><td>at</td><td>at(int) -> string</td></tr>
+</tbody>
+</table>
+<h2 id="rest">REST and CLI interfaces</h2>
+<p>The current lmcode_std_v3 catalog (226 signatures) adds the former REST module. None of the names below exist in the std vendored by lmtorch 0.5.1; they become available when lmtorch syncs its lmcode-cpp pin and releases.</p>
+<table>
+<thead><tr><th>Kind</th><th>Names (not in lmtorch 0.5.1)</th></tr></thead>
+<tbody>
+<tr><td>Standard interfaces</td><td>RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand, CliOption</td></tr>
+<tr><td>Functions</td><td>rest_config(string, string) -> void; rest_route(string, string, string) -> void; rest_serve() -> void; rest_stop() -> void; rest_cli(StrList) -> string</td></tr>
+<tr><td>Exchange type</td><td>RestExchange with 15 methods</td></tr>
+</tbody>
+</table>
+<h2 id="related">Related pages</h2>
+<ul>
+<li><a href="/tools/lmtorch/">Quick reference</a></li>
+<li><a href="/tools/lmtorch/skill.html">Skill</a></li>
+<li><a href="/tools/lmtorch/guide.html">Guide</a></li>
+<li><a href="https://github.com/lmctl-ai/lmtorch/blob/main/docs/dsl-api.md">docs/dsl-api.md in the repository</a></li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmtorch">github.com/lmctl-ai/lmtorch</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmssl authoring skill — lmssl — lmctl.com tools</title>
+<meta name="description" content="lmssl is a static single-file executable embedding the complete OpenSSL 4.0.3 command-line suite, default openssl.cnf, libcrypto, libssl, and the lmcode-cpp…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmssl/">Overview</a></li>
+<li><a href="/tools/lmssl/skill.html">Skill</a></li>
+<li><a href="/tools/lmssl/guide.html">Guide</a></li>
+<li><a href="/tools/lmssl/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmssl authoring skill</h1>
+<p>lmssl is a static single-file executable embedding the complete OpenSSL 4.0.3 command-line suite, default openssl.cnf, libcrypto, libssl, and the lmcode-cpp bytecode VM. It executes both native OpenSSL CLI commands and compiled _lmcode_ programs for X.509 PKI issuance, cryptographic primitives, explicit DNS/TCP/TLS handshake diagnostics, and standard REST and CLI routing.</p>
+<h2>Purpose</h2>
+<p>Use lmssl to generate RSA, EC, and Ed25519 keys, construct self-signed or CA-signed X.509 certificates and CSRs with Subject Alternative Names, compute digests, HMACs, PBKDF2 keys, and AEAD ciphertexts (AES-GCM, ChaCha20-Poly1305), inspect TLS 1.2/1.3 handshakes and post-quantum hybrid groups (such as X25519MLKEM768), run local test HTTPS/mTLS servers, and serve standard lmcode_std_v3 REST and CLI interfaces.</p>
+<h2>When to use it</h2>
+<p>Choose lmssl when you need deterministic X.509 certificate generation, PKI chain validation, low-level TLS handshake tracing, or cryptographic operations without external OpenSSL packages or config files. Use lmcurl when running high-level HTTP/HTTPS or LDAPv3 contract test suites, lmnet when testing raw sockets or packet capture, and lmssh when automating OpenSSH clients and SSH certificates.</p>
+<h2>Install</h2>
+<p>Install the lmctl toolchain with npm install -g @lmctl-ai/lmctl@latest. Pre-built standalone binaries for Linux (static glibc x64 and arm64), macOS (x64 and arm64), and Windows (x64) are published on GitHub Releases and fetched automatically when an LMScript program specifies cli="lmssl" and install="github:lmctl-ai/lmssl@latest".</p>
+<pre><code>lmscript --version
+lmssl --version
+lmssl version
+lmssl --lmcode-schema
+lmssl --lmcode-signatures</code></pre>
+<h2>Commands</h2>
+<p>Any invocation whose first flag is not --lmcode, --dry-run, --json, --version, --lmcode-schema, or --lmcode-signatures is dispatched directly to OpenSSL 4.0.3's unmodified command processor.</p>
+<pre><code># Host introspection and bytecode execution
+lmssl --version
+lmssl --lmcode-schema
+lmssl --lmcode-schema --json
+lmssl --lmcode-signatures
+lmssl --lmcode build/program.dslb arg1 arg2
+lmssl --dry-run --lmcode build/program.dslb
+
+# Native OpenSSL 4.0.3 CLI mode (uses embedded openssl.cnf automatically)
+lmssl version -a
+lmssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -keyout key.pem -out cert.pem -subj /CN=demo.example.test
+lmssl x509 -in cert.pem -noout -text
+lmssl dgst -sha256 cert.pem</code></pre>
+<h2>Inputs and outputs</h2>
+<p>In _lmcode_ mode, lmssl exposes four host contexts (ssl: Ssl, net: Net, fs: Fs, and out: Out) plus the 226 standard lmcode_std_v3 functions and methods. Each --lmcode FILE [ARG...] part receives its trailing positional arguments via ssl.args(). Binary outputs from cryptographic primitives (digest, hmac, pbkdf2, seal, Key.sign, rand_hex) are returned as lowercase hexadecimal strings. All _lmcode_ invocations write one terminal JSON SDK envelope to stdout, while out.line, out.text, and out.warn write diagnostics to stderr.</p>
+<h2>Safety rules</h2>
+<p>Observe these cryptographic and filesystem safeguards when authoring lmssl scripts:</p>
+<ul>
+<li>Write private keys exclusively through Key.save, Key.save_encrypted, or fs.write_private so files are created with mode 0600 permissions.</li>
+<li>Configure Cert builder properties (san, ca, ext, valid_days, valid_between, serial) before calling sign_self or sign_with; signing finalizes extensions (subjectKeyIdentifier, basicConstraints, authorityKeyIdentifier) and binds the signature.</li>
+<li>Remember that ssl.client_ctx() fails closed by default: peer verification is enabled with an empty trust store until you explicitly load roots via ctx.ca_file(path), ctx.add_ca(cert), or ctx.system_roots().</li>
+<li>Use --dry-run --lmcode to validate bytecode loading and argument handling without executing key generation, filesystem writes, or network socket callbacks.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>The first example exercises cryptographic primitives (SHA-256, HMAC, PBKDF2, AES-256-GCM AEAD seal/open, and Ed25519 signing) and verifies a two-tier CA and leaf certificate chain:</p>
+<pre><code>p = _lmcode_ cli="lmssl" install="github:lmctl-ai/lmssl@latest";
+let key_hex = ssl.pbkdf2("SHA256", "correct-horse", 10000, "73616c74", 32);
+let iv_hex = ssl.rand_hex(12);
+let ct_hex = ssl.seal("AES-256-GCM", key_hex, iv_hex, "header-aad", "secret-payload");
+let pt = ssl.open("AES-256-GCM", key_hex, iv_hex, "header-aad", ct_hex);
+assert_eq(pt, "secret-payload");
+
+let sign_key = ssl.gen_ed25519();
+let sig = sign_key.sign("SHA256", "message-body");
+assert_eq(sign_key.verify("SHA256", "message-body", sig), true);
+
+let ca_k = ssl.gen_ec("P-256");
+let ca = ssl.new_cert(ca_k, "CN=Test Root CA").ca(true).valid_days(365).sign_self(ca_k, "SHA256");
+let csr_k = ssl.gen_ec("P-256");
+let csr = ssl.new_csr(csr_k, "CN=app.internal").san("DNS:app.internal,IP:127.0.0.1").sign(csr_k, "SHA256");
+assert_eq(csr.verify(), true);
+let leaf = ssl.cert_from_csr(csr).valid_days(30).sign_with(ca, ca_k, "SHA256");
+assert_eq(leaf.verify_with(ca), true);
+assert_eq(leaf.matches_host("app.internal"), true);
+end _lmcode_
+res = run_lmcode(p);
+require(res.ok, json_stringify(res));</code></pre>
+<p>The second example exposes digest computation and self-signed certificate generation through the standard lmcode_std_v3 CliOption, CliCommand, and RestGet interfaces:</p>
+<pre><code>p = _lmcode_ cli="lmssl" install="github:lmctl-ai/lmssl@latest";
+@"--alg"
+fn opt_alg(x: RestExchange) -> void implements CliOption {
+  x.set("alg", x.query("alg"));
+}
+
+@"digest"
+fn cmd_digest(x: RestExchange) -> void implements CliCommand {
+  let alg = x.get("alg");
+  x.send(alg + ":" + ssl.digest(alg, x.body()));
+}
+
+@"/cert/:cn"
+fn get_self_cert(x: RestExchange) -> void implements RestGet {
+  let k = ssl.gen_ec("P-256");
+  let c = ssl.new_cert(k, "CN=" + x.param("cn")).valid_days(30).sign_self(k, "SHA256");
+  x.json("{\"subject\":\"" + c.subject() + "\",\"self_signed\":true}");
+}
+
+rest_config("session", "global");
+assert_eq(rest_cli(str_split("--alg=SHA256 digest -- abc", " ")), "SHA256:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+assert_eq(rest_cli(str_split("/cert/demo.test", " ")), "{\"subject\":\"CN=demo.test\",\"self_signed\":true}");
+end _lmcode_
+res = run_lmcode(p);
+require(res.ok, json_stringify(res));</code></pre>
+<h2>Errors and exit codes</h2>
+<p>In native OpenSSL CLI mode, lmssl returns OpenSSL 4.0.3's standard exit code. In _lmcode_ and host modes, it returns deterministic exit codes:</p>
+<ul>
+<li>Exit code 0 indicates that all bytecode parts or introspection commands succeeded and all assertions passed.</li>
+<li>Exit code 2 indicates a command-line or invocation metadata error (such as missing --lmcode argument or malformed CLI flags).</li>
+<li>Exit code 3 indicates a bytecode load error, schema SHA-256 mismatch, or runtime host error (RUN_HOST, such as a TLS handshake verification failure, invalid hex input, or AEAD tag mismatch).</li>
+<li>Exit code 4 indicates an explicit application failure triggered by out.fail(msg) or an assertion failure (code APP_FAIL).</li>
+</ul>
+<h2>How to verify</h2>
+<p>Verify the installed lmssl binary by inspecting its version, embedded OpenSSL version, schema JSON bytes, and 360 canonical signatures:</p>
+<pre><code>lmssl --version
+lmssl version
+lmssl --lmcode-schema --json > /tmp/lmssl-schema.json
+lmssl --lmcode-signatures > /tmp/lmssl-sigs.txt
+lmscript --lmcode-signatures /tmp/lmssl-schema.json > /tmp/lmssl-compiler-sigs.txt
+diff -u /tmp/lmssl-compiler-sigs.txt /tmp/lmssl-sigs.txt</code></pre>
+<p>In a repository checkout, run ./test.sh to build the static binary and execute the full test suite covering cryptographic test vectors, X.509/CSR chains, 0600 key permissions, loopback TLS 1.3 and mTLS handshakes, and native OpenSSL CLI interoperability.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmssl">github.com/lmctl-ai/lmssl</a>.</p>
+</footer>
+</body>
+</html>

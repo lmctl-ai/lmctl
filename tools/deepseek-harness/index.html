@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>deepseek-harness — lmctl.com tools</title>
+<meta name="description" content="deepseek-harness (dsh) is an open-source everything-is-a-plugin agent harness powered by Cordis, maintained in lmctl-ai/deepseek-harness for arm64 builds and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/deepseek-harness/">Overview</a></li>
+<li><a href="/tools/deepseek-harness/skill.html">Skill</a></li>
+<li><a href="/tools/deepseek-harness/guide.html">Guide</a></li>
+<li><a href="/tools/deepseek-harness/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>deepseek-harness</h1>
+<p>deepseek-harness (dsh) is an open-source everything-is-a-plugin agent harness powered by Cordis, maintained in lmctl-ai/deepseek-harness for arm64 builds and lmctl provider integration.</p>
+<h2>Quick reference</h2>
+<p>Run DeepSeek Harness in headless prompt mode, start the local Web UI on 127.0.0.1:3080, or build from source on x64 and arm64 machines.</p>
+<pre><code>dsh --version
+dsh --profile headless "Summarize this directory"
+npx @deepseek-ai/dsh web --no-open
+pnpm install &amp;&amp; pnpm run build &amp;&amp; pnpm dsh web</code></pre>
+<table>
+<thead>
+<tr>
+<th>Command or variable</th>
+<th>Usage</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>dsh --profile headless</td>
+<td>dsh --profile headless "&lt;prompt>"</td>
+<td>Execute a non-interactive one-shot prompt and print the plain-text answer to stdout.</td>
+</tr>
+<tr>
+<td>dsh web</td>
+<td>npx @deepseek-ai/dsh web [--no-open] or pnpm dsh web</td>
+<td>Start the local Web UI server at http://127.0.0.1:3080.</td>
+</tr>
+<tr>
+<td>DSH_HOME</td>
+<td>DSH_HOME=/path/to/state</td>
+<td>Isolate DeepSeek Harness configuration and session state to a private directory.</td>
+</tr>
+<tr>
+<td>DEEPSEEK_API_KEY &amp; DEEPSEEK_BASE_URL</td>
+<td>DEEPSEEK_BASE_URL=http://127.0.0.1:PORT/v1</td>
+<td>Trusted environment-tier API key and endpoint override.</td>
+</tr>
+<tr>
+<td>DSH_TELEMETRY_DISABLED</td>
+<td>DSH_TELEMETRY_DISABLED=1</td>
+<td>Disable outbound telemetry in automated or mock E2E runs.</td>
+</tr>
+</tbody>
+</table>
+<p>Runnable headless prompt example using an isolated DSH_HOME and trusted environment-tier endpoint override:</p>
+<pre><code>export DSH_HOME="$(mktemp -d)"
+export DSH_TELEMETRY_DISABLED=1
+export DEEPSEEK_API_KEY="synthetic-mock-key-129"
+export DEEPSEEK_BASE_URL="http://127.0.0.1:4567/v1"
+dsh --profile headless "Reply with exactly PROVIDER_MOCK_OK_129. Do not call any tools."</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/deepseek-harness/skill.html">Skill</a> — LLM agent authoring rules, arm64 source builds, headless and web commands, and verification steps.</li>
+<li><a href="/tools/deepseek-harness/guide.html">Guide</a> — Cordis plugin architecture, why lmctl-ai maintains this fork, and headless and Web UI usage.</li>
+<li><a href="/tools/deepseek-harness/reference.html">Reference</a> — CLI subcommands, environment variables, provider profile, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/deepseek-harness">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/deepseek-harness">github.com/lmctl-ai/deepseek-harness</a>.</p>
+</footer>
+</body>
+</html>

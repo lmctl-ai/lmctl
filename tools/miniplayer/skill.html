@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>miniplayer authoring skill — miniplayer — lmctl.com tools</title>
+<meta name="description" content="miniplayer is a lightweight Node 20+ and standalone Bun binary CLI harness for language models that separates deterministic script execution from pure model…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/miniplayer/">Overview</a></li>
+<li><a href="/tools/miniplayer/skill.html">Skill</a></li>
+<li><a href="/tools/miniplayer/guide.html">Guide</a></li>
+<li><a href="/tools/miniplayer/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>miniplayer authoring skill</h1>
+<p>miniplayer is a lightweight Node 20+ and standalone Bun binary CLI harness for language models that separates deterministic script execution from pure model interpretation.</p>
+<h2>Purpose</h2>
+<p>Use miniplayer to send pure, tool-free prompts (miniplayer run), classify model or command outputs into structured JSON (miniplayer classify), or run interactive REPL (miniplayer chat) and Agent Client Protocol (miniplayer acp) sessions across cloud and local Ollama models.</p>
+<h2>When to use it</h2>
+<p>Choose miniplayer when an LMScript program or shell pipeline runs tools deterministically and needs a clean, zero-overhead LLM interpreter or classifier that works even on weak local models without tool-calling support (such as ollama/qwen2.5:14b), or when adding a lightweight ACP member (provider=miniplayer) to an lmctl Teamfile.</p>
+<h2>Install</h2>
+<p>Download the standalone platform executable and verify its SHA256SUMS digest from GitHub Releases, or install from a source checkout on Node 20+.</p>
+<pre><code>curl -LO https://github.com/lmctl-ai/miniplayer/releases/download/&lt;tag>/miniplayer-linux-x64
+curl -LO https://github.com/lmctl-ai/miniplayer/releases/download/&lt;tag>/SHA256SUMS
+sha256sum --check --ignore-missing SHA256SUMS
+chmod +x miniplayer-linux-x64
+./miniplayer-linux-x64 --version</code></pre>
+<h2>Commands</h2>
+<p>Inspect providers and catalog models, execute one-shot prompts or classifications, or start interactive and ACP sessions.</p>
+<pre><code>miniplayer --version
+miniplayer providers --json
+miniplayer models --routed --provider anthropic
+miniplayer run -m anthropic/claude-opus-5-5 "Summarize this diff"
+miniplayer run -m ollama/qwen2.5:14b --file prompt.txt
+miniplayer run -m openai/gpt-5-nano --session new --json "Remember token ALPHA"
+miniplayer classify -m claude-haiku-4-5 --file response.txt
+miniplayer chat -m ollama/qwen2.5:14b --no-context-files
+miniplayer acp -m deepseek/deepseek-flash</code></pre>
+<h2>Inputs and outputs</h2>
+<p>In run and classify modes, miniplayer reads prompt text from positional arguments, --file &lt;path>, or piped stdin, and sends strictly that prompt (plus an optional --system or --system-file override) with zero tools, no working-directory preamble, and no context files. miniplayer run prints the model reply (or a JSON object with session ID when --json is passed). miniplayer classify prints a single compact JSON line {"label":"...","reason":"...","confidence":0.96}. miniplayer acp speaks JSON-RPC over stdin/stdout.</p>
+<h2>Safety rules</h2>
+<p>To use an alternative config file, set MINIPLAYER_CONFIG=/path/to/config.json in the environment. miniplayer never stores or prints API keys; export the environment variable named by miniplayer providers (such as ANTHROPIC_API_KEY, OPENAI_API_KEY, DEEPSEEK_API_KEY, or OPENROUTER_API_KEY). In offline or hermetic test suites, set MINIPLAYER_CATALOG=/path/to/model_list.json to disable network catalog checks completely. External tools are only active in chat and acp modes when explicitly listed in config.json, are spawned with shell: false in detached process groups, cap stdout at 256 KiB and stderr at 64 KiB, and are automatically skipped if the catalog marks supports_function_calling as false.</p>
+<h2>Worked examples</h2>
+<p>Example 1: Pure prompt execution, caller-owned system prompt, and JSON response classification.</p>
+<pre><code>export OLLAMA_HOST=http://127.0.0.1:11434
+miniplayer run -m ollama/qwen2.5:14b --system "You are a strict release auditor." "Check if version 2.0.0 is valid semver" > reply.txt
+miniplayer classify -m ollama/qwen2.5:14b --file reply.txt</code></pre>
+<p>Example 2: Using miniplayer as an ACP member in an lmctl Teamfile; the miniplayer profile invokes miniplayer acp.</p>
+<pre><code>_MEMBER_ alias=Interpreter provider=miniplayer model=deepseek/deepseek-flash sessiondir=.</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Exit code 0 indicates normal completion (including clean /exit or idle Ctrl-C in chat mode). Non-zero exit codes occur when an unknown provider selector is given (printing known providers), when the required API key environment variable is unset (printing Missing API key for &lt;provider>: export &lt;KEY_ENV>=...), when both the network catalog URL and local cache are unavailable, or when a request exceeds requestTimeoutMs (default 60,000 ms). Missing external tool binaries (ENOENT) in chat/acp return structured tool error messages to the model rather than crashing miniplayer.</p>
+<h2>How to verify</h2>
+<p>Run the hermetic test suite (which makes zero network calls) or the local Ollama check script.</p>
+<pre><code>npm test
+miniplayer --version
+./scripts/manual-ollama-check.sh</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/miniplayer">github.com/lmctl-ai/miniplayer</a>.</p>
+</footer>
+</body>
+</html>

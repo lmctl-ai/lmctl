@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-cpp reference — lmcode-cpp — lmctl.com tools</title>
+<meta name="description" content="Reference tables for the lmcode-cpp SDK: the C++ host API in include/dslvm.hpp, the command-line conventions a host built on it follows, exit codes, the…">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmcode-cpp/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-cpp/">Overview</a></li>
+<li><a href="/tools/lmcode-cpp/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-cpp/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmcode-cpp/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-cpp/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmcode-cpp reference</h1>
+<p>Reference tables for the lmcode-cpp SDK: the C++ host API in include/dslvm.hpp, the command-line conventions a host built on it follows, exit codes, the lmcode_std_v3 standard catalog (226 canonical signatures, std.lock version 3) and the standard REST and CLI interfaces. Facts come from the repository README, std/lmcode-std.schema.json, the stdlib schema fragments and stdlib/rest.hpp.</p>
+<h2 id="api">C++ host API</h2>
+<table>
+<thead><tr><th>Name</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td>dslvm::Registry</td><td>Holds the host's context declarations, functions and methods, declared with the schema's type strings. A default Registry also installs the standard catalog.</td></tr>
+<tr><td>Registry(dslvm::StdMode::Disabled)</td><td>Creates a registry without the standard catalog; group binders such as dslvm::stdlib::register_string can then be applied manually.</td></tr>
+<tr><td>Registry::context(name, type)</td><td>Declares a schema context variable and its host type.</td></tr>
+<tr><td>Registry::method(type, name, params, returns, callback)</td><td>Binds a method; the callback receives void* self and dslvm::Args&amp;. Overloads with distinct parameter tuples are allowed; the same tuple twice is refused.</td></tr>
+<tr><td>Registry::function(name, params, returns, callback)</td><td>Binds a host function; the callback receives dslvm::Args&amp;.</td></tr>
+<tr><td>Registry::signatures()</td><td>Returns the sorted canonical signature strings, including the built-in standard, for comparison with lmscript --lmcode-signatures.</td></tr>
+<tr><td>Registry::set_std_output(stream)</td><td>Redirects standard-library output, for example to std::cerr while a REST program owns stdout.</td></tr>
+<tr><td>dslvm::Program::load(bytecode, schema, registry)</td><td>Verifies bytecode version 6 against the exact schema bytes and the registry; refuses the file before anything runs.</td></tr>
+<tr><td>Program::run(context, registry)</td><td>Executes the body of the chunk.</td></tr>
+<tr><td>Program::entries()</td><td>Rule entries in source order; each Program::Entry has name, annotation, iface, returns and params.</td></tr>
+<tr><td>Program::call(i, context, registry, args)</td><td>Runs rule entry i with the given arguments; returns Value::none() for a void interface.</td></tr>
+<tr><td>dslvm::Context</td><td>Live host objects for one run: set(name, pointer); set_dry(true) selects dry execution.</td></tr>
+<tr><td>dslvm::Value</td><td>INT (int64), FLOAT (binary64), STR, BOOL and OBJ (host pointer plus schema type name); constructors include Value::integer, Value::string, Value::boolean and Value::none.</td></tr>
+<tr><td>dslvm::Error</td><td>Thrown by load and run, and by host code to report a run-time failure.</td></tr>
+<tr><td>dslvm::dry(callback)</td><td>Marks a callback for the optional dry slot of a registration.</td></tr>
+<tr><td>dslvm::read_file(path)</td><td>Reads a bytecode or schema file as bytes.</td></tr>
+<tr><td>dslvm::VERSION</td><td>The bytecode format version the SDK reads, currently 6; every other version is refused.</td></tr>
+</tbody>
+</table>
+<h2 id="cli">Host CLI flags</h2>
+<p>lmcode-cpp is a header, not a program. Hosts built on it follow the same host protocol, which lmscript drives when a block names the host with cli= and is executed with run_lmcode.</p>
+<table>
+<thead><tr><th>Flag</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td>HOST --lmcode-schema --json</td><td>Prints the host schema JSON the compiler binds to.</td></tr>
+<tr><td>HOST --lmcode-signatures</td><td>Prints Registry::signatures(), one sorted canonical signature per line.</td></tr>
+<tr><td>HOST --lmcode FILE.dslb</td><td>Loads and runs a compiled program file.</td></tr>
+<tr><td>lmscript --lmcode-signatures schema.json</td><td>Compiler side of the parity check; diff its output against the host's.</td></tr>
+</tbody>
+</table>
+<h2 id="exit-codes">Exit codes</h2>
+<table>
+<thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success.</td></tr>
+<tr><td>2</td><td>Controlled command-line failure.</td></tr>
+<tr><td>3</td><td>Bytecode load or run failure.</td></tr>
+<tr><td>4</td><td>Application failure.</td></tr>
+</tbody>
+</table>
+<h2 id="std">Standard groups (lmcode_std_v3)</h2>
+<p>The canonical std/lmcode-std.schema.json is named lmcode_std_v3 and holds 226 signatures: 88 function signatures and 138 method signatures over 17 types, plus 10 interfaces. The table counts each schema fragment in stdlib; the fragment counts sum to 228 while the merged canonical schema holds 226.</p>
+<table>
+<thead><tr><th>Group</th><th>Function signatures</th><th>Method signatures</th><th>Names</th></tr></thead>
+<tbody>
+<tr><td>string</td><td>16</td><td>0</td><td>str_starts_with, str_ends_with, str_contains, str_lower, str_upper, str_substr, str_len, str_match, str_find, str_replace, str_trim, str_repeat, str_to_int, str_is_int, str_to_float, str_is_float</td></tr>
+<tr><td>math</td><td>16</td><td>0</td><td>math_abs, math_ceil, math_floor, math_max, math_min, math_pow, math_round, math_sqrt (overloaded)</td></tr>
+<tr><td>collections</td><td>5</td><td>32</td><td>str_list, int_list, float_list, str_map, str_split; types StrList, IntList, FloatList, StrMap</td></tr>
+<tr><td>containers</td><td>11</td><td>80</td><td>int_map, float_map, and stack, queue and pq constructors for str, int and float; types IntMap, FloatMap, StrStack, IntStack, FloatStack, StrQueue, IntQueue, FloatQueue, StrPQ, IntPQ, FloatPQ</td></tr>
+<tr><td>json</td><td>2</td><td>11</td><td>json_parse, template_render; type Json</td></tr>
+<tr><td>encoding</td><td>4</td><td>0</td><td>str_base64_encode, str_base64_decode, str_hex_encode, str_hex_decode</td></tr>
+<tr><td>file</td><td>5</td><td>0</td><td>file_read, file_write, file_append, file_exists, file_lines</td></tr>
+<tr><td>result</td><td>24</td><td>0</td><td>lmcode_return_set, lmcode_return_put, lmcode_return_null, lmcode_return_put_null (overloaded)</td></tr>
+<tr><td>testing</td><td>2</td><td>0</td><td>print, assert_close</td></tr>
+<tr><td>rest</td><td>5</td><td>15</td><td>rest_config, rest_route, rest_serve, rest_stop, rest_cli; type RestExchange</td></tr>
+</tbody>
+</table>
+<h2 id="rest">REST and CLI interfaces</h2>
+<p>The former lmcode_std_rest_v1 module is part of lmcode_std_v3. It serves HTTP/1.1 requests read from an input stream and written to an output stream; there is no network listener. Handlers are annotated rule entries that implement one of ten standard interfaces, each with the shape (RestExchange) -> void, and they run strictly one at a time.</p>
+<table>
+<thead><tr><th>Interface</th><th>Signature</th><th>Use</th></tr></thead>
+<tbody>
+<tr><td>RestGet</td><td>RestGet(RestExchange) -> void</td><td>Handler for GET requests.</td></tr>
+<tr><td>RestPost</td><td>RestPost(RestExchange) -> void</td><td>Handler for POST requests.</td></tr>
+<tr><td>RestPut</td><td>RestPut(RestExchange) -> void</td><td>Handler for PUT requests.</td></tr>
+<tr><td>RestDelete</td><td>RestDelete(RestExchange) -> void</td><td>Handler for DELETE requests.</td></tr>
+<tr><td>RestPatch</td><td>RestPatch(RestExchange) -> void</td><td>Handler for PATCH requests.</td></tr>
+<tr><td>RestHead</td><td>RestHead(RestExchange) -> void</td><td>Handler for HEAD requests.</td></tr>
+<tr><td>RestOptions</td><td>RestOptions(RestExchange) -> void</td><td>Handler for OPTIONS requests.</td></tr>
+<tr><td>RestHandler</td><td>RestHandler(RestExchange) -> void</td><td>General handler bound to a route with rest_route.</td></tr>
+<tr><td>CliCommand</td><td>CliCommand(RestExchange) -> void</td><td>Command dispatched by rest_cli.</td></tr>
+<tr><td>CliOption</td><td>CliOption(RestExchange) -> void</td><td>Option handler dispatched by rest_cli.</td></tr>
+</tbody>
+</table>
+<h3 id="rest-functions">Functions</h3>
+<table>
+<thead><tr><th>Signature</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>rest_config(string, string) -> void</td><td>Stores a configuration key and value. The keys prefix and base_path set the route prefix; max_body_bytes sets the request body limit when given a positive decimal number. Refused once rest_serve has been called.</td></tr>
+<tr><td>rest_route(string, string, string) -> void</td><td>Registers a route. Path templates accept {param} and {rest...} as well as :param and :rest... placeholders. Routes are frozen once rest_serve has been called.</td></tr>
+<tr><td>rest_serve() -> void</td><td>Marks the program as serving: after the body finishes, the host serves the input stream until end of input, rest_stop or a framing error. A second call is an error.</td></tr>
+<tr><td>rest_stop() -> void</td><td>Stops serving.</td></tr>
+<tr><td>rest_cli(StrList) -> string</td><td>Stateless CLI mode: dispatches an argument list to options, commands and REST routes without resetting the outer run state. The method defaults to GET; --method or -X sets it, --body or -d sets the body, positional words form the path, and words after -- are joined with spaces as the body.</td></tr>
+</tbody>
+</table>
+<h3 id="rest-exchange">RestExchange methods</h3>
+<table>
+<thead><tr><th>Method</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>method() -> string</td><td>Request method.</td></tr>
+<tr><td>path() -> string</td><td>Request path.</td></tr>
+<tr><td>query(string) -> string</td><td>Query parameter value, or empty when absent.</td></tr>
+<tr><td>has_query(string) -> bool</td><td>Whether the query parameter is present.</td></tr>
+<tr><td>param(string) -> string</td><td>Route template parameter value, or empty when absent.</td></tr>
+<tr><td>header(string) -> string</td><td>Request header value; repeated headers are joined with a comma and a space.</td></tr>
+<tr><td>has_header(string) -> bool</td><td>Whether the request header is present.</td></tr>
+<tr><td>body() -> string</td><td>Request body.</td></tr>
+<tr><td>status(int) -> void</td><td>Sets the response status; values outside 200..599 are an error.</td></tr>
+<tr><td>set_header(string, string) -> void</td><td>Sets a response header. Content-Length, Connection and Transfer-Encoding are managed by the server and refused.</td></tr>
+<tr><td>send(string) -> void</td><td>Sets the response body.</td></tr>
+<tr><td>json(string) -> void</td><td>Sets the response body and Content-Type application/json.</td></tr>
+<tr><td>get(string) -> string</td><td>Reads a value from the shared server state, or empty when absent.</td></tr>
+<tr><td>set(string, string) -> void</td><td>Writes a value to the shared server state.</td></tr>
+<tr><td>increment(string) -> int</td><td>Increments a counter in the shared server state and returns it.</td></tr>
+</tbody>
+</table>
+<p>See also the <a href="/tools/lmcode-cpp/">quick reference</a>, the <a href="/tools/lmcode-cpp/guide.html">guide</a> and the <a href="https://github.com/lmctl-ai/lmcode-cpp">repository</a>.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-cpp">github.com/lmctl-ai/lmcode-cpp</a>.</p>
+</footer>
+</body>
+</html>

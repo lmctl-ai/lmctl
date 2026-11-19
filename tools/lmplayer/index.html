@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmplayer — lmctl.com tools</title>
+<meta name="description" content="lmplayer is an open-source AI coding agent for scripts, unattended workflows, single-user REST services, and terminal sessions.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmplayer/">Overview</a></li>
+<li><a href="/tools/lmplayer/skill.html">Skill</a></li>
+<li><a href="/tools/lmplayer/guide.html">Guide</a></li>
+<li><a href="/tools/lmplayer/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmplayer</h1>
+<p>lmplayer is an open-source AI coding agent for scripts, unattended workflows, single-user REST services, and terminal sessions.</p>
+<h2>Quick reference</h2>
+<p>Run prompts non-interactively from the command line, inspect models and session metrics as JSON, start the sequential REST service, or open the terminal UI.</p>
+<pre><code>lmplayer --version
+lmplayer models --json
+lmplayer providers list --json
+lmplayer run --model "ollama/qwen2.5" "Summarize this directory"
+lmplayer run --agent lean --model "ollama/qwen2.5+tools" "Run the test suite"
+lmplayer serve --hostname 127.0.0.1 --port 4096
+lmplayer session metrics "&lt;sessionID>" --json</code></pre>
+<table>
+<thead>
+<tr>
+<th>Command or feature</th>
+<th>Usage</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Non-interactive prompt</td>
+<td>lmplayer "prompt" or lmplayer run --model ID --effort high "prompt"</td>
+<td>Execute a coding or analysis prompt directly from the CLI or stdin pipeline.</td>
+</tr>
+<tr>
+<td>REST service</td>
+<td>lmplayer serve --hostname 127.0.0.1 --port 4096</td>
+<td>Run a single-user HTTP agent service with a process-wide FIFO execution gate.</td>
+</tr>
+<tr>
+<td>Background jobs &amp; cron</td>
+<td>bash tool {background: true}, job tool, cron tool</td>
+<td>Persist background shell jobs with completion wakeups and schedule 5-field in-memory cron prompts.</td>
+</tr>
+<tr>
+<td>Durable-memory compaction</td>
+<td>lmplayer config set compaction.mode organize</td>
+<td>Maintain session-owned durable-memory/index.md notes across context compactions.</td>
+</tr>
+<tr>
+<td>Session observability</td>
+<td>lmplayer session ls | tail | report | health | metrics --json</td>
+<td>Inspect token usage, estimated cost, latency, tool calls, and touched files (session-metrics/v1).</td>
+</tr>
+<tr>
+<td>Configuration &amp; models</td>
+<td>lmplayer config get|set|unset|verify; lmplayer models verify ID</td>
+<td>Manage ~/.config/lmplayer/opencode.json settings and verify provider model resolution.</td>
+</tr>
+</tbody>
+</table>
+<p>Runnable CLI and LMScript orchestration example verifying configuration, and running a headless prompt:</p>
+<pre><code>lmplayer config set permission_ask deny
+lmplayer config set compaction.mode organize
+lmplayer config verify
+lmplayer run --model "ollama/qwen2.5" --format json "Reply with READY"</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmplayer/skill.html">Skill</a> — LLM agent authoring rules, CLI commands, permission policies, and verification steps for lmplayer.</li>
+<li><a href="/tools/lmplayer/guide.html">Guide</a> — Architecture, background jobs, internal cron, organize compaction, agent provisioning, Ollama +tools routing, and standard REST/CLI integration.</li>
+<li><a href="/tools/lmplayer/reference.html">Reference</a> — CLI subcommands, flags, config keys, built-in agent profiles, environment variables, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmplayer">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmplayer">github.com/lmctl-ai/lmplayer</a>.</p>
+</footer>
+</body>
+</html>

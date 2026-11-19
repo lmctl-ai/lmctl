@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmazure — lmctl.com tools</title>
+<meta name="description" content="lmazure is the Azure scripting host for LMScript, providing the shared lmcloud procedural schema and a 72-example Azure metadata and owned-resource suite.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmazure/">Overview</a></li>
+<li><a href="/tools/lmazure/skill.html">Skill</a></li>
+<li><a href="/tools/lmazure/guide.html">Guide</a></li>
+<li><a href="/tools/lmazure/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmazure</h1>
+<p>lmazure is the Azure scripting host for LMScript, providing the shared lmcloud procedural schema and a 72-example Azure metadata and owned-resource suite.</p>
+<h2>Quick reference</h2>
+<p>Bind lmazure in an LMScript program or run the binary directly against its in-process fake adapter, the local azuresim emulator on 127.0.0.1:4577, or Azure metadata APIs.</p>
+<pre><code>lmazure --version
+lmazure --lmcode-schema --json
+lmazure --lmcode-signatures
+lmazure --sweep
+p = _lmcode_ cli="lmazure" install="github:lmctl-ai/lmazure@latest";</code></pre>
+<table>
+<thead>
+<tr>
+<th>Surface</th>
+<th>Command or method</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Shared cloud context</td>
+<td>context cloud: Cloud</td>
+<td>Provider-neutral Azure Blob object storage, Queue Storage, tables, permissions, serverless functions, user directories, cost caps, and metrics.</td>
+</tr>
+<tr>
+<td>Azure metadata session</td>
+<td>mock(), live(), session.inventory(kind), session.find_prefix(prefix), session.begin_run(path)</td>
+<td>Inspect 12 Azure ARM metadata domains, filter resources by prefix, and run ledger-guarded container and queue lifecycles.</td>
+</tr>
+<tr>
+<td>Emulator endpoint</td>
+<td>cloud.set_endpoint("all", "http://127.0.0.1:4577")</td>
+<td>Target a local azuresim instance over loopback HTTP using devstoreaccount1 SharedKey or Bearer token credentials.</td>
+</tr>
+<tr>
+<td>Standard REST and CLI</td>
+<td>rest_config, rest_route, rest_serve, rest_stop, rest_cli</td>
+<td>Expose Azure storage and queue workflows as HTTP endpoints (:param patterns) and CLI commands via lmcode_std_v3 interfaces.</td>
+</tr>
+</tbody>
+</table>
+<p>Runnable LMScript example using lmazure with Azure Blob containers, Queue Storage, and standard REST/CLI dispatch:</p>
+<pre><code>p = _lmcode_ cli="lmazure" install="github:lmctl-ai/lmazure@latest";
+  @"/blobs/:container/:blob"
+  fn get_blob(x: RestExchange) -> void implements RestGet {
+    x.send(cloud.object_get(x.param("container"), x.param("blob")));
+  }
+
+  @"push-job"
+  fn cmd_push(x: RestExchange) -> void implements CliCommand {
+    let id = cloud.queue_send("azure-jobs", x.body());
+    x.send("queued:" + id);
+  }
+
+  rest_config("prefix", "/v1");
+  cloud.set_cost_cap_usd(0.05);
+  cloud.bucket_create("demo-container");
+  cloud.object_put("demo-container", "hello.txt", "hello from lmazure");
+  cloud.queue_create("azure-jobs");
+
+  let q_out = rest_cli(str_split("push-job -- task-42", " "));
+  let b_out = rest_cli(str_split("/v1/blobs/demo-container/hello.txt", " "));
+  print(q_out + " | " + b_out);
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, "lmazure workflow failed");</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmazure/skill.html">Skill</a> — LLM agent authoring rules, commands, safety guardrails, and verification steps for lmazure.</li>
+<li><a href="/tools/lmazure/guide.html">Guide</a> — Architecture, azuresim loopback configuration, ARM inventory domains, cost ledgers, and standard REST/CLI interfaces.</li>
+<li><a href="/tools/lmazure/reference.html">Reference</a> — CLI flags, environment variables, Cloud and Azure session methods, standard REST/CLI interfaces, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmazure">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmazure">github.com/lmctl-ai/lmazure</a>.</p>
+</footer>
+</body>
+</html>

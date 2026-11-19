@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>lmr — Native statistics for LMScript — lmr — lmctl.com tools</title>
+<title>lmr — lmctl.com tools</title>
 <meta name="description" content="lmr is a native LMScript host for distributions, statistical tests, regression, time series, clustering, smoothing, and numerical optimization.">
 <link rel="stylesheet" href="/tools/style.css">
 
@@ -18,13 +18,79 @@
 <li><a href="/tools/lmr/skill.html">Skill</a></li>
 <li><a href="/tools/lmr/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmr/guide.html">Guide</a></li>
+<li><a href="/tools/lmr/reference.html">Reference</a></li>
 <li><a href="/tools/lmr/examples/">Examples</a></li>
 </ul>
 </nav>
-<main><h1>lmr — Native statistics for LMScript</h1>
-<p>lmr is a native LMScript host for distributions, statistical tests, regression, time series, clustering, smoothing, and numerical optimization. It runs without an R runtime and can be installed automatically by lmscript.</p>
-<p>Start with <a href="/tools/lmr/skill.html">the lmr skill</a> for setup and verification, <a href="/tools/lmr/guide.html">the API guide</a> for operations, or <a href="/tools/lmr/examples/">the example book</a> for runnable analyses.</p>
-<p>Try <a href="/tools/lmr/get_started.html">a solo or trio lmr quickrun</a> to ask a provider team to analyze a small data set.</p>
+<main><h1>lmr</h1>
+<p>lmr is a native LMScript host for distributions, statistical tests, regression, time series, clustering, smoothing, and numerical optimization. It is a small C++17 executable that needs no R runtime, and lmscript can install it automatically from a release.</p>
+<h2>Install and run</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmscript --check analysis.lms
+lmscript analysis.lms
+lmr --version
+lmr --lmcode-schema --json</code></pre>
+<p>A block that declares install="github:lmctl-ai/lmr@latest" lets lmscript download the release binary when lmr is not on PATH. A host already on PATH is used as is.</p>
+<h2>Host protocol</h2>
+<table>
+<thead><tr><th>Command</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td>lmr --version</td><td>Prints lmr and the release version.</td></tr>
+<tr><td>lmr --lmcode-schema</td><td>Prints a readable summary of every function, type and method.</td></tr>
+<tr><td>lmr --lmcode-schema --json</td><td>Writes the embedded schema JSON that lmscript compiles against.</td></tr>
+<tr><td>lmr --lmcode-signatures</td><td>Prints one canonical signature per line.</td></tr>
+<tr><td>lmr --lmcode FILE.dslb [FILE ...]</td><td>Runs compiled programs; run_lmcode does this for you.</td></tr>
+</tbody>
+</table>
+<table>
+<thead><tr><th>Exit code</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success, all out.check assertions passed.</td></tr>
+<tr><td>2</td><td>Command-line usage error.</td></tr>
+<tr><td>3</td><td>Load or run error.</td></tr>
+<tr><td>4</td><td>Application failure such as a failed check.</td></tr>
+</tbody>
+</table>
+<h2>Main objects and functions</h2>
+<p>The schema has one context object, 166 functions and 50 types. The table lists the entry points used most; the <a href="/tools/lmr/reference.html">reference</a> lists every signature.</p>
+<table>
+<thead><tr><th>Area</th><th>Names</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Context object out (type Out)</td><td>out.set, out.check, out.check_close, out.fail, out.failures, out.print</td><td>out.set exports a value into result.values; a failed check makes the run exit 4; out.print writes to stderr.</td></tr>
+<tr><td>Vectors and frames</td><td>parse_vec, seq, frame, str_list; Vec supports + - * with vectors and numbers</td><td>parse_vec reads numeric text including NA, NaN, Inf and -Inf.</td></tr>
+<tr><td>Distributions and random values</td><td>norm and the other Dist constructors, rng, Vec quantiles</td><td>Seed the Rng for reproducible draws.</td></tr>
+<tr><td>Tests and models</td><td>test, lm, glm, nls, anova</td><td>Formulas are parsed by the native formula parser, not evaluated as R.</td></tr>
+<tr><td>Time series</td><td>fft, arima, arima_sim, stl, Vec acf and pacf</td><td></td></tr>
+<tr><td>Smoothing and interpolation</td><td>smooth_spline, loess, spline_fun, approx_fun</td><td></td></tr>
+<tr><td>Clustering</td><td>kmeans, hclust</td><td></td></tr>
+<tr><td>Numerical methods</td><td>minimize, optimize, uniroot, integrate</td><td>Objectives are written in the block and fed to the solver object.</td></tr>
+<tr><td>Standard library</td><td>lmcode_std_v3, 206 signatures as vendored</td><td>The current upstream catalog has 226 signatures including the REST and CLI interfaces; lmr does not vendor those yet.</td></tr>
+</tbody>
+</table>
+<h2>Minimal example</h2>
+<p>Save as linear-fit.lms and run it with lmscript. This is the linear fit example from the lmr repository and compiles with lmscript --check.</p>
+<pre><code>p = _lmcode_ cli="lmr" install="github:lmctl-ai/lmr@latest";
+let x = seq(0.0, 5.0, 1.0);
+let fit = lm(frame().set("x", x).set("y", 2.0 * x + 1.0), "y ~ x");
+out.check_close(fit.estimates().at(0), 1.0, 0.000000000001, "intercept is 1");
+out.check_close(fit.estimates().at(1), 2.0, 0.000000000001, "slope is 2");
+out.set("intercept", fit.estimates().at(0));
+out.set("slope", fit.estimates().at(1));
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, "run failed: " + r.get("message", "unknown"));
+result = r.result;
+println(sprintf("Line fit: intercept %.1f, slope %.1f", result.values.intercept, result.values.slope));</code></pre>
+<p>run_lmcode returns ok and result; for lmr the result holds values, checks and failures.</p>
+<h2>More</h2>
+<ul>
+<li><a href="/tools/lmr/skill.html">The lmr skill</a>: setup, safety rules and verification.</li>
+<li><a href="/tools/lmr/guide.html">The API guide</a>: operations, results and limits.</li>
+<li><a href="/tools/lmr/reference.html">The reference</a>: every flag, exit code, type, method and function.</li>
+<li><a href="/tools/lmr/get_started.html">Get started</a>: a solo or trio lmr quickrun that asks a provider team to analyze a small data set.</li>
+<li><a href="/tools/lmr/examples/">The example book</a>: runnable analyses.</li>
+<li><a href="https://github.com/lmctl-ai/lmr">github.com/lmctl-ai/lmr</a>: source and releases.</li>
+</ul>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmr">github.com/lmctl-ai/lmr</a>.</p>

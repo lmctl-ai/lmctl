@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmclient — lmctl.com tools</title>
+<meta name="description" content="lmclient is a scriptable protocol client and lmcode host in one native executable for JDBC databases, Redis, mail, message queues, MQTT, and MongoDB.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmclient/">Overview</a></li>
+<li><a href="/tools/lmclient/skill.html">Skill</a></li>
+<li><a href="/tools/lmclient/guide.html">Guide</a></li>
+<li><a href="/tools/lmclient/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmclient</h1>
+<p>lmclient is a scriptable protocol client and lmcode host in one native executable for JDBC databases, Redis, mail, message queues, MQTT, and MongoDB.</p>
+<h2>Quick reference</h2>
+<pre><code>lmscript install github:lmctl-ai/lmclient@latest
+lmclient --version
+lmclient --lmcode-schema --json
+lmclient --lmcode-signatures
+lmclient --url jdbc:sqlite::memory: --sql "SELECT 1 AS ok" --format json</code></pre>
+<table>
+<thead>
+<tr><th>Item</th><th>Kind</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>--url URL --sql SQL</td><td>JDBC CLI</td><td>Run a SQL query against SQLite, DuckDB, H2, PostgreSQL, or SQL Server.</td></tr>
+<tr><td>--metadata KIND [--table T]</td><td>JDBC CLI</td><td>Inspect tables, columns, keys, foreign_keys, indexes, views, or schemas.</td></tr>
+<tr><td>redis / mail / queue / mqtt / mongo</td><td>Subcommands</td><td>Execute Redis, SMTP/IMAP, AMQP, MQTT, and MongoDB operations with JSON output.</td></tr>
+<tr><td>connect(url) / connect_file(url, file)</td><td>Host functions</td><td>Open a JDBC Connection inside an _lmcode_ program.</td></tr>
+<tr><td>Connection.query / exec / diff / tables</td><td>Host methods</td><td>Run SQL, inspect JDBC metadata, or diff two database schemas.</td></tr>
+<tr><td>Result.csv / json / number / text</td><td>Host methods</td><td>Export query results or inspect typed cells by zero-based row and column.</td></tr>
+</tbody>
+</table>
+<pre><code>dbhost = _lmcode_ cli="lmclient" install="github:lmctl-ai/lmclient@latest";
+let c = connect("jdbc:sqlite::memory:");
+c.exec("CREATE TABLE items(name TEXT, qty INT); INSERT INTO items VALUES ('bolt', 50);");
+let r = c.query("SELECT name, qty FROM items");
+r.csv("items.csv");
+c.close();
+end _lmcode_
+res = run_lmcode(dbhost);
+assert(res.ok);</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmclient/skill.html">Skill</a> for setup, credential safety rules, and runnable examples.</li>
+<li><a href="/tools/lmclient/guide.html">Guide</a> for JDBC drivers, memory budgets, protocol areas, and REST/CLI interfaces.</li>
+<li><a href="/tools/lmclient/reference.html">Reference</a> for CLI flags, Connection and Result signatures, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmclient">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmclient">github.com/lmctl-ai/lmclient</a>.</p>
+</footer>
+</body>
+</html>

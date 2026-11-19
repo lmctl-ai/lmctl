@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmaudio — lmctl.com tools</title>
+<meta name="description" content="lmaudio is a native lmcode host for offline audio: synthesis, physical models, filters, effects and analysis in one static executable scripted from LMScript.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmaudio/">Overview</a></li>
+<li><a href="/tools/lmaudio/skill.html">Skill</a></li>
+<li><a href="/tools/lmaudio/guide.html">Guide</a></li>
+<li><a href="/tools/lmaudio/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmaudio</h1>
+<p>lmaudio is a native lmcode host for offline audio: synthesis, physical models, filters, effects and analysis in one static executable scripted from LMScript. It renders deterministic WAV, CSV and numeric results and needs no sound card.</p>
+<h2>Install and run</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmscript hello.lms
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmaudio/main/examples/drum_machine_pattern.lms</code></pre>
+<p>A block that declares cli="lmaudio" and install="github:lmctl-ai/lmaudio@latest" compiles against the schema embedded in the lmaudio binary. lmscript uses lmaudio from PATH, or downloads the release binary into its tool cache on first use. The latest release is v0.2.2.</p>
+<h2>Host protocol and flags</h2>
+<table>
+<thead><tr><th>Command or variable</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td>lmaudio --version</td><td>Prints the release identity, for example lmaudio 0.2.2.</td></tr>
+<tr><td>lmaudio --notices</td><td>Prints the third-party software notices with the upstream license texts.</td></tr>
+<tr><td>lmaudio --lmcode-schema</td><td>Prints the embedded schema as readable JSON.</td></tr>
+<tr><td>lmaudio --lmcode-schema --json</td><td>Prints the exact schema bytes the compiler binds a program to (schema version 2, name lmaudio).</td></tr>
+<tr><td>lmaudio --lmcode-signatures</td><td>Prints every canonical signature the host registry provides, one per line, standard catalog included.</td></tr>
+<tr><td>lmaudio --lmcode FILE [FILE ...]</td><td>Runs compiled lmcode program files. This is what run_lmcode calls; the compiler owns the program files.</td></tr>
+<tr><td>lmaudio --dry-run --lmcode FILE</td><td>Runs a program without writing any file. The flag comes before --lmcode. The result envelope carries dry true.</td></tr>
+<tr><td>LMAUDIO_MAX_MEMORY_MB</td><td>Environment variable: total memory budget in MiB, default 4096. A value that is not a positive whole number is a usage error on every command.</td></tr>
+</tbody>
+</table>
+<table>
+<thead><tr><th>Exit code</th><th>Envelope</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>ok true</td><td>The program ran and every audio.assert_close held.</td></tr>
+<tr><td>2</td><td>phase cli, code CLI_USAGE</td><td>Unknown or misplaced arguments, or an invalid LMAUDIO_MAX_MEMORY_MB.</td></tr>
+<tr><td>3</td><td>phase load, for example code LOAD_BAD_BYTECODE or LOAD_UNBOUND</td><td>The program file cannot be read, or it imports a function the host does not provide.</td></tr>
+<tr><td>3</td><td>phase run, code RUN_HOST</td><td>A host error with a source line and column: a failed audio.assert_close, a missing WAV file, an invalid argument, or the memory budget being exceeded.</td></tr>
+</tbody>
+</table>
+<p>Every --lmcode run ends with one JSON envelope on stdout between the lines LMCODE_RETURN_BEGIN and LMCODE_RETURN_END. run_lmcode decodes it and returns a map with ok and result on success, or ok false with phase, code, message, line and column on failure.</p>
+<h2>Schema quick reference</h2>
+<table>
+<thead><tr><th>Item</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Schema</td><td>dsl.schema 2, name lmaudio</td></tr>
+<tr><td>Context object</td><td>audio, of type Audio</td></tr>
+<tr><td>Host types</td><td>Audio (28 methods), Buffer (58 methods), Spectrum (16 methods), Spectrogram (9 methods), Biquad (10 methods)</td></tr>
+<tr><td>Host signatures</td><td>171</td></tr>
+<tr><td>Standard signatures</td><td>206 of lmcode_std_v3 (the current catalog has 226)</td></tr>
+<tr><td>Total from lmaudio --lmcode-signatures</td><td>377</td></tr>
+<tr><td>Units</td><td>seconds, Hz, linear amplitude unless a name says db</td></tr>
+<tr><td>Sample rate</td><td>100 to 384000 Hz, 44100 when omitted</td></tr>
+<tr><td>Buffers</td><td>mono or stereo, 32-bit float, at most 200 million frames</td></tr>
+</tbody>
+</table>
+<h2>Main objects and functions</h2>
+<table>
+<thead><tr><th>Object</th><th>What it does</th><th>Main members</th></tr></thead>
+<tbody>
+<tr><td>audio (Audio)</td><td>Makes sound and holds helpers</td><td>silence, sine, cosine, saw, square, triangle, chirp, impulse, noise, expr, additive, fm, karplus, pluck, modal, bar, drum, sequence, load_wav, stereo, biquad_design, note_freq, midi_freq, cents, db, print, save_text, assert_close</td></tr>
+<tr><td>Buffer: levels and envelopes</td><td>Returns a new buffer</td><td>gain, gain_db, normalize, normalize_rms, normalize_lufs, fade, adsr, multiply, pan</td></tr>
+<tr><td>Buffer: editing</td><td>Returns a new buffer</td><td>slice, pad, concat, mix, reverse, resample, channel, to_mono, pattern, granular</td></tr>
+<tr><td>Buffer: filters and effects</td><td>Returns a new buffer</td><td>biquad, svf, ladder, lpf_sweep, convolve, reverb, zitarev, delay, chorus, flanger, phaser, compress, overdrive, wavefold, bitcrush, paulstretch</td></tr>
+<tr><td>Buffer: measurement</td><td>Returns numbers</td><td>rms, peak, dc_offset, energy, zcr, duration, frames, sr, channels, get, pitch, lufs, rt60, peak_freq, centroid, thd, snr_db</td></tr>
+<tr><td>Buffer: analysis objects</td><td>Returns Spectrum, Spectrogram or Buffer</td><td>spectrum, spectrogram, schroeder_db</td></tr>
+<tr><td>Buffer: output</td><td>Writes files and returns the buffer</td><td>save_wav, save_csv, pitch_track_csv</td></tr>
+<tr><td>Spectrum</td><td>Reads one FFT</td><td>mag_at_freq, peak_freq_in, peak_freq, peak_mag, db_at, phase_at, ifft, parseval_energy, save_csv</td></tr>
+<tr><td>Spectrogram</td><td>Reads an STFT grid</td><td>frames, bins, time_at, freq_at, mag_at, db_at, ridge_freq, save_csv</td></tr>
+<tr><td>Biquad</td><td>Exact filter response</td><td>gain_at, db_at, phase_deg_at, apply, save_response_csv, b0, b1, b2, a1, a2</td></tr>
+<tr><td>Standard functions</td><td>Values back to LMScript and general helpers</td><td>lmcode_return_put, lmcode_return_set, str_split, float_list, json_parse, file_write</td></tr>
+</tbody>
+</table>
+<h2>Minimal runnable example</h2>
+<p>Save as hello.lms in an empty directory and run lmscript hello.lms. It renders an arpeggio, normalizes it to -16 LUFS, checks the loudness, saves a WAV file and returns two numbers to LMScript.</p>
+<pre><code># hello.lms: an A major arpeggio on a plucked string, checked and saved
+mkdir("audio");
+a = _lmcode_ cli="lmaudio" install="github:lmctl-ai/lmaudio@latest";
+let arp = audio.sequence("A3:0.5 C#4:0.5 E4:0.5 A4:1.5", 120.0, "karplus", 22050);
+let out = arp.reverb(0.8, 6500.0, 0.25).normalize_lufs(-16.0);
+audio.assert_close(out.lufs(), -16.0, 0.01);
+audio.print("pitch of the first note: " + str(arp.slice(0.0, 0.25).pitch()) + " Hz");
+out.save_wav("audio/hello.wav", 16);
+lmcode_return_put("lufs", out.lufs());
+lmcode_return_put("seconds", out.duration());
+end _lmcode_
+r = run_lmcode(a);
+println(json_stringify(r));
+assert(r.ok);</code></pre>
+<pre><kbd>lmscript hello.lms</kbd>
+<samp>pitch of the first note: 219.959988525778 Hz
+lmaudio: warning: 1 sample(s) outside [-1, 1] were clipped while writing audio/hello.wav (16-bit PCM); normalize() first or save with bits=32
+{"ok":true,"result":{"lufs":-16.00000004683295,"seconds":1.5000907029478459}}</samp></pre>
+<h2>More detail</h2>
+<ul>
+<li><a href="/tools/lmaudio/skill.html">Skill</a>: install, commands, safety rules, worked examples, errors and verification.</li>
+<li><a href="/tools/lmaudio/guide.html">Guide</a>: concepts, architecture, the domain model and limits.</li>
+<li><a href="/tools/lmaudio/reference.html">Reference</a>: every type, method, flag and exit code, plus the standard library.</li>
+<li><a href="https://github.com/lmctl-ai/lmaudio">GitHub repository</a>: README gallery, 22 runnable examples and releases.</li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmaudio">github.com/lmctl-ai/lmaudio</a>.</p>
+</footer>
+</body>
+</html>

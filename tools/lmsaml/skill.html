@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmsaml authoring skill — lmsaml — lmctl.com tools</title>
+<meta name="description" content="lmsaml is a pure-Go single-binary SAML 2.0 Identity Provider (IdP), Service Provider (SP), REST API server, and LMScript host built on crewjam/saml and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmsaml/">Overview</a></li>
+<li><a href="/tools/lmsaml/skill.html">Skill</a></li>
+<li><a href="/tools/lmsaml/guide.html">Guide</a></li>
+<li><a href="/tools/lmsaml/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmsaml authoring skill</h1>
+<p>lmsaml is a pure-Go single-binary SAML 2.0 Identity Provider (IdP), Service Provider (SP), REST API server, and LMScript host built on crewjam/saml and lmcode-go. It serves standard SAML 2.0 SSO/SLO and metadata endpoints, signs and verifies XML assertions with RSA-SHA256 and Exclusive C14N, and executes compiled _lmcode_ programs.</p>
+<h2>Purpose</h2>
+<p>Use lmsaml to launch an ephemeral or standalone SAML 2.0 IdP and SP for identity integration testing, provision users and SP metadata over REST or LMScript, issue cryptographically signed SAML 2.0 assertions, verify XML signatures and audience/time conditions, and expose standard lmcode_std_v3 REST and CLI interfaces.</p>
+<h2>When to use it</h2>
+<p>Choose lmsaml when testing SAML 2.0 Single Sign-On, Single Logout, SP-initiated AuthnRequest redirects, XML-DSig signature verification, or SAML attribute extraction. Pair lmsaml with lmconn saml or lmcurl for external HTTP/XML contract tests, lmldap when testing LDAPv3 directory binds and searches, or lmmock when mocking OAuth2, OIDC, and LLM APIs.</p>
+<h2>Install</h2>
+<p>Install the lmctl toolchain with npm install -g @lmctl-ai/lmctl@latest and build or download the zero-dependency lmsaml executable (CGO_ENABLED=0). When an LMScript program declares cli="lmsaml" and install="github:lmctl-ai/lmsaml@latest", the runtime validates and runs bytecode against the embedded lmsaml schema and 226-signature lmcode_std_v3 standard catalog.</p>
+<pre><code>lmscript --version
+lmsaml --version
+lmsaml --lmcode-schema --json
+lmsaml --lmcode-signatures</code></pre>
+<h2>Commands</h2>
+<p>lmsaml runs as a turnkey SAML 2.0 IdP/SP and REST HTTP server or as an _lmcode_ bytecode host, and interoperates directly with curl, lmcurl, and lmconn saml.</p>
+<pre><code># Host schema, signatures, and bytecode execution
+lmsaml --version
+lmsaml --lmcode-schema --json
+lmsaml --lmcode-signatures
+lmsaml --host-signatures
+lmsaml --lmcode build/program.dslb
+lmsaml --dry-run --lmcode build/program.dslb
+
+# Start SAML 2.0 IdP, SP, and REST API server
+lmsaml --host 127.0.0.1 --port 8080 --rest-port 8081 --admin-user admin --admin-password admin-secret --require-auth
+
+# Query SAML 2.0 metadata and SP-initiated SSO redirect
+curl -s http://127.0.0.1:8080/idp/metadata
+curl -s http://127.0.0.1:8080/sp/metadata
+curl -s -D - -o /dev/null http://127.0.0.1:8080/sp/hello
+
+# REST user provisioning, authentication, and signed assertion issuance/verification
+curl -s http://127.0.0.1:8081/ping
+curl -s -X PUT http://127.0.0.1:8081/users/alice -H "Content-Type: application/json" -d '{"password":"alice-pw","email":"alice@example.com","common_name":"Alice Smith","groups":["eng","security"]}'
+curl -s -X POST http://127.0.0.1:8081/authn -H "Content-Type: application/json" -d '{"username":"alice","password":"alice-pw"}'
+curl -s -X POST http://127.0.0.1:8081/assertion -H "Content-Type: application/json" -d '{"user":"alice"}'
+curl -s -X POST http://127.0.0.1:8081/verify -H "Content-Type: application/json" -d '{"saml_response_b64":"..."}'
+
+# Companion lmconn saml client commands
+lmconn saml ping --port 8080
+lmconn saml metadata --port 8080
+lmconn saml user-add --port 8080 --user bob --email bob@example.com --password bob-pw
+lmconn saml assertion --port 8080 --user bob
+lmconn saml verify --port 8080 --response "$SAML_RESPONSE_B64"</code></pre>
+<h2>Inputs and outputs</h2>
+<p>In server mode, lmsaml serves XML metadata (application/samlmetadata+xml) on /idp/metadata, /metadata, and /sp/metadata, HTML/redirect SSO flows on /idp/sso and /sp/hello, and JSON responses on /ping, /users, /services, /authn, /assertion, and /verify. In _lmcode_ mode, lmsaml exposes context saml: Saml, Batch, and print(string) alongside the 226 standard lmcode_std_v3 signatures. When SAML_REST_URL, SAML_REST_PORT, or SAML_PORT is set in the environment, context saml methods target the running server over HTTP; otherwise they operate against an isolated in-process SamlEngine and emit a terminal SDK invocation frame on stdout.</p>
+<h2>Safety rules</h2>
+<p>Follow these cryptographic and operational boundaries when authoring lmsaml workflows:</p>
+<ul>
+<li>Loopback binding and REST auth: lmsaml binds 127.0.0.1 by default and seeds admin/admin for local testing; always pass --admin-password with a strong synthetic secret and --require-auth when testing authenticated REST admin flows (/users, /services, /assertion).</li>
+<li>Password hashing and redaction: User passwords supplied to PUT /users/{id} or saml.add_user are hashed immediately with bcrypt and stripped from all GET /users/{id} and saml.get_user JSON payloads.</li>
+<li>Strict XML signature verification: Never parse SAML assertions as plain unverified XML in production or contract checks; always verify signatures, audience restrictions, ACS recipient URLs, and NotBefore/NotOnOrAfter windows via POST /verify or saml.verify_assertion.</li>
+<li>Ephemeral keypairs: Each lmsaml server process generates fresh in-memory RSA-2048 keys and self-signed X.509 certificates at startup; assertions issued by one server instance will fail signature verification against a restarted instance with a different keypair.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>The first example provisions users, executes a multi-operation Batch pipeline, issues an RSA-SHA256 signed SAML 2.0 assertion, and verifies both valid and tampered payloads in LMScript:</p>
+<pre><code>p = _lmcode_ cli="lmsaml" install="github:lmctl-ai/lmsaml@latest";
+let b = saml.batch();
+b.ping()
+ .add_user("carol", "{\"email\":\"carol@example.com\",\"password\":\"carol-pass\",\"common_name\":\"Carol Danvers\",\"groups\":[\"admins\"]}")
+ .get_user("carol");
+let batch_out = json_parse(b.exec());
+assert_eq(batch_out.at(0).as_string(), "PONG");
+
+assert_eq(saml.authenticate("carol", "carol-pass"), true);
+assert_eq(saml.authenticate("carol", "wrong-pass"), false);
+
+let issued = json_parse(saml.issue_assertion("carol", ""));
+let xml = issued.get("xml").as_string();
+let check_ok = json_parse(saml.verify_assertion(xml));
+assert_eq(check_ok.get("valid").as_bool(), true);
+assert_eq(check_ok.get("subject").as_string(), "carol@example.com");
+
+let tampered = str_replace(xml, "carol@example.com", "mallory@example.com");
+let check_bad = json_parse(saml.verify_assertion(tampered));
+assert_eq(check_bad.get("valid").as_bool(), false);
+lmcode_return_put("subject", check_ok.get("subject").as_string());
+end _lmcode_
+res = run_lmcode(p);
+require(res.ok, json_stringify(res));</code></pre>
+<p>The second example combines context saml with the standard lmcode_std_v3 CliOption, CliCommand, and RestGet interfaces:</p>
+<pre><code>p = _lmcode_ cli="lmsaml" install="github:lmctl-ai/lmsaml@latest";
+@"--org"
+fn opt_org(x: RestExchange) -> void implements CliOption {
+  x.set("org", x.query("org"));
+}
+
+@"enroll"
+fn cmd_enroll(x: RestExchange) -> void implements CliCommand {
+  let u = x.query("user");
+  saml.add_user(u, "{\"email\":\"" + u + "@example.com\",\"password\":\"pw123\"}");
+  let issued = json_parse(saml.issue_assertion(u, ""));
+  let verified = json_parse(saml.verify_assertion(issued.get("saml_response_b64").as_string()));
+  x.send(x.get("org") + ":" + u + ":valid=" + str(verified.get("valid").as_bool()));
+}
+
+@"/sso-user/:name"
+fn get_sso_user(x: RestExchange) -> void implements RestGet {
+  x.json(saml.get_user(x.param("name")));
+}
+
+rest_config("session", "global");
+assert_eq(rest_cli(str_split("--org=acme enroll --user=grace", " ")), "acme:grace:valid=true");
+assert(str_contains(rest_cli(str_split("/sso-user/grace", " ")), "grace@example.com"));
+end _lmcode_</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmsaml returns deterministic exit codes across server startup and _lmcode_ bytecode execution:</p>
+<ul>
+<li>Exit code 0 indicates clean server shutdown on SIGINT/SIGTERM, successful schema/signature inspection, or successful _lmcode_ execution.</li>
+<li>Exit code 1 indicates a server initialization or TCP bind failure (such as an occupied --port or --rest-port).</li>
+<li>Exit code 2 indicates invalid command-line usage, missing bytecode file arguments, or retired --dsl* flag names.</li>
+<li>Exit code 3 indicates a bytecode load failure, schema mismatch, or unhandled host runtime error during _lmcode_ execution.</li>
+<li>Exit code 4 indicates an application assertion failure (assert, assert_eq) or result contract violation.</li>
+</ul>
+<h2>How to verify</h2>
+<p>Verify the lmsaml binary by checking its version, embedded schema JSON, canonical signature table, and the full SAML 2.0 integration test suite:</p>
+<pre><code>lmsaml --version
+lmsaml --lmcode-schema --json > /tmp/lmsaml-schema.json
+lmsaml --lmcode-signatures > /tmp/lmsaml-sigs.txt</code></pre>
+<p>In a source checkout, run ./test.sh to build the pure-Go binary, run all unit tests across the SAML 2.0 IdP/SP and XML encryption packages, and execute tests/integration-test.sh across SAML protocol endpoints, REST APIs, XML signature tampering checks, lmconn saml, lmcurl, and _lmcode_ Batch/REST/CLI scripts.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmsaml">github.com/lmctl-ai/lmsaml</a>.</p>
+</footer>
+</body>
+</html>

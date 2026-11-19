@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmdraw reference — lmdraw — lmctl.com tools</title>
+<meta name="description" content="Every command-line flag, exit code, host type, method, attribute, limit and standard-library signature of lmdraw 0.2.7, taken from the release binary (lmdraw…">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmdraw/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmdraw/">Overview</a></li>
+<li><a href="/tools/lmdraw/skill.html">Skill</a></li>
+<li><a href="/tools/lmdraw/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmdraw/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmdraw/guide.html">Guide</a></li>
+<li><a href="/tools/lmdraw/reference.html">Reference</a></li>
+<li><a href="/tools/lmdraw/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>lmdraw reference</h1>
+<p>Every command-line flag, exit code, host type, method, attribute, limit and standard-library signature of lmdraw 0.2.7, taken from the release binary (lmdraw --lmcode-schema, lmdraw --lmcode-signatures) and the repository script guide. Types in signatures are int, float, string, bool and the host or standard types named here.</p>
+<h2 id="cli">Command line</h2>
+<table>
+<thead><tr><th>Command</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td>lmdraw --version</td><td>Prints lmdraw and the version number.</td></tr>
+<tr><td>lmdraw --lmcode-schema --json</td><td>Prints the exact embedded schema JSON (dsl.schema 2, name lmdraw, functions, types, context). This is the compiler input.</td></tr>
+<tr><td>lmdraw --lmcode-schema</td><td>Prints the compact summary: the context line, then each host type with its method signatures.</td></tr>
+<tr><td>lmdraw --schema [--json]</td><td>Earlier spelling of --lmcode-schema; prints identical output.</td></tr>
+<tr><td>lmdraw --lmcode-signatures</td><td>Prints every registered signature, host and standard, one per line and sorted: 253 lines in 0.2.7 (1 context, 46 host methods, 83 standard functions, 123 standard methods).</td></tr>
+<tr><td>lmdraw --lmcode FILE [FILE ...]</td><td>Verifies every compiled program file against the embedded schema, then runs them in order in one process sharing one scene. Each file is at most 16 MiB.</td></tr>
+</tbody>
+</table>
+<p>With no arguments or an unknown flag the host prints its usage line and exits 2. Failures also print a JSON result between the lines LMCODE_RETURN_BEGIN and LMCODE_RETURN_END, which run_lmcode parses into its return value.</p>
+<h3 id="exit-codes">Exit codes</h3>
+<table>
+<thead><tr><th>Code</th><th>Meaning</th><th>Observed result codes</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success.</td><td></td></tr>
+<tr><td>2</td><td>Invalid command line.</td><td>CLI_USAGE (phase cli)</td></tr>
+<tr><td>3</td><td>Program file load or verification failed, or a host call failed while running.</td><td>LOAD_BAD_BYTECODE, LOAD_UNBOUND, RUN_HOST (phases load and run)</td></tr>
+<tr><td>4</td><td>Another application failure.</td><td></td></tr>
+</tbody>
+</table>
+<h3 id="lmscript">Used from lmscript</h3>
+<table>
+<thead><tr><th>Form</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest"; ... end _lmcode_</td><td>Declares a block compiled against the lmdraw schema. install lets lmscript download the release binary when it is not in the tool cache.</td></tr>
+<tr><td>r = run_lmcode(p)</td><td>Runs the block on the host and returns a map: ok true with result, or ok false with phase, code, message and, for run errors, line and column.</td></tr>
+<tr><td>${expr}</td><td>Inserts an outer lmscript value into the block as a literal. Integral numbers arrive as int; lists cannot cross.</td></tr>
+<tr><td>b = lmcode_build(["lmdraw", "--lmcode"]); b.add(p, ["$DSLFILE"]); r = run_lmcode(b)</td><td>Runs several blocks in one host process, in order, sharing one scene. The lmdraw executable must be on PATH for this form. Two blocks that return nothing give ok true, result [null,null] and parts 2.</td></tr>
+<tr><td>lmscript --check FILE.lms</td><td>Compiles every block against the host schema without running; exits 2 on an error.</td></tr>
+<tr><td>lmscript install github:lmctl-ai/lmdraw@latest</td><td>Downloads the release binary into the tool cache and prints its tag, path and SHA-256.</td></tr>
+</tbody>
+</table>
+<h2 id="types">Context and host types</h2>
+<table>
+<thead><tr><th>Name</th><th>Kind</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td>scene</td><td>Context object of type Scene</td><td>The one entry point of a block. All constructors and render calls are methods on it.</td></tr>
+<tr><td>Scene</td><td>Host type</td><td>The retained scene: canvas, constructors, loaders, measurement and rendering.</td></tr>
+<tr><td>Node</td><td>Host type</td><td>Handle to one primitive: rect, circle, ellipse, line, arrow, polyline, path, text, image or an imported SVG element.</td></tr>
+<tr><td>Shape</td><td>Host type</td><td>Handle to a labeled diagram shape (box, diamond, cylinder, note, cluster) or a grid cell, with named anchors.</td></tr>
+<tr><td>Grid</td><td>Host type</td><td>An invisible rows-by-columns array of cell shapes.</td></tr>
+<tr><td>Group</td><td>Host type</td><td>A container of nodes and groups; also returned by connectors, axes, legends and sequence notation.</td></tr>
+<tr><td>Gradient</td><td>Host type</td><td>A linear gradient definition referenced as url(#id).</td></tr>
+</tbody>
+</table>
+<p>The schema declares no host free functions and no enum types. Options that behave like enums are strings; their accepted values are listed under String options.</p>
+<h2 id="scene">Scene methods</h2>
+<h3 id="scene-setup">Scene setup and output</h3>
+<table>
+<thead><tr><th>Signature</th><th>Returns</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>canvas(int width, int height, string background)</td><td>Scene</td><td>Starts a new scene with the given size and background color. 1 to 4096 pixels per side and at most 8,000,000 pixels.</td></tr>
+<tr><td>load_svg(string relative_path, string id)</td><td>Node</td><td>Parses an SVG that is a direct child of assets/ and returns the retained node with that id. The same path can be loaded again for another id; a different path starts a new scene.</td></tr>
+<tr><td>load_font(string family, string relative_ttf_path, bool bold)</td><td>void</td><td>Registers a TrueType font from assets/fonts/ under a family name, as the regular or bold face.</td></tr>
+<tr><td>measure_text(string content, float size, bool bold)</td><td>float</td><td>Width in pixels of UTF-8 text at the given size in the embedded fonts, including fallback math glyphs.</td></tr>
+<tr><td>render_png(string path, int width, int height, int scale)</td><td>void</td><td>Writes a PNG of width × scale by height × scale pixels. Path is a .png directly under images/ or build/rendered/; scale is 1 to 4.</td></tr>
+</tbody>
+</table>
+<h3 id="scene-primitives">Primitives</h3>
+<table>
+<thead><tr><th>Signature</th><th>Returns</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>rect(float x, float y, float width, float height, string fill)</td><td>Node</td><td>Rectangle.</td></tr>
+<tr><td>circle(float cx, float cy, float radius, string fill)</td><td>Node</td><td>Circle.</td></tr>
+<tr><td>ellipse(float cx, float cy, float rx, float ry, string fill)</td><td>Node</td><td>Ellipse.</td></tr>
+<tr><td>line(float x1, float y1, float x2, float y2, string stroke, float stroke_width)</td><td>Node</td><td>Straight line.</td></tr>
+<tr><td>arrow(float x1, float y1, float x2, float y2, string stroke, float stroke_width)</td><td>Node</td><td>Line with an arrow marker at its endpoint.</td></tr>
+<tr><td>polyline(string points, string stroke, float stroke_width)</td><td>Node</td><td>Open polyline from numeric point pairs.</td></tr>
+<tr><td>path(string d, string fill, string stroke, float stroke_width)</td><td>Node</td><td>Path from SVG path data.</td></tr>
+<tr><td>text(float x, float baseline_y, float size, string content, string fill)</td><td>Node</td><td>Text in Noto Sans at a pixel size; newlines start new lines with a 1.2 em step.</td></tr>
+<tr><td>text(float x, float baseline_y, float size, string content, string fill, float wrap_width)</td><td>Node</td><td>Text wrapped at word boundaries to a positive pixel width; at most 256 lines.</td></tr>
+<tr><td>image(string png_data_uri, float x, float y, float width, float height)</td><td>Node</td><td>Embedded PNG from a data URI, at most 1.5 MiB, 4096 pixels per side and 8,000,000 pixels.</td></tr>
+<tr><td>group()</td><td>Group</td><td>Empty group.</td></tr>
+<tr><td>linear_gradient(string id, float x1, float y1, float x2, float y2)</td><td>Gradient</td><td>Linear gradient; coordinates are fractions 0 to 1 of the painted object bounds.</td></tr>
+</tbody>
+</table>
+<h3 id="scene-diagram">Diagram shapes and connectors</h3>
+<table>
+<thead><tr><th>Signature</th><th>Returns</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>box(float cx, float cy, float width, float height, string label, string fill, string stroke, float corner_radius, float label_size)</td><td>Shape</td><td>Rounded rectangle centered at a point, with a centered, measured, wrapped label. An empty label draws none.</td></tr>
+<tr><td>box(Shape at, string anchor, float width, float height, string label, string fill, string stroke, float corner_radius, float label_size)</td><td>Shape</td><td>The same box centered on a named anchor of another shape, such as a grid cell.</td></tr>
+<tr><td>diamond(float cx, float cy, float width, float height, string label, string fill, string stroke, float label_size)</td><td>Shape</td><td>Labeled decision diamond.</td></tr>
+<tr><td>cylinder(float cx, float cy, float width, float height, string label, string fill, string stroke, float label_size)</td><td>Shape</td><td>Labeled datastore cylinder; height must exceed 20 pixels.</td></tr>
+<tr><td>note(float x, float y, float width, float height, string label, string fill, string stroke, float label_size)</td><td>Shape</td><td>Folded-corner annotation with a top-left label.</td></tr>
+<tr><td>cluster(float x, float y, float width, float height, string label, string fill, string stroke, float corner_radius, float label_size)</td><td>Shape</td><td>Labeled group box drawn behind its children; the label is a bold header in the stroke color.</td></tr>
+<tr><td>grid(float x, float y, float width, float height, int rows, int cols, float gap_x, float gap_y)</td><td>Grid</td><td>Invisible array of cell shapes over an extent, separated by gaps.</td></tr>
+<tr><td>connector(float x1, float y1, float x2, float y2, string routing, string start_marker, string end_marker, string dash, string color, float width, string label, float label_position, float label_dx, float label_dy)</td><td>Group</td><td>Edge between two points.</td></tr>
+<tr><td>connector(Shape a, string anchor_a, Shape b, string anchor_b, string routing, string start_marker, string end_marker, string dash, string color, float width, string label, float label_position, float label_dx, float label_dy)</td><td>Group</td><td>Edge between named anchors of two shapes.</td></tr>
+<tr><td>connector(float x1, float y1, Shape b, string anchor_b, string routing, string start_marker, string end_marker, string dash, string color, float width, string label, float label_position, float label_dx, float label_dy)</td><td>Group</td><td>Edge from a point to a shape anchor.</td></tr>
+<tr><td>connector(Shape a, string anchor_a, float x2, float y2, string routing, string start_marker, string end_marker, string dash, string color, float width, string label, float label_position, float label_dx, float label_dy)</td><td>Group</td><td>Edge from a shape anchor to a point.</td></tr>
+</tbody>
+</table>
+<h3 id="scene-sequence">Sequence notation</h3>
+<table>
+<thead><tr><th>Signature</th><th>Returns</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>lifeline(float x, float y0, float y1, string color)</td><td>Group</td><td>Dashed vertical lifeline.</td></tr>
+<tr><td>message(float x1, float y1, float x2, float y2, string label, bool dashed, string color)</td><td>Group</td><td>Arrowed solid or dashed message with a centered label.</td></tr>
+<tr><td>activation(float x, float y0, float y1, string fill, string stroke)</td><td>Group</td><td>Activation bar on a lifeline.</td></tr>
+<tr><td>self_message(float x, float y, string label, string color)</td><td>Group</td><td>A 60 pixel self-loop with a label.</td></tr>
+</tbody>
+</table>
+<h3 id="scene-plot">Axes and legends</h3>
+<table>
+<thead><tr><th>Signature</th><th>Returns</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>axes(float x, float y, float width, float height, float xmin, float xmax, float ymin, float ymax, int intervals, string color)</td><td>Group</td><td>Horizontal and vertical axes with evenly spaced ticks and numeric labels. Each axis prints all labels with one decimal count, the fewest that show the tick step.</td></tr>
+<tr><td>log_axes(float x, float y, float width, float height, float xmin, float xmax, float ymin, float ymax, int y_intervals, string color)</td><td>Group</td><td>Logarithmic x axis with decade and minor ticks and a linear y axis.</td></tr>
+<tr><td>log_axes(float x, float y, float width, float height, float xmin, float xmax, float ymin, float ymax, bool log_x, bool log_y, int linear_intervals, string color)</td><td>Group</td><td>Selects a logarithmic or linear scale for each axis independently.</td></tr>
+<tr><td>legend(float x, float y, string labels_newline, string colors_csv, string text_color)</td><td>Group</td><td>Rounded legend box with 24 pixel line swatches and 13 pixel labels: 1 to 16 newline-separated labels and matching comma or space separated colors.</td></tr>
+<tr><td>legend(float x, float y, string labels_newline, string colors_csv, string text_color, string background)</td><td>Group</td><td>The same legend with a background color, or none.</td></tr>
+</tbody>
+</table>
+<h2 id="handles">Node, Shape, Grid, Group and Gradient methods</h2>
+<table>
+<thead><tr><th>Signature</th><th>Returns</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Node.set_attr(string name, string value)</td><td>Node</td><td>Sets an SVG-style attribute on the node and returns it, so calls can follow a constructor.</td></tr>
+<tr><td>Shape.set_attr(string name, string value)</td><td>Shape</td><td>Styles the shape body (everything but the label text).</td></tr>
+<tr><td>Shape.cx()</td><td>float</td><td>Center x of the shape.</td></tr>
+<tr><td>Shape.cy()</td><td>float</td><td>Center y of the shape.</td></tr>
+<tr><td>Grid.cell(int col, int row)</td><td>Shape</td><td>The cell shape at a column and row. Cells render nothing until given a fill or stroke.</td></tr>
+<tr><td>Group.add(Node child)</td><td>Group</td><td>Attaches a node. A node has at most one parent.</td></tr>
+<tr><td>Group.add(Group child)</td><td>Group</td><td>Attaches a group. Cycles are refused.</td></tr>
+<tr><td>Group.set_attr(string name, string value)</td><td>Group</td><td>Sets a presentation attribute on the group.</td></tr>
+<tr><td>Gradient.stop(float offset, string color)</td><td>Gradient</td><td>Adds a color stop at an offset from 0 to 1. A usable gradient needs at least two stops.</td></tr>
+</tbody>
+</table>
+<h2 id="options">String options</h2>
+<p>These string parameters accept a fixed set of values.</p>
+<table>
+<thead><tr><th>Parameter</th><th>Accepted values</th></tr></thead>
+<tbody>
+<tr><td>Shape anchor (anchor, anchor_a, anchor_b)</td><td>n, s, e, w, ne, nw, se, sw, c</td></tr>
+<tr><td>connector routing</td><td>straight, elbow, curve</td></tr>
+<tr><td>connector start_marker and end_marker</td><td>none, arrow, dot, diamond</td></tr>
+<tr><td>connector dash</td><td>none, or a dash list such as 6 5</td></tr>
+<tr><td>connector label_position</td><td>A float from 0 to 1 along the drawn path; label_dx and label_dy add a pixel offset.</td></tr>
+<tr><td>legend background</td><td>A color, or none</td></tr>
+<tr><td>Attributes marker-start, marker-mid, marker-end</td><td>arrow, dot, diamond, none</td></tr>
+<tr><td>Attribute text-anchor</td><td>start, middle, end</td></tr>
+</tbody>
+</table>
+<h2 id="attributes">Attributes for set_attr</h2>
+<table>
+<thead><tr><th>Family</th><th>Names</th><th>Values</th></tr></thead>
+<tbody>
+<tr><td>Paint</td><td>fill, stroke</td><td>Named colors, #RGB, #RGBA, #RRGGBB, #RRGGBBAA, none, or a same-scene gradient reference such as url(#warm).</td></tr>
+<tr><td>Opacity</td><td>opacity, fill-opacity, stroke-opacity</td><td>Number from 0 to 1.</td></tr>
+<tr><td>Stroke</td><td>stroke-width</td><td>Positive pixel value.</td></tr>
+<tr><td>Stroke pattern</td><td>stroke-dasharray, stroke-dashoffset</td><td>Comma or space separated positive pixel lengths (at most 32), or none; the offset is a finite signed pixel length.</td></tr>
+<tr><td>Markers</td><td>marker-start, marker-mid, marker-end</td><td>arrow, dot, diamond or none, on constructed line, path and polyline nodes. Size follows stroke-width and fill follows the stroke.</td></tr>
+<tr><td>Geometry</td><td>x, y, width, height, cx, cy, r, rx, ry, x1, y1, x2, y2</td><td>Finite pixels; width, height and r must be positive; rx and ry may be zero.</td></tr>
+<tr><td>Paths</td><td>d, points</td><td>Bounded SVG path data or numeric point pairs.</td></tr>
+<tr><td>Text</td><td>font-family, font-size, font-weight, text-anchor</td><td>Family name, positive pixel size, numeric or string weight, and start, middle or end.</td></tr>
+<tr><td>Transform</td><td>transform</td><td>SVG transform syntax supported by the renderer.</td></tr>
+<tr><td>Stroke style</td><td>stroke-linecap, stroke-linejoin</td><td>SVG cap and join values.</td></tr>
+<tr><td>Image</td><td>href</td><td>Embedded data:image URI only.</td></tr>
+</tbody>
+</table>
+<h2 id="svg">SVG input</h2>
+<table>
+<thead><tr><th>SVG element</th><th>Scene meaning</th></tr></thead>
+<tbody>
+<tr><td>svg</td><td>Canvas dimensions and viewBox</td></tr>
+<tr><td>g</td><td>Retained group with child order</td></tr>
+<tr><td>rect, circle, ellipse, line</td><td>Matching geometry node</td></tr>
+<tr><td>polyline, polygon, path</td><td>Path geometry; polygon closes its outline</td></tr>
+<tr><td>text, tspan</td><td>Text and ordered text runs</td></tr>
+<tr><td>defs, linearGradient, radialGradient, stop</td><td>Definitions referenced by local fragment URLs</td></tr>
+<tr><td>clipPath, mask</td><td>Static clipping definitions</td></tr>
+<tr><td>use</td><td>Same-document reference by fragment id</td></tr>
+<tr><td>title, desc</td><td>Document metadata, not painted</td></tr>
+</tbody>
+</table>
+<p>Supported SVG attributes are xmlns, xmlns:xlink, width, height, viewBox, preserveAspectRatio, role, aria-labelledby, aria-label, id, x, y, rx, ry, cx, cy, r, x1, y1, x2, y2, points, d, fill, fill-opacity, stroke, stroke-width, stroke-linecap, stroke-linejoin, stroke-opacity, opacity, transform, font-family, font-size, font-weight, text-anchor, href, xlink:href, gradientUnits, gradientTransform, offset, stop-color, stop-opacity, clip-path and mask. Refused: CSS class and style attributes and stylesheets, script and event handlers, DTDs and entities, SMIL animation, foreignObject, filters, external URLs or files, and embedded data images.</p>
+<h2 id="limits">Limits</h2>
+<table>
+<thead><tr><th>Item</th><th>Limit</th></tr></thead>
+<tbody>
+<tr><td>Coordinates</td><td>Finite, within plus or minus 1,000,000 pixels</td></tr>
+<tr><td>Canvas</td><td>1 to 4096 pixels per side; at most 8,000,000 pixels</td></tr>
+<tr><td>Render scale</td><td>Integer 1 to 4; scaled output at most 8,000,000 pixels</td></tr>
+<tr><td>Scene nodes</td><td>10,000 per host run</td></tr>
+<tr><td>Gradients</td><td>1,024, with at most 128 stops each</td></tr>
+<tr><td>SVG input</td><td>Direct child of assets/, at most 2 MiB</td></tr>
+<tr><td>Font input</td><td>TrueType, direct child of assets/fonts/, at most 8 MiB</td></tr>
+<tr><td>Image node</td><td>Embedded PNG data URI, at most 1.5 MiB, 4096 pixels per side, 8,000,000 pixels</td></tr>
+<tr><td>Wrapped text</td><td>256 lines</td></tr>
+<tr><td>Dash array</td><td>32 entries</td></tr>
+<tr><td>Legend</td><td>1 to 16 labels</td></tr>
+<tr><td>Program file</td><td>16 MiB per file</td></tr>
+<tr><td>PNG output</td><td>A .png directly under images/ or build/rendered/; no subdirectories, traversal or symbolic links</td></tr>
+</tbody>
+</table>
+<h2 id="errors">Host error messages</h2>
+<p>These messages were produced by lmdraw 0.2.7. Run errors carry the prefix dsl line L:C and the code RUN_HOST.</p>
+<table>
+<thead><tr><th>Message</th><th>Cause</th></tr></thead>
+<tbody>
+<tr><td>call scene.canvas or scene.load_svg before drawing</td><td>A constructor ran before a scene existed.</td></tr>
+<tr><td>canvas must fit 1..4096 pixels per side and 8000000 pixels total</td><td>Canvas size out of range.</td></tr>
+<tr><td>render scale must be 1..4 and keep total output at or below 8000000 pixels</td><td>Scale or scaled output out of range.</td></tr>
+<tr><td>PNG output must be a .png file directly under build/rendered/ or images/</td><td>Output path outside the allowed folders.</td></tr>
+<tr><td>load_svg accepts only an assets/*.svg relative path</td><td>SVG path outside assets/.</td></tr>
+<tr><td>unsupported node attribute 'NAME'; use SVG geometry, fill, stroke, opacity, transform, or text attributes</td><td>set_attr with a name the host does not accept.</td></tr>
+<tr><td>bytecode input must be a readable file no larger than 16 MiB</td><td>The --lmcode file is missing, unreadable or too large (phase load, exit 3).</td></tr>
+<tr><td>not a DSL bytecode file: bad magic (expected 'DSLB')</td><td>The --lmcode file is not a compiled program (code LOAD_BAD_BYTECODE, exit 3).</td></tr>
+<tr><td>import 'fn NAME(...) -> T' is not provided by the host</td><td>The block calls a function the installed host does not register (code LOAD_UNBOUND).</td></tr>
+<tr><td>expected --lmcode FILE [FILE ...]</td><td>Invalid command line (code CLI_USAGE, exit 2).</td></tr>
+</tbody>
+</table>
+<h2 id="std">Standard library in lmdraw 0.2.7</h2>
+<p>lmdraw 0.2.7 registers 206 standard lmcode_std_v3 signatures in addition to its 46 host methods. They are available in every block without a declaration. Strings are raw bytes with byte-based lengths and offsets. Collection and Json handles are valid only during the run that created them. The file functions use the process working directory without a sandbox. The current lmcode_std_v3 catalog has 226 signatures; the 20 that 0.2.7 does not ship are listed under <a href="#rest">REST and CLI interfaces</a>.</p>
+<h3 id="std-return">Return values (24)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>lmcode_return_null() -> void</td><td>Set the invocation return value to JSON null.</td></tr>
+<tr><td>lmcode_return_put(string, FloatList) -> void</td><td>Store a deep owned copy at a top-level return field. A null root is promoted to an object.</td></tr>
+<tr><td>lmcode_return_put(string, FloatMap) -> void</td><td>Store a deep owned copy at a top-level return field. A null root is promoted to an object.</td></tr>
+<tr><td>lmcode_return_put(string, IntList) -> void</td><td>Store a deep owned copy at a top-level return field. A null root is promoted to an object.</td></tr>
+<tr><td>lmcode_return_put(string, IntMap) -> void</td><td>Store a deep owned copy at a top-level return field. A null root is promoted to an object.</td></tr>
+<tr><td>lmcode_return_put(string, Json) -> void</td><td>Store a deep owned copy at a top-level return field. A null root is promoted to an object.</td></tr>
+<tr><td>lmcode_return_put(string, StrList) -> void</td><td>Store a deep owned copy at a top-level return field. A null root is promoted to an object.</td></tr>
+<tr><td>lmcode_return_put(string, StrMap) -> void</td><td>Store a deep owned copy at a top-level return field. A null root is promoted to an object.</td></tr>
+<tr><td>lmcode_return_put(string, bool) -> void</td><td>Store a deep owned copy at a top-level return field. A null root is promoted to an object.</td></tr>
+<tr><td>lmcode_return_put(string, float) -> void</td><td>Store a deep owned copy at a top-level return field. A null root is promoted to an object.</td></tr>
+<tr><td>lmcode_return_put(string, int) -> void</td><td>Store a deep owned copy at a top-level return field. A null root is promoted to an object.</td></tr>
+<tr><td>lmcode_return_put(string, string) -> void</td><td>Store a deep owned copy at a top-level return field. A null root is promoted to an object.</td></tr>
+<tr><td>lmcode_return_put_null(string) -> void</td><td>Set a top-level return field to JSON null. A null root is promoted to an object.</td></tr>
+<tr><td>lmcode_return_set(FloatList) -> void</td><td>Replace the invocation return value with a deep owned copy; writing again replaces it.</td></tr>
+<tr><td>lmcode_return_set(FloatMap) -> void</td><td>Replace the invocation return value with a deep owned copy; writing again replaces it.</td></tr>
+<tr><td>lmcode_return_set(IntList) -> void</td><td>Replace the invocation return value with a deep owned copy; writing again replaces it.</td></tr>
+<tr><td>lmcode_return_set(IntMap) -> void</td><td>Replace the invocation return value with a deep owned copy; writing again replaces it.</td></tr>
+<tr><td>lmcode_return_set(Json) -> void</td><td>Replace the invocation return value with a deep owned copy; writing again replaces it.</td></tr>
+<tr><td>lmcode_return_set(StrList) -> void</td><td>Replace the invocation return value with a deep owned copy; writing again replaces it.</td></tr>
+<tr><td>lmcode_return_set(StrMap) -> void</td><td>Replace the invocation return value with a deep owned copy; writing again replaces it.</td></tr>
+<tr><td>lmcode_return_set(bool) -> void</td><td>Replace the invocation return value with a deep owned copy; writing again replaces it.</td></tr>
+<tr><td>lmcode_return_set(float) -> void</td><td>Replace the invocation return value with a deep owned copy; writing again replaces it.</td></tr>
+<tr><td>lmcode_return_set(int) -> void</td><td>Replace the invocation return value with a deep owned copy; writing again replaces it.</td></tr>
+<tr><td>lmcode_return_set(string) -> void</td><td>Replace the invocation return value with a deep owned copy; writing again replaces it.</td></tr>
+</tbody>
+</table>
+<h3 id="std-string">String functions (20)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>str_base64_decode(string) -> string</td><td>Decode canonical padded RFC 4648 Base64; reject whitespace, URL-safe symbols, invalid padding and nonzero pad bits. Empty input is legal.</td></tr>
+<tr><td>str_base64_encode(string) -> string</td><td>Encode bytes as canonical padded RFC 4648 Base64 without line breaks. Empty input is legal.</td></tr>
+<tr><td>str_contains(string, string) -> bool</td><td>Byte substring search; an empty needle matches.</td></tr>
+<tr><td>str_ends_with(string, string) -> bool</td><td>Byte suffix comparison; an empty suffix matches.</td></tr>
+<tr><td>str_find(string, string) -> int</td><td>Return the first byte offset or -1; an empty needle returns 0.</td></tr>
+<tr><td>str_hex_decode(string) -> string</td><td>Decode an even number of ASCII 0-9/a-f/A-F digits; reject separators, prefixes and whitespace. Empty input is legal.</td></tr>
+<tr><td>str_hex_encode(string) -> string</td><td>Encode bytes as lowercase ASCII hex. Empty input is legal.</td></tr>
+<tr><td>str_is_float(string) -> bool</td><td>Accept a complete signed decimal with optional decimal point and exponent, including representable subnormals. Reject whitespace, hex, NaN/infinity, overflow and underflow to zero.</td></tr>
+<tr><td>str_is_int(string) -> bool</td><td>Report whether the complete signed decimal token fits int64.</td></tr>
+<tr><td>str_len(string) -> int</td><td>Return the raw byte length, including NUL and invalid UTF-8 bytes.</td></tr>
+<tr><td>str_lower(string) -> string</td><td>Lowercase ASCII A-Z bytes; preserve every other byte.</td></tr>
+<tr><td>str_match(string, string) -> bool</td><td>Match a whole byte string with *, ?, classes, ranges, negation, and backslash escapes.</td></tr>
+<tr><td>str_repeat(string, int) -> string</td><td>Repeat raw bytes; reject negative counts and platform-unrepresentable result sizes.</td></tr>
+<tr><td>str_replace(string, string, string) -> string</td><td>Replace nonoverlapping byte matches left to right; an empty search leaves bytes unchanged. No implicit result-size budget.</td></tr>
+<tr><td>str_starts_with(string, string) -> bool</td><td>Byte prefix comparison; an empty prefix matches.</td></tr>
+<tr><td>str_substr(string, int, int) -> string</td><td>Return a byte slice; clamp negative starts and overlong counts, with nonpositive counts empty.</td></tr>
+<tr><td>str_to_float(string) -> float</td><td>Parse the same complete decimal grammar as str_is_float; return 0.0 on invalid input, overflow or underflow to zero. Preserve valid signed zero.</td></tr>
+<tr><td>str_to_int(string) -> int</td><td>Parse a complete signed decimal int64 token; return zero on failure.</td></tr>
+<tr><td>str_trim(string) -> string</td><td>Remove ASCII space and bytes 0x09 through 0x0d from both ends.</td></tr>
+<tr><td>str_upper(string) -> string</td><td>Uppercase ASCII a-z bytes; preserve every other byte.</td></tr>
+</tbody>
+</table>
+<h3 id="std-math">Math functions (16)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>math_abs(float) -> float</td><td>Absolute value; integer arithmetic wraps, and float signed zero is cleared.</td></tr>
+<tr><td>math_abs(int) -> int</td><td>Absolute value; integer arithmetic wraps, and float signed zero is cleared.</td></tr>
+<tr><td>math_ceil(float) -> float</td><td>Identity for int; ceiling for binary64 while preserving signed zero.</td></tr>
+<tr><td>math_ceil(int) -> int</td><td>Identity for int; ceiling for binary64 while preserving signed zero.</td></tr>
+<tr><td>math_floor(float) -> float</td><td>Identity for int; floor for binary64 while preserving signed zero.</td></tr>
+<tr><td>math_floor(int) -> int</td><td>Identity for int; floor for binary64 while preserving signed zero.</td></tr>
+<tr><td>math_max(float, float) -> float</td><td>Maximum; integer comparison, or NaN propagation with first-operand ties for floats.</td></tr>
+<tr><td>math_max(int, int) -> int</td><td>Maximum; integer comparison, or NaN propagation with first-operand ties for floats.</td></tr>
+<tr><td>math_min(float, float) -> float</td><td>Minimum; integer comparison, or NaN propagation with first-operand ties for floats.</td></tr>
+<tr><td>math_min(int, int) -> int</td><td>Minimum; integer comparison, or NaN propagation with first-operand ties for floats.</td></tr>
+<tr><td>math_pow(float, float) -> float</td><td>Float power follows IEEE/libm special cases.</td></tr>
+<tr><td>math_pow(int, int) -> int</td><td>Integer exponentiation wraps modulo 2^64; the exponent must be nonnegative.</td></tr>
+<tr><td>math_round(float) -> float</td><td>Identity for int; binary64 nearest integer with halfway cases away from zero.</td></tr>
+<tr><td>math_round(int) -> int</td><td>Identity for int; binary64 nearest integer with halfway cases away from zero.</td></tr>
+<tr><td>math_sqrt(float) -> float</td><td>Binary64 square root for float.</td></tr>
+<tr><td>math_sqrt(int) -> int</td><td>Exact floor integer square root; the argument must be nonnegative.</td></tr>
+</tbody>
+</table>
+<h3 id="std-file">File functions (5)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>file_append(string, string) -> void</td><td>Create or append all raw bytes to a regular file.</td></tr>
+<tr><td>file_exists(string) -> bool</td><td>Return true only when metadata identifies a regular file; missing and nonregular paths return false.</td></tr>
+<tr><td>file_lines(string) -> StrList</td><td>Read raw bytes and split on every LF, preserving CR and empty fields: empty file gives [""], and "a\n" gives ["a", ""]. Return an arena-owned StrList.</td></tr>
+<tr><td>file_read(string) -> string</td><td>Read a complete regular file as raw bytes.</td></tr>
+<tr><td>file_write(string, string) -> void</td><td>Create or truncate a regular file and write all raw bytes.</td></tr>
+</tbody>
+</table>
+<h3 id="std-json">Json and templates (13)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>json_parse(string) -> Json</td><td>Parse strict UTF-8 JSON eagerly; int64 integers, finite binary64 decimals, depth &lt;=256, duplicate decoded keys rejected.</td></tr>
+<tr><td>template_render(string, Json) -> string</td><td>Render arbitrary text with &lt;path>, &lt;items[0]>, &lt;items:{item|body}; separator=", "> and &lt;if(flag)>yes&lt;else>no&lt;endif>. Loop index is zero-based. &lt;&lt; emits &lt;. Inserted values remain literal.</td></tr>
+<tr><td>Json.as_bool() -> bool</td><td>Read a boolean.</td></tr>
+<tr><td>Json.as_float() -> float</td><td>Read binary64; integer conversion may round.</td></tr>
+<tr><td>Json.as_int() -> int</td><td>Read a signed int64 integer.</td></tr>
+<tr><td>Json.as_string() -> string</td><td>Read decoded UTF-8 bytes including escaped NUL.</td></tr>
+<tr><td>Json.at(int) -> Json</td><td>Borrow an array child.</td></tr>
+<tr><td>Json.get(string) -> Json</td><td>Borrow an object member.</td></tr>
+<tr><td>Json.has(string) -> bool</td><td>Test a decoded object key.</td></tr>
+<tr><td>Json.keys() -> StrList</td><td>Snapshot keys in insertion order.</td></tr>
+<tr><td>Json.kind() -> string</td><td>Return null/bool/int/float/string/array/object.</td></tr>
+<tr><td>Json.len() -> int</td><td>Count array items or object keys.</td></tr>
+<tr><td>Json.to_json() -> string</td><td>Emit compact tokens preserving number/string spellings and object order.</td></tr>
+</tbody>
+</table>
+<h3 id="std-ctor">Collection constructors (16)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>float_list() -> FloatList</td><td>Construct an empty FloatList in the active collection arena.</td></tr>
+<tr><td>float_map() -> FloatMap</td><td>Create an insertion-ordered byte-key map.</td></tr>
+<tr><td>float_pq() -> FloatPQ</td><td>Create an empty FloatPQ in the run arena.</td></tr>
+<tr><td>float_queue() -> FloatQueue</td><td>Create an empty FloatQueue in the run arena.</td></tr>
+<tr><td>float_stack() -> FloatStack</td><td>Create an empty FloatStack in the run arena.</td></tr>
+<tr><td>int_list() -> IntList</td><td>Construct an empty IntList in the active collection arena.</td></tr>
+<tr><td>int_map() -> IntMap</td><td>Create an insertion-ordered byte-key map.</td></tr>
+<tr><td>int_pq() -> IntPQ</td><td>Create an empty IntPQ in the run arena.</td></tr>
+<tr><td>int_queue() -> IntQueue</td><td>Create an empty IntQueue in the run arena.</td></tr>
+<tr><td>int_stack() -> IntStack</td><td>Create an empty IntStack in the run arena.</td></tr>
+<tr><td>str_list() -> StrList</td><td>Construct an empty StrList in the active collection arena.</td></tr>
+<tr><td>str_map() -> StrMap</td><td>Construct an empty insertion-ordered StrMap in the active collection arena.</td></tr>
+<tr><td>str_pq() -> StrPQ</td><td>Create an empty StrPQ in the run arena.</td></tr>
+<tr><td>str_queue() -> StrQueue</td><td>Create an empty StrQueue in the run arena.</td></tr>
+<tr><td>str_split(string, string) -> StrList</td><td>Split raw bytes on every nonoverlapping nonempty separator into a StrList.</td></tr>
+<tr><td>str_stack() -> StrStack</td><td>Create an empty StrStack in the run arena.</td></tr>
+</tbody>
+</table>
+<h3 id="std-list">Lists (22)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>FloatList.add(float) -> FloatList</td><td>Append a float and return the receiver.</td></tr>
+<tr><td>FloatList.at(int) -> float</td><td>Return the element at a zero-based index.</td></tr>
+<tr><td>FloatList.clear() -> FloatList</td><td>Remove elements and return the receiver.</td></tr>
+<tr><td>FloatList.contains(float) -> bool</td><td>Test float == equality; NaN never matches.</td></tr>
+<tr><td>FloatList.index_of(float) -> int</td><td>Return the first float == index or -1; NaN never matches.</td></tr>
+<tr><td>FloatList.len() -> int</td><td>Return element count.</td></tr>
+<tr><td>FloatList.set(int, float) -> FloatList</td><td>Replace an indexed float and return the receiver.</td></tr>
+<tr><td>IntList.add(int) -> IntList</td><td>Append an int and return the receiver.</td></tr>
+<tr><td>IntList.at(int) -> int</td><td>Return the element at a zero-based index.</td></tr>
+<tr><td>IntList.clear() -> IntList</td><td>Remove elements and return the receiver.</td></tr>
+<tr><td>IntList.contains(int) -> bool</td><td>Test integer equality of elements.</td></tr>
+<tr><td>IntList.index_of(int) -> int</td><td>Return the first equal index or -1.</td></tr>
+<tr><td>IntList.len() -> int</td><td>Return element count.</td></tr>
+<tr><td>IntList.set(int, int) -> IntList</td><td>Replace an indexed int and return the receiver.</td></tr>
+<tr><td>StrList.add(string) -> StrList</td><td>Append a byte string and return the receiver.</td></tr>
+<tr><td>StrList.at(int) -> string</td><td>Return the element at a zero-based index.</td></tr>
+<tr><td>StrList.clear() -> StrList</td><td>Remove elements and return the receiver.</td></tr>
+<tr><td>StrList.contains(string) -> bool</td><td>Test byte equality of elements.</td></tr>
+<tr><td>StrList.index_of(string) -> int</td><td>Return the first byte-equal index or -1.</td></tr>
+<tr><td>StrList.join(string) -> string</td><td>Join byte strings with a byte separator.</td></tr>
+<tr><td>StrList.len() -> int</td><td>Return element count.</td></tr>
+<tr><td>StrList.set(int, string) -> StrList</td><td>Replace an indexed byte string and return the receiver.</td></tr>
+</tbody>
+</table>
+<h3 id="std-map">Maps (30)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>FloatMap.clear() -> FloatMap</td><td>Remove all keys; return self.</td></tr>
+<tr><td>FloatMap.get(string) -> float</td><td>Read a value.</td></tr>
+<tr><td>FloatMap.get_or(string, float) -> float</td><td>Read a value or the supplied fallback.</td></tr>
+<tr><td>FloatMap.has(string) -> bool</td><td>Test a byte-exact key.</td></tr>
+<tr><td>FloatMap.key_at(int) -> string</td><td>Read a live key in insertion order.</td></tr>
+<tr><td>FloatMap.keys() -> StrList</td><td>Allocate an independent StrList snapshot of keys in insertion order; later map/list mutations do not alias. Preserve raw bytes and float payload bits.</td></tr>
+<tr><td>FloatMap.len() -> int</td><td>Count live keys.</td></tr>
+<tr><td>FloatMap.remove(string) -> bool</td><td>Remove a key; reinsertion goes last.</td></tr>
+<tr><td>FloatMap.set(string, float) -> FloatMap</td><td>Insert/update; overwrites retain original position; return self.</td></tr>
+<tr><td>FloatMap.values() -> FloatList</td><td>Allocate an independent FloatList snapshot of values in insertion order; later map/list mutations do not alias. Preserve raw bytes and float payload bits.</td></tr>
+<tr><td>IntMap.clear() -> IntMap</td><td>Remove all keys; return self.</td></tr>
+<tr><td>IntMap.get(string) -> int</td><td>Read a value.</td></tr>
+<tr><td>IntMap.get_or(string, int) -> int</td><td>Read a value or the supplied fallback.</td></tr>
+<tr><td>IntMap.has(string) -> bool</td><td>Test a byte-exact key.</td></tr>
+<tr><td>IntMap.key_at(int) -> string</td><td>Read a live key in insertion order.</td></tr>
+<tr><td>IntMap.keys() -> StrList</td><td>Allocate an independent StrList snapshot of keys in insertion order; later map/list mutations do not alias. Preserve raw bytes and float payload bits.</td></tr>
+<tr><td>IntMap.len() -> int</td><td>Count live keys.</td></tr>
+<tr><td>IntMap.remove(string) -> bool</td><td>Remove a key; reinsertion goes last.</td></tr>
+<tr><td>IntMap.set(string, int) -> IntMap</td><td>Insert/update; overwrites retain original position; return self.</td></tr>
+<tr><td>IntMap.values() -> IntList</td><td>Allocate an independent IntList snapshot of values in insertion order; later map/list mutations do not alias. Preserve raw bytes and float payload bits.</td></tr>
+<tr><td>StrMap.clear() -> StrMap</td><td>Remove entries and return the receiver.</td></tr>
+<tr><td>StrMap.get(string) -> string</td><td>Return a byte-key value.</td></tr>
+<tr><td>StrMap.get_or(string, string) -> string</td><td>Return a byte-key value or the fallback.</td></tr>
+<tr><td>StrMap.has(string) -> bool</td><td>Test byte-key presence.</td></tr>
+<tr><td>StrMap.key_at(int) -> string</td><td>Return the insertion-order key at a zero-based index.</td></tr>
+<tr><td>StrMap.keys() -> StrList</td><td>Allocate an independent StrList snapshot of keys in insertion order; later map/list mutations do not alias. Preserve raw bytes and float payload bits.</td></tr>
+<tr><td>StrMap.len() -> int</td><td>Return insertion-order entry count.</td></tr>
+<tr><td>StrMap.remove(string) -> bool</td><td>Remove a key and report whether it existed.</td></tr>
+<tr><td>StrMap.set(string, string) -> StrMap</td><td>Insert or replace a value while preserving an existing key position; removal tombstones compact on key_at.</td></tr>
+<tr><td>StrMap.values() -> StrList</td><td>Allocate an independent StrList snapshot of values in insertion order; later map/list mutations do not alias. Preserve raw bytes and float payload bits.</td></tr>
+</tbody>
+</table>
+<h3 id="std-queue">Queues and stacks (42)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>FloatQueue.at(int) -> float</td><td>Read in pop order without consuming; index zero is next to pop.</td></tr>
+<tr><td>FloatQueue.clear() -> FloatQueue</td><td>Remove all items; return self; reset PQ insertion sequence.</td></tr>
+<tr><td>FloatQueue.empty() -> bool</td><td>Return whether there are no items.</td></tr>
+<tr><td>FloatQueue.len() -> int</td><td>Return the number of items.</td></tr>
+<tr><td>FloatQueue.peek() -> float</td><td>Read without removing the next item in pop order.</td></tr>
+<tr><td>FloatQueue.pop() -> float</td><td>Remove and return the next item in pop order.</td></tr>
+<tr><td>FloatQueue.push(float) -> FloatQueue</td><td>Append an item; return the same container.</td></tr>
+<tr><td>FloatStack.at(int) -> float</td><td>Read in pop order without consuming; index zero is next to pop.</td></tr>
+<tr><td>FloatStack.clear() -> FloatStack</td><td>Remove all items; return self; reset PQ insertion sequence.</td></tr>
+<tr><td>FloatStack.empty() -> bool</td><td>Return whether there are no items.</td></tr>
+<tr><td>FloatStack.len() -> int</td><td>Return the number of items.</td></tr>
+<tr><td>FloatStack.peek() -> float</td><td>Read without removing the next item in pop order.</td></tr>
+<tr><td>FloatStack.pop() -> float</td><td>Remove and return the next item in pop order.</td></tr>
+<tr><td>FloatStack.push(float) -> FloatStack</td><td>Append an item; return the same container.</td></tr>
+<tr><td>IntQueue.at(int) -> int</td><td>Read in pop order without consuming; index zero is next to pop.</td></tr>
+<tr><td>IntQueue.clear() -> IntQueue</td><td>Remove all items; return self; reset PQ insertion sequence.</td></tr>
+<tr><td>IntQueue.empty() -> bool</td><td>Return whether there are no items.</td></tr>
+<tr><td>IntQueue.len() -> int</td><td>Return the number of items.</td></tr>
+<tr><td>IntQueue.peek() -> int</td><td>Read without removing the next item in pop order.</td></tr>
+<tr><td>IntQueue.pop() -> int</td><td>Remove and return the next item in pop order.</td></tr>
+<tr><td>IntQueue.push(int) -> IntQueue</td><td>Append an item; return the same container.</td></tr>
+<tr><td>IntStack.at(int) -> int</td><td>Read in pop order without consuming; index zero is next to pop.</td></tr>
+<tr><td>IntStack.clear() -> IntStack</td><td>Remove all items; return self; reset PQ insertion sequence.</td></tr>
+<tr><td>IntStack.empty() -> bool</td><td>Return whether there are no items.</td></tr>
+<tr><td>IntStack.len() -> int</td><td>Return the number of items.</td></tr>
+<tr><td>IntStack.peek() -> int</td><td>Read without removing the next item in pop order.</td></tr>
+<tr><td>IntStack.pop() -> int</td><td>Remove and return the next item in pop order.</td></tr>
+<tr><td>IntStack.push(int) -> IntStack</td><td>Append an item; return the same container.</td></tr>
+<tr><td>StrQueue.at(int) -> string</td><td>Read in pop order without consuming; index zero is next to pop.</td></tr>
+<tr><td>StrQueue.clear() -> StrQueue</td><td>Remove all items; return self; reset PQ insertion sequence.</td></tr>
+<tr><td>StrQueue.empty() -> bool</td><td>Return whether there are no items.</td></tr>
+<tr><td>StrQueue.len() -> int</td><td>Return the number of items.</td></tr>
+<tr><td>StrQueue.peek() -> string</td><td>Read without removing the next item in pop order.</td></tr>
+<tr><td>StrQueue.pop() -> string</td><td>Remove and return the next item in pop order.</td></tr>
+<tr><td>StrQueue.push(string) -> StrQueue</td><td>Append an item; return the same container.</td></tr>
+<tr><td>StrStack.at(int) -> string</td><td>Read in pop order without consuming; index zero is next to pop.</td></tr>
+<tr><td>StrStack.clear() -> StrStack</td><td>Remove all items; return self; reset PQ insertion sequence.</td></tr>
+<tr><td>StrStack.empty() -> bool</td><td>Return whether there are no items.</td></tr>
+<tr><td>StrStack.len() -> int</td><td>Return the number of items.</td></tr>
+<tr><td>StrStack.peek() -> string</td><td>Read without removing the next item in pop order.</td></tr>
+<tr><td>StrStack.pop() -> string</td><td>Remove and return the next item in pop order.</td></tr>
+<tr><td>StrStack.push(string) -> StrStack</td><td>Append an item; return the same container.</td></tr>
+</tbody>
+</table>
+<h3 id="std-pq">Priority queues (18)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>FloatPQ.clear() -> FloatPQ</td><td>Remove all items; return self; reset PQ insertion sequence.</td></tr>
+<tr><td>FloatPQ.empty() -> bool</td><td>Return whether there are no items.</td></tr>
+<tr><td>FloatPQ.len() -> int</td><td>Return the number of items.</td></tr>
+<tr><td>FloatPQ.peek() -> float</td><td>Read without removing the next item in pop order.</td></tr>
+<tr><td>FloatPQ.pop() -> float</td><td>Remove and return the next item in pop order.</td></tr>
+<tr><td>FloatPQ.push(float, float) -> FloatPQ</td><td>Push with finite min-first priority; stable insertion-order ties including signed zero.</td></tr>
+<tr><td>IntPQ.clear() -> IntPQ</td><td>Remove all items; return self; reset PQ insertion sequence.</td></tr>
+<tr><td>IntPQ.empty() -> bool</td><td>Return whether there are no items.</td></tr>
+<tr><td>IntPQ.len() -> int</td><td>Return the number of items.</td></tr>
+<tr><td>IntPQ.peek() -> int</td><td>Read without removing the next item in pop order.</td></tr>
+<tr><td>IntPQ.pop() -> int</td><td>Remove and return the next item in pop order.</td></tr>
+<tr><td>IntPQ.push(int, float) -> IntPQ</td><td>Push with finite min-first priority; stable insertion-order ties including signed zero.</td></tr>
+<tr><td>StrPQ.clear() -> StrPQ</td><td>Remove all items; return self; reset PQ insertion sequence.</td></tr>
+<tr><td>StrPQ.empty() -> bool</td><td>Return whether there are no items.</td></tr>
+<tr><td>StrPQ.len() -> int</td><td>Return the number of items.</td></tr>
+<tr><td>StrPQ.peek() -> string</td><td>Read without removing the next item in pop order.</td></tr>
+<tr><td>StrPQ.pop() -> string</td><td>Remove and return the next item in pop order.</td></tr>
+<tr><td>StrPQ.push(string, float) -> StrPQ</td><td>Push with finite min-first priority; stable insertion-order ties including signed zero.</td></tr>
+</tbody>
+</table>
+<h2 id="rest">REST and CLI interfaces</h2>
+<p>The current lmcode_std_v3 catalog adds the former lmcode_std_rest_v1 module: 10 standard interfaces, 5 functions and 15 RestExchange methods, for 226 signatures in total. lmdraw 0.2.7 does not register them. The lmscript 0.2.482 compiler accepts a call such as rest_stop() in an lmdraw block, but the 0.2.7 host then refuses the program at load time with code LOAD_UNBOUND and the message that the import is not provided by the host. They become usable in lmdraw blocks when a release synced to the 226-signature catalog is published; the tables below describe the catalog, not lmdraw 0.2.7.</p>
+<h3 id="rest-interfaces">Standard interfaces (not in lmdraw 0.2.7)</h3>
+<table>
+<thead><tr><th>Interface</th><th>Handler shape</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td>RestGet</td><td>(exchange: RestExchange) -> void</td><td>Handler for GET routes.</td></tr>
+<tr><td>RestPost</td><td>(exchange: RestExchange) -> void</td><td>Handler for POST routes.</td></tr>
+<tr><td>RestPut</td><td>(exchange: RestExchange) -> void</td><td>Handler for PUT routes.</td></tr>
+<tr><td>RestDelete</td><td>(exchange: RestExchange) -> void</td><td>Handler for DELETE routes.</td></tr>
+<tr><td>RestPatch</td><td>(exchange: RestExchange) -> void</td><td>Handler for PATCH routes.</td></tr>
+<tr><td>RestHead</td><td>(exchange: RestExchange) -> void</td><td>Handler for HEAD routes.</td></tr>
+<tr><td>RestOptions</td><td>(exchange: RestExchange) -> void</td><td>Handler for OPTIONS routes.</td></tr>
+<tr><td>RestHandler</td><td>(exchange: RestExchange) -> void</td><td>Generic handler bound to a route with rest_route.</td></tr>
+<tr><td>CliCommand</td><td>(exchange: RestExchange) -> void</td><td>Handler for a command dispatched by rest_cli.</td></tr>
+<tr><td>CliOption</td><td>(exchange: RestExchange) -> void</td><td>Handler for an option dispatched by rest_cli.</td></tr>
+</tbody>
+</table>
+<h3 id="rest-functions">Functions and RestExchange methods (not in lmdraw 0.2.7)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>rest_cli(StrList) -> string</td><td>Auto-register annotated REST and CLI routes, dispatch a single stateless CLI argv request through CliOption and CliCommand/REST handlers, and return the response body.</td></tr>
+<tr><td>rest_config(string, string) -> void</td><td>Set a configuration or initial session store entry on the global single-session REST controller before serving.</td></tr>
+<tr><td>rest_route(string, string, string) -> void</td><td>Register a route pattern for an HTTP method and bind it to a @tag RestHandler entry.</td></tr>
+<tr><td>rest_serve() -> void</td><td>Auto-register annotated REST routes, validate route bindings, and arm the global single-session stdio server loop.</td></tr>
+<tr><td>rest_stop() -> void</td><td>Stop the active REST stdio server loop after the current exchange finishes.</td></tr>
+<tr><td>RestExchange.body() -> string</td><td>Return the raw request body bytes.</td></tr>
+<tr><td>RestExchange.get(string) -> string</td><td>Read a string value from the global single-session store, or empty string when absent.</td></tr>
+<tr><td>RestExchange.has_header(string) -> bool</td><td>Return whether the request contains a case-insensitive header name.</td></tr>
+<tr><td>RestExchange.has_query(string) -> bool</td><td>Return whether the request URL contains the query key.</td></tr>
+<tr><td>RestExchange.header(string) -> string</td><td>Read a case-insensitive request header value, or empty string when absent.</td></tr>
+<tr><td>RestExchange.increment(string) -> int</td><td>Increment a decimal integer counter in the global single-session store and return the new value.</td></tr>
+<tr><td>RestExchange.json(string) -> void</td><td>Validate strict UTF-8 JSON, set default content-type to application/json, and replace the response body.</td></tr>
+<tr><td>RestExchange.method() -> string</td><td>Return the canonical uppercase HTTP method of the request.</td></tr>
+<tr><td>RestExchange.param(string) -> string</td><td>Read a matched path parameter by name.</td></tr>
+<tr><td>RestExchange.path() -> string</td><td>Return the decoded request path without query string.</td></tr>
+<tr><td>RestExchange.query(string) -> string</td><td>Read the last decoded query value for a key, or empty string when absent.</td></tr>
+<tr><td>RestExchange.send(string) -> void</td><td>Set default content-type to text/plain; charset=utf-8 if unset and replace the response body.</td></tr>
+<tr><td>RestExchange.set(string, string) -> void</td><td>Store a key-value pair in the global single-session store.</td></tr>
+<tr><td>RestExchange.set_header(string, string) -> void</td><td>Set or replace a case-insensitive response header.</td></tr>
+<tr><td>RestExchange.status(int) -> void</td><td>Set the HTTP response status code (100..599).</td></tr>
+</tbody>
+</table>
+<p>Route templates accept {param} and {rest...} as well as :param and :rest... placeholders. rest_cli(argv) is a stateless mode that dispatches options, commands and REST routes for a single argv request and returns the response body.</p>
+<h2 id="related">Related pages</h2>
+<ul>
+<li><a href="/tools/lmdraw/">Quick reference</a></li>
+<li><a href="/tools/lmdraw/skill.html">Skill</a></li>
+<li><a href="/tools/lmdraw/guide.html">Guide</a></li>
+<li><a href="/tools/lmdraw/tutorial.html">Tutorial</a></li>
+<li><a href="https://github.com/lmctl-ai/lmdraw">GitHub repository</a></li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmdraw">github.com/lmctl-ai/lmdraw</a>.</p>
+</footer>
+</body>
+</html>

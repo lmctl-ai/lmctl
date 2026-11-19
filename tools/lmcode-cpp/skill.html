@@ -18,6 +18,7 @@
 <li><a href="/tools/lmcode-cpp/skill.html">Skill</a></li>
 <li><a href="/tools/lmcode-cpp/tutorial.html">Tutorial</a></li>
 <li><a href="/tools/lmcode-cpp/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-cpp/reference.html">Reference</a></li>
 </ul>
 </nav>
 <main>
@@ -27,7 +28,7 @@
 <h2>When to use it</h2>
 <p>Use this when implementing a native application that should expose a controlled set of host objects, methods and functions to DSL scripts.</p>
 <h2>Install</h2>
-<p>Include dslvm.hpp from the SDK and compile as C++17. The standard function schema is included by each Registry; add callbacks only for host-specific functions and methods. Use a compiler that emits the SDK's current bytecode version.</p>
+<p>Include dslvm.hpp from the SDK and compile as C++17. The standard catalog lmcode_std_v3 (226 signatures, including the REST and CLI interfaces RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand and CliOption with rest_config, rest_route, rest_serve, rest_stop, rest_cli and the RestExchange methods) is included by each Registry; add callbacks only for host-specific functions and methods. Use a compiler that emits the SDK's current bytecode version.</p>
 <h2>Commands</h2>
 <pre><code>g++ -std=c++17 -Iinclude host.cpp -o host
 lmscript --lmcode-signatures schema.json
@@ -38,7 +39,7 @@ lmscript --lmcode-signatures schema.json
 <h2>Safety rules</h2>
 <ul><li>Treat bytecode as trusted: the VM does not impose runtime limits or dynamic call checks.</li><li>Pass exact schema bytes and bind each host-specific context, function and method; standard functions are included by the Registry.</li><li>Keep objects and references returned by methods alive for all subsequent script calls.</li><li>Check signature parity during development. Matching arity and return type are part of the schema contract.</li><li>Expose collections as host object types with len() and at(i); DSL list/map value kinds do not exist.</li></ul>
 <h2>Worked examples</h2>
-<ol><li>Create one Registry and register a context object type.</li><li>Bind each method callback with argument and return type strings that exactly match the schema.</li><li>Load bytecode and schema bytes with Program::load.</li><li>Create host objects before Context::set; keep owners in scope through Program::run.</li><li>Use standard functions without host registration; bind only host-specific functions and methods.</li><li>For collections, return typed object values and implement the indexed access behavior in the host.</li></ol>
+<ol><li>Create one Registry and register a context object type.</li><li>Bind each method callback with argument and return type strings that exactly match the schema.</li><li>Load bytecode and schema bytes with Program::load.</li><li>Create host objects before Context::set; keep owners in scope through Program::run.</li><li>For a REST or CLI program, let annotated rule entries implement the standard interfaces, call rest_route and rest_serve in the body, or dispatch an argument list with rest_cli; see the reference page for RestExchange.</li><li>Use standard functions without host registration; bind only host-specific functions and methods.</li><li>For collections, return typed object values and implement the indexed access behavior in the host.</li></ol>
 <h2>Errors and exit codes</h2>
 <p>Catch dslvm::Error around load and run. Standard CLI conventions use exit 2 for compilation/argument errors, 3 for bytecode load or run errors, and 4 for application failures. Include the error code and source location when present.</p>
 <h2>How to verify</h2>

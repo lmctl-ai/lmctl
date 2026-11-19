@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmblender reference — lmblender — lmctl.com tools</title>
+<meta name="description" content="Every host type, method, command line flag and exit code of lmblender 0.3.6, generated from schema/lmblender.dsl.json, cpp/main.cpp and the vendored…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmblender/">Overview</a></li>
+<li><a href="/tools/lmblender/skill.html">Skill</a></li>
+<li><a href="/tools/lmblender/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmblender/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmblender/guide.html">Guide</a></li>
+<li><a href="/tools/lmblender/reference.html">Reference</a></li>
+<li><a href="/tools/lmblender/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>lmblender reference</h1>
+<p>Every host type, method, command line flag and exit code of lmblender 0.3.6, generated from schema/lmblender.dsl.json, cpp/main.cpp and the vendored cpp/std/lmcode-std.schema.json in the repository. All calls are positional with no optional arguments. Units, bounds and argument meaning for each call are in the repository file docs/LLM_GUIDE.md.</p>
+<h2 id="cli">Command line</h2>
+<table>
+<thead>
+<tr><th>Command</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td>lmblender --version</td><td>Prints lmblender version with the DSL bytecode version, the Cycles version and the OpenImageDenoise version (or that it is disabled). Exit 0.</td></tr>
+<tr><td>lmblender --lmcode-schema</td><td>Prints a compact summary: context and function signatures, then methods grouped by type.</td></tr>
+<tr><td>lmblender --lmcode-schema --json</td><td>Prints the embedded schema JSON byte for byte (same bytes as schema/lmblender.dsl.json merged with the vendored std).</td></tr>
+<tr><td>lmblender --schema --json</td><td>Older spelling of the same embedded schema output.</td></tr>
+<tr><td>lmblender --schema</td><td>Embedded schema followed by one newline (kept for compatibility).</td></tr>
+<tr><td>lmblender --lmcode-signatures</td><td>Prints every registered signature, one per line. Exit 0.</td></tr>
+<tr><td>lmblender --lmcode FILE.dslb</td><td>Loads compiled bytecode, binds the scene context object, runs the program and prints one JSON result line.</td></tr>
+<tr><td>lmblender --presets</td><td>Lists embedded scene presets as name, tab, description.</td></tr>
+<tr><td>lmblender --preset-show NAME</td><td>Prints one embedded preset as JSON; exit 2 when the name is unknown.</td></tr>
+</tbody>
+</table>
+<h3 id="exit-codes">Exit codes</h3>
+<table>
+<thead>
+<tr><th>Code</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>Success. The run prints a JSON line with ok true and a result.</td></tr>
+<tr><td>2</td><td>Usage error (wrong arguments) or unknown preset name for --preset-show. Compile failures reported by lmscript also use 2.</td></tr>
+<tr><td>3</td><td>Load or run error: JSON line with ok false, phase load or run, code, message and line/column when available.</td></tr>
+<tr><td>4</td><td>APP_FAIL (phase app, an unexpected host failure), or a failed write of the schema to stdout.</td></tr>
+</tbody>
+</table>
+<h3 id="env">Environment variables</h3>
+<table>
+<thead>
+<tr><th>Variable</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td>LMBLENDER_OUTPUT_ROOT</td><td>Confines every output path to one directory.</td></tr>
+<tr><td>LMBLENDER_RUN_TIMEOUT_SECONDS</td><td>Whole-program wall-clock limit, default 7200; 0 disables.</td></tr>
+<tr><td>LMBLENDER_MAX_INSTRUCTIONS</td><td>Whole-program VM instruction budget, default 100 million; 0 disables.</td></tr>
+</tbody>
+</table>
+<h3 id="lmscript">Used from lmscript</h3>
+<p>An lmscript program declares the host on the block, and run_lmcode compiles the block against the host schema, runs the host and returns a record with ok and result.</p>
+<pre><code>mkdir("images");
+prog = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@latest";
+let ball = scene.uv_sphere(1.0, 48, 32, true);
+ball.set_material(scene.material(0.1, 0.3, 0.8, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0));
+scene.studio_setup();
+scene.render_png("images/hello.png", 32, 640, 480);
+end _lmcode_
+r = run_lmcode(prog);
+if (!r.ok) { println("lmblender failed"); exit(1); }
+println("wrote images/hello.png");</code></pre>
+<p>The repository examples save the bytecode and call the host with an explicit timeout in milliseconds, which is the form to use for long renders:</p>
+<pre><code>savedsl(prog, "build/scene.dslb");
+argv = dsl_cli(prog);
+push(argv, "--lmcode");
+push(argv, "build/scene.dslb");
+r = system(argv, 3600000);
+println(trim(r.stdout));
+if (r.code != 0) { println(trim(f"lmblender exit {r.code}: {r.stderr}")); exit(1); }</code></pre>
+<h2 id="types">Context and host types</h2>
+<table>
+<thead>
+<tr><th>Name</th><th>Kind</th><th>Methods</th><th>Role</th></tr>
+</thead>
+<tbody>
+<tr><td>scene</td><td>context object of type Scene</td><td></td><td>The one object bound by the host; every program starts from it.</td></tr>
+<tr><td>Scene</td><td>type</td><td>69</td><td>Scene construction, camera, lights, world, materials, imports, render and presets.</td></tr>
+<tr><td>Mesh</td><td>type</td><td>18</td><td>Handle returned by primitives, imports and instance_mesh.</td></tr>
+<tr><td>Material</td><td>type</td><td>9</td><td>Handle returned by the material constructors.</td></tr>
+</tbody>
+</table>
+<p>The host schema declares no host functions of its own; free functions come from the standard library below.</p>
+<h2 id="scene">Scene methods (69)</h2>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>camera_look_at</td><td>float, float, float, float, float, float, float</td><td>void</td></tr>
+<tr><td>camera_dof</td><td>float, float</td><td>void</td></tr>
+<tr><td>camera_orthographic</td><td>float, float, float, float, float, float, float</td><td>void</td></tr>
+<tr><td>fit_camera</td><td>float</td><td>void</td></tr>
+<tr><td>studio_setup</td><td>none</td><td>void</td></tr>
+<tr><td>area_light</td><td>float, float, float, float, float, float, float, float, float, float, float</td><td>void</td></tr>
+<tr><td>sun_light</td><td>float, float, float, float, float, float, float, float</td><td>void</td></tr>
+<tr><td>spot_light</td><td>float, float, float, float, float, float, float, float, float, float, float, float</td><td>void</td></tr>
+<tr><td>ground_plane</td><td>float, float, float, float, float</td><td>void</td></tr>
+<tr><td>wall_plane_y</td><td>float, float, float, float, float</td><td>void</td></tr>
+<tr><td>checker_material</td><td>float, float, float, float, float, float, float, float</td><td>Material</td></tr>
+<tr><td>noise_material</td><td>float, float, float, float, float, float, float, float</td><td>Material</td></tr>
+<tr><td>image_material</td><td>string, float</td><td>Material</td></tr>
+<tr><td>point_light</td><td>float, float, float, float, float, float, float</td><td>void</td></tr>
+<tr><td>world_color</td><td>float, float, float, float</td><td>void</td></tr>
+<tr><td>sky_texture</td><td>float, float, float</td><td>void</td></tr>
+<tr><td>environment_texture</td><td>string, float, float</td><td>void</td></tr>
+<tr><td>transparent_background</td><td>bool</td><td>void</td></tr>
+<tr><td>expect_int</td><td>int, int</td><td>void</td></tr>
+<tr><td>import_obj</td><td>string</td><td>Mesh</td></tr>
+<tr><td>import_stl</td><td>string</td><td>Mesh</td></tr>
+<tr><td>import_ply</td><td>string</td><td>Mesh</td></tr>
+<tr><td>import_gltf</td><td>string</td><td>Mesh</td></tr>
+<tr><td>instance_mesh</td><td>Mesh, float, float, float, float, float, float</td><td>Mesh</td></tr>
+<tr><td>material</td><td>float, float, float, float, float, float, float, float, float, float</td><td>Material</td></tr>
+<tr><td>render_png</td><td>string, int, int, int</td><td>void</td></tr>
+<tr><td>render_exr</td><td>string, int, int, int</td><td>void</td></tr>
+<tr><td>render_passes</td><td>string, int, int, int</td><td>void</td></tr>
+<tr><td>depth_range</td><td>float, float</td><td>void</td></tr>
+<tr><td>exposure</td><td>float</td><td>void</td></tr>
+<tr><td>render_timeout</td><td>int</td><td>void</td></tr>
+<tr><td>render_settings</td><td>int, int, bool</td><td>void</td></tr>
+<tr><td>denoise_quality</td><td>string</td><td>void</td></tr>
+<tr><td>render_preset</td><td>string</td><td>void</td></tr>
+<tr><td>set_view_transform</td><td>string</td><td>void</td></tr>
+<tr><td>version</td><td>none</td><td>string</td></tr>
+<tr><td>plane</td><td>float</td><td>Mesh</td></tr>
+<tr><td>cube</td><td>float</td><td>Mesh</td></tr>
+<tr><td>uv_sphere</td><td>float, int, int, bool</td><td>Mesh</td></tr>
+<tr><td>cylinder</td><td>float, float, int, bool</td><td>Mesh</td></tr>
+<tr><td>cone</td><td>float, float, int, bool</td><td>Mesh</td></tr>
+<tr><td>torus</td><td>float, float, int, int, bool</td><td>Mesh</td></tr>
+<tr><td>capsule</td><td>float, float, int, int</td><td>Mesh</td></tr>
+<tr><td>glow_orb</td><td>float, float, float, float, float, float, float, float</td><td>Mesh</td></tr>
+<tr><td>tube_between</td><td>float, float, float, float, float, float, float</td><td>Mesh</td></tr>
+<tr><td>strand</td><td>string, float, float, int</td><td>Mesh</td></tr>
+<tr><td>hair_sphere</td><td>float, float, float, float, int, float, float</td><td>Mesh</td></tr>
+<tr><td>hair_patch</td><td>float, float, float, float, int, float, float</td><td>Mesh</td></tr>
+<tr><td>loft</td><td>string, string, bool</td><td>Mesh</td></tr>
+<tr><td>toon_outline</td><td>Mesh, float, float, float, float</td><td>Mesh</td></tr>
+<tr><td>arrow_between</td><td>float, float, float, float, float, float, float</td><td>Mesh</td></tr>
+<tr><td>ring_arc</td><td>float, float, float, float, float, float, float, int</td><td>Mesh</td></tr>
+<tr><td>checkmark</td><td>float, float, float, float, float</td><td>Mesh</td></tr>
+<tr><td>label</td><td>string, float, float, float, float</td><td>Mesh</td></tr>
+<tr><td>checker_ground</td><td>float, float</td><td>void</td></tr>
+<tr><td>light_clamp</td><td>float, float</td><td>void</td></tr>
+<tr><td>render_sequence</td><td>string, int, int, int, int, int</td><td>void</td></tr>
+<tr><td>render_apng</td><td>string, int, int, int, int, int, int</td><td>void</td></tr>
+<tr><td>camera_keyframe</td><td>int, float, float, float, float, float, float, string</td><td>void</td></tr>
+<tr><td>ramp_material</td><td>float, float, float, float, float, float, float, float</td><td>Material</td></tr>
+<tr><td>motion_blur</td><td>bool, float</td><td>void</td></tr>
+<tr><td>area_light_shape</td><td>float, float, float, float, float, float, float, float, float, float, float, float, string</td><td>void</td></tr>
+<tr><td>camera_optics_keyframe</td><td>int, float, float, string</td><td>void</td></tr>
+<tr><td>point_light_keyframe</td><td>int, int, float, string</td><td>void</td></tr>
+<tr><td>set_threads</td><td>int</td><td>void</td></tr>
+<tr><td>use_preset</td><td>string</td><td>void</td></tr>
+<tr><td>load_preset</td><td>string</td><td>void</td></tr>
+<tr><td>preset_param</td><td>string, float</td><td>void</td></tr>
+<tr><td>material_from_palette</td><td>string</td><td>Material</td></tr>
+</tbody>
+</table>
+<h2 id="mesh">Mesh methods (18)</h2>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>set_material</td><td>Material</td><td>void</td></tr>
+<tr><td>set_smooth</td><td>bool</td><td>void</td></tr>
+<tr><td>translate</td><td>float, float, float</td><td>void</td></tr>
+<tr><td>scale</td><td>float, float, float</td><td>void</td></tr>
+<tr><td>rotate_x</td><td>float</td><td>void</td></tr>
+<tr><td>rotate_y</td><td>float</td><td>void</td></tr>
+<tr><td>rotate_z</td><td>float</td><td>void</td></tr>
+<tr><td>vertex_count</td><td>none</td><td>int</td></tr>
+<tr><td>triangle_count</td><td>none</td><td>int</td></tr>
+<tr><td>material_count</td><td>none</td><td>int</td></tr>
+<tr><td>min_x</td><td>none</td><td>float</td></tr>
+<tr><td>min_y</td><td>none</td><td>float</td></tr>
+<tr><td>min_z</td><td>none</td><td>float</td></tr>
+<tr><td>max_x</td><td>none</td><td>float</td></tr>
+<tr><td>max_y</td><td>none</td><td>float</td></tr>
+<tr><td>max_z</td><td>none</td><td>float</td></tr>
+<tr><td>keyframe_transform</td><td>int, float, float, float, string</td><td>void</td></tr>
+<tr><td>keyframe_visible</td><td>int, bool, string</td><td>void</td></tr>
+</tbody>
+</table>
+<h2 id="material">Material methods (9)</h2>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>subsurface</td><td>float, float, float, float, float</td><td>void</td></tr>
+<tr><td>volume</td><td>string, float, float, float, float</td><td>void</td></tr>
+<tr><td>keyframe_color</td><td>int, float, float, float, string</td><td>void</td></tr>
+<tr><td>bump</td><td>float, float, float</td><td>void</td></tr>
+<tr><td>texture_maps</td><td>string, string, string, string</td><td>void</td></tr>
+<tr><td>mix_with</td><td>Material, float</td><td>void</td></tr>
+<tr><td>mix_with_texture</td><td>Material, string</td><td>void</td></tr>
+<tr><td>backface_culling</td><td>bool</td><td>void</td></tr>
+<tr><td>keyframe_emission_strength</td><td>int, float, string</td><td>void</td></tr>
+</tbody>
+</table>
+<h2 id="errors">Error codes</h2>
+<table>
+<thead>
+<tr><th>Code</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>LOAD_BAD_BYTECODE, LOAD_SCHEMA_MISMATCH, LOAD_UNBOUND</td><td>Recompile the .lms against the schema of the installed host (exit 3, phase load).</td></tr>
+<tr><td>RUN_HOST</td><td>Host validation failure: range, non-finite value, missing file, wrong extension, unsupported combination. The message names the method and accepted bounds.</td></tr>
+<tr><td>RUN_ERROR</td><td>VM fault such as division by zero.</td></tr>
+<tr><td>GEOMETRY_BUDGET, IMAGE_LIMIT, IMAGE_INVALID</td><td>Scene geometry or image input outside the documented limits.</td></tr>
+<tr><td>OBJ_INVALID, OBJ_LIMIT, OBJ_MTL_INVALID, OBJ_MTL_LIMIT, OBJ_MTL_UNSUPPORTED</td><td>OBJ/MTL input problems; fix the input rather than retrying.</td></tr>
+<tr><td>GLTF_INVALID, GLTF_LIMIT, GLTF_UNSUPPORTED</td><td>glTF input problems.</td></tr>
+<tr><td>PRESET_INVALID, PRESET_NOT_FOUND, PRESET_UNSUPPORTED</td><td>Preset problems.</td></tr>
+<tr><td>OUTPUT_PATH</td><td>Output directory missing or path outside LMBLENDER_OUTPUT_ROOT.</td></tr>
+<tr><td>RENDER_TIMEOUT</td><td>One render exceeded render_timeout(seconds), 1..3600. Lower samples or resolution, or raise the timeout.</td></tr>
+<tr><td>RUN_TIMEOUT, RUN_BUDGET</td><td>Whole program exceeded its wall-clock or VM-instruction budget (defaults 7200 s and 100 million instructions).</td></tr>
+</tbody>
+</table>
+<h2 id="limits">Limits</h2>
+<table>
+<thead>
+<tr><th>Item</th><th>Limit</th></tr>
+</thead>
+<tbody>
+<tr><td>Meshes and materials</td><td>4096 each</td></tr>
+<tr><td>Scene geometry</td><td>10 million vertices and 20 million triangles in total; instances are free</td></tr>
+<tr><td>Image inputs</td><td>64 MiB on disk and 64 megapixels decoded</td></tr>
+<tr><td>Render size</td><td>4096 per dimension and 16 million pixels</td></tr>
+<tr><td>Samples</td><td>1 to 65536 (render_png also accepts 0 for the preset count)</td></tr>
+<tr><td>APNG</td><td>240 frames and 64 million total frame-pixels</td></tr>
+<tr><td>render_timeout</td><td>1 to 3600 seconds per render</td></tr>
+<tr><td>Device</td><td>CPU only</td></tr>
+</tbody>
+</table>
+<h2 id="std">Standard library in lmblender 0.3.6</h2>
+<p>lmblender 0.3.6 vendors the lmcode_std_v3 schema pinned in sdk.lock (lmcode-cpp commit 20325f7a) with 206 canonical signatures: 83 functions and 123 methods on 16 container and Json types. The current lmcode_std_v3 catalog has 226 signatures; the 20 additional ones are the REST and CLI module described in the next section, which lmblender picks up when it syncs its vendored std and releases.</p>
+<h3>File functions (5)</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>file_append</td><td>string, string</td><td>void</td></tr>
+<tr><td>file_exists</td><td>string</td><td>bool</td></tr>
+<tr><td>file_lines</td><td>string</td><td>StrList</td></tr>
+<tr><td>file_read</td><td>string</td><td>string</td></tr>
+<tr><td>file_write</td><td>string, string</td><td>void</td></tr>
+</tbody>
+</table>
+<h3>String functions (21)</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>str_base64_decode</td><td>string</td><td>string</td></tr>
+<tr><td>str_base64_encode</td><td>string</td><td>string</td></tr>
+<tr><td>str_contains</td><td>string, string</td><td>bool</td></tr>
+<tr><td>str_ends_with</td><td>string, string</td><td>bool</td></tr>
+<tr><td>str_find</td><td>string, string</td><td>int</td></tr>
+<tr><td>str_hex_decode</td><td>string</td><td>string</td></tr>
+<tr><td>str_hex_encode</td><td>string</td><td>string</td></tr>
+<tr><td>str_is_float</td><td>string</td><td>bool</td></tr>
+<tr><td>str_is_int</td><td>string</td><td>bool</td></tr>
+<tr><td>str_len</td><td>string</td><td>int</td></tr>
+<tr><td>str_lower</td><td>string</td><td>string</td></tr>
+<tr><td>str_match</td><td>string, string</td><td>bool</td></tr>
+<tr><td>str_repeat</td><td>string, int</td><td>string</td></tr>
+<tr><td>str_replace</td><td>string, string, string</td><td>string</td></tr>
+<tr><td>str_split</td><td>string, string</td><td>StrList</td></tr>
+<tr><td>str_starts_with</td><td>string, string</td><td>bool</td></tr>
+<tr><td>str_substr</td><td>string, int, int</td><td>string</td></tr>
+<tr><td>str_to_float</td><td>string</td><td>float</td></tr>
+<tr><td>str_to_int</td><td>string</td><td>int</td></tr>
+<tr><td>str_trim</td><td>string</td><td>string</td></tr>
+<tr><td>str_upper</td><td>string</td><td>string</td></tr>
+</tbody>
+</table>
+<h3>Math functions (16)</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>math_abs</td><td>int</td><td>int</td></tr>
+<tr><td>math_abs</td><td>float</td><td>float</td></tr>
+<tr><td>math_ceil</td><td>int</td><td>int</td></tr>
+<tr><td>math_ceil</td><td>float</td><td>float</td></tr>
+<tr><td>math_floor</td><td>int</td><td>int</td></tr>
+<tr><td>math_floor</td><td>float</td><td>float</td></tr>
+<tr><td>math_max</td><td>int, int</td><td>int</td></tr>
+<tr><td>math_max</td><td>float, float</td><td>float</td></tr>
+<tr><td>math_min</td><td>int, int</td><td>int</td></tr>
+<tr><td>math_min</td><td>float, float</td><td>float</td></tr>
+<tr><td>math_pow</td><td>int, int</td><td>int</td></tr>
+<tr><td>math_pow</td><td>float, float</td><td>float</td></tr>
+<tr><td>math_round</td><td>int</td><td>int</td></tr>
+<tr><td>math_round</td><td>float</td><td>float</td></tr>
+<tr><td>math_sqrt</td><td>int</td><td>int</td></tr>
+<tr><td>math_sqrt</td><td>float</td><td>float</td></tr>
+</tbody>
+</table>
+<h3>Json and templates (2)</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>json_parse</td><td>string</td><td>Json</td></tr>
+<tr><td>template_render</td><td>string, Json</td><td>string</td></tr>
+</tbody>
+</table>
+<h3>Return values (24)</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>lmcode_return_null</td><td>none</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, bool</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, float</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, FloatList</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, FloatMap</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, int</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, IntList</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, IntMap</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, Json</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, StrList</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, StrMap</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, string</td><td>void</td></tr>
+<tr><td>lmcode_return_put_null</td><td>string</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>bool</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>float</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>FloatList</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>FloatMap</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>int</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>IntList</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>IntMap</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>Json</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>StrList</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>StrMap</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>string</td><td>void</td></tr>
+</tbody>
+</table>
+<h3>Collection constructors (15)</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>float_list</td><td>none</td><td>FloatList</td></tr>
+<tr><td>float_map</td><td>none</td><td>FloatMap</td></tr>
+<tr><td>float_pq</td><td>none</td><td>FloatPQ</td></tr>
+<tr><td>float_queue</td><td>none</td><td>FloatQueue</td></tr>
+<tr><td>float_stack</td><td>none</td><td>FloatStack</td></tr>
+<tr><td>int_list</td><td>none</td><td>IntList</td></tr>
+<tr><td>int_map</td><td>none</td><td>IntMap</td></tr>
+<tr><td>int_pq</td><td>none</td><td>IntPQ</td></tr>
+<tr><td>int_queue</td><td>none</td><td>IntQueue</td></tr>
+<tr><td>int_stack</td><td>none</td><td>IntStack</td></tr>
+<tr><td>str_list</td><td>none</td><td>StrList</td></tr>
+<tr><td>str_map</td><td>none</td><td>StrMap</td></tr>
+<tr><td>str_pq</td><td>none</td><td>StrPQ</td></tr>
+<tr><td>str_queue</td><td>none</td><td>StrQueue</td></tr>
+<tr><td>str_stack</td><td>none</td><td>StrStack</td></tr>
+</tbody>
+</table>
+<h3>FloatList methods (7)</h3>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>add</td><td>float</td><td>FloatList</td></tr>
+<tr><td>at</td><td>int</td><td>float</td></tr>
+<tr><td>clear</td><td>none</td><td>FloatList</td></tr>
+<tr><td>contains</td><td>float</td><td>bool</td></tr>
+<tr><td>index_of</td><td>float</td><td>int</td></tr>
+<tr><td>len</td><td>none</td><td>int</td></tr>
+<tr><td>set</td><td>int, float</td><td>FloatList</td></tr>
+</tbody>
+</table>
+<h3>FloatMap methods (10)</h3>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>len</td><td>none</td><td>int</td></tr>
+<tr><td>has</td><td>string</td><td>bool</td></tr>
+<tr><td>get</td><td>string</td><td>float</td></tr>
+<tr><td>get_or</td><td>string, float</td><td>float</td></tr>
+<tr><td>set</td><td>string, float</td><td>FloatMap</td></tr>
+<tr><td>key_at</td><td>int</td><td>string</td></tr>
+<tr><td>remove</td><td>string</td><td>bool</td></tr>
+<tr><td>clear</td><td>none</td><td>FloatMap</td></tr>
+<tr><td>keys</td><td>none</td><td>StrList</td></tr>
+<tr><td>values</td><td>none</td><td>FloatList</td></tr>
+</tbody>
+</table>
+<h3>FloatPQ methods (6)</h3>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>push</td><td>float, float</td><td>FloatPQ</td></tr>
+<tr><td>pop</td><td>none</td><td>float</td></tr>
+<tr><td>peek</td><td>none</td><td>float</td></tr>
+<tr><td>len</td><td>none</td><td>int</td></tr>
+<tr><td>empty</td><td>none</td><td>bool</td></tr>
+<tr><td>clear</td><td>none</td><td>FloatPQ</td></tr>
+</tbody>
+</table>
+<h3>FloatQueue methods (7)</h3>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>push</td><td>float</td><td>FloatQueue</td></tr>
+<tr><td>pop</td><td>none</td><td>float</td></tr>
+<tr><td>peek</td><td>none</td><td>float</td></tr>
+<tr><td>len</td><td>none</td><td>int</td></tr>
+<tr><td>empty</td><td>none</td><td>bool</td></tr>
+<tr><td>clear</td><td>none</td><td>FloatQueue</td></tr>
+<tr><td>at</td><td>int</td><td>float</td></tr>
+</tbody>
+</table>
+<h3>FloatStack methods (7)</h3>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>push</td><td>float</td><td>FloatStack</td></tr>
+<tr><td>pop</td><td>none</td><td>float</td></tr>
+<tr><td>peek</td><td>none</td><td>float</td></tr>
+<tr><td>len</td><td>none</td><td>int</td></tr>
+<tr><td>empty</td><td>none</td><td>bool</td></tr>
+<tr><td>clear</td><td>none</td><td>FloatStack</td></tr>
+<tr><td>at</td><td>int</td><td>float</td></tr>
+</tbody>
+</table>
+<h3>IntList methods (7)</h3>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>add</td><td>int</td><td>IntList</td></tr>
+<tr><td>at</td><td>int</td><td>int</td></tr>
+<tr><td>clear</td><td>none</td><td>IntList</td></tr>
+<tr><td>contains</td><td>int</td><td>bool</td></tr>
+<tr><td>index_of</td><td>int</td><td>int</td></tr>
+<tr><td>len</td><td>none</td><td>int</td></tr>
+<tr><td>set</td><td>int, int</td><td>IntList</td></tr>
+</tbody>
+</table>
+<h3>IntMap methods (10)</h3>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>len</td><td>none</td><td>int</td></tr>
+<tr><td>has</td><td>string</td><td>bool</td></tr>
+<tr><td>get</td><td>string</td><td>int</td></tr>
+<tr><td>get_or</td><td>string, int</td><td>int</td></tr>
+<tr><td>set</td><td>string, int</td><td>IntMap</td></tr>
+<tr><td>key_at</td><td>int</td><td>string</td></tr>
+<tr><td>remove</td><td>string</td><td>bool</td></tr>
+<tr><td>clear</td><td>none</td><td>IntMap</td></tr>
+<tr><td>keys</td><td>none</td><td>StrList</td></tr>
+<tr><td>values</td><td>none</td><td>IntList</td></tr>
+</tbody>
+</table>
+<h3>IntPQ methods (6)</h3>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>push</td><td>int, float</td><td>IntPQ</td></tr>
+<tr><td>pop</td><td>none</td><td>int</td></tr>
+<tr><td>peek</td><td>none</td><td>int</td></tr>
+<tr><td>len</td><td>none</td><td>int</td></tr>
+<tr><td>empty</td><td>none</td><td>bool</td></tr>
+<tr><td>clear</td><td>none</td><td>IntPQ</td></tr>
+</tbody>
+</table>
+<h3>IntQueue methods (7)</h3>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>push</td><td>int</td><td>IntQueue</td></tr>
+<tr><td>pop</td><td>none</td><td>int</td></tr>
+<tr><td>peek</td><td>none</td><td>int</td></tr>
+<tr><td>len</td><td>none</td><td>int</td></tr>
+<tr><td>empty</td><td>none</td><td>bool</td></tr>
+<tr><td>clear</td><td>none</td><td>IntQueue</td></tr>
+<tr><td>at</td><td>int</td><td>int</td></tr>
+</tbody>
+</table>
+<h3>IntStack methods (7)</h3>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>push</td><td>int</td><td>IntStack</td></tr>
+<tr><td>pop</td><td>none</td><td>int</td></tr>
+<tr><td>peek</td><td>none</td><td>int</td></tr>
+<tr><td>len</td><td>none</td><td>int</td></tr>
+<tr><td>empty</td><td>none</td><td>bool</td></tr>
+<tr><td>clear</td><td>none</td><td>IntStack</td></tr>
+<tr><td>at</td><td>int</td><td>int</td></tr>
+</tbody>
+</table>
+<h3>Json methods (11)</h3>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>kind</td><td>none</td><td>string</td></tr>
+<tr><td>len</td><td>none</td><td>int</td></tr>
+<tr><td>at</td><td>int</td><td>Json</td></tr>
+<tr><td>get</td><td>string</td><td>Json</td></tr>
+<tr><td>has</td><td>string</td><td>bool</td></tr>
+<tr><td>keys</td><td>none</td><td>StrList</td></tr>
+<tr><td>as_string</td><td>none</td><td>string</td></tr>
+<tr><td>as_int</td><td>none</td><td>int</td></tr>
+<tr><td>as_float</td><td>none</td><td>float</td></tr>
+<tr><td>as_bool</td><td>none</td><td>bool</td></tr>
+<tr><td>to_json</td><td>none</td><td>string</td></tr>
+</tbody>
+</table>
+<h3>StrList methods (8)</h3>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>add</td><td>string</td><td>StrList</td></tr>
+<tr><td>at</td><td>int</td><td>string</td></tr>
+<tr><td>clear</td><td>none</td><td>StrList</td></tr>
+<tr><td>contains</td><td>string</td><td>bool</td></tr>
+<tr><td>index_of</td><td>string</td><td>int</td></tr>
+<tr><td>join</td><td>string</td><td>string</td></tr>
+<tr><td>len</td><td>none</td><td>int</td></tr>
+<tr><td>set</td><td>int, string</td><td>StrList</td></tr>
+</tbody>
+</table>
+<h3>StrMap methods (10)</h3>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>clear</td><td>none</td><td>StrMap</td></tr>
+<tr><td>get</td><td>string</td><td>string</td></tr>
+<tr><td>get_or</td><td>string, string</td><td>string</td></tr>
+<tr><td>has</td><td>string</td><td>bool</td></tr>
+<tr><td>key_at</td><td>int</td><td>string</td></tr>
+<tr><td>len</td><td>none</td><td>int</td></tr>
+<tr><td>remove</td><td>string</td><td>bool</td></tr>
+<tr><td>set</td><td>string, string</td><td>StrMap</td></tr>
+<tr><td>keys</td><td>none</td><td>StrList</td></tr>
+<tr><td>values</td><td>none</td><td>StrList</td></tr>
+</tbody>
+</table>
+<h3>StrPQ methods (6)</h3>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>push</td><td>string, float</td><td>StrPQ</td></tr>
+<tr><td>pop</td><td>none</td><td>string</td></tr>
+<tr><td>peek</td><td>none</td><td>string</td></tr>
+<tr><td>len</td><td>none</td><td>int</td></tr>
+<tr><td>empty</td><td>none</td><td>bool</td></tr>
+<tr><td>clear</td><td>none</td><td>StrPQ</td></tr>
+</tbody>
+</table>
+<h3>StrQueue methods (7)</h3>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>push</td><td>string</td><td>StrQueue</td></tr>
+<tr><td>pop</td><td>none</td><td>string</td></tr>
+<tr><td>peek</td><td>none</td><td>string</td></tr>
+<tr><td>len</td><td>none</td><td>int</td></tr>
+<tr><td>empty</td><td>none</td><td>bool</td></tr>
+<tr><td>clear</td><td>none</td><td>StrQueue</td></tr>
+<tr><td>at</td><td>int</td><td>string</td></tr>
+</tbody>
+</table>
+<h3>StrStack methods (7)</h3>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>push</td><td>string</td><td>StrStack</td></tr>
+<tr><td>pop</td><td>none</td><td>string</td></tr>
+<tr><td>peek</td><td>none</td><td>string</td></tr>
+<tr><td>len</td><td>none</td><td>int</td></tr>
+<tr><td>empty</td><td>none</td><td>bool</td></tr>
+<tr><td>clear</td><td>none</td><td>StrStack</td></tr>
+<tr><td>at</td><td>int</td><td>string</td></tr>
+</tbody>
+</table>
+<h2 id="rest">REST and CLI interfaces</h2>
+<p>These belong to the current 226-signature lmcode_std_v3 catalog and are not in the std that lmblender 0.3.6 vendors, so a program compiled for lmblender 0.3.6 cannot call them. They are listed so that readers know what arrives with the next std sync. lmblender itself is a batch renderer: it has no server mode and its own command line is the flag table above.</p>
+<h3 id="rest-interfaces">Standard interfaces (not in lmblender 0.3.6)</h3>
+<table>
+<thead>
+<tr><th>Interface</th><th>Role</th></tr>
+</thead>
+<tbody>
+<tr><td>RestGet</td><td>Handler for HTTP GET routes</td></tr>
+<tr><td>RestPost</td><td>Handler for HTTP POST routes</td></tr>
+<tr><td>RestPut</td><td>Handler for HTTP PUT routes</td></tr>
+<tr><td>RestDelete</td><td>Handler for HTTP DELETE routes</td></tr>
+<tr><td>RestPatch</td><td>Handler for HTTP PATCH routes</td></tr>
+<tr><td>RestHead</td><td>Handler for HTTP HEAD routes</td></tr>
+<tr><td>RestOptions</td><td>Handler for HTTP OPTIONS routes</td></tr>
+<tr><td>RestHandler</td><td>Handler for any method</td></tr>
+<tr><td>CliCommand</td><td>Command dispatched by rest_cli</td></tr>
+<tr><td>CliOption</td><td>Option dispatched by rest_cli</td></tr>
+</tbody>
+</table>
+<h3 id="rest-functions">Functions (not in lmblender 0.3.6)</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>rest_config</td><td>string, string</td><td>void</td></tr>
+<tr><td>rest_route</td><td>string, string, string</td><td>void</td></tr>
+<tr><td>rest_serve</td><td>none</td><td>void</td></tr>
+<tr><td>rest_stop</td><td>none</td><td>void</td></tr>
+<tr><td>rest_cli</td><td>StrList</td><td>string</td></tr>
+</tbody>
+</table>
+<p>Route templates accept {param} and {rest...} as well as :param and :rest... placeholders. rest_cli(argv) is a stateless CLI mode that dispatches options, commands and REST routes. The module also defines 15 RestExchange methods.</p>
+<h2 id="related">Related pages</h2>
+<ul>
+<li><a href="/tools/lmblender/">Quick reference</a></li>
+<li><a href="/tools/lmblender/skill.html">Skill</a></li>
+<li><a href="/tools/lmblender/guide.html">Guide</a></li>
+<li><a href="/tools/lmblender/tutorial.html">Tutorial</a></li>
+<li><a href="https://github.com/lmctl-ai/lmblender">github.com/lmctl-ai/lmblender</a></li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmblender">github.com/lmctl-ai/lmblender</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-java-sample skill — lmcode-java-sample — lmctl.com tools</title>
+<meta name="description" content="Use lmcode-java-sample as a verified blueprint for embedding lmcode-java (vendor/lmcode-java) in a Java 21 (JVM &amp; GraalVM Native Image) host application with…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-java-sample/">Overview</a></li>
+<li><a href="/tools/lmcode-java-sample/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-java-sample/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-java-sample/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-java-sample skill</h1>
+<p>Use lmcode-java-sample as a verified blueprint for embedding lmcode-java (vendor/lmcode-java) in a Java 21 (JVM &amp; GraalVM Native Image) host application with schema discovery, R49 rule entries, dry mode, and LMCODE_RETURN framing.</p>
+<h2>Purpose</h2>
+<p>Demonstrate a complete, byte-pinned Java 21 (JVM &amp; GraalVM Native Image) host application that exposes a 45-signature Shop/Ledger domain to DSLB v6 bytecode and passes the shared sample suite.</p>
+<h2>When to use it</h2>
+<p>Use lmcode-java-sample when learning how to bind Java 21 (JVM &amp; GraalVM Native Image) domain objects, overloaded methods, operators, R49 rule entries, and LMCODE_RETURN result envelopes with lmcode-java (vendor/lmcode-java).</p>
+<h2>Install</h2>
+<p>Clone lmctl-ai/lmcode-java-sample and run ./test.sh with Java 21 (JVM &amp; GraalVM Native Image), Python 3, Node 24.15 or later, and @lmctl-ai/lmctl 0.2.444 or later.</p>
+<h2>Commands</h2>
+<pre><code>git clone https://github.com/lmctl-ai/lmcode-java-sample.git
+cd lmcode-java-sample
+python3 scripts/sync.py check
+./build.sh
+./test.sh
+./bin/lmcode-java-sample --version
+./bin/lmcode-java-sample --lmcode-schema --json
+./bin/lmcode-java-sample --lmcode-signatures
+./bin/lmcode-java-sample --lmcode sample-suite/bytecode/001-literals.dslb</code></pre>
+<h2>Inputs and outputs</h2>
+<ul>
+<li>Input: compiled .dslb v6 bytecode files from sample-suite/bytecode/, embedded sample.dsl.json schema, and optional LMCODE_INVOCATION_FILE manifest.</li>
+<li>Output: print trace lines, entry NAME = VALUE lines, tagged host_summary JSON diagnostic, and terminal LMCODE_RETURN_BEGIN / END frame.</li>
+<li>Locks: sdk.lock and suite.lock pinning every vendored SDK and corpus byte by commit SHA and SHA-256.</li>
+</ul>
+<h2>Safety rules</h2>
+<ul>
+<li>Verify sdk.lock and suite.lock before building so vendored SDK and corpus files never drift silently.</li>
+<li>Preserve raw byte strings across Ledger.note and JSON diagnostics without lossy UTF-8 replacement.</li>
+<li>Check LMCODE_INVOCATION_FILE dry mode before seeding or mutating external state so dry runs remain side-effect-free.</li>
+</ul>
+<h2>Worked examples</h2>
+<pre><code>schema = load_schema(schema="sample-suite/sample.dsl.json");
+program = _lmcode_ schema;
+  ledger.record(shop.total());
+  $return.balance = ledger.balance();
+end _lmcode_
+r = run_lmcode(program, {command:[ARGV[0], "--lmcode", "$DSLFILE"]});
+require(r.ok, "sample host execution failed");</code></pre>
+<h2>Errors and exit codes</h2>
+<table><thead><tr><th>Code</th><th>Phase</th><th>Exit</th><th>Condition</th></tr></thead><tbody>
+<tr><td>LOAD_BAD_BYTECODE</td><td>load</td><td>3</td><td>Malformed DSLB v6 header, bad magic or version, truncated section, invalid opcode, or stack depth violation</td></tr>
+<tr><td>LOAD_BAD_SCHEMA</td><td>load</td><td>3</td><td>Host schema JSON fails dsl.schema 2 validation or declares an invalid result contract</td></tr>
+<tr><td>LOAD_SCHEMA_MISMATCH</td><td>load</td><td>3</td><td>32-byte SHA-256 schema hash in DSLB v6 header does not match exact host schema bytes</td></tr>
+<tr><td>LOAD_UNBOUND</td><td>load</td><td>3</td><td>Bytecode imports a context, function, or method signature not registered in the host Registry</td></tr>
+<tr><td>RUN_ERROR</td><td>run</td><td>3</td><td>VM division or remainder by zero</td></tr>
+<tr><td>RUN_HOST</td><td>run</td><td>3</td><td>Host callback failure, invalid encoding, or expired collection handle</td></tr>
+<tr><td>APP_FAIL</td><td>app</td><td>4</td><td>Post-run application domain validation failure</td></tr>
+</tbody></table>
+<h2>How to verify</h2>
+<pre><code>./test.sh</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-java-sample">github.com/lmctl-ai/lmcode-java-sample</a>.</p>
+</footer>
+</body>
+</html>

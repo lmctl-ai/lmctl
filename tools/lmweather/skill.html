@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmweather authoring skill — lmweather — lmctl.com tools</title>
+<meta name="description" content="Guidance for authoring, running, and verifying rotating shallow-water weather and climate dynamics programs on the lmweather host.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmweather/">Overview</a></li>
+<li><a href="/tools/lmweather/skill.html">Skill</a></li>
+<li><a href="/tools/lmweather/guide.html">Guide</a></li>
+<li><a href="/tools/lmweather/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmweather authoring skill</h1>
+<p>Guidance for authoring, running, and verifying rotating shallow-water weather and climate dynamics programs on the lmweather host.</p>
+<h2>Purpose</h2>
+<p>Help write deterministic lmscript programs for lmweather that simulate idealized atmospheric and oceanic dynamics on a rotating sphere (spectral transform method, Williamson test cases) or on a beta-plane channel (staggered C-grid finite differences).</p>
+<h2>When to use it</h2>
+<p>Use lmweather when a task needs spherical shallow-water integrations, Williamson benchmark cases (TC1 cosine-bell advection, TC2 steady geostrophic flow, TC5 mountain wave train, TC6 Rossby-Haurwitz wave), passive tracer transport, barotropic jet instability, or beta-plane Rossby, Kelvin, and gravity wave adjustments exported for plotting.</p>
+<h2>Install</h2>
+<p>Install the lmctl CLI toolchain with npm i -g @lmctl-ai/lmctl or download a release binary from <a href="https://github.com/lmctl-ai/lmweather/releases/latest">GitHub Releases</a>. Linux binaries require dynamic glibc 2.35 or newer (Ubuntu 22.04+) with C++ runtimes linked statically and zero external library dependencies. Bind install="github:lmctl-ai/lmweather@latest" on the _lmcode_ block so run_lmcode resolves or downloads the binary automatically.</p>
+<h2>Commands</h2>
+<pre><code>lmscript rh.lms
+lmweather --version
+lmweather --notices
+lmweather --lmcode-schema
+lmweather --lmcode-schema --json
+lmweather --lmcode-signatures
+lmweather --dry-run --lmcode build/rh.dslb
+lmweather --lmcode build/rh.dslb</code></pre>
+<h2>Inputs and outputs</h2>
+<ul>
+<li>Inputs are lmscript _lmcode_ blocks compiled against the embedded lmweather.dsl.json schema, using context object wx of type Wx to create Sphere and Plane models.</li>
+<li>Initial conditions, orography, and passive tracers are specified as mathematical expression strings (in radians using lon, lat on the sphere or meters using x, y on the plane) or built-in Williamson and spherical-harmonic presets.</li>
+<li>Outputs include point diagnostics, spectral and harmonic energy metrics, and space-separated gnuplot pm3d tables written via save_csv, save_zonal_mean, save_spectrum, save_row,save_column, or wx.save_text.</li>
+<li>Stdout carries only the single SDK JSON terminal result frame; wx.print(msg) writes diagnostics to stderr.</li>
+</ul>
+<h2>Safety rules</h2>
+<ul>
+<li>Keep explicit RK4 time steps within the gravity-wave CFL stability limit: query model.stable_dt() or choose dt below 2 * sqrt(2) / omega_max on the sphere; lmweather rejects unstable steps before integrating and re-checks stability every 64 steps.</li>
+<li>Respect unit and angle conventions: SI units everywhere; point query latitudes/longitudes (height_at, u_at, v_at, vorticity_at, tracer_at, wave_crest) and CSV columns use degrees, while tilt(alpha), williamson1(alpha), williamson2(alpha), and expression variables lon, lat use radians.</li>
+<li>On a Plane model, call depth(H) before calling fields, perturb, or run; changing resting depth after initializing fields is rejected. Note that the h expression in Plane.fields(h_anom, u, v) is the height anomaly added to H.</li>
+<li>Initialize a tracer with sphere.tracer(expr) or sphere.williamson1(alpha) before calling sphere.advect_only() or querying tracer_* methods.</li>
+<li>Keep triangular truncation T in [4, 170] and total memory within the default 4096 MiB ceiling (configurable via LMWEATHER_MAX_MEMORY_MB).</li>
+</ul>
+<h2>Worked examples</h2>
+<pre><code>p = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let s = wx.sphere(42).williamson6();
+let m0 = s.mean_height();
+let e0 = s.energy();
+s.run_dt(7.0 * 86400.0, 900.0);
+wx.print("crest of wave 4 at 45N: " + str(s.wave_crest(4, 45.0)) + " deg");
+wx.assert_close(s.mean_height(), m0, 0.000000001);
+wx.assert_close(s.energy() / e0, 1.0, 0.0001);
+s.save_csv("rh_day7.csv");
+
+let ch = wx.plane(128, 64, 6400000.0, 3200000.0)
+  .depth(1000.0)
+  .coriolis(0.0001, 1.6e-11)
+  .linear()
+  .fields("10.0 * exp(-((x - 0.5*lx)*(x - 0.5*lx) + (y - 0.5*ly)*(y - 0.5*ly)) / (300000.0*300000.0))", "0", "0");
+ch.run(86400.0);
+wx.assert_close(ch.mean_depth(), 1000.0, 0.0001);
+ch.save_row(32, "ridge_midline.dat");
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, "lmweather simulation failed");</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Exit 0 indicates that all bytecode slots loaded and completed. Exit 2 reports invalid command-line syntax, contradictory --dry-run flags, or an invalid LMWEATHER_MAX_MEMORY_MB setting. Exit 3 reports bytecode load or schema errors, expression syntax failures, RK4 CFL stability limit violations, non-finite divergence during integration, invalid method ordering (such as calling Plane.depth after Plane.fields or querying tracer metrics without a tracer), failed assertions, or memory budget exhaustion. Exit 4 reports application failures tagged APP_FAIL.</p>
+<h2>How to verify</h2>
+<ol>
+<li>Run lmweather --version and lmweather --lmcode-schema --json to verify the binary version and embedded schema contract.</li>
+<li>Validate compiled bytecode without running time integrations by passing --dry-run --lmcode.</li>
+<li>Check mass conservation with wx.assert_close(s.mean_height(), m0, 1e-9) on the sphere or wx.assert_close(p.mean_depth(), H0, 1e-9) on the plane.</li>
+<li>Check energy conservation (s.energy() / e0 near 1.0), normalized Williamson errors (s.error_l2(), s.error_linf()), or linear potential vorticity conservation (p.pv_anomaly_rms()).</li>
+</ol>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmweather">github.com/lmctl-ai/lmweather</a>.</p>
+</footer>
+</body>
+</html>

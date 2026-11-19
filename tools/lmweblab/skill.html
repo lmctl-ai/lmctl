@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmweblab authoring skill — lmweblab — lmctl.com tools</title>
+<meta name="description" content="Guidance for authoring, running, and verifying lmweblab AWS web stack integration scenarios with lmaws, lmcloud, lmcurl, lmdraw, and lmplot.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmweblab/">Overview</a></li>
+<li><a href="/tools/lmweblab/skill.html">Skill</a></li>
+<li><a href="/tools/lmweblab/guide.html">Guide</a></li>
+<li><a href="/tools/lmweblab/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmweblab authoring skill</h1>
+<p>Guidance for authoring, running, and verifying lmweblab AWS web stack integration scenarios with lmaws, lmcloud, lmcurl, lmdraw, and lmplot.</p>
+<h2>Purpose</h2>
+<p>Help run, extend, and verify the lmweblab integration suite, which provisions, tests, and tears down identical tagged AWS web stacks and 12 serverless/cloud scenarios using both native lmaws (Part A) and OpenTofu-based lmcloud (Part B), verified with lmcurl HTTP/load contracts and zero-leftover audits.</p>
+<h2>When to use it</h2>
+<p>Use lmweblab when validating end-to-end cloud web infrastructure lifecycles (up, test, phase2 HTTPS, status, down, all) across private S3 origins, CloudFront Origin Access Control, Route 53 aliases and weighted DNS, ACM DNS-validated certificates, EC2 Spot nano servers, Lambda Function URLs, DynamoDB, SQS workers, and EventBridge schedules.</p>
+<h2>Install</h2>
+<p>Install the lmctl CLI toolchain with npm i -g @lmctl-ai/lmctl and clone the lmweblab repository. Scripts automatically resolve or install the required native hosts (lmaws v0.1.16+, lmcloud v0.1.11+, lmcurl, lmdraw, and lmplot). Offline runs require zero AWS credentials and cost $0.00; live runs require Linux, an existing public Route 53 hosted zone in LMWEBLAB_DOMAIN, and the least-privilege AWS_PROFILE=lmaws in us-east-1.</p>
+<h2>Commands</h2>
+<pre><code>lmctl lmaws/web_stack.lms all --offline
+lmctl lmaws/web_stack.lms all --offline --phase2
+lmctl lmaws/report.lms
+lmctl lmcloud/validate.lms
+lmctl lmcloud/all.lms
+cd scenarios/01-static-site-s3-cloudfront/lmaws &amp;&amp; lmctl all.lms --offline
+bash test.sh</code></pre>
+<h2>Inputs and outputs</h2>
+<ul>
+<li>Inputs are lmscript lifecycle drivers (web_stack.lms, up.lms, test.lms, phase2.lms, status.lms, down.lms, all.lms), importable step recipes (lmaws/recipes/steps.lms), shared static assets and user-data scripts (shared/), and scenario configurations (scenarios/01..12).</li>
+<li>Environment inputs for live mode are AWS_PROFILE=lmaws, AWS_REGION=us-east-1, LMWEBLAB_DOMAIN, LMWEBLAB_LIVE=1 (and LMWEBLAB_WORKER_LIVE_GO=1 for scenario 07), plus optional --run-id hex identifiers.</li>
+<li>Outputs include architecture and latency PNG diagrams in images/, sanitized numeric timing and cost summaries in compare/RESULTS.md and scenarios/RESULTS.md, and private run state under ignored .lmweblab-local/.</li>
+</ul>
+<h2>Safety rules</h2>
+<ul>
+<li>Default to offline fixture runs (--offline, LMWEBLAB_LIVE=0, cost $0.00); never enable --live without explicit operator authorization, AWS_PROFILE=lmaws, and a valid delegated LMWEBLAB_DOMAIN.</li>
+<li>Never use an administrator AWS profile or modify IAM policies, roles, or credential files; all live resources must be created in us-east-1 under the lmaws-site-&lt;run>, lmaws-app-&lt;run>, or lmaws-tf-&lt;run> prefix and tagged with lmaws_test=&lt;run>.</li>
+<li>Always execute teardown (down.lms) after up or test failures; the all command traps child failures and invokes down automatically before exiting nonzero.</li>
+<li>Restrict EC2 security group ingress strictly to TCP port 80 from the caller /32 IPv4 address, use t4g.nano or t3.nano Spot instances with 8 GiB gp3 root volumes and bounded self-termination lifetimes, and keep total run cost within the $0.10 default cap ($0.25 hard ceiling).</li>
+<li>Never commit raw AWS resource IDs, account numbers, live domain names, or private receipts from .lmweblab-local/ into public files.</li>
+</ul>
+<h2>Worked examples</h2>
+<pre><code># Run the complete offline Part A (lmaws) two-phase HTTP + HTTPS stack lifecycle
+lmctl lmaws/web_stack.lms all --offline --phase2
+
+# Compose individual guarded provisioning steps from lmaws/recipes/steps.lms
+import "./lmaws/recipes/steps.lms";
+let cfg = {run_id: "cafe01", domain: "example.com", live: false, profile: "lmaws"};
+let b = web_bucket(cfg, "shared/site");
+let c = web_certificate(cfg);
+let d = web_distribution(cfg);
+let s = web_site_dns(cfg);
+assert(b.demo == "true", "recipe preview failed");</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Exit 0 indicates that provisioning, HTTP and p95 load assertions, teardown, and independent zero-leftover inventory checks all succeeded. Exit 1 (assertion or driver failure) occurs when any lifecycle phase fails; the all driver still runs down.lms before exiting 1. Underlying lmcode hosts (lmaws, lmcloud, lmcurl, lmdraw, lmplot) exit 2 on CLI/usage errors, 3 on load/runtime/guard/cost-cap errors, and 4 on application failures.</p>
+<h2>How to verify</h2>
+<ol>
+<li>Run bash test.sh from the repository root to execute the isolated offline gate across Part A recipes, both HTTP/HTTPS phases, the loopback Python user-data test, PNG header/size checks, and the scenario catalog gates.</li>
+<li>Run lmctl lmcloud/validate.lms to verify OpenTofu formatting, initialization, schema validation, and Phase 1/Phase 2 mock plans.</li>
+<li>After any live run, execute down.lms and confirm via an independent Cloud.web_find(run_id, domain) or status.lms check that active leftovers equal zero across the run namespace.</li>
+</ol>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmweblab">github.com/lmctl-ai/lmweblab</a>.</p>
+</footer>
+</body>
+</html>

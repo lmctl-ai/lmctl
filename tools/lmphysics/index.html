@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmphysics — lmctl.com tools</title>
+<meta name="description" content="lmphysics is a self-contained Project Chrono rigid-body physics host for LMScript.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmphysics/">Overview</a></li>
+<li><a href="/tools/lmphysics/skill.html">Skill</a></li>
+<li><a href="/tools/lmphysics/guide.html">Guide</a></li>
+<li><a href="/tools/lmphysics/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmphysics</h1>
+<p>lmphysics is a self-contained Project Chrono rigid-body physics host for LMScript. It simulates 3D collisions, friction, restitution, joints, springs, motors, gears, and mechanisms in SI units and exports trajectories to CSV.</p>
+<h2>Quick reference</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmphysics --version
+lmphysics --lmcode-schema --json
+lmctl autorun examples/pendulum.lms</code></pre>
+<table>
+<thead><tr><th>Object or method</th><th>Signature or syntax</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>context phys: Phys</td><td>phys.system("nsc" | "smc"), phys.assert_close(a, b, tol)</td><td>Create a non-smooth complementarity (nsc) or penalty (smc) world and verify known answers.</td></tr>
+<tr><td>System numerics</td><td>s.gravity(x,y,z), s.timestep(dt), s.integrator(name), s.solver(name, iters)</td><td>Configure gravity, time step, integrator (euler, trapezoidal, hht, newmark), and solver (psor, apgd).</td></tr>
+<tr><td>System bodies</td><td>s.ground(name), s.floor(name, mat), s.box(...), s.sphere(...), s.cylinder(...)</td><td>Add fixed ground/floor anchors or rigid box, sphere, and cylinder bodies with material collisions.</td></tr>
+<tr><td>System joints &amp; motors</td><td>s.revolute(...), s.prismatic(...), s.universal(...), s.gear(...), s.spring_at(...), s.motor_speed(...)</td><td>Connect bodies with 3D kinematic joints, gears, springs, dampers, and expression-driven rotational or linear motors.</td></tr>
+<tr><td>Recording &amp; state</td><td>s.record(name, cols), s.record_every(n), s.run(t_end), s.energy(), s.save_csv(path)</td><td>Integrate forward in time, inspect mechanical energy and reactions, and save CSV trajectories and quaternions.</td></tr>
+</tbody>
+</table>
+<pre><code>p = _lmcode_ cli="lmphysics" install="github:lmctl-ai/lmphysics@latest";
+let s = phys.system("nsc");
+s.integrator("hht").timestep(0.0005);
+let pin = s.ground("pin");
+let bob = s.sphere("bob", 0.05, 2000.0).pos(0.866, 0.0, -0.5);
+let hinge = s.revolute("hinge", pin, bob, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+s.record("bob", "x,z,vx,vz").record("hinge", "angle,fx,fz");
+let e0 = s.energy();
+s.run(5.0);
+phys.assert_close(s.energy() / e0, 1.0, 0.0001);
+s.save_csv("pendulum.csv");
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmphysics/skill.html">Skill</a> — authoring rules, CLI commands, inputs and outputs, safety rules, worked examples, and verification steps.</li>
+<li><a href="/tools/lmphysics/guide.html">Guide</a> — NSC vs SMC contact, integrator and solver selection, collision margins, pose export, and the standard lmcode_std_v3 library.</li>
+<li><a href="/tools/lmphysics/reference.html">Reference</a> — complete CLI flags, Phys/System/Body/Joint method signatures, standard library catalog, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmphysics">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmphysics">github.com/lmctl-ai/lmphysics</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-cpp reference — lmcode-cpp — lmctl.com tools</title>
+<meta name="description" content="SDK API, host protocol, exit codes and the lmcode_std_v3 standard catalog for lmcode-cpp.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmcode-cpp/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-cpp/">Overview</a></li>
+<li><a href="/tools/lmcode-cpp/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-cpp/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmcode-cpp/guide.html">Guide</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-cpp reference</h1>
+<p>This lmcode-cpp page is also kept at its former address for existing links; the current address is <a href="/tools/lmcode-cpp/">/tools/lmcode-cpp/</a>.</p>
+<p>SDK API, host protocol conventions, exit codes and the lmcode_std_v3 standard catalog, taken from the repository README, durable-memory notes and std/lmcode-std.schema.json.</p>
+<h2 id="api">SDK API</h2>
+<table>
+<thead><tr><th>SDK name</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td>dslvm::Registry</td><td>Declares context types, functions and methods with exact argument and return type strings and stores the C++ callbacks. Default construction includes lmcode_std_v3.</td></tr>
+<tr><td>Registry(StdMode::Disabled)</td><td>Registry without the standard catalog.</td></tr>
+<tr><td>dslvm::register_std(registry)</td><td>Idempotently registers the complete standard catalog.</td></tr>
+<tr><td>registry.context(name, type)</td><td>Declares a schema context variable and its host type.</td></tr>
+<tr><td>registry.method(type, name, params, returns, callback)</td><td>Binds a host method; the callback receives void* self and dslvm::Args.</td></tr>
+<tr><td>registry.function(name, params, returns, callback)</td><td>Binds a host function; the callback receives dslvm::Args.</td></tr>
+<tr><td>registry.signatures()</td><td>All registered signatures including std.</td></tr>
+<tr><td>registry.host_signatures()</td><td>Registered signatures excluding std.</td></tr>
+<tr><td>registry.matches_schema_signatures(...)</td><td>Accepts host-only or already merged declarations and rejects host drift.</td></tr>
+<tr><td>registry.std_collections()</td><td>Arena for standard collection values returned by native callbacks (make_* helpers); cleared at entry and exit of each Program::run.</td></tr>
+<tr><td>dslvm::Program::load(bytecode, schema, registry)</td><td>Verifies format, schema binding and imports, then returns a runnable program.</td></tr>
+<tr><td>program.run(context, registry)</td><td>Runs the chunk with live host objects.</td></tr>
+<tr><td>dslvm::Context, context.set(name, pointer)</td><td>Maps schema context variable names to host-owned object pointers.</td></tr>
+<tr><td>dslvm::Value</td><td>INT (int64), FLOAT (binary64), STR, BOOL, VOID or OBJ (host pointer plus schema type name); Value::none() and Value::string(...) construct values.</td></tr>
+<tr><td>dslvm::Error</td><td>Thrown by load and run; catch it around both.</td></tr>
+<tr><td>dslvm::read_file(path)</td><td>Reads a file as bytes without text conversion.</td></tr>
+<tr><td>dslvm::report_ok(json), dslvm::json_escape(text)</td><td>Emit the standard JSON result line.</td></tr>
+</tbody>
+</table>
+<h2 id="protocol">Host protocol, schema and exit codes</h2>
+<table>
+<thead><tr><th>Item</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>Bytecode</td><td>Version 6 only (DSLB v6); older and newer versions are refused.</td></tr>
+<tr><td>Schema</td><td>A dsl.schema 2 JSON document with name, types, functions, context and interfaces. Program::load takes its exact bytes for the SHA-256 binding; the SDK never reads its content.</td></tr>
+<tr><td>host --lmcode-schema --json</td><td>Host protocol flag: print the exact schema JSON the compiler uses.</td></tr>
+<tr><td>host --lmcode-signatures</td><td>Host protocol flag: print Registry::signatures(), diffed against lmscript --lmcode-signatures schema.json.</td></tr>
+<tr><td>host --lmcode FILE.dslb</td><td>Host protocol flag: load and run a compiled program file.</td></tr>
+<tr><td>Exit codes</td><td>2 for compilation or argument errors, 3 for bytecode load or run errors, 4 for application failures.</td></tr>
+<tr><td>Result</td><td>One standard JSON result line, for example {"ok": true, "result": ...}, which run_lmcode returns as ok and result.</td></tr>
+</tbody>
+</table>
+<h2 id="std">Standard catalog lmcode_std_v3</h2>
+<p>Every default dslvm::Registry includes the lmcode_std_v3 standard catalog: 226 canonical signatures (88 functions and 138 methods on 17 standard types), pinned in std.lock as version 3 of std/lmcode-std.schema.json. Registry(StdMode::Disabled) opts out and dslvm::register_std(registry) enables it idempotently.</p>
+<table>
+<thead><tr><th>Group</th><th>Contents</th></tr></thead>
+<tbody>
+<tr><td>String and codecs</td><td>str_len, str_find, str_split, str_replace, str_to_int, str_base64_encode, str_hex_decode and the other str_ functions; template_render</td></tr>
+<tr><td>Math</td><td>math_abs, math_ceil, math_floor, math_max, math_min, math_pow, math_round, math_sqrt, each with two overloads</td></tr>
+<tr><td>Collections</td><td>Constructors int_list, float_list, str_list, int_map, float_map, str_map, int_pq, float_pq, str_pq, int_queue, float_queue, str_queue, int_stack, float_stack, str_stack and the methods of the 15 collection types</td></tr>
+<tr><td>File</td><td>file_read, file_write, file_append, file_exists, file_lines: raw bytes, native paths, no newline translation</td></tr>
+<tr><td>Json</td><td>json_parse and the 11 Json methods</td></tr>
+<tr><td>Return values</td><td>lmcode_return_null, lmcode_return_put (11 overloads), lmcode_return_put_null, lmcode_return_set (11 overloads)</td></tr>
+<tr><td>REST and CLI</td><td>rest_config, rest_route, rest_serve, rest_stop, rest_cli, the 15 RestExchange methods and 10 interfaces</td></tr>
+</tbody>
+</table>
+<h3 id="std-types">Standard types</h3>
+<table>
+<thead><tr><th>Type</th><th>Methods</th></tr></thead>
+<tbody>
+<tr><td>FloatList</td><td>add, at, clear, contains, index_of, len, set</td></tr>
+<tr><td>FloatMap</td><td>len, has, get, get_or, set, key_at, remove, clear, keys, values</td></tr>
+<tr><td>FloatPQ</td><td>push, pop, peek, len, empty, clear</td></tr>
+<tr><td>FloatQueue</td><td>push, pop, peek, len, empty, clear, at</td></tr>
+<tr><td>FloatStack</td><td>push, pop, peek, len, empty, clear, at</td></tr>
+<tr><td>IntList</td><td>add, at, clear, contains, index_of, len, set</td></tr>
+<tr><td>IntMap</td><td>len, has, get, get_or, set, key_at, remove, clear, keys, values</td></tr>
+<tr><td>IntPQ</td><td>push, pop, peek, len, empty, clear</td></tr>
+<tr><td>IntQueue</td><td>push, pop, peek, len, empty, clear, at</td></tr>
+<tr><td>IntStack</td><td>push, pop, peek, len, empty, clear, at</td></tr>
+<tr><td>Json</td><td>kind, len, at, get, has, keys, as_string, as_int, as_float, as_bool, to_json</td></tr>
+<tr><td>StrList</td><td>add, at, clear, contains, index_of, join, len, set</td></tr>
+<tr><td>StrMap</td><td>clear, get, get_or, has, key_at, len, remove, set, keys, values</td></tr>
+<tr><td>StrPQ</td><td>push, pop, peek, len, empty, clear</td></tr>
+<tr><td>StrQueue</td><td>push, pop, peek, len, empty, clear, at</td></tr>
+<tr><td>StrStack</td><td>push, pop, peek, len, empty, clear, at</td></tr>
+<tr><td>RestExchange</td><td>method, path, query, has_query, param, header, has_header, body, status, set_header, send, json, get, set, increment</td></tr>
+</tbody>
+</table>
+<h2 id="rest">Standard REST and CLI interfaces</h2>
+<p>The catalog includes the standard REST and CLI surface: the 10 interfaces RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand and CliOption (each takes one RestExchange and returns void), the functions rest_config, rest_route, rest_serve, rest_stop and rest_cli, and 15 RestExchange methods.</p>
+<table>
+<thead><tr><th>Interface</th><th>Signature</th></tr></thead>
+<tbody>
+<tr><td>RestGet</td><td>RestGet(RestExchange exchange) -> void</td></tr>
+<tr><td>RestPost</td><td>RestPost(RestExchange exchange) -> void</td></tr>
+<tr><td>RestPut</td><td>RestPut(RestExchange exchange) -> void</td></tr>
+<tr><td>RestDelete</td><td>RestDelete(RestExchange exchange) -> void</td></tr>
+<tr><td>RestPatch</td><td>RestPatch(RestExchange exchange) -> void</td></tr>
+<tr><td>RestHead</td><td>RestHead(RestExchange exchange) -> void</td></tr>
+<tr><td>RestOptions</td><td>RestOptions(RestExchange exchange) -> void</td></tr>
+<tr><td>RestHandler</td><td>RestHandler(RestExchange exchange) -> void</td></tr>
+<tr><td>CliCommand</td><td>CliCommand(RestExchange exchange) -> void</td></tr>
+<tr><td>CliOption</td><td>CliOption(RestExchange exchange) -> void</td></tr>
+</tbody>
+</table>
+<p>A script function declares one of these with implements, as examples/rule-entries.lms does for a host interface; the compiler checks the signature.</p>
+<h3 id="rest-functions">Functions</h3>
+<table>
+<thead><tr><th>Signature</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>rest_config(string, string) -> void</td><td>Sets a named REST configuration value.</td></tr>
+<tr><td>rest_route(string, string, string) -> void</td><td>Registers a route; route templates accept {param} and {rest...} as well as :param and :rest... placeholders.</td></tr>
+<tr><td>rest_serve() -> void</td><td>Starts serving the registered routes.</td></tr>
+<tr><td>rest_stop() -> void</td><td>Stops the server.</td></tr>
+<tr><td>rest_cli(StrList) -> string</td><td>Stateless CLI mode: dispatches options, commands and REST routes from an argument list without resetting outer run state.</td></tr>
+</tbody>
+</table>
+<h3 id="rest-exchange">RestExchange methods</h3>
+<table>
+<thead><tr><th>Signature</th></tr></thead>
+<tbody>
+<tr><td>RestExchange.method() -> string</td></tr>
+<tr><td>RestExchange.path() -> string</td></tr>
+<tr><td>RestExchange.query(string) -> string</td></tr>
+<tr><td>RestExchange.has_query(string) -> bool</td></tr>
+<tr><td>RestExchange.param(string) -> string</td></tr>
+<tr><td>RestExchange.header(string) -> string</td></tr>
+<tr><td>RestExchange.has_header(string) -> bool</td></tr>
+<tr><td>RestExchange.body() -> string</td></tr>
+<tr><td>RestExchange.status(int) -> void</td></tr>
+<tr><td>RestExchange.set_header(string, string) -> void</td></tr>
+<tr><td>RestExchange.send(string) -> void</td></tr>
+<tr><td>RestExchange.json(string) -> void</td></tr>
+<tr><td>RestExchange.get(string) -> string</td></tr>
+<tr><td>RestExchange.set(string, string) -> void</td></tr>
+<tr><td>RestExchange.increment(string) -> int</td></tr>
+</tbody>
+</table>
+<h2 id="pages">Pages</h2>
+<ul>
+<li><a href="/tools/cpp-dsl-sdk/skill.html">Skill: host authoring procedure</a></li>
+<li><a href="/tools/cpp-dsl-sdk/guide.html">Guide: concepts, ownership and limits</a></li>
+<li><a href="/tools/cpp-dsl-sdk/reference.html">Reference: SDK API, exit codes and the standard catalog</a></li>
+<li><a href="/tools/cpp-dsl-sdk/tutorial.html">Tutorial: build a greeter host</a></li>
+<li><a href="/tools/lmcode-cpp/">lmcode-cpp at its current address</a></li>
+<li><a href="https://github.com/lmctl-ai/lmcode-cpp">GitHub repository lmctl-ai/lmcode-cpp</a></li>
+<li><a href="https://github.com/lmctl-ai/lmcode-cpp/blob/main/docs/std.md">Generated std reference (docs/std.md)</a></li>
+<li><a href="https://github.com/lmctl-ai/lmcode-cpp-sample">lmcode-cpp-sample teaching host</a></li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-cpp">github.com/lmctl-ai/lmcode-cpp</a>.</p>
+</footer>
+</body>
+</html>

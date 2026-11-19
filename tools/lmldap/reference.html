@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmldap reference — lmldap — lmctl.com tools</title>
+<meta name="description" content="Complete server and host CLI flag reference, integrated HTTP REST API endpoints, host schema types and methods (Ldap, Batch), standard lmcode_std_v3 REST and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmldap/">Overview</a></li>
+<li><a href="/tools/lmldap/skill.html">Skill</a></li>
+<li><a href="/tools/lmldap/guide.html">Guide</a></li>
+<li><a href="/tools/lmldap/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmldap reference</h1>
+<p>Complete server and host CLI flag reference, integrated HTTP REST API endpoints, host schema types and methods (Ldap, Batch), standard lmcode_std_v3 REST and CLI interfaces, and exit codes for lmldap v0.1.0.</p>
+<h2>Server and host CLI flags</h2>
+<table>
+<thead><tr><th>Flag or environment variable</th><th>Arguments / default</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>--version / -v</td><td>none</td><td>Print the lmldap version string (lmldap 0.1.0) and exit 0.</td></tr>
+<tr><td>--lmcode-schema</td><td>[--json]</td><td>Print the embedded schema/lmldap.dsl.json definition to stdout and exit 0.</td></tr>
+<tr><td>--lmcode-signatures</td><td>none</td><td>Print all 244 canonical context, function, and method signatures (18 host + 226 standard library) and exit 0.</td></tr>
+<tr><td>--lmcode</td><td>&lt;file.dslb></td><td>Load and execute a compiled LMScript bytecode program against the embedded lmldap schema.</td></tr>
+<tr><td>--port</td><td>&lt;int> (default 389)</td><td>TCP port for the native RFC 4511 LDAPv3 listener (binds 0.0.0.0:&lt;port> in zero-config mode).</td></tr>
+<tr><td>--rest-port</td><td>&lt;int> (default 0 / disabled)</td><td>TCP port for the integrated HTTP/JSON REST server bridge.</td></tr>
+<tr><td>--base-dn</td><td>&lt;dn> (default dc=example,dc=com)</td><td>Directory base Distinguished Name auto-provisioned in slapd.conf and seeded on startup.</td></tr>
+<tr><td>--admin-dn</td><td>&lt;dn> (default cn=admin,&lt;base-dn>)</td><td>Root/administrator Distinguished Name granted write permissions in slapd.conf.</td></tr>
+<tr><td>--admin-pw</td><td>&lt;password> (default secret)</td><td>Root/administrator password used by slapd and the integrated REST bridge.</td></tr>
+<tr><td>--data-dir</td><td>&lt;path> (default /tmp/lmldap-data-&lt;port>)</td><td>Directory path for auto-generated slapd.conf, schema.conf, slapd.pid, and mdb/ database files.</td></tr>
+<tr><td>--daemonize</td><td>yes | no | 1 | true (default false)</td><td>Allow slapd to detach into the background instead of running in foreground mode (-d 0).</td></tr>
+<tr><td>-f / -F / -h / -d</td><td>upstream slapd arguments</td><td>Pass explicit slapd configuration file (-f), config directory (-F), listener URLs (-h), or debug level (-d).</td></tr>
+<tr><td>LDAP_HOST / LDAP_PORT</td><td>env vars (default 127.0.0.1 / 389)</td><td>Override target LDAPv3 host and port used by context ldap: Ldap during _lmcode_ execution.</td></tr>
+<tr><td>LDAP_BIND_DN / LDAP_BIND_PW</td><td>env vars (default cn=admin,dc=example,dc=com / secret)</td><td>Override simple bind credentials used by context ldap: Ldap during _lmcode_ execution.</td></tr>
+</tbody>
+</table>
+<h2>Integrated HTTP REST API endpoints (--rest-port)</h2>
+<table>
+<thead><tr><th>HTTP method</th><th>Path and query</th><th>Response format and behavior</th></tr></thead>
+<tbody>
+<tr><td>GET</td><td>/ or /health</td><td>Return 200 JSON {"ok":true,"service":"lmldap","version":"0.1.0","base_dn":"...","result":"PONG"}.</td></tr>
+<tr><td>GET</td><td>/ping</td><td>Return 200 JSON {"ok":true,"result":"PONG"}.</td></tr>
+<tr><td>GET</td><td>/search?base=&lt;dn>&amp;filter=&lt;f>&amp;scope=sub|one|base (or /entries)</td><td>Search directory entries and return 200 JSON {"ok":true,"result":[{"dn":"...","attributes":{...}}]}.</td></tr>
+<tr><td>GET</td><td>/entry/&lt;dn></td><td>Fetch a single entry by URL-encoded DN as {"ok":true,"result":{"dn":"...","attributes":{...}}} or 404 if missing.</td></tr>
+<tr><td>PUT</td><td>/entry/&lt;dn></td><td>Create or replace an entry from a JSON object of attribute values and return {"ok":true,"result":"OK"}.</td></tr>
+<tr><td>POST</td><td>/entry/&lt;dn></td><td>Modify attributes on an existing entry (or create if absent) from a JSON object and return {"ok":true,"result":"OK"}.</td></tr>
+<tr><td>DELETE</td><td>/entry/&lt;dn></td><td>Delete an entry by DN and return {"ok":true,"result":1} (or 0 if the entry did not exist).</td></tr>
+<tr><td>POST</td><td>/bind</td><td>Verify credentials from JSON {"dn":"...","password":"..."} and return 200 {"ok":true,"result":{"bound":true,"dn":"..."}} or 401.</td></tr>
+</tbody>
+</table>
+<h2>Host schema types, methods, and functions</h2>
+<table>
+<thead><tr><th>Type / context</th><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context ldap: Ldap</td><td>ldap.add(dn: string, attrs_json: string) -> bool</td><td>Create or replace a directory entry at dn from a JSON object of attributes.</td></tr>
+<tr><td>Ldap</td><td>ldap.get(dn: string) -> string</td><td>Fetch a single directory entry by dn as a JSON string ({"dn":...,"attributes":{...}}), or "" if not found.</td></tr>
+<tr><td>Ldap</td><td>ldap.search(base_dn: string, filter: string) -> string</td><td>Run a subtree search under base_dn with an RFC 4515 filter and return a JSON array string of matching entries.</td></tr>
+<tr><td>Ldap</td><td>ldap.modify(dn: string, mods_json: string) -> bool</td><td>Modify or replace attributes on dn from a JSON object of attribute values.</td></tr>
+<tr><td>Ldap</td><td>ldap.del(dn: string) -> int</td><td>Delete the entry at dn and return 1 if deleted or 0 if not found.</td></tr>
+<tr><td>Ldap</td><td>ldap.exists(dn: string) -> bool</td><td>Return true if an entry exists at dn, or false otherwise.</td></tr>
+<tr><td>Ldap</td><td>ldap.bind(dn: string, password: string) -> bool</td><td>Verify simple bind credentials for dn and password against the live server or fallback store.</td></tr>
+<tr><td>Ldap</td><td>ldap.batch() -> Batch</td><td>Create a new Batch builder for queued directory operations.</td></tr>
+<tr><td>Batch</td><td>b.add(dn: string, attrs_json: string) -> Batch</td><td>Queue an ADD operation on the batch and return the Batch for chaining.</td></tr>
+<tr><td>Batch</td><td>b.get(dn: string) -> Batch</td><td>Queue a GET operation by dn on the batch.</td></tr>
+<tr><td>Batch</td><td>b.search(base_dn: string) -> Batch | b.search(base_dn: string, filter: string) -> Batch</td><td>Queue a subtree SEARCH operation with default (objectClass=*) or explicit filter.</td></tr>
+<tr><td>Batch</td><td>b.modify(dn: string, mods_json: string) -> Batch</td><td>Queue a MODIFY operation on the batch.</td></tr>
+<tr><td>Batch</td><td>b.del(dn: string) -> Batch</td><td>Queue a DEL operation by dn on the batch.</td></tr>
+<tr><td>Batch</td><td>b.len() -> int | b.clear() -> void</td><td>Return the number of queued operations in the batch or clear all queued operations.</td></tr>
+<tr><td>Batch</td><td>b.exec() -> string</td><td>Execute all queued operations in order and return a JSON array string of results.</td></tr>
+<tr><td>global function</td><td>print(msg: string) -> void</td><td>Write a string followed by a newline to stdout.</td></tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<table>
+<thead><tr><th>Interface or function</th><th>Signature / annotation</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>RestGet .. RestOptions</td><td>@"/path/:param" fn h(x: RestExchange) -> void implements RestGet</td><td>Bind an HTTP GET, POST, PUT, DELETE, PATCH, HEAD, or OPTIONS route handler.</td></tr>
+<tr><td>RestHandler</td><td>@"/path" fn h(x: RestExchange) -> void implements RestHandler</td><td>Bind a method-agnostic HTTP route handler.</td></tr>
+<tr><td>CliCommand</td><td>@"cmd" fn h(x: RestExchange) -> void implements CliCommand</td><td>Bind a named CLI subcommand dispatched by rest_cli.</td></tr>
+<tr><td>CliOption</td><td>@"--flag" fn h(x: RestExchange) -> void implements CliOption</td><td>Bind a CLI option flag (--flag=val or --flag val) evaluated before the command handler.</td></tr>
+<tr><td>rest_config / rest_route</td><td>rest_config(key: string, val: string) -> void | rest_route(method: string, path: string, handler: string) -> void</td><td>Configure host, port, or session (ephemeral or global) and dynamically register HTTP route handlers.</td></tr>
+<tr><td>rest_serve / rest_stop / rest_cli</td><td>rest_serve() -> void | rest_stop() -> void | rest_cli(args: StrList) -> string</td><td>Start or stop the embedded standard HTTP server or dispatch CLI options, commands, and routes in-process.</td></tr>
+<tr><td>RestExchange</td><td>x.method() | x.path() | x.body() | x.param(string) | x.query(string) | x.header(string) | x.get(string) -> string | x.has_query(string) | x.has_header(string) -> bool | x.status(int) | x.set_header(string, string) | x.send(string) | x.json(string) | x.set(string, string) -> void | x.increment(string) -> int</td><td>Inspect request metadata, emit plain text or JSON responses, and read or mutate ephemeral/global session state.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th>Exit code</th><th>Category</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success</td><td>Server exited cleanly, metadata flag printed, or _lmcode_ program completed with LMCODE_RETURN ok:true.</td></tr>
+<tr><td>1</td><td>Server error</td><td>OpenLDAP slapd failed to initialize configuration, LMDB storage, or listener sockets.</td></tr>
+<tr><td>2</td><td>Usage error</td><td>Missing --lmcode &lt;file> argument in host execution mode (phase cli, code CLI_USAGE).</td></tr>
+<tr><td>3</td><td>Host / VM error</td><td>Bytecode load failure (phase load) or runtime execution/assertion error (phase run) during _lmcode_ execution.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmldap">github.com/lmctl-ai/lmldap</a>.</p>
+</footer>
+</body>
+</html>

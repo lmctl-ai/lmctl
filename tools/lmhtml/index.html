@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>lmhtml — lmctl.com tools</title>
-<meta name="description" content="lmhtml is a native host for auditing links and CSS names, comparing HTML documents, extracting templates, and applying shared-page edits.">
+<meta name="description" content="lmhtml is a native host for auditing links and CSS names, comparing HTML documents, extracting templates, applying shared-page edits, converting Markdown and…">
 <link rel="stylesheet" href="/tools/style.css">
 <link rel="icon" type="image/png" href="/tools/lmhtml/img/icon.png">
 </head>
@@ -20,18 +20,72 @@
 <li><a href="/tools/lmhtml/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmhtml/guide.html">Guide</a></li>
 <li><a href="/tools/lmhtml/recipes.html">Recipes</a></li>
+<li><a href="/tools/lmhtml/reference.html">Reference</a></li>
 <li><a href="/tools/lmhtml/examples/">Examples</a></li>
 </ul>
 </nav>
-<main>
-<h1>lmhtml</h1>
+<main><h1>lmhtml</h1>
 <figure><img src="/tools/lmhtml/img/logo.png" alt="lmhtml logo" width="256" height="256"></figure>
-<p>lmhtml is a native host for auditing links and CSS names, comparing HTML documents, extracting templates, and applying shared-page edits.</p>
+<p>lmhtml is a native host for auditing links and CSS names, comparing HTML documents, extracting templates, applying shared-page edits, converting Markdown and producing plain content for agents. This page is the quick reference for lmhtml 0.7.6; scripts reach it through an _lmcode_ block and run_lmcode, and the native commands need only the binary.</p>
+<h2 id="install">Install and run</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmscript --check audit.lms
+lmscript audit.lms
+lmhtml --version
+lmhtml --lmcode-signatures</code></pre>
+<p>A block that declares cli="lmhtml" install="github:lmctl-ai/lmhtml@latest" lets lmscript download the release binary and compile against its embedded schema.</p>
+<h2 id="example">Minimal example</h2>
+<pre><code>p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+let d = html.parse("&lt;main>&lt;h1 id=\"top\">Hello&lt;/h1>&lt;a href=\"#top\">Top&lt;/a>&lt;/main>");
+let h = d.select("h1");
+$return.title = h.at(0).text();
+$return.links = d.links().len();
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));
+println(json_stringify(r));</code></pre>
+<pre><kbd>lmscript audit.lms</kbd>
+<samp>{"ok":true,"result":{"title":"Hello","links":1}}</samp></pre>
+<h2 id="protocol">Host protocol and native commands</h2>
+<table>
+<thead><tr><th>Command</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td>lmhtml --version</td><td>Print the version.</td></tr>
+<tr><td>lmhtml --lmcode-schema [--json]</td><td>Print the schema summary, or the compiler schema JSON.</td></tr>
+<tr><td>lmhtml --lmcode-signatures</td><td>Print all 305 canonical signatures: host API plus the 226-signature lmcode_std_v3 catalog.</td></tr>
+<tr><td>lmhtml [--dry-run] --lmcode FILE [FILE ...]</td><td>Run compiled program files; this is what run_lmcode calls.</td></tr>
+<tr><td>lmhtml md2html IN.md [OUT.html] [--template FILE] [--allow-html]</td><td>Markdown to HTML.</td></tr>
+<tr><td>lmhtml index DIR [--order FILE] [--check]</td><td>Generate or check DIR/index.md.</td></tr>
+<tr><td>lmhtml mdcheck DIR</td><td>Check Markdown notes and their links.</td></tr>
+<tr><td>lmhtml site DIR OUT [--template FILE]</td><td>Build a static note site.</td></tr>
+<tr><td>lmhtml lint [--stats] [--json] [--config FILE] [--compare BEFORE] PATHS</td><td>Count plain-content violations.</td></tr>
+<tr><td>lmhtml normalize [--check] PATHS</td><td>Rewrite pages as plain content.</td></tr>
+<tr><td>lmhtml clean URL-or-file [--base URL] [--markdown] [--check]</td><td>Extract main content for agents.</td></tr>
+</tbody>
+</table>
+<p>Exit codes: 0 success, 2 usage, 3 load or runtime error, 4 application failure.</p>
+<h2 id="api">Host objects</h2>
+<table>
+<thead><tr><th>Name</th><th>Main members</th></tr></thead>
+<tbody>
+<tr><td>html (context, type Html)</td><td>load, load_dir, parse, save, diff, link_kind, link_exists, resolve, write_template, from_markdown, render_markdown, check_markdown, index_markdown, site, png_size</td></tr>
+<tr><td>report (context, type Report)</td><td>add, write_text, write_json, fail_if_any</td></tr>
+<tr><td>Doc</td><td>select, links, ids, classes_used, css_classes, css_ids, title, summary, source, markup_errors, normalize, clean, markdown</td></tr>
+<tr><td>DocList</td><td>len, at, ids, classes_used, css_classes, css_ids</td></tr>
+<tr><td>Node</td><td>tag, text, attr, has_attr, attributes, get_attrs, set_attr, set_attrs, select, parent, outer_html, replace_with, insert_before, insert_after, append_html, prepend_html, remove</td></tr>
+<tr><td>NodeList</td><td>len, at</td></tr>
+<tr><td>ImageSize</td><td>width, height</td></tr>
+<tr><td>Host functions</td><td>suggest, str_difference, str_union, str_text_prefix, print, assert_close</td></tr>
+<tr><td>Standard catalog</td><td>226 lmcode_std_v3 signatures: strings, math, files, JSON, typed lists, maps, queues, stacks, priority queues, lmcode_return and the REST and CLI interfaces with rest_config, rest_route, rest_serve, rest_stop, rest_cli and RestExchange</td></tr>
+</tbody>
+</table>
+<h2 id="more">More</h2>
 <p><a href="/tools/lmhtml/get_started.html">Get started with a solo or trio provider session</a>, or browse the <a href="/tools/lmhtml/examples/">runnable example book</a>.</p>
 <ul>
 <li><a href="/tools/lmhtml/skill.html">Skill</a></li>
-<li><a href="/tools/lmhtml/tutorial.html">Tutorial</a></li>
 <li><a href="/tools/lmhtml/guide.html">Guide</a></li>
+<li><a href="/tools/lmhtml/reference.html">Reference</a></li>
+<li><a href="/tools/lmhtml/tutorial.html">Tutorial</a></li>
 <li><a href="/tools/lmhtml/recipes.html">Recipes</a></li>
 <li><a href="/tools/lmhtml/get_started.html">Get started</a></li>
 <li><a href="/tools/lmhtml/examples/">Examples</a></li>

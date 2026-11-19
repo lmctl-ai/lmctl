@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmgallery reference — lmgallery — lmctl.com tools</title>
+<meta name="description" content="Reference tables for lmgallery CLI workflows, test flags, manifest schemas, host output conventions, featured host catalog, and exit codes.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmgallery/">Overview</a></li>
+<li><a href="/tools/lmgallery/skill.html">Skill</a></li>
+<li><a href="/tools/lmgallery/guide.html">Guide</a></li>
+<li><a href="/tools/lmgallery/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmgallery reference</h1>
+<p>Reference tables for lmgallery CLI workflows, test flags, manifest schemas, host output conventions, featured host catalog, and exit codes.</p>
+<h2>Test and maintenance commands</h2>
+<table>
+<thead><tr><th>Command</th><th>Flags</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>./test.sh</td><td>(none)</td><td>Validate PNG/GIF headers, CRCs, decoded dimensions, preview size budgets, SHA-256 attribution, cross-host bindings, autorun captions, and local links</td></tr>
+<tr><td>./test.sh</td><td>--network</td><td>Also verify published HTTP links and raw GitHub URLs</td></tr>
+<tr><td>./test.sh</td><td>--run</td><td>Execute all 50 local composition scripts in fresh temporary directories</td></tr>
+<tr><td>./test.sh</td><td>--urls</td><td>Execute all 50 public raw GitHub URLs with lmctl in fresh temporary directories</td></tr>
+<tr><td>./examples/render-all.sh</td><td>(none)</td><td>Run all 50 compositions in temporary directories and copy outputs to docs/images/</td></tr>
+<tr><td>./examples/render-all.sh</td><td>--only NN</td><td>Regenerate a single showcase preview by its two-digit number (01 to 50)</td></tr>
+<tr><td>python3 scripts/build-readme.py</td><td>(none)</td><td>Regenerate README.md, examples/README.md, and docs/ATTRIBUTION.md from catalog.json and showcases.json</td></tr>
+</tbody>
+</table>
+<h2>Featured hosts in catalog.json</h2>
+<table>
+<thead><tr><th>Host</th><th>Domain</th><th>Upstream repository</th></tr></thead>
+<tbody>
+<tr><td>lmplot</td><td>2D and 3D plots, surfaces, and multiplot dashboards</td><td>https://github.com/lmctl-ai/lmplot</td></tr>
+<tr><td>lmnum</td><td>Numerical computing, Eigen linear algebra, and SUNDIALS ODE/nonlinear solvers</td><td>https://github.com/lmctl-ai/lmnum</td></tr>
+<tr><td>lmfinance</td><td>Financial models, yield curves, cashflows, and option pricing</td><td>https://github.com/lmctl-ai/lmfinance</td></tr>
+<tr><td>lmspace</td><td>Orbital mechanics, Kepler propagation, and transfer maneuvers</td><td>https://github.com/lmctl-ai/lmspace</td></tr>
+<tr><td>lmphysics</td><td>Rigid-body mechanics, constraints, and force balance simulations</td><td>https://github.com/lmctl-ai/lmphysics</td></tr>
+<tr><td>lmbio</td><td>Biochemical reaction networks, enzyme kinetics, and pharmacokinetics</td><td>https://github.com/lmctl-ai/lmbio</td></tr>
+<tr><td>lmfluid</td><td>Fluid dynamics and 2D finite-element PDE solvers</td><td>https://github.com/lmctl-ai/lmfluid</td></tr>
+<tr><td>lmmolecule</td><td>OpenMM molecular dynamics, lattices, water models, and thermostats</td><td>https://github.com/lmctl-ai/lmmolecule</td></tr>
+<tr><td>lmcell</td><td>Multicellular agent-based growth, division, and motility simulations</td><td>https://github.com/lmctl-ai/lmcell</td></tr>
+<tr><td>lmparticle</td><td>Photon and particle radiation transport, attenuation, and shielding</td><td>https://github.com/lmctl-ai/lmparticle</td></tr>
+<tr><td>lmweather</td><td>Shallow-water atmospheric dynamics, geostrophic adjustment, and gravity waves</td><td>https://github.com/lmctl-ai/lmweather</td></tr>
+<tr><td>lmdraw</td><td>Annotated 2D vector diagrams and schematic rendering</td><td>https://github.com/lmctl-ai/lmdraw</td></tr>
+<tr><td>lmcad</td><td>Parametric 3D OpenCASCADE solids, meshes, and shaded renders</td><td>https://github.com/lmctl-ai/lmcad</td></tr>
+<tr><td>lmblender</td><td>Path-traced 3D scenes and materials</td><td>https://github.com/lmctl-ai/lmblender</td></tr>
+<tr><td>lmimg</td><td>Procedural color and raster image processing (preview)</td><td>https://github.com/lmctl-ai/lmimg</td></tr>
+<tr><td>lmaudio</td><td>Audio synthesis, filtering, and spectral analysis (preview)</td><td>https://github.com/lmctl-ai/lmaudio</td></tr>
+</tbody>
+</table>
+<h2>Additional composition hosts</h2>
+<table>
+<thead><tr><th>Host</th><th>Role in showcase compositions (01 to 50)</th></tr></thead>
+<tbody>
+<tr><td>lmvideo</td><td>Renders charts, contact sheets, 3D scenes, terminal captures, and animations in compositions 02, 05, 11, 13, 14, 26-31, and 33-50</td></tr>
+<tr><td>lmoffice</td><td>Generates DOCX reports, XLSX workbooks, and PPTX slide decks in compositions 26-31 and 34-50</td></tr>
+<tr><td>lmpdf</td><td>Renders PDF documents and page raster previews in compositions 43-46, 49, and 50</td></tr>
+<tr><td>lmhtml</td><td>Audits HTML documents and link integrity in compositions 36 and 46</td></tr>
+<tr><td>lmssl</td><td>Inspects X.509 certificates and TLS inventories in compositions 37 and 46</td></tr>
+<tr><td>lmcloud</td><td>Evaluates infrastructure plans and applied state in composition 49</td></tr>
+</tbody>
+</table>
+<h2>Cross-host tabular output formats</h2>
+<table>
+<thead><tr><th>Producer host</th><th>Method</th><th>Delimiter</th><th>Header row</th></tr></thead>
+<tbody>
+<tr><td>lmnum</td><td>save_csv(path)</td><td>Space</td><td>None</td></tr>
+<tr><td>lmspace</td><td>save_csv(path)</td><td>Comma</td><td>None</td></tr>
+<tr><td>lmphysics</td><td>save_csv(path)</td><td>Comma</td><td>Yes (body.column names)</td></tr>
+<tr><td>lmfluid</td><td>sample(...).save_csv(path)</td><td>Comma</td><td>None (x,y,0,value)</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th>Code</th><th>Source</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>test.sh / lmctl / native hosts</td><td>All checks or composition blocks succeeded</td></tr>
+<tr><td>Nonzero</td><td>test.sh / scripts</td><td>Integrity check, link verification, or composition test failed</td></tr>
+<tr><td>2</td><td>test.sh / native lmcode host</td><td>Unknown test.sh flag (usage message), or host CLI usage error or metadata flag query</td></tr>
+<tr><td>3</td><td>Native lmcode host</td><td>Bytecode load error, runtime exception, or memory budget exceeded</td></tr>
+<tr><td>4</td><td>Native lmcode host</td><td>Application assertion or output verification failure</td></tr>
+</tbody>
+</table></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmgallery">github.com/lmctl-ai/lmgallery</a>.</p>
+</footer>
+</body>
+</html>

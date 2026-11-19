@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmclient reference — lmclient — lmctl.com tools</title>
+<meta name="description" content="CLI options, protocol subcommands, JDBC host schema types and methods, standard REST and CLI interfaces, and exit codes for lmclient.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmclient/">Overview</a></li>
+<li><a href="/tools/lmclient/skill.html">Skill</a></li>
+<li><a href="/tools/lmclient/guide.html">Guide</a></li>
+<li><a href="/tools/lmclient/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmclient reference</h1>
+<p>CLI options, protocol subcommands, JDBC host schema types and methods, standard REST and CLI interfaces, and exit codes for lmclient.</p>
+<h2>CLI flags and protocol subcommands</h2>
+<table>
+<thead>
+<tr><th>Flag or subcommand</th><th>Area</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>--version</td><td>Core</td><td>Print the lmclient version and exit 0.</td></tr>
+<tr><td>--lmcode-schema [--json]</td><td>Core</td><td>Print the embedded lmclient host schema summary or exact JSON bytes.</td></tr>
+<tr><td>--lmcode-signatures</td><td>Core</td><td>Print the 28 sorted canonical signatures of the lmclient domain bindings.</td></tr>
+<tr><td>--lmcode FILE</td><td>Core</td><td>Execute a compiled DSLB bytecode file (optionally with --dry-run).</td></tr>
+<tr><td>--url URL</td><td>JDBC / All</td><td>Connection URL (or use LMCLIENT_&lt;AREA>_URL in the environment).</td></tr>
+<tr><td>--credentials-file FILE</td><td>JDBC / All</td><td>UTF-8 properties file containing connection credentials (never printed).</td></tr>
+<tr><td>--sql SQL / --file FILE.sql</td><td>JDBC</td><td>Execute an inline SQL statement or a UTF-8 SQL script file.</td></tr>
+<tr><td>--explain SQL</td><td>JDBC</td><td>Return the query execution plan for SQL.</td></tr>
+<tr><td>--metadata KIND [--table T]</td><td>JDBC</td><td>Inspect schemas, tables, views, columns, keys, foreign_keys, or indexes.</td></tr>
+<tr><td>--diff-url URL</td><td>JDBC</td><td>Compare the primary --url schema against a reference JDBC URL.</td></tr>
+<tr><td>--format json|csv|table</td><td>JDBC</td><td>Select output formatting (optionally written to --output FILE).</td></tr>
+<tr><td>--max-rows N</td><td>JDBC</td><td>Maximum rows returned per query (default 10000, cap 1000000).</td></tr>
+<tr><td>redis / mail / queue / mqtt / mongo</td><td>Protocols</td><td>Run Redis, SMTP/IMAP, AMQP, MQTT, or MongoDB operations with a JSON result envelope.</td></tr>
+</tbody>
+</table>
+<h2>Host functions and domain types (lmclient)</h2>
+<table>
+<thead>
+<tr><th>Signature</th><th>Return type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>fn connect(url: string)</td><td>Connection</td><td>Open a JDBC connection to a SQLite, DuckDB, H2, PostgreSQL, or SQL Server URL.</td></tr>
+<tr><td>fn connect_file(url: string, credentials_file: string)</td><td>Connection</td><td>Open a JDBC connection using credentials from a protected properties file.</td></tr>
+<tr><td>Connection.exec(sql: string)</td><td>void</td><td>Execute DDL or DML statements.</td></tr>
+<tr><td>Connection.query(sql: string)</td><td>Result</td><td>Execute a SQL query and return a bounded Result table.</td></tr>
+<tr><td>Connection.schemas() / tables() / views()</td><td>Result</td><td>Return JDBC catalog metadata for schemas, tables, or views.</td></tr>
+<tr><td>Connection.columns(t: string) / keys(t: string) / foreign_keys(t: string) / indexes(t: string)</td><td>Result</td><td>Return column, primary-key, foreign-key, or index metadata for table t.</td></tr>
+<tr><td>Connection.explain(sql: string)</td><td>Result</td><td>Return the database engine's execution plan for sql.</td></tr>
+<tr><td>Connection.diff(other: Connection)</td><td>Result</td><td>Compute structural schema differences against another open Connection.</td></tr>
+<tr><td>Connection.begin() / commit() / rollback() / close()</td><td>void</td><td>Manage explicit transactions and close the connection handle.</td></tr>
+<tr><td>Result.csv(path: string) / Result.json(path: string)</td><td>void</td><td>Write the result set to a UTF-8 CSV or JSON file.</td></tr>
+<tr><td>Result.csv_string() / Result.json_string() / Result.table()</td><td>string</td><td>Format the result set in memory as CSV, JSON, or an aligned text table.</td></tr>
+<tr><td>Result.rows() / Result.columns() / Result.column(col: int)</td><td>int / string</td><td>Return row count, column count, or zero-based column name.</td></tr>
+<tr><td>Result.number(r: int, c: int) / Result.text(r: int, c: int) / Result.is_null(r: int, c: int)</td><td>float / string / bool</td><td>Read typed cell values or null status at zero-based (row, col).</td></tr>
+</tbody>
+</table>
+<h2>Standard REST and CLI interfaces (lmcode_std_v3)</h2>
+<table>
+<thead>
+<tr><th>Interface or function</th><th>Signature</th><th>Role</th></tr>
+</thead>
+<tbody>
+<tr><td>RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler</td><td>(exchange: RestExchange) -> void</td><td>SAM interfaces for HTTP route templates supporting :param and {param} placeholders.</td></tr>
+<tr><td>CliCommand, CliOption</td><td>(exchange: RestExchange) -> void</td><td>SAM interfaces for stateless CLI commands and flags dispatched via rest_cli.</td></tr>
+<tr><td>rest_config, rest_route, rest_serve, rest_stop, rest_cli</td><td>Standard router functions</td><td>Configure and dispatch REST routes or CLI invocations with isolated JDBC callbacks.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr><th>Code</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>Query, protocol command, or bytecode execution succeeded.</td></tr>
+<tr><td>2</td><td>CLI usage error, invalid flag combination, or invalid LMCLIENT_MAX_MEMORY_MB value.</td></tr>
+<tr><td>3</td><td>Runtime failure (connection error, SQL error, row cap exceeded, or memory budget breach).</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmclient">github.com/lmctl-ai/lmclient</a>.</p>
+</footer>
+</body>
+</html>

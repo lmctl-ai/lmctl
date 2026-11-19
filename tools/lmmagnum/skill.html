@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmmagnum skill: build and render 3D scenes headlessly from LMScript — lmmagnum — lmctl.com tools</title>
+<meta name="description" content="This page tells an agent how to install, call and verify lmmagnum, the lmcode host that drives Magnum primitives through a built-in software rasterizer.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmmagnum/">Overview</a></li>
+<li><a href="/tools/lmmagnum/skill.html">Skill</a></li>
+<li><a href="/tools/lmmagnum/guide.html">Guide</a></li>
+<li><a href="/tools/lmmagnum/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmmagnum skill: build and render 3D scenes headlessly from LMScript</h1>
+<p>This page tells an agent how to install, call and verify lmmagnum, the lmcode host that drives Magnum primitives through a built-in software rasterizer. Everything here was checked against lmmagnum 0.2.15 and the examples in the lmctl-ai/lmmagnum repository.</p>
+<h2 id="purpose">Purpose</h2>
+<p>lmmagnum is one static executable that builds a scene from Magnum primitives inside an lmscript _lmcode_ block, renders it on the CPU and exports PNG or PPM images and STL, OBJ or PLY meshes. It needs no GPU, no window system and no shared libraries.</p>
+<h2 id="when">When to use it</h2>
+<ul>
+<li>You need a deterministic picture of a 3D scene (primitives, molecules, diagrams, small animations frame by frame) on a machine without a GPU or display.</li>
+<li>You need a mesh file (OBJ, STL or PLY) assembled from cubes, boxes, spheres, cylinders, cones, capsules, planes, rings, tubes, triangles or voxel text.</li>
+<li>You want textured, lit and optionally shadowed renders described entirely in a script.</li>
+<li>Do not use it for interactive viewing, GPU shading, physics engines or loading external 3D models: the host exposes none of these.</li>
+</ul>
+<h2 id="install">Install</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmscript scene.lms             # downloads the lmmagnum release on first use</code></pre>
+<p>The install attribute github:lmctl-ai/lmmagnum@latest on the block makes lmscript download and cache the release binary. The current release lane publishes native Linux binaries named lmmagnum-linux-x64 and lmmagnum-linux-arm64; earlier releases may contain macOS and Windows assets that the current lane no longer produces.</p>
+<h2 id="commands">Commands</h2>
+<table>
+<thead>
+<tr><th>Command</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td>lmscript scene.lms</td><td>Compile the _lmcode_ block against the host schema, run the host and continue the outer script</td></tr>
+<tr><td>lmscript --check scene.lms</td><td>Compile only; reports type and signature errors without rendering</td></tr>
+<tr><td>lmctl autorun URL</td><td>Run a repository example straight from its raw GitHub URL; it writes images/NAME.png</td></tr>
+<tr><td>lmmagnum --version</td><td>Print the host name and version</td></tr>
+<tr><td>lmmagnum --lmcode-schema --json</td><td>Print the embedded schema JSON (schema format 2, name lmmagnum)</td></tr>
+<tr><td>lmmagnum --lmcode-signatures</td><td>Print one line per context, function and method signature (267 lines in 0.2.15)</td></tr>
+<tr><td>lmmagnum --lmcode FILE [FILE ...]</td><td>Run compiled bytecode; this is what run_lmcode invokes for you</td></tr>
+</tbody>
+</table>
+<h2 id="io">Inputs and outputs</h2>
+<table>
+<thead>
+<tr><th>Direction</th><th>What</th></tr>
+</thead>
+<tbody>
+<tr><td>Input</td><td>An _lmcode_ block with cli="lmmagnum"; the context object scene and the functions material and magnum_version</td></tr>
+<tr><td>Input files</td><td>Optional texture images for scene.texture_file: PNG, JPEG, BMP or TGA</td></tr>
+<tr><td>Output files</td><td>scene.render_png and scene.render_ppm (path, width, height); scene.export_obj, export_stl, export_ply (path); texture.save_png (path); scene.save_accumulated_png (path)</td></tr>
+<tr><td>Result</td><td>run_lmcode returns a map with ok and result; result is whatever the block set with lmcode_return_set or lmcode_return_put</td></tr>
+<tr><td>Failure</td><td>ok is false and phase, code and message are set in the result frame</td></tr>
+</tbody>
+</table>
+<p>Paths are relative to the working directory of the lmscript process. The host does not create missing directories in the repository examples; they call mkdir("images") in the outer script first.</p>
+<h2 id="safety">Safety rules</h2>
+<ul>
+<li>Render and export calls overwrite the target path. Write into a dedicated output directory.</li>
+<li>The standard file functions (file_read, file_write, file_append) are unrestricted; treat a block as code with the file permissions of the caller.</li>
+<li>Create output directories in the outer script before run_lmcode.</li>
+<li>Always test r.ok after run_lmcode and stop on failure; do not assume an image exists.</li>
+<li>Large frame counts cost CPU time: the rasterizer is software only. Start with a small image size and few frames.</li>
+<li>Bytecode passed to --lmcode must be a readable file no larger than 16 MiB.</li>
+<li>Use only signatures printed by lmmagnum --lmcode-signatures for the installed version.</li>
+</ul>
+<h2 id="examples">Worked examples</h2>
+<h3 id="ex-scene">Two solids, one picture, one mesh</h3>
+<pre><code>prog = _lmcode_ cli="lmmagnum" install="github:lmctl-ai/lmmagnum@latest";
+scene.background(0.08, 0.09, 0.12);
+let m = material().color(0.85, 0.45, 0.2).specular(0.4);
+scene.cube(1.0, m).translate(-1.5, 0.0, 0.0).rotate(20.0, 30.0, 0.0);
+scene.sphere(0.6, m).translate(1.5, 0.0, 0.0);
+scene.camera(40.0, 0.0, 1.5, 9.0, 0.0, -0.5, 0.0);
+scene.directional_light(-0.5, -1.0, -0.4, 0.9);
+scene.render_png("scene.png", 800, 400);
+scene.export_obj("scene.obj");
+lmcode_return_put("shapes", scene.shape_count());
+lmcode_return_put("triangles", scene.triangle_count());
+lmcode_return_put("magnum", magnum_version());
+end _lmcode_
+r = run_lmcode(prog);
+println(json_stringify(r));
+require(r.ok, "render failed");</code></pre>
+<pre><kbd>lmscript scene.lms</kbd>
+<samp>{"ok":true,"result":{"shapes":2,"triangles":2220,"magnum":"369e9620ab22"}}</samp></pre>
+<p>The run writes scene.png (800 by 400) and scene.obj next to the script.</p>
+<h3 id="ex-primitives">The repository primitives example</h3>
+<pre><code>mkdir("images");
+mkdir("build");
+p = _lmcode_ cli="lmmagnum" install="github:lmctl-ai/lmmagnum@latest";
+scene.background(0.08, 0.09, 0.12);
+let c = material().color(0.85, 0.45, 0.2).specular(0.4);
+scene.cube(1.0, c).translate(-3.0, 0.0, 0.0).rotate(20.0, 30.0, 0.0);
+scene.sphere(0.6, c).translate(-1.5, 0.0, 0.0);
+scene.icosphere(0.6, 2, c).translate(0.0, 0.0, 0.0);
+scene.cylinder(0.5, 1.2, c).translate(1.5, 0.0, 0.0);
+scene.cone(0.5, 1.2, c).translate(3.0, 0.0, 0.0);
+scene.capsule(0.4, 1.0, c).translate(0.0, -1.6, 0.0);
+scene.camera(40.0, 0.0, 1.5, 9.0, 0.0, -0.5, 0.0);
+scene.directional_light(-0.5, -1.0, -0.4, 0.9);
+scene.render_png("images/primitives.png", 800, 400);
+scene.export_obj("build/primitives.obj");
+end _lmcode_
+r = run_lmcode(p);
+if (!r.ok) { println(r.stderr + r.stdout); }
+assert(r.ok);
+println("wrote images/primitives.png");</code></pre>
+<h3 id="ex-url">Run a gallery example from its URL</h3>
+<pre><code>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmmagnum/main/examples/primitives.lms</code></pre>
+<h2 id="errors">Errors and exit codes</h2>
+<table>
+<thead>
+<tr><th>Exit</th><th>Meaning</th><th>Observed case</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>Success</td><td>--version, schema and signature queries, a completed --lmcode run</td></tr>
+<tr><td>2</td><td>CLI usage error; failure frame with phase cli and code CLI_USAGE</td><td>No arguments or an unknown flag</td></tr>
+<tr><td>3</td><td>Load or run error; failure frame with phase load and code RUN_HOST for unreadable bytecode</td><td>--lmcode with a missing file</td></tr>
+</tbody>
+</table>
+<pre><kbd>lmmagnum --lmcode /nonexistent.dslb</kbd>
+<samp>bytecode input must be a readable file no larger than 16 MiB
+LMCODE_RETURN_BEGIN
+{"ok":false,"phase":"load","code":"RUN_HOST","message":"bytecode input must be a readable file no larger than 16 MiB"}
+LMCODE_RETURN_END</samp></pre>
+<p>The result frame is delimited by the lines LMCODE_RETURN_BEGIN and LMCODE_RETURN_END. Compile errors (unknown method, wrong argument types) are reported by lmscript before the host starts; fix them with lmscript --check.</p>
+<h2 id="verify">How to verify</h2>
+<ul>
+<li>Run lmmagnum --version and confirm the version you expect (0.2.15 at the time of writing).</li>
+<li>Run lmscript --check on the script: exit status 0 means the block matches the host schema.</li>
+<li>After the run, require r.ok and check that every output file exists and is not empty.</li>
+<li>Return scene.shape_count() and scene.triangle_count() with lmcode_return_put and compare them with what the script should have built.</li>
+<li>Open the PNG and look at it: framing, lighting and visibility mistakes do not raise errors.</li>
+</ul>
+<p>See also the <a href="/tools/lmmagnum/">quick reference</a>, the <a href="/tools/lmmagnum/guide.html">guide</a> and the <a href="/tools/lmmagnum/reference.html">reference</a>.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmmagnum">github.com/lmctl-ai/lmmagnum</a>.</p>
+</footer>
+</body>
+</html>

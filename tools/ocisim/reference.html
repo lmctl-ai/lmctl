@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ocisim reference — ocisim — lmctl.com tools</title>
+<meta name="description" content="Reference tables for ocisim CLI commands and flags, environment variables, default identity constants, OCI REST endpoints, and exit codes.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/ocisim/">Overview</a></li>
+<li><a href="/tools/ocisim/skill.html">Skill</a></li>
+<li><a href="/tools/ocisim/guide.html">Guide</a></li>
+<li><a href="/tools/ocisim/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>ocisim reference</h1>
+<p>Reference tables for ocisim CLI commands and flags, environment variables, default identity constants, OCI REST endpoints, and exit codes.</p>
+<h2>CLI commands and flags</h2>
+<table>
+<thead>
+<tr>
+<th>Command or flag</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ocisim --version</td>
+<td>none</td>
+<td>Print ocisim version string and exit 0.</td>
+</tr>
+<tr>
+<td>ocisim --help, -h</td>
+<td>none</td>
+<td>Print usage instructions and exit 0.</td>
+</tr>
+<tr>
+<td>ocisim serve | start</td>
+<td>foreground</td>
+<td>Start the local OCI emulator on 127.0.0.1.</td>
+</tr>
+<tr>
+<td>--port &lt;port></td>
+<td>4599</td>
+<td>Loopback TCP port for the HTTP listener.</td>
+</tr>
+<tr>
+<td>--data-dir &lt;path></td>
+<td>in-memory</td>
+<td>Directory to persist Object Storage, IAM, and Queue state across restarts.</td>
+</tr>
+<tr>
+<td>--auth open | enforce</td>
+<td>open</td>
+<td>Select open multi-tenancy isolation or enforced RSA-SHA256 signature and IAM policy evaluation.</td>
+</tr>
+<tr>
+<td>--auth-config &lt;file></td>
+<td>unset</td>
+<td>Path to the JSON credentials and IAM policy file required in enforce mode.</td>
+</tr>
+</tbody>
+</table>
+<h2>Environment variables and default identity</h2>
+<table>
+<thead>
+<tr>
+<th>Variable or constant</th>
+<th>Default value</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OCISIM_AUTH, SIM_AUTH</td>
+<td>open</td>
+<td>Set to enforce to enable two-layer RSA signature and IAM policy checks (overridden by --auth).</td>
+</tr>
+<tr>
+<td>OCISIM_AUTH_CONFIG, SIM_AUTH_CONFIG</td>
+<td>unset</td>
+<td>Path to the JSON auth configuration file (overridden by --auth-config).</td>
+</tr>
+<tr>
+<td>FLOCI_OCI_SERVICES_FUNCTIONS_MOCK, FLOCI_OCI_SERVICES_OKE_MOCK</td>
+<td>true</td>
+<td>Keep Functions and OKE services in container-free mock mode by default.</td>
+</tr>
+<tr>
+<td>Default tenancy OCID</td>
+<td>ocid1.tenancy.oc1..flocilocaltenancy0000000000000000000000000000000000000000</td>
+<td>Default local tenancy OCID in open mode.</td>
+</tr>
+<tr>
+<td>Default user OCID</td>
+<td>ocid1.user.oc1..flocilocaluser00000000000000000000000000000000000000000000</td>
+<td>Default local user OCID in open mode.</td>
+</tr>
+<tr>
+<td>Default namespace and region</td>
+<td>floci-local / us-ashburn-1</td>
+<td>Default Object Storage namespace and OCI region.</td>
+</tr>
+</tbody>
+</table>
+<h2>HTTP service endpoints</h2>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>Path pattern on 127.0.0.1:4599</th>
+<th>Operations</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Health check</td>
+<td>GET /_floci-oci/health</td>
+<td>Anonymous readiness endpoint in both open and enforce modes.</td>
+</tr>
+<tr>
+<td>Object Storage</td>
+<td>/n, /n/{namespace}/b/{bucket}, /n/{namespace}/b/{bucket}/o/{object}</td>
+<td>GetNamespace, Create/Get/List/DeleteBucket, Put/Get/Head/Delete/List/RenameObject.</td>
+</tr>
+<tr>
+<td>Queue</td>
+<td>/20210201/queues and /20210201/queues/{queueId}/messages</td>
+<td>Create/Get/List/DeleteQueue, PutMessages, GetMessages, DeleteMessage.</td>
+</tr>
+<tr>
+<td>Identity (IAM), Streaming, Vault, KMS, Secrets</td>
+<td>/20160918/compartments, /20160918/regions (Identity)</td>
+<td>Identity regions and compartment create/list are covered by the integration tests; the other services run in-process on the same port.</td>
+</tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Clean server shutdown or --version / --help output.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Invalid CLI arguments or unreadable/invalid --auth-config file.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Server startup or runtime failure (such as port already in use).</td>
+</tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/ocisim">github.com/lmctl-ai/ocisim</a>.</p>
+</footer>
+</body>
+</html>

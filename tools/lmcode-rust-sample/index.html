@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-rust-sample — lmctl.com tools</title>
+<meta name="description" content="lmcode-rust-sample is the native Rust reference Shop and Ledger host embedding the vendored dslvm crate and passing the 123-case canonical sample suite.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-rust-sample/">Overview</a></li>
+<li><a href="/tools/lmcode-rust-sample/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-rust-sample/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-rust-sample/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-rust-sample</h1>
+<p>lmcode-rust-sample is the native Rust reference Shop and Ledger host embedding the vendored dslvm crate and passing the 123-case canonical sample suite. It verifies all 206 standard and 45 host signatures with zero unsafe blocks, multi-part builder slots, dry-mode sentinels, and LMCODE_RETURN framing.</p>
+<h2>Quick reference</h2>
+<pre><code>git clone https://github.com/lmctl-ai/lmcode-rust-sample.git
+cd lmcode-rust-sample
+python3 scripts/sync.py check
+cargo build --release
+./test.sh</code></pre>
+<table><thead><tr><th>Aspect</th><th>Value</th><th>Role</th></tr></thead><tbody>
+<tr><td>Language &amp; toolchain</td><td>Rust (stable, zero crates.io dependencies)</td><td>Reference host implementation embedding lmcode-rust (vendor/lmcode-rust/dslvm)</td></tr>
+<tr><td>Domain schema</td><td>45 host signatures</td><td>Shop, Items, Money, Ledger, Currency enum, operators, and Adjuster/Score interfaces</td></tr>
+<tr><td>Standard catalog</td><td>lmcode_std_v3</td><td>Preloaded standard catalog plus opt-in print and assert_close testing helpers</td></tr>
+<tr><td>--lmcode-schema [--json]</td><td>Discovery flag</td><td>Print human summary or exact embedded dsl.schema: 2 JSON bytes (exit 0)</td></tr>
+<tr><td>--lmcode-signatures</td><td>Discovery flag</td><td>Print sorted canonical host and standard signatures (exit 0)</td></tr>
+<tr><td>--lmcode / --first / --last</td><td>Execution flags</td><td>Run one or more compiled DSLB v6 chunks, dispatch @item/@total entries, and frame results</td></tr>
+</tbody></table>
+<pre><code>./target/release/lmcode-rust-sample --version
+./target/release/lmcode-rust-sample --lmcode-schema --json
+./target/release/lmcode-rust-sample --lmcode-signatures
+./target/release/lmcode-rust-sample --lmcode sample-suite/bytecode/001-literals.dslb</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmcode-rust-sample/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-rust-sample/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-rust-sample/reference.html">Reference</a></li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmcode-rust-sample">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-rust-sample">github.com/lmctl-ai/lmcode-rust-sample</a>.</p>
+</footer>
+</body>
+</html>

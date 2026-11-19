@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmparticle guide — lmparticle — lmctl.com tools</title>
+<meta name="description" content="Physics models, NIST XCOM cross-section interpolation, geometry priority, variance reduction, and the standard lmcode_std_v3 library for lmparticle.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmparticle/">Overview</a></li>
+<li><a href="/tools/lmparticle/skill.html">Skill</a></li>
+<li><a href="/tools/lmparticle/guide.html">Guide</a></li>
+<li><a href="/tools/lmparticle/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmparticle guide</h1>
+<p>Physics models, NIST XCOM cross-section interpolation, geometry priority, variance reduction, and the standard lmcode_std_v3 library for lmparticle.</p>
+<h2>Overview</h2>
+<p>lmparticle is a C++17 Monte Carlo photon transport engine embedded in the lmcode-cpp runtime. It combines NIST XCOM element attenuation tables, exact Klein-Nishina Compton sampling, screened Thomas-Fermi Rayleigh scattering, pair production with at-rest positron annihilation, and a seeded xoshiro256** pseudorandom generator so simulations are bitwise reproducible on a given platform.</p>
+<h2>Photon interaction models and collision kerma</h2>
+<p>Every history tracks a photon from birth until it escapes all geometry regions, is photoelectrically absorbed, drops below the energy cutoff (default and minimum 0.001 MeV, maximum 20 MeV), or is terminated by Russian roulette:</p>
+<ul>
+<li>Cross-section interpolation: for each compound or mixture, lmparticle merges the energy grids of its constituent elements (preserving K, L, and M absorption edge below/above pairs) and uses log-log interpolation for total and partial interaction coefficients.</li>
+<li>Photoelectric absorption: deposits the photon's entire energy locally at the interaction vertex without fluorescent X-ray emission.</li>
+<li>Compton (incoherent) scattering: uses the XCOM total incoherent cross section (including atomic binding effects) and samples the scattered photon angle and energy from the exact free-electron Klein-Nishina distribution, depositing the recoil electron kinetic energy locally.</li>
+<li>Rayleigh (coherent) scattering: uses the XCOM coherent cross section and samples deflection angles using a Thomson (1 + cos^2(theta))/2 factor multiplied by a screened Thomas-Fermi form factor squared; calling Sim.no_rayleigh() disables coherent scattering for narrow-beam comparisons.</li>
+<li>Pair production: sums nuclear-field and electron-field pair cross sections above 1.022 MeV, deposits E - 1.022 MeV locally as charged-particle kinetic energy, and emits two isotropic back-to-back 511 keV annihilation photons marked as collided.</li>
+<li>Collision kerma vs absorbed dose: because secondary electrons and positrons are not transported, Result.deposited(region) measures collision kerma rather than absorbed dose. The ratio deposited(region) / deposited_uncollided(region) yields the region's kerma buildup factor.</li>
+</ul>
+<h2>Geometry priority, sources, and tallies</h2>
+<ul>
+<li>Constructive region priority: Geometry supports axis-aligned boxes (box), x-y infinite slabs (slab), spheres (sphere), and z-axis cylinders (cylinder). Where regions overlap, the earlier-declared region wins, making it easy to embed a bone rod or detector crystal inside a water phantom or lead shield without Boolean subtraction.</li>
+<li>Boundary crossing stability: upon hitting a region boundary, the transport kernel snaps the coordinate to the surface and advances 1e-8 cm along the surface normal so grazing trajectories never stall in surface-reentry loops.</li>
+<li>Sources: Source supports point origins or uniform disc origins perpendicular to the beam axis, with isotropic, pencil-beam, or uniform solid-angle cone directions and monoenergetic (energy) or discrete multi-line (line) gamma spectra.</li>
+<li>Variance reduction and track recording: Sim.implicit_capture(weight_cutoff) deposits the photoelectric weight fraction at each collision and applies Russian roulette below weight_cutoff to improve deep-shielding statistics (incompatible with pulse_height). Sim.tracks(n) records up to 100,000 histories of interaction vertices for export via Result.save_tracks(path).</li>
+</ul>
+<h2>Multi-host simulation and visualization workflows</h2>
+<p>In LMScript pipelines, an lmparticle _lmcode_ block computes transport tallies, verifies known physical limits with rad.assert_close, and exports space-separated data files (save_regions, save_plane_spectrum, save_leakage_spectrum, save_pulse_height, save_tracks). Subsequent _lmcode_ blocks in the same script invoke lmplot to render publication curves and spectra, lmdraw to draw scaled geometric schematics, or lmcad to render 3D shielding layouts.</p>
+<h2>Standard lmcode_std_v3 library</h2>
+<p>Alongside context rad: Rad, lmparticle embeds the standard lmcode_std_v3 catalog (cpp/std/lmcode-std.schema.json) providing string manipulation, base64/hex encoding, math functions, typed lists/maps/queues/stacks/priority queues, JSON parsing, Mustache templates, file I/O, and structured return framing (lmcode_return_set, lmcode_return_put). The std catalog pinned in this repository does not include the REST and CLI handler interfaces (RestGet, CliCommand, rest_serve, and related signatures).</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmparticle">github.com/lmctl-ai/lmparticle</a>.</p>
+</footer>
+</body>
+</html>

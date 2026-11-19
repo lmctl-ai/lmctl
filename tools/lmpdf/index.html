@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmpdf — lmctl.com tools</title>
+<meta name="description" content="lmpdf is a self-contained Rust and Typst lmcode host that generates deterministic, tagged PDF/A-2b and PDF/UA-1 documents and slide decks.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmpdf/">Overview</a></li>
+<li><a href="/tools/lmpdf/skill.html">Skill</a></li>
+<li><a href="/tools/lmpdf/guide.html">Guide</a></li>
+<li><a href="/tools/lmpdf/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmpdf</h1>
+<p>lmpdf is a self-contained Rust and Typst lmcode host that generates deterministic, tagged PDF/A-2b and PDF/UA-1 documents and slide decks. It accepts the exact same typed calls as lmoffice docx and lmoffice pptx with bundled Latin, Arabic RTL, and CJK fonts.</p>
+<h2>Quick reference</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmpdf --version
+lmpdf docx --lmcode-schema --json
+lmpdf inspect hello.pdf</code></pre>
+<table>
+<thead><tr><th>Route or command</th><th>Key methods or flags</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>lmpdf docx</td><td>docx.create(path), heading, paragraph, table, footer_fields, markdown, html_doc, save</td><td>Render paginated, tagged PDF/A-2b and PDF/UA-1 documents from typed docx calls, Markdown, or html-doc@1 XHTML/CSS.</td></tr>
+<tr><td>lmpdf pptx</td><td>pptx.create(path), slide, title_slide, text, bullet, table, bar_chart, markdown, save</td><td>Render 16:9 presentation slide decks (1280x720 px / 960x540 pt) to tagged PDF/A-2b and PDF/UA-1.</td></tr>
+<tr><td>lmpdf inspect</td><td>lmpdf inspect FILE.pdf</td><td>Inspect a PDF and return a JSON summary with page, image, table, and hyperlink counts plus extracted text.</td></tr>
+<tr><td>lmpdf docx --to-markdown</td><td>lmpdf docx --to-markdown FILE.pdf</td><td>Extract Markdown content from a generated PDF file.</td></tr>
+</tbody>
+</table>
+<pre><code>output = ARGV.len() > 0 ? ARGV[0] : "hello.pdf";
+p = _lmcode_ cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.2.19";
+let doc = docx.create(${output});
+doc.heading("Hello PDF", 1);
+doc.paragraph("The same document calls can target lmoffice docx or lmpdf docx.");
+doc.footer_fields("Page {PAGE} of {NUMPAGES}").save();
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmpdf/skill.html">Skill</a> — authoring rules, CLI commands, inputs and outputs, safety rules, worked examples, and verification steps.</li>
+<li><a href="/tools/lmpdf/guide.html">Guide</a> — Typst layout architecture, lmoffice parity, PDF/A-2b and PDF/UA-1 conformance, dry execution, and the standard lmcode_std_v3 library.</li>
+<li><a href="/tools/lmpdf/reference.html">Reference</a> — complete CLI flags, docx and pptx schema types and methods, standard library catalog, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmpdf">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmpdf">github.com/lmctl-ai/lmpdf</a>.</p>
+</footer>
+</body>
+</html>

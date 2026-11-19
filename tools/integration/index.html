@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>integration — lmctl.com tools</title>
+<meta name="description" content="integration provides hermetic E2E scenarios, the ported mono-test suite, and reusable GitHub Actions for published lmctl, lmscript, and lmcode releases.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/integration/">Overview</a></li>
+<li><a href="/tools/integration/skill.html">Skill</a></li>
+<li><a href="/tools/integration/guide.html">Guide</a></li>
+<li><a href="/tools/integration/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>integration</h1>
+<p>integration provides hermetic E2E scenarios, the ported mono-test suite, and reusable GitHub Actions for published lmctl, lmscript, and lmcode releases.</p>
+<h2>Quick reference</h2>
+<p>Run hermetic T0 and T1 scenarios against installed releases, run the ported 88-entry mono-test suite and its negative controls, or invoke the reusable setup action in GitHub Actions.</p>
+<pre><code>bash tests/setup-selftest.sh
+bash scripts/run-scenario.sh scenarios/t0-claudemock
+bash scripts/run-scenario.sh scenarios/t0-fanout
+bash scripts/run-scenario.sh scenarios/t1-lmmock-ai
+bash tests/scenario-controls.sh
+node suites/mono-test/run.mjs
+node suites/mono-test/run.mjs --control broken-bin
+bash tests/suite-controls.sh</code></pre>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Path</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Reusable setup action</td>
+<td>actions/setup (lmctl-ai/integration/actions/setup@&lt;sha>)</td>
+<td>Install @lmctl-ai/lmctl in RUNNER_TEMP and SHA-256-verify released lmcode hosts and extra assets.</td>
+</tr>
+<tr>
+<td>T0 ClaudeMock scenarios</td>
+<td>scenarios/t0-claudemock, t0-fanout, t0-provider-smoke-mock</td>
+<td>Verify lm_prompt, lm_fanout slot ordering, multi-turn seeds, and error handling offline.</td>
+</tr>
+<tr>
+<td>T1 lmmock scenarios</td>
+<td>scenarios/t1-lmmock-ai, t1-lmmock-modes</td>
+<td>Verify lmscript -> lmctl -> miniplayer acp -> HTTP -> lmmock across ok, retry (429), 401, 500, and bad-json modes.</td>
+</tr>
+<tr>
+<td>Ported mono-test suite</td>
+<td>suites/mono-test/run.mjs (inventory.tsv, allowlist.json)</td>
+<td>Run the hermetic subset of the 88 lmctl-mono-test suites against the published lmctl package.</td>
+</tr>
+<tr>
+<td>Negative control suites</td>
+<td>tests/setup-selftest.sh, scenario-controls.sh, suite-controls.sh</td>
+<td>Prove that corrupted checksums, bad tags, wrong replies, and vacuous binaries fail the gate.</td>
+</tr>
+</tbody>
+</table>
+<p>Runnable scenario and control verification example executing T0 scenarios in a hermetic temporary HOME:</p>
+<pre><code>bash tests/setup-selftest.sh
+bash scripts/run-scenario.sh scenarios/t0-claudemock
+bash scripts/run-scenario.sh scenarios/t0-fanout
+bash scripts/run-scenario.sh scenarios/t0-provider-smoke-mock</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/integration/skill.html">Skill</a> — LLM agent authoring rules, hermetic scenario execution, negative controls, and verification steps.</li>
+<li><a href="/tools/integration/guide.html">Guide</a> — Architecture of actions/setup, T0/T1 scenario chains, ported mono-test runner, and allowlist policy.</li>
+<li><a href="/tools/integration/reference.html">Reference</a> — Action inputs/outputs, scenario matrix, mono-test classifications, control tests, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/integration">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/integration">github.com/lmctl-ai/integration</a>.</p>
+</footer>
+</body>
+</html>

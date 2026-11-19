@@ -25,6 +25,7 @@
 <p>This lmcode-cpp page is also kept at its former address for existing links.</p>
 <h2>Overview</h2>
 <p>The SDK is a header-only C++17 loader, structural verifier, registry and VM. lmscript compiles source against a JSON schema; the host implements that schema in C++ and supplies its exact bytes to Program::load. The SDK does not parse or interpret schema JSON.</p>
+<p>Blocks are written between _lmcode_ and end _lmcode_; users of a released host name it with cli and install and execute the block with run_lmcode, which returns ok and result. See the <a href="/tools/cpp-dsl-sdk/reference.html">reference</a> for the full API and standard catalog tables.</p>
 <h2>Install</h2>
 <p>Copy include/dslvm.hpp into your source tree and include it, or pin a repository revision and verify the header hash. Compile as C++17. No separate library is built and the header has no third-party dependencies. Use the matching published lmscript compiler.</p>
 <h2>Concepts</h2>
@@ -47,6 +48,10 @@ program.run(context, registry);</code></pre>
 </tbody></table>
 <p>String lengths and indexes are bytes; UTF-8 is not decoded. Case conversion is ASCII-only. The catalog documents bounded replacement/repetition and glob work.</p>
 <p>CLI hosts commonly embed one schema and implement --schema (compact summary), --schema --json (exact JSON bytes), and --lmcode-signatures (registry list). A host can accept multiple --lmcode bytecode files and run them in order against that same schema. The SDK itself does not define a CLI.</p>
+<h2>Standard catalog</h2>
+<p>Every default dslvm::Registry includes the lmcode_std_v3 standard catalog: 226 canonical signatures (88 functions and 138 methods on 17 standard types), pinned in std.lock as version 3 of std/lmcode-std.schema.json. Registry(StdMode::Disabled) opts out and dslvm::register_std(registry) enables it idempotently.</p>
+<p>The catalog includes the standard REST and CLI surface: the 10 interfaces RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand and CliOption (each takes one RestExchange and returns void), the functions rest_config, rest_route, rest_serve, rest_stop and rest_cli, and 15 RestExchange methods.</p>
+<p>Route templates accept {param} and {rest...} as well as :param and :rest... placeholders, and rest_cli dispatches options, commands and REST routes from an argument list in a stateless CLI mode.</p>
 <h2>Tasks</h2>
 <ul><li>Register an object: call registry.context(name, type), then bind the type's methods with registry.method.</li><li>Check parity: compare registry.signatures() with lmscript --lmcode-signatures schema.json.</li><li>Load safely: read binary files without text conversion and pass exact schema bytes to Program::load.</li><li>Support collections: expose a host object with len() -> int and at(int) -> T; the compiler lowers foreach to those methods.</li><li>Use standard functions directly; add registry callbacks only for host-specific functions and methods.</li></ul>
 <h2>Limits</h2>
