@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmfinance — lmctl.com tools</title>
+<meta name="description" content="lmfinance is a native lmcode host that puts QuantLib behind an LMScript _lmcode_ block: yield curves, bonds, swaps, caps, floors and swaptions, vanilla,…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmfinance/">Overview</a></li>
+<li><a href="/tools/lmfinance/skill.html">Skill</a></li>
+<li><a href="/tools/lmfinance/guide.html">Guide</a></li>
+<li><a href="/tools/lmfinance/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmfinance</h1>
+<p>lmfinance is a native lmcode host that puts QuantLib behind an LMScript _lmcode_ block: yield curves, bonds, swaps, caps, floors and swaptions, vanilla, barrier and Asian options, Greeks, value at risk and Heston calibration in one executable. It is a scripting host, not a command-line calculator: lmscript compiles the block against the schema embedded in the binary and runs it with run_lmcode.</p>
+<h2 id="install">Install and run</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmscript bs.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmfinance/main/examples/option_pricing.lms</code></pre>
+<p>The install attribute of the block downloads the lmfinance release binary for the platform on first use and verifies its SHA-256; no separate installation step is needed. The current release is lmfinance 0.1.4. Linux binaries need dynamic glibc 2.35 or newer (Ubuntu 22.04 or newer); QuantLib and the C++ runtimes are linked statically.</p>
+<h2 id="example">Minimal example</h2>
+<pre><code># bs.lms: Black-Scholes call S=100 K=100 r=5% vol=20% T=1 is worth 10.4506
+prog = _lmcode_ cli="lmfinance" install="github:lmctl-ai/lmfinance@latest";
+let m = model.black_scholes(100.0, 0.05, 0.0, 0.2);
+let call = instrument.european_call(100.0, 1.0);
+let res = pricing.price(call, m, pricing.analytic());
+lmf.print("price " + str(res.price()) + " delta " + str(res.delta()));
+lmf.assert_close(res.price(), 10.4506, 0.00005);
+lmcode_return_put("price", res.price());
+lmcode_return_put("delta", res.delta());
+end _lmcode_
+r = run_lmcode(prog);
+println(json_stringify(r));
+require(r.ok, "pricing run failed");</code></pre>
+<pre><kbd>lmscript bs.lms</kbd>
+<samp>price 10.4505835721856 delta 0.636830651175619
+{"ok":true,"result":{"price":10.450583572185577,"delta":0.6368306511756194}}</samp></pre>
+<h2 id="protocol">CLI flags and host protocol</h2>
+<table>
+<thead>
+<tr><th>Invocation</th><th>Effect</th><th>Exit</th></tr>
+</thead>
+<tbody>
+<tr><td>lmfinance --version</td><td>Prints lmfinance X.Y.Z (exactly this form, used by the installer)</td><td>0</td></tr>
+<tr><td>lmfinance --notices</td><td>Prints the embedded third-party license texts (QuantLib, Boost, runtimes)</td><td>0</td></tr>
+<tr><td>lmfinance --lmcode-schema --json</td><td>Prints the exact embedded schema bytes (dsl.schema 2) that lmscript compiles against</td><td>0</td></tr>
+<tr><td>lmfinance --lmcode-schema</td><td>Prints the registry signatures as text, one per line</td><td>0</td></tr>
+<tr><td>lmfinance --lmcode-signatures</td><td>Prints the same signature list: 320 lines in 0.1.4 (7 contexts, 107 host methods, 206 standard signatures)</td><td>0</td></tr>
+<tr><td>lmfinance --lmcode FILE [FILE ...]</td><td>Loads and verifies every compiled program first, then runs them in order and writes one result frame; this is what run_lmcode calls</td><td>0, 3 or 4</td></tr>
+<tr><td>lmfinance --dry-run --lmcode FILE [FILE ...]</td><td>Loads and verifies every program but runs none</td><td>0 or 3</td></tr>
+<tr><td>anything else</td><td>Usage text on stderr and a cli failure frame</td><td>2</td></tr>
+</tbody>
+</table>
+<p>Exit codes: 0 success, 2 command-line or invocation metadata error, 3 program load or run error, 4 application or output failure. The environment variable LMFINANCE_MAX_MEMORY_MB sets the total memory budget in MiB (default 4096).</p>
+<h2 id="api">Context objects</h2>
+<p>Seven context objects are in scope inside the block. Rates are decimals (0.05), volatilities are annual, maturities are years, dates are YYYY-MM-DD strings, and float arguments need a decimal point (100.0, not 100).</p>
+<table>
+<thead>
+<tr><th>Context</th><th>Main members</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>market</td><td>set_date, date, flat_curve(rate), zero_curve(), bootstrap_curve()</td><td>Curve, or a CurveBuilder with zero, deposit, swap and build</td></tr>
+<tr><td>instrument</td><td>european_call, european_put, american_call, american_put, barrier_call, barrier_put, asian_call, asian_put, bond, zero_bond, swap, cap, floor, swaption</td><td>Option, Bond, Swap, CapFloor, Swaption</td></tr>
+<tr><td>model</td><td>black_scholes(spot, rate, dividend, vol), heston(spot, rate, dividend, v0, kappa, theta, sigma, rho)</td><td>Model with spot, param, with_spot, with_rate, with_vol</td></tr>
+<tr><td>pricing</td><td>Engines analytic, binomial, binomial_tree, finite_diff, monte_carlo, baw; price(option, model, engine); bond_*, swap_*, capfloor_* and swaption_* valuations</td><td>Engine, Result (price, stderr, delta, gamma, vega, theta, rho), float</td></tr>
+<tr><td>risk</td><td>Bumped delta, gamma, vega, rho, theta; bond_dv01, swap_dv01; var_normal, es_normal; series(path); save_profile</td><td>float, Series (size, get, mean, std, min, max, quantile, var, es)</td></tr>
+<tr><td>calibration</td><td>implied_vol(option, model, engine, price); heston(spot, rate, dividend)</td><td>float, HestonFit (quote, guess, fit, error)</td></tr>
+<tr><td>lmf</td><td>assert_close(a, b, tolerance), check(bool, message), print(text), save_text(path, text), version()</td><td>void, string</td></tr>
+</tbody>
+</table>
+<p>The schema also carries the standard lmcode_std_v3 library as vendored by lmfinance 0.1.4: 206 signatures (strings, math, files, collections, Json, the lmcode_return result sink). The current catalog in lmcode-cpp has 226 signatures including the REST and CLI interfaces; lmfinance picks those up when it next syncs and releases.</p>
+<h2 id="pages">Detail pages</h2>
+<ul>
+<li><a href="/tools/lmfinance/skill.html">Skill</a>: install, commands, safety rules, worked examples, errors and verification for agents</li>
+<li><a href="/tools/lmfinance/guide.html">Guide</a>: domain model, market conventions, engines, architecture and limits</li>
+<li><a href="/tools/lmfinance/reference.html">Reference</a>: every type, method, context object, flag, exit code and standard library signature</li>
+<li><a href="https://github.com/lmctl-ai/lmfinance">GitHub repository lmctl-ai/lmfinance</a>: source, examples and gallery</li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmfinance">github.com/lmctl-ai/lmfinance</a>.</p>
+</footer>
+</body>
+</html>

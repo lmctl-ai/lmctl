@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmformat guide — lmformat — lmctl.com tools</title>
+<meta name="description" content="Two-phase grid measurement, decimal alignment, width capping, and scalar formatting conventions in @lmctl-ai/lmformat.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmformat/">Overview</a></li>
+<li><a href="/tools/lmformat/skill.html">Skill</a></li>
+<li><a href="/tools/lmformat/guide.html">Guide</a></li>
+<li><a href="/tools/lmformat/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmformat guide</h1>
+<p>Two-phase grid measurement, decimal alignment, width capping, and scalar formatting conventions in @lmctl-ai/lmformat.</p>
+<h2>Overview</h2>
+<p>lmformat is designed around predictable, zero-dependency CLI output: columns size themselves to the widest cell by default, two spaces separate adjacent columns, trailing spaces are never emitted at the end of a line, and every glyph or width cap is an explicit caller option rather than a heuristic.</p>
+<h2>Measuring and rendering shared grids</h2>
+<p>While formatTable and printTable measure and render a single table in one step, CLI status displays often group rows under separate section headings while keeping columns aligned down the entire screen. Splitting measurement from rendering solves this cleanly:</p>
+<ol>
+<li>Pass an array of section row arrays (or { rows, headers } objects) to measureColumns(grids, options) to compute one shared widths array across all sections.</li>
+<li>Render each section independently with renderGrid(rows, { widths, margin: 2 }), placing section headings or blank lines between sections as needed.</li>
+</ol>
+<pre><code>const { measureColumns, renderGrid } = require('@lmctl-ai/lmformat');
+
+const running = [['math.lmctl:Lead', 'exec', 'running 16h ago']];
+const idle = [
+  ['triage.lmctl:Triage', 'chat', 'ran 24s, idle 5m ago'],
+  ['or.lmctl:Lead', 'chat', 'ran 5s, idle 6m ago'],
+];
+
+const widths = measureColumns([running, idle]);
+console.log('Running:');
+console.log(renderGrid(running, { widths, margin: 2 }));
+console.log('Idle:');
+console.log(renderGrid(idle, { widths, margin: 2 }));</code></pre>
+<h2>Decimal alignment across sections</h2>
+<p>Setting align to decimal aligns floating-point numbers and dollar amounts ($10, $0.25, -$1.25, comma-grouped thousands) on the decimal point without rounding or adding trailing zeros. Missing fractional digits are reserved with spaces, and non-numeric cells or headers fall back to standard right alignment. When sharing decimal alignment across multiple sections, compute const decimalPlaces = measureDecimalPlaces(sections) first and pass both align and decimalPlaces to measureColumns and renderGrid.</p>
+<h2>Manual width caps and truncation</h2>
+<p>To prevent an outlier cell from stretching a table, pass max: [26, null, 20] to measureColumns, renderGrid, formatTable, or printTable. Any non-trailing cell wider than its column width is truncated to fit with a trailing ellipsis (default …, customizable via ellipsis: '...' or '' for a hard cut). Trailing cells are left open-ended by default; pass truncateTrailing: true to bound the last populated column as well, or truncate: false to disable truncation entirely.</p>
+<h2>Terminal display width and cell sanitization</h2>
+<p>Column measurement uses terminal display widths: East Asian wide and fullwidth characters and most emoji count as width 2, while combining marks and zero-width characters count as width 0. Because multi-line cells or terminal escape codes corrupt tabular alignment, raw control characters throw an error; use escapeCell(untrusted) to escape control bytes safely before formatting.</p>
+<h2>Scalar formatters for CLI telemetry</h2>
+<p>lmformat includes eight scalar formatters tailored for CLI status tables:</p>
+<ul>
+<li>formatCount(n) formats finite numbers using K/M/B/T suffixes (960K, 15.8M), promoting units after symmetric rounding so 999999 becomes 1.0M.</li>
+<li>formatDuration(ms, { maxUnit, style }) formats milliseconds in up to two units (2h 5m, or 2d02h03m with style: 'compact', or capped at days with maxUnit: 'd').</li>
+<li>formatRelativeTime(ts, { now }) returns the largest whole unit relative to now (3d, 40m ago, now, or unknown).</li>
+<li>formatPercent(fraction) and formatBar(fraction, { width, fill, empty, unknown }) render quota usage percentages and fixed-width progress bars.</li>
+<li>formatTimer(ms), formatClock(ts), and formatLocalTimestamp(ts) format digital stopwatches (00:36:12 or 5d 18:24:33) and local wall-clock timestamps.</li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmformat">github.com/lmctl-ai/lmformat</a>.</p>
+</footer>
+</body>
+</html>

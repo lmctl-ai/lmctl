@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmgcp guide — lmgcp — lmctl.com tools</title>
+<meta name="description" content="lmgcp is a single-binary Google Cloud Platform host for LMScript built on lmcode-go and official Google Cloud Go SDKs (cloud.google.com/go and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmgcp/">Overview</a></li>
+<li><a href="/tools/lmgcp/skill.html">Skill</a></li>
+<li><a href="/tools/lmgcp/guide.html">Guide</a></li>
+<li><a href="/tools/lmgcp/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmgcp guide</h1>
+<h2>Overview</h2>
+<p>lmgcp is a single-binary Google Cloud Platform host for LMScript built on lmcode-go and official Google Cloud Go SDKs (cloud.google.com/go and google.golang.org/api). It provides two execution surfaces in one executable: the native 16-service Gcp schema (default lmgcp command) and the provider-neutral lmcloud schema (lmgcp cloud subcommand).</p>
+<h2>Dual schema architecture: native Gcp and shared lmcloud</h2>
+<p>Understanding the two CLI modes lets you pick the right abstraction for your script:</p>
+<ul>
+<li>Native GCP mode (lmgcp --lmcode FILE): binds schema/lmgcp.dsl.json with context gcp: Gcp. It exposes 299 host-specific signatures across 16 GCP service families and 20 typed handles, plus 226 standard lmcode_std_v3 signatures (525 total signatures). Use this mode for the 40 visual GCP cloud stories, multi-VPC topology analysis, GKE/Cloud SQL/KMS/IAM security audits, BigQuery/Firestore data workflows, and Cloud Logging/Monitoring pipelines.</li>
+<li>Shared lmcloud mode (lmgcp cloud --lmcode FILE): delegates to cloudhost.Program from github.com/lmctl-ai/lmcloud/hostkit/cloudhost and binds schema/lmcloud.dsl.json with context cloud: Cloud. In this mode, bucket_* and object_* map to Cloud Storage (GCS), queue_* maps to Pub/Sub topic-and-subscription pairs, and table_*/item_* map to Firestore.</li>
+</ul>
+<h2>In-process fakegcp server versus local gcpsim emulator</h2>
+<p>lmgcp supports three transport backends without code changes:</p>
+<ul>
+<li>In-process fakegcp server (default): starts an ephemeral loopback HTTP server inside the lmgcp process pre-seeded with 43 realistic GCP resources across all 16 domains. Every example runs deterministically offline at $0.00 actual cloud cost.</li>
+<li>Local gcpsim emulator: set LMGCP_ENDPOINT=http://127.0.0.1:4588 (or cloud.set_endpoint("all", "http://127.0.0.1:4588") in lmgcp cloud mode) to target a standalone gcpsim process for GCS and Pub/Sub testing. Set LMGCP_ACCESS_TOKEN when testing against gcpsim --auth enforce with OAuth bearer token and IAM binding rules.</li>
+<li>Live Google Cloud (LMGCP_LIVE=1): authenticates with Google Application Default Credentials in LMGCP_PROJECT, LMGCP_REGION (default us-central1), and LMGCP_ZONE (default us-central1-a). LMGCP_ENDPOINT and LMGCP_LIVE=1 are mutually exclusive.</li>
+</ul>
+<h2>Cloud safety guardrails and RunLedger cost model</h2>
+<p>Every mutating operation in lmgcp passes through internal/safety guardrails:</p>
+<ul>
+<li>Mandatory prefixes and labels: created resources are automatically prefixed with lmgcp_&lt;runId>_ or lmgcp-&lt;runId>- and labeled with lmgcp_test=&lt;runId>. Resources lacking ownership metadata are never modified or deleted.</li>
+<li>Shape allowlists: Compute Engine instances are restricted to e2-micro and e2-small with boot disks ≤20 GB; Cloud SQL instances are restricted to db-f1-micro and db-g1-small; GKE cluster creation is read-only in live mode to prevent high-cost control-plane charges.</li>
+<li>Pre-dispatch cost cap: RunLedger estimates cost using us-central1 list prices before each mutating request. The default cap is $0.05 per run with a hard ceiling of $0.25. Any operation that would push cumulative cost above the cap is refused before contacting the transport.</li>
+<li>Durable recovery journal and LIFO teardown: every creation appends an entry to an fsynced journal in LMGCP_STATE_DIR (or LMGCP_LEDGER). On normal exit, error, or memory watchdog trigger (LMGCP_MAX_MEMORY_MB, default 4096 MiB), CleanupLedger deletes owned resources in reverse order. Interrupted runs can be replayed with lmgcp --sweep --run-id ID --delete.</li>
+</ul>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<p>Both native lmgcp and lmgcp cloud register the 226-signature lmcode_std_v3 standard library, including all 10 standard REST and CLI SAM interfaces (RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand, CliOption) and the 5 dispatcher functions (rest_config, rest_route, rest_serve, rest_stop, rest_cli).</p>
+<pre><code>p = _lmcode_ cli="lmgcp" install="github:lmctl-ai/lmgcp@latest";
+  @"/projects/inventory/:service"
+  fn get_inv(x: RestExchange) -> void implements RestGet {
+    let svc = x.param("service");
+    if (svc == "vms") {
+      x.json("{\"vms\":" + str(gcp.compute_list_instances(gcp.zone()).len()) + "}");
+      return;
+    }
+    x.json("{\"buckets\":" + str(gcp.storage_list_buckets().len()) + "}");
+  }
+
+  @"--format"
+  fn opt_fmt(x: RestExchange) -> void implements CliOption {
+    x.set("fmt", x.query("format"));
+  }
+
+  @"audit"
+  fn cmd_audit(x: RestExchange) -> void implements CliCommand {
+    x.send(x.get("fmt") + ":vms=" + str(gcp.compute_list_instances(gcp.zone()).len()));
+  }
+
+  rest_config("prefix", "/v1");
+  let a = rest_cli(str_split("--format text audit", " "));
+  let b = rest_cli(str_split("/v1/projects/inventory/vms", " "));
+  print(a + " | " + b);
+end _lmcode_</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmgcp">github.com/lmctl-ai/lmgcp</a>.</p>
+</footer>
+</body>
+</html>

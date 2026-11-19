@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>claude-ollama-live guide — claude-ollama-live — lmctl.com tools</title>
+<meta name="description" content="claude-ollama-live defines a deterministic CLI probe and a reusable GitHub Actions workflow that qualifies Claude Code (@anthropic-ai/claude-code@2.1.316)…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/claude-ollama-live/">Overview</a></li>
+<li><a href="/tools/claude-ollama-live/skill.html">Skill</a></li>
+<li><a href="/tools/claude-ollama-live/guide.html">Guide</a></li>
+<li><a href="/tools/claude-ollama-live/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>claude-ollama-live guide</h1>
+<h2>Overview</h2>
+<p>claude-ollama-live defines a deterministic CLI probe and a reusable GitHub Actions workflow that qualifies Claude Code (@anthropic-ai/claude-code@2.1.316) against Ollama Cloud's Anthropic-compatible Messages endpoint (https://ollama.com) alongside a loopback lmmock Anthropic handler.</p>
+<h2>Direct Ollama Cloud configuration and compatibility contract</h2>
+<p>Starting in Ollama 0.14.0, Ollama exposes an Anthropic-compatible /v1/messages endpoint. Rather than running a local Ollama proxy daemon in CI, claude-ollama-live connects Claude Code directly to https://ollama.com using bearer authentication:</p>
+<ul>
+<li>Base URL and bearer routing: set ANTHROPIC_BASE_URL=https://ollama.com (without a trailing /v1), ANTHROPIC_API_KEY="", and ANTHROPIC_AUTH_TOKEN from the OLLAMA_API_KEY secret.</li>
+<li>Model slot pinning: hosted model names (such as glm-5.3-flash) omit the :cloud suffix used by local signed-in proxies. Pin ANTHROPIC_MODEL and all four ANTHROPIC_DEFAULT_{OPUS,SONNET,HAIKU,FABLE}_MODEL environment variables to glm-5.3-flash so background helper calls cannot drift to another model alias.</li>
+<li>Prompt-cache and tool isolation: set DISABLE_PROMPT_CACHING=1 because Ollama's Anthropic compatibility layer does not support prompt-cache control blocks or count_tokens. The probe invokes claude with --bare -p --output-format json --tools "" --setting-sources "" --no-session-persistence and an explicit empty MCP configuration with stdin closed.</li>
+</ul>
+<h2>Organization-secret boundary and reusable workflow architecture</h2>
+<p>The live operator secret OLLAMA_API_KEY belongs to the private lmctlhq GitHub organization and is never copied into the public lmctl-ai organization:</p>
+<ul>
+<li>Public push workflow: runs the loopback lmmock job and visibly skips the live job. A skipped live job is never counted as live qualification.</li>
+<li>Private organization runner (lmctlhq/claude-ollama-live-runner): calls the public reusable workflow at an exact pinned commit SHA and passes secrets.OLLAMA_API_KEY by reference. Both live and mock jobs execute in full, emitting safe JSON summaries without uploading raw Claude logs, HOME directories, or session transcripts.</li>
+</ul>
+<h2>Loopback lmmock qualification and semantic negative controls</h2>
+<p>Every run proves both positive transport and negative failure detection:</p>
+<ul>
+<li>Live positive and negative control: the live job asserts exit 0, JSON type=result, subtype=success, is_error=false, and exact reply OLLAMA_CLAUDE_OK_107, then runs a synthetic invalid-key control that must fail with client exit 1.</li>
+<li>Mock positive and wrong-reply control: the mock job downloads and SHA-256-verifies lmmock (v0.1.94) with its shipped examples/llm-api.lms Anthropic Handler, confirms a real POST /v1/messages with HTTP 200 in the request audit, and runs a wrong-reply control that returns HTTP 200 and client exit 0 so the oracle's exact-text assertion proves it can fail semantically.</li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/claude-ollama-live">github.com/lmctl-ai/claude-ollama-live</a>.</p>
+</footer>
+</body>
+</html>

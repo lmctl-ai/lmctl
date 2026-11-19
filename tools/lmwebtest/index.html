@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmwebtest — lmctl.com tools</title>
+<meta name="description" content="lmwebtest is a Playwright Chromium browser automation host and web integration testing tool for lmscript.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmwebtest/">Overview</a></li>
+<li><a href="/tools/lmwebtest/skill.html">Skill</a></li>
+<li><a href="/tools/lmwebtest/guide.html">Guide</a></li>
+<li><a href="/tools/lmwebtest/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmwebtest</h1>
+<p>lmwebtest is a Playwright Chromium browser automation host and web integration testing tool for lmscript. It provides a concise Web and Report DSL, a full reflective Playwright lmcode host, and CLI commands for page health checks and screenshots.</p>
+<h2>Quick reference</h2>
+<pre><code>lmscript install github:lmctl-ai/lmwebtest
+npx playwright install chromium
+lmwebtest --version
+lmwebtest test http://127.0.0.1:3000 --status 200 --selector "#app"
+lmwebtest screenshot http://127.0.0.1:3000 --out screenshots/page.png</code></pre>
+<table>
+<thead>
+<tr>
+<th>Surface or command</th>
+<th>Invocation or context</th>
+<th>Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Web DSL host</td>
+<td>_lmcode_ cli="lmwebtest" (context web: Web, report: Report)</td>
+<td>Navigate, wait for selectors, click/fill/press, save rendered HTML, and record findings</td>
+</tr>
+<tr>
+<td>Playwright host</td>
+<td>_lmcode_ cli="lmwebtest playwright" (context pw: Playwright)</td>
+<td>Drive the complete Playwright API including file uploads, downloads, dialogs, routing, and expect</td>
+</tr>
+<tr>
+<td>lmwebtest test</td>
+<td>lmwebtest test &lt;url> [--status 200] [--title TEXT] [--selector CSS]</td>
+<td>Verify HTTP status, console/page errors, failed requests, visible selectors, and broken images</td>
+</tr>
+<tr>
+<td>lmwebtest screenshot</td>
+<td>lmwebtest screenshot &lt;url> --out &lt;file.png> [--no-js]</td>
+<td>Capture a full-page PNG screenshot of a live or local URL</td>
+</tr>
+<tr>
+<td>lmwebtest init</td>
+<td>lmwebtest init &lt;site-name> [--url &lt;url>]</td>
+<td>Scaffold a per-site Playwright test directory under sites/&lt;site-name></td>
+</tr>
+<tr>
+<td>lmwebtest run / batch</td>
+<td>lmwebtest run [site-id|file] | lmwebtest batch</td>
+<td>Execute Playwright test suites across one or all configured site directories</td>
+</tr>
+</tbody>
+</table>
+<pre><code>let test_dsl = _lmcode_ cli="lmwebtest" install="github:lmctl-ai/lmwebtest@latest";
+let page = web.navigate("https://example.com");
+page.wait_for("h1", 10000);
+if (!page.has("h1")) {
+  report.add("missing_heading", "h1", 1, "Expected main heading");
+  report.fail_if_any();
+}
+page.save_html("rendered.html");
+web.close();
+end _lmcode_
+let r = run_lmcode(test_dsl);
+require(r.ok, "web check failed");</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmwebtest/skill.html">Authoring skill</a>: purpose, commands, safety rules, worked examples, and verification steps for browser automation scripts.</li>
+<li><a href="/tools/lmwebtest/guide.html">Guide</a>: tiered HTTP-to-browser acquisition architecture, Web DSL vs Playwright worker-bridge host, file uploads, and offline lmmock testing.</li>
+<li><a href="/tools/lmwebtest/reference.html">Reference</a>: complete tables of CLI commands and flags, Web, Page, Element, ElementList, and Report methods, Playwright host handle types, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmwebtest">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmwebtest">github.com/lmctl-ai/lmwebtest</a>.</p>
+</footer>
+</body>
+</html>

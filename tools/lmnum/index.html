@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmnum — lmctl.com tools</title>
+<meta name="description" content="lmnum is a native numerical computing host for LMScript that embeds Eigen linear algebra, SUNDIALS ODE and nonlinear solvers, quadrature, root finding, and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmnum/">Overview</a></li>
+<li><a href="/tools/lmnum/skill.html">Skill</a></li>
+<li><a href="/tools/lmnum/guide.html">Guide</a></li>
+<li><a href="/tools/lmnum/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmnum</h1>
+<p>lmnum is a native numerical computing host for LMScript that embeds Eigen linear algebra, SUNDIALS ODE and nonlinear solvers, quadrature, root finding, and optimization.</p>
+<h2>Quick reference</h2>
+<p>Install lmctl and run any published numerical script directly, or declare cli="lmnum" in an LMScript _lmcode_ block. The current supported release is v0.1.4.</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmnum/main/examples/linear_algebra.lms</code></pre>
+<table>
+<thead><tr><th>Method</th><th>Signature</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>num.matrix / identity / parse / linspace</td><td>matrix constructors -> Matrix</td><td>Build dense double-precision matrices and column vectors</td></tr>
+<tr><td>num.random / normal</td><td>(rows, cols, seed) -> Matrix</td><td>Generate cross-platform deterministic uniform [0, 1) or standard normal matrices</td></tr>
+<tr><td>num.load_csv / Matrix.save_csv</td><td>(path: string)</td><td>Load whitespace or comma CSV data and write exact round-trip space-separated tables</td></tr>
+<tr><td>Matrix.solve / lstsq / inverse / det</td><td>linear algebra methods</td><td>Solve linear systems (FullPivLU), least squares, inverses, and determinants</td></tr>
+<tr><td>Matrix.eig_sym / eigvec_sym / svd_* / cholesky</td><td>factorizations -> Matrix</td><td>Compute symmetric eigendecompositions, thin SVD factors, and Cholesky L factors</td></tr>
+<tr><td>num.ode(n)</td><td>(n: int) -> Ode</td><td>Build and solve nonstiff (Adams) or stiff (BDF) ODE systems with SUNDIALS CVODE</td></tr>
+<tr><td>num.system(n)</td><td>(n: int) -> System</td><td>Solve nonlinear systems F(x) = 0 with SUNDIALS KINSOL</td></tr>
+<tr><td>num.integrate / integrate_tol</td><td>(expr, var, a, b[, tol]) -> float</td><td>Compute 1D definite integrals with adaptive Gauss-Kronrod quadrature</td></tr>
+<tr><td>num.root</td><td>(expr, var, a, b) -> float</td><td>Find a bracketed root on [a, b] with Brent's method</td></tr>
+<tr><td>num.minimize / minimize_path</td><td>(expr, vars, guess) -> Matrix</td><td>Minimize a multivariate objective with the Nelder-Mead simplex algorithm</td></tr>
+<tr><td>num.polyfit / polyval / interp</td><td>fitting and interpolation</td><td>Fit least-squares polynomials and evaluate 1D linear interpolants</td></tr>
+</tbody>
+</table>
+<p>Solve a stiff Robertson chemical kinetics ODE system with SUNDIALS CVODE BDF:</p>
+<pre><code>p = _lmcode_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
+let ode = num.ode(3).stiff().tol(1e-8, 1e-12);
+ode.rhs(0, "-0.04*y0 + 1e4*y1*y2")
+   .rhs(1, "0.04*y0 - 1e4*y1*y2 - 3e7*y1*y1")
+   .rhs(2, "3e7*y1*y1")
+   .init(0, 1.0).init(1, 0.0).init(2, 0.0);
+let sol = ode.solve(0.0, 40.0, 101);
+num.assert_close(sol.get(100, 1) + sol.get(100, 2) + sol.get(100, 3), 1.0, 1e-9);
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, "stiff ODE solve failed");</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmnum/skill.html">Skill</a>: installation, commands, safety rules, verification steps, and worked examples for LLM agents.</li>
+<li><a href="/tools/lmnum/guide.html">Guide</a>: matrix conventions, expression strings, Eigen decompositions, and SUNDIALS solvers.</li>
+<li><a href="/tools/lmnum/reference.html">Reference</a>: complete tables of CLI flags, Num, Matrix, Func, Ode, and System methods, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmnum">Source repository and releases</a></p></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmnum">github.com/lmctl-ai/lmnum</a>.</p>
+</footer>
+</body>
+</html>

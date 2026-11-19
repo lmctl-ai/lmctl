@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>lmvideo — lmctl.com tools</title>
-<meta name="description" content="Draw images and compose video from LMScript programs using the lmvideo host.">
+<title>lmvideo skill — lmvideo — lmctl.com tools</title>
+<meta name="description" content="How an agent uses the lmvideo host to turn an LMScript program into PNG, SVG, PDF, GIF or MP4 output: the exact block form, the video lifecycle, safe paths,…">
 <link rel="stylesheet" href="/tools/style.css">
 
 </head>
@@ -16,6 +16,8 @@
 <li><a href="/skills/">Skills</a></li>
 <li><a href="/tools/lmvideo/">Overview</a></li>
 <li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/guide.html">Guide</a></li>
+<li><a href="/tools/lmvideo/reference.html">Reference</a></li>
 <li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
 <li><a href="/tools/lmvideo/examples/">Examples</a></li>
 <li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
@@ -24,17 +26,197 @@
 <li><a href="/tools/lmvideo/physics/">Physics</a></li>
 </ul>
 </nav>
-<main><h1>lmvideo</h1>
-<p>Draw images and compose video from LMScript programs using the lmvideo host. Start with the public examples, whose source and previews are imported at a pinned commit.</p>
-<h2>Purpose</h2><p>Generate charts, diagrams, images and video from scripts.</p>
-<h2>When to use it</h2><p>Use it for reproducible visual explanations and programmatic drawing.</p>
-<h2>Install</h2><pre><kbd>npm install -g @lmctl-ai/lmctl</kbd></pre><p>The example scripts declare their lmvideo release; LMScript installs that host when needed.</p>
-<h2>Commands</h2><p>Run an example with lmctl autorun using its raw source URL. Each example page gives the pinned URL.</p>
-<h2>Inputs and outputs</h2><p>Inputs are LMScript programs. The examples below produce PNG images; some also use FFmpeg to encode video.</p>
-<h2>Safety rules</h2><p>Read downloaded programs before running them. Run in an empty working directory: output files are written relative to that directory. Autorun executes program code.</p>
-<h2>Worked examples</h2><p><a href="/tools/lmvideo/examples/">Public examples with source, commands and previews</a></p>
-<h2>Errors and exit codes</h2><p>A nonzero exit indicates failure. Read the compiler or renderer diagnostic; verify the host release, output-directory permissions and any FFmpeg requirement before retrying.</p>
-<h2>How to verify</h2><p>Check that the command exits successfully and opens the expected PNG. Preview images document upstream output; they are not a cross-platform pixel identity guarantee.</p>
+<main><h1>lmvideo skill</h1>
+<p>How an agent uses the lmvideo host to turn an LMScript program into PNG, SVG, PDF, GIF or MP4 output: the exact block form, the video lifecycle, safe paths, real error envelopes and a verification loop. All commands and outputs on this page were run with lmscript 0.2.482 and the lmvideo v0.1.124 Linux binary.</p>
+<h2>Purpose</h2>
+<p>lmvideo draws 2D graphics, plots, diagrams, image processing results, CPU rendered 3D scenes and rigid body motion, and encodes frames to video. The drawing code is an _lmcode_ block inside an LMScript file; lmscript type checks the block against the host schema, the host executes it and returns a JSON envelope.</p>
+<h2>When to use it</h2>
+<ul>
+<li>A reproducible chart, diagram or annotated figure is needed as PNG, SVG or PDF.</li>
+<li>An explanation needs motion: an animated plot, a diagram reveal, a turntable or a short MP4 or GIF.</li>
+<li>An image must be processed or measured (resize, levels, blend, threshold, PSNR, SSIM) without an external image tool.</li>
+<li>A 3D still or sequence is wanted from meshes, PBR materials and lights, as a fast raster preview or a CPU Cycles final.</li>
+<li>Boxes and spheres should fall, collide and stack, or presentation content should tumble, with a fixed step and seed.</li>
+</ul>
+<p>Do not use it for interactive playback, for audio, or for scripts written for the legacy lmdraw, lmimg, lmmagnum or lmfilament hosts without migrating them first; see the migration book.</p>
+<h2>Install</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl@0.2.460</code></pre>
+<p>The repository examples and toolchain lock name compiler 0.2.460; newer compilers work as well. No separate lmvideo install step exists: the block header carries install="github:lmctl-ai/lmvideo@v0.1.124" and lmscript downloads that release into its tool cache on the first real run. Pin the tag, as every repository example does, so reruns use the same host.</p>
+<p>MP4 output needs ffmpeg and ffprobe on PATH, supplied by the user. Linux needs glibc 2.35 or newer. Platforms: Linux x86_64 and arm64, macOS x86_64 and arm64 (13 or newer), Windows x86_64 (10 or newer).</p>
+<h2>Commands</h2>
+<table>
+<thead>
+<tr><th>Command</th><th>Use</th></tr>
+</thead>
+<tbody>
+<tr><td>lmscript --check FILE.lms</td><td>Compile only. Reports block type errors with file, line and column. Needs the host schema in the cache, so do one real run of any lmvideo program first on a new machine.</td></tr>
+<tr><td>lmscript --dry-run FILE.lms</td><td>Show the plan without running the host or writing files. Add --plan-format json for a machine readable plan.</td></tr>
+<tr><td>lmscript FILE.lms [args]</td><td>Run for real. Arguments reach the outer script as ARGV.</td></tr>
+<tr><td>lmctl autorun URL</td><td>Fetch and run a published example by its raw URL.</td></tr>
+<tr><td>lmvideo --lmcode-signatures</td><td>List every callable signature of the installed host. Use it to confirm a method exists before writing it.</td></tr>
+<tr><td>lmvideo --lmcode-schema --json</td><td>Print the schema the compiler checks against.</td></tr>
+<tr><td>lmvideo render IN.svg OUT.png</td><td>Rasterize an SVG with no program. Optional --width, --height, --background.</td></tr>
+<tr><td>lmvideo render-job DIR, lmvideo render-job-batch DIR</td><td>Render scene jobs saved with Scene3D.save_job. Options --renderer raster or cycles, --pass color, --output.</td></tr>
+</tbody>
+</table>
+<p>The block is always written and executed the same way.</p>
+<pre><code>prog = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.124";
+# typed drawing code: let bindings, for loops, if, fn, host calls
+end _lmcode_
+r = run_lmcode(prog);
+if (!r.ok) { println(r.message); }
+assert(r.ok);</code></pre>
+<h3>Block syntax that differs from outer LMScript</h3>
+<ul>
+<li>Locals are declared with let and are statically typed. Float parameters need float literals such as 40.0, or float(x) to convert an int.</li>
+<li>Outer values enter the block only through splices written ${name}; the block cannot see outer variables otherwise.</li>
+<li>Built in helpers inside the block: float, int, str, sin, cos, sqrt, abs, floor, pow, min, max, clamp, lerp, ease, ease_in, ease_out. Loops use for (i in range(0, n)).</li>
+<li>Colors are hex strings. mix(a, b, t) blends two colors.</li>
+<li>A block level return of a value is rejected; report values with out.print and read them from r.result.output.</li>
+</ul>
+<h2>Inputs and outputs</h2>
+<table>
+<thead>
+<tr><th>Direction</th><th>What</th><th>How</th></tr>
+</thead>
+<tbody>
+<tr><td>Input</td><td>LMScript source with one or more _lmcode_ blocks</td><td>lmscript FILE.lms</td></tr>
+<tr><td>Input</td><td>Images, SVG, fonts, meshes, glTF, OBJ, saved pictures</td><td>image_file, svg_file, font_load, mesh_load, Scene3D.import_gltf, Scene3D.import_obj, picture_file</td></tr>
+<tr><td>Output</td><td>Video or single frame</td><td>video.output(path) with video.begin, video.frame, video.end. One frame and a .png path gives a PNG; an .mp4 path is encoded through ffmpeg.</td></tr>
+<tr><td>Output</td><td>Extra stills</td><td>video.save_frame(path), Image.save(path), Surface.png(path)</td></tr>
+<tr><td>Output</td><td>Vector and document formats</td><td>Surface.svg, Surface.pdf, Picture.svg, Picture.pdf, Picture.skp, PdfDocument.write</td></tr>
+<tr><td>Output</td><td>GIF</td><td>Timeline.save(path) or Timeline.encode_gif()</td></tr>
+<tr><td>Output</td><td>3D assets and jobs</td><td>Scene3D.export_gltf, Mesh3D.save, Material.save, Scene3D.save_job</td></tr>
+<tr><td>Output</td><td>Font record</td><td>The host writes NAME.fonts.json beside each output it reports, listing the fonts used with their hashes and licenses.</td></tr>
+<tr><td>Output</td><td>Envelope</td><td>run_lmcode returns ok and result. result.output holds the out.print lines; result also reports file, width, height, frames, fps and timing counters.</td></tr>
+</tbody>
+</table>
+<p>Relative output paths resolve against the directory lmscript runs in. The host does not create missing parent directories: writing into one fails with code RUN_HOST and a cannot write message, so call mkdir in the outer script first, as the repository examples do.</p>
+<h2>Safety rules</h2>
+<ul>
+<li>Read any downloaded script before running it. lmctl autorun and lmscript execute program code, including outer file writes and system commands.</li>
+<li>Run in a fresh or dedicated output directory. Outputs are written relative to the working directory and existing files with the same name are replaced.</li>
+<li>Use lmscript --check, then lmscript --dry-run, before a first real run of an unfamiliar script. The dry run executes no host code and writes nothing.</li>
+<li>Pin the host with install="github:lmctl-ai/lmvideo@v0.1.124" instead of a floating tag when results must be repeatable.</li>
+<li>Always test r.ok. A failed block does not make lmscript exit nonzero by itself; without assert(r.ok) the script continues after a failed render.</li>
+<li>Keep sequences small while iterating: lower size, frames and samples first. Cycles work multiplies with resolution and sample count and a short video can take minutes.</li>
+<li>Preview images in the books document upstream output; they are not a cross platform pixel identity guarantee.</li>
+</ul>
+<h2>Worked examples</h2>
+<h3>A chart as one PNG</h3>
+<p>One frame and a PNG path make the video object a still image writer. The plot is retained: configure it, add points, then draw.</p>
+<pre><code># A retained plot drawn into a single PNG frame.
+mkdir("build");
+prog = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.124";
+video.size(640, 360);
+video.frames(1);
+video.output("build/plot.png");
+video.begin();
+video.frame();
+canvas.clear("#f5f7fa");
+let plot = canvas.plot(20.0, 20.0, 600.0, 320.0).title("Decay").xlabel("t").ylabel("x").x_range(0.0, 10.0).y_range(-1.0, 1.0).background("#ffffff");
+let s = plot.series("x(t)", "line", "#2878b5").width(2.5);
+for (k in range(0, 101)) {
+  let t = float(k) * 0.1;
+  s.add(t, pow(2.718281828459045, -0.3 * t) * cos(3.0 * t));
+}
+plot.draw();
+video.end();
+end _lmcode_
+r = run_lmcode(prog);
+if (!r.ok) { println(r.message); }
+assert(r.ok);</code></pre>
+<pre><kbd>lmscript plot.lms</kbd>
+<samp>wrote build/plot.png (640x360)</samp></pre>
+<h3>A 3D still with a renderer check</h3>
+<p>The three argument render_image is the raster path with a supersampling count. The seven argument form selects a named renderer, for example scene.render_image(960, 540, "cycles", 32, 4, 42, true) for samples 32, bounces 4, seed 42 and denoising on.</p>
+<pre><code># A raster 3D still: one sphere, one light, one camera.
+mkdir("build");
+prog = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.124";
+let scene = scene3d().background("#111923");
+scene.camera(camera3d().look_at(4.0, 2.8, 6.0, 0.0, 0.6, 0.0).perspective(42.0, 0.1, 100.0));
+scene.directional_light(2.0, 3.0, 4.0, "#ffffff", 2.0);
+scene.add(mesh_sphere(1.0, 32, 48), material("#d9a441", 0.25, 0.45));
+let preview = scene.render_image(480, 270, 2);
+preview.save("build/sphere.png");
+out.print("cycles available: " + str(render_available("cycles")));
+end _lmcode_
+r = run_lmcode(prog);
+if (!r.ok) { println(r.message); }
+assert(r.ok);
+println(r.result.output[0]);</code></pre>
+<pre><kbd>lmscript scene.lms</kbd>
+<samp>wrote build/sphere.png (480x270)
+cycles available: true</samp></pre>
+<h3>Physics replayed into a video</h3>
+<p>Bake the simulation once, then place each body from the take for every frame. Rendering an Image does not paint the frame: draw it with canvas.image. This example needs ffmpeg.</p>
+<pre><code># A ball dropped on a static floor: bake once, replay the take, paint each frame.
+mkdir("build");
+prog = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.124";
+let rubber = physics_material(0.55, 0.4);
+let world = physics_world(1.0 / 120.0, 42).gravity(0.0, -9.81, 0.0);
+world.box(8.0, 0.2, 8.0, 0.0, -0.1, 0.0, 0.0, rubber);
+let ball = world.sphere(0.4, 0.0, 3.0, 0.0, 1.0, rubber);
+let take = world.bake(120, 2);
+video.size(320, 240); video.fps(24); video.frames(48); video.output("build/drop.mp4"); video.begin();
+let scene = scene3d().background("#121a2a").ambient(0.25);
+let cam = camera3d().look_at(5.0, 3.0, 7.0, 0.0, 1.0, 0.0).perspective(42.0, 0.1, 40.0);
+for (f in range(0, video.count())) {
+  video.frame();
+  scene.clear().camera(cam).directional_light(-2.0, 5.0, 4.0, "#ffefd4", 1.4);
+  scene.add(mesh_box(8.0, 0.2, 8.0), "#c49b74").position(0.0, -0.1, 0.0);
+  let node = scene.add(mesh_sphere(0.4, 16, 24), "#ef8f8f");
+  take.pose(video.t(), ball.id()).sync(node);
+  canvas.clear("#121a2a");
+  canvas.image(scene.render_image(320, 240, 2), 0.0, 0.0);
+}
+video.end();
+out.print("bodies " + str(take.body_count()) + ", samples " + str(take.frames()));
+end _lmcode_
+r = run_lmcode(prog);
+if (!r.ok) { println(r.message); }
+assert(r.ok);
+println(r.result.output[0]);</code></pre>
+<pre><kbd>lmscript drop.lms</kbd>
+<samp>wrote build/drop.mp4 (320x240, 48 frames at 24 fps)
+bodies 2, samples 120</samp></pre>
+<p>More complete programs, each with its command and preview, are in the <a href="/tools/lmvideo/getting-started/">Getting started</a>, <a href="/tools/lmvideo/examples/">Examples</a>, <a href="/tools/lmvideo/physics/">Physics</a>, <a href="/tools/lmvideo/cycles/">Cycles</a> and <a href="/tools/lmvideo/showcase/">Showcase</a> books.</p>
+<h2>Errors and exit codes</h2>
+<table>
+<thead>
+<tr><th>Symptom</th><th>Exit code</th><th>Cause and fix</th></tr>
+</thead>
+<tbody>
+<tr><td>lmscript --check prints No cached host schema for "lmvideo"</td><td>2</td><td>The host has never been downloaded on this machine. Do one real run of a program whose block has the install attribute, then check again.</td></tr>
+<tr><td>lmscript prints type Canvas has no method ... followed by the method list</td><td>2</td><td>Compile error in the block. Pick a name from the printed list or from lmvideo --lmcode-signatures.</td></tr>
+<tr><td>lmscript prints undefined name ... followed by the schema names</td><td>2</td><td>Unknown function, or an outer variable used without a ${name} splice.</td></tr>
+<tr><td>r.ok false, code RUN_HOST, message video.frame requires an active video.begin()/video.end() block</td><td>0 unless asserted</td><td>Call video.begin before the first video.frame and video.end after the last.</td></tr>
+<tr><td>r.ok false, message Video.frame: ffmpeg stopped reading frames ... cannot execute 'ffmpeg'</td><td>0 unless asserted</td><td>ffmpeg is not on PATH. Install it, or write PNG frames instead.</td></tr>
+<tr><td>r.ok false, code APP_FAIL</td><td>0 unless asserted</td><td>The block called out.fail; the message is the script's own text.</td></tr>
+<tr><td>r.ok false, code LOAD_UNBOUND</td><td>0 unless asserted</td><td>The block calls a function the pinned host lacks, such as a rest_ function from the newer standard catalog. Remove the call or use a host release that provides it.</td></tr>
+<tr><td>Error in host function 'assert': Assertion failed</td><td>1</td><td>assert(r.ok) caught one of the failures above. Print r.message before asserting to see which.</td></tr>
+<tr><td>lmvideo run by hand with an unknown option</td><td>2</td><td>Envelope with code CLI_USAGE and the usage line.</td></tr>
+<tr><td>lmvideo --lmcode with an unreadable file</td><td>3</td><td>Envelope with code LOAD_BAD_BYTECODE.</td></tr>
+<tr><td>lmvideo render with a missing SVG</td><td>3</td><td>Runtime error: Cannot open file for reading.</td></tr>
+</tbody>
+</table>
+<p>A failed block returns an envelope like this one, produced by calling out.fail on line 3 of a block.</p>
+<pre><samp>{"ok":false,"phase":"app","code":"APP_FAIL","message":"dsl line 3:5: stopped on purpose","line":3,"column":5}</samp></pre>
+<h2>How to verify</h2>
+<ol>
+<li>Compile: lmscript --check FILE.lms exits 0 and prints nothing.</li>
+<li>Run: lmscript FILE.lms exits 0, and the script asserts r.ok.</li>
+<li>Confirm the host line: it prints wrote PATH (WIDTHxHEIGHT) for a still and adds the frame count and rate for a video.</li>
+<li>Check the file exists and has the expected properties. For video, ffprobe reports the stream.</li>
+<li>Read back facts you printed with out.print from r.result.output instead of parsing console text.</li>
+<li>For repeatability, keep the install tag, seeds, sample counts and thread count fixed, and compare with Image.psnr or Image.ssim against a stored reference where an exact match is not expected across platforms.</li>
+</ol>
+<pre><kbd>ffprobe -v error -show_entries stream=codec_name,width,height,nb_frames,r_frame_rate -of default=nw=1 build/clip.mp4</kbd>
+<samp>codec_name=h264
+width=320
+height=180
+r_frame_rate=30/1
+nb_frames=60</samp></pre>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>

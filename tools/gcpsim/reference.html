@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gcpsim reference — gcpsim — lmctl.com tools</title>
+<meta name="description" content="Reference tables for gcpsim CLI commands and flags, environment variables, GCS and Pub/Sub endpoints, and exit…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/gcpsim/">Overview</a></li>
+<li><a href="/tools/gcpsim/skill.html">Skill</a></li>
+<li><a href="/tools/gcpsim/guide.html">Guide</a></li>
+<li><a href="/tools/gcpsim/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>gcpsim reference</h1>
+<p>Reference tables for gcpsim CLI commands and flags, environment variables, GCS and Pub/Sub endpoints, and exit codes.</p>
+<h2>CLI commands and flags</h2>
+<table>
+<thead>
+<tr>
+<th>Command or flag</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>gcpsim --version</td>
+<td>none</td>
+<td>Print gcpsim version string (for example gcpsim 0.2.1 (floci-gcp 0.11.0)) and exit 0.</td>
+</tr>
+<tr>
+<td>gcpsim --help</td>
+<td>none</td>
+<td>Print usage instructions and exit 0.</td>
+</tr>
+<tr>
+<td>gcpsim serve | start</td>
+<td>foreground</td>
+<td>Run the local GCP emulator in the foreground.</td>
+</tr>
+<tr>
+<td>--host &lt;addr></td>
+<td>127.0.0.1</td>
+<td>Bind address for the HTTP/gRPC server (use 0.0.0.0 only when network access is explicitly desired).</td>
+</tr>
+<tr>
+<td>--port &lt;port></td>
+<td>4588</td>
+<td>TCP port shared by REST and gRPC listeners in open mode.</td>
+</tr>
+<tr>
+<td>--project &lt;id></td>
+<td>gcpsim-local</td>
+<td>Default Google Cloud project ID.</td>
+</tr>
+<tr>
+<td>--data-dir &lt;path></td>
+<td>in-memory</td>
+<td>Directory for durable GCS and Pub/Sub state across restarts.</td>
+</tr>
+<tr>
+<td>--auth open | enforce</td>
+<td>open</td>
+<td>Select open mode or enforced OAuth Bearer token and IAM permission checks.</td>
+</tr>
+<tr>
+<td>--auth-config &lt;file></td>
+<td>unset</td>
+<td>Path to the JSON authentication and IAM policy configuration file for enforce mode.</td>
+</tr>
+</tbody>
+</table>
+<h2>Environment variables</h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SIM_AUTH</td>
+<td>open</td>
+<td>Set to enforce to enable OAuth Bearer and IAM policy checks (overridden by --auth).</td>
+</tr>
+<tr>
+<td>SIM_AUTH_CONFIG</td>
+<td>unset</td>
+<td>Path to the JSON auth configuration file (overridden by --auth-config).</td>
+</tr>
+<tr>
+<td>STORAGE_EMULATOR_HOST</td>
+<td>http://127.0.0.1:4588</td>
+<td>Standard Google Cloud Storage client library emulator host variable.</td>
+</tr>
+<tr>
+<td>PUBSUB_EMULATOR_HOST</td>
+<td>127.0.0.1:4588</td>
+<td>Standard Google Cloud Pub/Sub client library emulator host:port variable.</td>
+</tr>
+<tr>
+<td>FLOCI_GCP_SERVICES_&lt;SERVICE>_MOCK</td>
+<td>true</td>
+<td>Keep Docker-backed services in mock mode by default.</td>
+</tr>
+</tbody>
+</table>
+<h2>HTTP service endpoints</h2>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>Path pattern on 127.0.0.1:4588</th>
+<th>Operations</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Health check</td>
+<td>GET /health</td>
+<td>Returns emulator readiness status.</td>
+</tr>
+<tr>
+<td>Cloud Storage (GCS)</td>
+<td>/storage/v1/b and /upload/storage/v1/b/&lt;bucket>/o</td>
+<td>Bucket create/list/get/delete, object upload (multipart/resumable/media), download, metadata, and prefix/delimiter listing.</td>
+</tr>
+<tr>
+<td>Cloud Pub/Sub</td>
+<td>/v1/projects/&lt;project>/topics and /v1/projects/&lt;project>/subscriptions</td>
+<td>Topic create/get/list/delete, publish, subscription create/get/list/delete, pull, acknowledge, and modifyAckDeadline.</td>
+</tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Clean server shutdown or --version / --help output.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Invalid CLI input or invalid auth configuration.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Emulator startup failure.</td>
+</tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/gcpsim">github.com/lmctl-ai/gcpsim</a>.</p>
+</footer>
+</body>
+</html>

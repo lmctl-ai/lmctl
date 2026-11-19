@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmlucene reference — lmlucene — lmctl.com tools</title>
+<meta name="description" content="CLI options, host functions, Lucene domain types, SAM callback interfaces, standard REST and CLI interfaces, and exit codes for lmlucene.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmlucene/">Overview</a></li>
+<li><a href="/tools/lmlucene/skill.html">Skill</a></li>
+<li><a href="/tools/lmlucene/guide.html">Guide</a></li>
+<li><a href="/tools/lmlucene/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmlucene reference</h1>
+<p>CLI options, host functions, Lucene domain types, SAM callback interfaces, standard REST and CLI interfaces, and exit codes for lmlucene.</p>
+<h2>CLI flags and subcommands</h2>
+<table>
+<thead>
+<tr><th>Command or flag</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>lmlucene --version</td><td>Print the lmlucene version string and exit 0.</td></tr>
+<tr><td>lmlucene --schema / --cli-schema</td><td>Print the cli.schema.v1 JSON contract describing the run operation.</td></tr>
+<tr><td>lmlucene --lmcode-schema [--json]</td><td>Print the embedded lmcode/lucene.dsl.json schema summary or exact JSON bytes.</td></tr>
+<tr><td>lmlucene --lmcode-signatures</td><td>Print sorted canonical signatures for all domain and standard catalog bindings.</td></tr>
+<tr><td>lmlucene --lmcode FILE.dslb</td><td>Execute a compiled DSLB v6 bytecode program and emit the JSON return envelope.</td></tr>
+<tr><td>lmlucene run --program FILE.dslb [--dryrun] [--readonly]</td><td>Run or dry-validate a compiled bytecode program (--readonly refuses execution because bytecode may write).</td></tr>
+<tr><td>lmlucene run --input-json JSON / --input-file FILE</td><td>Supply the run operation parameters as a JSON object or JSON file.</td></tr>
+</tbody>
+</table>
+<h2>Host functions and enums (lucene.dsl.json)</h2>
+<table>
+<thead>
+<tr><th>Signature or enum</th><th>Return type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>enum Occur / OpenMode / SortType</td><td>Enum</td><td>Occur: MUST, SHOULD, MUST_NOT, FILTER; OpenMode: CREATE, APPEND, CREATE_OR_APPEND; SortType: LONG, STRING.</td></tr>
+<tr><td>fn memory_directory() / fs_directory(path: string)</td><td>Directory</td><td>Create an in-memory ByteBuffersDirectory or a filesystem NIOFSDirectory.</td></tr>
+<tr><td>fn standard_analyzer() / english_analyzer() / whitespace_analyzer() / keyword_analyzer()</td><td>Analyzer</td><td>Create a built-in Lucene Analyzer instance.</td></tr>
+<tr><td>fn rule_analyzer(entry_name: string)</td><td>Analyzer</td><td>Create an analyzer that applies the named TokenTransform SAM rule after StandardAnalyzer.</td></tr>
+<tr><td>fn writer_config(analyzer: Analyzer) / index_writer(dir: Directory, cfg: WriterConfig)</td><td>WriterConfig / IndexWriter</td><td>Configure and open a Lucene IndexWriter.</td></tr>
+<tr><td>fn directory_reader(dir: Directory) / index_searcher(reader: DirectoryReader)</td><td>DirectoryReader / IndexSearcher</td><td>Open a point-in-time index reader and create a searcher over it.</td></tr>
+<tr><td>fn document() / facet_config()</td><td>Document / FacetConfig</td><td>Create a mutable Document builder or a FacetConfig for sorted-set facet fields.</td></tr>
+<tr><td>fn term_query(f: string, t: string) / prefix_query(f: string, p: string) / parse_query(f: string, q: string, a: Analyzer)</td><td>Query</td><td>Build a TermQuery, PrefixQuery, or QueryParser query.</td></tr>
+<tr><td>fn boolean_query() / all_query() / long_range(f: string, min: int, max: int)</td><td>BooleanQuery / Query</td><td>Build a BooleanQuery builder, MatchAllDocsQuery, or LongPoint range query.</td></tr>
+<tr><td>fn knn_query(f: string, vec: FloatList, k: int[, filter: Query]) / drill_down(cfg: FacetConfig, base: Query, dim: string, val: string)</td><td>Query</td><td>Build a KnnFloatVectorQuery (with optional pre-filter) or a facet DrillDownQuery.</td></tr>
+<tr><td>fn report(label: string, value: string) / print(msg: string) / assert_true(cond: bool, msg: string)</td><td>void</td><td>Record detail values in result.details, print to stderr, or assert conditions.</td></tr>
+</tbody>
+</table>
+<h2>Domain types and methods</h2>
+<table>
+<thead>
+<tr><th>Type</th><th>Methods</th></tr>
+</thead>
+<tbody>
+<tr><td>Document</td><td>text(field, val, stored), vector_text(field, val, stored) (text with term vectors), keyword(field, val, stored), stored(field, val), number(field, val, stored), sort_number(field, val), sort_keyword(field, val), facet(dim, val), vector(field, floats: FloatList), get(field), has(field).</td></tr>
+<tr><td>IndexWriter / WriterConfig</td><td>IndexWriter: add(doc), update(field, term, doc), delete(field, term), commit(), rollback(), reader(), close(); WriterConfig: open_mode(OpenMode), ram_mb(float).</td></tr>
+<tr><td>DirectoryReader / TermVectors / VectorTerm</td><td>DirectoryReader: num_docs(), term_vectors(doc_id, field), close(); TermVectors: len(), at(int); VectorTerm: term(), len(), at(int), tokens().</td></tr>
+<tr><td>IndexSearcher</td><td>search(query, k), search_after(query, hit, k), sorted_search(query, field, SortType, reverse, k), count(query), explain(query, doc_id), facets(query, facet_config, dim, top_n), bm25(k1, b), similarity_rule(entry_name).</td></tr>
+<tr><td>TopDocs / Hit / FacetCounts</td><td>TopDocs: total(), len(), at(int), emit(label); Hit: doc_id(), score(), document(); FacetCounts: total(), len(), label(int), value(int), count(label), emit(label).</td></tr>
+<tr><td>FacetConfig / BooleanQuery / Directory</td><td>FacetConfig: multi_valued(dim), build(doc); BooleanQuery: add(query, Occur), build(); Directory: close().</td></tr>
+<tr><td>Analyzer / Tokens / Token / CollectionStats</td><td>Analyzer: tokens(field, text), close(); Tokens: len(), at(int), emit(label); Token: term(), start(), end(), position(); CollectionStats: field(), doc_count(), total_terms(), doc_freq(), boost().</td></tr>
+</tbody>
+</table>
+<h2>SAM callback interfaces and standard REST/CLI interfaces</h2>
+<table>
+<thead>
+<tr><th>Interface</th><th>Signature</th><th>Role</th></tr>
+</thead>
+<tbody>
+<tr><td>TokenTransform</td><td>(token: string) -> string</td><td>SAM interface wired via rule_analyzer(entry_name) to transform tokens during analysis.</td></tr>
+<tr><td>FieldWeight</td><td>(stats: CollectionStats) -> float</td><td>SAM interface wired via searcher.similarity_rule(entry_name) to scale BM25 field scoring.</td></tr>
+<tr><td>RestGet..RestOptions, RestHandler</td><td>(exchange: RestExchange) -> void</td><td>Standard lmcode_std_v3 HTTP route handler interfaces supporting :param and {param} (current main; the v0.1.19 release predates them).</td></tr>
+<tr><td>CliCommand, CliOption</td><td>(exchange: RestExchange) -> void</td><td>Standard lmcode_std_v3 stateless CLI handler interfaces dispatched by rest_cli.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr><th>Code</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>Execution, dry-run validation, or schema introspection succeeded.</td></tr>
+<tr><td>2</td><td>CLI argument usage error or LMScript compilation error.</td></tr>
+<tr><td>3</td><td>Bytecode load error, schema mismatch, runtime Lucene/callback failure, or --readonly policy refusal.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmlucene">github.com/lmctl-ai/lmlucene</a>.</p>
+</footer>
+</body>
+</html>

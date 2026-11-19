@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmasm guide — lmasm — lmctl.com tools</title>
+<meta name="description" content="Architecture, bytecode extraction model, and standard REST and CLI interfaces for the lmasm host.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmasm/">Overview</a></li>
+<li><a href="/tools/lmasm/skill.html">Skill</a></li>
+<li><a href="/tools/lmasm/guide.html">Guide</a></li>
+<li><a href="/tools/lmasm/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmasm guide</h1>
+<p>Architecture, bytecode extraction model, and standard REST and CLI interfaces for the lmasm host.</p>
+<h2>Overview</h2>
+<p>lmasm pairs the OW2 ASM 9.11 bytecode analysis library (asm and asm-tree) with the lmcode-java runtime so bytecode inspection policy lives in concise LMScript programs rather than compiled Java plugins. At startup, the host verifies that its live registry matches the embedded schema/lmasm.schema.json contract byte for byte.</p>
+<h2>Bytecode extraction architecture</h2>
+<p>The host registry in io.lmctl.lmasm.AsmHost exposes two domain functions that separate raw class-file parsing from graph policy:</p>
+<ul>
+<li>Class discovery via asm_classes scans a JAR file, a directory tree of .class files, or a single .class file, normalizes internal slash names to dotted class names, and filters out module-info and package-info descriptors.</li>
+<li>Reference extraction via asm_refs reads the target class bytes and unions two passes: a constant-pool scan over CONSTANT_Class entries and a full ClassNode tree walk over the superclass, implemented interfaces, field descriptors, method signatures, exception tables, field/method/type instructions, ldc type constants, invokedynamic bootstrap handles and arguments, multi-dimensional array descriptors, and visible or invisible annotations.</li>
+</ul>
+<p>Array descriptors and method descriptors are unwrapped to their element object types, primitive descriptors are ignored, and self-references to the declaring class are excluded before returning the sorted StrList.</p>
+<h2>Dependency coverage workflows</h2>
+<p>Because asm_classes and asm_refs return standard StrList collections, an _lmcode_ program can index library class sets in a StrMap and attribute references across arbitrary scope partitions such as production classes, unit tests, integration tests, or shaded JARs.</p>
+<pre><code>program = _lmcode_ cli="lmasm";
+let jar = "target/lmasm.jar";
+let classes = asm_classes(jar);
+let edge_count = 0;
+for (c in classes) {
+  edge_count = edge_count + asm_refs(jar, c).len();
+}
+$return = {"classes": classes.len(), "edges": edge_count};
+end _lmcode_
+r = run_lmcode(program);
+print(json_stringify(r.result));</code></pre>
+<h2>Standard REST and stateless CLI interfaces</h2>
+<p>Through the lmcode-java SDK registry, lmasm supports the standard lmcode_std_v3 catalog (226 signatures), including stateless CLI dispatch and HTTP/1.1 REST route handlers inside _lmcode_ blocks. Functions annotated with route templates or option names can implement RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand, and CliOption.</p>
+<pre><code>program = _lmcode_ cli="lmasm";
+@"--jar"
+fn opt_jar(x: RestExchange) -> void implements CliOption {
+  x.set("jar", x.query("jar"));
+}
+
+@"count"
+fn cmd_count(x: RestExchange) -> void implements CliCommand {
+  let classes = asm_classes(x.get("jar"));
+  x.send("classes:" + str(classes.len()));
+}
+
+@"/classes/:name"
+fn get_refs(x: RestExchange) -> void implements RestGet {
+  let refs = asm_refs(x.get("jar"), x.param("name"));
+  x.json("{\"class\":\"" + x.param("name") + "\",\"refs\":" + str(refs.len()) + "}");
+}
+
+print(rest_cli(str_split("--jar=fixtures/jars/liba.jar count", " ")));
+print(rest_cli(str_split("--jar=fixtures/jars/liba.jar /classes/liba.A1", " ")));
+end _lmcode_</code></pre>
+<p>Route patterns support both :param and {param} placeholders, and rest_config, rest_route, rest_serve, rest_stop, and rest_cli allow the same bytecode analysis logic to run as a one-shot CLI or an embedded query service.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmasm">github.com/lmctl-ai/lmasm</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>claude-ollama-live authoring skill — claude-ollama-live — lmctl.com tools</title>
+<meta name="description" content="claude-ollama-live provides a shared CLI probe and reusable GitHub Actions workflow that qualifies Claude Code (@anthropic-ai/claude-code@2.1.316) against…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/claude-ollama-live/">Overview</a></li>
+<li><a href="/tools/claude-ollama-live/skill.html">Skill</a></li>
+<li><a href="/tools/claude-ollama-live/guide.html">Guide</a></li>
+<li><a href="/tools/claude-ollama-live/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>claude-ollama-live authoring skill</h1>
+<p>claude-ollama-live provides a shared CLI probe and reusable GitHub Actions workflow that qualifies Claude Code (@anthropic-ai/claude-code@2.1.316) against Ollama Cloud (glm-5.3-flash) and a loopback lmmock server.</p>
+<h2>Purpose</h2>
+<p>Use claude-ollama-live to verify that Claude Code's headless Anthropic Messages transport (--bare -p --output-format json) works end-to-end against both Ollama Cloud's direct https://ollama.com endpoint and a checksum-verified lmmock loopback server, complete with semantic negative controls.</p>
+<h2>When to use it</h2>
+<p>Choose claude-ollama-live when qualifying a Claude Code upgrade or an Ollama Cloud hosted model route (such as glm-5.3-flash), when testing reusable workflow secret boundaries between public and organization-scoped runners, or when running the offline oracle suite via npm test.</p>
+<h2>Install</h2>
+<p>Clone the repository and run npm test for the offline oracle, or let the workflow install @anthropic-ai/claude-code@2.1.316 into an isolated private prefix.</p>
+<pre><code>git clone https://github.com/lmctl-ai/claude-ollama-live.git
+cd claude-ollama-live
+npm test</code></pre>
+<h2>Commands</h2>
+<p>Run the local oracle tests, execute the headless Claude Code probe in an isolated HOME, or trigger the reusable GitHub Actions workflow.</p>
+<pre><code>npm test
+claude --bare -p --output-format json --tools "" --setting-sources "" --strict-mcp-config --mcp-config '{"mcpServers":{}}' --no-session-persistence "Reply with exactly OLLAMA_CLAUDE_OK_107. Do not call any tools."
+ollama launch claude --model glm-5.3-flash:cloud --yes -- -p "Reply with exactly OLLAMA_CLAUDE_OK_107. Do not call any tools."</code></pre>
+<h2>Inputs and outputs</h2>
+<p>The probe sends the exact prompt Reply with exactly OLLAMA_CLAUDE_OK_107. Do not call any tools. with stdin closed and all tools, MCP servers, session persistence, and setting sources disabled. The oracle parses the JSON stdout and requires process exit code 0, type == "result", subtype == "success", is_error == false, and exact result text OLLAMA_CLAUDE_OK_107. In the mock job, the audit additionally asserts that lmmock recorded a real POST /v1/messages request with HTTP status 200.</p>
+<h2>Safety rules</h2>
+<p>Never store OLLAMA_API_KEY or ANTHROPIC_AUTH_TOKEN in settings files or commit logs; supply it exclusively through the secret manager or GitHub Actions secret environment. Leave /v1 off ANTHROPIC_BASE_URL=https://ollama.com because Claude Code appends /v1/messages itself. Pin ANTHROPIC_MODEL and all four ANTHROPIC_DEFAULT_{OPUS,SONNET,HAIKU,FABLE}_MODEL variables to the same hosted model ID (glm-5.3-flash) so helper aliases cannot route to an unintended model, and set DISABLE_PROMPT_CACHING=1. Always isolate HOME and CLAUDE_CONFIG_DIR in temporary directories and never upload raw Claude logs or transcripts as CI artifacts. Never claim a skipped live job on a public repository push as live proof; live qualification requires the organization-scoped runner (lmctlhq/claude-ollama-live-runner) where both live and mock jobs execute.</p>
+<h2>Worked examples</h2>
+<p>Example 1: Isolated shell probe against Ollama Cloud with all model slots pinned and prompt caching disabled.</p>
+<pre><code>scratch="$(mktemp -d)"
+export HOME="$scratch/home"
+export CLAUDE_CONFIG_DIR="$scratch/claude"
+mkdir -p "$HOME" "$CLAUDE_CONFIG_DIR"
+export ANTHROPIC_BASE_URL="https://ollama.com"
+export ANTHROPIC_API_KEY=""
+export ANTHROPIC_AUTH_TOKEN="$OLLAMA_API_KEY"
+export ANTHROPIC_MODEL="glm-5.3-flash"
+export ANTHROPIC_DEFAULT_OPUS_MODEL="glm-5.3-flash"
+export ANTHROPIC_DEFAULT_SONNET_MODEL="glm-5.3-flash"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL="glm-5.3-flash"
+export ANTHROPIC_DEFAULT_FABLE_MODEL="glm-5.3-flash"
+export DISABLE_PROMPT_CACHING=1
+
+claude --bare -p --output-format json --tools "" --setting-sources "" --no-session-persistence \
+  "Reply with exactly OLLAMA_CLAUDE_OK_107. Do not call any tools." &lt; /dev/null</code></pre>
+<h2>Errors and exit codes</h2>
+<p>The oracle succeeds (exit code 0) only when both the positive probe and the negative control behave as specified: for live mode, the positive probe must return OLLAMA_CLAUDE_OK_107 with exit 0 while a synthetic invalid bearer token must be rejected with client exit code 1; for mock mode, the positive probe must return OLLAMA_CLAUDE_OK_107 with exit 0 and a verified POST /v1/messages 200 audit record, while a wrong-reply fixture must reach the oracle with client exit 0 and be rejected semantically by the exact-reply check.</p>
+<h2>How to verify</h2>
+<p>Run the offline oracle unit test suite with npm test to confirm the positive, wrong-reply, error-flag, and authentication-rejection classifications pass.</p>
+<pre><code>npm test</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/claude-ollama-live">github.com/lmctl-ai/claude-ollama-live</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lminstall reference — lminstall — lmctl.com tools</title>
+<meta name="description" content="CLI subcommands, flags, supported provider IDs, launch backends, environment variables, and exit codes for lminstall.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lminstall/">Overview</a></li>
+<li><a href="/tools/lminstall/skill.html">Skill</a></li>
+<li><a href="/tools/lminstall/guide.html">Guide</a></li>
+<li><a href="/tools/lminstall/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lminstall reference</h1>
+<p>CLI subcommands, flags, supported provider IDs, launch backends, environment variables, and exit codes for lminstall.</p>
+<h2>CLI subcommands and flags</h2>
+<table>
+<thead>
+<tr><th>Subcommand or flag</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>lminstall list [--json]</td><td>List all supported coding providers, binaries, and official channel sources.</td></tr>
+<tr><td>lminstall install &lt;provider...> [--root DIR] [--json]</td><td>Install and verify one or more providers under the owned root prefix.</td></tr>
+<tr><td>lminstall status [&lt;provider...>] [--root DIR] [--json]</td><td>Report installation state (absent, incomplete, broken, installed, unavailable) and exit 0.</td></tr>
+<tr><td>lminstall upgrade &lt;provider...> [--root DIR] [--json]</td><td>Upgrade managed providers from their official channel and verify --version.</td></tr>
+<tr><td>lminstall uninstall &lt;provider...> [--root DIR] [--json]</td><td>Remove the owned prefix directory for each specified provider.</td></tr>
+<tr><td>lminstall configure &lt;provider> [FLAGS]</td><td>Create an owned launch profile under --profile-dir ABS without reading secrets.</td></tr>
+<tr><td>lminstall run &lt;provider> --profile-dir ABS -- [ARGS...]</td><td>Run a provider in an ephemeral isolated HOME with an in-memory credential bridge.</td></tr>
+<tr><td>lminstall env &lt;provider> --profile-dir ABS --runtime-dir ABS</td><td>Render a persistent mock-backend runtime directory and print environment exports.</td></tr>
+<tr><td>lminstall lmctl --root DIR [--release TAG|latest] [--candidate FILE]</td><td>Install the aggregate lmctl and lmscript package tree from GitHub releases.</td></tr>
+<tr><td>--root DIR / LMINSTALL_ROOT</td><td>Select the owned installation root prefix.</td></tr>
+<tr><td>--manifest FILE</td><td>Replace the embedded provider catalog with a trusted custom JSON manifest.</td></tr>
+<tr><td>--backend mock|ollama-cloud|ollama-local</td><td>Target model backend for lminstall configure (ollama-local is accepted by the parser but returns an explicit unsupported error).</td></tr>
+<tr><td>--base-url URL / --model ID</td><td>Upstream base URL and model identifier for lminstall configure.</td></tr>
+<tr><td>--credential-env NAME</td><td>Environment variable name read at lminstall run time by the loopback bridge.</td></tr>
+<tr><td>--format plan|github-env|sh</td><td>Output format for configure (plan, github-env) and env (plan, github-env, sh).</td></tr>
+</tbody>
+</table>
+<h2>Supported provider catalog</h2>
+<table>
+<thead>
+<tr><th>Provider ID</th><th>Binary</th><th>Channel type</th><th>Runtime prerequisite</th></tr>
+</thead>
+<tbody>
+<tr><td>claude</td><td>claude</td><td>Native manifest + SHA-256 payload</td><td>None (standalone native binary).</td></tr>
+<tr><td>codex</td><td>codex</td><td>GitHub release archive + SHA-256</td><td>None (standalone native binary).</td></tr>
+<tr><td>gemini</td><td>gemini</td><td>Go in-process npm (@google/gemini-cli)</td><td>node on PATH.</td></tr>
+<tr><td>copilot</td><td>copilot</td><td>GitHub release archive + SHA256SUMS.txt</td><td>None (standalone native binary).</td></tr>
+<tr><td>opencode</td><td>opencode</td><td>GitHub release archive + SHA-256</td><td>None (standalone native binary).</td></tr>
+<tr><td>kimi</td><td>kimi</td><td>Native manifest + SHA-256 binary</td><td>None (standalone native binary).</td></tr>
+<tr><td>qwen</td><td>qwen</td><td>Standalone archive + SHA256SUMS</td><td>None (bundles its own Node runtime).</td></tr>
+<tr><td>pi</td><td>pi</td><td>Go in-process npm (@earendil-works/pi-coding-agent)</td><td>node on PATH.</td></tr>
+<tr><td>dsh</td><td>dsh</td><td>Go in-process npm (@deepseek-ai/dsh)</td><td>node on PATH.</td></tr>
+<tr><td>lmctl</td><td>lmctl, lmscript</td><td>Go in-process npm (@lmctl-ai/lmctl)</td><td>node >= 24.15 on PATH.</td></tr>
+<tr><td>miniplayer</td><td>miniplayer</td><td>GitHub source tarball via Go npm client</td><td>node on PATH.</td></tr>
+<tr><td>lmplayer</td><td>lmplayer</td><td>GitHub release archive + SHA-256</td><td>None (standalone native binary).</td></tr>
+<tr><td>hermes</td><td>hermes</td><td>In-process Go Git + pinned uv and Python 3.14</td><td>Self-bootstrapped inside owned prefix.</td></tr>
+<tr><td>agy</td><td>agy</td><td>Official updater manifest + SHA-512 artifact</td><td>None (standalone native binary).</td></tr>
+<tr><td>muse</td><td>muse</td><td>Native muse-stable manifest + SHA-256 + size</td><td>None (standalone native binary).</td></tr>
+<tr><td>claudemock</td><td>(fixture)</td><td>Declared unavailable standalone CLI</td><td>Built into lmctl via LMCTL_ENABLE_MOCK_PROVIDER=1.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr><th>Code</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>Command succeeded (or status query completed).</td></tr>
+<tr><td>1</td><td>Operation failure (download, checksum verification, --version check, or runtime launch error; or preserved non-zero child exit in run).</td></tr>
+<tr><td>2</td><td>Invalid CLI arguments or invalid manifest/profile data.</td></tr>
+<tr><td>3</td><td>Requested provider distribution is declared unavailable (for example claudemock).</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lminstall">github.com/lmctl-ai/lminstall</a>.</p>
+</footer>
+</body>
+</html>

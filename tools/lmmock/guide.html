@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmmock guide — lmmock — lmctl.com tools</title>
+<meta name="description" content="lmmock combines a pure-Go loopback HTTP/1.x and TLS server, an embedded lmcode-go bytecode VM, a multi-provider LLM and OAuth2 fixture catalog, a stdio…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmmock/">Overview</a></li>
+<li><a href="/tools/lmmock/skill.html">Skill</a></li>
+<li><a href="/tools/lmmock/guide.html">Guide</a></li>
+<li><a href="/tools/lmmock/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmmock guide</h1>
+<h2>Overview</h2>
+<p>lmmock combines a pure-Go loopback HTTP/1.x and TLS server, an embedded lmcode-go bytecode VM, a multi-provider LLM and OAuth2 fixture catalog, a stdio JSON-RPC host for ACP and MCP, a binary wire protocol engine (WebSocket, HTTP/2, gRPC, Redis, Kafka, MongoDB, Postgres, MQTT, SMTP, IMAP, AMQP), and a traffic-capture scrubber inside a single dependency-free executable.</p>
+<h2>HTTP mock architecture and execution lifecycle</h2>
+<p>Every scripted HTTP mock separates startup route registration from per-request execution:</p>
+<ul>
+<li>Startup validation: When lmmock loads a compiled bytecode file, it executes the top-level chunk once to evaluate route(method, path, annotation), rest_route(method, path, annotation), and rest_config(key, value) calls. Missing or duplicate annotations, invalid interface bindings, or conflicting Go net/http ServeMux patterns fail before any socket is bound.</li>
+<li>Isolated per-request VM state: Each incoming HTTP request runs the matched annotated function in its own VM registry and memory arena. Shared key-value strings (Exchange.get, Exchange.set, Exchange.take) and atomic counters (Exchange.increment) are synchronized across concurrent requests and persist for the lifetime of the server instance.</li>
+<li>Buffered vs. streaming responses: Exchange.send and Exchange.json buffer the payload until the handler returns, allowing status and headers to be replaced multiple times. Calling Exchange.stream_event flushes ordered chunks immediately during the handler call for SSE or chunked transfer testing, while Exchange.stream_fault injects raw HTTP/1 disconnect, truncated-chunk, or malformed-chunk framing errors after an optional prefix.</li>
+<li>Process wrapping and readiness: lmmock exec binds an ephemeral loopback port (127.0.0.1:0), exports LMMOCK_URL to the child command, captures bounded child stdout (up to 10 MiB) when orchestrated via run_lmcode, and closes the listener as soon as the child exits. lmmock serve writes a single readiness JSON line to stdout and optionally atomically creates and cleans up a --ready-file.</li>
+<li>Selective upstream passthrough: Passing --upstream http(s)://host/base/ forwards only paths that have no registered mock route to a fixed upstream over HTTP/1.1 while stripping hop-by-hop headers and rejecting dot-segment path traversal with HTTP 400. Adding --upstream-read-only strips Authorization and Cookie headers and restricts unmatched forwarding to GET and HEAD.</li>
+</ul>
+<h2>Built-in LLM, OAuth2, and SaaS connector fixtures</h2>
+<p>lmmock ships both precompiled embedded presets (--builtin) and source fixtures under examples/ for offline testing of AI SDKs and workflow connectors:</p>
+<ul>
+<li>Multi-provider LLM API (--builtin llm-api and examples/llm-api.lms): Implements OpenAI Chat Completions, OpenAI Responses, Embeddings, and Models (/v1/chat/completions, /v1/responses, /v1/embeddings, /v1/models), Anthropic Messages (/v1/messages), Google Gemini (generateContent, streamGenerateContent, batchEmbedContents), and Ollama (/api/chat, /api/tags). Supports scripted per-turn replies keyed on request body matches, tool-call generation (disable with {"toolCalls": false}), SSE and NDJSON streaming, and /__inspect or /__requests introspection.</li>
+<li>OAuth2 and Codex device auth (--builtin oauth-codex-device, examples/oauth.lms, examples/auth/*): Models OAuth 2.0 authorization-code with S256 PKCE, refresh token rotation, client credentials, GitHub device flow, OpenAI Codex CLI device login, and npm web login using host crypto helpers (sha256_url, random_token, secure_equal, basic_id, basic_secret, form_get, now_ms).</li>
+<li>n8n SaaS connector presets: Annotated scripts under examples/ model real authentication headers, pagination, stateful create/read operations, vendor-specific error envelopes, and deterministic 429/500 fault triggers for Slack, Discord, Telegram, Jira, Xray, Stripe, GitHub, GitLab, Bitbucket, Notion, Airtable, HubSpot, Asana, Trello, ClickUp, Linear, PagerDuty, Datadog, Cloudflare, Dropbox, Box, SendGrid, Mailchimp, Twilio, PayPal, CircleCI, Typeform, Shopify, WordPress, and WooCommerce.</li>
+</ul>
+<h2>Stdio ACP/MCP, wire protocols, and database brokers</h2>
+<p>Beyond HTTP/1.x, lmmock provides three specialized protocol families:</p>
+<ul>
+<li>Stdio JSON-RPC and agent streams (lmmock stdio): Speaks newline-delimited or Content-Length JSON-RPC over stdin/stdout using annotated RPCHandler(RPC) functions bound via bind(method, annotation). Includes embedded presets for ACP (initialize, session/new, session/load, session/prompt with ordered session/update chunks), MCP 2025-11-25 (initialize, tools/list, tools/call, resources/*, prompts/*, ping), an owned-peer mcp-client verifier guarded by --fake-bin, and one-shot CLI agent presets (--preset claude|codex|gemini|agy) driven by deterministic (alias, turn) scenario cells.</li>
+<li>Frame-level wire handlers (lmmock wire): Exposes WebSocket (ws), HTTP/2 duplex streams (http2), descriptor-driven gRPC (grpc), and line-delimited TCP (line) through annotated WebSocketHandler, HTTP2Handler, GRPCHandler, and LineHandler interfaces receiving a Session object (send, receive, close, metadata).</li>
+<li>In-memory infrastructure brokers (lmmock proto): Runs zero-dependency loopback servers for Kafka (kfake broker with auto-created or seeded topics and idempotent producer support), MongoDB (OP_MSG wire mock with insert, find, delete, count, $gt, and $set), PostgreSQL (v3 startup, simple and prepared SQL fixtures), Redis (RESP2 strings, TTL, lists, pub/sub, and READONLY mode), MQTT (QoS 0/1/2 broker), SMTP (AUTH PLAIN/LOGIN sink with JSONL spool), IMAP (seeded INBOX or live SMTP spool reader), and AMQP 0-9-1 (in-memory queues, publisher confirms, and basic.get).</li>
+</ul>
+<h2>TLS, traffic capture scrubbing, and security boundaries</h2>
+<p>When --tls is passed to serve or exec, lmmock generates an ephemeral in-memory CA and server keypair for 127.0.0.1, ::1, localhost, and any --tls-host DNS or IP identities. Only the public CA certificate is written to a temporary directory and exported to the exec child via LMMOCK_CA_CERT, SSL_CERT_FILE, NODE_EXTRA_CA_CERTS, REQUESTS_CA_BUNDLE, and CURL_CA_BUNDLE; machine trust stores are never modified.</p>
+<p>For recording-driven fixtures, lmmock scenario scrub ingests raw lminspect JSONL captures, decompresses gzip payloads, normalizes dynamic provider IDs and timestamps, and scrubs Authorization headers, API keys, cookies, and escaped JSON credentials across all exchanges before writing safe flows.jsonl and scenario.json artifacts. lmmock scenario verify replays scrubbed flows against a live loopback mock to assert byte-for-byte and event-order fidelity.</p>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<p>Every lmmock HTTP program also embeds the 226-signature lmcode_std_v3 standard catalog. Scripts can combine native Handler(Exchange) routes with standard RestExchange interfaces and stateless CLI dispatch:</p>
+<ul>
+<li>Standard HTTP route interfaces: RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, and RestHandler. Colon-prefixed path parameters such as @"/users/:id" and wildcard segments such as @"/files/:rest..." or @"/files/*rest" are automatically normalized to Go net/http ServeMux patterns ({id} and {rest...}).</li>
+<li>Stateless CLI options and commands: CliOption (annotated with @"--flag") and CliCommand (annotated with @"cmd"). Running lmmock --lmcode FILE [args...] or calling rest_cli(args) inside _lmcode_ evaluates matching CliOption flags and dispatches the target CliCommand or HTTP route in-process.</li>
+<li>Route prefixing and shared configuration: rest_config("prefix", "/api") or rest_config("base_path", "/api") prepends a base path to registered standard routes, while other keys populate shared server state readable via RestExchange.get(key).</li>
+</ul>
+<pre><code>p = _lmcode_ schema="examples/schema.json";
+@"--prefix-tag"
+fn opt_tag(x: RestExchange) -> void implements CliOption {
+  x.set("tag", x.query("prefix-tag"));
+}
+
+@"status"
+fn cmd_status(x: RestExchange) -> void implements CliCommand {
+  let n = x.increment("cli_calls");
+  x.send(x.get("tag") + ":" + str(n));
+}
+
+@"/items/:id"
+fn get_item(x: RestExchange) -> void implements RestGet {
+  x.json("{\"id\":\"" + x.param("id") + "\",\"tag\":\"" + x.get("tag") + "\"}");
+}
+
+rest_config("prefix", "/v1");
+assert_eq(rest_cli(str_split("--prefix-tag=ci status", " ")), "ci:1");
+assert_eq(rest_cli(str_split("--prefix-tag=ci /v1/items/99", " ")), "{\"id\":\"99\",\"tag\":\"ci\"}");
+end _lmcode_</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmmock">github.com/lmctl-ai/lmmock</a>.</p>
+</footer>
+</body>
+</html>

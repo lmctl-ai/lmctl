@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>deepseek-harness reference — deepseek-harness — lmctl.com tools</title>
+<meta name="description" content="Reference tables for deepseek-harness (dsh) CLI commands, environment variables, wire protocol behavior, build targets, and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/deepseek-harness/">Overview</a></li>
+<li><a href="/tools/deepseek-harness/skill.html">Skill</a></li>
+<li><a href="/tools/deepseek-harness/guide.html">Guide</a></li>
+<li><a href="/tools/deepseek-harness/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>deepseek-harness reference</h1>
+<p>Reference tables for deepseek-harness (dsh) CLI commands, environment variables, wire protocol behavior, build targets, and exit codes.</p>
+<h2>CLI commands and flags</h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Flags and arguments</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>dsh --version</td>
+<td>none</td>
+<td>Print the installed dsh version string (for example 0.2.1-alpha.1 for a source build of main).</td>
+</tr>
+<tr>
+<td>dsh --profile headless</td>
+<td>"&lt;prompt>"</td>
+<td>Run a single non-interactive prompt and print the plain-text answer to stdout.</td>
+</tr>
+<tr>
+<td>dsh web</td>
+<td>[--no-open]</td>
+<td>Start the Web UI server at http://127.0.0.1:3080 (opens browser unless --no-open or SSH).</td>
+</tr>
+<tr>
+<td>pnpm run build</td>
+<td>none</td>
+<td>Compile all workspace packages and prepare repository artifacts from source.</td>
+</tr>
+<tr>
+<td>pnpm run dev:web</td>
+<td>none</td>
+<td>Build, serve, and rebuild client bundles on source edits.</td>
+</tr>
+</tbody>
+</table>
+<h2>Environment variables</h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DSH_HOME</td>
+<td>~/.dsh</td>
+<td>Directory for dsh state, configuration, and local session data.</td>
+</tr>
+<tr>
+<td>DEEPSEEK_API_KEY</td>
+<td>unset</td>
+<td>API key for authenticating model requests.</td>
+</tr>
+<tr>
+<td>DEEPSEEK_BASE_URL</td>
+<td>vendor default</td>
+<td>Trusted environment-tier API base URL override (such as http://127.0.0.1:PORT/v1).</td>
+</tr>
+<tr>
+<td>DSH_TELEMETRY_DISABLED</td>
+<td>unset</td>
+<td>Set to 1 to disable telemetry in automated tests and hermetic environments.</td>
+</tr>
+</tbody>
+</table>
+<h2>Wire protocol and provider-mock-e2e profile</h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Value</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Package name</td>
+<td>@deepseek-ai/dsh (binary: dsh)</td>
+<td>Built from lmctl-ai/deepseek-harness on arm64.</td>
+</tr>
+<tr>
+<td>HTTP route</td>
+<td>POST /v1/messages (Anthropic Messages SSE)</td>
+<td>Observed with the default headless configuration in lmctl provider mock runs.</td>
+</tr>
+<tr>
+<td>Headless args</td>
+<td>dsh --profile headless "&lt;prompt>"</td>
+<td>Stdout trimmed is the exact model reply.</td>
+</tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Headless prompt, version check, or server shutdown succeeded.</td>
+</tr>
+<tr>
+<td>non-zero</td>
+<td>Missing credentials, HTTP transport failure, or plugin initialization error.</td>
+</tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/deepseek-harness">github.com/lmctl-ai/deepseek-harness</a>.</p>
+</footer>
+</body>
+</html>

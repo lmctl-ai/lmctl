@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmaws — lmctl.com tools</title>
+<meta name="description" content="lmaws is the AWS scripting host for LMScript, providing both the shared lmcloud procedural schema and a curated AWS inventory, spend, and sandbox…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmaws/">Overview</a></li>
+<li><a href="/tools/lmaws/skill.html">Skill</a></li>
+<li><a href="/tools/lmaws/guide.html">Guide</a></li>
+<li><a href="/tools/lmaws/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmaws</h1>
+<p>lmaws is the AWS scripting host for LMScript, providing both the shared lmcloud procedural schema and a curated AWS inventory, spend, and sandbox API.</p>
+<h2>Quick reference</h2>
+<p>Declare lmaws in an LMScript program or run its CLI directly against offline synthetic fixtures, the local awssim emulator on 127.0.0.1:4566, or guarded live AWS accounts.</p>
+<pre><code>lmaws --version
+lmaws --lmcode-schema --json
+lmaws --lmcode-signatures
+lmaws --sweep --dry-run
+p = _lmcode_ cli="lmaws" install="github:lmctl-ai/lmaws@latest";</code></pre>
+<table>
+<thead>
+<tr>
+<th>Surface</th>
+<th>Command or method</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Shared cloud context</td>
+<td>context cloud: Cloud</td>
+<td>Provider-neutral S3 object storage, SQS queues, DynamoDB tables, IAM policy lint/attach, Lambda functions, Cognito userpools, cost caps, and metrics.</td>
+</tr>
+<tr>
+<td>AWS inventory and spend</td>
+<td>context aws: Aws; aws.example(name)</td>
+<td>Read-only AWS inventory, Cost Explorer spend reports, CloudFront traffic, EC2 fleet cost analysis, and run-owned sandboxes.</td>
+</tr>
+<tr>
+<td>Emulator endpoint</td>
+<td>cloud.set_endpoint("all", "http://127.0.0.1:4566")</td>
+<td>Target a local awssim instance over loopback HTTP using dummy test/test SigV4 credentials.</td>
+</tr>
+<tr>
+<td>Orphan sweeper</td>
+<td>lmaws --sweep [--apply|--dry-run] [--all-stale] [RUN_ID]</td>
+<td>Inspect or tear down run-owned resources recorded in durable recovery journals.</td>
+</tr>
+<tr>
+<td>Standard REST and CLI</td>
+<td>rest_config, rest_route, rest_serve, rest_stop, rest_cli</td>
+<td>Expose S3, SQS, and DynamoDB workflows as HTTP routes (:param patterns) and CLI commands via lmcode_std_v3 interfaces.</td>
+</tr>
+</tbody>
+</table>
+<p>Runnable LMScript example using lmaws with the shared cloud context and standard REST and CLI routing:</p>
+<pre><code>p = _lmcode_ cli="lmaws" install="github:lmctl-ai/lmaws@latest";
+  @"/s3/:bucket/:key"
+  fn get_s3(x: RestExchange) -> void implements RestGet {
+    x.send(cloud.object_get(x.param("bucket"), x.param("key")));
+  }
+
+  @"enqueue"
+  fn cmd_enqueue(x: RestExchange) -> void implements CliCommand {
+    let id = cloud.queue_send("lmaws-jobs", x.body());
+    x.send("sent:" + id);
+  }
+
+  rest_config("prefix", "/v1");
+  cloud.set_cost_cap_usd(0.05);
+  cloud.bucket_create("lmaws-demo-bkt");
+  cloud.object_put("lmaws-demo-bkt", "config.json", "{\"region\":\"us-east-1\"}");
+  cloud.queue_create("lmaws-jobs");
+
+  let cli_res = rest_cli(str_split("enqueue -- build-artifact", " "));
+  let http_res = rest_cli(str_split("/v1/s3/lmaws-demo-bkt/config.json", " "));
+  print(cli_res + " | " + http_res);
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, "lmaws run failed");</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmaws/skill.html">Skill</a> — LLM agent authoring rules, commands, live safety gates, and verification steps for lmaws.</li>
+<li><a href="/tools/lmaws/guide.html">Guide</a> — Architecture, awssim emulator setup, live double/triple opt-in guardrails, spend reporting, and standard REST/CLI interfaces.</li>
+<li><a href="/tools/lmaws/reference.html">Reference</a> — CLI flags, environment variables, Cloud and Aws schema signatures, standard REST/CLI interfaces, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmaws">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmaws">github.com/lmctl-ai/lmaws</a>.</p>
+</footer>
+</body>
+</html>

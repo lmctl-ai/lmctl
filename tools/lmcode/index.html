@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode — lmctl.com tools</title>
+<meta name="description" content="lmcode is the specification, DSLB v6 bytecode contract, 226-signature standard catalog, and conformance suite for schema-bound host programs.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode/">Overview</a></li>
+<li><a href="/tools/lmcode/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode</h1>
+<p>lmcode is the specification, DSLB v6 bytecode contract, 226-signature standard catalog, and conformance suite for schema-bound host programs. It defines the grammar, schema format, verifier rules, standard REST and CLI interfaces, invocation result protocol, and cross-runtime test vectors.</p>
+<h2>Quick reference</h2>
+<pre><code>git clone https://github.com/lmctl-ai/lmcode.git
+cd lmcode
+npm install -g @lmctl-ai/lmctl
+python3 tests/grammar/tree_sitter_differential.py --json /tmp/tree-sitter-diff.json</code></pre>
+<table><thead><tr><th>Item</th><th>Signature / Value</th><th>Role</th></tr></thead><tbody>
+<tr><td>Bytecode format</td><td>DSLB v6</td><td>Schema-hash bound bytecode with typed imports, line table, and R49 entry table</td></tr>
+<tr><td>Schema version</td><td>dsl.schema: 2</td><td>Declares host types, methods, functions, contexts, enums, operators, interfaces, and result contract</td></tr>
+<tr><td>Standard catalog</td><td>lmcode_std_v3 (226 signatures)</td><td>Strings, byte codecs, math, files, collections, containers, strict JSON, templates, returns, and REST/CLI</td></tr>
+<tr><td>Standard interfaces</td><td>10 interfaces</td><td>RestGet..RestOptions, RestHandler, CliCommand, and CliOption on RestExchange</td></tr>
+<tr><td>Return protocol</td><td>LMCODE_RETURN_BEGIN / END</td><td>Single-shot compact UTF-8 JSON result envelope after body, entries, and app checks</td></tr>
+<tr><td>Host CLI flags</td><td>--lmcode, --lmcode-schema, --lmcode-signatures</td><td>Standard discovery and execution flags with exit codes 0, 2, 3, and 4</td></tr>
+</tbody></table>
+<pre><code>program = _lmcode_ schema="host.schema.json";
+
+@"/users/:id"
+fn get_user(x: RestExchange) -> void implements RestGet {
+  x.json("{\"id\":\"" + x.param("id") + "\"}");
+}
+
+@"status"
+fn cli_status(x: RestExchange) -> void implements CliCommand {
+  x.send("ok:" + x.param("arg0"));
+}
+
+rest_config("prefix", "/api");
+$return.preview = rest_cli(qw/status ready/);
+rest_serve();
+end _lmcode_</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmcode/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode/reference.html">Reference</a></li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmcode">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode">github.com/lmctl-ai/lmcode</a>.</p>
+</footer>
+</body>
+</html>

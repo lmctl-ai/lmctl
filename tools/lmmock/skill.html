@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmmock authoring skill — lmmock — lmctl.com tools</title>
+<meta name="description" content="lmmock is a pure-Go multi-protocol mock server and LMScript host built on lmcode-go.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmmock/">Overview</a></li>
+<li><a href="/tools/lmmock/skill.html">Skill</a></li>
+<li><a href="/tools/lmmock/guide.html">Guide</a></li>
+<li><a href="/tools/lmmock/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmmock authoring skill</h1>
+<p>lmmock is a pure-Go multi-protocol mock server and LMScript host built on lmcode-go. It runs scriptable loopback HTTP and HTTPS mock servers, embedded LLM and OAuth2 presets, stdio ACP and MCP fixtures, WebSocket/HTTP2/gRPC wire handlers, and in-memory database and messaging protocol brokers.</p>
+<h2>Purpose</h2>
+<p>Use lmmock to isolate integration tests from live third-party services by scripting deterministic HTTP responses, SSE token streams, HTTP/1 framing faults, OAuth2 PKCE and device-code grants, LLM tool-call round trips, stdio JSON-RPC sessions, and binary wire protocols on loopback sockets.</p>
+<h2>When to use it</h2>
+<p>Choose lmmock when an application, CLI, or SDK needs a local loopback server or stdio peer that models vendor APIs, rate limits, retries, dropped connections, or multi-turn agent transcripts. Pair lmmock with lmcurl when driving HTTP or SSE client contract suites, lminspect when recording live upstream traffic for scenario scrubbing, or lmldap and lmsaml when testing dedicated directory and SAML 2.0 servers.</p>
+<h2>Install</h2>
+<p>Install the lmctl toolchain with npm install -g @lmctl-ai/lmctl@latest and download or build the native lmmock binary (CGO_ENABLED=0) for Linux x64/arm64, macOS x64/arm64, or Windows x64. When an LMScript program declares cli="lmmock" and install="github:lmctl-ai/lmmock@latest" or uses lmmock schema, the runtime validates bytecode against the embedded lmmock_v5 host schema and 226-signature lmcode_std_v3 standard catalog.</p>
+<pre><code>lmscript --version
+lmmock --version
+lmmock --lmcode-schema --json
+lmmock --lmcode-signatures</code></pre>
+<h2>Commands</h2>
+<p>lmmock provides subcommands for HTTP execution and serving, built-in LLM and OAuth presets, declarative check suites, binary protocol mocks, stdio RPC peers, WebSocket/HTTP2/gRPC wire mocks, and capture scenario scrubbing.</p>
+<pre><code># Schema and signature inspection
+lmmock schema > schema.json
+lmmock --lmcode-schema --json
+lmmock --lmcode-signatures
+
+# Run a compiled mock around a test client command
+lmmock exec --lmcode build/api.lmcode -- node examples/client.mjs
+lmmock exec --tls --tls-host fixed.mock.test --lmcode build/api.lmcode -- curl --cacert "$LMMOCK_CA_CERT" "$LMMOCK_URL/health"
+
+# Built-in LLM and Codex OAuth mocks (no compiler needed)
+lmmock exec --builtin llm-api --config examples/llm-config.json -- lmmock check --suite examples/llm-client.json
+lmmock serve --builtin oauth-codex-device --listen 127.0.0.1:0 --ready-file ready.json
+
+# Selective upstream fallback and redacted audit logging
+lmmock serve --lmcode build/api.lmcode --upstream http://127.0.0.1:8080/base/ --upstream-read-only --audit-log requests.jsonl
+
+# In-memory protocol mock servers (kafka, mongodb, postgres, redis, mqtt, smtp, imap, amqp)
+lmmock proto --list
+lmmock proto redis --listen 127.0.0.1:0 --config cfg.json --ready-file ready.json
+
+# Stdio ACP, MCP, and CLI agent presets
+lmmock stdio --schema
+lmmock stdio acp --scenario tests/stdio/scenario.json --alias Worker
+lmmock stdio mcp --scenario tests/stdio/scenario.json --alias MCP
+lmmock stdio agent --preset claude --scenario cells.json --alias Worker -- -p ping
+
+# WebSocket, HTTP/2, gRPC, and line wire handlers
+lmmock wire --list
+lmmock wire schema grpc
+lmmock wire exec ws --config scenario.json -- node ws-client.mjs
+
+# Scrub, import, and verify recorded lminspect traffic
+lmmock scenario scrub --input raw.jsonl --output flows.jsonl
+lmmock scenario import --input flows.jsonl --output scenario.json
+lmmock scenario verify --input flows.jsonl --target "$LMMOCK_URL"</code></pre>
+<h2>Inputs and outputs</h2>
+<p>In HTTP mode, the top-level _lmcode_ script runs once at startup to register routes with route(method, path, annotation) or rest_route(method, path, annotation). Annotated functions implement Handler(Exchange) -> void or the standard lmcode_std_v3 interfaces RestGet through RestOptions, RestHandler, CliCommand, and CliOption. In exec mode, lmmock passes LMMOCK_URL (and LMMOCK_CA_CERT plus standard CA bundle variables when --tls is active) to the child process. Under run_lmcode, child stdout is captured into result.stdout and host stdout emits one terminal SDK invocation frame. In serve, proto, and wire serve modes, stdout emits one readiness JSON line containing url, pid, and optional address, protocol, or ca_cert fields.</p>
+<h2>Safety rules</h2>
+<p>Follow these boundaries when authoring and running lmmock fixtures:</p>
+<ul>
+<li>Loopback only: --listen accepts only loopback IP literals such as 127.0.0.1:0 or [::1]:0; non-loopback addresses and hostnames are rejected before opening a socket.</li>
+<li>Synthetic credentials only: Use dummy tokens in --config files, connector presets, and /__inspect or /__requests endpoints; always scrub raw lminspect captures with lmmock scenario scrub before committing fixtures, and review output for custom application secrets.</li>
+<li>Startup route registration: Call route() and rest_config() only at top level during startup; calling route() inside a request handler or binding duplicate/missing annotations fails immediately.</li>
+<li>Stream commit ordering: Exchange.stream_event flushes chunked bytes immediately; once a stream is committed, calling status, set_header, send, json, or delay is refused.</li>
+<li>Bounded payloads and trusted scripts: Request bodies are capped at 1 MiB (4 MiB for lmmock check responses), header reads at 5 seconds, and request reads at 10 seconds, while _lmcode_ scripts run unsandboxed with no VM instruction timeout.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>The first example defines stateful HTTP routes, a retry fault counter, and an immediate SSE stream using the native Handler interface:</p>
+<pre><code>p = _lmcode_ schema="examples/schema.json";
+@retry_once
+fn handle_retry(x: Exchange) -> void implements Handler {
+  let attempt = x.increment("attempts");
+  if (attempt == 1) {
+    x.status(429);
+    x.set_header("Retry-After", "1");
+    x.json("{\"error\":\"rate_limited\"}");
+  } else {
+    x.status(200);
+    x.json("{\"ok\":true,\"attempt\":" + str(attempt) + "}");
+  }
+}
+
+@sse_tokens
+fn handle_sse(x: Exchange) -> void implements Handler {
+  x.set_header("Content-Type", "text/event-stream");
+  x.stream_event("data: {\"delta\":\"hello\"}\n\n");
+  x.stream_event("data: [DONE]\n\n");
+}
+
+route("GET", "/retry", "retry_once");
+route("POST", "/v1/stream", "sse_tokens");
+end _lmcode_
+r = run_lmcode(p, {command: ["lmmock", "exec", "--lmcode", "$DSLFILE", "--", "node", "examples/client.mjs"]});
+require(r.ok, json_stringify(r));</code></pre>
+<p>The second example uses the standard lmcode_std_v3 REST and CLI interfaces to expose parameterized routes and in-process CLI dispatch on the same bytecode program:</p>
+<pre><code>p = _lmcode_ schema="examples/schema.json";
+@"--env"
+fn opt_env(x: RestExchange) -> void implements CliOption {
+  x.set("env", x.query("env"));
+}
+
+@"ping"
+fn cmd_ping(x: RestExchange) -> void implements CliCommand {
+  x.send("pong:" + x.get("env"));
+}
+
+@"/users/:id"
+fn get_user(x: RestExchange) -> void implements RestGet {
+  x.json("{\"id\":\"" + x.param("id") + "\",\"env\":\"" + x.get("env") + "\"}");
+}
+
+rest_config("prefix", "/api");
+assert_eq(rest_cli(str_split("--env=staging ping", " ")), "pong:staging");
+assert_eq(rest_cli(str_split("--env=staging /api/users/7", " ")), "{\"id\":\"7\",\"env\":\"staging\"}");
+end _lmcode_</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmmock distinguishes CLI usage, host bytecode load failures, and child application failures:</p>
+<ul>
+<li>Exit code 0 indicates that the mock server, dry-run validation, CLI dispatch, check suite, or wrapped client command succeeded.</li>
+<li>Exit code 1 indicates a standalone operational failure, check suite assertion mismatch, or scenario verification failure.</li>
+<li>Exit code 2 indicates invalid command-line flags, retired flag spellings, non-loopback listen addresses, or missing required arguments.</li>
+<li>Exit code 3 indicates a host bytecode load error, schema mismatch, missing or duplicate handler annotation, invalid route registration, or runtime VM error under run_lmcode.</li>
+<li>Exit code 4 indicates that the wrapped client command failed during run_lmcode execution (standalone lmmock exec propagates the child process exit code directly, or 130 on SIGINT/SIGTERM).</li>
+</ul>
+<h2>How to verify</h2>
+<p>Verify the lmmock binary by checking its version, embedded schema JSON, canonical signature list, and a built-in LLM suite execution:</p>
+<pre><code>lmmock --version
+lmmock --lmcode-schema --json > /tmp/lmmock-schema.json
+lmmock --lmcode-signatures > /tmp/lmmock-sigs.txt
+lmmock exec --builtin llm-api --config examples/llm-config.json -- lmmock check --suite examples/llm-client.json</code></pre>
+<p>In a repository checkout, run lmscript test.lms (or ./test.sh) to compile all example and negative fixtures, execute Go unit and race tests, and run the multi-protocol integration suites.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmmock">github.com/lmctl-ai/lmmock</a>.</p>
+</footer>
+</body>
+</html>

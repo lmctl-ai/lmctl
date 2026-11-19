@@ -18,40 +18,70 @@
 <li><a href="/tools/lmtorch/skill.html">Skill</a></li>
 <li><a href="/tools/lmtorch/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmtorch/guide.html">Guide</a></li>
+<li><a href="/tools/lmtorch/reference.html">Reference</a></li>
 <li><a href="/tools/lmtorch/examples/">Examples</a></li>
 </ul>
 </nav>
 <main><h1>Use lmtorch from LMScript</h1>
-<p>lmtorch is a CPU tensor and neural network host for LMScript. It runs compiled DSL blocks with native tensor operations, automatic differentiation, model layers, optimizers, and local tensor files.</p>
+<p>lmtorch is a CPU tensor and neural network host for LMScript. It runs compiled lmcode blocks with native tensor operations, automatic differentiation, model layers, optimizers, and local tensor files.</p>
 <h2>Purpose</h2>
-<p>Use lmtorch when a local LMScript program needs tensor math, gradients, model training, or safetensors and CSV input or output. A DSL block runs in one process, so intermediate tensors stay in memory.</p>
+<p>Use lmtorch when a local LMScript program needs tensor math, gradients, model training, or safetensors and CSV input or output. All parts of one invocation run in one process, so intermediate tensors stay in memory.</p>
 <h2>When to use it</h2>
-<p>Use lmtorch for deterministic CPU tensor workflows and small models. Choose another host when the task requires a GPU, remote training service, or Python package ecosystem.</p>
+<p>Use lmtorch for deterministic CPU tensor workflows and small models. Choose another host when the task requires a GPU, a remote training service, or the Python package ecosystem; the executable contains no Python runtime.</p>
 <h2>Install</h2>
-<p>Install Node.js 24.15 or newer and LMScript with npm install -g @lmctl-ai/lmctl. A host declaration with cli="lmtorch" install="github:lmctl-ai/lmtorch@v0.5.1" downloads the matching release binary when lmtorch is not on PATH and verifies its SHA256SUMS checksum.</p>
-<p>The lmtorch v0.5.1 release embeds its host-specific DSL schema. Standard functions come from the LMScript standard library and are not repeated in the host schema. LMScript uses the schema reported by the same binary that executes the compiled bytecode. This release supports Linux x64 and arm64, macOS x64 and arm64, and Windows x64.</p>
+<p>Install LMScript with npm install -g @lmctl-ai/lmctl and run lmctl init. A block declared with cli="lmtorch" and install="github:lmctl-ai/lmtorch@latest" downloads the newest release binary when lmtorch is not on PATH; pin a tag such as @v0.5.1 for reproducibility and digest verification.</p>
+<p>lmtorch 0.5.1 embeds its host-specific schema (context torch and out, 7 types, enum DType). Standard functions come from the lmcode std catalog registered by the embedded VM and are not repeated in the host schema. lmtorch 0.5.1 vendors the lmcode_std_v3 catalog of the lmcode-cpp commit pinned in sdk.lock: 206 canonical signatures (83 functions and 123 methods on 16 standard types). The current lmcode_std_v3 catalog has 226 signatures, adding the REST and CLI interfaces; lmtorch picks those up when it syncs its SDK pin and releases.</p>
 <h2>Commands</h2>
-<p>Save a DSL block to bytecode and run it through the host command prefix.</p>
-<pre><code>p = _lmcode_ cli="lmtorch" install="github:lmctl-ai/lmtorch@v0.5.1";
-let x = torch.tensor("[1.0, 2.0, 3.0]");
-out.set("sum", x.sum().item());
+<p>Write an _lmcode_ block and execute it with run_lmcode, which compiles the block against the schema of the same binary, invokes the host with the v1 invocation manifest and decodes the terminal return frame.</p>
+<pre><code>p = _lmcode_ cli="lmtorch" install="github:lmctl-ai/lmtorch@latest";
+let values = torch.tensor("[[1.0, 2.0], [3.0, 4.0]]");
+let total = values.sum().item();
+out.check(total == 10.0, "sum must be 10");
+out.set("shape", values.shape()).set("sum", total);
 end _lmcode_
-savedsl(p, "program.dslb");
-run = system ${dsl_cli(p)} --lmcode program.dslb;</code></pre>
-<p>Check run.code before using run.stdout. The host prints a JSON result for values set through out.</p>
+
+run = run_lmcode(p);
+if (!run.ok) { println(f"lmtorch {run.phase} error {run.code}: {run.message}"); exit(1); }
+result = run.result;
+println(f"shape {result.shape}, sum {result.sum}");</code></pre>
+<p>The host protocol flags are stable and can be called directly for discovery.</p>
+<pre><code>lmtorch --version
+lmtorch --lmcode-schema
+lmtorch --lmcode-schema --json
+lmtorch --lmcode-signatures
+lmtorch --lmcode FILE.dslb</code></pre>
+<p>Compile-check a script without running it with lmscript --check file.lms.</p>
 <h2>Inputs and outputs</h2>
-<p>Create tensors from JSON arrays or Torch constructors. Tensor operations return tensors; methods such as item, item_int, shape, and to_text return scalar or textual values. Set output fields with out.set and check expectations with out.check.</p>
-<p>Tensor.save and Torch.load use safetensors. Torch.read_csv loads numeric data, and Tensor.write_csv writes numeric results. Keep artifact paths inside the current working directory.</p>
+<p>Literal data enters as JSON text through torch.tensor, usually built in lmscript with json_stringify and substituted into the block with a dollar-brace expression. Shapes are one to four int arguments, as in torch.zeros(2, 3). Tensor operations return tensors; methods such as item and shape return scalar or structured values.</p>
+<p>The result of a block is the out object: set fields with out.set and assert expectations with out.check. run_lmcode returns an object whose ok field tells success; on success result holds the out fields, on failure phase, code and message describe the error.</p>
+<p>Tensor.save and torch.load use safetensors (F32, F64, I64, BOOL). CSV and text files are also supported by host methods. Every host path is relative to, and must stay inside, the working directory; saves replace an existing file atomically.</p>
 <h2>Safety rules</h2>
-<p>The host and LMScript run with the local user's permissions. Review scripts before running them. The install declaration downloads a native executable from the public lmtorch release. Keep generated artifacts in a dedicated working directory.</p>
+<p>The host and LMScript run with the local user's permissions. Review scripts before running them. The install declaration downloads a native executable from the public lmtorch release. Host loads and saves are confined to the working directory, but the std file functions (file_read, file_write, file_append) are not confined and their writes are not atomic, so keep generated artifacts in a dedicated working directory.</p>
+<p>In long training loops use torch.mark and torch.release so that unkept tensor handles are freed; using a released handle is reported as an error.</p>
 <h2>Worked examples</h2>
 <p>The <a href="/tools/lmtorch/examples/tensor-sum.html">tensor sum</a> example reduces a two-by-two tensor and checks the result. The <a href="/tools/lmtorch/examples/autograd-gradient.html">autograd example</a> differentiates a sum of squares and verifies that the gradient is 2x.</p>
+<p>A gradient through a matrix product, from the repository API document:</p>
+<pre><code>prog = _lmcode_ cli="lmtorch" install="github:lmctl-ai/lmtorch@latest";
+let x = torch.tensor("[[1.0, 2.0], [3.0, 4.0]]").requires_grad(true);
+let loss = (x.matmul(x) + 1.0).square().mean();
+loss.backward();
+out.set("loss", loss.item()).set("grad", x.grad());
+end _lmcode_
+r = run_lmcode(prog);</code></pre>
 <p>For a training workflow, see <a href="https://github.com/lmctl-ai/lmtorch/blob/main/examples/classify-moons-dsl.lms">classify-moons-dsl.lms</a> in the public repository.</p>
 <h2>Errors and exit codes</h2>
-<p>A compiler schema error usually means LMScript is too old or its host declaration is invalid. Upgrade @lmctl-ai/lmctl and check the cli and install values. A nonzero host exit means compilation or execution failed; read stderr before using the output.</p>
-<p>Invalid tensor shapes and unsupported dtypes are rejected by the host. Check the shape and dtype at the operation that failed. File operations also fail when a path is missing, outside the working directory, or already exists when an exclusive output is required.</p>
+<table>
+<thead><tr><th>Exit code</th><th>Phase</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>none</td><td>Success.</td></tr>
+<tr><td>2</td><td>cli</td><td>Usage error (CLI_USAGE), retired or unknown flag, invalid invocation manifest, or a missing or nonboolean dry value; no host work is done.</td></tr>
+<tr><td>3</td><td>load or run</td><td>Bytecode failed verification against the embedded schema (for example LOAD_BAD_BYTECODE), or a program failed while running (host errors are reported as RUN_HOST).</td></tr>
+<tr><td>4</td><td>app</td><td>Application-phase failure, or the result could not be written to standard output.</td></tr>
+</tbody>
+</table>
+<p>A compile error from lmscript usually means LMScript is too old or the host declaration is invalid; upgrade @lmctl-ai/lmctl and check the cli and install values. Invalid tensor shapes, unsupported dtypes, nonfinite or ragged literals and paths outside the working directory are rejected by the host as located RUN_HOST errors. All bytecode files are verified before any of them runs, so a load error leaves no partial work.</p>
 <h2>How to verify</h2>
-<p>Run the <a href="/tools/lmtorch/examples/tensor-sum.html">tensor sum quickrun</a> and confirm its result is 10. For gradients, run the <a href="/tools/lmtorch/examples/autograd-gradient.html">autograd quickrun</a> and confirm the derivative is [2, -4, 6]. The repository test.sh runs the host API checks and examples.</p>
+<p>Run the <a href="/tools/lmtorch/examples/tensor-sum.html">tensor sum quickrun</a> and confirm its result is 10. For gradients, run the <a href="/tools/lmtorch/examples/autograd-gradient.html">autograd quickrun</a> and confirm the derivative is [2, -4, 6]. Compare lmtorch --lmcode-signatures with the <a href="/tools/lmtorch/reference.html">reference</a> when an API name is in doubt. The repository test.sh runs the host API checks and examples.</p>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmtorch">github.com/lmctl-ai/lmtorch</a>.</p>

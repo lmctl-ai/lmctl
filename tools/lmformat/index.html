@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmformat — lmctl.com tools</title>
+<meta name="description" content="lmformat (@lmctl-ai/lmformat) is a dependency-free Node.js library for CLI output formatting: automatically sized tables, counts, durations, and timestamps.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmformat/">Overview</a></li>
+<li><a href="/tools/lmformat/skill.html">Skill</a></li>
+<li><a href="/tools/lmformat/guide.html">Guide</a></li>
+<li><a href="/tools/lmformat/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmformat</h1>
+<p>lmformat (@lmctl-ai/lmformat) is a dependency-free Node.js library for CLI output formatting: automatically sized tables, counts, durations, and timestamps.</p>
+<h2>Quick reference</h2>
+<pre><code>npm install @lmctl-ai/lmformat
+node -e "const { printTable } = require('@lmctl-ai/lmformat'); printTable([['triage', 5, '25s']], { headers: ['team', 'msgs', 'time'] });"</code></pre>
+<table>
+<thead>
+<tr><th>Function</th><th>Category</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>formatTable(rows, options) / printTable(rows, options)</td><td>Tables</td><td>Measure and render an aligned table string or write it to stdout.</td></tr>
+<tr><td>measureColumns(grids, options) / renderGrid(rows, options)</td><td>Shared grids</td><td>Share column widths and caps across multiple table sections.</td></tr>
+<tr><td>measureDecimalPlaces(grids)</td><td>Decimal align</td><td>Share fractional digit slots across decimal-aligned table sections.</td></tr>
+<tr><td>escapeCell(value)</td><td>Sanitization</td><td>Escape tabs, newlines, ANSI sequences, and control characters for safe cells.</td></tr>
+<tr><td>formatCount / formatDuration / formatPercent / formatBar</td><td>Scalars</td><td>Format compact counts (960K), durations (2h 5m), percentages (16%), and bars.</td></tr>
+<tr><td>formatRelativeTime / formatTimer / formatClock / formatLocalTimestamp</td><td>Time</td><td>Format relative ages/countdowns (3d ago), timers (00:36:12), and local clocks.</td></tr>
+</tbody>
+</table>
+<pre><code>const { printTable } = require('@lmctl-ai/lmformat');
+
+const rows = [
+  ['triage.lmctl', 'Triage', 'done', 5, '25s'],
+  ['math.lmctl', 'Lead', 'done', 120, '2s'],
+];
+printTable(rows, {
+  headers: ['team', 'alias', 'status', 'msgs', 'time spent'],
+  align: ['left', 'left', 'left', 'right', 'right'],
+});</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmformat/skill.html">Skill</a> for installation, single-line cell safety rules, and verification commands.</li>
+<li><a href="/tools/lmformat/guide.html">Guide</a> for multi-section shared grids, decimal alignment, and width caps.</li>
+<li><a href="/tools/lmformat/reference.html">Reference</a> for all exported functions, TableOptions fields, and error rules.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmformat">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmformat">github.com/lmctl-ai/lmformat</a>.</p>
+</footer>
+</body>
+</html>

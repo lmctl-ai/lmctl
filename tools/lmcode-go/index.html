@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-go — lmctl.com tools</title>
+<meta name="description" content="lmcode-go is a standard-library-only Go 1.26+ SDK (package lmcode) for verifying and executing lmcode DSLB v6 bytecode in static Go binaries.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-go/">Overview</a></li>
+<li><a href="/tools/lmcode-go/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-go/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-go/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-go</h1>
+<p>lmcode-go is a standard-library-only Go 1.26+ SDK (package lmcode) for verifying and executing lmcode DSLB v6 bytecode in static Go binaries. It builds cleanly with CGO_ENABLED=0 and provides the 226-signature lmcode_std_v3 catalog, rest.Controller controller, dry-mode callbacks, and LMCODE_RETURN framing.</p>
+<h2>Quick reference</h2>
+<pre><code>git clone https://github.com/lmctl-ai/lmcode-go.git
+cd lmcode-go
+CGO_ENABLED=0 go test ./...
+go run ./cmd/conformance conformance/vectors</code></pre>
+<table><thead><tr><th>Item</th><th>Signature / Value</th><th>Role</th></tr></thead><tbody>
+<tr><td>lmcode.NewRegistry()</td><td>*lmcode.Registry</td><td>Create a registry preloaded with all 226 canonical lmcode_std_v3 signatures</td></tr>
+<tr><td>lmcode.NewRegistryWithoutStd()</td><td>*lmcode.Registry</td><td>Create an empty registry without the standard catalog</td></tr>
+<tr><td>lmcode.Load(bc, schema, reg)</td><td>(*lmcode.Program, error)</td><td>Verify DSLB v6 header, SHA-256 schema hash, imports, and control-flow stack depths</td></tr>
+<tr><td>prog.Run(ctx, reg)</td><td>error</td><td>Run the verified bytecode body with a per-run Context</td></tr>
+<tr><td>prog.Call(entryIdx, ctx, reg, args)</td><td>(lmcode.Value, error)</td><td>Call an R49 rule entry by index with typed lmcode.Value arguments</td></tr>
+<tr><td>rest.Register(reg, rest.Options{})</td><td>(*rest.Controller, error)</td><td>Bind the 20 REST/CLI std signatures to a configured HTTP/1.1 stdio and CLI server</td></tr>
+<tr><td>lmcode.InvocationResultsFromCommand(files)</td><td>(*lmcode.InvocationResults, error)</td><td>Manage multi-part ResultSinks, dry mode, and LMCODE_RETURN_BEGIN/END output</td></tr>
+</tbody></table>
+<pre><code>package main
+
+import (
+	"os"
+	lmcode "github.com/lmctl-ai/lmcode-go"
+	"github.com/lmctl-ai/lmcode-go/rest"
+)
+
+func main() {
+	reg := lmcode.NewRegistry()
+	srv, _ := rest.Register(reg, rest.Options{MaxBodyBytes: 1 &lt;&lt; 20})
+	bc, _ := os.ReadFile(os.Args[1])
+	schema, _ := os.ReadFile(os.Args[2])
+	prog, err := lmcode.Load(bc, schema, reg)
+	lmcode.ExitIfError("load", err)
+	err = srv.Run(prog, lmcode.NewContext())
+	lmcode.ExitIfError("run", err)
+}</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmcode-go/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-go/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-go/reference.html">Reference</a></li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmcode-go">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-go">github.com/lmctl-ai/lmcode-go</a>.</p>
+</footer>
+</body>
+</html>

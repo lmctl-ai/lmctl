@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>provider-mock-e2e reference — provider-mock-e2e — lmctl.com tools</title>
+<meta name="description" content="Reference tables for the 13 qualified coding agent CLIs in MATRIX.md, harness scripts, environment isolation variables, and exit codes.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/provider-mock-e2e/">Overview</a></li>
+<li><a href="/tools/provider-mock-e2e/skill.html">Skill</a></li>
+<li><a href="/tools/provider-mock-e2e/guide.html">Guide</a></li>
+<li><a href="/tools/provider-mock-e2e/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>provider-mock-e2e reference</h1>
+<p>Reference tables for the 13 qualified coding agent CLIs in MATRIX.md, harness scripts, environment isolation variables, and exit codes.</p>
+<h2>13-provider routing and configuration matrix</h2>
+<table>
+<thead>
+<tr>
+<th>Provider key &amp; package</th>
+<th>Config file or environment routing (B=origin, V=B/v1)</th>
+<th>Actual HTTP endpoint</th>
+<th>CLI arguments &amp; reply extraction</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>claude (@anthropic-ai/claude-code 2.1.316)</td>
+<td>ANTHROPIC_BASE_URL=B, ANTHROPIC_AUTH_TOKEN=key, ANTHROPIC_API_KEY="", DISABLE_PROMPT_CACHING=1</td>
+<td>POST /v1/messages?beta=true</td>
+<td>--bare --setting-sources "" --strict-mcp-config --mcp-config '{"mcpServers":{}}' --no-session-persistence --tools "" --model mock-agent -p PROMPT --output-format json (json.loads(stdout)['result'])</td>
+</tr>
+<tr>
+<td>codex (@openai/codex 0.166.0)</td>
+<td>CODEX_HOME/config.toml: model_provider="mock", base_url=V, wire_api="responses", env_key="MOCK_API_KEY"</td>
+<td>POST /v1/responses SSE</td>
+<td>exec --skip-git-repo-check --json PROMPT (JSONL item.completed agent_message text)</td>
+</tr>
+<tr>
+<td>gemini (@google/gemini-cli 0.66.0)</td>
+<td>GEMINI_API_KEY=key, GOOGLE_GEMINI_BASE_URL=B, GEMINI_CLI_TRUST_WORKSPACE=true, .gemini/settings.json</td>
+<td>POST /v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse</td>
+<td>-m gemini-2.5-flash -p PROMPT --output-format json (json.loads(stdout)['response'])</td>
+</tr>
+<tr>
+<td>copilot (@github/copilot 1.0.105)</td>
+<td>COPILOT_PROVIDER_BASE_URL=V, COPILOT_PROVIDER_TYPE=openai, COPILOT_PROVIDER_API_KEY=key, COPILOT_OFFLINE=true</td>
+<td>POST /v1/chat/completions SSE</td>
+<td>-p PROMPT --model mock-agent --silent --no-ask-user (stdout.strip())</td>
+</tr>
+<tr>
+<td>opencode (opencode-ai 1.19.5)</td>
+<td>OPENCODE_CONFIG provider.json (@ai-sdk/openai-compatible, baseURL=V), permission={"*":"deny"}</td>
+<td>POST /v1/chat/completions SSE</td>
+<td>run --model mock/mock-agent --format json PROMPT (JSONL type=="text" part.text)</td>
+</tr>
+<tr>
+<td>kimi (@moonshot-ai/kimi-code 2.4.1)</td>
+<td>.kimi-code/config.toml: default_model="mock", [providers.mock] type="openai", base_url=V</td>
+<td>POST /v1/chat/completions SSE</td>
+<td>-p PROMPT --output-format stream-json (JSONL role=="assistant" content)</td>
+</tr>
+<tr>
+<td>qwen (@qwen-code/qwen-code 0.26.5)</td>
+<td>OPENAI_API_KEY=key, OPENAI_BASE_URL=V, .qwen/settings.json selectedType="openai"</td>
+<td>POST /v1/chat/completions SSE</td>
+<td>-m mock-agent -p PROMPT --output-format json (JSON array type=="result" result)</td>
+</tr>
+<tr>
+<td>pi (@earendil-works/pi-coding-agent 1.4.0)</td>
+<td>PI_CODING_AGENT_DIR/models.json: providers.mock baseUrl=V, api="openai-completions"</td>
+<td>POST /v1/chat/completions SSE</td>
+<td>--provider mock --model mock-agent --no-session --no-tools -p PROMPT (stdout.strip())</td>
+</tr>
+<tr>
+<td>dsh (@deepseek-ai/dsh 0.2.1-rc.5)</td>
+<td>DSH_HOME, DEEPSEEK_API_KEY=key, DEEPSEEK_BASE_URL=V, DSH_TELEMETRY_DISABLED=1</td>
+<td>POST /v1/messages (2 requests)</td>
+<td>headless PROMPT (stdout.strip())</td>
+</tr>
+<tr>
+<td>miniplayer (miniplayer 2.0.0)</td>
+<td>MINIPLAYER_CONFIG provider.openai.baseURL=V, OPENAI_API_KEY=key</td>
+<td>POST /v1/responses</td>
+<td>run --model openai/mock-agent PROMPT (stdout.strip())</td>
+</tr>
+<tr>
+<td>lmplayer (lmplayer 1.18.25)</td>
+<td>LMPLAYER_CONFIG / OPENCODE_CONFIG provider.json (@ai-sdk/openai-compatible, baseURL=V)</td>
+<td>POST /v1/chat/completions SSE</td>
+<td>run --model mock/mock-agent --format json PROMPT (JSONL type=="text" part.text)</td>
+</tr>
+<tr>
+<td>agy (Antigravity CLI 1.4.12)</td>
+<td>GEMINI_API_KEY=key, GOOGLE_GEMINI_BASE_URL=B, .gemini/antigravity-cli/settings.json modelProvider="gemini"</td>
+<td>POST /v1beta/models/gemini-3.8-flash:streamGenerateContent?alt=sse</td>
+<td>-p PROMPT --model gemini-3.8-flash (stdout.strip())</td>
+</tr>
+<tr>
+<td>hermes (Hermes git557254f)</td>
+<td>HERMES_HOME, OPENAI_BASE_URL=V, OPENAI_API_KEY=key; cleanup-hermes.py reaps gateway PID</td>
+<td>POST /v1/chat/completions JSON</td>
+<td>chat --native --provider custom --base-url V --api-key key --model mock-agent --safe-mode -Q -q PROMPT</td>
+</tr>
+</tbody>
+</table>
+<h2>Harness scripts</h2>
+<table>
+<thead>
+<tr>
+<th>Script</th>
+<th>Arguments</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>scripts/prepare.py</td>
+<td>none (environment: LMSCRIPT_JS required, MOCK_ROOT optional)</td>
+<td>Download the pinned lmmock release into MOCK_ROOT, write settings.json there, verify lmmock release checksum and compile the no-forced-tool smoke fixture and stock wire handler.</td>
+</tr>
+<tr>
+<td>scripts/run.py</td>
+<td>&lt;provider> --settings &lt;file> --out &lt;dir></td>
+<td>Query lminstall status &lt;provider> --json for the installed binary and invoke scripts/probe.py.</td>
+</tr>
+<tr>
+<td>scripts/probe.py</td>
+<td>&lt;provider> --binary &lt;path> --settings &lt;file> --out &lt;dir></td>
+<td>Start lmmock exec, run the isolated probe against the LMMOCK_URL it provides, check PROVIDER_MOCK_OK_129 and negative control, and write JSON results.</td>
+</tr>
+<tr>
+<td>scripts/wire.py</td>
+<td>&lt;settings.json> &lt;out dir></td>
+<td>Wire-shape probes against the stock llm-api handler.</td>
+</tr>
+<tr>
+<td>scripts/cleanup-hermes.py</td>
+<td>&lt;hermes_home_dir></td>
+<td>Verify fingerprint and reap the per-HOME detached Hermes gateway process.</td>
+</tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Provider exited 0, returned exact PROVIDER_MOCK_OK_129, passed request audit, and negative control fired properly.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Non-zero provider exit, wrong reply text, non-loopback LMMOCK_URL, missing lminstall binary, or failed audit (uncaught Python exception).</td>
+</tr>
+<tr>
+<td>2</td>
+<td>argparse usage error in scripts/run.py or scripts/probe.py (missing provider, --settings, or --out).</td>
+</tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/provider-mock-e2e">github.com/lmctl-ai/provider-mock-e2e</a>.</p>
+</footer>
+</body>
+</html>

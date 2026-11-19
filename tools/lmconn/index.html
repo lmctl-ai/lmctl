@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmconn — lmctl.com tools</title>
+<meta name="description" content="lmconn is a zero-dependency connector CLI and cli.schema.v1 module for AI-agent workflows with a local SQLite credential and OAuth2 store.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmconn/">Overview</a></li>
+<li><a href="/tools/lmconn/skill.html">Skill</a></li>
+<li><a href="/tools/lmconn/guide.html">Guide</a></li>
+<li><a href="/tools/lmconn/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmconn</h1>
+<p>lmconn is a zero-dependency connector CLI and cli.schema.v1 module for AI-agent workflows with an AES-256-GCM encrypted SQLite credential and OAuth2 store. It exposes 56 operations across HTTP, OAuth2, LLM providers, GitHub, Valkey, LDAPv3, SAML 2.0, MCP, ACP, and npm.</p>
+<h2>Quick reference</h2>
+<pre><code>curl -L https://github.com/lmctl-ai/lmconn/releases/latest/download/lmconn-linux-x64.tar.gz | tar xz
+./lmconn-linux-x64 --version
+lmconn --cli-schema --json</code></pre>
+<table>
+<thead><tr><th>Command area</th><th>Subcommands / operations</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>cred / key</td><td>cred set|get|list|delete|path|store|oauth-store|encrypt-existing, key rotate|backup</td><td>Manage AES-256-GCM encrypted secrets, instance/data keys, and broker grants in ~/.lmconn/creds.db.</td></tr>
+<tr><td>oauth</td><td>authorize, device, refresh, status, list</td><td>Run OAuth2 authorization-code + PKCE and device-code flows across 69 built-in service presets.</td></tr>
+<tr><td>llm</td><td>providers, chat, probe</td><td>Query API providers (deepseek, openrouter, ollama-cloud) and CLI agents (claude, codex, agy, kimi).</td></tr>
+<tr><td>http</td><td>request</td><td>Send HTTP/HTTPS requests with automatic stored API-key or OAuth2 bearer token injection and refresh.</td></tr>
+<tr><td>github</td><td>user, repos</td><td>Inspect the authenticated GitHub user or paginate organization and user repository names.</td></tr>
+<tr><td>valkey</td><td>ping, get, set, del, cmd</td><td>Connect to Valkey or Redis servers over native RESP wire protocol or lmvalkey REST endpoints.</td></tr>
+<tr><td>ldap</td><td>ping, bind, whoami, search, get, add, modify, compare, del</td><td>Execute RFC 4511/4516/4532 LDAPv3 operations over native ASN.1 BER or lmldap REST endpoints.</td></tr>
+<tr><td>saml</td><td>ping, metadata, sp-metadata, users, user-get, user-add, user-del, authn, assertion, verify</td><td>Manage users and issue or verify signed SAML 2.0 responses against lmsaml servers.</td></tr>
+<tr><td>mcp / acp / npm</td><td>mcp tools|resources|prompts|read|prompt|call|session, acp chat, npm pack|publish|whoami</td><td>Drive stdio MCP servers, ACP agent sessions, and credential-protected npm package publishing.</td></tr>
+</tbody>
+</table>
+<pre><code># Direct CLI usage
+lmconn cred set deepseek api_key --env DEEPSEEK_API_KEY
+lmconn http request https://api.github.com/zen
+lmconn ldap search --url "ldap://127.0.0.1:3389/dc=example,dc=com?cn,mail?sub?(cn=Alice)"
+lmconn valkey set session:1 '{"active":true}' --port 6379 --mode resp
+
+# LMScript cli.schema.v1 import
+import "schema/lmconn.cli.schema.v1.json";
+r = lmconn.github_repos("lmctl-ai", {limit: 5});
+require(r.status == "ok" &amp;&amp; r.result.ok, json_stringify(r));
+println(json_stringify(r.result));</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmconn/skill.html">Skill</a> — agent authoring rules, commands, credential safety rules, exit codes, and verification steps.</li>
+<li><a href="/tools/lmconn/guide.html">Guide</a> — architecture, SQLite credential and broker store design, protocol connectors (OAuth2, LDAPv3, SAML 2.0, Valkey, MCP), and schema bridge integration.</li>
+<li><a href="/tools/lmconn/reference.html">Reference</a> — complete table of all 56 cli.schema.v1 operations, CLI flags, environment variables, error codes, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmconn">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmconn">github.com/lmctl-ai/lmconn</a>.</p>
+</footer>
+</body>
+</html>

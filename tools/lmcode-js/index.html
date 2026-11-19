@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-js — lmctl.com tools</title>
+<meta name="description" content="lmcode-js is a dependency-free Node.js ESM SDK (@lmctl-ai/lmcode-js) for loading, verifying, and executing lmcode DSLB v6 bytecode in JavaScript hosts.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-js/">Overview</a></li>
+<li><a href="/tools/lmcode-js/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-js/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-js/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-js</h1>
+<p>lmcode-js is a dependency-free Node.js ESM SDK (@lmctl-ai/lmcode-js) for loading, verifying, and executing lmcode DSLB v6 bytecode in JavaScript hosts. It provides lossless BigInt and raw Buffer string modes, the 226-signature lmcode_std_v3 catalog, registerRest stdio HTTP/CLI controller, and InvocationResults.</p>
+<h2>Quick reference</h2>
+<pre><code>git clone https://github.com/lmctl-ai/lmcode-js.git
+cd lmcode-js
+npm test
+npm run conformance</code></pre>
+<table><thead><tr><th>Item</th><th>Signature / Value</th><th>Role</th></tr></thead><tbody>
+<tr><td>createRegistry()</td><td>Registry</td><td>Create a registry preloaded with all 226 canonical lmcode_std_v3 signatures</td></tr>
+<tr><td>new Registry()</td><td>Registry</td><td>Create an empty registry without the standard catalog</td></tr>
+<tr><td>Program.load(bc, schema, reg)</td><td>Program</td><td>Verify DSLB v6 header, SHA-256 schema hash, imports, and control-flow stack depths</td></tr>
+<tr><td>program.run(context)</td><td>void</td><td>Execute the bytecode body against a Context instance</td></tr>
+<tr><td>program.call(nameOrIndex, ctx, args)</td><td>any</td><td>Invoke an R49 rule entry by name or index</td></tr>
+<tr><td>registerRest(reg, options)</td><td>RestController</td><td>Re-bind the 20 REST/CLI std signatures to a configured stdio HTTP/1.1 and CLI controller</td></tr>
+<tr><td>InvocationResults.fromCommand(files)</td><td>InvocationResults</td><td>Read LMCODE_INVOCATION_FILE, manage per-part ResultSinks, and format LMCODE_RETURN frames</td></tr>
+</tbody></table>
+<pre><code>import { readFileSync } from 'node:fs';
+import { Context, Program, createRegistry } from '@lmctl-ai/lmcode-js';
+import { registerRest } from '@lmctl-ai/lmcode-js/rest';
+
+const registry = createRegistry();
+const rest = registerRest(registry, { maxBodyBytes: 1 &lt;&lt; 20 });
+const bytecode = readFileSync(process.argv[2]);
+const schema = readFileSync(process.argv[3]);
+const program = Program.load(bytecode, schema, registry);
+await rest.run(program, new Context());</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmcode-js/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-js/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-js/reference.html">Reference</a></li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmcode-js">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-js">github.com/lmctl-ai/lmcode-js</a>.</p>
+</footer>
+</body>
+</html>

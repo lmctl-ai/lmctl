@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmweblab guide — lmweblab — lmctl.com tools</title>
+<meta name="description" content="Dual-engine architecture, two-phase HTTP and HTTPS verification, 12-scenario catalog, and security guardrails for lmweblab.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmweblab/">Overview</a></li>
+<li><a href="/tools/lmweblab/skill.html">Skill</a></li>
+<li><a href="/tools/lmweblab/guide.html">Guide</a></li>
+<li><a href="/tools/lmweblab/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmweblab guide</h1>
+<p>Dual-engine architecture, two-phase HTTP and HTTPS verification, 12-scenario catalog, and security guardrails for lmweblab.</p>
+<h2>Overview</h2>
+<p>lmweblab validates and compares two independent infrastructure engines implemented in lmscript: Part A using the native lmaws host (Cloud.web_stack and Serverless builders) and Part B using the OpenTofu-backed lmcloud host. Both engines deploy functionally identical tagged AWS web architectures, run the same lmcurl HTTP contract and p95 latency tests, render architecture and latency diagrams with lmdraw and lmplot, and prove zero leftover resources in an independent post-teardown audit.</p>
+<h2>Base web stack and two-phase lifecycle</h2>
+<p>The core stack combines a static delivery path and a dynamic compute path under a single run identifier:</p>
+<ul>
+<li>Private S3 origin and CloudFront OAC: creates a private bucket with all four Block Public Access settings enabled, uploads five shared site assets (index.html, about.html, style.css, banner.png rendered by lmdraw, and 404.html), attaches a SigV4 Origin Access Control policy scoped strictly to the CloudFront distribution ARN, and aliases the distribution in Route 53.</li>
+<li>Dynamic EC2 Spot nano server: provisions a one-time t4g.nano or t3.nano Spot instance with an 8 GiB encrypted gp3 root volume, a security group allowing inbound TCP port 80 solely from the caller /32 public IPv4 address, a Route 53 A record, and a standard-library Python 3 user-data HTTP server with a bounded self-termination timer.</li>
+<li>Phase 1 (HTTP) and Phase 2 (ACM HTTPS): Phase 1 verifies static CloudFront asset delivery, gzip compression, custom 404 responses, dynamic HTML-escaped query echo (?echo=), monotonic request counters and timestamps on /api/info, and a multi-request p95 load check. When --phase2 (or --acm) is active, ACM DNS validation is attached and viewer protocol policy switches to redirect-to-https before repeating the full lmcurl test contract over TLS.</li>
+</ul>
+<pre><code># Run Part A offline through Phase 1 and Phase 2, then verify recipes
+lmctl lmaws/web_stack.lms all --offline --phase2
+lmctl lmaws/test_recipes.lms
+lmctl lmaws/report.lms</code></pre>
+<h2>Importable step recipes</h2>
+<p>In addition to the monolithic web_stack.lms lifecycle driver, lmaws/recipes/steps.lms exposes granular provisioning functions (web_bucket, web_certificate, web_distribution, web_site_dns, web_compute, web_app_dns, web_https, and web_invalidate) that can be imported locally or via a raw GitHub URL. Passing live: false runs a deterministic, credential-free preview; preparing web_certificate before web_distribution attaches the validated custom alias at distribution creation time and avoids a second CloudFront deployment wait.</p>
+<h2>12-scenario cloud and serverless catalog</h2>
+<p>Under scenarios/01..12, lmweblab expands into twelve focused architectural patterns, each providing up.lms, test.lms, down.lms, status.lms, and all.lms entry points:</p>
+<ul>
+<li>01-static-site-s3-cloudfront: private S3 bucket, CloudFront OAC, Route 53 alias, and optional ACM TLS redirect.</li>
+<li>02-dynamic-page-spot-nano: EC2 Spot t4g.nano Python HTTP server with caller /32 security group and XSS-safe query echoing.</li>
+<li>03-lambda-function-url-hello: Python 3.12 Lambda Function URL behind a CloudFront alias with cold vs warm latency measurement.</li>
+<li>04-lambda-dynamodb-guestbook: serverless guestbook API with on-demand DynamoDB storage, cursor pagination, HTML escaping, and TTL expiry.</li>
+<li>05-static-plus-api: single-domain CloudFront distribution routing / to private S3 and /api/* to a Lambda Function URL without CORS overhead.</li>
+<li>06-scheduled-report: EventBridge rate(1 minute) scheduled Lambda writing periodic execution reports to S3 and DynamoDB.</li>
+<li>07-sqs-worker: asynchronous API enqueueing jobs to SQS with a Lambda worker, DynamoDB status tracking, and a dead-letter queue (DLQ) for poison messages.</li>
+<li>08-session-login-demo: cookie-based session login, authenticated read, logout, and TTL expiration backed by DynamoDB.</li>
+<li>09-url-shortener: short-code creation, 301/302 redirect resolution, 404 handling, and atomic DynamoDB hit counters.</li>
+<li>10-presigned-upload-gallery: presigned S3 PUT upload URLs issued by Lambda and delivered through CloudFront with size and content-type bounds.</li>
+<li>11-weighted-dns-two-backends: Route 53 weighted traffic shifting (90/10 to 50/50 to 0/100) across static CloudFront and dynamic EC2 backends verified via DNS-over-HTTPS ECS subnet sampling.</li>
+<li>12-maintenance-page-failover: live Route 53 DNS cutover from the dynamic application server to a static S3/CloudFront maintenance page and back.</li>
+</ul>
+<h2>Isolation, ownership tags, and cost guardrails</h2>
+<p>Offline runs are the default gate in CI and local development: they use deterministic synthetic transports, test the actual Python user-data server and Lambda handlers on loopback through lmcurl, always run teardown, and cost $0.00. Always run scenario tests in isolated temporary copies via bash test.sh or scenarios/test-lmaws.sh so fixture runs never collide with active deployment state.</p>
+<p>Live runs enforce strict guardrails in both the scripts and the native lmaws host: mutations require AWS_PROFILE=lmaws, us-east-1, and LMWEBLAB_LIVE=1; resource names must match the run-scoped lmaws-site-&lt;run>, lmaws-app-&lt;run>, or lmaws-tf-&lt;run> prefixes; taggable resources carry lmaws_test=&lt;run>; and estimated run costs are capped at $0.10 by default ($0.25 hard ceiling). For Lambda scenarios (03–10), down.lms invokes Serverless.settle(900) to allow delayed CloudWatch log delivery to settle before deleting log groups and running the final zero-leftover audit.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmweblab">github.com/lmctl-ai/lmweblab</a>.</p>
+</footer>
+</body>
+</html>

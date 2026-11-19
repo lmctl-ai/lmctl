@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gcpsim — lmctl.com tools</title>
+<meta name="description" content="gcpsim is a single-binary local GCP emulator on 127.0.0.1:4588 that runs Cloud Storage (GCS) and Pub/Sub in-process without Docker, Java, or a Google Cloud…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/gcpsim/">Overview</a></li>
+<li><a href="/tools/gcpsim/skill.html">Skill</a></li>
+<li><a href="/tools/gcpsim/guide.html">Guide</a></li>
+<li><a href="/tools/gcpsim/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>gcpsim</h1>
+<p>gcpsim is a single-binary local GCP emulator on 127.0.0.1:4588 that runs Cloud Storage (GCS) and Pub/Sub in-process without Docker, Java, or a Google Cloud account.</p>
+<h2>Quick reference</h2>
+<p>Start gcpsim on loopback port 4588 in open mode or with OAuth Bearer token and IAM permission enforcement, then connect lmgcp, gcloud, or Google Cloud SDK clients.</p>
+<pre><code>gcpsim --version
+gcpsim serve
+gcpsim serve --port 4588 --project gcpsim-local --data-dir ./data
+gcpsim serve --auth enforce --auth-config auth.json
+curl http://127.0.0.1:4588/health</code></pre>
+<table>
+<thead>
+<tr>
+<th>Command or option</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>gcpsim serve | start</td>
+<td>127.0.0.1:4588, in-memory</td>
+<td>Run the foreground local GCP emulator sharing REST and gRPC on port 4588 in open mode.</td>
+</tr>
+<tr>
+<td>--port &lt;port></td>
+<td>4588</td>
+<td>Override the listening TCP port.</td>
+</tr>
+<tr>
+<td>--project &lt;id></td>
+<td>gcpsim-local</td>
+<td>Set the default GCP project identifier.</td>
+</tr>
+<tr>
+<td>--data-dir &lt;path></td>
+<td>in-memory</td>
+<td>Persist GCS buckets, objects, and Pub/Sub topics/subscriptions across restarts.</td>
+</tr>
+<tr>
+<td>--auth open | enforce</td>
+<td>open (SIM_AUTH)</td>
+<td>Run in open mode or enforce OAuth Bearer tokens and IAM permission bindings.</td>
+</tr>
+<tr>
+<td>--auth-config &lt;file></td>
+<td>SIM_AUTH_CONFIG</td>
+<td>JSON file defining dummy Bearer tokens, principals, and IAM role/permission bindings.</td>
+</tr>
+</tbody>
+</table>
+<p>LMScript example driving gcpsim through lmgcp. The calls follow examples/templates-client.lms in the repository, which runs against the pinned lmgcp v0.1.17 client; point lmgcp at the simulator as described in the guide and set LMGCP_BINARY to the downloaded client.</p>
+<pre><code>program = _lmcode_ cli="lmgcp" install="github:lmctl-ai/lmgcp@v0.1.17";
+  let bucket = gcp.storage_create_bucket("gcpsim-demo", "us-central1", "STANDARD");
+  let uploaded = gcp.storage_put_object("gcpsim-demo", "hello.txt", "hello from gcpsim", "text/plain");
+  let read = gcp.storage_read_object("gcpsim-demo", "hello.txt");
+  let topic = gcp.pubsub_create_topic("gcpsim-demo");
+  let attrs = str_map().set("note", "demo");
+  let id = gcp.pubsub_publish("gcpsim-demo", "hello gcpsim", attrs);
+  $return = read;
+end _lmcode_
+result = run_lmcode(program, {command:[env("LMGCP_BINARY"), "--lmcode", "$DSLFILE"]});
+assert(result.ok, "gcpsim client run failed: " + json_stringify(result));
+println(json_stringify(result.result));</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/gcpsim/skill.html">Skill</a> — LLM agent authoring rules, commands, gcloud overrides, safety rules, and verification steps for gcpsim.</li>
+<li><a href="/tools/gcpsim/guide.html">Guide</a> — Architecture, ack-deadline and auth overlays, OAuth Bearer and IAM enforcement, and client endpoint configuration.</li>
+<li><a href="/tools/gcpsim/reference.html">Reference</a> — CLI flags, environment variables, GCS and Pub/Sub endpoints, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/gcpsim">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/gcpsim">github.com/lmctl-ai/gcpsim</a>.</p>
+</footer>
+</body>
+</html>

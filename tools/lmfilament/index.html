@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmfilament — lmctl.com tools</title>
+<meta name="description" content="lmfilament is a native host for the lmscript _lmcode_ statement that embeds Google Filament 1.78.1 (material compiler, engine, geometry tools) in one static…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmfilament/">Overview</a></li>
+<li><a href="/tools/lmfilament/skill.html">Skill</a></li>
+<li><a href="/tools/lmfilament/guide.html">Guide</a></li>
+<li><a href="/tools/lmfilament/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmfilament</h1>
+<p>lmfilament is a native host for the lmscript _lmcode_ statement that embeds Google Filament 1.78.1 (material compiler, engine, geometry tools) in one static executable. It builds headless scenes on the Filament noop backend and writes preview pictures with its own CPU rasterizer; it does not produce Filament pixels.</p>
+<h2 id="install">Install and run</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmfilament/main/examples/ball-stick.lms
+lmscript --check scene.lms
+lmscript scene.lms</code></pre>
+<p>The host binary is downloaded on demand through install="github:lmctl-ai/lmfilament@latest". The facts on this page were checked against lmfilament 0.3.21 (Linux x64 and arm64, glibc 2.35 or newer).</p>
+<h2 id="cli">CLI and host protocol</h2>
+<pre><code>usage: lmfilament --version | --lmcode-schema [--json] | --lmcode-signatures | --lmcode FILE [FILE ...]</code></pre>
+<table>
+<thead>
+<tr><th>Flag</th><th>Behavior</th></tr>
+</thead>
+<tbody>
+<tr><td>--version</td><td>Print lmfilament and the version</td></tr>
+<tr><td>--lmcode-schema</td><td>Print all signatures as text</td></tr>
+<tr><td>--lmcode-schema --json</td><td>Print the embedded schema JSON (dsl.schema 2, name lmfilament, 7 types, context fil)</td></tr>
+<tr><td>--lmcode-signatures</td><td>Print 269 lines: 1 context line, 206 standard signatures and 62 host methods</td></tr>
+<tr><td>--lmcode FILE [FILE ...]</td><td>Run compiled programs; this is what run_lmcode drives</td></tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr><th>Exit</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>Success</td></tr>
+<tr><td>2</td><td>Usage error, phase cli, code CLI_USAGE</td></tr>
+<tr><td>3</td><td>Load error, phase load, code LOAD_BAD_BYTECODE</td></tr>
+</tbody>
+</table>
+<h2 id="types">Context and types</h2>
+<table>
+<thead>
+<tr><th>Name</th><th>Kind</th><th>Main members</th></tr>
+</thead>
+<tbody>
+<tr><td>fil</td><td>Context object of type Filament</td><td>version, material, material_file, scene, mesh and texture factories</td></tr>
+<tr><td>Filament</td><td>Type, 19 methods</td><td>box, sphere, icosphere, cylinder, cone, capsule, plane, ring, triangle, text, tube_between, mesh_obj, texture, texture_checker, texture_file</td></tr>
+<tr><td>Material</td><td>Type, 7 methods</td><td>name, package_size, save, set_float, set_float3, set_float4, set_texture</td></tr>
+<tr><td>Mesh</td><td>Type, 6 methods</td><td>vertex_count, triangle_count, has_colors, has_tangents, compute_tangents, save_obj</td></tr>
+<tr><td>Texture</td><td>Type, 7 methods</td><td>width, height, pixel, filter, wrap, repeat, save_png</td></tr>
+<tr><td>Scene</td><td>Type, 14 methods</td><td>add, add_at, add_part, node, camera, skybox, directional_light, point_light, sun, shadows, render_frames, render_png, renderable_count, light_count</td></tr>
+<tr><td>Part</td><td>Type, 5 methods</td><td>translate, rotate, scale, parent, visible</td></tr>
+<tr><td>Node</td><td>Type, 4 methods</td><td>translate, rotate, scale, parent</td></tr>
+<tr><td>Standard library</td><td>lmcode_std_v3, 206 signatures</td><td>Strings, math, files, collections, Json, result sink</td></tr>
+</tbody>
+</table>
+<h2 id="example">Minimal example</h2>
+<pre><code>mkdir("build");
+prog = _lmcode_ cli="lmfilament" install="github:lmctl-ai/lmfilament@latest";
+let mat = fil.material("bakedColor", "material {\n    name : BakedColor,\n    requires : [\n        color\n    ],\n    shadingModel : unlit,\n    culling : none,\n    featureLevel : 0\n}\n\nfragment {\n    void material(inout MaterialInputs material) {\n        prepareMaterial(material);\n        material.baseColor = getColor();\n    }\n}\n");
+let s = fil.scene();
+s.skybox(0.1, 0.125, 0.25);
+s.camera(45.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0);
+let tri = fil.triangle();
+s.add(tri, mat);
+let frames = s.render_frames(2);
+s.render_png("build/triangle.png", 800, 600);
+lmcode_return_put("filament", fil.version());
+lmcode_return_put("frames", frames);
+lmcode_return_put("vertices", tri.vertex_count());
+lmcode_return_put("renderables", s.renderable_count());
+lmcode_return_put("package_bytes", mat.package_size());
+end _lmcode_
+r = run_lmcode(prog);
+if (!r.ok) { println(r.stderr + r.stdout); }
+assert(r.ok);
+println(r.result);</code></pre>
+<pre><kbd>lmscript triangle.lms</kbd>
+<samp>Using 'soft' CircularBuffer (12288 KiB)
+FEngine (64 bits) created at 0x94eb860 (threading is enabled)
+FEngine resolved backend: Noop
+Backend feature level: 1
+FEngine feature level: 1
+{"filament":"1.78.1","frames":2,"vertices":3,"renderables":1,"package_bytes":152462}</samp></pre>
+<h2 id="more">More</h2>
+<ul>
+<li><a href="/tools/lmfilament/skill.html">Skill: purpose, commands, safety rules, worked examples</a></li>
+<li><a href="/tools/lmfilament/guide.html">Guide: concepts, architecture, workflow and limits</a></li>
+<li><a href="/tools/lmfilament/reference.html">Reference: every type, method, flag and exit code</a></li>
+<li><a href="https://github.com/lmctl-ai/lmfilament">GitHub repository lmctl-ai/lmfilament</a></li>
+<li><a href="https://github.com/lmctl-ai/lmfilament/tree/main/examples">Repository examples</a></li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmfilament">github.com/lmctl-ai/lmfilament</a>.</p>
+</footer>
+</body>
+</html>

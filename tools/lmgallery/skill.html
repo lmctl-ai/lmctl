@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmgallery authoring skill — lmgallery — lmctl.com tools</title>
+<meta name="description" content="lmgallery is the multi-host showcase and composition benchmark for LMScript, pairing 16 native scripting hosts across 50 runnable programs that compute results…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmgallery/">Overview</a></li>
+<li><a href="/tools/lmgallery/skill.html">Skill</a></li>
+<li><a href="/tools/lmgallery/guide.html">Guide</a></li>
+<li><a href="/tools/lmgallery/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmgallery authoring skill</h1>
+<p>lmgallery is the multi-host showcase and composition benchmark for LMScript, pairing 16 native scripting hosts across 50 runnable programs that compute results and render visual outputs.</p>
+<h2>Purpose</h2>
+<p>Use lmgallery to run, author, and verify self-contained LMScript compositions that combine two or more native hosts in a single script, such as computing a numerical or physical simulation and rendering a plot, 3D scene, diagram, slide deck, workbook, or PDF report.</p>
+<h2>When to use it</h2>
+<p>Use lmgallery when you need reference examples of multi-host LMScript pipelines, when benchmarking end-to-end host interoperability from empty directories via lmctl autorun URLs, or when adding new cross-host showcase compositions and refreshing the gallery catalog.</p>
+<h2>Install</h2>
+<p>Install Node.js (the repository CI uses Node 24) and the lmctl CLI globally so lmctl and lmscript are available on PATH. Individual composition scripts declare their required native hosts with install bindings and download verified release binaries automatically on first run.</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+git clone https://github.com/lmctl-ai/lmgallery.git
+cd lmgallery</code></pre>
+<p>Export GITHUB_TOKEN when running many cold-cache compositions so GitHub release lookups do not hit anonymous API rate limits. Animated GIF compositions also require ffmpeg on PATH.</p>
+<h2>Commands</h2>
+<p>Run any showcase composition directly from a raw GitHub URL in an empty directory, or run the gallery test and rendering scripts from a checkout.</p>
+<pre><code>lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/01-oscillator-ode-plot.lms
+./test.sh
+./test.sh --network
+./test.sh --run
+./test.sh --urls
+./examples/render-all.sh
+./examples/render-all.sh --only 04
+python3 scripts/build-readme.py</code></pre>
+<h2>Inputs and outputs</h2>
+<p>Each composition in examples/ is a self-contained LMScript file that generates its own inputs locally, compiles and executes two or more _lmcode_ blocks across different hosts, and writes its visual output under images/ in the current working directory.</p>
+<p>Repository metadata lives in catalog.json for the 16 host previews and showcases.json for the 50 multi-host compositions. Running python3 scripts/build-readme.py regenerates README.md, examples/README.md, and docs/ATTRIBUTION.md from those two JSON manifests.</p>
+<h2>Safety rules</h2>
+<p>Run compositions in a fresh or dedicated working directory because each script creates local data files, bytecode artifacts, and an images/ output directory. Do not edit sibling host repositories from lmgallery; host previews in catalog.json are read-only snapshots credited with SHA-256 checksums in docs/ATTRIBUTION.md.</p>
+<p>Always check r.ok after run_lmcode before reading files produced by a host block. Never pass data between hosts by scraping raw stdout when a structured CSV, XYZ, or JSON file can be written and checked cleanly.</p>
+<h2>Worked examples</h2>
+<p>Run the damped oscillator composition (lmnum to lmplot) from an empty directory:</p>
+<pre><code>mkdir -p /tmp/gallery-demo &amp;&amp; cd /tmp/gallery-demo
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/01-oscillator-ode-plot.lms
+ls -la images/</code></pre>
+<p>Write a minimal two-host composition that integrates a decay curve with lmnum and plots it with lmplot:</p>
+<pre><code>sim = _lmcode_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
+let ode = num.ode(1);
+ode.param("k", 0.5).rhs(0, "-k*y0").init(0, 1.0);
+let sol = ode.solve(0.0, 10.0, 101);
+sol.save_csv("decay.csv");
+end _lmcode_
+r1 = run_lmcode(sim);
+require(r1.ok, "lmnum simulation failed");
+
+fig = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/decay.png", 800, 500);
+plot.cmd("set title 'Exponential Decay'");
+plot.cmd("set xlabel 't'");
+plot.cmd("set ylabel 'y(t)'");
+plot.cmd("plot 'decay.csv' using 1:2 with lines lw 2 title 'y0'");
+end _lmcode_
+r2 = run_lmcode(fig);
+require(r2.ok, "lmplot rendering failed");</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Each composition exits with code 0 when all host blocks and require assertions succeed. An unhandled require failure or host execution error terminates the script with a nonzero exit code and prints the failing phase and diagnostic message.</p>
+<p>Underlying native hosts use the standard SDK exit codes: 0 for success, 2 for command-line usage or metadata queries, 3 for bytecode load or runtime errors, and 4 for application check or output failures. In test.sh, any broken image header, CRC mismatch, missing attribution, stale generated README, or failed composition exits with a nonzero code, and an unknown flag prints a usage line and exits with code 2. The offline checks need only Python 3.10 or newer.</p>
+<h2>How to verify</h2>
+<p>Run the offline integrity suite first to verify PNG and GIF signatures, CRCs, image dimensions, size budgets, SHA-256 attribution, cross-host bindings, and generated markdown synchronization.</p>
+<pre><code>./test.sh
+python3 scripts/build-readme.py
+git diff --exit-code README.md examples/README.md docs/ATTRIBUTION.md</code></pre>
+<p>To verify runtime execution of a single composition in an isolated directory, run ./examples/render-all.sh --only 01 and inspect the generated preview under docs/images/.</p></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmgallery">github.com/lmctl-ai/lmgallery</a>.</p>
+</footer>
+</body>
+</html>

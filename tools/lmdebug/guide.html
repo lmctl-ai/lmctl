@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmdebug guide — lmdebug — lmctl.com tools</title>
+<meta name="description" content="lmdebug consolidates Linux networking utilities, system performance monitors, /proc process inspectors, YARA and hash-based threat detection, libpcap packet…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmdebug/">Overview</a></li>
+<li><a href="/tools/lmdebug/skill.html">Skill</a></li>
+<li><a href="/tools/lmdebug/guide.html">Guide</a></li>
+<li><a href="/tools/lmdebug/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmdebug guide</h1>
+<h2>Overview</h2>
+<p>lmdebug consolidates Linux networking utilities, system performance monitors, /proc process inspectors, YARA and hash-based threat detection, libpcap packet analysis, and the 226-signature lmcode_std_v3 standard library into a single binary. Rather than parsing inconsistent text tables from external shell tools, agents and scripts invoke lmdebug on the CLI or through compiled _lmcode_ bytecode to receive deterministic objects and JSON documents.</p>
+<h2>Domain architecture and introspection modes</h2>
+<p>The executable partitions functionality across six typed domain contexts so read-only queries, packet captures, and state mutations remain isolated and composable:</p>
+<ul>
+<li>Capabilities and host metadata (context lmdebug: Meta): lmdebug caps and lmdebug.caps_json() report the build version, OS, CPU architecture, effective UID (root), Linux capability bits (cap_net_raw, cap_net_admin), supported subcommands, privilege requirements (needs), and registered mutating verbs.</li>
+<li>Networking and active diagnostics (context net: Net): Queries kernel interfaces, 64-bit link counters, IPv4/IPv6 routing tables, policy routing rules, and ARP/NDP neighbors directly over rtnetlink; queries NIC link settings, driver metadata, and hardware statistics via SIOCETHTOOL; reads /proc/net protocol counters and socket tables with PID ownership attribution; resolves DNS via getaddrinfo or RFC 1035 UDP queries; and executes unprivileged TCP connect scans (net.scan, net.check), blocking TCP socket streams (net.tcp_connect, net.tcp_listen), and raw-socket IPv4 UDP traceroute, MTR, and ARP probes.</li>
+<li>System performance and sysctl management (context sys: Sys): Samples /proc/stat CPU utilization deltas across all cores, reads /proc/meminfo physical memory, swap, and Linux PSI pressure metrics, calculates per-device block I/O throughput, IOPS, and await latency, ranks top processes by CPU, RSS, or disk I/O rate, and plans persistent /proc/sys changes.</li>
+<li>Process inspection and pidfd control (context proc: Proc): Enumerates /proc/&lt;pid> process tables and deep-inspects individual PIDs for credentials, thread counts, OOM scores, resource limits, open file descriptors (up to 256), owned sockets, and virtual memory areas (first 200 mappings). Process signaling uses pidfd_send_signal pinned to pid, start_time, and starttime_ticks to prevent PID-reuse races.</li>
+<li>Detection, persistence, and quarantine (context detect: Detect): Evaluates embedded static libyara builtin or custom rules over files and directory trees in lexicographical order, audits Linux persistence surfaces (systemd units, cron directories, shell initialization files, /etc/ld.so.preload, /etc/ld.so.conf*, /etc/rc.local) with suspicion levels (none, low, medium, high), queries sorted-flat LMHASH01 SHA-256/MD5 stores imported from MalwareBazaar or ThreatFox feeds, and plans file quarantine and hash-verified restoration.</li>
+<li>Packet capture and protocol dissection (lmdebug pcap / context shark: Shark): Synthesizes deterministic Ethernet, VLAN, IPv4, TCP, UDP, DNS, TLS, and QUIC packets, reads and writes pcap and pcapng files, reconstructs L3/L4 flows and TCP sequence streams, evaluates Wireshark-style display filters and cBPF expressions, and inventories live capture interfaces via statically linked BSD libpcap.</li>
+</ul>
+<h2>Audited mutation framework and security boundaries</h2>
+<p>Every state-changing operation in lmdebug (link.set, sys.set, proc.kill, detect.hash_import, detect.quarantine, and detect.restore) is governed by a fail-closed change framework:</p>
+<ul>
+<li>Dry-run by default: Invoking a mutating CLI subcommand or _lmcode_ method without --apply inspects live system state and returns a structured Change plan containing a cryptographic plan_id (sha256:&lt;64hex>), current state (before), predicted target state (after), human-readable diff, reversible undo parameters, warnings, required privileges (needs), and whether --force is required (needs_force).</li>
+<li>Optimistic concurrency and audit logging: Passing --apply re-reads kernel or filesystem state, verifies --if-match against the freshly computed plan_id (exiting 6 on drift), appends an intent entry to the JSONL audit log, performs the change, verifies post-state, and appends an outcome entry.</li>
+<li>Hard policy guardrails: Write-only one-shot sysctls (vm.drop_caches, vm.compact_memory) are permanently refused with exit code 5. All kernel.* sysctls, vm.swappiness values outside 0..100, link MTUs below 576, and SIGKILL or kernel-thread signals require both --apply and --force. PID 1 and the running lmdebug process cannot be signaled even in dry-run mode.</li>
+<li>Quarantine isolation: Quarantined files are moved into a 0700 directory as inert 0400 payloads paired with a 0600 JSON sidecar recording the SHA-256 digest and original path, uid, gid, and mode for verified restoration.</li>
+<li>Graceful privilege degradation and memory limits: Operations needing CAP_NET_RAW or CAP_NET_ADMIN return structured .error() messages when run unprivileged instead of aborting the script. Total host memory is capped at 4096 MiB by default via LMDEBUG_MAX_MEMORY_MB.</li>
+</ul>
+<h2>Cross-tool segment timing and TLS 1.3 packet correlation</h2>
+<p>lmdebug pairs with lmssl (v0.2.0+) to correlate application-visible request timing with wire-level packet captures on loopback or offline fixtures without root privileges:</p>
+<ul>
+<li>Segment timing boundaries: lmssl measures dns, tcp_connect, tls_handshake, ttfb_us (from the end of write() to the first positive 1-byte read(1) return), transfer_us, eof, and close_call_kind using ssl.monotonic_us(), while lmdebug inspects socket tables and endpoint state.</li>
+<li>TLS 1.3 encrypted flight attribution: In TLS 1.3, handshake messages after ServerHello (EncryptedExtensions, Certificate, CertificateVerify, Finished, NewSessionTicket) travel inside encrypted ApplicationData (record type 23) records. Without a TLS key log, lmdebug pcap attributes TCP SYN/FIN segments and single-packet cleartext ClientHello/ServerHello records with exact packet attribution, while encrypted handshake flights are attributed at flight granularity via candidate_packet_ids. Application monotonic durations and libpcap packet timestamps come from distinct clock domains and are analyzed separately.</li>
+</ul>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<p>lmdebug embeds the 226-signature lmcode_std_v3 standard catalog, enabling any _lmcode_ script to expose its diagnostic or planning logic as an HTTP microservice or stateless CLI tool:</p>
+<ul>
+<li>HTTP route interfaces: Annotate functions with @"/path" or parameterized @"/path/:param" patterns and implement RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, or RestHandler. Extract route parameters via RestExchange.param, query strings via RestExchange.query, and emit responses with RestExchange.json or RestExchange.send.</li>
+<li>Stateless CLI dispatch: Implement CliOption (annotated with @"--flag") and CliCommand (annotated with @"cmd"), then invoke rest_cli(args) to parse flags and run commands in-process without opening network sockets.</li>
+<li>Session lifecycle: Configure rest_config("session", "global") to share state keys across RestExchange.get, RestExchange.set, and RestExchange.increment calls, or bind a live HTTP listener with rest_config("port", "8080") and rest_serve().</li>
+</ul>
+<pre><code>p = _lmcode_ cli="lmdebug" install="github:lmctl-ai/lmdebug@latest";
+@"--iface"
+fn opt_iface(x: RestExchange) -> void implements CliOption {
+  x.set("iface", x.query("iface"));
+}
+
+@"ethtool"
+fn cmd_ethtool(x: RestExchange) -> void implements CliCommand {
+  let lnk = net.ethtool_link(x.get("iface"));
+  x.send(lnk.iface() + ":up=" + str(lnk.link_detected()));
+}
+
+@"/proc/:pid"
+fn get_proc(x: RestExchange) -> void implements RestGet {
+  let info = proc.show(int(x.param("pid")));
+  x.json("{\"pid\":" + str(info.pid()) + ",\"name\":\"" + info.name() + "\"}");
+}
+
+rest_config("session", "global");
+assert_eq(rest_cli(str_split("--iface=lo ethtool", " ")), "lo:up=true");
+end _lmcode_</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmdebug">github.com/lmctl-ai/lmdebug</a>.</p>
+</footer>
+</body>
+</html>

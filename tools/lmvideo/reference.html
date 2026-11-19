@@ -1,0 +1,1554 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmvideo reference — lmvideo — lmctl.com tools</title>
+<meta name="description" content="Every context object, host function, host type and method of the lmvideo v0.1.124 host, generated from the published schema file schema/lmvideo.dsl.json, plus…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvideo/">Overview</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/guide.html">Guide</a></li>
+<li><a href="/tools/lmvideo/reference.html">Reference</a></li>
+<li><a href="/tools/lmvideo/getting-started/">Getting started</a></li>
+<li><a href="/tools/lmvideo/examples/">Examples</a></li>
+<li><a href="/tools/lmvideo/showcase/">Showcase</a></li>
+<li><a href="/tools/lmvideo/cycles/">Cycles</a></li>
+<li><a href="/tools/lmvideo/migration/">Migration</a></li>
+<li><a href="/tools/lmvideo/physics/">Physics</a></li>
+</ul>
+</nav>
+<main><h1>lmvideo reference</h1>
+<p>Every context object, host function, host type and method of the lmvideo v0.1.124 host, generated from the published schema file schema/lmvideo.dsl.json, plus the command line, the result envelope, exit codes and the standard library the release ships.</p>
+<p>The schema records parameter types and return types only. Parameter meanings are given where the repository documentation states them; everything else is listed as a typed signature. The same list is printed by lmvideo --lmcode-signatures.</p>
+<h2 id="counts">Surface at a glance</h2>
+<table>
+<thead>
+<tr><th>Item</th><th>Count in v0.1.124</th></tr>
+</thead>
+<tbody>
+<tr><td>Schema format (dsl.schema)</td><td>2</td></tr>
+<tr><td>Context objects</td><td>3 (canvas, video, out)</td></tr>
+<tr><td>Host function names</td><td>74</td></tr>
+<tr><td>Host function signatures</td><td>81</td></tr>
+<tr><td>Host types</td><td>55</td></tr>
+<tr><td>Host method signatures</td><td>524</td></tr>
+<tr><td>Standard library signatures (lmcode_std_v3)</td><td>206 (83 functions, 123 methods on 16 types)</td></tr>
+<tr><td>Total lines of --lmcode-signatures</td><td>814 (3 context, 164 fn, 647 method)</td></tr>
+<tr><td>Block result type</td><td>Json, nullable</td></tr>
+</tbody>
+</table>
+<h2 id="cli">Command line</h2>
+<p>The host prints this usage line for an unknown option. It is the complete list of top level modes in v0.1.124.</p>
+<pre><kbd>lmvideo --bogus</kbd>
+<samp>LMCODE_RETURN_BEGIN
+{"ok":false,"phase":"cli","code":"CLI_USAGE","message":"usage: lmvideo --lmcode FILE [--output PATH] [--offline] | --lmcode-schema [--json] | --lmcode-signatures | --version | demo OUT.png | render IN.svg OUT.png\n"}
+LMCODE_RETURN_END</samp></pre>
+<table>
+<thead>
+<tr><th>Invocation</th><th>What it does</th></tr>
+</thead>
+<tbody>
+<tr><td>lmvideo --version</td><td>Prints the version line, for example lmvideo 0.1.124.</td></tr>
+<tr><td>lmvideo --lmcode-schema</td><td>Prints the host schema JSON. The bytes are identical to schema/lmvideo.dsl.json in the repository (SHA-256 97d1643ca2d15ed98ae76acb5a5a4828b8a3509df770b0f395569a2c96c980a2).</td></tr>
+<tr><td>lmvideo --lmcode-schema --json</td><td>Same bytes as above in v0.1.124. This is the form the lmscript compiler calls.</td></tr>
+<tr><td>lmvideo --lmcode-signatures</td><td>Prints one line per context object, function and method, host and standard library together: 814 lines.</td></tr>
+<tr><td>lmvideo --lmcode FILE</td><td>Runs compiled block bytecode and prints the result envelope between LMCODE_RETURN_BEGIN and LMCODE_RETURN_END. run_lmcode does this for you.</td></tr>
+<tr><td>--output PATH, --offline</td><td>Options of the --lmcode mode named in the usage line. The public repository does not describe them further, so they are listed here without semantics.</td></tr>
+<tr><td>lmvideo demo OUT.png</td><td>Writes a built in demonstration picture (500 by 350 pixels in v0.1.124).</td></tr>
+<tr><td>lmvideo render IN.svg OUT.png [--width W] [--height H] [--background COLOR]</td><td>Rasterizes one SVG file to a PNG without any LMScript program.</td></tr>
+<tr><td>lmvideo render-job DIR [--renderer raster|cycles] [--pass color] [--output OUT.png]</td><td>Renders a scene job directory written by Scene3D.save_job.</td></tr>
+<tr><td>lmvideo render-job-batch DIR [--renderer raster|cycles] [--pass color] [--output DIR]</td><td>Renders a directory of frame jobs. Output is written atomically and completed frames survive cancellation.</td></tr>
+<tr><td>lmvideo render-job --capabilities</td><td>Prints accepted job options and bounds as JSON. It does not load or smoke test the renderer.</td></tr>
+</tbody>
+</table>
+<pre><kbd>lmvideo render-job --capabilities</kbd>
+<samp>{"schema":"render-job-capabilities/v1","status":"ok","renderers":["raster","cycles"],"passes":["color"],"max_frames":32,"max_pixels":4194304,"atomic_outputs":true,"cancellation":"renderer callback; completed frames and manifest are retained"}</samp></pre>
+<h3>Outer block attributes</h3>
+<table>
+<thead>
+<tr><th>Attribute</th><th>Value used by the repository examples</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>cli</td><td>lmvideo</td><td>Host executable that supplies the schema and runs the block.</td></tr>
+<tr><td>install</td><td>github:lmctl-ai/lmvideo@v0.1.124</td><td>Release that lmscript downloads into its tool cache when the host is not already there. The examples pin the tag for reproducible runs.</td></tr>
+</tbody>
+</table>
+<h2 id="exit-codes">Exit codes and error codes</h2>
+<p>These were observed by running the v0.1.124 Linux binary and lmscript 0.2.482. The public repository contains no exit code table, so only observed values are listed.</p>
+<table>
+<thead>
+<tr><th>Command</th><th>Situation</th><th>Exit code</th></tr>
+</thead>
+<tbody>
+<tr><td>lmvideo --version, --lmcode-schema, --lmcode-signatures</td><td>Success</td><td>0</td></tr>
+<tr><td>lmvideo demo, lmvideo render, lmvideo render-job --capabilities</td><td>Success</td><td>0</td></tr>
+<tr><td>lmvideo with an unknown option</td><td>Envelope with code CLI_USAGE</td><td>2</td></tr>
+<tr><td>lmvideo --lmcode FILE</td><td>Bytecode file cannot be read, envelope with code LOAD_BAD_BYTECODE</td><td>3</td></tr>
+<tr><td>lmvideo render</td><td>Input SVG cannot be opened</td><td>3</td></tr>
+<tr><td>lmvideo render-job or render-job-batch without a directory</td><td>Usage text</td><td>1</td></tr>
+<tr><td>lmscript --check FILE.lms</td><td>Block does not compile against the host schema</td><td>2</td></tr>
+<tr><td>lmscript FILE.lms</td><td>An assert on r.ok fails after a host error</td><td>1</td></tr>
+<tr><td>lmscript FILE.lms</td><td>Host error that the script inspects without asserting</td><td>0</td></tr>
+</tbody>
+</table>
+<h3>Envelope codes seen from the host</h3>
+<table>
+<thead>
+<tr><th>phase</th><th>code</th><th>Cause</th></tr>
+</thead>
+<tbody>
+<tr><td>cli</td><td>CLI_USAGE</td><td>Unknown command line option.</td></tr>
+<tr><td>load</td><td>LOAD_BAD_BYTECODE</td><td>The file given to --lmcode cannot be read.</td></tr>
+<tr><td>load</td><td>LOAD_UNBOUND</td><td>The program imports a function the host does not provide, for example a rest_ function.</td></tr>
+<tr><td>run</td><td>RUN_HOST</td><td>A host call failed, for example video.frame outside begin and end. The envelope carries line and column of the block.</td></tr>
+<tr><td>app</td><td>APP_FAIL</td><td>The block called out.fail. The message is the text passed to fail, prefixed with the block line and column.</td></tr>
+</tbody>
+</table>
+<h2 id="result">Result envelope</h2>
+<p>run_lmcode returns a value with ok and, on success, result; on failure it carries phase, code, message and, when known, line and column. The result of a successful lmvideo block in v0.1.124 has these fields.</p>
+<pre><samp>{"ok":true,"result":{"output":["drew 160x100"],"file":"build/dot.png","width":160,"height":100,"frames":1,"fps":30,"bytecode_bytes":1253,"instructions":47,"wall_ms":294,"render_calls":0,"phase_ms":{"compose":41.90718,"post":0.000943,"setup":252.409468},"max_frame_ms":0,"max_render_ms":0}}</samp></pre>
+<table>
+<thead>
+<tr><th>Field</th><th>Content</th></tr>
+</thead>
+<tbody>
+<tr><td>output</td><td>List of the strings passed to out.print, in order.</td></tr>
+<tr><td>file, width, height, frames, fps</td><td>The output the host reports for the run, with its pixel size, frame count and frame rate.</td></tr>
+<tr><td>bytecode_bytes, instructions</td><td>Size of the compiled block and the number of executed instructions.</td></tr>
+<tr><td>wall_ms, phase_ms, max_frame_ms, max_render_ms, render_calls</td><td>Timing and render counters. They vary from run to run.</td></tr>
+</tbody>
+</table>
+<p>Under --dry-run the envelope is {"ok":true,"result":null,"dry":true} and no host code runs.</p>
+<h2 id="context">Context objects</h2>
+<p>Three objects exist in every block without being constructed.</p>
+<table>
+<thead>
+<tr><th>Name</th><th>Type</th><th>Role</th></tr>
+</thead>
+<tbody>
+<tr><td>canvas</td><td>Canvas</td><td>The drawing surface of the active video frame, or of the Surface chosen with canvas.target.</td></tr>
+<tr><td>video</td><td>Video</td><td>Size, frame rate, frame count, output path and the begin, frame, end lifecycle.</td></tr>
+<tr><td>out</td><td>Output</td><td>Text output: print adds a line to result.output, fail stops the block with code APP_FAIL.</td></tr>
+</tbody>
+</table>
+<h2 id="functions">Host functions</h2>
+<p>74 function names with 81 signatures. Functions are called by bare name inside the block. Several are overloaded; each overload is one row.</p>
+<h3>2D drawing, text and documents</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>paint</td><td>(none)</td><td>Paint</td></tr>
+<tr><td>path</td><td>(none)</td><td>Path</td></tr>
+<tr><td>font</td><td>float</td><td>Font</td></tr>
+<tr><td>font_load</td><td>string</td><td>Typeface</td></tr>
+<tr><td>font_load</td><td>string, string</td><td>Typeface</td></tr>
+<tr><td>font_catalog</td><td>(none)</td><td>string</td></tr>
+<tr><td>fonts_used</td><td>(none)</td><td>string</td></tr>
+<tr><td>svg</td><td>string</td><td>Svg</td></tr>
+<tr><td>svg_file</td><td>string</td><td>Svg</td></tr>
+<tr><td>svg_file</td><td>string, string</td><td>Svg</td></tr>
+<tr><td>template_svg</td><td>string</td><td>TemplateSvg</td></tr>
+<tr><td>surface</td><td>int, int</td><td>Surface</td></tr>
+<tr><td>document</td><td>int, int</td><td>Document</td></tr>
+<tr><td>pdf_document</td><td>float, float</td><td>PdfDocument</td></tr>
+<tr><td>picture_file</td><td>string</td><td>Picture</td></tr>
+<tr><td>keyframes</td><td>(none)</td><td>Keyframes</td></tr>
+<tr><td>mix</td><td>string, string, float</td><td>string</td></tr>
+</tbody>
+</table>
+<h3>Images, layouts and timelines</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>image_create</td><td>int, int</td><td>Image</td></tr>
+<tr><td>image_create</td><td>int, int, string</td><td>Image</td></tr>
+<tr><td>image_create</td><td>int, int, float, float, float, float</td><td>Image</td></tr>
+<tr><td>image_file</td><td>string</td><td>Image</td></tr>
+<tr><td>image_file</td><td>string, string</td><td>Image</td></tr>
+<tr><td>image_bytes</td><td>string</td><td>Image</td></tr>
+<tr><td>image_rgba</td><td>int, int, string</td><td>Image</td></tr>
+<tr><td>image_pattern</td><td>int, int, string, string, string, string</td><td>Image</td></tr>
+<tr><td>image_hald</td><td>int</td><td>Image</td></tr>
+<tr><td>image_curve</td><td>(none)</td><td>Curve</td></tr>
+<tr><td>image_panel</td><td>Image, Image, int</td><td>Image</td></tr>
+<tr><td>image_text_width</td><td>string, float</td><td>float</td></tr>
+<tr><td>image_assert_close</td><td>float, float, float</td><td>void</td></tr>
+<tr><td>image_assert_true</td><td>bool</td><td>void</td></tr>
+<tr><td>layout_create</td><td>int, int</td><td>Layout</td></tr>
+<tr><td>layout_sheet</td><td>(none)</td><td>Layout</td></tr>
+<tr><td>timeline_create</td><td>(none)</td><td>Timeline</td></tr>
+<tr><td>timeline_create</td><td>int, int</td><td>Timeline</td></tr>
+<tr><td>frame_cache</td><td>string, int</td><td>FrameCache</td></tr>
+</tbody>
+</table>
+<h3>3D scenes, cameras and meshes</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>scene3d</td><td>(none)</td><td>Scene3D</td></tr>
+<tr><td>scene_job</td><td>string</td><td>Scene3D</td></tr>
+<tr><td>camera3d</td><td>(none)</td><td>Camera3D</td></tr>
+<tr><td>render_available</td><td>string</td><td>bool</td></tr>
+<tr><td>mesh_box</td><td>float, float, float</td><td>Mesh3D</td></tr>
+<tr><td>mesh_beveled_box</td><td>float, float, float, float</td><td>Mesh3D</td></tr>
+<tr><td>mesh_plane</td><td>float, float</td><td>Mesh3D</td></tr>
+<tr><td>mesh_sphere</td><td>float, int, int</td><td>Mesh3D</td></tr>
+<tr><td>mesh_cylinder</td><td>float, float, int</td><td>Mesh3D</td></tr>
+<tr><td>mesh_cone</td><td>float, float, int</td><td>Mesh3D</td></tr>
+<tr><td>mesh_torus</td><td>float, float, int, int</td><td>Mesh3D</td></tr>
+<tr><td>mesh_lathe</td><td>string, int</td><td>Mesh3D</td></tr>
+<tr><td>mesh_lathe_closed</td><td>string, int</td><td>Mesh3D</td></tr>
+<tr><td>mesh_tube_spline</td><td>string, float, int, bool</td><td>Mesh3D</td></tr>
+<tr><td>mesh_extrude</td><td>string, float</td><td>Mesh3D</td></tr>
+<tr><td>mesh_heightfield</td><td>Image, float, float, float</td><td>Mesh3D</td></tr>
+<tr><td>mesh_triangles</td><td>string, string</td><td>Mesh3D</td></tr>
+<tr><td>mesh_load</td><td>string</td><td>Mesh3D</td></tr>
+<tr><td>mesh_text</td><td>Typeface, string, float, float, float</td><td>Mesh3D</td></tr>
+<tr><td>mesh_text_bevel</td><td>Typeface, string, float, float, float, float</td><td>Mesh3D</td></tr>
+<tr><td>point_cloud</td><td>(none)</td><td>PointCloud</td></tr>
+<tr><td>hair_curves</td><td>string, string, string</td><td>HairCurves</td></tr>
+</tbody>
+</table>
+<h3>Materials, textures and environments</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>material</td><td>(none)</td><td>Material</td></tr>
+<tr><td>material</td><td>string, float, float</td><td>Material</td></tr>
+<tr><td>material_source</td><td>string</td><td>Material</td></tr>
+<tr><td>material_file</td><td>string</td><td>Material</td></tr>
+<tr><td>material_load</td><td>string</td><td>Material</td></tr>
+<tr><td>material_compile</td><td>string, string, int, int</td><td>Material</td></tr>
+<tr><td>texture_from_image</td><td>Image, string</td><td>Texture</td></tr>
+<tr><td>texture_file</td><td>string, string</td><td>Texture</td></tr>
+<tr><td>texture_constant</td><td>string</td><td>TextureGraph</td></tr>
+<tr><td>texture_noise</td><td>string, int, int</td><td>TextureGraph</td></tr>
+<tr><td>texture_graph_image</td><td>Texture</td><td>TextureGraph</td></tr>
+<tr><td>texture_checker</td><td>string, string, int</td><td>TextureGraph</td></tr>
+<tr><td>texture_gradient</td><td>string, string, int</td><td>TextureGraph</td></tr>
+<tr><td>texture_bricks</td><td>string, string, int</td><td>TextureGraph</td></tr>
+<tr><td>texture_stripes</td><td>string, string, int</td><td>TextureGraph</td></tr>
+<tr><td>texture_ramp</td><td>string, string, int</td><td>TextureGraph</td></tr>
+<tr><td>texture_radial</td><td>string, string, int</td><td>TextureGraph</td></tr>
+<tr><td>environment_image</td><td>Image</td><td>Environment</td></tr>
+<tr><td>environment_file</td><td>string, string</td><td>Environment</td></tr>
+<tr><td>environment_linear</td><td>int, int, string</td><td>Environment</td></tr>
+</tbody>
+</table>
+<h3>Physics</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>physics_world</td><td>float, int</td><td>PhysicsWorld</td></tr>
+<tr><td>physics_material</td><td>float, float</td><td>PhysicsMaterial</td></tr>
+<tr><td>physics_presentation</td><td>int, int, int</td><td>PhysicsPresentation</td></tr>
+</tbody>
+</table>
+<h2 id="types">Host types and methods</h2>
+<p>55 opaque types with 524 method signatures. Values are created by the functions above or returned by other methods; the line under each heading lists where a value of that type comes from according to the schema. Most configuration methods return the receiver so calls can be chained.</p>
+<table>
+<thead>
+<tr><th>Group</th><th>Types</th></tr>
+</thead>
+<tbody>
+<tr><td>Output and video</td><td>Video, Output</td></tr>
+<tr><td>Canvas drawing</td><td>Canvas, Paint, Path, Font, Typeface, Gradient, DrawNode, Shape, Group, Grid, Text, ImageView, Keyframes, Keyframe</td></tr>
+<tr><td>Plots</td><td>Plot, Series, Heatmap, VectorField, Legend, Axes</td></tr>
+<tr><td>Panels and layout managers</td><td>Panel, LayoutItem</td></tr>
+<tr><td>Images</td><td>Image, Curve, Layout, Timeline, FrameCache</td></tr>
+<tr><td>SVG and vector documents</td><td>Svg, SvgNode, TemplateSvg, Surface, Document, Picture, PdfDocument</td></tr>
+<tr><td>3D scene</td><td>Scene3D, Camera3D, Node3D, InstancedNode3D, Mesh3D, HairCurves, PointCloud, Projection, Anchor3D</td></tr>
+<tr><td>Materials and textures</td><td>Material, Texture, TextureGraph, Environment</td></tr>
+<tr><td>Physics</td><td>PhysicsWorld, PhysicsMaterial, PhysicsBody, PhysicsPose, PhysicsTake, PhysicsPresentation</td></tr>
+</tbody>
+</table>
+<h3 id="type-video">Video</h3>
+<p>15 method signatures. Comes from: context object video.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>size</td><td>int, int</td><td>void</td></tr>
+<tr><td>fps</td><td>int</td><td>void</td></tr>
+<tr><td>frames</td><td>int</td><td>void</td></tr>
+<tr><td>output</td><td>string</td><td>void</td></tr>
+<tr><td>crf</td><td>int</td><td>void</td></tr>
+<tr><td>begin</td><td>(none)</td><td>void</td></tr>
+<tr><td>frame</td><td>(none)</td><td>void</td></tr>
+<tr><td>end</td><td>(none)</td><td>void</td></tr>
+<tr><td>index</td><td>(none)</td><td>int</td></tr>
+<tr><td>count</td><td>(none)</td><td>int</td></tr>
+<tr><td>t</td><td>(none)</td><td>float</td></tr>
+<tr><td>time</td><td>(none)</td><td>float</td></tr>
+<tr><td>width</td><td>(none)</td><td>int</td></tr>
+<tr><td>height</td><td>(none)</td><td>int</td></tr>
+<tr><td>save_frame</td><td>string</td><td>void</td></tr>
+</tbody>
+</table>
+<h3 id="type-output">Output</h3>
+<p>2 method signatures. Comes from: context object out.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>print</td><td>string</td><td>void</td></tr>
+<tr><td>fail</td><td>string</td><td>void</td></tr>
+</tbody>
+</table>
+<h3 id="type-canvas">Canvas</h3>
+<p>69 method signatures. Comes from: context object canvas, Document.canvas, Surface.canvas.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>scene3d</td><td>Scene3D, float, float, int, int</td><td>void</td></tr>
+<tr><td>scene3d_camera</td><td>Scene3D, Camera3D, float, float, int, int</td><td>void</td></tr>
+<tr><td>panel</td><td>float, float, float, float</td><td>Panel</td></tr>
+<tr><td>plot</td><td>float, float, float, float</td><td>Plot</td></tr>
+<tr><td>box</td><td>float, float, float, float, string, string, string, float, float</td><td>Shape</td></tr>
+<tr><td>box</td><td>Shape, string, float, float, string, string, string, float, float</td><td>Shape</td></tr>
+<tr><td>diamond</td><td>float, float, float, float, string, string, string, float</td><td>Shape</td></tr>
+<tr><td>cylinder</td><td>float, float, float, float, string, string, string, float</td><td>Shape</td></tr>
+<tr><td>note</td><td>float, float, float, float, string, string, string, float</td><td>Shape</td></tr>
+<tr><td>cluster</td><td>float, float, float, float, string, string, string, float, float</td><td>Shape</td></tr>
+<tr><td>connector</td><td>float, float, float, float, string, string, string, string, string, float, string, float, float, float</td><td>Group</td></tr>
+<tr><td>connector</td><td>Shape, string, Shape, string, string, string, string, string, string, float, string, float, float, float</td><td>Group</td></tr>
+<tr><td>connector</td><td>float, float, Shape, string, string, string, string, string, string, float, string, float, float, float</td><td>Group</td></tr>
+<tr><td>connector</td><td>Shape, string, float, float, string, string, string, string, string, float, string, float, float, float</td><td>Group</td></tr>
+<tr><td>grid</td><td>float, float, float, float, int, int, float, float</td><td>Grid</td></tr>
+<tr><td>lifeline</td><td>float, float, float, string</td><td>Group</td></tr>
+<tr><td>message</td><td>float, float, float, float, string, bool, string</td><td>Group</td></tr>
+<tr><td>activation</td><td>float, float, float, string, string</td><td>Group</td></tr>
+<tr><td>self_message</td><td>float, float, string, string</td><td>Group</td></tr>
+<tr><td>group</td><td>(none)</td><td>Group</td></tr>
+<tr><td>draw_diagram</td><td>(none)</td><td>void</td></tr>
+<tr><td>clear</td><td>string</td><td>void</td></tr>
+<tr><td>rect</td><td>float, float, float, float, Paint</td><td>void</td></tr>
+<tr><td>rect</td><td>float, float, float, float, string</td><td>DrawNode</td></tr>
+<tr><td>round_rect</td><td>float, float, float, float, float, float, Paint</td><td>void</td></tr>
+<tr><td>oval</td><td>float, float, float, float, Paint</td><td>void</td></tr>
+<tr><td>circle</td><td>float, float, float, Paint</td><td>void</td></tr>
+<tr><td>circle</td><td>float, float, float, string</td><td>DrawNode</td></tr>
+<tr><td>line</td><td>float, float, float, float, Paint</td><td>void</td></tr>
+<tr><td>line</td><td>float, float, float, float, string, float</td><td>DrawNode</td></tr>
+<tr><td>log_axes</td><td>float, float, float, float, float, float, float, float, bool, bool, int, Font, Paint</td><td>Axes</td></tr>
+<tr><td>log_axes</td><td>float, float, float, float, float, float, float, float, int, string</td><td>Group</td></tr>
+<tr><td>log_axes</td><td>float, float, float, float, float, float, float, float, bool, bool, int, string</td><td>Group</td></tr>
+<tr><td>legend</td><td>float, float, StrList, StrList, Font, Paint, Paint</td><td>Legend</td></tr>
+<tr><td>legend</td><td>float, float, string, string, string</td><td>Group</td></tr>
+<tr><td>legend</td><td>float, float, string, string, string, string</td><td>Group</td></tr>
+<tr><td>axes</td><td>float, float, float, float, float, float, float, float, int, Font, Paint</td><td>Axes</td></tr>
+<tr><td>axes</td><td>float, float, float, float, float, float, float, float, int, string</td><td>Group</td></tr>
+<tr><td>arrow</td><td>float, float, float, float, float, Paint</td><td>void</td></tr>
+<tr><td>arrow</td><td>float, float, float, float, string, float</td><td>DrawNode</td></tr>
+<tr><td>polyline</td><td>FloatList, Paint</td><td>void</td></tr>
+<tr><td>polyline</td><td>string, string, float</td><td>DrawNode</td></tr>
+<tr><td>path</td><td>Path, Paint</td><td>void</td></tr>
+<tr><td>path</td><td>string, string, string, float</td><td>DrawNode</td></tr>
+<tr><td>text</td><td>string, float, float, Font, Paint</td><td>void</td></tr>
+<tr><td>text</td><td>float, float, float, string, string</td><td>DrawNode</td></tr>
+<tr><td>text</td><td>float, float, float, string, string, float</td><td>DrawNode</td></tr>
+<tr><td>image</td><td>Image, float, float</td><td>void</td></tr>
+<tr><td>image</td><td>string, float, float, float, float</td><td>DrawNode</td></tr>
+<tr><td>image_rect</td><td>Image, float, float, float, float</td><td>void</td></tr>
+<tr><td>svg</td><td>Svg, float, float, float, float</td><td>void</td></tr>
+<tr><td>picture</td><td>Picture, float, float, float, float</td><td>void</td></tr>
+<tr><td>save</td><td>(none)</td><td>void</td></tr>
+<tr><td>restore</td><td>(none)</td><td>void</td></tr>
+<tr><td>translate</td><td>float, float</td><td>void</td></tr>
+<tr><td>scale</td><td>float, float</td><td>void</td></tr>
+<tr><td>rotate</td><td>float</td><td>void</td></tr>
+<tr><td>clip_rect</td><td>float, float, float, float</td><td>void</td></tr>
+<tr><td>target</td><td>Surface</td><td>Canvas</td></tr>
+<tr><td>typeface</td><td>Typeface</td><td>Canvas</td></tr>
+<tr><td>redraw</td><td>(none)</td><td>void</td></tr>
+<tr><td>snapshot</td><td>(none)</td><td>Image</td></tr>
+<tr><td>snapshot</td><td>Image</td><td>Image</td></tr>
+<tr><td>png</td><td>string, int, int, int</td><td>void</td></tr>
+<tr><td>ellipse</td><td>float, float, float, float, string</td><td>DrawNode</td></tr>
+<tr><td>measure_text</td><td>string, float, bool</td><td>float</td></tr>
+<tr><td>linear_gradient</td><td>string, float, float, float, float</td><td>Gradient</td></tr>
+<tr><td>load_svg</td><td>string, string</td><td>SvgNode</td></tr>
+<tr><td>load_svg</td><td>string, string, string</td><td>SvgNode</td></tr>
+</tbody>
+</table>
+<h3 id="type-paint">Paint</h3>
+<p>11 method signatures. Comes from: paint.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>color</td><td>string</td><td>self</td></tr>
+<tr><td>alpha</td><td>float</td><td>self</td></tr>
+<tr><td>antialias</td><td>bool</td><td>self</td></tr>
+<tr><td>fill</td><td>(none)</td><td>self</td></tr>
+<tr><td>stroke</td><td>(none)</td><td>self</td></tr>
+<tr><td>stroke_width</td><td>float</td><td>self</td></tr>
+<tr><td>stroke_cap</td><td>string</td><td>self</td></tr>
+<tr><td>stroke_join</td><td>string</td><td>self</td></tr>
+<tr><td>gradient</td><td>float, float, float, float, string, string</td><td>self</td></tr>
+<tr><td>dash</td><td>float, float</td><td>self</td></tr>
+<tr><td>blur</td><td>float</td><td>self</td></tr>
+</tbody>
+</table>
+<h3 id="type-path">Path</h3>
+<p>9 method signatures. Comes from: path.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>move_to</td><td>float, float</td><td>self</td></tr>
+<tr><td>line_to</td><td>float, float</td><td>self</td></tr>
+<tr><td>quad_to</td><td>float, float, float, float</td><td>self</td></tr>
+<tr><td>cubic_to</td><td>float, float, float, float, float, float</td><td>self</td></tr>
+<tr><td>close</td><td>(none)</td><td>self</td></tr>
+<tr><td>rect</td><td>float, float, float, float</td><td>self</td></tr>
+<tr><td>oval</td><td>float, float, float, float</td><td>self</td></tr>
+<tr><td>circle</td><td>float, float, float</td><td>self</td></tr>
+<tr><td>round_rect</td><td>float, float, float, float, float, float</td><td>self</td></tr>
+</tbody>
+</table>
+<h3 id="type-font">Font</h3>
+<p>2 method signatures. Comes from: font, Typeface.font.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>bold</td><td>bool</td><td>Font</td></tr>
+<tr><td>measure</td><td>string</td><td>float</td></tr>
+</tbody>
+</table>
+<h3 id="type-typeface">Typeface</h3>
+<p>7 method signatures. Comes from: font_load.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>font</td><td>float</td><td>Font</td></tr>
+<tr><td>family</td><td>(none)</td><td>string</td></tr>
+<tr><td>sha256</td><td>(none)</td><td>string</td></tr>
+<tr><td>source</td><td>(none)</td><td>string</td></tr>
+<tr><td>has_glyphs</td><td>string</td><td>bool</td></tr>
+<tr><td>license</td><td>(none)</td><td>string</td></tr>
+<tr><td>version</td><td>(none)</td><td>string</td></tr>
+</tbody>
+</table>
+<h3 id="type-gradient">Gradient</h3>
+<p>1 method signatures. Comes from: Canvas.linear_gradient.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>stop</td><td>float, string</td><td>Gradient</td></tr>
+</tbody>
+</table>
+<h3 id="type-drawnode">DrawNode</h3>
+<p>3 method signatures. Comes from: Canvas.rect, Canvas.circle, Canvas.line, Canvas.arrow, Canvas.polyline, Canvas.path, Canvas.text, Canvas.image, Canvas.ellipse.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>set_attr</td><td>string, string</td><td>DrawNode</td></tr>
+<tr><td>set_attrs</td><td>StrMap</td><td>DrawNode</td></tr>
+<tr><td>get_attrs</td><td>StrList</td><td>StrMap</td></tr>
+</tbody>
+</table>
+<h3 id="type-shape">Shape</h3>
+<p>9 method signatures. Comes from: Canvas.box, Canvas.diamond, Canvas.cylinder, Canvas.note, Canvas.cluster, LayoutItem.shape, Grid.cell.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>fill</td><td>string</td><td>Shape</td></tr>
+<tr><td>stroke</td><td>string</td><td>Shape</td></tr>
+<tr><td>stroke_width</td><td>float</td><td>Shape</td></tr>
+<tr><td>radius</td><td>float</td><td>Shape</td></tr>
+<tr><td>label</td><td>string</td><td>Shape</td></tr>
+<tr><td>set_attr</td><td>string, string</td><td>Shape</td></tr>
+<tr><td>set_attrs</td><td>StrMap</td><td>Shape</td></tr>
+<tr><td>cx</td><td>(none)</td><td>float</td></tr>
+<tr><td>cy</td><td>(none)</td><td>float</td></tr>
+</tbody>
+</table>
+<h3 id="type-group">Group</h3>
+<p>4 method signatures. Comes from: Canvas.connector, Canvas.lifeline, Canvas.message, Canvas.activation, Canvas.self_message, Canvas.group, Canvas.log_axes, Canvas.legend, Canvas.axes.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>add</td><td>Group</td><td>Group</td></tr>
+<tr><td>add</td><td>DrawNode</td><td>Group</td></tr>
+<tr><td>set_attr</td><td>string, string</td><td>Group</td></tr>
+<tr><td>set_attrs</td><td>StrMap</td><td>Group</td></tr>
+</tbody>
+</table>
+<h3 id="type-grid">Grid</h3>
+<p>1 method signatures. Comes from: Canvas.grid.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>cell</td><td>int, int</td><td>Shape</td></tr>
+</tbody>
+</table>
+<h3 id="type-text">Text</h3>
+<p>4 method signatures. Comes from: LayoutItem.text.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>color</td><td>string</td><td>Text</td></tr>
+<tr><td>size</td><td>float</td><td>Text</td></tr>
+<tr><td>bold</td><td>bool</td><td>Text</td></tr>
+<tr><td>align</td><td>string</td><td>Text</td></tr>
+</tbody>
+</table>
+<h3 id="type-imageview">ImageView</h3>
+<p>1 method signatures. Comes from: LayoutItem.image.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>fit</td><td>string</td><td>ImageView</td></tr>
+</tbody>
+</table>
+<h3 id="type-keyframes">Keyframes</h3>
+<p>3 method signatures. Comes from: keyframes.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>len</td><td>(none)</td><td>int</td></tr>
+<tr><td>at</td><td>int</td><td>Keyframe</td></tr>
+<tr><td>add</td><td>float, float, string</td><td>Keyframes</td></tr>
+</tbody>
+</table>
+<h3 id="type-keyframe">Keyframe</h3>
+<p>3 method signatures. Comes from: Keyframes.at.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>x</td><td>(none)</td><td>float</td></tr>
+<tr><td>y</td><td>(none)</td><td>float</td></tr>
+<tr><td>color</td><td>(none)</td><td>string</td></tr>
+</tbody>
+</table>
+<h3 id="type-plot">Plot</h3>
+<p>23 method signatures. Comes from: Canvas.plot, LayoutItem.plot.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>title</td><td>string</td><td>Plot</td></tr>
+<tr><td>xlabel</td><td>string</td><td>Plot</td></tr>
+<tr><td>ylabel</td><td>string</td><td>Plot</td></tr>
+<tr><td>y2label</td><td>string</td><td>Plot</td></tr>
+<tr><td>x_range</td><td>float, float</td><td>Plot</td></tr>
+<tr><td>y_range</td><td>float, float</td><td>Plot</td></tr>
+<tr><td>y2_range</td><td>float, float</td><td>Plot</td></tr>
+<tr><td>x_scale</td><td>string</td><td>Plot</td></tr>
+<tr><td>y_scale</td><td>string</td><td>Plot</td></tr>
+<tr><td>legend</td><td>string</td><td>Plot</td></tr>
+<tr><td>grid</td><td>bool</td><td>Plot</td></tr>
+<tr><td>background</td><td>string</td><td>Plot</td></tr>
+<tr><td>heatmap</td><td>string, int, int</td><td>Heatmap</td></tr>
+<tr><td>quiver</td><td>string</td><td>VectorField</td></tr>
+<tr><td>x_symlog</td><td>float</td><td>Plot</td></tr>
+<tr><td>y_symlog</td><td>float</td><td>Plot</td></tr>
+<tr><td>x_date</td><td>string</td><td>Plot</td></tr>
+<tr><td>inset</td><td>float, float, float, float</td><td>Plot</td></tr>
+<tr><td>series</td><td>string, string, string</td><td>Series</td></tr>
+<tr><td>annotate</td><td>float, float, string, string</td><td>Plot</td></tr>
+<tr><td>vline</td><td>float, string, float</td><td>Plot</td></tr>
+<tr><td>hline</td><td>float, string, float</td><td>Plot</td></tr>
+<tr><td>draw</td><td>(none)</td><td>Plot</td></tr>
+</tbody>
+</table>
+<h3 id="type-series">Series</h3>
+<p>14 method signatures. Comes from: Plot.series.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>add</td><td>float, float</td><td>Series</td></tr>
+<tr><td>add_error</td><td>float, float, float, float</td><td>Series</td></tr>
+<tr><td>clear</td><td>(none)</td><td>Series</td></tr>
+<tr><td>axis</td><td>string</td><td>Series</td></tr>
+<tr><td>color</td><td>string</td><td>Series</td></tr>
+<tr><td>width</td><td>float</td><td>Series</td></tr>
+<tr><td>dash</td><td>string</td><td>Series</td></tr>
+<tr><td>marker</td><td>string</td><td>Series</td></tr>
+<tr><td>add_band</td><td>float, float, float</td><td>Series</td></tr>
+<tr><td>histogram</td><td>int</td><td>Series</td></tr>
+<tr><td>box</td><td>float, float, float, float, float</td><td>Series</td></tr>
+<tr><td>stack</td><td>string</td><td>Series</td></tr>
+<tr><td>group</td><td>string</td><td>Series</td></tr>
+<tr><td>donut</td><td>float</td><td>Series</td></tr>
+</tbody>
+</table>
+<h3 id="type-heatmap">Heatmap</h3>
+<p>8 method signatures. Comes from: Plot.heatmap.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>cell</td><td>int, int, float</td><td>Heatmap</td></tr>
+<tr><td>palette</td><td>string</td><td>Heatmap</td></tr>
+<tr><td>range</td><td>float, float</td><td>Heatmap</td></tr>
+<tr><td>colorbar</td><td>bool</td><td>Heatmap</td></tr>
+<tr><td>labels</td><td>bool</td><td>Heatmap</td></tr>
+<tr><td>contours</td><td>int, string, float</td><td>Heatmap</td></tr>
+<tr><td>clear</td><td>(none)</td><td>Heatmap</td></tr>
+<tr><td>draw</td><td>(none)</td><td>Heatmap</td></tr>
+</tbody>
+</table>
+<h3 id="type-vectorfield">VectorField</h3>
+<p>6 method signatures. Comes from: Plot.quiver.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>add</td><td>float, float, float, float</td><td>VectorField</td></tr>
+<tr><td>color</td><td>string</td><td>VectorField</td></tr>
+<tr><td>scale</td><td>float</td><td>VectorField</td></tr>
+<tr><td>streamlines</td><td>bool</td><td>VectorField</td></tr>
+<tr><td>clear</td><td>(none)</td><td>VectorField</td></tr>
+<tr><td>draw</td><td>(none)</td><td>VectorField</td></tr>
+</tbody>
+</table>
+<h3 id="type-legend">Legend</h3>
+<p>3 method signatures. Comes from: Canvas.legend.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>width</td><td>(none)</td><td>float</td></tr>
+<tr><td>height</td><td>(none)</td><td>float</td></tr>
+<tr><td>draw</td><td>(none)</td><td>Legend</td></tr>
+</tbody>
+</table>
+<h3 id="type-axes">Axes</h3>
+<p>3 method signatures. Comes from: Canvas.log_axes, Canvas.axes.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>x</td><td>float</td><td>float</td></tr>
+<tr><td>y</td><td>float</td><td>float</td></tr>
+<tr><td>draw</td><td>(none)</td><td>Axes</td></tr>
+</tbody>
+</table>
+<h3 id="type-panel">Panel</h3>
+<p>18 method signatures. Comes from: Canvas.panel, LayoutItem.panel.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>manager</td><td>string</td><td>Panel</td></tr>
+<tr><td>padding</td><td>float, float, float, float</td><td>Panel</td></tr>
+<tr><td>gap</td><td>float</td><td>Panel</td></tr>
+<tr><td>background</td><td>string</td><td>Panel</td></tr>
+<tr><td>edge</td><td>string, float</td><td>Panel</td></tr>
+<tr><td>align</td><td>string, string</td><td>Panel</td></tr>
+<tr><td>min_size</td><td>float, float</td><td>Panel</td></tr>
+<tr><td>max_size</td><td>float, float</td><td>Panel</td></tr>
+<tr><td>columns</td><td>int</td><td>Panel</td></tr>
+<tr><td>row_weight</td><td>int, float</td><td>Panel</td></tr>
+<tr><td>column_weight</td><td>int, float</td><td>Panel</td></tr>
+<tr><td>add_panel</td><td>(none)</td><td>LayoutItem</td></tr>
+<tr><td>add_plot</td><td>(none)</td><td>LayoutItem</td></tr>
+<tr><td>add_text</td><td>string</td><td>LayoutItem</td></tr>
+<tr><td>add_shape</td><td>string</td><td>LayoutItem</td></tr>
+<tr><td>add_image</td><td>Image</td><td>LayoutItem</td></tr>
+<tr><td>add_glue</td><td>(none)</td><td>LayoutItem</td></tr>
+<tr><td>draw</td><td>(none)</td><td>Panel</td></tr>
+</tbody>
+</table>
+<h3 id="type-layoutitem">LayoutItem</h3>
+<p>16 method signatures. Comes from: Panel.add_panel, Panel.add_plot, Panel.add_text, Panel.add_shape, Panel.add_image, Panel.add_glue.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>panel</td><td>(none)</td><td>Panel</td></tr>
+<tr><td>plot</td><td>(none)</td><td>Plot</td></tr>
+<tr><td>text</td><td>(none)</td><td>Text</td></tr>
+<tr><td>shape</td><td>(none)</td><td>Shape</td></tr>
+<tr><td>image</td><td>(none)</td><td>ImageView</td></tr>
+<tr><td>pack</td><td>string, string, bool</td><td>LayoutItem</td></tr>
+<tr><td>fill</td><td>string</td><td>LayoutItem</td></tr>
+<tr><td>grid</td><td>int, int, int, int</td><td>LayoutItem</td></tr>
+<tr><td>border</td><td>string</td><td>LayoutItem</td></tr>
+<tr><td>place</td><td>float, float, float, float</td><td>LayoutItem</td></tr>
+<tr><td>preferred_size</td><td>float, float</td><td>LayoutItem</td></tr>
+<tr><td>min_size</td><td>float, float</td><td>LayoutItem</td></tr>
+<tr><td>max_size</td><td>float, float</td><td>LayoutItem</td></tr>
+<tr><td>weight</td><td>float</td><td>LayoutItem</td></tr>
+<tr><td>sticky</td><td>string</td><td>LayoutItem</td></tr>
+<tr><td>align</td><td>string, string</td><td>LayoutItem</td></tr>
+</tbody>
+</table>
+<h3 id="type-image">Image</h3>
+<p>55 method signatures. Comes from: image_panel, image_hald, image_pattern, image_bytes, image_rgba, image_create, image_file, PhysicsPresentation.render, Texture.image, Scene3D.render_camera, Scene3D.render_image, Scene3D.render_depth_image, Scene3D.render_normal_image, Layout.render, and 4 more.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>width</td><td>(none)</td><td>int</td></tr>
+<tr><td>height</td><td>(none)</td><td>int</td></tr>
+<tr><td>rgba</td><td>(none)</td><td>string</td></tr>
+<tr><td>encode_png</td><td>(none)</td><td>string</td></tr>
+<tr><td>copy</td><td>(none)</td><td>Image</td></tr>
+<tr><td>pixel</td><td>int, int, int</td><td>float</td></tr>
+<tr><td>set_pixel</td><td>int, int, float, float, float, float</td><td>Image</td></tr>
+<tr><td>save</td><td>string</td><td>void</td></tr>
+<tr><td>resize</td><td>int, int</td><td>Image</td></tr>
+<tr><td>resize</td><td>int, int, string</td><td>Image</td></tr>
+<tr><td>crop</td><td>int, int, int, int</td><td>Image</td></tr>
+<tr><td>flip</td><td>bool</td><td>Image</td></tr>
+<tr><td>rotate</td><td>float</td><td>Image</td></tr>
+<tr><td>rotate</td><td>float, float, float, float, float</td><td>Image</td></tr>
+<tr><td>levels</td><td>float, float, float</td><td>Image</td></tr>
+<tr><td>curves</td><td>Curve</td><td>Image</td></tr>
+<tr><td>curves_rgb</td><td>Curve, Curve, Curve</td><td>Image</td></tr>
+<tr><td>hsl</td><td>float, float, float</td><td>Image</td></tr>
+<tr><td>channelmix</td><td>float, float, float, float, float, float, float, float, float</td><td>Image</td></tr>
+<tr><td>grayscale</td><td>(none)</td><td>Image</td></tr>
+<tr><td>sepia</td><td>float</td><td>Image</td></tr>
+<tr><td>rect</td><td>float, float, float, float, float, float, float, float</td><td>Image</td></tr>
+<tr><td>circle</td><td>float, float, float, float, float, float, float</td><td>Image</td></tr>
+<tr><td>line</td><td>float, float, float, float, float, float, float, float, float</td><td>Image</td></tr>
+<tr><td>text</td><td>float, float, string, float, float, float, float, float</td><td>Image</td></tr>
+<tr><td>text</td><td>float, float, string, Font, Paint</td><td>Image</td></tr>
+<tr><td>blur</td><td>float, float</td><td>Image</td></tr>
+<tr><td>sharpen</td><td>float, float</td><td>Image</td></tr>
+<tr><td>edges</td><td>float</td><td>Image</td></tr>
+<tr><td>unsharp</td><td>float, float, float, float</td><td>Image</td></tr>
+<tr><td>vignette</td><td>float, float</td><td>Image</td></tr>
+<tr><td>tilt_shift</td><td>float, float, float</td><td>Image</td></tr>
+<tr><td>blend</td><td>Image, string, float, int, int</td><td>Image</td></tr>
+<tr><td>mask</td><td>Image</td><td>Image</td></tr>
+<tr><td>selection</td><td>int, int, int, int</td><td>Image</td></tr>
+<tr><td>mean</td><td>int</td><td>float</td></tr>
+<tr><td>stddev</td><td>int</td><td>float</td></tr>
+<tr><td>min</td><td>int</td><td>float</td></tr>
+<tr><td>max</td><td>int</td><td>float</td></tr>
+<tr><td>psnr</td><td>Image</td><td>float</td></tr>
+<tr><td>ssim</td><td>Image</td><td>float</td></tr>
+<tr><td>histogram_csv</td><td>(none)</td><td>string</td></tr>
+<tr><td>histogram</td><td>string</td><td>void</td></tr>
+<tr><td>clut</td><td>Image</td><td>Image</td></tr>
+<tr><td>colormap</td><td>string</td><td>Image</td></tr>
+<tr><td>threshold</td><td>float</td><td>Image</td></tr>
+<tr><td>invert</td><td>(none)</td><td>Image</td></tr>
+<tr><td>normalize</td><td>(none)</td><td>Image</td></tr>
+<tr><td>equalize</td><td>(none)</td><td>Image</td></tr>
+<tr><td>morphology</td><td>string, int</td><td>Image</td></tr>
+<tr><td>perspective</td><td>float, float, float, float, float, float, float, float</td><td>Image</td></tr>
+<tr><td>lens</td><td>float</td><td>Image</td></tr>
+<tr><td>heal</td><td>int, int, int, int, int</td><td>Image</td></tr>
+<tr><td>encode</td><td>string</td><td>string</td></tr>
+<tr><td>fonts</td><td>(none)</td><td>string</td></tr>
+</tbody>
+</table>
+<h3 id="type-curve">Curve</h3>
+<p>1 method signatures. Comes from: image_curve.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>point</td><td>float, float</td><td>Curve</td></tr>
+</tbody>
+</table>
+<h3 id="type-layout">Layout</h3>
+<p>7 method signatures. Comes from: layout_sheet, layout_create.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>add</td><td>Image, string, float, int, int</td><td>Layout</td></tr>
+<tr><td>add</td><td>Image</td><td>Layout</td></tr>
+<tr><td>masked</td><td>Image, Image, string, float, int, int</td><td>Layout</td></tr>
+<tr><td>clear</td><td>(none)</td><td>Layout</td></tr>
+<tr><td>render</td><td>(none)</td><td>Image</td></tr>
+<tr><td>render</td><td>Image</td><td>Image</td></tr>
+<tr><td>render</td><td>int, int, float, float, float, float</td><td>Image</td></tr>
+</tbody>
+</table>
+<h3 id="type-timeline">Timeline</h3>
+<p>7 method signatures. Comes from: timeline_create.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>add</td><td>Image, int</td><td>Timeline</td></tr>
+<tr><td>size</td><td>(none)</td><td>int</td></tr>
+<tr><td>delay</td><td>int</td><td>int</td></tr>
+<tr><td>frame</td><td>int</td><td>Image</td></tr>
+<tr><td>duration</td><td>(none)</td><td>float</td></tr>
+<tr><td>encode_gif</td><td>(none)</td><td>string</td></tr>
+<tr><td>save</td><td>string</td><td>void</td></tr>
+</tbody>
+</table>
+<h3 id="type-framecache">FrameCache</h3>
+<p>5 method signatures. Comes from: frame_cache.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>render</td><td>Scene3D, int, int, int</td><td>Image</td></tr>
+<tr><td>render</td><td>Scene3D, int, int, int, Image</td><td>Image</td></tr>
+<tr><td>hits</td><td>(none)</td><td>int</td></tr>
+<tr><td>misses</td><td>(none)</td><td>int</td></tr>
+<tr><td>last_hit</td><td>(none)</td><td>bool</td></tr>
+</tbody>
+</table>
+<h3 id="type-svg">Svg</h3>
+<p>4 method signatures. Comes from: svg, svg_file, TemplateSvg.render.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>root</td><td>(none)</td><td>SvgNode</td></tr>
+<tr><td>node</td><td>string</td><td>SvgNode</td></tr>
+<tr><td>width</td><td>(none)</td><td>float</td></tr>
+<tr><td>height</td><td>(none)</td><td>float</td></tr>
+</tbody>
+</table>
+<h3 id="type-svgnode">SvgNode</h3>
+<p>2 method signatures. Comes from: Svg.root, Svg.node, Canvas.load_svg.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>set_attr</td><td>string, string</td><td>SvgNode</td></tr>
+<tr><td>set_attrs</td><td>StrMap</td><td>SvgNode</td></tr>
+</tbody>
+</table>
+<h3 id="type-templatesvg">TemplateSvg</h3>
+<p>1 method signatures. Comes from: template_svg.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>render</td><td>float, float, string</td><td>Svg</td></tr>
+</tbody>
+</table>
+<h3 id="type-surface">Surface</h3>
+<p>5 method signatures. Comes from: surface.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>canvas</td><td>(none)</td><td>Canvas</td></tr>
+<tr><td>image</td><td>(none)</td><td>Image</td></tr>
+<tr><td>png</td><td>string</td><td>void</td></tr>
+<tr><td>svg</td><td>string</td><td>void</td></tr>
+<tr><td>pdf</td><td>string</td><td>void</td></tr>
+</tbody>
+</table>
+<h3 id="type-document">Document</h3>
+<p>2 method signatures. Comes from: document.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>canvas</td><td>(none)</td><td>Canvas</td></tr>
+<tr><td>finish</td><td>(none)</td><td>Picture</td></tr>
+</tbody>
+</table>
+<h3 id="type-picture">Picture</h3>
+<p>7 method signatures. Comes from: picture_file, Document.finish.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>width</td><td>(none)</td><td>int</td></tr>
+<tr><td>height</td><td>(none)</td><td>int</td></tr>
+<tr><td>draw</td><td>Canvas, float, float, float, float</td><td>void</td></tr>
+<tr><td>png</td><td>string, int</td><td>void</td></tr>
+<tr><td>svg</td><td>string</td><td>void</td></tr>
+<tr><td>pdf</td><td>string</td><td>void</td></tr>
+<tr><td>skp</td><td>string</td><td>void</td></tr>
+</tbody>
+</table>
+<h3 id="type-pdfdocument">PdfDocument</h3>
+<p>3 method signatures. Comes from: pdf_document.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>add_page</td><td>Picture</td><td>PdfDocument</td></tr>
+<tr><td>pages</td><td>(none)</td><td>int</td></tr>
+<tr><td>write</td><td>string</td><td>void</td></tr>
+</tbody>
+</table>
+<h3 id="type-scene3d">Scene3D</h3>
+<p>44 method signatures. Comes from: scene3d, scene_job.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>environment</td><td>Environment, float, float, bool</td><td>Scene3D</td></tr>
+<tr><td>tonemap</td><td>string, float</td><td>Scene3D</td></tr>
+<tr><td>shadows</td><td>int, float, float, int</td><td>Scene3D</td></tr>
+<tr><td>shadow_light</td><td>int</td><td>Scene3D</td></tr>
+<tr><td>shadows_off</td><td>(none)</td><td>Scene3D</td></tr>
+<tr><td>add</td><td>Mesh3D, string</td><td>Node3D</td></tr>
+<tr><td>add</td><td>Mesh3D, Material</td><td>Node3D</td></tr>
+<tr><td>add_hair</td><td>HairCurves, Material</td><td>Node3D</td></tr>
+<tr><td>group</td><td>(none)</td><td>Node3D</td></tr>
+<tr><td>camera</td><td>Camera3D</td><td>Scene3D</td></tr>
+<tr><td>background</td><td>string</td><td>Scene3D</td></tr>
+<tr><td>ambient</td><td>float</td><td>Scene3D</td></tr>
+<tr><td>time</td><td>float</td><td>Scene3D</td></tr>
+<tr><td>clear</td><td>(none)</td><td>Scene3D</td></tr>
+<tr><td>clip_plane</td><td>float, float, float, float</td><td>Scene3D</td></tr>
+<tr><td>clear_clip</td><td>(none)</td><td>Scene3D</td></tr>
+<tr><td>render_camera</td><td>Camera3D, int, int</td><td>Image</td></tr>
+<tr><td>directional_light</td><td>float, float, float, string, float</td><td>Scene3D</td></tr>
+<tr><td>point_light</td><td>float, float, float, string, float, float</td><td>Scene3D</td></tr>
+<tr><td>spot_light</td><td>float, float, float, float, float, float, string, float, float, float</td><td>Scene3D</td></tr>
+<tr><td>add_instances</td><td>Mesh3D, string</td><td>InstancedNode3D</td></tr>
+<tr><td>add_instances</td><td>Mesh3D, Material</td><td>InstancedNode3D</td></tr>
+<tr><td>render_image</td><td>int, int</td><td>Image</td></tr>
+<tr><td>render_image</td><td>int, int, int</td><td>Image</td></tr>
+<tr><td>render_image</td><td>int, int, Image</td><td>Image</td></tr>
+<tr><td>render_image</td><td>int, int, string</td><td>Image</td></tr>
+<tr><td>render_image</td><td>int, int, string, int, int, int, bool</td><td>Image</td></tr>
+<tr><td>render_depth_image</td><td>int, int</td><td>Image</td></tr>
+<tr><td>render_normal_image</td><td>int, int</td><td>Image</td></tr>
+<tr><td>points</td><td>PointCloud</td><td>Scene3D</td></tr>
+<tr><td>clear_points</td><td>(none)</td><td>Scene3D</td></tr>
+<tr><td>projection</td><td>int, int</td><td>Projection</td></tr>
+<tr><td>projection</td><td>Camera3D, int, int</td><td>Projection</td></tr>
+<tr><td>projection</td><td>int, int, Projection</td><td>Projection</td></tr>
+<tr><td>export_gltf</td><td>string, bool</td><td>void</td></tr>
+<tr><td>sky_hosek</td><td>float, float, float, float, float, bool</td><td>Scene3D</td></tr>
+<tr><td>clear_environment</td><td>(none)</td><td>Scene3D</td></tr>
+<tr><td>import_obj</td><td>string, float</td><td>Node3D</td></tr>
+<tr><td>import_gltf</td><td>string, float</td><td>Node3D</td></tr>
+<tr><td>save_job</td><td>string, int, int, int</td><td>void</td></tr>
+<tr><td>save_job</td><td>string, int, int, string, int, int, int, bool</td><td>void</td></tr>
+<tr><td>area_light</td><td>float, float, float, float, float, float, float, float, string, float, float</td><td>Scene3D</td></tr>
+<tr><td>light_caustics</td><td>int, bool</td><td>Scene3D</td></tr>
+<tr><td>threads</td><td>int</td><td>Scene3D</td></tr>
+</tbody>
+</table>
+<h3 id="type-camera3d">Camera3D</h3>
+<p>6 method signatures. Comes from: camera3d.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>look_at</td><td>float, float, float, float, float, float</td><td>Camera3D</td></tr>
+<tr><td>up</td><td>float, float, float</td><td>Camera3D</td></tr>
+<tr><td>perspective</td><td>float, float, float</td><td>Camera3D</td></tr>
+<tr><td>ortho</td><td>float, float, float</td><td>Camera3D</td></tr>
+<tr><td>lens</td><td>float, float</td><td>Camera3D</td></tr>
+<tr><td>dof</td><td>float, float, int</td><td>Camera3D</td></tr>
+</tbody>
+</table>
+<h3 id="type-node3d">Node3D</h3>
+<p>15 method signatures. Comes from: PhysicsBody.sync, PhysicsPose.sync, Scene3D.add, Scene3D.add_hair, Scene3D.group, Scene3D.import_obj, Scene3D.import_gltf.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>material</td><td>Material</td><td>Node3D</td></tr>
+<tr><td>cast_shadow</td><td>bool</td><td>Node3D</td></tr>
+<tr><td>receive_shadow</td><td>bool</td><td>Node3D</td></tr>
+<tr><td>cast_caustics</td><td>bool</td><td>Node3D</td></tr>
+<tr><td>receive_caustics</td><td>bool</td><td>Node3D</td></tr>
+<tr><td>parent</td><td>Node3D</td><td>Node3D</td></tr>
+<tr><td>visible</td><td>bool</td><td>Node3D</td></tr>
+<tr><td>unlit</td><td>bool</td><td>Node3D</td></tr>
+<tr><td>cull</td><td>bool</td><td>Node3D</td></tr>
+<tr><td>color</td><td>string</td><td>Node3D</td></tr>
+<tr><td>keyframe</td><td>float, float, float, float, float, float, float, float, float, float</td><td>Node3D</td></tr>
+<tr><td>position</td><td>float, float, float</td><td>Node3D</td></tr>
+<tr><td>rotation</td><td>float, float, float</td><td>Node3D</td></tr>
+<tr><td>scale</td><td>float, float, float</td><td>Node3D</td></tr>
+<tr><td>id</td><td>(none)</td><td>string</td></tr>
+</tbody>
+</table>
+<h3 id="type-instancednode3d">InstancedNode3D</h3>
+<p>4 method signatures. Comes from: Scene3D.add_instances.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>scatter_on_mesh</td><td>Mesh3D, int, int, bool, float</td><td>InstancedNode3D</td></tr>
+<tr><td>add_instance</td><td>float, float, float, float, float, float, float, float, float, string</td><td>InstancedNode3D</td></tr>
+<tr><td>size</td><td>(none)</td><td>int</td></tr>
+<tr><td>set_instance</td><td>int, float, float, float, float, float, float, float, float, float</td><td>InstancedNode3D</td></tr>
+</tbody>
+</table>
+<h3 id="type-mesh3d">Mesh3D</h3>
+<p>13 method signatures. Comes from: mesh_text, mesh_text_bevel, mesh_triangles, mesh_load, mesh_box, mesh_plane, mesh_sphere, mesh_cylinder, mesh_cone, mesh_torus, mesh_lathe, mesh_lathe_closed, mesh_tube_spline, mesh_extrude, and 2 more.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>copy</td><td>(none)</td><td>Mesh3D</td></tr>
+<tr><td>geometry_hash</td><td>(none)</td><td>string</td></tr>
+<tr><td>replace</td><td>Mesh3D</td><td>Mesh3D</td></tr>
+<tr><td>revision</td><td>(none)</td><td>int</td></tr>
+<tr><td>bound</td><td>int</td><td>float</td></tr>
+<tr><td>save</td><td>string</td><td>void</td></tr>
+<tr><td>vertices</td><td>(none)</td><td>int</td></tr>
+<tr><td>triangles</td><td>(none)</td><td>int</td></tr>
+<tr><td>positions</td><td>string</td><td>Mesh3D</td></tr>
+<tr><td>uvs</td><td>string</td><td>Mesh3D</td></tr>
+<tr><td>colors</td><td>string</td><td>Mesh3D</td></tr>
+<tr><td>set_vertex_scalars</td><td>string, string, float, float</td><td>Mesh3D</td></tr>
+<tr><td>fonts</td><td>(none)</td><td>string</td></tr>
+</tbody>
+</table>
+<h3 id="type-haircurves">HairCurves</h3>
+<p>Opaque handle with no methods. Comes from: hair_curves.</p>
+<h3 id="type-pointcloud">PointCloud</h3>
+<p>4 method signatures. Comes from: point_cloud.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>add</td><td>float, float, float, float, string, float, bool</td><td>PointCloud</td></tr>
+<tr><td>set</td><td>int, float, float, float, float, string, float, bool</td><td>PointCloud</td></tr>
+<tr><td>size</td><td>(none)</td><td>int</td></tr>
+<tr><td>clear</td><td>(none)</td><td>PointCloud</td></tr>
+</tbody>
+</table>
+<h3 id="type-projection">Projection</h3>
+<p>1 method signatures. Comes from: Scene3D.projection.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>at</td><td>float, float, float</td><td>Anchor3D</td></tr>
+</tbody>
+</table>
+<h3 id="type-anchor3d">Anchor3D</h3>
+<p>5 method signatures. Comes from: Projection.at.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>x</td><td>(none)</td><td>float</td></tr>
+<tr><td>y</td><td>(none)</td><td>float</td></tr>
+<tr><td>depth</td><td>(none)</td><td>float</td></tr>
+<tr><td>visible</td><td>(none)</td><td>bool</td></tr>
+<tr><td>occluded</td><td>(none)</td><td>bool</td></tr>
+</tbody>
+</table>
+<h3 id="type-material">Material</h3>
+<p>28 method signatures. Comes from: material, material_source, material_file, material_load, material_compile.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>copy</td><td>(none)</td><td>Material</td></tr>
+<tr><td>base_color</td><td>string</td><td>Material</td></tr>
+<tr><td>emissive</td><td>string, float</td><td>Material</td></tr>
+<tr><td>alpha</td><td>string, float</td><td>Material</td></tr>
+<tr><td>double_sided</td><td>bool</td><td>Material</td></tr>
+<tr><td>thin_walled</td><td>bool</td><td>Material</td></tr>
+<tr><td>volume_absorption</td><td>string, float</td><td>Material</td></tr>
+<tr><td>density_grid</td><td>int, int, int, string</td><td>Material</td></tr>
+<tr><td>volume_scattering</td><td>float, float, string</td><td>Material</td></tr>
+<tr><td>subsurface</td><td>float, float, float, float</td><td>Material</td></tr>
+<tr><td>clearcoat</td><td>float, float</td><td>Material</td></tr>
+<tr><td>anisotropy</td><td>float, float</td><td>Material</td></tr>
+<tr><td>hair</td><td>float, float, float, string</td><td>Material</td></tr>
+<tr><td>height</td><td>Image, float, bool</td><td>Material</td></tr>
+<tr><td>save</td><td>string</td><td>void</td></tr>
+<tr><td>metallic</td><td>float</td><td>Material</td></tr>
+<tr><td>roughness</td><td>float</td><td>Material</td></tr>
+<tr><td>occlusion</td><td>float</td><td>Material</td></tr>
+<tr><td>opacity</td><td>float</td><td>Material</td></tr>
+<tr><td>normal_scale</td><td>float</td><td>Material</td></tr>
+<tr><td>transmission</td><td>float</td><td>Material</td></tr>
+<tr><td>ior</td><td>float</td><td>Material</td></tr>
+<tr><td>albedo</td><td>Texture</td><td>Material</td></tr>
+<tr><td>orm</td><td>Texture</td><td>Material</td></tr>
+<tr><td>normal</td><td>Texture</td><td>Material</td></tr>
+<tr><td>emission</td><td>Texture</td><td>Material</td></tr>
+<tr><td>wireframe</td><td>string, float</td><td>Material</td></tr>
+<tr><td>wireframe_off</td><td>(none)</td><td>Material</td></tr>
+</tbody>
+</table>
+<h3 id="type-texture">Texture</h3>
+<p>9 method signatures. Comes from: texture_from_image, texture_file, TextureGraph.bake.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>levels</td><td>(none)</td><td>int</td></tr>
+<tr><td>image</td><td>int</td><td>Image</td></tr>
+<tr><td>sample</td><td>float, float, float, int</td><td>float</td></tr>
+<tr><td>wrap</td><td>string, string</td><td>Texture</td></tr>
+<tr><td>filter</td><td>string</td><td>Texture</td></tr>
+<tr><td>rotate</td><td>float</td><td>Texture</td></tr>
+<tr><td>repeat</td><td>float, float</td><td>Texture</td></tr>
+<tr><td>offset</td><td>float, float</td><td>Texture</td></tr>
+<tr><td>fonts</td><td>(none)</td><td>string</td></tr>
+</tbody>
+</table>
+<h3 id="type-texturegraph">TextureGraph</h3>
+<p>6 method signatures. Comes from: texture_constant, texture_noise, texture_graph_image, texture_checker, texture_gradient, texture_bricks, texture_stripes, texture_ramp, texture_radial.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>invert</td><td>(none)</td><td>TextureGraph</td></tr>
+<tr><td>bake</td><td>int, int, string</td><td>Texture</td></tr>
+<tr><td>amount</td><td>float</td><td>TextureGraph</td></tr>
+<tr><td>add</td><td>TextureGraph, float</td><td>TextureGraph</td></tr>
+<tr><td>multiply</td><td>TextureGraph, float</td><td>TextureGraph</td></tr>
+<tr><td>mix</td><td>TextureGraph, float</td><td>TextureGraph</td></tr>
+</tbody>
+</table>
+<h3 id="type-environment">Environment</h3>
+<p>Opaque handle with no methods. Comes from: environment_image, environment_file, environment_linear.</p>
+<h3 id="type-physicsworld">PhysicsWorld</h3>
+<p>11 method signatures. Comes from: physics_world.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>gravity</td><td>float, float, float</td><td>PhysicsWorld</td></tr>
+<tr><td>planar</td><td>bool</td><td>PhysicsWorld</td></tr>
+<tr><td>box</td><td>float, float, float, float, float, float, float, PhysicsMaterial</td><td>PhysicsBody</td></tr>
+<tr><td>sphere</td><td>float, float, float, float, float, PhysicsMaterial</td><td>PhysicsBody</td></tr>
+<tr><td>step</td><td>int</td><td>PhysicsWorld</td></tr>
+<tr><td>time</td><td>(none)</td><td>float</td></tr>
+<tr><td>timestep</td><td>(none)</td><td>float</td></tr>
+<tr><td>body_count</td><td>(none)</td><td>int</td></tr>
+<tr><td>body</td><td>int</td><td>PhysicsBody</td></tr>
+<tr><td>random</td><td>float, float</td><td>float</td></tr>
+<tr><td>bake</td><td>int, int</td><td>PhysicsTake</td></tr>
+</tbody>
+</table>
+<h3 id="type-physicsmaterial">PhysicsMaterial</h3>
+<p>2 method signatures. Comes from: physics_material.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>friction</td><td>(none)</td><td>float</td></tr>
+<tr><td>restitution</td><td>(none)</td><td>float</td></tr>
+</tbody>
+</table>
+<h3 id="type-physicsbody">PhysicsBody</h3>
+<p>19 method signatures. Comes from: PhysicsWorld.box, PhysicsWorld.sphere, PhysicsWorld.body.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>x</td><td>(none)</td><td>float</td></tr>
+<tr><td>y</td><td>(none)</td><td>float</td></tr>
+<tr><td>z</td><td>(none)</td><td>float</td></tr>
+<tr><td>qx</td><td>(none)</td><td>float</td></tr>
+<tr><td>qy</td><td>(none)</td><td>float</td></tr>
+<tr><td>qz</td><td>(none)</td><td>float</td></tr>
+<tr><td>qw</td><td>(none)</td><td>float</td></tr>
+<tr><td>vx</td><td>(none)</td><td>float</td></tr>
+<tr><td>vy</td><td>(none)</td><td>float</td></tr>
+<tr><td>vz</td><td>(none)</td><td>float</td></tr>
+<tr><td>id</td><td>(none)</td><td>int</td></tr>
+<tr><td>sleeping</td><td>(none)</td><td>bool</td></tr>
+<tr><td>pose</td><td>(none)</td><td>PhysicsPose</td></tr>
+<tr><td>sync</td><td>Node3D</td><td>Node3D</td></tr>
+<tr><td>position</td><td>float, float, float</td><td>PhysicsBody</td></tr>
+<tr><td>rotation</td><td>float, float, float</td><td>PhysicsBody</td></tr>
+<tr><td>velocity</td><td>float, float, float</td><td>PhysicsBody</td></tr>
+<tr><td>angular_velocity</td><td>float, float, float</td><td>PhysicsBody</td></tr>
+<tr><td>impulse</td><td>float, float, float</td><td>PhysicsBody</td></tr>
+</tbody>
+</table>
+<h3 id="type-physicspose">PhysicsPose</h3>
+<p>11 method signatures. Comes from: PhysicsBody.pose, PhysicsTake.pose.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>x</td><td>(none)</td><td>float</td></tr>
+<tr><td>y</td><td>(none)</td><td>float</td></tr>
+<tr><td>z</td><td>(none)</td><td>float</td></tr>
+<tr><td>qx</td><td>(none)</td><td>float</td></tr>
+<tr><td>qy</td><td>(none)</td><td>float</td></tr>
+<tr><td>qz</td><td>(none)</td><td>float</td></tr>
+<tr><td>qw</td><td>(none)</td><td>float</td></tr>
+<tr><td>vx</td><td>(none)</td><td>float</td></tr>
+<tr><td>vy</td><td>(none)</td><td>float</td></tr>
+<tr><td>vz</td><td>(none)</td><td>float</td></tr>
+<tr><td>sync</td><td>Node3D</td><td>Node3D</td></tr>
+</tbody>
+</table>
+<h3 id="type-physicstake">PhysicsTake</h3>
+<p>3 method signatures. Comes from: PhysicsWorld.bake.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>frames</td><td>(none)</td><td>int</td></tr>
+<tr><td>body_count</td><td>(none)</td><td>int</td></tr>
+<tr><td>pose</td><td>float, int</td><td>PhysicsPose</td></tr>
+</tbody>
+</table>
+<h3 id="type-physicspresentation">PhysicsPresentation</h3>
+<p>9 method signatures. Comes from: physics_presentation.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>title</td><td>string, float, float, string</td><td>PhysicsPresentation</td></tr>
+<tr><td>bar</td><td>string, float, float, float, float, string</td><td>PhysicsPresentation</td></tr>
+<tr><td>bullet</td><td>string, float, float, string</td><td>PhysicsPresentation</td></tr>
+<tr><td>kpi</td><td>string, int, float, float, string</td><td>PhysicsPresentation</td></tr>
+<tr><td>step</td><td>int</td><td>PhysicsPresentation</td></tr>
+<tr><td>tumble</td><td>(none)</td><td>PhysicsPresentation</td></tr>
+<tr><td>assemble</td><td>(none)</td><td>PhysicsPresentation</td></tr>
+<tr><td>render</td><td>(none)</td><td>Image</td></tr>
+<tr><td>body_count</td><td>(none)</td><td>int</td></tr>
+</tbody>
+</table>
+<h2 id="values">String values and argument orders stated by the repository</h2>
+<p>The schema types many options as plain string, so it defines no enums. The values below are the ones that appear in the repository documentation and runnable examples; other values may exist but are not listed because they could not be confirmed from public material.</p>
+<table>
+<thead>
+<tr><th>Where</th><th>Values or argument order</th></tr>
+</thead>
+<tbody>
+<tr><td>Colors</td><td>Hex strings such as #1e3c72. mix(color, color, t) blends two of them.</td></tr>
+<tr><td>Plot.series(name, kind, color)</td><td>Kinds used in the examples: line, bar, scatter, area, stacked_bar, grouped_bar, errorbar, step, histogram, donut, box.</td></tr>
+<tr><td>Series.marker, Series.dash</td><td>circle; dashed.</td></tr>
+<tr><td>Plot.legend</td><td>none hides the legend.</td></tr>
+<tr><td>Plot.x_scale</td><td>log.</td></tr>
+<tr><td>Heatmap.palette, Image.colormap</td><td>viridis, magma, coolwarm; viridis.</td></tr>
+<tr><td>Panel.manager</td><td>grid, border, place, pack.</td></tr>
+<tr><td>LayoutItem.fill, LayoutItem.sticky</td><td>both, none; nsew.</td></tr>
+<tr><td>Paint.stroke_cap, Paint.stroke_join</td><td>round.</td></tr>
+<tr><td>Image.blend mode</td><td>over, screen. The migration notes say ten blend modes exist.</td></tr>
+<tr><td>Image.morphology</td><td>erode, dilate, median.</td></tr>
+<tr><td>Texture.filter, Texture.wrap</td><td>trilinear; repeat, repeat.</td></tr>
+<tr><td>Scene3D.tonemap</td><td>aces.</td></tr>
+<tr><td>Renderer names</td><td>raster and cycles, for Scene3D.render_image, Scene3D.save_job, render_available and the render-job commands.</td></tr>
+<tr><td>Scene3D.render_image(width, height, renderer, samples, bounces, seed, denoise)</td><td>The seven argument overload: renderer name, path tracing samples, maximum bounces, repeatable seed, denoise switch.</td></tr>
+<tr><td>Scene3D.render_image(width, height, samples)</td><td>Raster render; the migration notes map 2 by 2 supersampling to samples 2.</td></tr>
+<tr><td>Scene3D.directional_light(x, y, z, color, intensity)</td><td>The vector points toward the light source.</td></tr>
+<tr><td>Camera3D.perspective(fov, near, far)</td><td>Vertical field of view in degrees.</td></tr>
+<tr><td>Node3D.position, rotation, scale</td><td>Set semantics; rotation in degrees.</td></tr>
+<tr><td>mesh_plane</td><td>Lies in the XZ plane facing +Y.</td></tr>
+<tr><td>physics_world(timestep, seed)</td><td>Fixed step in seconds and a seed, for example 1.0 / 120.0 and 42.</td></tr>
+<tr><td>physics_material(friction, restitution)</td><td>Both in the range 0 to 1.</td></tr>
+<tr><td>PhysicsWorld.box</td><td>Full width, height, depth, position x, y, z, mass, material. Mass zero is static.</td></tr>
+<tr><td>PhysicsWorld.sphere</td><td>Radius, position x, y, z, mass, material.</td></tr>
+<tr><td>PhysicsWorld.bake(frames, stride)</td><td>2 to 512 samples, stride 1 to 1000.</td></tr>
+<tr><td>PhysicsTake.pose(t, body_id)</td><td>t from 0 to 1; interpolated position and normalized quaternion.</td></tr>
+<tr><td>physics_presentation(width, height, seed)</td><td>Authoring coordinates are top left pixels.</td></tr>
+<tr><td>PhysicsPresentation.title(text, x, y, color)</td><td>One rigid tile per printable ASCII character.</td></tr>
+<tr><td>PhysicsPresentation.bar(label, value, maximum, x, y, color)</td><td>Twenty normalized bins, rounded to nearest.</td></tr>
+<tr><td>PhysicsPresentation.kpi(label, count, x, y, color)</td><td>Exactly 0 to 64 grains.</td></tr>
+</tbody>
+</table>
+<h3>Built in block functions</h3>
+<p>Besides the host and standard functions, the block language itself supplies these numeric and conversion built-ins, as listed by the compiler diagnostic for an undefined name: float, str, sin, cos, sqrt, abs, floor, pow, min, max, clamp, lerp, ease, ease_in, ease_out, int. Loops in the examples use for with range(start, end).</p>
+<h3>Physics limits</h3>
+<table>
+<thead>
+<tr><th>Limit</th><th>Value</th></tr>
+</thead>
+<tbody>
+<tr><td>Bodies per world</td><td>2048</td></tr>
+<tr><td>Simultaneous worlds</td><td>4</td></tr>
+<tr><td>Fixed updates per world</td><td>1,000,000</td></tr>
+<tr><td>Updates per step call</td><td>10,000</td></tr>
+<tr><td>Updates per bake</td><td>10,000</td></tr>
+<tr><td>Stored body poses per bake</td><td>262,144</td></tr>
+<tr><td>Stored body poses across all retained takes</td><td>524,288</td></tr>
+<tr><td>Body shapes</td><td>Boxes and spheres. Capsules, convex hulls and joints are not exposed.</td></tr>
+</tbody>
+</table>
+<h2 id="std">Standard library in v0.1.124: lmcode_std_v3, 206 signatures</h2>
+<p>The lmvideo release pins the standard catalog by hash in toolchain.lock.json (std_sha256 1defd1be67bf11cf1780f7d890059cd2ac6fd506a7b7fa578e31b5ef124aa221). That hash is the 206 signature edition of lmcode_std_v3: 83 function signatures and 123 methods on 16 container and Json types. All of them appear in lmvideo --lmcode-signatures and are callable in a block without any import.</p>
+<h3>Standard function groups</h3>
+<table>
+<thead>
+<tr><th>Group</th><th>Signatures</th><th>Function names</th></tr>
+</thead>
+<tbody>
+<tr><td>Strings</td><td>21</td><td>str_base64_decode, str_base64_encode, str_contains, str_ends_with, str_find, str_hex_decode, str_hex_encode, str_is_float, str_is_int, str_len, str_lower, str_match, str_repeat, str_replace, str_split, str_starts_with, str_substr, str_to_float, str_to_int, str_trim, str_upper</td></tr>
+<tr><td>Math</td><td>16</td><td>math_abs, math_ceil, math_floor, math_max, math_min, math_pow, math_round, math_sqrt</td></tr>
+<tr><td>Files</td><td>5</td><td>file_append, file_exists, file_lines, file_read, file_write</td></tr>
+<tr><td>JSON and templates</td><td>2</td><td>json_parse, template_render</td></tr>
+<tr><td>Result envelope</td><td>24</td><td>lmcode_return_null, lmcode_return_put, lmcode_return_put_null, lmcode_return_set</td></tr>
+<tr><td>Container constructors</td><td>15</td><td>float_list, float_map, float_pq, float_queue, float_stack, int_list, int_map, int_pq, int_queue, int_stack, str_list, str_map, str_pq, str_queue, str_stack</td></tr>
+</tbody>
+</table>
+<h3>Standard functions</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Parameters</th><th>Returns</th></tr>
+</thead>
+<tbody>
+<tr><td>file_append</td><td>string, string</td><td>void</td></tr>
+<tr><td>file_exists</td><td>string</td><td>bool</td></tr>
+<tr><td>file_lines</td><td>string</td><td>StrList</td></tr>
+<tr><td>file_read</td><td>string</td><td>string</td></tr>
+<tr><td>file_write</td><td>string, string</td><td>void</td></tr>
+<tr><td>float_list</td><td>(none)</td><td>FloatList</td></tr>
+<tr><td>float_map</td><td>(none)</td><td>FloatMap</td></tr>
+<tr><td>float_pq</td><td>(none)</td><td>FloatPQ</td></tr>
+<tr><td>float_queue</td><td>(none)</td><td>FloatQueue</td></tr>
+<tr><td>float_stack</td><td>(none)</td><td>FloatStack</td></tr>
+<tr><td>int_list</td><td>(none)</td><td>IntList</td></tr>
+<tr><td>int_map</td><td>(none)</td><td>IntMap</td></tr>
+<tr><td>int_pq</td><td>(none)</td><td>IntPQ</td></tr>
+<tr><td>int_queue</td><td>(none)</td><td>IntQueue</td></tr>
+<tr><td>int_stack</td><td>(none)</td><td>IntStack</td></tr>
+<tr><td>json_parse</td><td>string</td><td>Json</td></tr>
+<tr><td>lmcode_return_null</td><td>(none)</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, bool</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, float</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, FloatList</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, FloatMap</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, int</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, IntList</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, IntMap</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, Json</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, StrList</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, StrMap</td><td>void</td></tr>
+<tr><td>lmcode_return_put</td><td>string, string</td><td>void</td></tr>
+<tr><td>lmcode_return_put_null</td><td>string</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>bool</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>float</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>FloatList</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>FloatMap</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>int</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>IntList</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>IntMap</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>Json</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>StrList</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>StrMap</td><td>void</td></tr>
+<tr><td>lmcode_return_set</td><td>string</td><td>void</td></tr>
+<tr><td>math_abs</td><td>int</td><td>int</td></tr>
+<tr><td>math_abs</td><td>float</td><td>float</td></tr>
+<tr><td>math_ceil</td><td>int</td><td>int</td></tr>
+<tr><td>math_ceil</td><td>float</td><td>float</td></tr>
+<tr><td>math_floor</td><td>int</td><td>int</td></tr>
+<tr><td>math_floor</td><td>float</td><td>float</td></tr>
+<tr><td>math_max</td><td>int, int</td><td>int</td></tr>
+<tr><td>math_max</td><td>float, float</td><td>float</td></tr>
+<tr><td>math_min</td><td>int, int</td><td>int</td></tr>
+<tr><td>math_min</td><td>float, float</td><td>float</td></tr>
+<tr><td>math_pow</td><td>int, int</td><td>int</td></tr>
+<tr><td>math_pow</td><td>float, float</td><td>float</td></tr>
+<tr><td>math_round</td><td>int</td><td>int</td></tr>
+<tr><td>math_round</td><td>float</td><td>float</td></tr>
+<tr><td>math_sqrt</td><td>int</td><td>int</td></tr>
+<tr><td>math_sqrt</td><td>float</td><td>float</td></tr>
+<tr><td>str_base64_decode</td><td>string</td><td>string</td></tr>
+<tr><td>str_base64_encode</td><td>string</td><td>string</td></tr>
+<tr><td>str_contains</td><td>string, string</td><td>bool</td></tr>
+<tr><td>str_ends_with</td><td>string, string</td><td>bool</td></tr>
+<tr><td>str_find</td><td>string, string</td><td>int</td></tr>
+<tr><td>str_hex_decode</td><td>string</td><td>string</td></tr>
+<tr><td>str_hex_encode</td><td>string</td><td>string</td></tr>
+<tr><td>str_is_float</td><td>string</td><td>bool</td></tr>
+<tr><td>str_is_int</td><td>string</td><td>bool</td></tr>
+<tr><td>str_len</td><td>string</td><td>int</td></tr>
+<tr><td>str_list</td><td>(none)</td><td>StrList</td></tr>
+<tr><td>str_lower</td><td>string</td><td>string</td></tr>
+<tr><td>str_map</td><td>(none)</td><td>StrMap</td></tr>
+<tr><td>str_match</td><td>string, string</td><td>bool</td></tr>
+<tr><td>str_pq</td><td>(none)</td><td>StrPQ</td></tr>
+<tr><td>str_queue</td><td>(none)</td><td>StrQueue</td></tr>
+<tr><td>str_repeat</td><td>string, int</td><td>string</td></tr>
+<tr><td>str_replace</td><td>string, string, string</td><td>string</td></tr>
+<tr><td>str_split</td><td>string, string</td><td>StrList</td></tr>
+<tr><td>str_stack</td><td>(none)</td><td>StrStack</td></tr>
+<tr><td>str_starts_with</td><td>string, string</td><td>bool</td></tr>
+<tr><td>str_substr</td><td>string, int, int</td><td>string</td></tr>
+<tr><td>str_to_float</td><td>string</td><td>float</td></tr>
+<tr><td>str_to_int</td><td>string</td><td>int</td></tr>
+<tr><td>str_trim</td><td>string</td><td>string</td></tr>
+<tr><td>str_upper</td><td>string</td><td>string</td></tr>
+<tr><td>template_render</td><td>string, Json</td><td>string</td></tr>
+</tbody>
+</table>
+<h3>Standard types</h3>
+<table>
+<thead>
+<tr><th>Type</th><th>Method signatures</th><th>Methods</th></tr>
+</thead>
+<tbody>
+<tr><td>FloatList</td><td>7</td><td>add, at, clear, contains, index_of, len, set</td></tr>
+<tr><td>FloatMap</td><td>10</td><td>len, has, get, get_or, set, key_at, remove, clear, keys, values</td></tr>
+<tr><td>FloatPQ</td><td>6</td><td>push, pop, peek, len, empty, clear</td></tr>
+<tr><td>FloatQueue</td><td>7</td><td>push, pop, peek, len, empty, clear, at</td></tr>
+<tr><td>FloatStack</td><td>7</td><td>push, pop, peek, len, empty, clear, at</td></tr>
+<tr><td>IntList</td><td>7</td><td>add, at, clear, contains, index_of, len, set</td></tr>
+<tr><td>IntMap</td><td>10</td><td>len, has, get, get_or, set, key_at, remove, clear, keys, values</td></tr>
+<tr><td>IntPQ</td><td>6</td><td>push, pop, peek, len, empty, clear</td></tr>
+<tr><td>IntQueue</td><td>7</td><td>push, pop, peek, len, empty, clear, at</td></tr>
+<tr><td>IntStack</td><td>7</td><td>push, pop, peek, len, empty, clear, at</td></tr>
+<tr><td>Json</td><td>11</td><td>kind, len, at, get, has, keys, as_string, as_int, as_float, as_bool, to_json</td></tr>
+<tr><td>StrList</td><td>8</td><td>add, at, clear, contains, index_of, join, len, set</td></tr>
+<tr><td>StrMap</td><td>10</td><td>clear, get, get_or, has, key_at, len, remove, set, keys, values</td></tr>
+<tr><td>StrPQ</td><td>6</td><td>push, pop, peek, len, empty, clear</td></tr>
+<tr><td>StrQueue</td><td>7</td><td>push, pop, peek, len, empty, clear, at</td></tr>
+<tr><td>StrStack</td><td>7</td><td>push, pop, peek, len, empty, clear, at</td></tr>
+</tbody>
+</table>
+<p>The Json type is also the block result type: the schema declares result as nullable Json.</p>
+<h2 id="rest-cli">Standard REST and CLI interfaces: not in v0.1.124</h2>
+<p>The current lmcode_std_v3 catalog has 226 canonical signatures. The 20 added signatures are the former lmcode_std_rest_v1 module: 5 functions and 15 RestExchange methods, together with 10 standard interfaces. lmvideo v0.1.124 was built against the 206 signature catalog, so none of the names in this section exist in that release: its signature list contains no rest_ function and no RestExchange type. A recent compiler (checked with lmscript 0.2.482) still accepts the names at compile time because it knows the newer catalog, but the v0.1.124 host refuses the program when it loads it, with code LOAD_UNBOUND, as shown below. lmvideo picks the 226 signature catalog up when a later release is built against it. The tables are provided so that a reader knows what will and will not resolve today.</p>
+<pre><code>prog = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.124";
+rest_stop();
+end _lmcode_
+r = run_lmcode(prog);
+println(json_stringify(r));</code></pre>
+<pre><samp>{"ok":false,"phase":"load","code":"LOAD_UNBOUND","message":"import 'fn rest_stop() -> void' is not provided by the host"}</samp></pre>
+<h3>Standard interfaces (current catalog only)</h3>
+<table>
+<thead>
+<tr><th>Interface</th><th>Handler parameters</th><th>Returns</th><th>In lmvideo v0.1.124</th></tr>
+</thead>
+<tbody>
+<tr><td>RestGet</td><td>exchange: RestExchange</td><td>void</td><td>No</td></tr>
+<tr><td>RestPost</td><td>exchange: RestExchange</td><td>void</td><td>No</td></tr>
+<tr><td>RestPut</td><td>exchange: RestExchange</td><td>void</td><td>No</td></tr>
+<tr><td>RestDelete</td><td>exchange: RestExchange</td><td>void</td><td>No</td></tr>
+<tr><td>RestPatch</td><td>exchange: RestExchange</td><td>void</td><td>No</td></tr>
+<tr><td>RestHead</td><td>exchange: RestExchange</td><td>void</td><td>No</td></tr>
+<tr><td>RestOptions</td><td>exchange: RestExchange</td><td>void</td><td>No</td></tr>
+<tr><td>RestHandler</td><td>exchange: RestExchange</td><td>void</td><td>No</td></tr>
+<tr><td>CliCommand</td><td>exchange: RestExchange</td><td>void</td><td>No</td></tr>
+<tr><td>CliOption</td><td>exchange: RestExchange</td><td>void</td><td>No</td></tr>
+</tbody>
+</table>
+<h3>REST and CLI functions (current catalog only)</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Parameters</th><th>Returns</th><th>In lmvideo v0.1.124</th></tr>
+</thead>
+<tbody>
+<tr><td>rest_config</td><td>string, string</td><td>void</td><td>No</td></tr>
+<tr><td>rest_route</td><td>string, string, string</td><td>void</td><td>No</td></tr>
+<tr><td>rest_serve</td><td>(none)</td><td>void</td><td>No</td></tr>
+<tr><td>rest_stop</td><td>(none)</td><td>void</td><td>No</td></tr>
+<tr><td>rest_cli</td><td>StrList</td><td>string</td><td>No</td></tr>
+</tbody>
+</table>
+<p>Route templates in the current catalog accept {param} and {rest...} as well as :param and :rest... placeholders. rest_cli takes an argument list and is the stateless CLI mode that dispatches options, commands and REST routes.</p>
+<h3>RestExchange methods (current catalog only)</h3>
+<table>
+<thead>
+<tr><th>Method</th><th>Parameters</th><th>Returns</th><th>In lmvideo v0.1.124</th></tr>
+</thead>
+<tbody>
+<tr><td>method</td><td>(none)</td><td>string</td><td>No</td></tr>
+<tr><td>path</td><td>(none)</td><td>string</td><td>No</td></tr>
+<tr><td>query</td><td>string</td><td>string</td><td>No</td></tr>
+<tr><td>has_query</td><td>string</td><td>bool</td><td>No</td></tr>
+<tr><td>param</td><td>string</td><td>string</td><td>No</td></tr>
+<tr><td>header</td><td>string</td><td>string</td><td>No</td></tr>
+<tr><td>has_header</td><td>string</td><td>bool</td><td>No</td></tr>
+<tr><td>body</td><td>(none)</td><td>string</td><td>No</td></tr>
+<tr><td>status</td><td>int</td><td>void</td><td>No</td></tr>
+<tr><td>set_header</td><td>string, string</td><td>void</td><td>No</td></tr>
+<tr><td>send</td><td>string</td><td>void</td><td>No</td></tr>
+<tr><td>json</td><td>string</td><td>void</td><td>No</td></tr>
+<tr><td>get</td><td>string</td><td>string</td><td>No</td></tr>
+<tr><td>set</td><td>string, string</td><td>void</td><td>No</td></tr>
+<tr><td>increment</td><td>string</td><td>int</td><td>No</td></tr>
+</tbody>
+</table>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/tools/lmvideo/">Quick reference</a></li>
+<li><a href="/tools/lmvideo/skill.html">Skill</a></li>
+<li><a href="/tools/lmvideo/guide.html">Guide</a></li>
+<li><a href="https://github.com/lmctl-ai/lmvideo/blob/main/schema/lmvideo.dsl.json">schema/lmvideo.dsl.json in the repository</a></li>
+<li><a href="https://github.com/lmctl-ai/lmvideo/blob/main/docs/physics.md">Physics API notes in the repository</a></li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvideo">github.com/lmctl-ai/lmvideo</a>.</p>
+</footer>
+</body>
+</html>

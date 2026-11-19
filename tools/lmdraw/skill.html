@@ -19,70 +19,159 @@
 <li><a href="/tools/lmdraw/tutorial.html">Tutorial</a></li>
 <li><a href="/tools/lmdraw/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmdraw/guide.html">Guide</a></li>
+<li><a href="/tools/lmdraw/reference.html">Reference</a></li>
 <li><a href="/tools/lmdraw/examples/">Examples</a></li>
 </ul>
 </nav>
 <main><h1>lmdraw script authoring skill</h1>
-<p>Use lmdraw to create editable 2D scenes and render still images or animation frames through typed lmscript calls.</p>
+<p>Use lmdraw to create editable 2D scenes and render still images or animation frames through typed lmscript calls. Facts on this page were checked against lmdraw 0.2.7 with lmscript 0.2.482.</p>
 <h2>Purpose</h2>
-<p>Write lmscript programs that create retained vector nodes, import supported SVG artwork, update node attributes and render PNG images or frame sequences.</p>
+<p>Write lmscript programs whose _lmcode_ block creates retained vector nodes, labeled diagram shapes and connectors, plot axes, or imported SVG artwork, updates node attributes, and renders PNG images or numbered frame sequences. The outer script computes data and runs the block with run_lmcode.</p>
 <h2>When to use it</h2>
-<p>Choose lmdraw for diagrams, title cards, vector overlays and scripted 2D animation. Use it when the same scene should produce many frames by changing a few attributes. Use a 3D host when the work depends on solid geometry, perspective or physical lighting.</p>
+<p>Choose lmdraw for diagrams with explicit geometry (flowcharts, sequence diagrams, state machines, org charts), computed figures, title cards, vector overlays and scripted 2D animation where one scene produces many frames by changing a few attributes. Layout is never automatic: the script positions everything. Use a 3D host such as lmcad when the work depends on solid geometry or perspective, and a plotting host such as lmplot for data-heavy statistical charts. lmdraw writes PNG only; there is no SVG or PDF export.</p>
 <h2>Install</h2>
-<p>Download the latest lmdraw binary from <a href="https://github.com/lmctl-ai/lmdraw/releases/latest">GitHub Releases</a>. Install Node.js 24.15 or newer and use the published lmscript compiler with npx. Source builds require C++17, CMake, Ninja and Python 3; the project README has the build steps.</p>
+<p>Install lmctl from npm; it provides lmscript. The install declaration on the block downloads the lmdraw release binary into the lmscript tool cache on first use, or fetch it ahead of time with lmscript install. Release binaries are built for Linux x86-64 and arm64 and need glibc 2.35 or newer. ffmpeg is optional and only needed to encode frames.</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmscript --version
+lmscript install github:lmctl-ai/lmdraw@latest</code></pre>
 <h2>Commands</h2>
-<pre><code>npx --yes --package=@lmctl-ai/lmctl -- lmscript scene.lms build/scene.dslb
-lmdraw --lmcode build/scene.dslb
-lmdraw --schema
-lmdraw --schema --json
-lmdraw --lmcode-signatures</code></pre>
-<p>Compile against the exact JSON printed by lmdraw --schema --json. The short --schema summary is for people; the JSON is the compiler input.</p>
+<pre><code>lmscript --check scene.lms
+lmscript scene.lms
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmdraw/main/examples/title-card.lms</code></pre>
+<p>lmscript --check compiles every _lmcode_ block against the schema the host reports and exits 2 on a type error without running anything. lmscript scene.lms compiles and runs the script. The host itself answers these protocol flags; lmscript and run_lmcode use them, and you can run them to inspect the installed binary:</p>
+<pre><code>lmdraw --version
+lmdraw --lmcode-schema
+lmdraw --lmcode-schema --json
+lmdraw --lmcode-signatures
+lmdraw --lmcode FILE.dslb [FILE.dslb ...]</code></pre>
+<p>The JSON schema is the compiler input; the form without --json is a compact summary for people. The earlier spellings --schema and --schema --json print the same bytes. run_lmcode writes the compiled program file and invokes --lmcode itself, so scripts do not handle program files.</p>
 <h2>Inputs and outputs</h2>
 <ul>
-<li>Programs use an LMCode block and schema version 2. The host reads bytecode version 5.</li>
-<li>scene.canvas(width, height, background) starts a scene. Its coordinates are CSS pixels, with x increasing right and y increasing down.</li>
-<li>Nodes are returned as handles. node.set_attr(name, value) uses SVG-style attribute names such as fill, stroke, opacity, transform, font-size and text-anchor.</li>
-<li>scene.load_svg(path, id) reads a supported SVG from assets/ and returns the node with that id. Repeated loads of the same file can obtain additional handles.</li>
-<li>PNG outputs are written below build/rendered/. Loops can write numbered frames, which ffmpeg can encode as video.</li>
+<li>A block opens with p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest"; and closes with end _lmcode_. r = run_lmcode(p) returns a map with ok and result, or ok false with phase, code, message, line and column.</li>
+<li>The single context object is scene, of type Scene. scene.canvas(width, height, background) or scene.load_svg(path, id) must come before any drawing call.</li>
+<li>Coordinates and sizes are float CSS pixels, x right and y down, origin at the upper left. Text y is the baseline.</li>
+<li>Constructors return Node, Shape, Group, Grid or Gradient handles. set_attr(name, value) takes SVG-style attribute names and string values.</li>
+<li>Outer values enter the block as literals with ${expr}. Integral numbers arrive as int, so pass computed coordinates as strings, for example set_attr("x", ${str(x)}), or as path and points data, or compute them inside the block. Lists cannot cross; index them outside, as in ${names[2]}.</li>
+<li>scene.render_png(path, width, height, scale) writes a PNG of width × scale by height × scale pixels. The path must be a .png file directly under images/ or build/rendered/.</li>
+<li>scene.load_svg reads only a direct child of assets/; scene.load_font reads only a TrueType file directly under assets/fonts/; scene.image takes an embedded PNG data URI.</li>
+<li>A block can return data to the outer script with lmcode_return_set(value) or lmcode_return_put(key, value); it appears as r.result.</li>
 </ul>
-<pre><code>Context: scene: Scene
-Scene.canvas(int, int, string) -> Scene
+<pre><code>Scene.canvas(int, int, string) -> Scene
 Scene.rect(float, float, float, float, string) -> Node
 Scene.circle(float, float, float, string) -> Node
+Scene.line(float, float, float, float, string, float) -> Node
+Scene.arrow(float, float, float, float, string, float) -> Node
+Scene.polyline(string, string, float) -> Node
 Scene.path(string, string, string, float) -> Node
 Scene.text(float, float, float, string, string) -> Node
+Scene.text(float, float, float, string, string, float) -> Node
+Scene.box(float, float, float, float, string, string, string, float, float) -> Shape
+Scene.diamond(float, float, float, float, string, string, string, float) -> Shape
+Scene.connector(Shape, string, Shape, string, string, string, string, string, string, float, string, float, float, float) -> Group
+Scene.measure_text(string, float, bool) -> float
 Scene.load_svg(string, string) -> Node
 Scene.render_png(string, int, int, int) -> void
-Node.set_attr(string, string) -> Node
-Group.add(Node) -> Group
-Scene.linear_gradient(string, float, float, float, float) -> Gradient</code></pre>
+Node.set_attr(string, string) -> Node</code></pre>
+<p>This is a selection of the lines printed by lmdraw --lmcode-schema. The <a href="/tools/lmdraw/reference.html">reference</a> documents all 46 host methods with parameter names.</p>
 <h2>Safety rules</h2>
 <ul>
-<li>Run only bytecode you trust. The VM has no instruction or allocation budget.</li>
-<li>Canvas dimensions, image pixel totals, scene nodes, SVG input and bytecode have host-side limits. Keep rendering scale within the total-pixel limit.</li>
-<li>SVG files must be direct children of assets/. External files, URLs, scripts, stylesheets, CSS classes, event handlers, DTDs, animation and filters are refused.</li>
-<li>PNG paths must be direct children of build/rendered/. Path traversal and symbolic-link escapes are rejected.</li>
-<li>There are no DSL list values. Host collections, where provided, use len(), at(i) and foreach; lmdraw itself does not expose a collection API.</li>
-<li>Use float(i) when a loop index participates in float arithmetic. Integer and float values do not mix implicitly.</li>
+<li>Run only scripts you trust. lmscript runs with your full local authority, and the host imposes no instruction budget on a block; only input and image bounds apply.</li>
+<li>Write float arguments with a decimal point (36.0, not 36). Int and float do not mix implicitly; use float(i) for a loop index in float arithmetic and str(value) when an attribute needs a number.</li>
+<li>Keep the canvas within 4096 pixels per side and 8,000,000 pixels, and the render scale between 1 and 4 with scaled output at or below 8,000,000 pixels.</li>
+<li>Create images/ (or build/rendered/) with mkdir before the block when you want to be explicit; never point render_png at a subdirectory, an absolute path or another folder. Symbolic links and path traversal are rejected.</li>
+<li>SVG input must stay in the static subset: no CSS classes or stylesheets, scripts, event handlers, DTDs or entities, SMIL animation, foreignObject, filters, or external URLs and files.</li>
+<li>A new scene.canvas or a load_svg of a different file starts a new scene generation; handles from the earlier scene fail if reused.</li>
+<li>The embedded Noto Sans and Noto Sans Math fonts cover Latin, Greek, Cyrillic, sub and superscripts, arrows and common math symbols. There is no complex-script shaping or right-to-left layout.</li>
+<li>The standard file functions (file_read, file_write and the rest) act on the process working directory without a sandbox. The host performs no network access.</li>
+<li>Test for optional tools before calling them, for example which("ffmpeg") != null, because the outer system call throws when the program is missing.</li>
 </ul>
 <h2>Worked examples</h2>
-<p>A five-minute path is: compile a title card, run it, inspect the PNG, load an SVG node, then change an attribute and render again.</p>
-<ol>
-<li>Make a title card with scene.canvas, scene.rect and scene.text. Set typography and decoration using node.set_attr.</li>
-<li>Load an SVG by path and element id, then change a presentation attribute such as opacity or fill before rendering.</li>
-<li>For animation, loop over frame indices, compute t as float(i) / float(frame_count - 1), update string-valued attributes with str(lerp(...)), and call scene.render_png for each numbered frame.</li>
-<li>Encode frames with ffmpeg using a fixed frame rate and pixel format. Keep the numbered PNGs when you need to inspect or regenerate the video.</li>
-<li>Use scene.measure_text before positioning a label. Text uses bundled Noto Sans; complex-script shaping and bidirectional layout are not provided.</li>
-</ol>
+<h3>A flowchart from shapes, a grid and connectors</h3>
+<p>This script was compiled and run with lmdraw 0.2.7; it writes a 600 by 360 PNG.</p>
+<pre><code>mkdir("images");
+p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(600, 360, "#101820");
+let slots = scene.grid(60.0, 60.0, 480.0, 240.0, 2, 3, 20.0, 20.0);
+let order = scene.box(slots.cell(0, 0), "c", 120.0, 44.0, "order", "#1e3247", "#4a6a88", 8.0, 14.0);
+let gate = scene.diamond(300.0, 120.0, 130.0, 70.0, "in stock?", "#1e3247", "#f5c16c", 13.0);
+let ship = scene.box(slots.cell(2, 1), "c", 120.0, 44.0, "ship", "#1e3247", "#6fbdb4", 22.0, 14.0);
+scene.connector(order, "e", gate, "w", "straight", "none", "arrow", "none", "#8fb4d9", 2.0, "", 0.5, 0.0, 0.0);
+scene.connector(gate, "s", ship, "n", "elbow", "none", "arrow", "6 5", "#8fb4d9", 2.0, "yes", 0.4, 8.0, 0.0);
+scene.render_png("images/flow.png", 600, 360, 1);
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));
+println("wrote images/flow.png");</code></pre>
+<pre><kbd>lmscript flow.lms</kbd>
+<samp>wrote images/flow.png</samp></pre>
+<h3>Load an SVG and tween 24 frames</h3>
+<p>The outer script writes a small SVG under assets/; the block takes a handle to the element with id dot and moves it with lerp and ease, rendering one PNG per frame.</p>
+<pre><code>mkdir("images");
+mkdir("assets");
+svg = "&lt;svg xmlns=\"http://www.w3.org/2000/svg\" width=\"320\" height=\"120\" viewBox=\"0 0 320 120\">";
+svg = svg + "&lt;rect id=\"plate\" x=\"10\" y=\"10\" width=\"300\" height=\"100\" rx=\"12\" fill=\"#1f344b\"/>";
+svg = svg + "&lt;circle id=\"dot\" cx=\"60\" cy=\"60\" r=\"24\" fill=\"#f5c16c\"/>&lt;/svg>";
+write_file("assets/badge.svg", svg);
+p = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+let dot = scene.load_svg("assets/badge.svg", "dot");
+dot.set_attr("fill", "#6fbdb4");
+for (i in range(0, 24)) {
+  let t = float(i) / 23.0;
+  dot.set_attr("cx", str(lerp(60.0, 260.0, ease(t))));
+  scene.render_png("images/badge-" + str(i) + ".png", 320, 120, 1);
+}
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));
+println("wrote 24 frames");</code></pre>
+<pre><kbd>lmscript tween.lms</kbd>
+<samp>wrote 24 frames</samp></pre>
+<p>Encode the frames with ffmpeg at a fixed frame rate and pixel format:</p>
+<pre><code>ffmpeg -framerate 24 -start_number 0 -i 'images/badge-%d.png' -frames:v 24 -c:v libx264 -pix_fmt yuv420p -movflags +faststart badge.mp4</code></pre>
+<h3>More patterns</h3>
+<ul>
+<li>Measure before placing: scene.measure_text(text, size, bold) returns the pixel width; the six-argument scene.text wraps at a pixel width.</li>
+<li>Arrowheads and dashes: set marker-end to arrow, dot or diamond and stroke-dasharray to a list such as 6 5 on constructed line, path and polyline nodes.</li>
+<li>Several blocks in one host process sharing one scene: b = lmcode_build(["lmdraw", "--lmcode"]); b.add(p, ["$DSLFILE"]); for each block; r = run_lmcode(b). The builder resolves the command name lmdraw on PATH, so the lmdraw executable must be on PATH for this form; otherwise it fails with cannot resolve lmcode command lmdraw. The result then holds one entry per block and a parts count. The repository example truss-bridge.lms uses this.</li>
+<li>The <a href="/tools/lmdraw/examples/">example book</a> and the repository examples folder hold 38 runnable programs.</li>
+</ul>
 <h2>Errors and exit codes</h2>
-<p>Exit code 0 means success. Exit code 2 indicates invalid command-line arguments. Exit code 3 indicates bytecode loading, verification or a DSL host-call error. Exit code 4 indicates another application failure. A rejected SVG usually needs unsupported CSS, filters, scripts or external references removed. An output path error means the PNG must be written directly inside build/rendered/.</p>
+<p>A compile error is reported by lmscript with file, line and column, and lmscript --check exits 2 (the script directory is shortened to /work here):</p>
+<pre><kbd>lmscript --check c.lms</kbd>
+<samp>error:/work/c.lms:2:12: _lmcode_: method Scene.rect expects float for argument 1; found int</samp></pre>
+<p>A host refusal does not throw by itself: run_lmcode returns ok false with the phase, code, message and block position, so check r.ok. This is the result for a render path outside the allowed folders:</p>
+<pre><kbd>lmscript bad.lms</kbd>
+<samp>dsl line 3:7: PNG output must be a .png file directly under build/rendered/ or images/
+{"ok":false,"phase":"run","code":"RUN_HOST","message":"dsl line 3:7: PNG output must be a .png file directly under build/rendered/ or images/","line":3,"column":7}</samp></pre>
+<table>
+<thead><tr><th>Host exit code</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success.</td></tr>
+<tr><td>2</td><td>Invalid command-line arguments (code CLI_USAGE).</td></tr>
+<tr><td>3</td><td>Program file load or verification failure, or a failed host call (for example codes LOAD_BAD_BYTECODE, LOAD_UNBOUND, RUN_HOST).</td></tr>
+<tr><td>4</td><td>Another application failure.</td></tr>
+</tbody>
+</table>
+<table>
+<thead><tr><th>Message</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>call scene.canvas or scene.load_svg before drawing</td><td>Start the scene first.</td></tr>
+<tr><td>canvas must fit 1..4096 pixels per side and 8000000 pixels total</td><td>Lower the canvas dimensions.</td></tr>
+<tr><td>render scale must be 1..4 and keep total output at or below 8000000 pixels</td><td>Lower the scale or the render size.</td></tr>
+<tr><td>PNG output must be a .png file directly under build/rendered/ or images/</td><td>Write to images/name.png or build/rendered/name.png.</td></tr>
+<tr><td>load_svg accepts only an assets/*.svg relative path</td><td>Place the SVG directly in assets/ and inline its presentation attributes.</td></tr>
+<tr><td>unsupported node attribute</td><td>Use SVG geometry, fill, stroke, opacity, transform or text attributes; filters are not available.</td></tr>
+<tr><td>import ... is not provided by the host (LOAD_UNBOUND)</td><td>The block calls a standard function newer than the installed host, such as the rest functions on lmdraw 0.2.7. Remove the call or use a host release that includes it.</td></tr>
+</tbody>
+</table>
 <h2>How to verify</h2>
 <ol>
-<li>Compile using the schema bytes from lmdraw --schema --json.</li>
-<li>Compare lmscript --lmcode-signatures schema.json with lmdraw --lmcode-signatures when checking schema and registry parity.</li>
-<li>Run the bytecode and confirm the host prints its success result.</li>
-<li>Check image dimensions and inspect the render visually. Re-run the same input and compare PNG bytes when determinism matters.</li>
-<li>For animation, count the numbered frames, inspect first, middle and last images, and verify the encoded video dimensions and frame rate.</li>
+<li>Run lmscript --check on the script; it must exit 0.</li>
+<li>Run the script and require r.ok; print json_stringify(r) on failure.</li>
+<li>Check each PNG with file or an image viewer: dimensions must equal width × scale by height × scale. Look at the render; text overflow and overlaps are not errors to the host.</li>
+<li>When determinism matters, run twice and compare sha256sum output; the same binary writes the same bytes.</li>
+<li>For animation, count the numbered frames, inspect the first, middle and last, and check the encoded video with ffprobe.</li>
+<li>To confirm what the installed host accepts, compare lmdraw --lmcode-signatures with the calls in the block.</li>
 </ol>
 </main>
 <footer>

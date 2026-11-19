@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmproxy authoring skill — lmproxy — lmctl.com tools</title>
+<meta name="description" content="lmproxy is a statically-linked HTTP/HTTPS proxy daemon, URL and HTTP/1.x parser CLI, and LMScript host embedding the Squid 7 engine.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmproxy/">Overview</a></li>
+<li><a href="/tools/lmproxy/skill.html">Skill</a></li>
+<li><a href="/tools/lmproxy/guide.html">Guide</a></li>
+<li><a href="/tools/lmproxy/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmproxy authoring skill</h1>
+<p>lmproxy is a statically-linked HTTP/HTTPS proxy daemon, URL and HTTP/1.x parser CLI, and LMScript host embedding the Squid 7 engine. It executes standalone URL and message parsing commands, runs forward and transparent interception proxies with dynamic SSL-bump certificate generation, and evaluates compiled _lmcode_ programs.</p>
+<h2>Purpose</h2>
+<p>Use lmproxy to inspect how Squid 7 decomposes URLs, percent-encodes path segments, and parses raw HTTP/1.x requests and responses, or to launch a zero-config forward or intercepting HTTP/HTTPS proxy daemon with live stderr tapping, JSONL traffic recording, transparent backend routing, and HTTP 307 redirect swapping.</p>
+<h2>When to use it</h2>
+<p>Choose lmproxy when testing how an enterprise forward proxy or transparent gateway parses edge-case URLs and HTTP headers, or when intercepting, recording, and rerouting live client traffic through Squid 7. Use lminspect when capturing traffic for lmmock scenario scrubbing, lmmock when serving scriptable mock endpoints, or lmcurl when sending outbound HTTP and LDAPv3 client requests.</p>
+<h2>Install</h2>
+<p>Install the lmctl toolchain with npm install -g @lmctl-ai/lmctl@latest. When an LMScript program declares cli="lmproxy" and install="github:lmctl-ai/lmproxy@latest", the runtime resolves the native lmproxy binary (statically linking Squid 7 and OpenSSL, requiring only glibc 2.35+ on Linux or system frameworks on macOS).</p>
+<pre><code>lmscript --version
+lmproxy --version
+lmproxy --lmcode-schema
+lmproxy --lmcode-signatures</code></pre>
+<h2>Commands</h2>
+<p>lmproxy provides host introspection and bytecode execution flags, direct JSON-emitting URL and HTTP/1.x message parsers, and embedded Squid 7 daemon subcommands.</p>
+<pre><code># Host schema, signatures, and bytecode execution
+lmproxy --lmcode-schema
+lmproxy --lmcode-schema --json
+lmproxy --lmcode-signatures
+lmproxy --lmcode build/program.dslb
+
+# Direct Squid 7 URL and HTTP/1.x message parsing (JSON output)
+lmproxy parse-url "http://user@example.com:8080/a/b?c=1" "https://[::1]:8443/health"
+lmproxy parse-request examples/request.txt
+lmproxy parse-response examples/response.txt
+printf 'GET /ping HTTP/1.1\r\nHost: example.com\r\n\r\n' | lmproxy parse-request -
+
+# Forward proxy daemon (default 127.0.0.1:3128) with live tap and JSONL recording
+lmproxy forward --port 3128 --bind 127.0.0.1 --tap --record traffic.jsonl
+
+# Forward proxy with SSL-bump TLS interception, origin routing, and 307 redirect swapping
+lmproxy forward --port 3128 --bind 127.0.0.1 --ssl-bump --route "api.example.com=127.0.0.1:9000" --redirect "legacy.example.com=http://127.0.0.1:9000/v2"
+
+# Transparent interception proxy (default 127.0.0.1:3129) or custom squid.conf
+lmproxy intercept --port 3129 --bind 127.0.0.1 --ssl-bump
+lmproxy run --config custom-squid.conf</code></pre>
+<h2>Inputs and outputs</h2>
+<p>The CLI commands parse-url, parse-request, and parse-response emit one compact JSON object per line on stdout containing valid/complete status, decomposed URL or HTTP header fields, and any parser error string. In _lmcode_ mode, lmproxy exposes context proxy: Proxy (plus top-level parse_url, parse_request, parse_response, percent_decode, percent_encode, and println functions) alongside the 226 standard lmcode_std_v3 signatures, writing one terminal SDK invocation JSON frame on stdout.</p>
+<h2>Safety rules</h2>
+<p>Respect object limits, network binding, and TLS certificate boundaries when authoring lmproxy workflows:</p>
+<ul>
+<li>Object arena caps: Each _lmcode_ execution can allocate at most 65536 Url handles and 65536 Message handles; scripts that exceed this limit abort cleanly with exit code 3.</li>
+<li>Immutable parsed messages: Message.header_names() returns an independent StrList snapshot from the standard collection arena; mutating that StrList does not alter the underlying parsed Message headers.</li>
+<li>Loopback binding: lmproxy forward and lmproxy intercept bind 127.0.0.1 by default; only pass --bind with a non-loopback address when the proxy is meant to be reachable from other hosts.</li>
+<li>Ephemeral SSL-bump CA material: When --ssl-bump is enabled without --ca-cert and --ca-key, lmproxy generates an ephemeral 2048-bit RSA Root CA in /tmp/lmproxy-XXXXXX; never install ephemeral test CAs into permanent system trust stores.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>The first example decomposes URLs, round-trips percent-encoding, and inspects raw HTTP/1.1 request and response messages inside an _lmcode_ program:</p>
+<pre><code>p = _lmcode_ cli="lmproxy" install="github:lmctl-ai/lmproxy@latest";
+let u = proxy.parse_url("https://admin@192.0.2.10:8443/v1/items%20list?limit=10");
+assert_eq(u.valid(), true);
+assert_eq(u.host_is_ip(), true);
+assert_eq(u.has_port(), true);
+assert_eq(u.port(), 8443);
+assert_eq(proxy.percent_decode(u.path()), "/v1/items list?limit=10");
+
+let req = proxy.parse_request("POST /submit HTTP/1.1\r\nHost: api.local\r\nContent-Type: application/json\r\n\r\n");
+assert_eq(req.complete(), true);
+assert_eq(req.method(), "POST");
+assert_eq(req.header("content-type"), "application/json");
+
+let resp = proxy.parse_response("HTTP/1.1 307 Temporary Redirect\r\nLocation: /v2/submit\r\n\r\n");
+assert_eq(resp.status(), 307);
+assert_eq(resp.header("location"), "/v2/submit");
+lmcode_return_put("headers", req.header_count());
+end _lmcode_
+res = run_lmcode(p);
+require(res.ok, json_stringify(res));</code></pre>
+<p>The second example exposes Squid 7 URL and request inspection through the standard lmcode_std_v3 stateless CLI and REST interfaces:</p>
+<pre><code>p = _lmcode_ cli="lmproxy" install="github:lmctl-ai/lmproxy@latest";
+@"--field"
+fn opt_field(x: RestExchange) -> void implements CliOption {
+  x.set("field", x.query("field"));
+}
+
+@"parse"
+fn cmd_parse(x: RestExchange) -> void implements CliCommand {
+  let u = proxy.parse_url(x.body());
+  x.send(x.get("field") + "=" + u.host() + ":" + str(u.port()) + u.path());
+}
+
+@"/request/inspect"
+fn get_inspect(x: RestExchange) -> void implements RestGet {
+  let m = proxy.parse_request("GET /status HTTP/1.1\r\nHost: proxy.local\r\n\r\n");
+  x.json("{\"method\":\"" + m.method() + "\",\"host\":\"" + m.header("host") + "\"}");
+}
+
+rest_config("session", "global");
+assert_eq(rest_cli(str_split("--field=url parse -- http://example.com:8080/a?b=1", " ")), "url=example.com:8080/a?b=1");
+assert_eq(rest_cli(str_split("/request/inspect", " ")), "{\"method\":\"GET\",\"host\":\"proxy.local\"}");
+end _lmcode_</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmproxy reports deterministic exit codes across CLI parser, proxy daemon, and bytecode execution modes:</p>
+<ul>
+<li>Exit code 0 indicates that the CLI parser, proxy daemon shutdown, or _lmcode_ program completed and all assertions passed.</li>
+<li>Exit code 2 indicates command-line usage errors, malformed --route or --redirect expressions, or unknown flags.</li>
+<li>Exit code 3 indicates a file read failure in parse-request/parse-response, a bytecode load or schema mismatch error, an arena handle overflow (65536), or an unhandled runtime error.</li>
+<li>Exit code 4 indicates an application assertion failure (assert, assert_eq) or stdout write failure.</li>
+</ul>
+<h2>How to verify</h2>
+<p>Verify the installed lmproxy binary by checking its version, embedded schema JSON, canonical signatures, and direct Squid 7 URL and request parsing:</p>
+<pre><code>lmproxy --version
+lmproxy --lmcode-schema --json > /tmp/lmproxy-schema.json
+lmproxy --lmcode-signatures > /tmp/lmproxy-sigs.txt
+lmproxy parse-url "http://example.com:8080/test?x=1"
+printf 'GET / HTTP/1.1\r\nHost: example.com\r\n\r\n' | lmproxy parse-request -</code></pre>
+<p>In a source checkout, run ./test.sh to execute all 28 verification checks covering URL and message parsing, forward and SSL-bump proxying, --tap, --record, --route, --redirect, standard REST/CLI interfaces, and static linkage invariants.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmproxy">github.com/lmctl-ai/lmproxy</a>.</p>
+</footer>
+</body>
+</html>

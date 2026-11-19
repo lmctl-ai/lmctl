@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmformat reference — lmformat — lmctl.com tools</title>
+<meta name="description" content="Exported functions, option interfaces, and error behaviors for @lmctl-ai/lmformat.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmformat/">Overview</a></li>
+<li><a href="/tools/lmformat/skill.html">Skill</a></li>
+<li><a href="/tools/lmformat/guide.html">Guide</a></li>
+<li><a href="/tools/lmformat/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmformat reference</h1>
+<p>Exported functions, option interfaces, and error behaviors for @lmctl-ai/lmformat.</p>
+<h2>Table and grid functions</h2>
+<table>
+<thead>
+<tr><th>Function signature</th><th>Return type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>formatTable(rows: TableCell[][], options?: TableOptions)</td><td>string</td><td>Measure and format a single table into an aligned multi-line string without a trailing newline.</td></tr>
+<tr><td>printTable(rows: TableCell[][], options?: PrintTableOptions)</td><td>void</td><td>Format a table and write it with a final newline to process.stdout or options.stream (writes nothing if empty).</td></tr>
+<tr><td>measureColumns(grids: Array&lt;Grid | TableCell[][]>, options?: MeasureOptions)</td><td>number[]</td><td>Return the maximum display width of each column across one or more grids, subject to options.max caps.</td></tr>
+<tr><td>measureDecimalPlaces(grids: Array&lt;Grid | TableCell[][]>)</td><td>number[]</td><td>Return the maximum fractional digit count per column across data rows (excluding headers).</td></tr>
+<tr><td>renderGrid(rows: TableCell[][], options?: RenderGridOptions)</td><td>string</td><td>Render a single grid using explicit options.widths or self-measured widths.</td></tr>
+<tr><td>escapeCell(value: unknown)</td><td>string</td><td>Convert a value to a single-line string with tabs, newlines, ANSI sequences, and control characters escaped.</td></tr>
+</tbody>
+</table>
+<h2>TableOptions, RenderGridOptions, and PrintTableOptions</h2>
+<table>
+<thead>
+<tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>headers</td><td>TableCell[]</td><td>undefined</td><td>Optional header row aligned according to each column's alignment.</td></tr>
+<tr><td>align</td><td>Array&lt;'left' | 'right' | 'decimal'></td><td>['left', ...]</td><td>Per-column alignment mode.</td></tr>
+<tr><td>decimalPlaces</td><td>number[]</td><td>measured</td><td>Shared fractional digit slots per column for decimal alignment.</td></tr>
+<tr><td>widths</td><td>number[]</td><td>measured</td><td>Explicit column widths for renderGrid (mutually exclusive with max).</td></tr>
+<tr><td>max</td><td>Array&lt;number | null | undefined></td><td>undefined</td><td>Per-column maximum width caps during measurement.</td></tr>
+<tr><td>truncate</td><td>boolean</td><td>true</td><td>Truncate over-width cells with an ellipsis; false allows overflow.</td></tr>
+<tr><td>truncateTrailing</td><td>boolean</td><td>false</td><td>Also truncate the last populated cell of each row to its column width.</td></tr>
+<tr><td>ellipsis</td><td>string</td><td>'…'</td><td>Truncation suffix ('...' for ASCII, '' for hard cut).</td></tr>
+<tr><td>margin</td><td>number | string</td><td>0</td><td>Leading space count or prefix string prepended to every rendered line.</td></tr>
+<tr><td>stream</td><td>{ write(text: string): void }</td><td>process.stdout</td><td>Destination writable stream for printTable.</td></tr>
+</tbody>
+</table>
+<h2>Scalar formatting functions</h2>
+<table>
+<thead>
+<tr><th>Function signature</th><th>Return type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>formatRelativeTime(value: TimestampInput, options?: { now?: TimestampInput })</td><td>string</td><td>Largest whole unit relative to now (w, d, h, m, s), e.g. 3d, 40m ago, now, or unknown.</td></tr>
+<tr><td>formatCount(value: number | null | undefined)</td><td>string</td><td>Compact count (960K, 15.8M, 1.0M) or unknown for non-finite input.</td></tr>
+<tr><td>formatDuration(ms: number | null | undefined, options?: { maxUnit?: 'w'|'d'|'h'|'m'|'s'; style?: 'spaced'|'compact' })</td><td>string</td><td>Up to two units (2h 5m) or dense compact style (2d02h03m), or unknown.</td></tr>
+<tr><td>formatPercent(fraction: number | null | undefined)</td><td>string</td><td>Rounded percentage string (0.16 -> 16%) or ?% for non-finite input.</td></tr>
+<tr><td>formatBar(fraction: number | null | undefined, options?: { width?: number; fill?: string; empty?: string; unknown?: string })</td><td>string</td><td>Bare progress bar of display-width-1 glyphs (default width 10, fill '#', empty ' ', unknown '?').</td></tr>
+<tr><td>formatTimer(ms: number | null | undefined)</td><td>string</td><td>Stopwatch string HH:MM:SS (or Nd HH:MM:SS past 24 hours), or unknown.</td></tr>
+<tr><td>formatClock(value?: TimestampInput)</td><td>string</td><td>Local wall-clock time HH:MM:SS (defaults to current time), or unknown.</td></tr>
+<tr><td>formatLocalTimestamp(value?: TimestampInput)</td><td>string</td><td>Local date and time YYYY-MM-DD HH:MM:SS (defaults to current time), or unknown.</td></tr>
+</tbody>
+</table>
+<h2>Validation errors and exit behavior</h2>
+<table>
+<thead>
+<tr><th>Condition</th><th>Behavior</th></tr>
+</thead>
+<tbody>
+<tr><td>Control characters, tabs, newlines, or ANSI escapes in a table cell</td><td>Throws TypeError; sanitize untrusted inputs with escapeCell first.</td></tr>
+<tr><td>Both widths and max passed to renderGrid</td><td>Throws TypeError; use max when measuring or widths when rendering pre-measured grids.</td></tr>
+<tr><td>Invalid explicit options.now in formatRelativeTime</td><td>Throws TypeError.</td></tr>
+<tr><td>Wide, zero-width, or multi-character glyph in formatBar</td><td>Throws TypeError; fill, empty, and unknown must have terminal display width 1.</td></tr>
+<tr><td>Non-finite number or unparseable target timestamp in scalar formatters</td><td>Returns unknown (or ?% in formatPercent) without throwing.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmformat">github.com/lmctl-ai/lmformat</a>.</p>
+</footer>
+</body>
+</html>

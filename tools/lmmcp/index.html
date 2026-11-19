@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmmcp — lmctl.com tools</title>
+<meta name="description" content="lmmcp is a pure-Go Model Context Protocol (MCP) bridge and LMScript host exposing stdio, Streamable HTTP, and HTTP+SSE MCP servers over REST, CLI, and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmmcp/">Overview</a></li>
+<li><a href="/tools/lmmcp/skill.html">Skill</a></li>
+<li><a href="/tools/lmmcp/guide.html">Guide</a></li>
+<li><a href="/tools/lmmcp/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmmcp</h1>
+<p>lmmcp is a pure-Go Model Context Protocol (MCP) bridge and LMScript host exposing stdio, Streamable HTTP, and HTTP+SSE MCP servers over REST, CLI, and JSON-lines stdio. It provides typed _lmcode_ functions (mcp_server, mcp_call, mcp_read) alongside the 226 standard lmcode_std_v3 REST and CLI interfaces.</p>
+<h2>Quick reference</h2>
+<pre><code>git clone https://github.com/lmctl-ai/lmmcp.git
+cd lmmcp &amp;&amp; CGO_ENABLED=0 go build -o lmmcp ./cmd/lmmcp
+./lmmcp --version
+./lmmcp --lmcode-schema
+./lmmcp --lmcode-signatures</code></pre>
+<table>
+<thead><tr><th>Interface or flag</th><th>Signature or syntax</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>CLI host bytecode</td><td>lmmcp --config config.json --lmcode prog.dslb</td><td>Execute compiled LMScript bytecode against configured MCP servers with dry-run preview and LMCODE_RETURN support.</td></tr>
+<tr><td>CLI schema and signatures</td><td>lmmcp --lmcode-schema [--json] | --lmcode-signatures</td><td>Print embedded JSON schema or all 242 canonical host and lmcode_std_v3 signatures.</td></tr>
+<tr><td>CLI MCP client actions</td><td>lmmcp servers|tools|call|resources|read|templates|prompts|prompt (--config FILE | --url ORIGIN)</td><td>Discover and invoke MCP tools, resources, templates, and prompts in-process or against a running lmmcp serve gateway.</td></tr>
+<tr><td>CLI REST and stdio servers</td><td>lmmcp serve --config FILE [--listen 127.0.0.1:8080] | lmmcp stdio --config FILE | lmmcp openapi</td><td>Serve the loopback HTTP REST gateway, concurrent JSON-lines REST over stdio, or print the OpenAPI 3.1 document.</td></tr>
+<tr><td>MCPServer handle</td><td>mcp_server(name: string) -> MCPServer</td><td>Acquire a typed handle to a configured MCP server with .tools(), .call(), .resources(), .templates(), .read(), .prompts(), and .prompt() methods.</td></tr>
+<tr><td>Global MCP functions</td><td>mcp_servers() | mcp_tools(s) | mcp_call(s, tool, Json) | mcp_resources(s) | mcp_templates(s) | mcp_read(s, uri) | mcp_prompts(s) | mcp_prompt(s, name, Json) -> Json</td><td>Dispatch MCP discovery, tool execution, resource reads, and prompt rendering directly from _lmcode_ and receive {ok, data|error} Json envelopes.</td></tr>
+<tr><td>Standard REST and CLI</td><td>RestGet..RestOptions, RestHandler, CliCommand, CliOption</td><td>Expose _lmcode_ functions as HTTP routes (:param) or stateless CLI flags and commands via rest_serve and rest_cli.</td></tr>
+</tbody>
+</table>
+<pre><code>p = _lmcode_ schema="examples/schema.json";
+let srv = mcp_server("fixture");
+let tools = srv.tools();
+let reply = srv.call("echo", json_parse("{\"text\":\"hello from lmcode\"}"));
+
+@"/call/:tool"
+fn get_call(x: RestExchange) -> void implements RestGet {
+  let res = mcp_call("fixture", x.param("tool"), json_parse("{\"text\":\"hi\"}"));
+  x.json(res.to_json());
+}
+
+rest_config("session", "global");
+let route_out = rest_cli(str_split("/call/echo", " "));
+$return = json_parse("{\"direct\":" + reply.to_json() + ",\"route\":" + route_out + "}");
+end _lmcode_
+r = run_lmcode(p, {command: ["lmmcp", "--config", ARGV[0], "--lmcode", "$DSLFILE"]});
+require(r.ok, json_stringify(r));</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmmcp/skill.html">Skill</a> — agent authoring rules, CLI and _lmcode_ commands, secret-suppression and destination safety rules, exit codes, and verification steps.</li>
+<li><a href="/tools/lmmcp/guide.html">Guide</a> — bridge architecture, MCP transport revisions (stdio, Streamable HTTP, legacy SSE), cancellation and session lifecycle, and standard REST and CLI interfaces.</li>
+<li><a href="/tools/lmmcp/reference.html">Reference</a> — complete CLI commands and flags, REST endpoints, MCPServer and mcp_* signatures, standard lmcode_std_v3 interfaces, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmmcp">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmmcp">github.com/lmctl-ai/lmmcp</a>.</p>
+</footer>
+</body>
+</html>

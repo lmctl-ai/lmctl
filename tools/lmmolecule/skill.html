@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmmolecule authoring skill — lmmolecule — lmctl.com tools</title>
+<meta name="description" content="lmmolecule is a native OpenMM molecular dynamics scripting host for LMScript that simulates crystal lattices, rigid water models, custom Lepton potentials,…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmmolecule/">Overview</a></li>
+<li><a href="/tools/lmmolecule/skill.html">Skill</a></li>
+<li><a href="/tools/lmmolecule/guide.html">Guide</a></li>
+<li><a href="/tools/lmmolecule/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmmolecule authoring skill</h1>
+<p>lmmolecule is a native OpenMM molecular dynamics scripting host for LMScript that simulates crystal lattices, rigid water models, custom Lepton potentials, thermostats, barostats, and structural observables in a single executable.</p>
+<h2>Purpose</h2>
+<p>Use lmmolecule to construct atomic and molecular systems, run energy minimization and NVE, NVT, or NPT molecular dynamics trajectories, and measure thermodynamic and structural observables such as radial distribution functions, mean squared displacement, and Madelung constants from LMScript.</p>
+<h2>When to use it</h2>
+<p>Use lmmolecule when you need reproducible CPU or Reference-platform molecular dynamics simulations, crystal and liquid state checks, or trajectory generation for downstream plotting with lmplot or 3D rendering with lmcad. Choose an external GPU molecular dynamics suite when a project requires CUDA/OpenCL acceleration or full AMBER/CHARMM biomolecular topology parameterization.</p>
+<h2>Install</h2>
+<p>Install Node.js 24.15 or newer and the lmctl CLI globally. Declare lmmolecule in an LMScript _lmcode_ block with cli="lmmolecule" and install="github:lmctl-ai/lmmolecule@latest" so LMScript downloads and verifies the release binary automatically on first use. Linux release binaries require glibc 2.35 or newer (Ubuntu 22.04+).</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmmolecule --version
+lmmolecule --lmcode-schema --json
+lmmolecule --lmcode-signatures</code></pre>
+<h2>Commands</h2>
+<p>Run an LMScript program that binds lmmolecule, or invoke the host binary directly for bytecode execution, dry-run validation, schema inspection, and third-party license notices:</p>
+<pre><code>lmscript simulation.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmmolecule/main/examples/argon_fcc_melt.lms
+lmmolecule --lmcode program.dslb
+lmmolecule --dry-run --lmcode program.dslb
+lmmolecule --lmcode-schema --json
+lmmolecule --lmcode-signatures
+lmmolecule --notices</code></pre>
+<h2>Inputs and outputs</h2>
+<p>Inside an _lmcode_ block, the global md context (of type Md) builds System objects from explicit particles, FCC or rock-salt lattices, seeded gases, rigid TIP3P or SPC/E water boxes, or coordinate files loaded via load_xyz and load_pdb. All units follow OpenMM standard conventions: nanometers (nm), picoseconds (ps), atomic mass units (amu), elementary charge (e), kelvin (K), kilojoules per mole (kJ/mol), radians (rad), and bar.</p>
+<p>A Sim context integrates equations of motion using Verlet or Langevin middle (BAOAB) dynamics and writes thermodynamic time series via report(path, every), multi-frame coordinates via xyz(path, every), single snapshots via save_xyz(path) and save_pdb(path), and pair correlation histograms via rdf and rdf_pair.</p>
+<h2>Safety rules</h2>
+<p>Keep time steps appropriate for the stiffest degree of freedom (typically 0.001 to 0.002 ps for molecular systems) and ensure nonbonded cutoffs satisfy 2 * cutoff &lt; box_length. When combining Lennard-Jones and Coulomb interactions, use the same cutoff distance on both forces because they share OpenMM's underlying NonbondedForce.</p>
+<p>lmmolecule enforces a default 4096 MiB process memory budget across all systems, contexts, neighbor lists, and PME grids; override it with LMMOLECULE_MAX_MEMORY_MB only when larger simulations require more memory. Always check r.ok after run_lmcode before reading generated CSV, XYZ, or PDB files in a downstream host block.</p>
+<h2>Worked examples</h2>
+<p>Equilibrate a 108-atom FCC argon crystal with L-BFGS minimization and Langevin dynamics, writing thermodynamic reports and XYZ trajectories:</p>
+<pre><code>p = _lmcode_ cli="lmmolecule" install="github:lmctl-ai/lmmolecule@latest";
+let sys = md.system().fcc(3, 0.54, 39.948).lj(0.996, 0.3405, 0.78);
+let sim = sys.sim("langevin", 0.002, 120.0, 5.0, 42);
+sim.minimize(0.001, 200)
+   .velocities(120.0, 42)
+   .report("argon.csv", 50)
+   .xyz("argon.xyz", 200)
+   .step(800);
+md.assert_close(sim.temperature(), 120.0, 25.0);
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, "argon simulation failed");</code></pre>
+<p>Simulate a Morse dimer with a Lepton custom bond potential under NVE Verlet dynamics and verify energy conservation:</p>
+<pre><code>p = _lmcode_ cli="lmmolecule" install="github:lmctl-ai/lmmolecule@latest";
+let sys = md.system();
+sys.add_particle(39.948, 0.0, 0.0, 0.0)
+   .add_particle(39.948, 0.42, 0.0, 0.0)
+   .custom_bond(0, 1, "10.0*(1-exp(-15.0*(r-0.38)))^2");
+let sim = sys.sim("verlet", 0.001, 0.0, 0.0, 1);
+let e0 = sim.energy();
+sim.step(2000);
+md.assert_close(sim.energy(), e0, 0.001);
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, "morse dimer check failed");</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmmolecule uses the standard SDK invocation frame and process exit codes: 0 when execution and all assertions succeed, 2 for CLI flag or metadata errors, 3 for bytecode load or runtime errors, and 4 for application or output failures.</p>
+<p>Non-finite coordinates, velocities, energies, or Lepton constant sub-expressions (such as division by zero or sqrt of a negative number), mismatched LJ and Coulomb cutoffs, cutoffs exceeding half the box length, or allocations exceeding LMMOLECULE_MAX_MEMORY_MB immediately abort execution with exit code 3 and a JSON error payload naming the failing step or builder call.</p>
+<h2>How to verify</h2>
+<p>Verify the installed binary schema and run the repository test suite from a checkout:</p>
+<pre><code>lmmolecule --version
+lmmolecule --lmcode-schema --json > /tmp/lmmolecule.schema.json
+lmmolecule --lmcode-signatures > /tmp/lmmolecule.sigs.txt
+./test.sh</code></pre>
+<p>To verify an end-to-end autorun workflow in an empty directory, run lmctl https://raw.githubusercontent.com/lmctl-ai/lmmolecule/main/examples/morse_dimer.lms and confirm exit code 0.</p></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmmolecule">github.com/lmctl-ai/lmmolecule</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcloud authoring skill — lmcloud — lmctl.com tools</title>
+<meta name="description" content="lmcloud provides the shared procedural lmcode schema (schema/lmcloud.dsl.json) and Go hostkit (github.com/lmctl-ai/lmcloud/hostkit) implemented in lockstep by…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcloud/">Overview</a></li>
+<li><a href="/tools/lmcloud/skill.html">Skill</a></li>
+<li><a href="/tools/lmcloud/guide.html">Guide</a></li>
+<li><a href="/tools/lmcloud/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcloud authoring skill</h1>
+<p>lmcloud provides the shared procedural lmcode schema (schema/lmcloud.dsl.json) and Go hostkit (github.com/lmctl-ai/lmcloud/hostkit) implemented in lockstep by lmaws, lmazure, lmgcp, and lmoci.</p>
+<h2>Purpose</h2>
+<p>Use lmcloud to write provider-neutral LMScript cloud programs that run identically against the in-memory reference fake adapter, local cloud emulators (awssim, azuresim, gcpsim, ocisim), and provider hosts (lmaws, lmazure, lmgcp cloud, lmoci) without rewriting application logic.</p>
+<h2>When to use it</h2>
+<p>Choose the shared lmcloud schema when a workflow uses portable object storage, queues, key-value tables, IAM policy linting and attachment, serverless functions, user directories, cost caps, or operational metrics across AWS, Azure, GCP, and OCI. Choose a provider-specific schema only when inspecting vendor-specific resources outside the shared contract.</p>
+<h2>Install</h2>
+<p>Declare any lmcloud-compatible provider host in an LMScript program or load schema/lmcloud.dsl.json directly when running conformance suites against hostkit.</p>
+<pre><code>p = _lmcode_ cli="lmaws" install="github:lmctl-ai/lmaws@latest";
+# Or bind lmazure, lmoci, or lmgcp cloud against the shared schema:
+s = load_schema(schema="schema/lmcloud.dsl.json");</code></pre>
+<h2>Commands</h2>
+<p>Every host built on hostkit/cloudhost accepts the same top-level CLI flags, with an optional leading cloud subcommand word for hosts that also serve a legacy vendor-specific schema.</p>
+<pre><code>lmaws [cloud] --version
+lmaws [cloud] --help
+lmaws [cloud] --notices
+lmaws [cloud] --lmcode-schema --json
+lmaws [cloud] --lmcode-signatures
+lmaws [cloud] --lmcode-signatures --without-std
+lmaws [cloud] --lmcode build/program.dslb
+bash scripts/test-hostkit.sh
+bash tests/run-conformance.sh --check</code></pre>
+<h2>Inputs and outputs</h2>
+<p>Programs interact with the cloud context (type Cloud) inside an _lmcode_ block. Operations return typed handles including ObjectMeta, ObjectSummary, ObjectListPage, QueueMessage, QueueMessageList, TableItem, TablePage, Policy, LintReport, LintFinding, FunctionConfig, FunctionInvokeResult, User, UserPage, Session, CostReport, CostLineItem, MetricsReport, OpMetrics, and CloudError. When cloud.set_abort_on_error(false) is set, failed calls record status in cloud.last_error() instead of halting the VM.</p>
+<h2>Safety rules</h2>
+<p>By default, hosts with no endpoint and no live opt-in run against an in-process fake adapter and make zero network calls. Plain HTTP endpoints are permitted only for loopback addresses (127.0.0.1, localhost, ::1) targeting local emulators: 127.0.0.1:4566 for awssim, 127.0.0.1:4577 for azuresim, 127.0.0.1:4588 for gcpsim, and 127.0.0.1:4599 for ocisim. Live mode requires explicit double opt-in environment gates, immutable live-policy.json validation, an append-only fsynced recovery journal with flock leases and OwnerNonce tags, and reservation-based cost caps via cloud.set_cost_cap_usd(cap) (monotone-decreasing, default $0.05, maximum $0.25).</p>
+<h2>Worked examples</h2>
+<p>Example 1: Portable object storage, queue processing, and cost reporting across providers.</p>
+<pre><code>p = _lmcode_ cli="lmoci" install="github:lmctl-ai/lmoci@latest";
+  cloud.set_cost_cap_usd(0.05);
+  cloud.bucket_create("artifacts-bkt");
+  let meta = cloud.object_put("artifacts-bkt", "build/info.txt", "v1.0.0");
+  assert(meta.exists() &amp;&amp; meta.size() == 6, "object upload failed");
+
+  cloud.queue_create("events-q");
+  let msg_id = cloud.queue_send("events-q", cloud.object_get("artifacts-bkt", "build/info.txt"));
+  let batch = cloud.queue_receive("events-q", 1, 30, 0);
+  assert(batch.len() == 1, "expected 1 message");
+  cloud.queue_ack("events-q", batch.at(0).receipt());
+
+  let rep = cloud.cost_report();
+  print(rep.summary());
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, "run failed");</code></pre>
+<p>Example 2: Combining key-value tables with standard lmcode_std_v3 REST and CLI interfaces.</p>
+<pre><code>p = _lmcode_ cli="lmazure" install="github:lmctl-ai/lmazure@latest";
+  @"/items/:table/:pk"
+  fn handle_get(x: RestExchange) -> void implements RestGet {
+    let item = cloud.item_get(x.param("table"), x.param("pk"));
+    if (!item.exists()) {
+      x.status(404);
+      x.json("{\"error\":\"not_found\"}");
+      return;
+    }
+    x.json("{\"pk\":\"" + item.pk() + "\",\"role\":\"" + item.get_string("role") + "\"}");
+  }
+
+  @"seed"
+  fn cmd_seed(x: RestExchange) -> void implements CliCommand {
+    cloud.table_create("users-tbl");
+    let row = cloud.item_new("u-100").set_string("role", x.body());
+    cloud.item_put("users-tbl", row);
+    x.send("seeded");
+  }
+
+  rest_config("prefix", "/api");
+  let seed_res = rest_cli(str_split("seed -- admin", " "));
+  let get_res = rest_cli(str_split("/api/items/users-tbl/u-100", " "));
+  print(seed_res + " -> " + get_res);
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, "table REST/CLI example failed");</code></pre>
+<h2>Errors and exit codes</h2>
+<p>In-band cloud errors map to the ErrorCode enum: OK, INVALID_ARGUMENT, NOT_FOUND, CONFLICT, PRECONDITION_FAILED, UNAUTHENTICATED, PERMISSION_DENIED, COST_CAP_EXCEEDED, and INTERNAL. Inspect cloud.last_error().code(), http_status(), provider_code(), and message() when abort_on_error is false. Process exit code 0 indicates success; exit code 2 indicates CLI usage or invalid environment configuration (CLI_USAGE); exit code 3 indicates host runtime, assertion, memory budget, or unhandled cloud error failure (APP_FAIL / RUN_HOST); exit code 4 indicates bytecode loading or schema contract failure.</p>
+<h2>How to verify</h2>
+<p>Run the hostkit reference test suite and conformance static checks in the lmcloud repository to confirm all 226 standard signatures, 10 REST/CLI interfaces, and shared cloud slices pass.</p>
+<pre><code>bash scripts/test-hostkit.sh
+bash tests/run-conformance.sh --check</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcloud">github.com/lmctl-ai/lmcloud</a>.</p>
+</footer>
+</body>
+</html>

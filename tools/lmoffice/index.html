@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmoffice — lmctl.com tools</title>
+<meta name="description" content="lmoffice is a self-contained .NET 8 NativeAOT lmcode host that creates and inspects Word, Excel, and PowerPoint Open XML documents.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmoffice/">Overview</a></li>
+<li><a href="/tools/lmoffice/skill.html">Skill</a></li>
+<li><a href="/tools/lmoffice/guide.html">Guide</a></li>
+<li><a href="/tools/lmoffice/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmoffice</h1>
+<p>lmoffice is a self-contained .NET 8 NativeAOT lmcode host that creates and inspects Word, Excel, and PowerPoint Open XML documents. It embeds dedicated docx, xlsx, and pptx schemas and validates generated packages with OpenXmlValidator without requiring Microsoft Office.</p>
+<h2>Quick reference</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmoffice --version
+lmoffice docx --lmcode-schema --json
+lmoffice inspect report.docx --markdown</code></pre>
+<table>
+<thead><tr><th>Route or context</th><th>Key methods or flags</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>lmoffice docx</td><td>docx.create(path), heading, paragraph, table, markdown, html_doc, save</td><td>Author Word (.docx) documents from typed builder calls, Markdown, or html-doc@1 XHTML/CSS.</td></tr>
+<tr><td>lmoffice xlsx</td><td>xlsx.create(path), sheet, set, formula, number_format, bar_chart, sheet_from_csv, save</td><td>Author Excel (.xlsx) workbooks with 1-based cells, formulas, conditional formatting, and charts.</td></tr>
+<tr><td>lmoffice pptx</td><td>pptx.create(path), slide, title_slide, text, bullet, table, bar_chart, markdown, save</td><td>Author 16:9 PowerPoint (.pptx) presentations on a 1280x720 canvas or from slide-separated Markdown.</td></tr>
+<tr><td>lmoffice inspect</td><td>lmoffice inspect FILE [--markdown]</td><td>Validate .docx, .xlsx, or .pptx packages with OpenXmlValidator and return JSON counts or Markdown.</td></tr>
+</tbody>
+</table>
+<pre><code>body = """# Weekly brief
+
+- **Shipped:** the pilot workflow
+- **Next:** customer feedback
+
+{{sign: Avery Chen}}
+""";
+p = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.33";
+docx.create("brief.docx").markdown(${body}).save();
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmoffice/skill.html">Skill</a> — authoring rules, CLI commands, inputs and outputs, safety rules, worked examples, and verification steps.</li>
+<li><a href="/tools/lmoffice/guide.html">Guide</a> — subcommand architecture, Markdown and html-doc@1 workflows, coordinate conventions, and the standard lmcode_std_v3 library.</li>
+<li><a href="/tools/lmoffice/reference.html">Reference</a> — complete CLI flags, Docx/Xlsx/Pptx schema types and methods, standard library catalog, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmoffice">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmoffice">github.com/lmctl-ai/lmoffice</a>.</p>
+</footer>
+</body>
+</html>

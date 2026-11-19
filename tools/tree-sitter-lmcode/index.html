@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tree-sitter-lmcode — lmctl.com tools</title>
+<meta name="description" content="tree-sitter-lmcode is the Tree-sitter grammar and C external scanner for the standalone lmcode language inside _lmcode_ blocks.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/tree-sitter-lmcode/">Overview</a></li>
+<li><a href="/tools/tree-sitter-lmcode/skill.html">Skill</a></li>
+<li><a href="/tools/tree-sitter-lmcode/guide.html">Guide</a></li>
+<li><a href="/tools/tree-sitter-lmcode/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>tree-sitter-lmcode</h1>
+<p>tree-sitter-lmcode is the Tree-sitter grammar and C external scanner for the standalone lmcode language inside _lmcode_ blocks. It parses typed fn declarations, @NAME annotations, implements clauses, qw/qi/qf and %json literals, FIFO heredocs, ${...} splices, and $return assignments.</p>
+<h2>Quick reference</h2>
+<pre><code>git clone https://github.com/lmctl-ai/tree-sitter-lmcode.git
+cd tree-sitter-lmcode
+npm install --prefix /tmp/ts-cli tree-sitter-cli@0.27.1
+export PATH="/tmp/ts-cli/node_modules/.bin:$PATH"
+tree-sitter generate &amp;&amp; tree-sitter test --rebuild</code></pre>
+<table><thead><tr><th>Component</th><th>Version / Kind</th><th>Role</th></tr></thead><tbody>
+<tr><td>tree-sitter-cli</td><td>0.27.1</td><td>Pinned generator version producing committed src/parser.c, grammar.json, and node-types.json</td></tr>
+<tr><td>src/parser.c + src/scanner.c</td><td>C99 parser sources</td><td>Zero-Node native parser and external scanner for FIFO heredocs, qw/qi/qf, and splices</td></tr>
+<tr><td>function_declaration</td><td>AST node</td><td>Covers @annotation fn name(params) -> ret implements Interface { ... }</td></tr>
+<tr><td>return_assignment</td><td>AST node</td><td>Assignment-only $return, $return.name, and $return[expr] target nodes</td></tr>
+<tr><td>heredoc_start / heredoc_body</td><td>FIFO AST nodes</td><td>Expression-position heredoc start paired FIFO with raw heredoc_body extra tokens</td></tr>
+<tr><td>Pinned corpus</td><td>127 extracted bodies</td><td>3 mono examples, 14 lmok rule packs, and 110 lmcode-cpp sample-suite programs</td></tr>
+</tbody></table>
+<pre><code># Run the complete tree-sitter-lmcode verification suite
+tree-sitter generate
+tree-sitter test --rebuild
+python3 scripts/conformance.py
+python3 scripts/negative.py
+python3 scripts/incremental.py
+python3 scripts/scanner-limits.py
+python3 scripts/controls.py</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/tree-sitter-lmcode/skill.html">Skill</a></li>
+<li><a href="/tools/tree-sitter-lmcode/guide.html">Guide</a></li>
+<li><a href="/tools/tree-sitter-lmcode/reference.html">Reference</a></li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/tree-sitter-lmcode">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/tree-sitter-lmcode">github.com/lmctl-ai/tree-sitter-lmcode</a>.</p>
+</footer>
+</body>
+</html>

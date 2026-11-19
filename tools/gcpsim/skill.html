@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gcpsim authoring skill — gcpsim — lmctl.com tools</title>
+<meta name="description" content="gcpsim is a standalone native local GCP emulator on 127.0.0.1:4588 built on floci-gcp 0.11.0 with an ack-deadline and OAuth/IAM enforcement overlay.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/gcpsim/">Overview</a></li>
+<li><a href="/tools/gcpsim/skill.html">Skill</a></li>
+<li><a href="/tools/gcpsim/guide.html">Guide</a></li>
+<li><a href="/tools/gcpsim/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>gcpsim authoring skill</h1>
+<p>gcpsim is a standalone native local GCP emulator on 127.0.0.1:4588 built on floci-gcp 0.11.0 with an ack-deadline and OAuth/IAM enforcement overlay.</p>
+<h2>Purpose</h2>
+<p>Use gcpsim to run Google Cloud Storage (GCS) and Cloud Pub/Sub locally in a single native executable without Docker, Java, or a GCP project, and to test OAuth Bearer authentication and GCP IAM permission bindings with lmgcp or gcloud.</p>
+<h2>When to use it</h2>
+<p>Choose gcpsim when testing LMScript GCP programs (via LMGCP_ENDPOINT=http://127.0.0.1:4588 or lmgcp cloud), when verifying Pub/Sub ack deadline modifications and pull/ack lifecycles locally, or when testing IAM permission denials in --auth enforce mode.</p>
+<h2>Install</h2>
+<p>Download the prebuilt gcpsim binary and SHA256SUMS for your platform from GitHub Releases, or build from the pinned upstream source lock using GraalVM JDK 25.</p>
+<pre><code>python3 scripts/build.py --native
+./dist/gcpsim --version</code></pre>
+<h2>Commands</h2>
+<p>Start the foreground emulator on 127.0.0.1:4588, specify a project or data directory, or enable OAuth Bearer and IAM enforcement.</p>
+<pre><code>gcpsim --version
+gcpsim --help
+gcpsim serve
+gcpsim start --port 4590 --project my-project --data-dir ./data
+gcpsim serve --auth enforce --auth-config auth.json
+curl -fsS http://127.0.0.1:4588/health</code></pre>
+<h2>Inputs and outputs</h2>
+<p>In open mode, REST and gRPC share port 4588 and default to project gcpsim-local. Service endpoints return standard GCP JSON and gRPC wire formats. CLI usage and startup errors emit a JSON envelope {"ok":false,"error":"..."} on stdout, while server logs go to stderr.</p>
+<h2>Safety rules</h2>
+<p>gcpsim binds to 127.0.0.1 by default (--host 0.0.0.0 is an explicit opt-in) and keeps Docker-backed upstream services in mock mode (FLOCI_GCP_SERVICES_&lt;SERVICE>_MOCK=true) so no container daemon is touched. Always use dummy bearer tokens (such as gcpsim-local-token) in --auth-config files and isolated CLOUDSDK_CONFIG directories when running gcloud tests; never use real GCP credentials against the local emulator. Each persistent instance using --data-dir must use its own directory.</p>
+<h2>Worked examples</h2>
+<p>Example 1: Redirecting gcloud storage and pubsub commands to a local gcpsim server on 127.0.0.1:4588.</p>
+<pre><code>export CLOUDSDK_CORE_PROJECT=gcpsim-local
+export CLOUDSDK_AUTH_ACCESS_TOKEN=gcpsim-local-token
+export CLOUDSDK_API_ENDPOINT_OVERRIDES_STORAGE=http://127.0.0.1:4588/storage/v1/
+export CLOUDSDK_API_ENDPOINT_OVERRIDES_PUBSUB=http://127.0.0.1:4588/
+gcloud storage buckets create gs://gcpsim-demo --location=us-central1
+gcloud pubsub topics create gcpsim-demo
+gcloud pubsub subscriptions create gcpsim-demo-sub --topic=gcpsim-demo
+gcloud pubsub topics publish gcpsim-demo --message="hello gcpsim"
+gcloud pubsub subscriptions pull gcpsim-demo-sub --auto-ack</code></pre>
+<p>Example 2: Driving gcpsim from LMScript through lmgcp. The calls follow examples/templates-client.lms in the repository, which runs against the pinned lmgcp v0.1.17 client; point lmgcp at the simulator as described in the guide and set LMGCP_BINARY to the downloaded client.</p>
+<pre><code>program = _lmcode_ cli="lmgcp" install="github:lmctl-ai/lmgcp@v0.1.17";
+  let bucket = gcp.storage_create_bucket("gcpsim-demo", "us-central1", "STANDARD");
+  let uploaded = gcp.storage_put_object("gcpsim-demo", "hello.txt", "hello from gcpsim", "text/plain");
+  let read = gcp.storage_read_object("gcpsim-demo", "hello.txt");
+  let topic = gcp.pubsub_create_topic("gcpsim-demo");
+  let attrs = str_map().set("note", "demo");
+  let id = gcp.pubsub_publish("gcpsim-demo", "hello gcpsim", attrs);
+  $return = read;
+end _lmcode_
+result = run_lmcode(program, {command:[env("LMGCP_BINARY"), "--lmcode", "$DSLFILE"]});
+assert(result.ok, "gcpsim client run failed: " + json_stringify(result));
+println(json_stringify(result.result));</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Exit code 0 indicates clean completion or --version / --help; exit code 2 indicates invalid CLI arguments or invalid --auth-config file; exit code 3 indicates server startup failure (such as port conflict). CLI errors emit {"ok":false,"error":"..."} on stdout, and auth enforcement failures return HTTP 401 or 403 GCP JSON error responses with tokens redacted.</p>
+<h2>How to verify</h2>
+<p>Run the CLI contract, GCS/Pub/Sub lifecycle, and pinned lmgcp auth verification suites against the built binary.</p>
+<pre><code>python3 scripts/test-cli.py dist/gcpsim
+python3 scripts/test-lifecycle.py dist/gcpsim
+python3 scripts/download-client.py
+python3 scripts/test-auth.py dist/gcpsim dist/lmgcp</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/gcpsim">github.com/lmctl-ai/gcpsim</a>.</p>
+</footer>
+</body>
+</html>

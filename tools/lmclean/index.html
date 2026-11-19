@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmclean — lmctl.com tools</title>
+<meta name="description" content="lmclean is a native lmcode host for scriptable file search and cleanup with dry-run defaults, reversible trash manifests, Git status checks, and a REST server.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmclean/">Overview</a></li>
+<li><a href="/tools/lmclean/skill.html">Skill</a></li>
+<li><a href="/tools/lmclean/guide.html">Guide</a></li>
+<li><a href="/tools/lmclean/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmclean</h1>
+<p>lmclean is a native lmcode host for scriptable file search and cleanup with dry-run defaults, reversible trash manifests, Git status checks, and a REST server.</p>
+<h2>Quick reference</h2>
+<pre><code>lmscript install github:lmctl-ai/lmclean@v0.1.20
+lmclean --version
+lmclean --lmcode-schema --json
+lmclean --lmcode-signatures
+lmscript examples/clean-regen-dirs.lms /path/to/projects</code></pre>
+<table>
+<thead>
+<tr><th>Item</th><th>Kind</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>--lmcode FILE [PATH ...]</td><td>CLI mode</td><td>Run compiled cleanup rules in dry-run mode by default.</td></tr>
+<tr><td>--exec [--trash DIR]</td><td>CLI flags</td><td>Delete matched paths or move them into DIR with manifest.jsonl.</td></tr>
+<tr><td>--trash DIR --restore</td><td>CLI flags</td><td>Restore trashed entries in reverse order from DIR/manifest.jsonl.</td></tr>
+<tr><td>--serve [--allow-exec]</td><td>Server mode</td><td>Start the REST server for scan caching, view filtering, and guarded deletes.</td></tr>
+<tr><td>Ignore, Filter, Report</td><td>SAM interfaces</td><td>@ignore pruning, @select deletion predicates, and @report audit callbacks over File.</td></tr>
+<tr><td>File.rsize(), File.rmodified(), File.git_status()</td><td>Host methods</td><td>Deterministic recursive byte size, subtree mtime, and Git clean/pushed status.</td></tr>
+</tbody>
+</table>
+<pre><code>program = _lmcode_ cli="lmclean" install="github:lmctl-ai/lmclean@latest";
+@ignore
+fn skip_git(f: File) -> bool implements Ignore {
+  return f.is_dir() &amp;&amp; f.name() == ".git";
+}
+@select
+fn stale_tmp(f: File) -> bool implements Filter {
+  return f.is_file() &amp;&amp; f.extension() == "tmp" &amp;&amp; (now() - f.modified() > 7 * 86400);
+}
+end _lmcode_
+r = run_lmcode(program);
+print(json_stringify(r));</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmclean/skill.html">Skill</a> for setup, dry-run and trash safety rules, and verification commands.</li>
+<li><a href="/tools/lmclean/guide.html">Guide</a> for the @ignore/@select/@report walker pipeline and --serve REST API.</li>
+<li><a href="/tools/lmclean/reference.html">Reference</a> for CLI flags, File methods, SAM interfaces, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmclean">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmclean">github.com/lmctl-ai/lmclean</a>.</p>
+</footer>
+</body>
+</html>

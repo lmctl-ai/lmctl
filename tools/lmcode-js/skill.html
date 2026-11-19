@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-js skill — lmcode-js — lmctl.com tools</title>
+<meta name="description" content="Use lmcode-js to embed the DSLB v6 bytecode verifier, 226-signature standard catalog, and REST/CLI controller into Node.js 22+ and 24+ applications.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-js/">Overview</a></li>
+<li><a href="/tools/lmcode-js/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-js/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-js/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-js skill</h1>
+<p>Use lmcode-js to embed the DSLB v6 bytecode verifier, 226-signature standard catalog, and REST/CLI controller into Node.js 22+ and 24+ applications.</p>
+<h2>Purpose</h2>
+<p>Run schema-bound lmcode DSLB v6 bytecode in pure JavaScript with lossless 64-bit BigInt math, raw byte buffers, REST/CLI dispatch, and LMCODE_RETURN framing.</p>
+<h2>When to use it</h2>
+<p>Use lmcode-js when building a Node.js host tool, CLI, or test runner that executes compiled .dslb v6 programs without native addons.</p>
+<h2>Install</h2>
+<p>Import @lmctl-ai/lmcode-js and @lmctl-ai/lmcode-js/rest in Node.js 22 or 24 LTS with zero external npm runtime dependencies.</p>
+<h2>Commands</h2>
+<pre><code>npm run verify:pins
+npm test
+npm run mutation
+npm run conformance
+npm run conformance:rest
+npm run sample-suite</code></pre>
+<h2>Inputs and outputs</h2>
+<ul>
+<li>Input: Buffer or Uint8Array DSLB v6 bytecode, exact schema JSON bytes, and optional LMCODE_INVOCATION_FILE manifest.</li>
+<li>Output: mutated JS host objects in Context, HTTP/1.1 traffic on stdout via RestController, or a terminal LMCODE_RETURN frame.</li>
+<li>Types: integers default to BigInt (or safe Number with { ints: 'number' }); strings default to UTF-8 (or Buffer with { rawStrings: true }).</li>
+</ul>
+<h2>Safety rules</h2>
+<ul>
+<li>Enable { rawStrings: true } on callbacks that must preserve invalid UTF-8 bytes or interior NUL bytes as Node Buffer instances.</li>
+<li>Keep default BigInt mode for callbacks that handle full signed 64-bit integer ranges outside Number.MAX_SAFE_INTEGER.</li>
+<li>Pass { dry: previewCallback } options only for side-effect-free preview callbacks during dry invocations.</li>
+</ul>
+<h2>Worked examples</h2>
+<pre><code>import { Context, Program, createRegistry } from '@lmctl-ai/lmcode-js';
+
+const registry = createRegistry();
+registry.context('greeter', 'Greeter');
+registry.method('method Greeter.say(string) -> void', (greeter, text) => {
+  greeter.messages.push(text);
+});
+const program = Program.load(bytecode, schemaBytes, registry);
+const context = new Context({ greeter: { messages: [] } });
+program.run(context);</code></pre>
+<h2>Errors and exit codes</h2>
+<table><thead><tr><th>Code</th><th>Phase</th><th>Exit</th><th>Condition</th></tr></thead><tbody>
+<tr><td>LOAD_BAD_BYTECODE</td><td>load</td><td>3</td><td>Malformed DSLB v6 header, bad magic or version, truncated section, invalid opcode, or stack depth violation</td></tr>
+<tr><td>LOAD_BAD_SCHEMA</td><td>load</td><td>3</td><td>Host schema JSON fails dsl.schema 2 validation or declares an invalid result contract</td></tr>
+<tr><td>LOAD_SCHEMA_MISMATCH</td><td>load</td><td>3</td><td>32-byte SHA-256 schema hash in DSLB v6 header does not match exact host schema bytes</td></tr>
+<tr><td>LOAD_UNBOUND</td><td>load</td><td>3</td><td>Bytecode imports a context, function, or method signature not registered in the host Registry</td></tr>
+<tr><td>RUN_ERROR</td><td>run</td><td>3</td><td>VM division or remainder by zero, or loop-free operand stack underflow</td></tr>
+<tr><td>RUN_HOST</td><td>run</td><td>3</td><td>Host callback failure, invalid encoding, expired collection handle, or REST route validation failure</td></tr>
+<tr><td>APP_FAIL</td><td>app</td><td>4</td><td>Post-run application domain validation failure or output stream write failure</td></tr>
+</tbody></table>
+<h2>How to verify</h2>
+<pre><code>npm run check</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-js">github.com/lmctl-ai/lmcode-js</a>.</p>
+</footer>
+</body>
+</html>

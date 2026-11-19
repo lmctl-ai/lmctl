@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmldap guide — lmldap — lmctl.com tools</title>
+<meta name="description" content="lmldap links OpenLDAP 2.6 slapd, the LMDB (back-mdb) transactional storage engine, standard directory schemas (core, cosine, inetorgperson, nis), a…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmldap/">Overview</a></li>
+<li><a href="/tools/lmldap/skill.html">Skill</a></li>
+<li><a href="/tools/lmldap/guide.html">Guide</a></li>
+<li><a href="/tools/lmldap/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmldap guide</h1>
+<h2>Overview</h2>
+<p>lmldap links OpenLDAP 2.6 slapd, the LMDB (back-mdb) transactional storage engine, standard directory schemas (core, cosine, inetorgperson, nis), a multi-threaded HTTP-to-LDAPv3 REST translator, and the C++17 lmcode-cpp virtual machine into a single portable binary. It eliminates external slapd.conf files, schema directories, and LDIF bootstrap scripts while preserving full wire compatibility with RFC 4511 LDAPv3 clients.</p>
+<h2>Dual-protocol architecture and zero-config bootstrap</h2>
+<p>When launched with custom server flags (--port, --rest-port, --base-dn, --admin-dn, --admin-pw, --data-dir), lmldap intercepts process initialization before entering the upstream slapd listener loop:</p>
+<ul>
+<li>Turnkey LMDB and schema provisioning: If no explicit -f or -F configuration flag is supplied, lmldap creates a data directory (defaulting to /tmp/lmldap-data-&lt;port>) containing an mdb/ subdirectory, writes the embedded core, cosine, inetorgperson, and nis schema definitions to schema.conf, and generates a slapd.conf configured with a 100 MiB LMDB maxsize, rootdn/rootpw credentials, and objectClass equality indexing.</li>
+<li>Automatic base DN seeding: A background bootstrap thread waits for the slapd TCP listener to accept connections on 127.0.0.1:&lt;port>, queries the configured --base-dn, and automatically seeds the root organization and dcObject entry if the directory is empty.</li>
+<li>Integrated HTTP REST bridge: When --rest-port is greater than zero, lmldap starts an embedded HTTP server that translates JSON REST requests directly into ASN.1 BER LDAPv3 wire operations against the local slapd listener. Writes performed via HTTP PUT/POST/DELETE on /entry/&lt;dn> are immediately visible to native LDAPv3 clients (such as lmcurl ldap://, lmconn ldap, or ldapsearch), and native LDAPv3 writes are immediately visible to HTTP GET requests on /entry/&lt;dn> and /search.</li>
+</ul>
+<h2>Embedded lmcode host and live vs fallback execution</h2>
+<p>Running lmldap --lmcode program.dslb executes compiled LMScript bytecode against the embedded schema (context ldap: Ldap and Batch):</p>
+<ul>
+<li>Live BER wire mode: On first directory operation, LdapHostClient checks whether an LDAPv3 server is listening on LDAP_HOST (default 127.0.0.1) and LDAP_PORT (default 389, or set by --port). When a server is reachable, ldap.add, ldap.get, ldap.search, ldap.modify, ldap.del, ldap.exists, and ldap.bind communicate over TCP using native ASN.1 BER framing authenticated with LDAP_BIND_DN and LDAP_BIND_PW. Furthermore, calling ldap.add on an existing Distinguished Name (LDAP result code 68, entryAlreadyExists) automatically falls back to an attribute modify operation so provisioning scripts remain idempotent.</li>
+<li>Deterministic in-memory fallback store: If no live LDAP daemon is listening on the target port, LdapHostClient transparently executes all Ldap and Batch methods against an in-memory map pre-seeded with the base DN entry. This allows unit tests, CI pipelines, and stateless CLI commands to run _lmcode_ programs offline without spawning a background daemon.</li>
+<li>Batch operation pipelines: ldap.batch() creates a Batch builder that queues ADD, GET, SEARCH, MODIFY, and DEL operations. Calling b.exec() executes all queued steps sequentially and returns a single JSON array string containing "OK", entry JSON objects, search result arrays, or deletion counts.</li>
+</ul>
+<h2>Security and operational boundaries</h2>
+<p>Keep the following boundaries in mind when deploying lmldap in automated test suites or local development environments:</p>
+<ul>
+<li>Access control model: The auto-generated slapd.conf grants write access to the configured --admin-dn and read access to all clients (by * read), while the optional --rest-port HTTP bridge executes mutations using the admin session for zero-auth convenience. Do not expose --port or --rest-port to untrusted networks.</li>
+<li>Payload and header limits: The integrated HTTP REST listener enforces a 64 KiB HTTP header limit and a 4 MiB JSON request body cap per connection.</li>
+<li>Filter encoding: Both the REST /search endpoint and LdapHostClient encode RFC 4515 search filters into BER filter trees supporting AND (&amp;), OR (|), NOT (!), presence (attr=*), equality (attr=val), and initial/any/final substring wildcards (attr=a*b*c).</li>
+</ul>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<p>In addition to context ldap: Ldap, lmldap embeds the 226-signature lmcode_std_v3 standard library. Scripts can combine directory operations with the 10 standard REST and CLI interfaces:</p>
+<ul>
+<li>HTTP route interfaces: Implement RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, or RestHandler on functions annotated with static (@"/health") or parameterized (@"/directory/:cn") paths.</li>
+<li>Stateless CLI commands and options: Implement CliOption (@"--flag") and CliCommand (@"cmd") and dispatch argument lists in-process with rest_cli(args).</li>
+<li>Session state and custom HTTP listeners: Configure rest_config("session", "global") to share state across RestExchange.get, RestExchange.set, and RestExchange.increment calls, or launch a custom script-defined HTTP server via rest_config("port", "8090") and rest_serve().</li>
+</ul>
+<pre><code>p = _lmcode_ cli="lmldap" install="github:lmctl-ai/lmldap@latest";
+@"--org"
+fn opt_org(x: RestExchange) -> void implements CliOption {
+  x.set("org", x.query("org"));
+}
+
+@"seed"
+fn cmd_seed(x: RestExchange) -> void implements CliCommand {
+  let cn = x.get("org");
+  let dn = "cn=" + cn + ",dc=example,dc=com";
+  ldap.add(dn, "{\"objectClass\":[\"top\",\"person\"],\"cn\":\"" + cn + "\",\"sn\":\"" + cn + "\"}");
+  x.send(str_from_int(x.increment("seeded")) + ":" + dn);
+}
+
+@"/exists/:cn"
+fn get_exists(x: RestExchange) -> void implements RestGet {
+  let ok = ldap.exists("cn=" + x.param("cn") + ",dc=example,dc=com");
+  x.json("{\"exists\":" + (ok ? "true" : "false") + "}");
+}
+
+rest_config("session", "global");
+assert_eq(rest_cli(str_split("--org=Ops seed", " ")), "1:cn=Ops,dc=example,dc=com");
+assert_eq(rest_cli(str_split("/exists/Ops", " ")), "{\"exists\":true}");
+end _lmcode_</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmldap">github.com/lmctl-ai/lmldap</a>.</p>
+</footer>
+</body>
+</html>

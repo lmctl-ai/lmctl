@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmvalkey guide — lmvalkey — lmctl.com tools</title>
+<meta name="description" content="lmvalkey embeds the upstream Valkey in-memory datastore, a zero-dependency HTTP JSON REST server (src/rest.c), and the lmcode-cpp bytecode virtual machine…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvalkey/">Overview</a></li>
+<li><a href="/tools/lmvalkey/skill.html">Skill</a></li>
+<li><a href="/tools/lmvalkey/guide.html">Guide</a></li>
+<li><a href="/tools/lmvalkey/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmvalkey guide</h1>
+<h2>Overview</h2>
+<p>lmvalkey embeds the upstream Valkey in-memory datastore, a zero-dependency HTTP JSON REST server (src/rest.c), and the lmcode-cpp bytecode virtual machine (src/lmcode_host.cpp) inside a single native executable. Both protocol listeners operate on the same in-memory keyspace, allowing native RESP clients, HTTP clients, and LMScript _lmcode_ programs to read and mutate shared state without external proxies or adapters.</p>
+<h2>Unified RESP and HTTP REST architecture</h2>
+<p>Standard Valkey deployments speak only the Redis Serialization Protocol (RESP), requiring specialized client drivers or sidecar proxies when HTTP services or AI agents need to inspect keys. lmvalkey integrates HTTP directly into the server core:</p>
+<ul>
+<li>Dual listeners and protocol sniffing: Starting lmvalkey --port 6379 --rest-port 8080 binds the native RESP engine on port 6379 and a dedicated HTTP REST listener on port 8080. In addition, the native port automatically detects incoming HTTP requests (GET, POST, PUT, DELETE) and routes them through the REST handler.</li>
+<li>Zero-lag shared keyspace: REST handlers execute directly against the internal Valkey dictionary. A key written via POST /set/user:42 or PUT /keys/user:42 is immediately readable via native RESP (GET user:42), and vice versa.</li>
+<li>Zero-auth local REST bridge: Even when the Valkey server is configured with requirepass for external RESP clients, the integrated HTTP REST endpoints execute without authentication so trusted local tools and agents on loopback can inspect or seed state directly.</li>
+<li>Generic command dispatch: Beyond convenience routes (/ping, /get/&lt;key>, /set/&lt;key>, /keys/&lt;pattern>), POST /cmd accepts either a JSON array (["MGET", "k1", "k2"]) or a JSON object ({"command": "MSET", "args": ["k1", "v1", "k2", "v2"]}) and translates the Valkey reply into a JSON envelope ({"ok": true, "result": ...}).</li>
+</ul>
+<h2>Embedded lmcode host, pipelined batches, and offline fallback</h2>
+<p>When invoked with --lmcode &lt;file.dslb>, lmvalkey executes compiled LMScript bytecode using its built-in ValkeyClient and Batch classes:</p>
+<ul>
+<li>Live socket or automatic in-memory fallback: On the first valkey.* call, ValkeyClient checks VALKEY_HOST (fallback REDIS_HOST, default 127.0.0.1) and VALKEY_PORT (fallback REDIS_PORT, default 6379). If a live Valkey server accepts the TCP connection, all operations are serialized as RESP frames over that socket. If no server is listening, ValkeyClient transparently falls back to an in-process C++ std::map store supporting PING, SET, GET, DEL, and EXISTS so self-contained _lmcode_ scripts and unit tests run with zero daemon setup.</li>
+<li>Single-round-trip Batch pipelines: Calling valkey.batch() returns a Batch builder that accumulates SET, GET, DEL, and arbitrary 1-to-3 token commands in memory. Calling b.exec() concatenates all queued RESP frames into a single socket send(), reads back each reply in order, and returns a JSON array string of results (for example, "[\"OK\",\"OK\",\"Apples\"]").</li>
+</ul>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<p>In addition to context valkey, lmvalkey embeds the 226-signature lmcode_std_v3 standard library (src/stdlib/rest.hpp). Scripts can define custom application-level HTTP routes and CLI subcommands backed by Valkey storage:</p>
+<ul>
+<li>HTTP route interfaces: Functions annotated with static or parameterized paths (such as @"/cache/:namespace/:key") can implement RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, or RestHandler.</li>
+<li>Stateless CLI interfaces: Functions annotated with @"--flag" implement CliOption and functions annotated with @"command" implement CliCommand. rest_cli(args) dispatches flags, commands, or URL paths in-process without opening a network listener.</li>
+<li>Session state and server control: rest_config("session", "global") shares RestExchange key-value state across invocations, while rest_serve() and rest_stop() manage the standard library's embedded HTTP server loop.</li>
+</ul>
+<pre><code>p = _lmcode_ cli="lmvalkey" install="github:lmctl-ai/lmvalkey@latest";
+@"--ns"
+fn opt_ns(x: RestExchange) -> void implements CliOption {
+  x.set("ns", x.query("ns"));
+}
+
+@"seed"
+fn cmd_seed(x: RestExchange) -> void implements CliCommand {
+  let ns = x.get("ns");
+  let b = valkey.batch();
+  b.set(ns + ":a", "10").set(ns + ":b", "20");
+  x.send(b.exec());
+}
+
+@"/read/:ns/:item"
+fn get_item(x: RestExchange) -> void implements RestGet {
+  let k = x.param("ns") + ":" + x.param("item");
+  x.json("{\"key\":\"" + k + "\",\"val\":\"" + valkey.get(k) + "\"}");
+}
+
+rest_config("session", "global");
+assert_eq(rest_cli(str_split("--ns=prod seed", " ")), "[\"OK\",\"OK\"]");
+assert_eq(rest_cli(str_split("/read/prod/a", " ")), "{\"key\":\"prod:a\",\"val\":\"10\"}");
+end _lmcode_</code></pre>
+<h2>Combining lmvalkey with lmconn and lmcurl</h2>
+<p>In multi-tool integration tests, start lmvalkey as a background daemon (--port 6379 --rest-port 8080 --daemonize yes), seed fixture batches through an _lmcode_ block on cli="lmvalkey", verify RESP wire responses with lmconn valkey ... --mode resp, and run JSONPath contract assertions against http://127.0.0.1:8080/get/... or /cmd using lmcurl.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvalkey">github.com/lmctl-ai/lmvalkey</a>.</p>
+</footer>
+</body>
+</html>

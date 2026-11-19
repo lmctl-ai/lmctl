@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcurl reference — lmcurl — lmctl.com tools</title>
+<meta name="description" content="Complete command-line flag reference, LDAPv3 CLI subcommands, host schema contexts and methods, standard lmcode_std_v3 REST and CLI interfaces, and exit codes…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcurl/">Overview</a></li>
+<li><a href="/tools/lmcurl/skill.html">Skill</a></li>
+<li><a href="/tools/lmcurl/guide.html">Guide</a></li>
+<li><a href="/tools/lmcurl/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcurl reference</h1>
+<p>Complete command-line flag reference, LDAPv3 CLI subcommands, host schema contexts and methods, standard lmcode_std_v3 REST and CLI interfaces, and exit codes for lmcurl v0.1.4.</p>
+<h2>Host and CLI flags</h2>
+<table>
+<thead><tr><th>Flag or command</th><th>Arguments</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>--version</td><td>none</td><td>Print the lmcurl version string and exit 0.</td></tr>
+<tr><td>--lmcode</td><td>&lt;file.dslb></td><td>Load and execute a compiled LMScript bytecode program against the embedded schema.</td></tr>
+<tr><td>--lmcode-schema</td><td>[--json]</td><td>Print a human-readable schema summary, or exact embedded schema JSON bytes when --json is passed.</td></tr>
+<tr><td>--lmcode-signatures</td><td>none</td><td>Print all 413 canonical context, function, and method signatures (187 host + 226 standard library).</td></tr>
+<tr><td>ldap://...</td><td>[-u dn:pw] [-X METHOD] [-d BODY] [-i]</td><td>Execute a direct curl-style LDAPv3 URL request (/ping, /bind, /whoami, /compare, /search, /entry/DN, or RFC 4516 search URL).</td></tr>
+<tr><td>ldap ping</td><td>[--host H] [--port P]</td><td>Send an anonymous Root DSE probe and return {"ok":true,"result":"PONG"}.</td></tr>
+<tr><td>ldap bind</td><td>--dn DN --password PW [--host H] [--port P]</td><td>Perform an explicit LDAPv3 simple bind and report bind status.</td></tr>
+<tr><td>ldap whoami</td><td>[--bind-dn DN] [--bind-pw PW] [--host H] [--port P]</td><td>Send an RFC 4532 Who Am I? extended request (OID 1.3.6.1.4.1.4203.1.11.3) and return authzId.</td></tr>
+<tr><td>ldap search</td><td>--base-dn DN [--filter F] [--scope base|one|sub] [--attrs a,b]</td><td>Search directory entries with filter evaluation and optional attribute projection.</td></tr>
+<tr><td>ldap get</td><td>&lt;dn> [--attrs a,b] [--host H] [--port P]</td><td>Fetch a single directory entry by Distinguished Name (base-scope search).</td></tr>
+<tr><td>ldap add</td><td>&lt;dn> &lt;json-attrs> [--bind-dn DN] [--bind-pw PW]</td><td>Create a new directory entry from a JSON object of attribute values.</td></tr>
+<tr><td>ldap modify</td><td>&lt;dn> &lt;json-ops> [--bind-dn DN] [--bind-pw PW]</td><td>Apply add, replace, or delete attribute modifications from a JSON object.</td></tr>
+<tr><td>ldap compare</td><td>&lt;dn> &lt;attr> &lt;value> [--bind-dn DN] [--bind-pw PW]</td><td>Execute an RFC 4511 CompareRequest (tag 0x6e) and return {"match":true|false}.</td></tr>
+<tr><td>ldap del</td><td>&lt;dn> [--bind-dn DN] [--bind-pw PW]</td><td>Delete an entry by Distinguished Name.</td></tr>
+</tbody>
+</table>
+<h2>Host contexts and HTTP/LDAP methods</h2>
+<table>
+<thead><tr><th>Type / context</th><th>Method signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context curl: Curl</td><td>curl.session(string) -> Session</td><td>Create an HTTP, HTTPS, or LDAPv3 session rooted at the given base URL.</td></tr>
+<tr><td>Curl</td><td>curl.suite(string) -> Suite</td><td>Create a named contract test suite.</td></tr>
+<tr><td>Curl</td><td>curl.mock() -> Mock</td><td>Create or attach to the built-in loopback mock HTTP server.</td></tr>
+<tr><td>Curl</td><td>curl.load(Request, int, float, int) -> LoadResult</td><td>Run a load test with virtual users, duration in seconds, and request limit.</td></tr>
+<tr><td>Curl</td><td>curl.query_json(string, string) -> Query</td><td>Evaluate a JSONPath expression against a raw JSON string.</td></tr>
+<tr><td>Curl</td><td>curl.query_text(string) -> Query</td><td>Wrap a plain text string in a Query object for assertions and transforms.</td></tr>
+<tr><td>Curl</td><td>curl.schema_valid(string, string) -> bool</td><td>Validate a JSON string against a JSON Schema string.</td></tr>
+<tr><td>Curl</td><td>curl.env(string) -> string | curl.version() -> string</td><td>Read an environment variable or return the lmcurl version string.</td></tr>
+<tr><td>Mock</td><td>mock.url() -> string | mock.serve(string, string, int) -> void | mock.stop() -> void</td><td>Return the mock base URL, serve with ready/stop signal files and timeout_ms, or stop the listener.</td></tr>
+<tr><td>Session</td><td>s.get(string) | s.post(string) | s.put(string) | s.delete(string) | s.patch(string) | s.head(string) -> Request</td><td>Create a Request for the specified HTTP method or LDAP path relative to the session base URL.</td></tr>
+<tr><td>Session</td><td>s.request(string, string) -> Request</td><td>Create a Request with an explicit method name and path.</td></tr>
+<tr><td>Session</td><td>s.header(string, string) -> Session | s.set(string, string) -> Session | s.get_var(string) -> string</td><td>Configure default session headers or store and retrieve session template variables.</td></tr>
+<tr><td>Session</td><td>s.secret(string, string) -> Session</td><td>Store a named secret variable and register its value for automatic output redaction.</td></tr>
+<tr><td>Request</td><td>req.header(string, string) | req.body(string) | req.json(string) | req.form(string, string) -> Request</td><td>Set request headers, raw body, JSON payload, or URL-encoded form fields.</td></tr>
+<tr><td>Request</td><td>req.part(string, string) | req.upload(string, string, string) -> Request</td><td>Add multipart form fields or file uploads (field name, path, content type).</td></tr>
+<tr><td>Request</td><td>req.basic(string, string) | req.digest(string, string) | req.bearer_env(string) -> Request</td><td>Configure Basic auth (or LDAP simple bind DN/password), Digest auth, or bearer token from an env var.</td></tr>
+<tr><td>Request</td><td>req.cacert(string) | req.cert(string, string) | req.insecure(bool) | req.http2(bool) -> Request</td><td>Configure TLS CA bundle, client certificate and key, peer verification, or HTTP/2 negotiation.</td></tr>
+<tr><td>Request</td><td>req.timeout(int) | req.limit(int) | req.retry(int, int) | req.follow(bool) -> Request</td><td>Set timeout in ms, response byte cap, retry count and backoff ms, or redirect following.</td></tr>
+<tr><td>Request</td><td>req.proxy(string) | req.resolve(string) | req.stream(bool) | req.allow_error(bool) -> Request</td><td>Configure proxy URL ("" disables env proxies), custom host:port:ip resolution, SSE streaming, or non-throwing transport errors.</td></tr>
+<tr><td>Request</td><td>req.send() -> Response</td><td>Execute the HTTP or LDAPv3 request and return the Response.</td></tr>
+<tr><td>Response</td><td>resp.status() -> int | resp.body() -> string | resp.bytes() -> int | resp.url() -> string</td><td>Inspect the HTTP/LDAP status code, response body, byte length, or effective URL.</td></tr>
+<tr><td>Response</td><td>resp.header(string) -> string | resp.cookie(string) -> string | resp.certificate() -> string</td><td>Read a response header, cookie value, or peer TLS certificate summary.</td></tr>
+<tr><td>Response</td><td>resp.error() -> string | resp.attempts() -> int | resp.time(string) -> float | resp.sse_count() -> int</td><td>Inspect redacted transport error text, retry attempts, timing phase (dns, connect, tls, ttfb, total), or SSE event count.</td></tr>
+<tr><td>Response</td><td>resp.json(string) -> Query | resp.xpath(string) -> Query | resp.query(string, string) -> Query</td><td>Query response body with JSONPath, XPath, or a named query kind.</td></tr>
+<tr><td>Response</td><td>resp.assert_json_schema(string) -> bool | resp.assert_openapi(string, string, string) -> bool</td><td>Validate response JSON against a JSON Schema or an OpenAPI document, path, and method.</td></tr>
+<tr><td>Response</td><td>resp.save(string) -> void | resp.snapshot(string, bool) -> bool</td><td>Save response body to disk or compare/update a named golden snapshot.</td></tr>
+</tbody>
+</table>
+<h2>Query, Suite, LoadResult, and LLM methods</h2>
+<table>
+<thead><tr><th>Type / context</th><th>Method signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Query</td><td>q.value() -> string | q.to_int() -> int | q.count() -> int | q.exists() -> bool | q.missing() -> bool</td><td>Extract projected scalar value, integer value, match count, or presence status.</td></tr>
+<tr><td>Query</td><td>q.equals(string) | q.not_equals(string) | q.contains(string) | q.starts_with(string) | q.ends_with(string) | q.matches(string) -> bool</td><td>Evaluate string and POSIX ERE predicates on the projected query value.</td></tr>
+<tr><td>Query</td><td>q.gt(string) | q.lt(string) | q.includes(string) | q.is_empty() | q.is_string() | q.is_integer() | q.is_collection() -> bool</td><td>Evaluate numeric comparisons, collection membership, and value-type predicates.</td></tr>
+<tr><td>Query</td><td>q.nth(int) | q.split(string) | q.replace(string, string) | q.regex(string) | q.format(string) | q.url_decode() | q.html_escape() | q.to_date(string) -> Query</td><td>Transform query results through indexing, splitting, replacement, regex extraction, or escaping.</td></tr>
+<tr><td>Suite</td><td>suite.test_request(string, Request) -> Test | suite.before(Request) | suite.after(Request) -> Suite</td><td>Register a named test case or suite setup and teardown requests.</td></tr>
+<tr><td>Suite</td><td>suite.data_csv(string) | suite.data_json(string) | suite.filter(string) | suite.parallel(bool) | suite.fail_fast(bool) -> Suite</td><td>Drive tests from CSV/JSON rows, filter by tag, enable concurrent execution, or stop on first failure.</td></tr>
+<tr><td>Suite / Report</td><td>suite.report() -> Report | rep.passed() | rep.failed() | rep.skipped() -> int | rep.assert_all() -> bool</td><td>Execute suite and inspect pass/fail counts or assert zero failures.</td></tr>
+<tr><td>Report</td><td>rep.console() | rep.json() | rep.tap() -> string | rep.save(string) | rep.csv(string) | rep.junit(string) | rep.html(string) -> void</td><td>Render or export test suite reports as console text, JSON, TAP, CSV, JUnit XML, or standalone HTML.</td></tr>
+<tr><td>Test</td><td>t.expect_status(int) | t.expect_status_in(int, int) | t.expect_body(string) | t.expect_exact(string) | t.expect_json(string, string) | t.expect_xpath(string, string) | t.expect_schema(string) -> Test</td><td>Attach status, substring, exact body, JSONPath, XPath, or JSON Schema assertions to a suite test.</td></tr>
+<tr><td>Test</td><td>t.capture(string, string) | t.capture_secret(string, string) | t.poll_json(string, string, int, int) | t.retry(int, int) | t.timeout(int) | t.tag(string) -> Test</td><td>Capture JSONPath values into session variables or redacted secrets, poll until ready, or tag tests.</td></tr>
+<tr><td>LoadResult</td><td>lr.requests() -> int | lr.error_rate() | lr.p50_ms() | lr.p95_ms() | lr.p99_ms() -> float | lr.threshold(float, float) -> bool</td><td>Inspect load test totals and latency percentiles or assert max error rate and p95 latency thresholds.</td></tr>
+<tr><td>context llm: Llm</td><td>llm.openrouter(string) | llm.deepseek(string) | llm.ollama(string) | llm.mock(string) | llm.provider(string, string, string) -> Provider</td><td>Configure an LLM provider endpoint or deterministic local mock fixture.</td></tr>
+<tr><td>Llm / functions</td><td>llm.ledger(string) -> void | llm_calls() -> int | llm_cost() -> float</td><td>Write cost ledger JSON and inspect cumulative LLM call count and estimated USD spend.</td></tr>
+<tr><td>Provider / Chat</td><td>p.model(string) -> Provider | p.chat(string) -> Chat | p.matrix(string, string) -> Matrix</td><td>Select model, start a Chat request, or compare a prompt across a comma-separated model matrix.</td></tr>
+<tr><td>Chat</td><td>c.system(string) | c.user(string) | c.assistant(string) | c.tool(string, string) | c.temperature(float) | c.max_tokens(int) | c.seed(int) | c.json_mode(bool) | c.stream(bool) | c.timeout(int) | c.cassette(string) | c.replay(string) -> Chat</td><td>Configure chat messages, tool declarations, sampling hyperparameters, streaming, and cassette recording/replay.</td></tr>
+<tr><td>Chat / Result</td><td>c.send() -> Result | c.sample(int, float) -> Sample | res.text() | res.json() | res.tools() | res.model() | res.finish() -> string | res.status() | res.length() | res.input_tokens() | res.output_tokens() -> int | res.latency_ms() | res.estimated_cost() -> float</td><td>Execute completion or multi-run sampling and inspect output text, tokens, latency, and estimated cost.</td></tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<table>
+<thead><tr><th>Interface or function</th><th>Signature / annotation</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>RestGet .. RestOptions</td><td>@"/path/:param" fn h(x: RestExchange) -> void implements RestGet</td><td>Bind an HTTP GET, POST, PUT, DELETE, PATCH, HEAD, or OPTIONS route handler.</td></tr>
+<tr><td>RestHandler</td><td>@"/path" fn h(x: RestExchange) -> void implements RestHandler</td><td>Bind a method-agnostic HTTP route handler.</td></tr>
+<tr><td>CliCommand</td><td>@"cmd" fn h(x: RestExchange) -> void implements CliCommand</td><td>Bind a named CLI subcommand dispatched by rest_cli.</td></tr>
+<tr><td>CliOption</td><td>@"--flag" fn h(x: RestExchange) -> void implements CliOption</td><td>Bind a CLI option flag (--flag=val or --flag val) evaluated before the command handler.</td></tr>
+<tr><td>rest_config</td><td>rest_config(key: string, value: string) -> void</td><td>Configure server or CLI settings such as host, port, and session (ephemeral or global).</td></tr>
+<tr><td>rest_route</td><td>rest_route(method: string, path: string, handler: string) -> void</td><td>Dynamically register an HTTP method and route pattern to a handler function name.</td></tr>
+<tr><td>rest_serve / rest_stop</td><td>rest_serve() -> void | rest_stop() -> void</td><td>Start or stop the embedded standard HTTP server loop.</td></tr>
+<tr><td>rest_cli</td><td>rest_cli(args: StrList) -> string</td><td>Dispatch CLI options, commands, or path requests in-process without opening a socket.</td></tr>
+<tr><td>RestExchange</td><td>x.method() | x.path() | x.body() | x.param(string) | x.query(string) | x.header(string) -> string</td><td>Read request method, path, body, :param segment, query parameter, or header.</td></tr>
+<tr><td>RestExchange</td><td>x.has_query(string) | x.has_header(string) -> bool</td><td>Check whether a query parameter or request header is present.</td></tr>
+<tr><td>RestExchange</td><td>x.status(int) | x.set_header(string, string) | x.send(string) | x.json(string) -> void</td><td>Set response status code and headers, and emit plain text or application/json bodies.</td></tr>
+<tr><td>RestExchange</td><td>x.get(string) -> string | x.set(string, string) -> void | x.increment(string) -> int</td><td>Read, write, or atomically increment session state keys across global or ephemeral exchanges.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th>Exit code</th><th>Category</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success</td><td>Command, LDAPv3 operation, or _lmcode_ program succeeded and all assertions passed.</td></tr>
+<tr><td>1</td><td>Operation error</td><td>Direct CLI HTTP or LDAPv3 network, bind, or directory operation failed.</td></tr>
+<tr><td>2</td><td>Usage error</td><td>Invalid command-line flag, retired flag name, or missing required CLI argument.</td></tr>
+<tr><td>3</td><td>Host / load error</td><td>Bytecode format mismatch, schema binding failure, unhandled runtime error, or non-Linux platform stub refusal.</td></tr>
+<tr><td>4</td><td>Contract failure</td><td>An assertion (assert, assert_eq, Report.assert_all) or test contract failed during execution.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcurl">github.com/lmctl-ai/lmcurl</a>.</p>
+</footer>
+</body>
+</html>

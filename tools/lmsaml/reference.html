@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmsaml reference — lmsaml — lmctl.com tools</title>
+<meta name="description" content="Complete command-line flags, SAML 2.0 and REST HTTP endpoints, Saml and Batch host methods, standard lmcode_std_v3 REST and CLI interfaces, and exit codes for…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmsaml/">Overview</a></li>
+<li><a href="/tools/lmsaml/skill.html">Skill</a></li>
+<li><a href="/tools/lmsaml/guide.html">Guide</a></li>
+<li><a href="/tools/lmsaml/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmsaml reference</h1>
+<p>Complete command-line flags, SAML 2.0 and REST HTTP endpoints, Saml and Batch host methods, standard lmcode_std_v3 REST and CLI interfaces, and exit codes for lmsaml v0.1.0.</p>
+<h2>Host and server CLI flags</h2>
+<table>
+<thead><tr><th>Flag</th><th>Arguments</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>--version | -v</td><td>none</td><td>Print lmsaml 0.1.0 and exit 0.</td></tr>
+<tr><td>--help | -h</td><td>none</td><td>Print command-line usage summary and exit 0.</td></tr>
+<tr><td>--lmcode-schema</td><td>[--json]</td><td>Write the embedded lmsaml schema JSON to stdout and exit 0.</td></tr>
+<tr><td>--lmcode-signatures</td><td>none</td><td>Print all canonical host and standard library (lmcode_std_v3) signatures.</td></tr>
+<tr><td>--host-signatures</td><td>none</td><td>Print only the lmsaml host-specific signatures (excluding lmcode_std_v3).</td></tr>
+<tr><td>--lmcode</td><td>[--dry-run] &lt;file.dslb>...</td><td>Execute (or dry-validate) compiled LMScript bytecode files against the embedded lmsaml schema.</td></tr>
+<tr><td>--port | -p</td><td>&lt;port></td><td>Primary HTTP port for SAML 2.0 IdP, SP, and REST endpoints (default 8080).</td></tr>
+<tr><td>--rest-port</td><td>&lt;port></td><td>Optional dedicated HTTP port for the JSON REST API.</td></tr>
+<tr><td>--host</td><td>&lt;address></td><td>Listen IP address or hostname (default 127.0.0.1).</td></tr>
+<tr><td>--entity-id</td><td>&lt;url></td><td>Override the base EntityID URL for the SAML 2.0 IdP and SP.</td></tr>
+<tr><td>--admin-user</td><td>&lt;username></td><td>Initial administrator username seeded at startup (default admin).</td></tr>
+<tr><td>--admin-password</td><td>&lt;password></td><td>Initial administrator password seeded at startup (default admin).</td></tr>
+<tr><td>--require-auth</td><td>none</td><td>Require HTTP Basic or Bearer authentication on administrative REST endpoints (/users, /services, /assertion).</td></tr>
+</tbody>
+</table>
+<h2>SAML 2.0 protocol and REST HTTP endpoints</h2>
+<table>
+<thead><tr><th>Method and path</th><th>Content type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>GET / | GET /ping</td><td>application/json</td><td>Health check returning {"ok":true,"result":"PONG","service":"lmsaml","version":"0.1.0"}.</td></tr>
+<tr><td>GET /idp/metadata | GET /metadata</td><td>application/samlmetadata+xml</td><td>Return the SAML 2.0 IdP EntityDescriptor XML with IDPSSODescriptor and X.509 signing certificate.</td></tr>
+<tr><td>GET|POST /idp/sso | /sso</td><td>text/html / SAML binding</td><td>SAML 2.0 Single Sign-On endpoint supporting HTTP-Redirect and HTTP-POST bindings.</td></tr>
+<tr><td>GET|POST /idp/slo | /slo</td><td>text/html / SAML binding</td><td>SAML 2.0 Single Logout endpoint.</td></tr>
+<tr><td>GET|POST /idp/login | /login</td><td>text/html</td><td>Interactive IdP HTML login form handler.</td></tr>
+<tr><td>GET|POST /idp/logout | /logout</td><td>text/html</td><td>Interactive IdP logout handler.</td></tr>
+<tr><td>GET /sp/metadata</td><td>application/samlmetadata+xml</td><td>Return the built-in SAML 2.0 Service Provider EntityDescriptor XML.</td></tr>
+<tr><td>POST /sp/acs</td><td>application/x-www-form-urlencoded</td><td>Built-in Service Provider Assertion Consumer Service (ACS) endpoint.</td></tr>
+<tr><td>GET /sp/hello</td><td>application/json / 302 redirect</td><td>Protected SP endpoint that initiates an AuthnRequest redirect to /idp/sso when unauthenticated.</td></tr>
+<tr><td>GET /users</td><td>application/json</td><td>List all user IDs in the directory as {"ok":true,"users":[...]}.</td></tr>
+<tr><td>GET /users/{id}</td><td>application/json</td><td>Fetch user profile attributes (name, email, common_name, surname, given_name, scoped_affiliation, groups).</td></tr>
+<tr><td>PUT|POST /users/{id}</td><td>application/json</td><td>Create or update a user from JSON attributes and bcrypt-hash any supplied password.</td></tr>
+<tr><td>DELETE /users/{id}</td><td>application/json</td><td>Delete a user by ID and return {"ok":true,"result":"DELETED"}.</td></tr>
+<tr><td>GET|PUT|POST|DELETE /services[/id]</td><td>application/json / application/xml</td><td>List, fetch, register, or remove SAML Service Provider EntityDescriptor metadata documents.</td></tr>
+<tr><td>POST /authn | POST /bind</td><td>application/json</td><td>Verify username and password against bcrypt store and return {"ok":true,"authenticated":true,"result":"BOUND"}.</td></tr>
+<tr><td>POST /assertion</td><td>application/json</td><td>Issue a signed SAML 2.0 Response + Assertion for {"user":...,"audience":...,"acs_url":...,"request_id":...}.</td></tr>
+<tr><td>POST /verify</td><td>application/json / application/xml</td><td>Cryptographically verify a SAML 2.0 Response (saml_response_b64 or raw XML) and return extracted subject and attributes.</td></tr>
+</tbody>
+</table>
+<h2>Host context saml: Saml and Batch methods</h2>
+<table>
+<thead><tr><th>Type / context</th><th>Method or function signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context saml: Saml</td><td>saml.ping() -> string</td><td>Check health of the target REST server or in-process engine and return "PONG".</td></tr>
+<tr><td>Saml</td><td>saml.metadata() -> string | saml.sp_metadata() -> string</td><td>Return the IdP EntityDescriptor XML string or built-in SP EntityDescriptor XML string.</td></tr>
+<tr><td>Saml</td><td>saml.add_user(string, string) -> bool</td><td>Create or update user (name, user_json) and return true on success.</td></tr>
+<tr><td>Saml</td><td>saml.get_user(string) -> string | saml.list_users() -> string</td><td>Return user profile JSON ("null" if not found) or a JSON array of username strings.</td></tr>
+<tr><td>Saml</td><td>saml.del_user(string) -> int</td><td>Delete a user by username and return 1 if deleted or 0 if not found.</td></tr>
+<tr><td>Saml</td><td>saml.authenticate(string, string) -> bool</td><td>Verify (username, password) against the bcrypt store and return true if valid.</td></tr>
+<tr><td>Saml</td><td>saml.issue_assertion(string, string) -> string</td><td>Issue an RSA-SHA256 signed SAML 2.0 Response for (user, audience) and return the IssuedAssertion JSON string.</td></tr>
+<tr><td>Saml</td><td>saml.verify_assertion(string) -> string</td><td>Cryptographically verify a base64 or raw XML SAML 2.0 Response and return VerifiedAssertion JSON ({ok,valid,subject,attributes,...}).</td></tr>
+<tr><td>Saml / function</td><td>saml.batch() -> Batch | print(string) -> void</td><td>Create a fluent Batch operation queue or print a line to stdout.</td></tr>
+<tr><td>Batch</td><td>b.ping() | b.list_users() -> Batch</td><td>Append a ping or list_users operation to the batch queue.</td></tr>
+<tr><td>Batch</td><td>b.add_user(string, string) | b.get_user(string) | b.del_user(string) -> Batch</td><td>Append a user upsert, lookup, or deletion operation to the batch queue.</td></tr>
+<tr><td>Batch</td><td>b.issue_assertion(string, string) -> Batch</td><td>Append a signed assertion issuance operation for (user, audience) to the batch queue.</td></tr>
+<tr><td>Batch</td><td>b.len() -> int | b.clear() -> void | b.exec() -> string</td><td>Return queued operation count, clear the queue, or execute all queued operations and return a JSON array string.</td></tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<table>
+<thead><tr><th>Interface or function</th><th>Signature / annotation</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>RestGet .. RestOptions</td><td>@"/path/:param" fn h(x: RestExchange) -> void implements RestGet</td><td>Bind an HTTP GET, POST, PUT, DELETE, PATCH, HEAD, or OPTIONS route handler.</td></tr>
+<tr><td>RestHandler</td><td>@"/path" fn h(x: RestExchange) -> void implements RestHandler</td><td>Bind a method-agnostic HTTP route handler.</td></tr>
+<tr><td>CliCommand</td><td>@"cmd" fn h(x: RestExchange) -> void implements CliCommand</td><td>Bind a named CLI subcommand dispatched by rest_cli.</td></tr>
+<tr><td>CliOption</td><td>@"--flag" fn h(x: RestExchange) -> void implements CliOption</td><td>Bind a CLI option flag (--flag=val or --flag val) evaluated before the command handler.</td></tr>
+<tr><td>rest_config</td><td>rest_config(key: string, value: string) -> void</td><td>Configure server or CLI settings such as host, port, and session (ephemeral or global).</td></tr>
+<tr><td>rest_route</td><td>rest_route(method: string, path: string, handler: string) -> void</td><td>Dynamically register an HTTP method and route pattern to a handler function name.</td></tr>
+<tr><td>rest_serve / rest_stop</td><td>rest_serve() -> void | rest_stop() -> void</td><td>Start or stop the embedded standard HTTP server loop.</td></tr>
+<tr><td>rest_cli</td><td>rest_cli(args: StrList) -> string</td><td>Dispatch CLI options, commands, or path requests in-process without opening a socket.</td></tr>
+<tr><td>RestExchange</td><td>x.method() | x.path() | x.body() | x.param(string) | x.query(string) | x.header(string) -> string</td><td>Read request method, path, body, :param segment, query parameter, or header.</td></tr>
+<tr><td>RestExchange</td><td>x.has_query(string) | x.has_header(string) -> bool</td><td>Check whether a query parameter or request header is present.</td></tr>
+<tr><td>RestExchange</td><td>x.status(int) | x.set_header(string, string) | x.send(string) | x.json(string) -> void</td><td>Set response status code and headers, and emit plain text or application/json bodies.</td></tr>
+<tr><td>RestExchange</td><td>x.get(string) -> string | x.set(string, string) -> void | x.increment(string) -> int</td><td>Read, write, or atomically increment session state keys across global or ephemeral exchanges.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th>Exit code</th><th>Category</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success</td><td>Server exited cleanly on SIGINT/SIGTERM, or _lmcode_ program succeeded and all assertions passed.</td></tr>
+<tr><td>1</td><td>Server / bind error</td><td>SamlEngine initialization failed or TCP listener failed to bind --port or --rest-port.</td></tr>
+<tr><td>2</td><td>Usage error</td><td>Missing bytecode file after --lmcode, invalid CLI flag, or retired --dsl* option.</td></tr>
+<tr><td>3</td><td>Host / load error</td><td>Bytecode read/load error, schema mismatch, or unhandled host runtime error.</td></tr>
+<tr><td>4</td><td>Contract failure</td><td>An assertion (assert, assert_eq) or result schema contract failed during script execution.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmsaml">github.com/lmctl-ai/lmsaml</a>.</p>
+</footer>
+</body>
+</html>

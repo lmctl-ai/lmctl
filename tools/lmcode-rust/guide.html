@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-rust guide — lmcode-rust — lmctl.com tools</title>
+<meta name="description" content="This guide covers embedding the dslvm crate in Rust applications, managing Context arenas and ByteString values, configuring RestController for REST and CLI…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-rust/">Overview</a></li>
+<li><a href="/tools/lmcode-rust/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-rust/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-rust/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-rust guide</h1>
+<p>This guide covers embedding the dslvm crate in Rust applications, managing Context arenas and ByteString values, configuring RestController for REST and CLI dispatch, and running conformance checks.</p>
+<h2>Overview</h2>
+<p>The dslvm workspace is implemented purely with the Rust standard library. Registry stores sorted canonical signatures and callback closures. Program::load parses the DSLB v6 sections, verifies the 32-byte schema digest, resolves imports to dense callback slots, and runs structural control-flow and stack-depth verification on the body and every R49 entry.</p>
+<h2>Registry and virtual machine embedding</h2>
+<p>Host domain objects live inside Context as arena-indexed Box&lt;dyn Any> slots referenced by ObjRef handles. Call ctx.insert(type_name, value) to allocate a handle and ctx.get::&lt;T>(obj_ref) or ctx.get_mut::&lt;T>(obj_ref) inside callbacks. Because handles are integer indices rather than raw pointers, host bindings require zero unsafe blocks. Registry::new() automatically registers all 226 lmcode_std_v3 signatures, including strings, hex/Base64 byte codecs, math, files, lists, maps, stacks, queues, priority queues, strict JSON, text templates, 24 lmcode_return_* sinks, and the 20 REST/CLI functions and methods.</p>
+<h2>REST and stateless CLI controller lifecycle</h2>
+<p>Calling dslvm::rest::register_rest(&amp;mut registry, RestOptions::default()) attaches a RestController controller to the 20 standard REST/CLI signatures. Programs can declare routes with path-annotated entries implementing RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand, or CliOption, or dynamically via rest_route(method, path, annotation). Path templates accept both :param / :rest... and {param} / {rest...} syntax. Calling rest_config(key, val) sets prefix or max_body_bytes before rest_serve(). Calling rest_cli(argv) executes a stateless CLI command vector across CliOption, CliCommand, and REST handlers using an isolated entry invocation that preserves the outer run's collection arena. When the body calls rest_serve(), RestController::run pumps HTTP/1.1 requests sequentially from stdin to stdout.</p>
+<pre><code>use dslvm::rest::{register_rest, RestOptions};
+use dslvm::{Context, Program, Registry, Value};
+
+fn main() -> Result&lt;(), Box&lt;dyn std::error::Error>> {
+    let mut registry = Registry::new();
+    registry.function("ping", &amp;[], "string", |_ctx, _args| Ok(Value::string("pong")))?;
+    let mut rest = register_rest(&amp;mut registry, RestOptions::default())?;
+    let schema = include_bytes!("../std/lmcode-std.schema.json");
+    let bytecode = std::fs::read("app.dslb")?;
+    let program = Program::load(&amp;bytecode, schema, &amp;registry)?;
+    let mut ctx = Context::new();
+    rest.run(&amp;program, &amp;registry, &amp;mut ctx)?;
+    Ok(())
+}</code></pre>
+<h2>Invocation result protocol and dry mode</h2>
+<p>Every host invocation reads the optional version-1 manifest from LMCODE_INVOCATION_FILE to determine whether dry mode is active and to allocate one ResultSink per submitted program slot. Inside an _lmcode_ chunk, assignments to $return, $return.field, or $return[key] invoke the 24 standard lmcode_return_* imports on the active slot. After all bodies, R49 rule entries, and application checks complete, WriteFrame emits a single terminal LMCODE_RETURN_BEGIN / LMCODE_RETURN_END envelope on stdout and returns exit code 0 on success, 2 on CLI usage error, 3 on load or runtime error, or 4 on application validation failure.</p>
+<h2>Conformance verification</h2>
+<p>Run cargo test and lmscript test.lms to execute unit tests, verifier mutation gates, 410 core vectors, 271 stdlib vectors, 39 REST/CLI conformance scenarios (both in-memory and via the rest-serve child binary), return-frame vectors, and the router integration test.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-rust">github.com/lmctl-ai/lmcode-rust</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>awssim authoring skill — awssim — lmctl.com tools</title>
+<meta name="description" content="awssim is a standalone native local AWS emulator on 127.0.0.1:4566 built on Floci 2.3.0 that serves S3, DynamoDB, and SQS in-process without requiring Java,…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/awssim/">Overview</a></li>
+<li><a href="/tools/awssim/skill.html">Skill</a></li>
+<li><a href="/tools/awssim/guide.html">Guide</a></li>
+<li><a href="/tools/awssim/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>awssim authoring skill</h1>
+<p>awssim is a standalone native local AWS emulator on 127.0.0.1:4566 built on Floci 2.3.0 that serves S3, DynamoDB, and SQS in-process without requiring Java, Docker, or AWS credentials.</p>
+<h2>Purpose</h2>
+<p>Use awssim to run deterministic local AWS S3, DynamoDB, and SQS workflows and to test SigV4 request signing and IAM allow/deny policies offline with lmaws, lmcloud conformance suites, or the AWS CLI.</p>
+<h2>When to use it</h2>
+<p>Choose awssim when testing LMScript cloud programs or REST/CLI handlers against real AWS wire protocols (path-style S3 XML and DynamoDB/SQS JSON APIs) on loopback, or when verifying IAM policy denials in --auth enforce mode before live deployment.</p>
+<h2>Install</h2>
+<p>Download the prebuilt awssim binary and SHA256SUMS for your platform from GitHub Releases, or build from the pinned upstream source lock with GraalVM 25.</p>
+<pre><code>python3 scripts/build.py
+./dist/awssim --version</code></pre>
+<h2>Commands</h2>
+<p>Start the foreground emulator on the default port 4566, customize its port or persistence directory, or enable SigV4 and IAM enforcement.</p>
+<pre><code>awssim --version
+awssim --help
+awssim serve
+awssim start --port 4567 --data-dir ./state
+awssim serve --auth enforce --auth-config examples/auth.json
+curl -fsS http://127.0.0.1:4566/_floci/health</code></pre>
+<h2>Inputs and outputs</h2>
+<p>On startup, awssim prints a JSON readiness envelope on stdout and binds 127.0.0.1 on the configured port while server diagnostics go to stderr. In --auth enforce mode, it reads a startup JSON configuration containing a credentials array of objects with accessKeyId, secretAccessKey, and an optional IAM policy document (Version and Statement array with Sid, Effect, Action, and Resource). Service endpoints return standard AWS S3 XML or DynamoDB/SQS JSON responses.</p>
+<h2>Safety rules</h2>
+<p>The HTTP listener binds exclusively to 127.0.0.1 loopback. EC2 emulation is disabled by default so upstream does not open a wildcard IMDS listener on port 9169 (opt in only when needed via FLOCI_SERVICES_EC2_ENABLED=true). Docker resources use the isolated awssim namespace. Always supply dummy secrets (such as test/test) in --auth-config files; if an auth config is invalid or unreadable, awssim exits with code 2 without printing the file contents. In enforce mode, policies default to deny, explicit Deny overrides Allow, encoded request bodies are capped at 16 MiB, and unsupported routes fail closed with HTTP 403.</p>
+<h2>Worked examples</h2>
+<p>Example 1: The enforce-mode examples/auth.json shipped in the repository, which accepts test/test, allows the three supported services, and denies Delete actions on resources whose ARN contains protected.</p>
+<pre><code>{
+  "credentials": [
+    {
+      "accessKeyId": "test",
+      "secretAccessKey": "test",
+      "policy": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {"Effect": "Allow", "Action": ["s3:*", "dynamodb:*", "sqs:*"], "Resource": "*"},
+          {"Effect": "Deny", "Action": "*:Delete*", "Resource": "*protected*"}
+        ]
+      }
+    }
+  ]
+}</code></pre>
+<p>Example 2: Driving awssim from an LMScript program using lmaws and standard lmcode_std_v3 REST/CLI handlers. This needs an lmaws release that ships the current 226-signature catalog; the lmaws v0.1.27 release pinned by awssim CI does not.</p>
+<pre><code>p = _lmcode_ cli="lmaws" install="github:lmctl-ai/lmaws@latest";
+  @"/buckets/:bucket/:key"
+  fn read_s3(x: RestExchange) -> void implements RestGet {
+    x.send(cloud.object_get(x.param("bucket"), x.param("key")));
+  }
+
+  @"seed-awssim"
+  fn cmd_seed(x: RestExchange) -> void implements CliCommand {
+    cloud.set_endpoint("all", "http://127.0.0.1:4566");
+    cloud.bucket_create("sim-bkt");
+    cloud.object_put("sim-bkt", "item.txt", x.body());
+    x.send("ok");
+  }
+
+  rest_config("prefix", "/v1");
+  let s = rest_cli(str_split("seed-awssim -- local-s3-body", " "));
+  let r = rest_cli(str_split("/v1/buckets/sim-bkt/item.txt", " "));
+  print(s + ":" + r);
+end _lmcode_</code></pre>
+<h2>Errors and exit codes</h2>
+<p>CLI usage or configuration errors return exit code 2 and emit {"ok":false,"error":{"kind":"usage","message":"..."}} on stdout. Server startup failures (such as an occupied TCP port) return exit code 3 with a JSON error envelope. Clean server shutdown, --version, and --help return exit code 0. In --auth enforce mode, authentication or policy rejections return HTTP 403 with S3 XML or AWS JSON error payloads.</p>
+<h2>How to verify</h2>
+<p>Run the CLI contract, open-mode integration, and enforced authentication test suites against the built binary.</p>
+<pre><code>python3 scripts/test-cli.py dist/awssim
+python3 scripts/test-integration.py dist/awssim
+python3 scripts/test-auth.py dist/awssim</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/awssim">github.com/lmctl-ai/awssim</a>.</p>
+</footer>
+</body>
+</html>

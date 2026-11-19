@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmasm authoring skill — lmasm — lmctl.com tools</title>
+<meta name="description" content="lmasm exposes the Java ASM bytecode inspection library to lmcode programs so LMScript workflows can enumerate classes and class-level reference edges across…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmasm/">Overview</a></li>
+<li><a href="/tools/lmasm/skill.html">Skill</a></li>
+<li><a href="/tools/lmasm/guide.html">Guide</a></li>
+<li><a href="/tools/lmasm/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmasm authoring skill</h1>
+<p>lmasm exposes the Java ASM bytecode inspection library to lmcode programs so LMScript workflows can enumerate classes and class-level reference edges across JARs, class directories, and class files.</p>
+<h2>Purpose</h2>
+<p>Use lmasm to inspect compiled JVM bytecode from an LMScript program and compute dependency coverage across main-scope code, test-scope code, and third-party library JARs without writing custom Java analyzers.</p>
+<h2>When to use it</h2>
+<p>Choose lmasm when you need deterministic class inventory and constant-pool plus syntax-tree reference extraction on JVM archives or class directories. Use a full JVM profiler or build tool when you need runtime call stacks, dynamic reflection traces, or Maven resolution graphs.</p>
+<h2>Install</h2>
+<p>Install the LMScript compiler with npm install -g @lmctl-ai/lmctl, or install the standalone GraalVM native release binary for Linux, macOS, or Windows through lmscript install.</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmscript install github:lmctl-ai/lmasm@v0.1.0
+lmasm --version
+lmasm --lmcode-schema --json
+lmasm --lmcode-signatures</code></pre>
+<p>When building from a source checkout, run mvn package with JDK 21 or newer to produce target/lmasm.jar and add bin to PATH.</p>
+<h2>Commands</h2>
+<p>Bind lmasm inside an LMScript program with an _lmcode_ block and execute the compiled bytecode through run_lmcode.</p>
+<pre><code>program = _lmcode_ cli="lmasm" install="github:lmctl-ai/lmasm@v0.1.0";
+let classes = asm_classes("fixtures/jars/liba.jar");
+for (cn in classes) {
+  let refs = asm_refs("fixtures/jars/liba.jar", cn);
+  print(cn + " references " + str(refs.len()) + " classes");
+}
+end _lmcode_
+r = run_lmcode(program);
+assert(r.ok);</code></pre>
+<p>You can also pass schema="schema/lmasm.schema.json" during cold syntax checks when the host binary is not yet cached on PATH.</p>
+<h2>Inputs and outputs</h2>
+<p>The host function asm_classes accepts a path to a .jar archive, a compiled classes directory, or a single .class file and returns a StrList of dotted class names while skipping module-info and package-info entries.</p>
+<p>The host function asm_refs accepts a container path and a dotted class name and returns a deduplicated StrList of every external class referenced in the constant pool or ASM tree walk. Execution concludes with an LMCODE_RETURN_BEGIN and LMCODE_RETURN_END JSON envelope consumed by run_lmcode.</p>
+<h2>Safety rules</h2>
+<p>lmasm inspects bytecode statically with ASM 9.11 and never loads or executes target classes on the JVM. Compile newer Java inputs with --release 21 if your compiler emits class file versions newer than the bundled ASM reader supports.</p>
+<p>Do not pass untrusted bytecode programs to --lmcode without review, as standard lmcode file functions execute with the permissions of the calling user.</p>
+<h2>Worked examples</h2>
+<p>The repository ships examples/dep-analysis.lms, which computes how many classes in each third-party library JAR are referenced by custom code overall versus test-scope code only.</p>
+<pre><code>program = _lmcode_ cli="lmasm";
+let lib_paths = str_split("fixtures/jars/liba.jar,fixtures/jars/libb.jar", ",");
+let main_paths = str_split("fixtures/appmain/classes", ",");
+let test_paths = str_split("fixtures/apptest.jar", ",");
+
+fn scan(path: string, lib_set: StrMap, used: StrMap) -> void {
+  for (class_name in asm_classes(path)) {
+    for (ref in asm_refs(path, class_name)) {
+      if (lib_set.has(ref)) { used.set(ref, "1"); }
+    }
+  }
+}
+
+for (lib in lib_paths) {
+  let lib_set = str_map();
+  for (class_name in asm_classes(lib)) { lib_set.set(class_name, "1"); }
+  let used = str_map();
+  let used_test = str_map();
+  for (p in main_paths) { scan(p, lib_set, used); }
+  for (p in test_paths) { scan(p, lib_set, used); scan(p, lib_set, used_test); }
+  print(lib + ", " + str(used.len()) + ", " + str(used_test.len()));
+}
+end _lmcode_
+result = run_lmcode(program);
+print(json_stringify(result));</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmasm exits with code 0 on success. Code 2 indicates command-line usage or invocation manifest errors. Code 3 indicates bytecode loading, schema hash mismatch, or runtime execution errors such as unreadable archive paths. Code 4 indicates an application assertion failure.</p>
+<h2>How to verify</h2>
+<p>Verify the host schema bytes, canonical signatures, and end-to-end dependency analysis gate from the repository root.</p>
+<pre><code>lmasm --version
+lmasm --lmcode-schema --json > /tmp/lmasm-schema.json
+cmp /tmp/lmasm-schema.json schema/lmasm.schema.json
+lmasm --lmcode-signatures > /tmp/lmasm-sigs.txt
+./test.sh</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmasm">github.com/lmctl-ai/lmasm</a>.</p>
+</footer>
+</body>
+</html>

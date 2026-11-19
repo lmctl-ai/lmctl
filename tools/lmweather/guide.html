@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmweather guide — lmweather — lmctl.com tools</title>
+<meta name="description" content="Architecture, numerical formulations, expression initializers, stability limits, and output formats for the lmweather host.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmweather/">Overview</a></li>
+<li><a href="/tools/lmweather/skill.html">Skill</a></li>
+<li><a href="/tools/lmweather/guide.html">Guide</a></li>
+<li><a href="/tools/lmweather/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmweather guide</h1>
+<p>Architecture, numerical formulations, expression initializers, stability limits, and output formats for the lmweather host.</p>
+<h2>Overview</h2>
+<p>lmweather packages two classical geophysical fluid dynamics solvers into a single zero-dependency C++17 executable hosting the lmcode-cpp bytecode VM. Rather than wrapping complex operational forecast suites that require Fortran, NetCDF, and gigabytes of boundary datasets, lmweather provides the exact single-layer rotating shallow-water equations used to test numerical weather prediction cores and study wave dynamics, geostrophic adjustment, and barotropic instability.</p>
+<h2>Spherical spectral transform model (Sphere)</h2>
+<p>Created via wx.sphere(T) for Earth parameters or wx.planet(T, radius, omega, g) for arbitrary planetary bodies, the Sphere model integrates the shallow-water equations in vorticity-divergence form using orthonormal associated Legendre functions at triangular truncation T in [4, 170]. Quadratic nonlinear products are evaluated on a dealiasing Gaussian grid where nlon is the smallest power of two at least 3*T + 1 and nlat = nlon / 2 (for example, T21 uses 64x32, T42 uses 128x64, and T85 uses 256x128).</p>
+<p>Built-in initializers configure standard benchmarks from Williamson et al. (1992):</p>
+<ul>
+<li>williamson1(alpha): cosine-bell passive tracer advected over the poles at axis tilt alpha (radians) with dynamics frozen in advect_only mode.</li>
+<li>williamson2(alpha): global steady-state nonlinear zonal geostrophic flow at tilt alpha (radians), holding height balance to machine precision.</li>
+<li>williamson5(): zonal flow over an isolated 2000 m conical mountain at 30N, 270E, generating a planetary Rossby wave train.</li>
+<li>williamson6(): Rossby-Haurwitz wave number 4 propagating eastward while conserving total mass and energy.</li>
+<li>mode(n, m, amp, depth): single spherical-harmonic gravity mode Y_n^m on resting depth for verifying Laplace tidal frequencies.</li>
+</ul>
+<p>Custom flows, surface topography, and passive scalars are configured with fields(h_expr, u_expr, v_expr), orography(hs_expr), and tracer(q_expr). Setting a state resets model time to 0 and records the reference height and tracer fields used by error_l2(), error_linf(), tracer_error_l2(), and tracer_error_linf(); call mark_reference() at any time to re-anchor the reference snapshot. Optional del^4 hyperdiffusion is enabled with diffusion(nu4), which damps high wavenumbers exponentially after each step while preserving rigid-body rotation (n = 1).</p>
+<h2>Beta-plane staggered C-grid model (Plane)</h2>
+<p>Created via wx.plane(nx, ny, Lx, Ly), the Plane model solves the rotating shallow-water equations on a rectangular beta-plane channel of width Lx and meridional extent Ly with Coriolis parameter f(y) = f0 + beta * (y - Ly / 2). The grid is periodic in x and bounded by free-slip rigid walls (v = 0) at y = 0 and y = Ly. Fluid thickness h lives at cell centers, zonal velocity u at west cell faces, meridional velocity v at south cell faces, and relative vorticity zeta at cell corners using energy- and enstrophy-consistent Sadourny averaging.</p>
+<p>Call depth(H), gravity(g), and coriolis(f0, beta) before initializing fields. Calling linear() switches the solver to the equations linearized about resting depth H (conserving discrete potential vorticity anomaly at every interior corner), while nonlinear() (the default) retains full momentum advection and finite-amplitude thickness fluxes. Optional Laplacian viscosity and linear Rayleigh drag are configured with viscosity(nu) and drag(r).</p>
+<pre><code>p = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let ch = wx.plane(160, 80, 16000000.0, 8000000.0)
+  .depth(2000.0)
+  .coriolis(0.0001, 1.6e-11)
+  .linear()
+  .fields("50.0 * cos(2.0 * pi * x / lx) * sin(pi * y / ly)", "0", "0");
+ch.run(2.0 * 86400.0);
+wx.assert_close(ch.mean_depth(), 2000.0, 0.000001);
+ch.save_csv("rossby_plane.csv");
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, "beta-plane run failed");</code></pre>
+<h2>Initial-condition expression language</h2>
+<p>Because the bytecode DSL has no closures, spatial fields (fields, orography, tracer) accept mathematical expression strings evaluated at each grid node:</p>
+<ul>
+<li>Sphere variables and constants: lon (radians, 0 to 2*pi), lat (radians, -pi/2 to pi/2), planetary radius a, rotation rate omega, gravity g, pi, and e.</li>
+<li>Plane variables and constants: x (meters, 0 to lx), y (meters, 0 to ly), domain dimensions lx and ly, resting depth H, gravity g, Coriolis parameters f0 and beta, pi, and e. On the plane, the first argument to fields(h_anom, u, v) is the height anomaly added to resting depth H.</li>
+<li>Supported operators and functions: +, -, *, /, ^, sin, cos, tan, asin, acos, atan, sqrt, abs, exp, log, pow, min, max.</li>
+<li>Seeded perturbations: call perturb(amp, seed, max_wave) on a Sphere or perturb(amp, seed) on a Plane after setting fields to add platform-independent deterministic splitmix64 perturbation noise.</li>
+</ul>
+<h2>Time stepping and CFL stability enforcement</h2>
+<p>Both models integrate in time using classical fourth-order Runge-Kutta (RK4). Calling run(seconds) selects a safe time step automatically via stable_dt(); calling run_dt(seconds, dt) uses the caller-supplied maximum step dt (shortening the final step if needed to land exactly on seconds).</p>
+<p>Because explicit RK4 becomes unstable when |omega * dt| exceeds 2 * sqrt(2) (approximately 2.828), lmweather computes the fastest gravity-plus-advection frequency omega_max before starting run_dt and every 64 steps during integration. If dt exceeds the stability limit initially, or if nonlinear flow acceleration pushes omega_max past the limit mid-run, lmweather halts immediately with an explicit run error (exit code 3) rather than producing corrupted finite numbers.</p>
+<h2>Output tables and gnuplot integration</h2>
+<p>Output files are formatted as space-separated ASCII tables with 10 significant digits, organized for direct plotting with lmplot or gnuplot:</p>
+<ul>
+<li>Sphere.save_csv(path): rows grouped by latitude with blank lines between latitude rings (ready for gnuplot splot with pm3d), containing columns lon, lat (in degrees), fluid thickness h, u, v, relative vorticity zeta, tracer q (0 if unset), and surface height hs (0 if unset). Free-surface elevation is h + hs.</li>
+<li>Sphere.save_zonal_mean(path): one line per Gaussian latitude ring with columns lat (degrees), zonal-mean height h_mean, and zonal-mean wind u_mean.</li>
+<li>Sphere.save_spectrum(path): one line per total spherical wavenumber n = 1..T with columns n, kinetic energy per unit depth ke (m^2/s^2), and potential energy pe (m^3/s^2).</li>
+<li>Plane.save_csv(path): rows grouped by y with blank lines between rows, containing columns x, y, total depth h, cell-centered u, cell-centered v, and cell-centered vorticity zeta.</li>
+<li>Plane.save_row(j, path) and Plane.save_column(i, path): 1D cross-sections of x, h along row j or y, h along column i.</li>
+</ul>
+<h2>Memory budget and resource limits</h2>
+<p>A single invocation may allocate at most 4096 MiB by default across spectral Legendre tables, grid buffers, and output strings. If a script exceeds this budget, lmweather releases a 1 MiB emergency reserve, emits a structured run failure frame, and exits with code 3. Override the limit in MiB by setting LMWEATHER_MAX_MEMORY_MB in the environment.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmweather">github.com/lmctl-ai/lmweather</a>.</p>
+</footer>
+</body>
+</html>

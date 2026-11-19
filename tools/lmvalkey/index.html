@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmvalkey — lmctl.com tools</title>
+<meta name="description" content="lmvalkey is a single-executable Valkey key-value server combining the native RESP protocol engine, an integrated HTTP REST API, and an embedded LMScript…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvalkey/">Overview</a></li>
+<li><a href="/tools/lmvalkey/skill.html">Skill</a></li>
+<li><a href="/tools/lmvalkey/guide.html">Guide</a></li>
+<li><a href="/tools/lmvalkey/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmvalkey</h1>
+<p>lmvalkey is a single-executable Valkey key-value server combining the native RESP protocol engine, an integrated HTTP REST API, and an embedded LMScript bytecode host. It serves unified in-memory data over RESP and JSON REST endpoints while running pipelined _lmcode_ batches and standard lmcode_std_v3 routes.</p>
+<h2>Quick reference</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl@latest
+lmvalkey --version
+lmvalkey --lmcode-schema --json
+lmvalkey --lmcode-signatures</code></pre>
+<table>
+<thead><tr><th>Interface or flag</th><th>Signature or syntax</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>Server RESP + REST</td><td>lmvalkey --port 6379 --rest-port 8080 [--daemonize yes]</td><td>Start the unified Valkey RESP server and zero-auth HTTP JSON REST listener.</td></tr>
+<tr><td>CLI host bytecode</td><td>lmvalkey --lmcode prog.dslb</td><td>Execute compiled LMScript bytecode against a live Valkey server or the built-in in-memory store.</td></tr>
+<tr><td>CLI schema and signatures</td><td>lmvalkey --lmcode-schema [--json] | --lmcode-signatures</td><td>Print embedded schema JSON bytes or all 245 canonical signatures (19 host + 226 standard library).</td></tr>
+<tr><td>HTTP REST endpoints</td><td>GET /ping | GET /get/&lt;k> | POST /set/&lt;k> | GET /keys[/&lt;pat>] | POST /cmd</td><td>Read, write, query, or run arbitrary Valkey commands over HTTP returning {"ok":true,"result":...}.</td></tr>
+<tr><td>context valkey: Valkey</td><td>valkey.set(k, v) -> bool | valkey.get(k) -> string | valkey.del(k) -> int | valkey.exists(k) -> bool</td><td>Execute typed key-value operations from _lmcode_ blocks against VALKEY_HOST:VALKEY_PORT or fallback memory.</td></tr>
+<tr><td>Valkey.cmd</td><td>valkey.cmd(c) | valkey.cmd(c, a1) | valkey.cmd(c, a1, a2) -> string</td><td>Run arbitrary Valkey commands (such as PING, INCR, HGETALL, INFO) with up to two arguments.</td></tr>
+<tr><td>Batch pipeline</td><td>let b = valkey.batch(); b.set(k, v).get(k).exec() -> string</td><td>Queue multiple commands and execute them in a single pipelined RESP round-trip returning a JSON array string.</td></tr>
+<tr><td>Standard REST and CLI</td><td>RestGet..RestOptions, RestHandler, CliCommand, CliOption</td><td>Expose _lmcode_ functions as HTTP routes (:param) or stateless CLI flags and commands via rest_serve and rest_cli.</td></tr>
+</tbody>
+</table>
+<pre><code>p = _lmcode_ cli="lmvalkey" install="github:lmctl-ai/lmvalkey@latest";
+assert_eq(valkey.set("user:100", "Alice"), true);
+assert_eq(valkey.get("user:100"), "Alice");
+
+let b = valkey.batch();
+b.set("item:1", "Apples").set("item:2", "Oranges").get("item:1").get("item:2");
+assert_eq(b.exec(), "[\"OK\",\"OK\",\"Apples\",\"Oranges\"]");
+
+@"/kv/:key"
+fn get_kv(x: RestExchange) -> void implements RestGet {
+  x.json("{\"key\":\"" + x.param("key") + "\",\"val\":\"" + valkey.get(x.param("key")) + "\"}");
+}
+assert_eq(rest_cli(str_split("/kv/user:100", " ")), "{\"key\":\"user:100\",\"val\":\"Alice\"}");
+end _lmcode_
+res = run_lmcode(p);
+require(res.ok, json_stringify(res));</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmvalkey/skill.html">Skill</a> — agent authoring rules, server and host commands, REST/RESP security rules, exit codes, and verification steps.</li>
+<li><a href="/tools/lmvalkey/guide.html">Guide</a> — dual-protocol RESP and REST architecture, pipelined Batch execution, in-memory fallback, and standard REST and CLI interfaces.</li>
+<li><a href="/tools/lmvalkey/reference.html">Reference</a> — complete CLI flags, HTTP REST endpoints, Valkey and Batch host methods, standard lmcode_std_v3 interfaces, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmvalkey">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvalkey">github.com/lmctl-ai/lmvalkey</a>.</p>
+</footer>
+</body>
+</html>

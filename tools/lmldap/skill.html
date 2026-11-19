@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmldap authoring skill — lmldap — lmctl.com tools</title>
+<meta name="description" content="lmldap is a standalone, single-executable OpenLDAP 2.6 (slapd + LMDB) server with zero-config startup, an embedded HTTP/JSON REST web server, and an embedded…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmldap/">Overview</a></li>
+<li><a href="/tools/lmldap/skill.html">Skill</a></li>
+<li><a href="/tools/lmldap/guide.html">Guide</a></li>
+<li><a href="/tools/lmldap/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmldap authoring skill</h1>
+<p>lmldap is a standalone, single-executable OpenLDAP 2.6 (slapd + LMDB) server with zero-config startup, an embedded HTTP/JSON REST web server, and an embedded C++17 _lmcode_ bytecode host. It serves RFC 4511 LDAPv3 clients and HTTP REST clients against a single LMDB directory while executing compiled LMScript programs.</p>
+<h2>Purpose</h2>
+<p>Use lmldap to spin up an ephemeral or persistent OpenLDAP directory server without writing slapd.conf or loading external schema files, read and write directory entries over both native LDAPv3 (ASN.1 BER over TCP) and HTTP JSON REST, script directory provisioning and batch queries in _lmcode_, and expose custom identity endpoints via the standard lmcode_std_v3 REST and CLI interfaces.</p>
+<h2>When to use it</h2>
+<p>Choose lmldap when a workflow or integration test needs a real OpenLDAP server with core, cosine, inetorgperson, and nis schemas, dual LDAPv3 and HTTP REST access, or scripted directory manipulation through context ldap: Ldap. Pair lmldap with lmcurl or lmconn when testing external LDAPv3 client wire protocols (such as RFC 4516 search URLs, RFC 4532 Who Am I?, or RFC 4511 Compare requests) against a live slapd instance.</p>
+<h2>Install</h2>
+<p>Install the lmctl toolchain with npm install -g @lmctl-ai/lmctl@latest. Standalone release binaries are published for Linux x64 and arm64, macOS arm64 and x64, and Windows x64. When an LMScript program specifies cli="lmldap" and install="github:lmctl-ai/lmldap@latest", lmscript locates lmldap on PATH or downloads the matching release binary automatically.</p>
+<pre><code>lmscript --version
+lmldap --version
+lmldap --lmcode-schema
+lmldap --lmcode-signatures</code></pre>
+<h2>Commands</h2>
+<p>lmldap operates both as a zero-config dual-protocol directory daemon and as an _lmcode_ bytecode execution host.</p>
+<pre><code># Host introspection and bytecode execution
+lmldap --version
+lmldap --lmcode-schema --json
+lmldap --lmcode-signatures
+lmldap --lmcode build/program.dslb
+
+# Start zero-config OpenLDAP + HTTP REST server
+lmldap --port 3389 --rest-port 8080 \
+  --base-dn "dc=example,dc=com" \
+  --admin-dn "cn=admin,dc=example,dc=com" \
+  --admin-pw "secret" \
+  --data-dir /tmp/lmldap-data-3389
+
+# Query and mutate the running directory over the integrated HTTP REST bridge
+curl "http://127.0.0.1:8080/health"
+curl "http://127.0.0.1:8080/ping"
+curl -X PUT "http://127.0.0.1:8080/entry/cn=Alice,dc=example,dc=com" \
+  -H "Content-Type: application/json" \
+  -d '{"objectClass":["top","person","inetOrgPerson"],"cn":"Alice","sn":"Smith","mail":"alice@example.com"}'
+curl "http://127.0.0.1:8080/entry/cn=Alice,dc=example,dc=com"
+curl "http://127.0.0.1:8080/search?base=dc=example,dc=com&amp;filter=(cn=Alice)&amp;scope=sub"
+curl -X POST "http://127.0.0.1:8080/bind" \
+  -H "Content-Type: application/json" \
+  -d '{"dn":"cn=Alice,dc=example,dc=com","password":"secret"}'
+curl -X DELETE "http://127.0.0.1:8080/entry/cn=Alice,dc=example,dc=com"</code></pre>
+<h2>Inputs and outputs</h2>
+<p>In _lmcode_ mode, lmldap exposes context ldap: Ldap, the Batch operation builder, print(string), and all 226 standard lmcode_std_v3 signatures. Directory entries are passed to ldap.add and ldap.modify as JSON object strings mapping attribute names to scalar strings or string arrays, and returned by ldap.get, ldap.search, and Batch.exec as serialized JSON objects ({dn, attributes}) or JSON arrays. When a live slapd instance is reachable on LDAP_HOST and LDAP_PORT, context ldap executes ASN.1 BER operations over TCP; otherwise it falls back to an in-memory directory store seeded with the base DN entry.</p>
+<h2>Safety rules</h2>
+<p>Observe directory isolation, port selection, and credential rules when running lmldap:</p>
+<ul>
+<li>Use unprivileged ports (such as --port 3389 and --rest-port 8080) and an explicit per-instance --data-dir when running parallel tests so LMDB data files, slapd.pid, and slapd.conf do not collide across concurrent runs.</li>
+<li>Treat the integrated --rest-port HTTP listener as a local test and automation bridge: it performs administrative writes using the configured --admin-dn and --admin-pw without requiring per-request HTTP authentication, so bind it only in trusted local or container networks.</li>
+<li>Configure live connection targets in _lmcode_ scripts via environment variables (LDAP_HOST, LDAP_PORT, LDAP_BIND_DN, LDAP_BIND_PW) rather than hardcoding sensitive directory passwords in shared script files.</li>
+<li>Validate JSON attribute payloads before passing them to ldap.add or ldap.modify; non-object JSON strings raise a runtime host error (exit code 3).</li>
+</ul>
+<h2>Worked examples</h2>
+<p>The first example provisions entries using context ldap: Ldap and Batch, verifies existence and search results, and prints the batch execution envelope:</p>
+<pre><code>p = _lmcode_ cli="lmldap" install="github:lmctl-ai/lmldap@latest";
+let added = ldap.add("cn=Alice,dc=example,dc=com", "{\"objectClass\":[\"top\",\"person\",\"inetOrgPerson\"],\"cn\":\"Alice\",\"sn\":\"Smith\",\"mail\":\"alice@example.com\"}");
+assert_eq(added, true);
+assert_eq(ldap.exists("cn=Alice,dc=example,dc=com"), true);
+
+let b = ldap.batch();
+b.add("cn=Frank,dc=example,dc=com", "{\"objectClass\":[\"top\",\"person\",\"inetOrgPerson\"],\"cn\":\"Frank\",\"sn\":\"Ocean\",\"mail\":\"frank@example.com\"}");
+b.get("cn=Frank,dc=example,dc=com");
+b.search("dc=example,dc=com", "(cn=Frank)");
+assert_eq(b.len(), 3);
+let batch_json = b.exec();
+assert_eq(str_contains(batch_json, "frank@example.com"), true);
+end _lmcode_
+res = run_lmcode(p);
+require(res.ok, json_stringify(res));</code></pre>
+<p>The second example exposes directory provisioning and lookup endpoints through the standard lmcode_std_v3 CliOption, CliCommand, and RestGet interfaces and dispatches them in-process via rest_cli:</p>
+<pre><code>p = _lmcode_ cli="lmldap" install="github:lmctl-ai/lmldap@latest";
+@"--user"
+fn opt_user(x: RestExchange) -> void implements CliOption {
+  x.set("user", x.query("user"));
+}
+
+@"provision"
+fn cmd_provision(x: RestExchange) -> void implements CliCommand {
+  let u = x.get("user");
+  let dn = "cn=" + u + ",dc=example,dc=com";
+  ldap.add(dn, "{\"objectClass\":[\"top\",\"person\",\"inetOrgPerson\"],\"cn\":\"" + u + "\",\"sn\":\"" + u + "\",\"mail\":\"" + u + "@example.com\"}");
+  x.send("provisioned:" + dn);
+}
+
+@"/directory/:cn"
+fn get_dir_user(x: RestExchange) -> void implements RestGet {
+  x.json(ldap.get("cn=" + x.param("cn") + ",dc=example,dc=com"));
+}
+
+rest_config("session", "global");
+let p_out = rest_cli(str_split("--user=Grace provision", " "));
+let g_out = rest_cli(str_split("/directory/Grace", " "));
+assert_eq(p_out, "provisioned:cn=Grace,dc=example,dc=com");
+assert_eq(str_contains(g_out, "Grace@example.com"), true);
+end _lmcode_</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmldap uses standard exit codes across server startup and _lmcode_ bytecode execution:</p>
+<ul>
+<li>Exit code 0 indicates that the CLI metadata command or _lmcode_ bytecode program completed and all assertions passed.</li>
+<li>Exit code 1 indicates an OpenLDAP slapd server startup, configuration, or socket bind failure.</li>
+<li>Exit code 2 indicates a command-line usage error in host mode (such as passing --lmcode without a bytecode file path, emitting code CLI_USAGE).</li>
+<li>Exit code 3 indicates a bytecode load failure (phase load), schema mismatch, invalid JSON attribute payload, or runtime assertion/execution error (phase run) inside _lmcode_.</li>
+</ul>
+<h2>How to verify</h2>
+<p>Verify the installed lmldap binary by checking its version, embedded schema JSON, canonical signature output, and running the repository test suite:</p>
+<pre><code>lmldap --version
+lmldap --lmcode-schema --json > /tmp/lmldap-schema.json
+lmldap --lmcode-signatures > /tmp/lmldap-sigs.txt
+lmscript --lmcode-signatures /tmp/lmldap-schema.json > /tmp/lmldap-compiler-sigs.txt
+diff -u /tmp/lmldap-compiler-sigs.txt /tmp/lmldap-sigs.txt</code></pre>
+<p>In a repository checkout, run ./test.sh and bash tests/integration-test.sh to verify schema and signature parity, _lmcode_ execution, and live dual-protocol synchronization between native LDAPv3 (lmconn and lmcurl) and HTTP REST.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmldap">github.com/lmctl-ai/lmldap</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-rust — lmctl.com tools</title>
+<meta name="description" content="lmcode-rust is a zero-dependency Rust SDK (dslvm crate) for loading, verifying, and executing lmcode DSLB v6 bytecode in native Rust hosts.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-rust/">Overview</a></li>
+<li><a href="/tools/lmcode-rust/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-rust/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-rust/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-rust</h1>
+<p>lmcode-rust is a zero-dependency Rust SDK (dslvm crate) for loading, verifying, and executing lmcode DSLB v6 bytecode in native Rust hosts. It ships the 226-signature lmcode_std_v3 catalog, the stdio REST and stateless CLI controller, dry-mode callback slots, and the LMCODE_RETURN invocation collector.</p>
+<h2>Quick reference</h2>
+<pre><code>git clone https://github.com/lmctl-ai/lmcode-rust.git
+cd lmcode-rust
+cargo test
+cargo run --bin dsl-conformance -- conformance/vectors</code></pre>
+<table><thead><tr><th>Item</th><th>Signature / Value</th><th>Role</th></tr></thead><tbody>
+<tr><td>Registry::new()</td><td>dslvm::Registry</td><td>Create a typed host registry preloaded with all 226 lmcode_std_v3 canonical signatures</td></tr>
+<tr><td>Registry::without_std()</td><td>dslvm::Registry</td><td>Create an empty host registry without standard library bindings</td></tr>
+<tr><td>Program::load(bc, schema, &amp;reg)</td><td>dslvm::Program</td><td>Verify DSLB v6 bytes and SHA-256 schema digest, bind imports, and validate stack depth</td></tr>
+<tr><td>program.run(&amp;mut ctx, &amp;reg)</td><td>Result&lt;(), Error></td><td>Execute the program body against live host objects stored in Context</td></tr>
+<tr><td>program.call(idx, &amp;mut ctx, &amp;reg, &amp;args)</td><td>Result&lt;Value, Error></td><td>Invoke a compiled R49 rule entry by index with typed arguments</td></tr>
+<tr><td>register_rest(&amp;mut reg, opts)</td><td>dslvm::rest::RestController</td><td>Bind the 20 REST/CLI std signatures to a configured stdio HTTP/1.1 and CLI controller</td></tr>
+<tr><td>InvocationResults::from_command(&amp;files)</td><td>dslvm::InvocationResults</td><td>Read LMCODE_INVOCATION_FILE, manage per-slot ResultSinks, and write LMCODE_RETURN frames</td></tr>
+</tbody></table>
+<pre><code>use dslvm::rest::{register_rest, RestOptions};
+use dslvm::{Context, Program, Registry, Value};
+
+fn main() -> Result&lt;(), Box&lt;dyn std::error::Error>> {
+    let mut registry = Registry::new();
+    registry.function("ping", &amp;[], "string", |_ctx, _args| Ok(Value::string("pong")))?;
+    let mut rest = register_rest(&amp;mut registry, RestOptions::default())?;
+    let schema = include_bytes!("../std/lmcode-std.schema.json");
+    let bytecode = std::fs::read("app.dslb")?;
+    let program = Program::load(&amp;bytecode, schema, &amp;registry)?;
+    let mut ctx = Context::new();
+    rest.run(&amp;program, &amp;registry, &amp;mut ctx)?;
+    Ok(())
+}</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmcode-rust/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-rust/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-rust/reference.html">Reference</a></li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmcode-rust">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-rust">github.com/lmctl-ai/lmcode-rust</a>.</p>
+</footer>
+</body>
+</html>

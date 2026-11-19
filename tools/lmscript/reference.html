@@ -1,0 +1,884 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmscript reference — lmscript — lmctl.com tools</title>
+<meta name="description" content="Generated from lmscript 0.2.482: the built-in functions come from lmscript --help, the standard lmcode signatures from lmscript --lmcode-signatures, and the…">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmscript/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmscript/">Overview</a></li>
+<li><a href="/tools/lmscript/skill.html">Skill</a></li>
+<li><a href="/tools/lmscript/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmscript/guide.html">Guide</a></li>
+<li><a href="/tools/lmscript/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmscript reference</h1>
+<p>Generated from lmscript 0.2.482: the built-in functions come from lmscript --help, the standard lmcode signatures from lmscript --lmcode-signatures, and the interfaces from the lmcode_std_v3 schema. See the <a href="/tools/lmscript/guide.html">user guide</a> for the language and the <a href="/tools/lmscript/skill.html">skill</a> for a compact summary.</p>
+<h2 id="cli">Command line</h2>
+<pre><code>lmscript [--check|--dry-run|--lint] [--trace FILE] [--dry-loop-limit N] [--plan-format text|json] [--resumepoint PATH] [--pref FILE] [--check-files] [--base-dir dir] [--source-name label] [--saveas FILE] &lt;file>|http(s)://.../x.lms|-| -e &lt;code> [args...]
+lmscript install github:OWNER/REPO[@TAG] | npm:@lmctl-ai/TOOL@VERSION|latest
+lmscript --lmcode-signatures SCHEMA [--without-std]
+lmscript --lmcode-schema SCHEMA [--without-std] [--json]</code></pre>
+<table>
+<thead><tr><th>Flag or form</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>--check</td><td>Static check only, including compiling _lmcode_ blocks; never starts a host.</td></tr>
+<tr><td>--dry-run</td><td>Checks, then evaluates with effects off and prints PLAN; a reached run_lmcode starts the host once with dry metadata.</td></tr>
+<tr><td>--lint</td><td>Stops after checking, like --check.</td></tr>
+<tr><td>--trace FILE</td><td>Writes an execution trace to FILE.</td></tr>
+<tr><td>--dry-loop-limit N</td><td>Loop iteration limit for the dry run.</td></tr>
+<tr><td>--plan-format text|json</td><td>Plan format for --dry-run.</td></tr>
+<tr><td>--resumepoint PATH</td><td>Start at a named resume point of a recover block.</td></tr>
+<tr><td>--pref FILE</td><td>Properties file.</td></tr>
+<tr><td>--check-files</td><td>Also verify path literals against the file system.</td></tr>
+<tr><td>--base-dir dir</td><td>Base directory for relative paths.</td></tr>
+<tr><td>--source-name label</td><td>Source label used in diagnostics.</td></tr>
+<tr><td>--saveas FILE</td><td>Download a remote .lms URL to FILE instead of running it; refused with exit 2 beside --check, --lint, --check-files or --dry-run.</td></tr>
+<tr><td>&lt;file> | http(s)://.../x.lms | - | -e &lt;code> [args...]</td><td>Script source: file, URL of an .lms file, standard input or inline code; the words after it are script arguments.</td></tr>
+<tr><td>lmscript install github:OWNER/REPO[@TAG] | npm:@lmctl-ai/TOOL@VERSION|latest</td><td>Explicit install of a native lmcode host from a GitHub release or a pinned npm package.</td></tr>
+<tr><td>lmscript --lmcode-signatures SCHEMA [--without-std]</td><td>Print the canonical signatures of a host schema, with or without the standard catalog.</td></tr>
+<tr><td>lmscript --lmcode-schema SCHEMA [--without-std] [--json]</td><td>Print a schema summary, or the normalized schema as JSON.</td></tr>
+<tr><td>lmscript --help [NAME]</td><td>List all functions and topics, or explain one function, built-in or topic.</td></tr>
+<tr><td>lmscript --version</td><td>Print the version.</td></tr>
+</tbody>
+</table>
+<h3 id="exit-codes">Exit codes</h3>
+<table>
+<thead><tr><th>Exit code</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success.</td></tr>
+<tr><td>1</td><td>Ordinary runtime failure, for example a failed require or a failed fetch of a remote script.</td></tr>
+<tr><td>2</td><td>Static check failure or refused flag combination; nothing ran.</td></tr>
+</tbody>
+</table>
+<h2 id="builtins">Built-in functions</h2>
+<p>255 functions in 20 categories, as listed by lmscript 0.2.482. The description column is filled where the standard library reference documents the function.</p>
+<h3 id="fn-agent-agents">Agents (agent)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>agent_close(agent, [status])</td><td>Closes an open agent and releases its lease; idempotent. Scope exit, recorded errors, exit and signals also close it.</td></tr>
+<tr><td>agent_compact(agent, [options])</td><td>Compacts an embedded conversation to its budget now (or to target_tokens), dropping the oldest exchanges and recording a compaction marker; a CLI tool manages its own context and answers status unsupported.</td></tr>
+<tr><td>agent_history(agent, [options])</td><td>The transcript of an open agent: the provider session reader (the lmctl tail path) for CLI tools, the native store for embedded models. Roles: user, assistant, system, tool_use, tool_result, thinking; kind compaction_summary marks a compaction marker.</td></tr>
+<tr><td>agent_info(agent)</td><td>State of an open agent without side effects: kind, provider, model, session_id, cwd, label, turns, pending_tools, context (managed_by host|provider, input_tokens_last, budget, compacted, estimated, compactions) and the accounting totals of its turns in this run.</td></tr>
+<tr><td>agent_models(provider, [options])</td><td>Model ids for one provider: the embedded provider's /models endpoint, or the known model list of a CLI tool (codex, agy, claude, kimi). Other CLI tools give ok:false with error.code unsupported.</td></tr>
+<tr><td>agent_open(spec, [options])</td><td>Opens a conversation with a CLI coding tool or an embedded model without a teamfile. spec: provider (required), model, kind, cwd, session_id (resume), label; embedded only: system, tools ("none" | "script" | {script:[declarations]} | {root, write, web, shell}), context {max_input_tokens, reserve_output_tokens, strategy: truncate_oldest|summarize|fail}, persist: full|none; CLI only: effort, permission: yolo|plan. A key the kind cannot honour is an author error. Returns an opaque resource handle owned by its first receiving binding, or null after writing the admission failure (busy, not found, provider down) to stderr. Dry run returns null without any effect.</td></tr>
+<tr><td>agent_prompt(spec, prompt, [options])</td><td>One shot: agent_open, one agent_turn, agent_close. The result carries session_id so the conversation can be resumed later with agent_open({... session_id}) or another agent_prompt. Admission failures come back as status busy or error rather than null.</td></tr>
+<tr><td>agent_providers([options])</td><td>The one catalog of agent providers: CLI coding tools (kind cli) and in-process embedded models (kind embedded) side by side, with transport, default model and capabilities. key_set (embedded) and binary_found (cli) are probed lazily in a real run and are null in dry run or with probe: false.</td></tr>
+<tr><td>agent_tool_result(agent, results, [options])</td><td>Answers a tool_request turn (tools_mode script): results is a list of {id, ok, data | error} covering exactly the pending calls; the same turn and the same turn_id finish. A wrong or missing id is error/invalid_argument and sends nothing.</td></tr>
+<tr><td>agent_turn(agent, prompt, [options])</td><td>Sends one user turn on an open agent and waits for the reply. The host owns the conversation: a CLI tool keeps its native session, an embedded model keeps the message list, runs granted tools and compacts the context to its budget. Exactly one accounting row (the turn_id) is written with the four token buckets and the saved price; usage and cost come back in the result. World failures are data (status != "ok"); a closed handle is error/invalid_argument.</td></tr>
+<tr><td>agent_usage([options])</td><td>Read-only accounting of agent turns from the same turn_usage view lmctl usage reads: this run by default (scope run), or every direct turn (scope all) narrowed by session_id, provider or since. A turn with unknown usage makes the affected total null and counts in unknown_turns.</td></tr>
+</tbody>
+</table>
+<h3 id="fn-core-agent-files">Agent Files (core)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>format_file_blocks(files: array): string</td><td>Inverse of parse_file_blocks (round-trips content ending in a newline); fence-wrapped content gets a longer outer fence.</td></tr>
+<tr><td>kv_from_last_paragraph(text: string): map</td><td>key: value lines of the last paragraph; last key wins, non-pairs ignored, missing keys absent. Up to 3 trailing paragraphs without pairs are skipped as chatter; a file-block marker stops the scan.</td></tr>
+<tr><td>parse_file_blocks(text: string): array</td><td>=== FILE: rel/path === to === END === blocks as [{path, content}]; prose and marker-line whitespace ignored; one wrapping fence stripped; content ends in a newline; a block without END (truncated, or interrupted by the next FILE marker) is dropped. See help agent-files.</td></tr>
+<tr><td>read_tree(dir: string, [options: map]): array</td><td>Sorted text files relative to dir; skips symlinks, binary/non-UTF-8, files over an explicitly supplied maxBytes and .git, node_modules, dist, build, target, .mp, __pycache__, *.lock, package-lock.json. Options ignore/include/maxBytes; missing dir gives [].</td></tr>
+<tr><td>split_command(text: string): array</td><td>POSIX quoting into argv for system(); unquoted | &amp; ; &lt; > ( )  $, $/ in double quotes, word-start #, newline or NAME=value prefix are errors (shell:false). Globs and ~ stay literal.</td></tr>
+<tr><td>write_files(dir, files)</td><td>Writes under dir (created) via temp + rename, keeping a replaced file mode. Rejects empty/absolute/backslash/.. paths, any .git segment, symlink targets and paths through a symlink leaving dir. Language dry run: skipped with {}, without classifying paths or creating files.</td></tr>
+</tbody>
+</table>
+<h3 id="fn-core-database">Database (core)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>sql_exec(path: string, sql: string, [params: array|map]): map</td><td>Runs ONE write statement against a local SQLite file (created if missing; refuses the lmctl state database) and returns {changes, last_insert_rowid}. Literal SQL, bound parameters.</td></tr>
+<tr><td>sql_read(path: string, sql: string, [params: array|map]): array</td><td>Runs ONE SELECT against a SQLite file opened read-only and returns the rows as a list of maps. The SQL must be a string literal; values are bound parameters (list for ?, map for :name), never text.</td></tr>
+</tbody>
+</table>
+<h3 id="fn-core-file-i-o">File I/O (core)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>abs_path(filePath: string): string</td><td>Resolves a path to an absolute path</td></tr>
+<tr><td>append_file(path: string, content: any): boolean</td><td>Appends string content to file</td></tr>
+<tr><td>basename(filePath: string, [ext: string]): string</td><td>Returns the last path segment, optionally stripping a trailing extension</td></tr>
+<tr><td>copy_file(src: string, dest: string): boolean</td><td>Copies a file to a new path</td></tr>
+<tr><td>csv_parse(text: string, [hasHeader: boolean = true], [delimiter: string = ","]): array</td><td>Parses inline CSV text into records or rows. Typed cells: a trimmed -?digits or -?digits.digits cell becomes a number (007 becomes 7), true/false/null in any case become those values; other cells stay text; a missing trailing column is null.</td></tr>
+<tr><td>csv_stringify(data: array, [delimiter: string = ","]): string</td><td>Serializes records or rows to CSV text</td></tr>
+<tr><td>dirname(filePath: string): string</td><td>Returns the directory portion of a path</td></tr>
+<tr><td>file_exists(path: string): boolean</td><td>Checks if file exists</td></tr>
+<tr><td>glob(pattern: string): array</td><td>Finds files matching a glob pattern and returns an array of matching paths</td></tr>
+<tr><td>list_dir(path: string): array</td><td>Lists filenames in a directory</td></tr>
+<tr><td>lmcode_build(host: lmcode schema | string | string list): lmcode_builder</td><td>Creates an opaque run-local lmcode builder</td></tr>
+<tr><td>mkdir(dirPath: string, [recursive: boolean = true]): boolean</td><td>Creates a directory (recursive by default)</td></tr>
+<tr><td>move_file(src: string, dest: string): boolean</td><td>Moves/renames a file</td></tr>
+<tr><td>path_join(...parts: string): string</td><td>Joins path segments using the OS-native separator</td></tr>
+<tr><td>read(path: string): string</td><td>Reads entire file as UTF-8 string</td></tr>
+<tr><td>read_csv(path: string, [hasHeader: boolean = true], [delimiter: string = ","]): array</td><td>Reads CSV file and parses into array of objects or rows. Typed cells: a trimmed -?digits or -?digits.digits cell becomes a number (007 becomes 7), true/false/null in any case become those values; other cells stay text; a missing trailing column is null.</td></tr>
+<tr><td>read_file(path: string): string</td><td>Reads entire file as UTF-8 string</td></tr>
+<tr><td>read_json(path: string): any</td><td>Reads file and parses JSON content</td></tr>
+<tr><td>read_lines(path: string): array</td><td>Reads file as an array of string lines</td></tr>
+<tr><td>rmdir(dirPath: string, [recursive: boolean = false]): boolean</td><td>Removes a directory; pass true for recursive removal of a non-empty directory</td></tr>
+<tr><td>run_lmcode(program_or_builder: lmcode, options?: map): map</td><td>Executes an opaque lmcode program or sealed builder; dry calls require dry-marked preview envelopes and record simulated PLAN data</td></tr>
+<tr><td>temp_file(): string</td><td>Creates an empty temporary file and returns its absolute path; caller deletes it</td></tr>
+<tr><td>write(path: string, content: any): boolean</td><td>Writes string content to file</td></tr>
+<tr><td>write_csv(path: string, data: array, [delimiter: string = ","]): boolean</td><td>Writes array of objects or rows to CSV file</td></tr>
+<tr><td>write_file(path: string, content: any): boolean</td><td>Writes string content to file</td></tr>
+<tr><td>write_file_exclusive(path: string, content: any): boolean</td><td>Creates a new file; refuses to overwrite an existing path</td></tr>
+<tr><td>write_json(path: string, data: any, [indent: number = 2]): boolean</td><td>Serializes data and writes formatted JSON to file</td></tr>
+<tr><td>write_lines(path: string, lines: array): boolean</td><td>Writes an array of lines to a file with trailing newline</td></tr>
+</tbody>
+</table>
+<h3 id="fn-core-json-data">JSON &amp; Data (core)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>filter_by(arr: array, key: string, value: any): array</td><td>Filters array of objects where item[key] == value</td></tr>
+<tr><td>find_by(arr: array, key: string, value: any): any</td><td>Finds first object in array where item[key] == value</td></tr>
+<tr><td>json_parse(str: string): any</td><td>Parse JSON text.</td></tr>
+<tr><td>json_parse_safe(str: string, [fallback: any = null]): any</td><td>Parse with fence/preamble recovery; fallback if invalid.</td></tr>
+<tr><td>json_stringify(val: any, [indent: number = 0]): string</td><td>Serializes value into JSON string</td></tr>
+<tr><td>json_validate(val: any, schema: map): map</td><td>Validate value against JSON-Schema subset (type, properties, required, enum, items, minimum/maximum, minLength/maxLength, additionalProperties:false). Returns {ok, errors}.</td></tr>
+<tr><td>pluck(arr: array, key: string): array</td><td>Extracts key from array of objects</td></tr>
+<tr><td>xml_attr(node, name, fallback=null)</td><td>Look up an unqualified or {URI}local attribute, with optional fallback.</td></tr>
+<tr><td>xml_children(node)</td><td>Return a native XML element's ordered child array; operate on Data.value() copies.</td></tr>
+<tr><td>xml_select(tree, selector)</td><td>Select native XML nodes by *, local tag, .class or #id; returns references inside the supplied copy.</td></tr>
+<tr><td>xml_text(node)</td><td>Concatenate descendant XML text in document order, excluding comments.</td></tr>
+</tbody>
+</table>
+<h3 id="fn-core-language-constructs">Language Constructs (core)</h3>
+<table>
+<thead><tr><th>Signature</th></tr></thead>
+<tbody>
+<tr><td>break</td></tr>
+<tr><td>continue</td></tr>
+<tr><td>fn name(arg1, arg2) { ... }</td></tr>
+<tr><td>for (x in expr) { ... }; for (init; condition; update) { ... }</td></tr>
+<tr><td>if (condition) { ... } else { ... }</td></tr>
+<tr><td>import "path"</td></tr>
+<tr><td>parallel([ call1(), call2() ])</td></tr>
+<tr><td>parallel_map(items, fn[, limit])</td></tr>
+<tr><td>return expr</td></tr>
+<tr><td>sync expr</td></tr>
+<tr><td>while (condition) { ... }</td></tr>
+</tbody>
+</table>
+<h3 id="fn-core-lists-arrays">Lists &amp; Arrays (core)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>avg(arr: array): number</td><td>Calculates average of array</td></tr>
+<tr><td>chunk(arr: array, size: number): array</td><td>Partition into lists; size&lt;=0 gives [].</td></tr>
+<tr><td>compact(arr: array): array</td><td>Remove null elements only; retain false/0/empty text.</td></tr>
+<tr><td>concat(first: array, ...more: array): array</td><td>Concatenates arrays</td></tr>
+<tr><td>drop(arr: array, n: number): array</td><td>Return suffix; negative start clamps to 0.</td></tr>
+<tr><td>enumerate(arr: array): array</td><td>Returns an array of [index, value] pairs, JS/Python-familiar alongside zip (Rule 1, operator 2026-09-29).</td></tr>
+<tr><td>first(arr: array): any</td><td>Returns first element</td></tr>
+<tr><td>flatten(arr: array): array</td><td>Flattens array one level</td></tr>
+<tr><td>insert(arr: array, index: number, item: any): array</td><td>Inserts item at index and returns the same array</td></tr>
+<tr><td>last(arr: array): any</td><td>Returns last element</td></tr>
+<tr><td>len(item: any): number</td><td>Returns length of string, array, or object</td></tr>
+<tr><td>pop(arr: array): any</td><td>Pops item from end of array</td></tr>
+<tr><td>push(arr: array, ...items: any): array</td><td>Pushes item(s) to end of array and returns the same array</td></tr>
+<tr><td>range(start: number, [end: number], [step: number = 1]): array</td><td>Generates an array of numbers</td></tr>
+<tr><td>remove_at(arr: array, index: number): any</td><td>Removes element at index</td></tr>
+<tr><td>reverse(arr: array): array</td><td>Returns reversed array</td></tr>
+<tr><td>shift(arr: array): any</td><td>Removes and returns first element</td></tr>
+<tr><td>sort(arr: array, [key: string]): array</td><td>Sorts array numerically, alphabetically, or by object key</td></tr>
+<tr><td>sum(arr: array): number</td><td>Calculates sum of array</td></tr>
+<tr><td>take(arr: array, n: number): array</td><td>Return prefix; negative n gives [].</td></tr>
+<tr><td>unique(arr: array): array</td><td>Removes duplicate elements</td></tr>
+<tr><td>unshift(arr: array, ...items: any): array</td><td>Adds item(s) to front of array and returns the same array</td></tr>
+<tr><td>zip(arr1: array, arr2: array): array</td><td>Combines two arrays into an array of pairs [[a1, b1], [a2, b2], ...].</td></tr>
+</tbody>
+</table>
+<h3 id="fn-core-maps-key-value">Maps &amp; Key-Value (core)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>clone(val: any): any</td><td>Deep clones an object or array</td></tr>
+<tr><td>delete_key(obj: object, key: string): object</td><td>Deletes key from object</td></tr>
+<tr><td>entries(obj: object): array</td><td>Returns array of [key, value] pairs</td></tr>
+<tr><td>from_entries(pairs: array): object</td><td>Creates map from [key, value] pairs</td></tr>
+<tr><td>get(obj: any, path: string|array, [defaultVal: any]): any</td><td>Safely extracts nested property by path (e.g. 'user.address.city')</td></tr>
+<tr><td>getbool(obj: any, path: string|array, [fallback: boolean = false]): boolean</td><td>Reads a boolean field from a map/request form ("true"/"false" strings included); fallback (default false) when missing or null</td></tr>
+<tr><td>getlist(obj: any, path: string|array, [fallback: array = []]): array</td><td>Reads an array field from a map/request form; fallback (default []) when missing, null, or not actually an array</td></tr>
+<tr><td>getnum(obj: any, path: string|array, [fallback: number = 0]): number</td><td>Reads a numeric field from a map/request form; fallback (default 0) when missing or null</td></tr>
+<tr><td>getstr(obj: any, path: string|array, [fallback: string = ""]): string</td><td>Reads a string field from a map/request form; fallback (default "") when missing or null (never the string "null"). A distinguishable non-"" fallback (e.g. "?") tells "missing" apart from a real empty string.</td></tr>
+<tr><td>has_key(obj: object, key: string): boolean</td><td>Checks if object has key</td></tr>
+<tr><td>items(obj: object): array</td><td>Returns array of [key, value] pairs (alias for entries)</td></tr>
+<tr><td>keys(obj: object): array</td><td>Returns array of object keys</td></tr>
+<tr><td>merge(a: object, b: object): object</td><td>Shallow merges two objects</td></tr>
+<tr><td>set(obj: object, path: string|array, value: any): object</td><td>Sets nested property by path</td></tr>
+<tr><td>values(obj: object): array</td><td>Returns array of object values</td></tr>
+</tbody>
+</table>
+<h3 id="fn-core-math">Math (core)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>abs(n: number): number</td><td>Absolute value</td></tr>
+<tr><td>ceil(n: number): number</td><td>Ceil value</td></tr>
+<tr><td>clamp(val: number, low: number, high: number): number</td><td>Restricts a numeric value to lie within [low, high] bounds.</td></tr>
+<tr><td>floor(n: number): number</td><td>Floor value</td></tr>
+<tr><td>max(...nums: number|array): number</td><td>Maximum value</td></tr>
+<tr><td>min(...nums: number|array): number</td><td>Minimum value</td></tr>
+<tr><td>num(val: any): number</td><td>Converts value to number</td></tr>
+<tr><td>pow(base: number, exp: number): number</td><td>Power calculation</td></tr>
+<tr><td>random(): number</td><td>Random float between 0 and 1</td></tr>
+<tr><td>round(n: number): number</td><td>Round value</td></tr>
+<tr><td>sqrt(n: number): number</td><td>Square root</td></tr>
+</tbody>
+</table>
+<h3 id="fn-core-math-utilities">Math &amp; Utilities (core)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>sha256(text: string): string</td><td>Returns lowercase SHA-256 of UTF-8 text; strings only</td></tr>
+</tbody>
+</table>
+<h3 id="fn-core-properties">Properties (core)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>get_properties([prefix])</td><td>Read or overlay hierarchical run-local properties; no persistence</td></tr>
+<tr><td>get_property(key, [default])</td><td>Read or overlay hierarchical run-local properties; no persistence</td></tr>
+<tr><td>has_property(key)</td><td>Read or overlay hierarchical run-local properties; no persistence</td></tr>
+<tr><td>set_property(key, value)</td><td>Read or overlay hierarchical run-local properties; no persistence</td></tr>
+</tbody>
+</table>
+<h3 id="fn-core-strings">Strings (core)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>char_at(s: string, index: number): string</td><td>UTF-16 code unit text; out of range gives empty string.</td></tr>
+<tr><td>char_code(s: string, [index: number = 0]): number</td><td>UTF-16 code unit number; out of range gives NaN.</td></tr>
+<tr><td>contains(haystack: string|array, needle: any): boolean</td><td>Checks if string or array contains item</td></tr>
+<tr><td>count_matches(s: string, sub: string): number</td><td>Count non-overlapping substrings; empty needle gives 0.</td></tr>
+<tr><td>ends_with(s: string, suffix: string): boolean</td><td>Checks if string ends with suffix</td></tr>
+<tr><td>endswith(s: string, suffix: string): boolean</td><td>Checks if string ends with suffix (alias for ends_with)</td></tr>
+<tr><td>expand(text, [vars])</td><td>Expand simple references from explicit vars, PROPS paths and invocation ARGV; inserted text is opaque</td></tr>
+<tr><td>format(template: string, ...args: any): string</td><td>Formats string with arguments, supporting {{ and }} brace escapes, positional {0}, auto {}, and {key} map substitution</td></tr>
+<tr><td>from_char_code(...codes: number): string</td><td>Returns string from character codes</td></tr>
+<tr><td>includes(haystack: string|array, needle: any): boolean</td><td>Checks if string or array contains item</td></tr>
+<tr><td>index_of(haystack: string|array, needle: any, [fromIndex: number]): number</td><td>Finds substring or strictly equal array element index; -1 if absent</td></tr>
+<tr><td>is_alnum(s: string): boolean</td><td>Nonempty ASCII letters/digits.</td></tr>
+<tr><td>is_alpha(s: string): boolean</td><td>Nonempty ASCII alphabetic text.</td></tr>
+<tr><td>is_blank(s: any): boolean</td><td>Returns true if string is null, empty, or whitespace only.</td></tr>
+<tr><td>is_digit(s: string): boolean</td><td>Nonempty ASCII digit text.</td></tr>
+<tr><td>is_empty(val: any): boolean</td><td>Literal emptiness: null, empty string, empty array or empty map; whitespace-only strings are not empty. Use is_blank for whitespace.</td></tr>
+<tr><td>join(arr: array, [separator: string]): string</td><td>Join list values; default separator is comma-space; non-list becomes String(value).</td></tr>
+<tr><td>last_index_of(haystack: string|array, needle: any): number</td><td>Finds last substring or strictly equal array element index; -1 if absent</td></tr>
+<tr><td>last_line_as_status(s: string): string|null</td><td>Returns the state word (DONE, NOTHING_TO_DO, BLOCKED, OTHER) from the last 3 non-blank lines of a string, or null if absent or conflicting</td></tr>
+<tr><td>lines(s: string): array</td><td>Splits string into array of lines</td></tr>
+<tr><td>lower(s: string): string</td><td>Converts string to lowercase</td></tr>
+<tr><td>lstrip(s: string): string</td><td>Trims leading whitespace (alias for trim_start)</td></tr>
+<tr><td>pad_end(s: string, targetLength: number, [padChar: string = " "]): string</td><td>Right-pads string</td></tr>
+<tr><td>pad_start(s: string, targetLength: number, [padChar: string = " "]): string</td><td>Left-pads string</td></tr>
+<tr><td>pos([s: string|number|null], [offset: number|null]): number</td><td>Reads or sets the Perl-like stateful regex match offset (0-based UTF-16 units, isolated per run and parallel task)</td></tr>
+<tr><td>regex_find(s: string, pattern: string, [flags: string]): string|null</td><td>Returns first matched substring or null; g retains first-match shape, y is rejected</td></tr>
+<tr><td>regex_find_all(s: string, pattern: string, [flags: string]): array</td><td>Returns capture arrays with Unicode-aware zero-width progress; y is rejected</td></tr>
+<tr><td>regex_find_pos(s: string, pattern: string, [flags: string]): string|null</td><td>Matches substring at pos(s) (sticky by default, or from pos(s) with g), advancing pos(s) after non-empty matches and leaving pos(s) unchanged on failure. An empty match consumes no input and leaves pos(s) at the match offset and a second empty match at that offset is refused (null/false; g resumes one unit or u/v code point later); Unicode matches never rewind the cursor</td></tr>
+<tr><td>regex_match(s: string, pattern: string, [flags: string]): array|null</td><td>Returns first full match and captures; g retains first-match shape, y is rejected</td></tr>
+<tr><td>regex_match_pos(s: string, pattern: string, [flags: string]): array|null</td><td>Matches at pos(s) (sticky by default, or from pos(s) with g), advancing pos(s) after non-empty matches and leaving pos(s) unchanged on failure. An empty match consumes no input and leaves pos(s) at the match offset and a second empty match at that offset is refused (null/false; g resumes one unit or u/v code point later); Unicode matches never rewind the cursor</td></tr>
+<tr><td>regex_matches(s: string, pattern: string, [flags: string]): array</td><td>Returns flat array of matched substrings with Unicode-aware zero-width progress; y is rejected</td></tr>
+<tr><td>regex_replace(s: string, pattern: string, replacement: string, [flags: string]): string</td><td>Replaces matches using JavaScript regex replacement semantics</td></tr>
+<tr><td>regex_test(s: string, pattern: string, [flags: string]): boolean</td><td>Tests a JavaScript regular expression against text</td></tr>
+<tr><td>regex_test_pos(s: string, pattern: string, [flags: string]): boolean</td><td>Tests pattern at pos(s) (sticky by default, or from pos(s) with g), advancing pos(s) after non-empty matches and leaving pos(s) unchanged on failure. An empty match consumes no input and leaves pos(s) at the match offset and a second empty match at that offset is refused (null/false; g resumes one unit or u/v code point later); Unicode matches never rewind the cursor</td></tr>
+<tr><td>repeat(s: string, count: number): string</td><td>Repeats string count times</td></tr>
+<tr><td>replace(s: string, search: string, replacement: string): string</td><td>Replaces first occurrence</td></tr>
+<tr><td>replace_all(s: string, search: string, replacement: string): string</td><td>Replaces all occurrences</td></tr>
+<tr><td>reverse_str(s: string): string</td><td>Reverse UTF-16 code units (not code points).</td></tr>
+<tr><td>rstrip(s: string): string</td><td>Trims trailing whitespace (alias for trim_end)</td></tr>
+<tr><td>set_pos(s_or_offset: string|number|null, [offset: number|null]): number</td><td>Sets or resets the stateful regex match offset and returns the new offset</td></tr>
+<tr><td>slice(target: string|array, start: number, [end: number]): string|array</td><td>Slices string or array</td></tr>
+<tr><td>split(s: string, delimiter: string): array</td><td>Splits string by required delimiter; use explicit empty delimiter for characters</td></tr>
+<tr><td>split_regex(s: string, pattern: string, [flags: string]): array</td><td>Splits text at regular expression matches</td></tr>
+<tr><td>sprintf(template: string, ...args: any): string</td><td>Formats %s/%d/%f/%% with bounded width, alignment and precision; use format() for {} brace syntax</td></tr>
+<tr><td>starts_with(s: string, prefix: string): boolean</td><td>Checks if string starts with prefix</td></tr>
+<tr><td>startswith(s: string, prefix: string): boolean</td><td>Checks if string starts with prefix (alias for starts_with)</td></tr>
+<tr><td>strip(s: string): string</td><td>Trims whitespace from both ends (alias for trim)</td></tr>
+<tr><td>substr(s: string, start: number, [length: number]): string</td><td>Returns substring by end-relative start and optional length</td></tr>
+<tr><td>substring(s: string, start: number, [end: number]): string</td><td>Returns substring between indices</td></tr>
+<tr><td>title_case(s: string): string</td><td>Uppercase ASCII word-initial characters; does not lowercase the tail.</td></tr>
+<tr><td>to_lower(s: string): string</td><td>Converts string to lowercase</td></tr>
+<tr><td>to_upper(s: string): string</td><td>Converts string to uppercase</td></tr>
+<tr><td>trim(s: string): string</td><td>Trims whitespace from both ends</td></tr>
+<tr><td>trim_end(s: string): string</td><td>Trims trailing whitespace</td></tr>
+<tr><td>trim_start(s: string): string</td><td>Trims leading whitespace</td></tr>
+<tr><td>upper(s: string): string</td><td>Converts string to uppercase</td></tr>
+<tr><td>upper_first(s: string): string</td><td>Uppercase first UTF-16 code unit; retain tail.</td></tr>
+<tr><td>words(s: string): array</td><td>Splits string into words</td></tr>
+</tbody>
+</table>
+<h3 id="fn-core-system-process">System &amp; Process (core)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>args_parse(argv, flags, [usage])</td><td>Parses declared long options without effects; returns values, args, provided, help and help_requested</td></tr>
+<tr><td>assert(condition: any, [message: string]): boolean</td><td>Throws error if condition is falsy</td></tr>
+<tr><td>cmd_render(argv, [dialect])</td><td>Renders argv as posix, windows or powershell text; execution never uses rendered text</td></tr>
+<tr><td>coalesce(...values: any): any</td><td>Returns the first non-null/non-undefined argument, else null</td></tr>
+<tr><td>date([epochMs: number]): string</td><td>Returns an ISO 8601 date-time string for now, or for a given epoch-ms timestamp</td></tr>
+<tr><td>env(name: string, [fallback: any = null]): any</td><td>Reads an environment variable, or a fallback if unset</td></tr>
+<tr><td>error(value, ...values)</td><td>Formats and logs an error to stderr and records it for the execution error summary</td></tr>
+<tr><td>exit([code: number = 0]): never</td><td>Terminates script execution with an optional exit code (default: 0)</td></tr>
+<tr><td>getenv(name: string, [fallback: any = null]): any</td><td>Reads an environment variable, or a fallback if unset (alias for env)</td></tr>
+<tr><td>http_get(url)</td><td>Downloads UTF-8 text from a public HTTP(S) URL</td></tr>
+<tr><td>if_else(cond: any, thenVal: any, elseVal: any): any</td><td>Eager JS-truthiness choice; use ?: for lazy selection.</td></tr>
+<tr><td>if_null(val: any, fallback: any): any</td><td>Returns fallback if value is null/undefined, else value</td></tr>
+<tr><td>is_array(val: any): boolean</td><td>Checks if value is an array</td></tr>
+<tr><td>is_function(val: any): boolean</td><td>Checks if value is a first-class function reference</td></tr>
+<tr><td>is_map(val: any): boolean</td><td>Checks if value is a map/object</td></tr>
+<tr><td>is_number(val: any): boolean</td><td>typeof number predicate; includes NaN/Infinity.</td></tr>
+<tr><td>is_string(val: any): boolean</td><td>Checks if value is a string</td></tr>
+<tr><td>now(): number</td><td>Returns current epoch in ms</td></tr>
+<tr><td>print(...values)</td><td>Prints formatted values to output log</td></tr>
+<tr><td>printf(format, ...values)</td><td>Formats %s, %d, %f and %% with the sprintf rules and writes exactly that text to stdout (no newline added)</td></tr>
+<tr><td>println(...values)</td><td>Prints line to output log</td></tr>
+<tr><td>prompt_human_config([config: map|string], [dir: string]): map</td><td>Configures prompt_human mode ('interactive' or 'file' with dedicated directory, timeout_ms, poll_ms)</td></tr>
+<tr><td>require(value: any, message: string): any</td><td>Requires a present value; injected diagnostic/captured error and exit 1 on missing</td></tr>
+<tr><td>set_env(name: string, value: any): boolean</td><td>Sets an environment variable for this run (isolated per parallel/parallel_map task): env()/getenv() and later system() calls, command literals, which(), run_script children and lm_* provider calls see it; null unsets the name, including an inherited value</td></tr>
+<tr><td>sleep_ms(ms: number): void</td><td>Sleeps for the specified milliseconds</td></tr>
+<tr><td>str(val: any): string</td><td>Converts lists and maps to compact JSON; scalars to normal text</td></tr>
+<tr><td>strftime(epochMs: number, fmt: string): string</td><td>Formats local time: epoch milliseconds first, format string second</td></tr>
+<tr><td>system(argv: array, [timeoutMs: number = 0 | options: map]): SystemResult</td><td>Executes argv directly with shell:false and optional timeoutMs (default 0, no deadline) or options {cwd, timeoutMs, stdin}, returning {stdout, stderr, code, signal, timed_out, duration_ms, pid}</td></tr>
+<tr><td>timestamp(): number</td><td>Returns current Unix epoch in whole seconds</td></tr>
+<tr><td>type(val: any): string</td><td>Returns runtime type of value</td></tr>
+<tr><td>warning(message: any): string</td><td>Adds a located non-failure warning</td></tr>
+<tr><td>which(name: string): string|null</td><td>Finds the first executable path without spawning</td></tr>
+</tbody>
+</table>
+<h3 id="fn-core-templates">Templates (core)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>template_extract(pattern, data)</td><td>Pure tree projection over parsed JSON-like values; returns {matched,value,candidate,error}; no-match is data, not an exception.</td></tr>
+<tr><td>template_extract_first(patterns, data)</td><td>Validate a nonempty candidate list and return the first matching projection as {matched,value,candidate,error}; failure records stay ordered.</td></tr>
+<tr><td>template_extract_text(template, text)</td><td>Exact whole-string extraction with simple ${name} holes, anchored suffix and earliest separators; returns {matched,value,candidate,error}.</td></tr>
+</tbody>
+</table>
+<h3 id="fn-core-uncategorized">Uncategorized (core)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>array(...args)</td><td>Creates a new list/array</td></tr>
+<tr><td>clear(arg1)</td><td>Clears array or map</td></tr>
+<tr><td>delete_file(arg1)</td><td>Deletes file if it exists</td></tr>
+<tr><td>hash()</td><td>Creates a new empty map/hash</td></tr>
+<tr><td>list(...args)</td><td>Creates a new list/array</td></tr>
+<tr><td>map()</td><td>Creates a new empty map/hash</td></tr>
+<tr><td>remove_file(arg1)</td><td>Deletes file if it exists</td></tr>
+<tr><td>size(arg1)</td><td>Returns number of elements in array, string, or map</td></tr>
+</tbody>
+</table>
+<h3 id="fn-llm-llm">LLM (llm)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>llm_models(provider, options)</td><td>Fetches the list of model IDs available for a provider (ollama-cloud, openrouter, deepseek, zai-coding-plan, anthropic) and returns a normalized response map with sorted model IDs. Returns {ok, provider, models:[string ids sorted], count, error:null|{code,message,http_status}, dry_run, latency_ms}. World failures return ok:false with error:{code, message, http_status}. Scripts must inspect r.ok.</td></tr>
+<tr><td>llm_prompt(model, prompt, options)</td><td>Sends a single prompt to a provider model (ollama-cloud, openrouter, deepseek, zai-coding-plan, anthropic) and returns a normalized response map. Returns {ok, text, provider, model, response_model, finish_reason, usage:{input_tokens, output_tokens, total_tokens}, latency_ms, id, error, dry_run, attempts}. World failures return ok:false with error:{code, message, http_status}. Scripts must inspect r.ok.</td></tr>
+<tr><td>llm_providers(): list</td><td>Returns the list of registered LLM providers and their metadata. Returns list of {id, label, key_env, key_set: boolean|null, default_model, models: boolean, reasoning_min_tokens: number|null, max_output_tokens: number|null}. Pure catalog query; dry run returns key_set:null without reading env.</td></tr>
+</tbody>
+</table>
+<h3 id="fn-lmbee-storage">Storage (lmbee)</h3>
+<table>
+<thead><tr><th>Signature</th></tr></thead>
+<tbody>
+<tr><td>lmbee_job_claim(options)</td></tr>
+<tr><td>lmbee_job_read(options)</td></tr>
+<tr><td>lmbee_job_write(options)</td></tr>
+</tbody>
+</table>
+<h3 id="fn-lmctl-host-functions">Host Functions (lmctl)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>run_script(...)</td><td>Run child in-process with inherited binding, properties and cancellation.</td></tr>
+</tbody>
+</table>
+<h3 id="fn-lmctl-lmctl-automation">lmctl Automation (lmctl)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>lm_batch_close(handle, status = "done", error = null)</td><td>Closes an active teamfile batch resource; scope exit, script error, exit, and signals also close it. Tracked-invocation and bundle cleanup run on close.</td></tr>
+<tr><td>lm_batch_open(teamfile, alias, batchfile, options = {})</td><td>Opens the only returned production resource: an async-only opaque read-only id handle. The first receiving lexical binding owns it until scope exit; aliases borrow, and returning/storing/coercing the handle is refused at runtime. Teamfile batches keep existing admission. A provider session without a teamfile is opened with agent_open (or agent_prompt for one turn), not here. Dry-run skips resource operations with typed dummies (factories return null), without provider or lease activity.</td></tr>
+<tr><td>lm_batch_turn(batch, prompt, [index], [total])</td><td>Runs one prompt of a teamfile batch; index and total are required. Dependent conversational turns on a provider session go through agent_turn.</td></tr>
+<tr><td>lm_classify_failure(text, [options])</td><td>Classifies a recorded provider failure text with the same classifier lm_prompt uses for live turns, so a script reading stored errors (for example tracked_invocation.error) never carries its own regex table. Pure: no database, provider or file access. Text no rule recognises is unknown, never the nearest class.</td></tr>
+<tr><td>lm_error(value, ...args)</td><td>Writes error messages to standard error prefixed with 'error: '.</td></tr>
+<tr><td>lm_exit(code = 0)</td><td>Immediately terminates script execution with the specified integer exit code (0-255).</td></tr>
+<tr><td>lm_lint(teamfile)</td><td>Validates a teamfile over the exact same internal path lmctl lint takes, returning structured findings instead of text a script would otherwise have to parse (operator, 2026-09-30: "lmscript does not use lmctl cli... expose lmctl internal working as api"). status is "error" ONLY for a genuine validation error (unparseable file, bad _MEMBER_ line, confirmed wrong-provider model) -- warnings never flip it to "error", matching the CLI's own exit-0-on-warnings contract. Progress/error/warning lines are also written to stderr, same as lmctl lint.</td></tr>
+<tr><td>lm_log(value, ...values)</td><td>Writes formatted log messages to standard error with trailing newline.</td></tr>
+<tr><td>lm_member(teamfile, alias)</td><td>Resolves a specific member in a team configuration file.</td></tr>
+<tr><td>lm_members(teamfile)</td><td>Resolves all team members declared in a team configuration file.</td></tr>
+<tr><td>lm_prompt(teamfile, alias, prompt, [options])</td><td>Sends a direct one-shot prompt to a team member and returns an ordinary result map. The host owns its pending per-turn lease and critical release; no returned resource or script closer.</td></tr>
+<tr><td>lm_ratelimit_readings([options])</td><td>Queries live provider quota readings using the existing ratelimit reader; preserves raw fields without cost aggregation or inferred availability.</td></tr>
+<tr><td>lm_read_paragraphs(batchfile)</td><td>Reads a prompt file and splits it into blank-line-separated paragraphs.</td></tr>
+<tr><td>lm_read_prompts(batchfile, [single])</td><td>Reads prompt file with BOM and CRLF normalization, splitting into paragraphs or reading entire file as single prompt.</td></tr>
+<tr><td>lm_running([options])</td><td>Returns active tracked-invocation snapshot. Options: since (e.g. "1h", "2d") and reconcile (boolean, default false). reconcile:true may mutate tracked invocations by reconciling verified dead holders; the default is read-only. Dispatch and branch on status busy, never gate on this.</td></tr>
+<tr><td>lm_seed(teamfile, [options])</td><td>Seeds a real teamfile over the exact same internal path lmctl seed takes: seeds only members that lack a sessionid, writes each new sessionid/sessiondir back into the teamfile file, and leaves an already-seeded member untouched. lmctl seed itself stays a minimal primitive (one-sentence Lead prompt); a workflow that wants a richer or role-specific preamble supplies it via options.preamble instead of lmctl growing that behavior.</td></tr>
+<tr><td>lm_session_delete(member, [options])</td><td>Deletes a native session by provider and sessionid. Requires force: true because another process may be using it; refuses active turns in this script engine. A forced cross-process deletion can disrupt that turn.</td></tr>
+<tr><td>lm_session_get(target)</td><td>Reads native session messages. Returns messages in chronological order (tool_use and tool_result entries carry tool_name and tool_call_id when the provider records them), or not_found if the session does not exist.</td></tr>
+<tr><td>lm_session_list([options])</td><td>Lists native sessions in the current workspace by default. Options: provider, sessiondir, all.</td></tr>
+<tr><td>lm_terminal(teamfile, alias)</td><td>Opens a tracked team member in its native provider TUI, preserving terminal ownership and inherited stdio. The host attempts checked lock/invocation release on completion, failure, cancellation or signal and reports unresolved failures, including a busy database; the returned outcome is an ordinary map. Refuses non-interactive mode.</td></tr>
+<tr><td>prompt_human([question|session])</td><td>Reads an operator answer or hands off a session. Accepts one optional question/session value; non-interactive mode refuses the operation. A handoff reservation is host-owned and released on EOF, provider failure, cancellation, context finalization or signal; the returned outcome is an ordinary map. Core prompt options apply only without this binding.</td></tr>
+</tbody>
+</table>
+<h3 id="fn-tools-tools">Tools (tools)</h3>
+<table>
+<thead><tr><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>tool_call(name, args, [options])</td><td>Executes a single tool call with workspace containment and error-as-data return. Returns {ok, tool, data, error, text, dry_run}. World failures return ok:false with error:{code, message}. text is compact JSON for the model.</td></tr>
+<tr><td>tool_parse(text)</td><td>Extracts a tool call request from model output text. Returns {ok: bool, name: string|null, args: map|null, error: string|null}.</td></tr>
+<tr><td>tool_specs([options])</td><td>Returns OpenAI-compatible JSON Schema tool specifications for tools enabled by the given options.</td></tr>
+</tbody>
+</table>
+<h2 id="lmcode">lmcode blocks and execution</h2>
+<p>An _lmcode_ block constructs an opaque immutable program of type lmcode; it does not execute. The block ends with end _lmcode_ and runs only through an explicit run_lmcode call.</p>
+<table>
+<thead><tr><th>Header attribute</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>schema=</td><td>Path of the host schema JSON file that the body is type-checked against; a schema handle from load_schema can be used in its place.</td></tr>
+<tr><td>cli=</td><td>Command that runs the host; binds the executable used by run_lmcode. A file-only schema requires an explicit command or a builder host.</td></tr>
+<tr><td>install=</td><td>Where to fetch the native host: github:OWNER/REPO@TAG or npm:@lmctl-ai/TOOL@EXACT_VERSION|latest. Check and dry run never download.</td></tr>
+<tr><td>with=[...]</td><td>Optional list of Data toLmcode fragments prepended to the body; may appear in either order with schema and cli.</td></tr>
+</tbody>
+</table>
+<table>
+<thead><tr><th>Function</th><th>Returns</th><th>Description</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>run_lmcode(program_or_builder: lmcode, options?: map): map</td><td>map</td><td>Runs one opaque lmcode program or one sealed builder in a single host process. Single results are {ok,result}; builder results are {ok,result:[...],parts}. Args are copied; command is single-program only. Returns validated success/failure envelopes. Check never executes; dry invokes the host once with dry metadata and records its simulated envelope in PLAN.</td><td>r = run_lmcode(program); require(r.ok, "host failed");</td></tr>
+<tr><td>lmcode_build(host: lmcode schema | string | string list): lmcode_builder</td><td>lmcode_builder</td><td>Creates a run-local one-process builder for lmcode programs. host is a host-bound load_schema descriptor or an explicit command prefix string/list; add programs with one $DSLFILE fragment each, then pass the builder to run_lmcode.</td><td>builder = lmcode_build(schema); builder.add(program); result = run_lmcode(builder);</td></tr>
+</tbody>
+</table>
+<h3 id="run-options">run_lmcode options and result frame</h3>
+<table>
+<thead><tr><th>Item</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>options.args</td><td>String list appended to the host argv; copied, literal data, no shell, glob or environment expansion.</td></tr>
+<tr><td>options.command</td><td>String or argv list, single program only: a complete command template with exactly one $DSLFILE outside argv[0].</td></tr>
+<tr><td>default argv</td><td>The retained host prefix, --lmcode, a private file, then args.</td></tr>
+<tr><td>builder.add(program, fragment=["--lmcode", "$DSLFILE"])</td><td>Appends a program plus one argv fragment containing exactly one $DSLFILE and returns the same builder; the first run seals the builder.</td></tr>
+<tr><td>single program result</td><td>{ok:true, result:PAYLOAD}</td></tr>
+<tr><td>builder result</td><td>{ok:true, result:[...], parts:N}, even for a one-slot builder; each result is checked against the schema contract of its slot.</td></tr>
+<tr><td>controlled failure</td><td>Returned as data with ok false (optional validated part for builders); malformed frames, unexpected exits or mismatched envelopes are located runtime errors.</td></tr>
+<tr><td>--check</td><td>Never starts hosts.</td></tr>
+<tr><td>--dry-run</td><td>Starts the host once with dry:true metadata and records its simulated envelope in PLAN as lmcode-host-dry.</td></tr>
+</tbody>
+</table>
+<h2 id="std">Standard lmcode signatures (lmcode_std_v3)</h2>
+<p>226 signatures that every lmcode host ships: 88 functions and 138 methods. Generated with lmscript --lmcode-signatures SCHEMA minus the --without-std output.</p>
+<h3 id="std-fn-core">Functions: core (2)</h3>
+<table>
+<thead><tr><th>Function</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>json_parse(string)</td><td>Json</td></tr>
+<tr><td>template_render(string, Json)</td><td>string</td></tr>
+</tbody>
+</table>
+<h3 id="std-fn-file">Functions: file (5)</h3>
+<table>
+<thead><tr><th>Function</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>file_append(string, string)</td><td>void</td></tr>
+<tr><td>file_exists(string)</td><td>bool</td></tr>
+<tr><td>file_lines(string)</td><td>StrList</td></tr>
+<tr><td>file_read(string)</td><td>string</td></tr>
+<tr><td>file_write(string, string)</td><td>void</td></tr>
+</tbody>
+</table>
+<h3 id="std-fn-float">Functions: float (5)</h3>
+<table>
+<thead><tr><th>Function</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>float_list()</td><td>FloatList</td></tr>
+<tr><td>float_map()</td><td>FloatMap</td></tr>
+<tr><td>float_pq()</td><td>FloatPQ</td></tr>
+<tr><td>float_queue()</td><td>FloatQueue</td></tr>
+<tr><td>float_stack()</td><td>FloatStack</td></tr>
+</tbody>
+</table>
+<h3 id="std-fn-int">Functions: int (5)</h3>
+<table>
+<thead><tr><th>Function</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>int_list()</td><td>IntList</td></tr>
+<tr><td>int_map()</td><td>IntMap</td></tr>
+<tr><td>int_pq()</td><td>IntPQ</td></tr>
+<tr><td>int_queue()</td><td>IntQueue</td></tr>
+<tr><td>int_stack()</td><td>IntStack</td></tr>
+</tbody>
+</table>
+<h3 id="std-fn-lmcode">Functions: lmcode (24)</h3>
+<table>
+<thead><tr><th>Function</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>lmcode_return_null()</td><td>void</td></tr>
+<tr><td>lmcode_return_put(string, FloatList)</td><td>void</td></tr>
+<tr><td>lmcode_return_put(string, FloatMap)</td><td>void</td></tr>
+<tr><td>lmcode_return_put(string, IntList)</td><td>void</td></tr>
+<tr><td>lmcode_return_put(string, IntMap)</td><td>void</td></tr>
+<tr><td>lmcode_return_put(string, Json)</td><td>void</td></tr>
+<tr><td>lmcode_return_put(string, StrList)</td><td>void</td></tr>
+<tr><td>lmcode_return_put(string, StrMap)</td><td>void</td></tr>
+<tr><td>lmcode_return_put(string, bool)</td><td>void</td></tr>
+<tr><td>lmcode_return_put(string, float)</td><td>void</td></tr>
+<tr><td>lmcode_return_put(string, int)</td><td>void</td></tr>
+<tr><td>lmcode_return_put(string, string)</td><td>void</td></tr>
+<tr><td>lmcode_return_put_null(string)</td><td>void</td></tr>
+<tr><td>lmcode_return_set(FloatList)</td><td>void</td></tr>
+<tr><td>lmcode_return_set(FloatMap)</td><td>void</td></tr>
+<tr><td>lmcode_return_set(IntList)</td><td>void</td></tr>
+<tr><td>lmcode_return_set(IntMap)</td><td>void</td></tr>
+<tr><td>lmcode_return_set(Json)</td><td>void</td></tr>
+<tr><td>lmcode_return_set(StrList)</td><td>void</td></tr>
+<tr><td>lmcode_return_set(StrMap)</td><td>void</td></tr>
+<tr><td>lmcode_return_set(bool)</td><td>void</td></tr>
+<tr><td>lmcode_return_set(float)</td><td>void</td></tr>
+<tr><td>lmcode_return_set(int)</td><td>void</td></tr>
+<tr><td>lmcode_return_set(string)</td><td>void</td></tr>
+</tbody>
+</table>
+<h3 id="std-fn-math">Functions: math (16)</h3>
+<table>
+<thead><tr><th>Function</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>math_abs(float)</td><td>float</td></tr>
+<tr><td>math_abs(int)</td><td>int</td></tr>
+<tr><td>math_ceil(float)</td><td>float</td></tr>
+<tr><td>math_ceil(int)</td><td>int</td></tr>
+<tr><td>math_floor(float)</td><td>float</td></tr>
+<tr><td>math_floor(int)</td><td>int</td></tr>
+<tr><td>math_max(float, float)</td><td>float</td></tr>
+<tr><td>math_max(int, int)</td><td>int</td></tr>
+<tr><td>math_min(float, float)</td><td>float</td></tr>
+<tr><td>math_min(int, int)</td><td>int</td></tr>
+<tr><td>math_pow(float, float)</td><td>float</td></tr>
+<tr><td>math_pow(int, int)</td><td>int</td></tr>
+<tr><td>math_round(float)</td><td>float</td></tr>
+<tr><td>math_round(int)</td><td>int</td></tr>
+<tr><td>math_sqrt(float)</td><td>float</td></tr>
+<tr><td>math_sqrt(int)</td><td>int</td></tr>
+</tbody>
+</table>
+<h3 id="std-fn-rest">Functions: rest (5)</h3>
+<table>
+<thead><tr><th>Function</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>rest_cli(StrList)</td><td>string</td></tr>
+<tr><td>rest_config(string, string)</td><td>void</td></tr>
+<tr><td>rest_route(string, string, string)</td><td>void</td></tr>
+<tr><td>rest_serve()</td><td>void</td></tr>
+<tr><td>rest_stop()</td><td>void</td></tr>
+</tbody>
+</table>
+<h3 id="std-fn-str">Functions: str (26)</h3>
+<table>
+<thead><tr><th>Function</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>str_base64_decode(string)</td><td>string</td></tr>
+<tr><td>str_base64_encode(string)</td><td>string</td></tr>
+<tr><td>str_contains(string, string)</td><td>bool</td></tr>
+<tr><td>str_ends_with(string, string)</td><td>bool</td></tr>
+<tr><td>str_find(string, string)</td><td>int</td></tr>
+<tr><td>str_hex_decode(string)</td><td>string</td></tr>
+<tr><td>str_hex_encode(string)</td><td>string</td></tr>
+<tr><td>str_is_float(string)</td><td>bool</td></tr>
+<tr><td>str_is_int(string)</td><td>bool</td></tr>
+<tr><td>str_len(string)</td><td>int</td></tr>
+<tr><td>str_list()</td><td>StrList</td></tr>
+<tr><td>str_lower(string)</td><td>string</td></tr>
+<tr><td>str_map()</td><td>StrMap</td></tr>
+<tr><td>str_match(string, string)</td><td>bool</td></tr>
+<tr><td>str_pq()</td><td>StrPQ</td></tr>
+<tr><td>str_queue()</td><td>StrQueue</td></tr>
+<tr><td>str_repeat(string, int)</td><td>string</td></tr>
+<tr><td>str_replace(string, string, string)</td><td>string</td></tr>
+<tr><td>str_split(string, string)</td><td>StrList</td></tr>
+<tr><td>str_stack()</td><td>StrStack</td></tr>
+<tr><td>str_starts_with(string, string)</td><td>bool</td></tr>
+<tr><td>str_substr(string, int, int)</td><td>string</td></tr>
+<tr><td>str_to_float(string)</td><td>float</td></tr>
+<tr><td>str_to_int(string)</td><td>int</td></tr>
+<tr><td>str_trim(string)</td><td>string</td></tr>
+<tr><td>str_upper(string)</td><td>string</td></tr>
+</tbody>
+</table>
+<h3 id="std-type-floatlist">Methods: FloatList (7)</h3>
+<table>
+<thead><tr><th>Method</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>FloatList.add(float)</td><td>FloatList</td></tr>
+<tr><td>FloatList.at(int)</td><td>float</td></tr>
+<tr><td>FloatList.clear()</td><td>FloatList</td></tr>
+<tr><td>FloatList.contains(float)</td><td>bool</td></tr>
+<tr><td>FloatList.index_of(float)</td><td>int</td></tr>
+<tr><td>FloatList.len()</td><td>int</td></tr>
+<tr><td>FloatList.set(int, float)</td><td>FloatList</td></tr>
+</tbody>
+</table>
+<h3 id="std-type-floatmap">Methods: FloatMap (10)</h3>
+<table>
+<thead><tr><th>Method</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>FloatMap.clear()</td><td>FloatMap</td></tr>
+<tr><td>FloatMap.get(string)</td><td>float</td></tr>
+<tr><td>FloatMap.get_or(string, float)</td><td>float</td></tr>
+<tr><td>FloatMap.has(string)</td><td>bool</td></tr>
+<tr><td>FloatMap.key_at(int)</td><td>string</td></tr>
+<tr><td>FloatMap.keys()</td><td>StrList</td></tr>
+<tr><td>FloatMap.len()</td><td>int</td></tr>
+<tr><td>FloatMap.remove(string)</td><td>bool</td></tr>
+<tr><td>FloatMap.set(string, float)</td><td>FloatMap</td></tr>
+<tr><td>FloatMap.values()</td><td>FloatList</td></tr>
+</tbody>
+</table>
+<h3 id="std-type-floatpq">Methods: FloatPQ (6)</h3>
+<table>
+<thead><tr><th>Method</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>FloatPQ.clear()</td><td>FloatPQ</td></tr>
+<tr><td>FloatPQ.empty()</td><td>bool</td></tr>
+<tr><td>FloatPQ.len()</td><td>int</td></tr>
+<tr><td>FloatPQ.peek()</td><td>float</td></tr>
+<tr><td>FloatPQ.pop()</td><td>float</td></tr>
+<tr><td>FloatPQ.push(float, float)</td><td>FloatPQ</td></tr>
+</tbody>
+</table>
+<h3 id="std-type-floatqueue">Methods: FloatQueue (7)</h3>
+<table>
+<thead><tr><th>Method</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>FloatQueue.at(int)</td><td>float</td></tr>
+<tr><td>FloatQueue.clear()</td><td>FloatQueue</td></tr>
+<tr><td>FloatQueue.empty()</td><td>bool</td></tr>
+<tr><td>FloatQueue.len()</td><td>int</td></tr>
+<tr><td>FloatQueue.peek()</td><td>float</td></tr>
+<tr><td>FloatQueue.pop()</td><td>float</td></tr>
+<tr><td>FloatQueue.push(float)</td><td>FloatQueue</td></tr>
+</tbody>
+</table>
+<h3 id="std-type-floatstack">Methods: FloatStack (7)</h3>
+<table>
+<thead><tr><th>Method</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>FloatStack.at(int)</td><td>float</td></tr>
+<tr><td>FloatStack.clear()</td><td>FloatStack</td></tr>
+<tr><td>FloatStack.empty()</td><td>bool</td></tr>
+<tr><td>FloatStack.len()</td><td>int</td></tr>
+<tr><td>FloatStack.peek()</td><td>float</td></tr>
+<tr><td>FloatStack.pop()</td><td>float</td></tr>
+<tr><td>FloatStack.push(float)</td><td>FloatStack</td></tr>
+</tbody>
+</table>
+<h3 id="std-type-intlist">Methods: IntList (7)</h3>
+<table>
+<thead><tr><th>Method</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>IntList.add(int)</td><td>IntList</td></tr>
+<tr><td>IntList.at(int)</td><td>int</td></tr>
+<tr><td>IntList.clear()</td><td>IntList</td></tr>
+<tr><td>IntList.contains(int)</td><td>bool</td></tr>
+<tr><td>IntList.index_of(int)</td><td>int</td></tr>
+<tr><td>IntList.len()</td><td>int</td></tr>
+<tr><td>IntList.set(int, int)</td><td>IntList</td></tr>
+</tbody>
+</table>
+<h3 id="std-type-intmap">Methods: IntMap (10)</h3>
+<table>
+<thead><tr><th>Method</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>IntMap.clear()</td><td>IntMap</td></tr>
+<tr><td>IntMap.get(string)</td><td>int</td></tr>
+<tr><td>IntMap.get_or(string, int)</td><td>int</td></tr>
+<tr><td>IntMap.has(string)</td><td>bool</td></tr>
+<tr><td>IntMap.key_at(int)</td><td>string</td></tr>
+<tr><td>IntMap.keys()</td><td>StrList</td></tr>
+<tr><td>IntMap.len()</td><td>int</td></tr>
+<tr><td>IntMap.remove(string)</td><td>bool</td></tr>
+<tr><td>IntMap.set(string, int)</td><td>IntMap</td></tr>
+<tr><td>IntMap.values()</td><td>IntList</td></tr>
+</tbody>
+</table>
+<h3 id="std-type-intpq">Methods: IntPQ (6)</h3>
+<table>
+<thead><tr><th>Method</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>IntPQ.clear()</td><td>IntPQ</td></tr>
+<tr><td>IntPQ.empty()</td><td>bool</td></tr>
+<tr><td>IntPQ.len()</td><td>int</td></tr>
+<tr><td>IntPQ.peek()</td><td>int</td></tr>
+<tr><td>IntPQ.pop()</td><td>int</td></tr>
+<tr><td>IntPQ.push(int, float)</td><td>IntPQ</td></tr>
+</tbody>
+</table>
+<h3 id="std-type-intqueue">Methods: IntQueue (7)</h3>
+<table>
+<thead><tr><th>Method</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>IntQueue.at(int)</td><td>int</td></tr>
+<tr><td>IntQueue.clear()</td><td>IntQueue</td></tr>
+<tr><td>IntQueue.empty()</td><td>bool</td></tr>
+<tr><td>IntQueue.len()</td><td>int</td></tr>
+<tr><td>IntQueue.peek()</td><td>int</td></tr>
+<tr><td>IntQueue.pop()</td><td>int</td></tr>
+<tr><td>IntQueue.push(int)</td><td>IntQueue</td></tr>
+</tbody>
+</table>
+<h3 id="std-type-intstack">Methods: IntStack (7)</h3>
+<table>
+<thead><tr><th>Method</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>IntStack.at(int)</td><td>int</td></tr>
+<tr><td>IntStack.clear()</td><td>IntStack</td></tr>
+<tr><td>IntStack.empty()</td><td>bool</td></tr>
+<tr><td>IntStack.len()</td><td>int</td></tr>
+<tr><td>IntStack.peek()</td><td>int</td></tr>
+<tr><td>IntStack.pop()</td><td>int</td></tr>
+<tr><td>IntStack.push(int)</td><td>IntStack</td></tr>
+</tbody>
+</table>
+<h3 id="std-type-json">Methods: Json (11)</h3>
+<table>
+<thead><tr><th>Method</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>Json.as_bool()</td><td>bool</td></tr>
+<tr><td>Json.as_float()</td><td>float</td></tr>
+<tr><td>Json.as_int()</td><td>int</td></tr>
+<tr><td>Json.as_string()</td><td>string</td></tr>
+<tr><td>Json.at(int)</td><td>Json</td></tr>
+<tr><td>Json.get(string)</td><td>Json</td></tr>
+<tr><td>Json.has(string)</td><td>bool</td></tr>
+<tr><td>Json.keys()</td><td>StrList</td></tr>
+<tr><td>Json.kind()</td><td>string</td></tr>
+<tr><td>Json.len()</td><td>int</td></tr>
+<tr><td>Json.to_json()</td><td>string</td></tr>
+</tbody>
+</table>
+<h3 id="std-type-restexchange">Methods: RestExchange (15)</h3>
+<table>
+<thead><tr><th>Method</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>RestExchange.body()</td><td>string</td></tr>
+<tr><td>RestExchange.get(string)</td><td>string</td></tr>
+<tr><td>RestExchange.has_header(string)</td><td>bool</td></tr>
+<tr><td>RestExchange.has_query(string)</td><td>bool</td></tr>
+<tr><td>RestExchange.header(string)</td><td>string</td></tr>
+<tr><td>RestExchange.increment(string)</td><td>int</td></tr>
+<tr><td>RestExchange.json(string)</td><td>void</td></tr>
+<tr><td>RestExchange.method()</td><td>string</td></tr>
+<tr><td>RestExchange.param(string)</td><td>string</td></tr>
+<tr><td>RestExchange.path()</td><td>string</td></tr>
+<tr><td>RestExchange.query(string)</td><td>string</td></tr>
+<tr><td>RestExchange.send(string)</td><td>void</td></tr>
+<tr><td>RestExchange.set(string, string)</td><td>void</td></tr>
+<tr><td>RestExchange.set_header(string, string)</td><td>void</td></tr>
+<tr><td>RestExchange.status(int)</td><td>void</td></tr>
+</tbody>
+</table>
+<h3 id="std-type-strlist">Methods: StrList (8)</h3>
+<table>
+<thead><tr><th>Method</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>StrList.add(string)</td><td>StrList</td></tr>
+<tr><td>StrList.at(int)</td><td>string</td></tr>
+<tr><td>StrList.clear()</td><td>StrList</td></tr>
+<tr><td>StrList.contains(string)</td><td>bool</td></tr>
+<tr><td>StrList.index_of(string)</td><td>int</td></tr>
+<tr><td>StrList.join(string)</td><td>string</td></tr>
+<tr><td>StrList.len()</td><td>int</td></tr>
+<tr><td>StrList.set(int, string)</td><td>StrList</td></tr>
+</tbody>
+</table>
+<h3 id="std-type-strmap">Methods: StrMap (10)</h3>
+<table>
+<thead><tr><th>Method</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>StrMap.clear()</td><td>StrMap</td></tr>
+<tr><td>StrMap.get(string)</td><td>string</td></tr>
+<tr><td>StrMap.get_or(string, string)</td><td>string</td></tr>
+<tr><td>StrMap.has(string)</td><td>bool</td></tr>
+<tr><td>StrMap.key_at(int)</td><td>string</td></tr>
+<tr><td>StrMap.keys()</td><td>StrList</td></tr>
+<tr><td>StrMap.len()</td><td>int</td></tr>
+<tr><td>StrMap.remove(string)</td><td>bool</td></tr>
+<tr><td>StrMap.set(string, string)</td><td>StrMap</td></tr>
+<tr><td>StrMap.values()</td><td>StrList</td></tr>
+</tbody>
+</table>
+<h3 id="std-type-strpq">Methods: StrPQ (6)</h3>
+<table>
+<thead><tr><th>Method</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>StrPQ.clear()</td><td>StrPQ</td></tr>
+<tr><td>StrPQ.empty()</td><td>bool</td></tr>
+<tr><td>StrPQ.len()</td><td>int</td></tr>
+<tr><td>StrPQ.peek()</td><td>string</td></tr>
+<tr><td>StrPQ.pop()</td><td>string</td></tr>
+<tr><td>StrPQ.push(string, float)</td><td>StrPQ</td></tr>
+</tbody>
+</table>
+<h3 id="std-type-strqueue">Methods: StrQueue (7)</h3>
+<table>
+<thead><tr><th>Method</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>StrQueue.at(int)</td><td>string</td></tr>
+<tr><td>StrQueue.clear()</td><td>StrQueue</td></tr>
+<tr><td>StrQueue.empty()</td><td>bool</td></tr>
+<tr><td>StrQueue.len()</td><td>int</td></tr>
+<tr><td>StrQueue.peek()</td><td>string</td></tr>
+<tr><td>StrQueue.pop()</td><td>string</td></tr>
+<tr><td>StrQueue.push(string)</td><td>StrQueue</td></tr>
+</tbody>
+</table>
+<h3 id="std-type-strstack">Methods: StrStack (7)</h3>
+<table>
+<thead><tr><th>Method</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>StrStack.at(int)</td><td>string</td></tr>
+<tr><td>StrStack.clear()</td><td>StrStack</td></tr>
+<tr><td>StrStack.empty()</td><td>bool</td></tr>
+<tr><td>StrStack.len()</td><td>int</td></tr>
+<tr><td>StrStack.peek()</td><td>string</td></tr>
+<tr><td>StrStack.pop()</td><td>string</td></tr>
+<tr><td>StrStack.push(string)</td><td>StrStack</td></tr>
+</tbody>
+</table>
+<h2 id="interfaces">REST and CLI interfaces</h2>
+<p>A top-level fn in an lmcode body with a directly preceding @NAME annotation must carry implements NAME after its return type and match the interface signature exactly; the host calls it as an entry.</p>
+<table>
+<thead><tr><th>Interface</th><th>Signature</th></tr></thead>
+<tbody>
+<tr><td>RestGet</td><td>fn(exchange: RestExchange) -> void</td></tr>
+<tr><td>RestPost</td><td>fn(exchange: RestExchange) -> void</td></tr>
+<tr><td>RestPut</td><td>fn(exchange: RestExchange) -> void</td></tr>
+<tr><td>RestDelete</td><td>fn(exchange: RestExchange) -> void</td></tr>
+<tr><td>RestPatch</td><td>fn(exchange: RestExchange) -> void</td></tr>
+<tr><td>RestHead</td><td>fn(exchange: RestExchange) -> void</td></tr>
+<tr><td>RestOptions</td><td>fn(exchange: RestExchange) -> void</td></tr>
+<tr><td>RestHandler</td><td>fn(exchange: RestExchange) -> void</td></tr>
+<tr><td>CliCommand</td><td>fn(exchange: RestExchange) -> void</td></tr>
+<tr><td>CliOption</td><td>fn(exchange: RestExchange) -> void</td></tr>
+</tbody>
+</table>
+<h3 id="rest-functions">REST functions</h3>
+<table>
+<thead><tr><th>Function</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>rest_config(string, string)</td><td>void</td></tr>
+<tr><td>rest_route(string, string, string)</td><td>void</td></tr>
+<tr><td>rest_serve()</td><td>void</td></tr>
+<tr><td>rest_stop()</td><td>void</td></tr>
+<tr><td>rest_cli(StrList)</td><td>string</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmctl">github.com/lmctl-ai/lmctl</a>.</p>
+</footer>
+</body>
+</html>

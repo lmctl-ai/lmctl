@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lminspect authoring skill — lminspect — lmctl.com tools</title>
+<meta name="description" content="lminspect is a statically linked pure-Go HTTP/HTTPS proxy, dynamic SSL-Bump TLS interceptor, JSONL flow recorder and replayer, and LMScript host.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lminspect/">Overview</a></li>
+<li><a href="/tools/lminspect/skill.html">Skill</a></li>
+<li><a href="/tools/lminspect/guide.html">Guide</a></li>
+<li><a href="/tools/lminspect/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lminspect authoring skill</h1>
+<p>lminspect is a statically linked pure-Go HTTP/HTTPS proxy, dynamic SSL-Bump TLS interceptor, JSONL flow recorder and replayer, and LMScript host. It executes bytecode-compiled _lmcode_ traffic addons at wire speed while enforcing mandatory credential sanitization across every output channel.</p>
+<h2>Purpose</h2>
+<p>Use lminspect to intercept, inspect, rewrite, mock, record, and replay HTTP and HTTPS traffic in forward, reverse, or transparent proxy modes; author deterministic mitmproxy-style request and response hooks in LMScript; generate sanitized JSONL flow captures compatible with lmmock; and expose standard lmcode_std_v3 REST and CLI interfaces.</p>
+<h2>When to use it</h2>
+<p>Choose lminspect when an automated test, microservice integration, or API reverse-engineering workflow needs an inline HTTP/HTTPS proxy that can tamper with headers, query strings, URLs, or payloads, serve synthetic responses, or record credential-scrubbed traffic fixtures. Use lmcurl when issuing client requests directly from a script, lmmock when hosting standalone contract mock servers from recorded fixtures, or lmdebug when capturing raw L2–L4 packets with libpcap.</p>
+<h2>Install</h2>
+<p>Install the lmctl toolchain with npm install -g @lmctl-ai/lmctl@latest. Prebuilt static binaries (CGO_ENABLED=0) are published for Linux and macOS on x64 and arm64, and can also be built from source with Go 1.25 or newer. When an LMScript program specifies cli="lminspect" and install="github:lmctl-ai/lminspect@latest", lmscript resolves lminspect on PATH or downloads the release binary automatically.</p>
+<pre><code>lmscript --version
+lminspect --version
+lminspect --lmcode-schema
+lminspect --lmcode-signatures</code></pre>
+<h2>Commands</h2>
+<p>lminspect supports Root CA certificate generation, forward and reverse proxy execution with live DSL addons or declarative rules, JSONL client/server flow replay, and standalone _lmcode_ bytecode execution.</p>
+<pre><code># Host schema, signatures, and standalone bytecode execution
+lminspect --version
+lminspect --lmcode-schema --json
+lminspect --lmcode-signatures
+lminspect --lmcode build/addon.dslb
+lminspect --lmcode build/addon.dslb --save build/saved-addon.dslb
+
+# Generate a local Root CA for dynamic SSL-Bump MITM
+lminspect certgen --cert ca.crt --key ca.key
+
+# Forward proxy with SSL-Bump, live stderr tap, JSONL recording, and DSL addon
+lminspect run --listen 127.0.0.1:8080 --ssl-bump --ca-cert ca.crt --ca-key ca.key --tap --record flows.jsonl --script build/addon.dslb
+
+# Reverse proxy in front of an upstream service with declarative rules
+lminspect run --listen 127.0.0.1:9090 --mode reverse:http://127.0.0.1:8000 --header "/api/*=X-Env:staging" --mock "/health=200:OK"
+
+# Serve recorded responses directly or replay recorded requests against a target
+lminspect run --listen 127.0.0.1:8080 --replay-server flows.jsonl
+lminspect replay --client flows.jsonl --target 127.0.0.1:9000</code></pre>
+<h2>Inputs and outputs</h2>
+<p>In _lmcode_ mode, lminspect provides context inspect: Inspector and context flow: Flow, three hook interfaces (RequestHook, ResponseHook, FlowHook), object types Request and Response, functions println(string) and assert(bool, string), and the 226 standard lmcode_std_v3 signatures. Recorded JSONL files (--record) contain one JSON object per line with request (method, host, port, path, headers, base64 content) and response (status_code, headers, base64 content) fields after mandatory credential redaction.</p>
+<h2>Safety rules</h2>
+<p>Adhere to lminspect credential sanitization and TLS interception rules when capturing or mutating traffic:</p>
+<ul>
+<li>Rely on mandatory output sanitization (proxy.SanitizeOutput): every recorded JSONL line, flow.to_json() export, --tap summary, replay/route error message, and _lmcode_ println call automatically replaces credentials with &lt;redacted:credential> (and MIME boundaries with redacted-credential) while leaving live wire traffic untouched.</li>
+<li>Never pass real production secrets on the command line or upload raw unsanitized captures from third-party tools; run captures involving live credentials only inside private workflows with scoped environment variables, which lminspect uses to seed credential echo discovery in RAM.</li>
+<li>Be aware of body decoding behavior during export: gzip, deflate, brotli (br), and zstd payloads are decompressed for credential inspection and exported unencoded; non-UTF-8 or corrupt compressed payloads are replaced in full and flagged with an X-Lminspect-Note header.</li>
+<li>Keep generated ca.key files restricted to local test environments and pass --cacert ca.crt explicitly to clients under test rather than installing ephemeral test CAs into system-wide trust stores on shared machines.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>The first example defines RequestHook and ResponseHook handlers that rewrite request headers, short-circuit a synthetic mock endpoint with Flow.respond, and test the flow logic offline via inspect.new_flow:</p>
+<pre><code>p = _lmcode_ cli="lminspect" install="github:lmctl-ai/lminspect@latest";
+@request
+fn on_request(f: Flow) -> void implements RequestHook {
+  f.request().set_header("X-Proxy-By", "lminspect");
+  if (f.request().path() == "/mock") {
+    f.respond(200, "{\"mocked\":true}", "application/json");
+  }
+}
+
+@response
+fn on_response(f: Flow) -> void implements ResponseHook {
+  f.response().set_header("X-Inspected", "true");
+}
+
+let sim = inspect.new_flow("GET", "https://api.example.com/mock");
+on_request(sim);
+on_response(sim);
+assert(sim.has_response(), "expected synthetic response");
+assert(sim.response().status_code() == 200, "expected 200");
+assert(sim.response().header("X-Inspected") == "true", "expected response header");
+end _lmcode_
+res = run_lmcode(p);
+require(res.ok, json_stringify(res));</code></pre>
+<p>The second example combines Inspector flow construction with the standard lmcode_std_v3 CliOption, CliCommand, and RestGet interfaces and dispatches them in-process with rest_cli:</p>
+<pre><code>p = _lmcode_ cli="lminspect" install="github:lmctl-ai/lminspect@latest";
+@"--host"
+fn opt_host(x: RestExchange) -> void implements CliOption {
+  x.set("host", x.query("host"));
+}
+
+@"flow"
+fn cmd_flow(x: RestExchange) -> void implements CliCommand {
+  let f = inspect.new_flow("GET", "https://" + x.get("host") + "/v1/ping");
+  x.send(f.request().method() + ":" + f.request().host() + f.request().path());
+}
+
+@"/flow/:seg"
+fn get_flow(x: RestExchange) -> void implements RestGet {
+  let f = inspect.new_flow("POST", "https://api.internal/" + x.param("seg"));
+  f.respond(201, "{\"seg\":\"" + x.param("seg") + "\"}", "application/json");
+  x.json("{\"status\":" + str(f.response().status_code()) + ",\"path\":\"" + f.request().path() + "\"}");
+}
+
+rest_config("session", "global");
+let cli_out = rest_cli(str_split("--host=gateway.internal flow", " "));
+let rest_out = rest_cli(str_split("/flow/orders", " "));
+assert(cli_out == "GET:gateway.internal/v1/ping", "cli mismatch");
+assert(rest_out == "{\"status\":201,\"path\":\"/orders\"}", "rest mismatch");
+end _lmcode_</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lminspect returns deterministic exit codes across proxy, replay, certgen, and _lmcode_ host modes:</p>
+<ul>
+<li>Exit code 0 indicates that the command, proxy shutdown, replay batch, or _lmcode_ bytecode execution succeeded.</li>
+<li>Exit code 1 indicates a runtime operational error in proxy, certgen, or replay mode (such as failing to bind a socket, load an addon script, or open a JSONL file).</li>
+<li>Exit code 2 indicates a command-line usage error, unknown subcommand, or missing required flag argument (such as --lmcode without a file or replay without --client).</li>
+<li>Exit code 3 indicates a bytecode read error, schema validation failure, or runtime VM execution error in standalone --lmcode / --dsl mode.</li>
+<li>Exit code 4 indicates an application assertion or host error reported through the LMCODE_INVOCATION_FILE manifest v1 contract.</li>
+</ul>
+<h2>How to verify</h2>
+<p>Verify the lminspect binary by inspecting its version, embedded schema JSON, canonical signature table, and running the repository test suite:</p>
+<pre><code>lminspect --version
+lminspect --lmcode-schema --json > /tmp/lminspect-schema.json
+lminspect --lmcode-signatures > /tmp/lminspect-sigs.txt
+lmscript --lmcode-signatures /tmp/lminspect-schema.json > /tmp/lminspect-compiler-sigs.txt
+diff -u /tmp/lminspect-compiler-sigs.txt /tmp/lminspect-sigs.txt</code></pre>
+<p>In a source checkout, run go test ./... and ./test.sh to execute Go unit tests, example addon compilations, HTTP and HTTPS SSL-Bump proxy tests, JSONL recording and replay checks, and python scripts/test-sanitize-mutation.py for credential sanitization verification.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lminspect">github.com/lmctl-ai/lminspect</a>.</p>
+</footer>
+</body>
+</html>

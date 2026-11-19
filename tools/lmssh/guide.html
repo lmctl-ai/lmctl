@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmssh guide — lmssh — lmctl.com tools</title>
+<meta name="description" content="lmssh links the four OpenSSH 10.6p1 client tools (ssh, sftp, scp, and ssh-keygen), OpenSSL libcrypto, zlib, and the lmcode-cpp bytecode virtual machine into a…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmssh/">Overview</a></li>
+<li><a href="/tools/lmssh/skill.html">Skill</a></li>
+<li><a href="/tools/lmssh/guide.html">Guide</a></li>
+<li><a href="/tools/lmssh/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmssh guide</h1>
+<h2>Overview</h2>
+<p>lmssh links the four OpenSSH 10.6p1 client tools (ssh, sftp, scp, and ssh-keygen), OpenSSL libcrypto, zlib, and the lmcode-cpp bytecode virtual machine into a single static binary. It preserves full interactive compatibility with upstream OpenSSH while providing a strongly typed _lmcode_ host API and the 226-signature lmcode_std_v3 standard library for automated infrastructure workflows.</p>
+<h2>Single-image OpenSSH architecture and fork isolation</h2>
+<p>Upstream OpenSSH client tools are designed as short-lived OS processes that mutate global state, install signal handlers, and terminate via exit() or fatal(). Embedding them directly inside a long-running script VM without isolation would corrupt process state. lmssh solves this with a multi-main fork architecture:</p>
+<ul>
+<li>Renamed entry points: During build, ssh.c, sftp.c, scp.c, and ssh-keygen.c are compiled with their main() functions renamed to lmssh_ssh_main, lmssh_sftp_main, lmssh_scp_main, and lmssh_ssh_keygen_main, and symbol collisions (showprogress, interrupted, cleanup_exit) are unified in cpp/tools.c.</li>
+<li>Self-reentrant transport: Because a single-file binary deployment does not require /usr/bin/ssh on disk, sftp and scp automatically pass -S pointing back to the running lmssh binary (/proc/self/exe on Linux or _NSGetExecutablePath on macOS). Symlinks named ssh, sftp, scp, or ssh-keygen also dispatch directly to the matching client without forking.</li>
+<li>Per-step child process groups: Each scripted operation (such as Session.exec, Session.put, or Keys.generate) forks a child process that calls setsid() to detach from the controlling terminal, binds stdin/stdout/stderr to pipes, and invokes the target OpenSSH entry point. The parent multiplexes pipe I/O with poll() and enforces per-step wall-clock timeouts by sending SIGKILL to the entire child process group (reporting exit status 124 and Result.timed_out() == true).</li>
+<li>Parallel fleet fan-out: Ssh.each(dests, cmd) schedules up to Ssh.parallel(n) (1 to 256, default 8) concurrent child processes and returns a ResultList in the exact order of the input destination list.</li>
+</ul>
+<h2>Connection multiplexing, secrets, and path hardening</h2>
+<p>Automated SSH workflows must never hang on unexpected terminal prompts or allow untrusted file names to inject transport commands:</p>
+<ul>
+<li>Unattended BatchMode and SSH_ASKPASS: By default, every scripted SSH, SCP, and SFTP step runs with BatchMode=yes. When a session configures Session.password(secret), lmssh switches to BatchMode=no and sets SSH_ASKPASS to re-enter the lmssh binary with LMSSH_ASKPASS_SECRET stored only in the child environment (never on the command line). The askpass handler supplies the password or passphrase prompt response while automatically answering no to any (yes/no) host-key prompt.</li>
+<li>Ephemeral ControlMaster sockets: Calling s.reuse(true) configures ControlMaster=auto, ControlPath=/tmp/lmssh-XXXXXX/c-%C, and ControlPersist=120 inside a private work directory created with mkdtemp. Session.close() or Ssh.shutdown() sends ssh -O exit to every active master and deletes the temporary socket directory on exit.</li>
+<li>Path and wildcard hardening (v0.1.1+): All script-supplied paths, destinations, usernames, jump hosts, and option strings are scanned before execution. Any string containing NUL, LF, or CR is rejected immediately with a RUN_HOST error (exit code 3) so SFTP batch scripts cannot be split into extra commands. Tool invocations terminate flags with --, prefix ambiguous relative local SCP paths (starting with - or containing : before /) with ./, and escape glob and brace characters (*, ?, [, ], {, }) so remote file operations always match literal paths.</li>
+</ul>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<p>Alongside ssh, keys, io, and report, lmssh embeds the 226-signature lmcode_std_v3 catalog (cpp/stdlib/rest.hpp). Scripts can expose SSH or key-management workflows as HTTP endpoints or structured CLI subcommands:</p>
+<ul>
+<li>HTTP route interfaces: Functions annotated with a route pattern (such as @"/hosts/:host/status" or @"/ca/certify") can implement RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, or RestHandler. Path parameters are read with RestExchange.param.</li>
+<li>Stateless CLI dispatch: Functions annotated with @"--flag" implement CliOption, and functions annotated with @"command" implement CliCommand. Calling rest_cli(args) parses flags and dispatches the command or route in-process without opening a listening socket.</li>
+<li>Server configuration: rest_config("host", "127.0.0.1"), rest_config("port", "8080"), and rest_config("session", "global") configure the embedded HTTP server and session state persistence across RestExchange.get, RestExchange.set, and RestExchange.increment calls.</li>
+</ul>
+<pre><code>p = _lmcode_ cli="lmssh" install="github:lmctl-ai/lmssh@latest";
+@"--validity"
+fn opt_validity(x: RestExchange) -> void implements CliOption {
+  x.set("validity", x.query("validity"));
+}
+
+@"issue-id"
+fn cmd_issue(x: RestExchange) -> void implements CliCommand {
+  let n = x.increment("issued");
+  x.send(x.body() + ":" + x.get("validity") + ":" + str(n));
+}
+
+@"/audit/:principal"
+fn get_audit(x: RestExchange) -> void implements RestGet {
+  x.json("{\"principal\":\"" + x.param("principal") + "\",\"issued\":\"" + x.get("issued") + "\"}");
+}
+
+rest_config("session", "global");
+assert_eq(rest_cli(str_split("--validity=+52w issue-id -- alice", " ")), "alice:+52w:1");
+assert_eq(rest_cli(str_split("/audit/alice", " ")), "{\"principal\":\"alice\",\"issued\":\"1\"}");
+end _lmcode_</code></pre>
+<h2>Atomic deployment and verification patterns</h2>
+<p>For zero-downtime file updates across remote hosts, combine io.sha256, Session.put, Session.output, and Session.rename. First compute the local file digest with io.sha256(local_path), upload to a staging path (remote_path + ".new") via s.put, verify the remote sha256sum output matches the local digest, and finally call s.rename(remote_path + ".new", remote_path) to atomically replace the target file on the remote filesystem.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmssh">github.com/lmctl-ai/lmssh</a>.</p>
+</footer>
+</body>
+</html>

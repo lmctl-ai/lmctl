@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-csharp guide — lmcode-csharp — lmctl.com tools</title>
+<meta name="description" content="This guide covers embedding Namespace LmCode in .NET 8 and NativeAOT hosts, working with VmString and Context handles, configuring RestController, and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-csharp/">Overview</a></li>
+<li><a href="/tools/lmcode-csharp/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-csharp/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-csharp/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-csharp guide</h1>
+<p>This guide covers embedding Namespace LmCode in .NET 8 and NativeAOT hosts, working with VmString and Context handles, configuring RestController, and verifying conformance.</p>
+<h2>Overview</h2>
+<p>LmCode uses zero reflection, zero dynamic code generation, and zero NuGet package dependencies so every host publishes cleanly with -p:PublishAot=true. Program.Load checks the DSLB v6 header, verifies the 32-byte SHA-256 digest of the schema bytes, resolves all imports against Registry, and validates loop structure and operand stack depths across the body and R49 entries.</p>
+<h2>Registry and virtual machine embedding</h2>
+<p>new Registry() installs all 226 canonical lmcode_std_v3 signatures via StandardCatalog.RegisterStd(registry). Host objects are registered with registry.Context(name, type) and bound per run with context.SetObject(name, type, instance). Method callbacks receive (Context context, ObjRef receiver, Value[] args) and retrieve the typed C# object via context.Get&lt;T>(receiver). Optional dry callbacks are supplied via Registry.Dry(...).</p>
+<h2>REST and stateless CLI controller lifecycle</h2>
+<p>The 226-signature standard catalog includes the 20 REST/CLI signatures and 10 standard interfaces (RestGet..RestOptions, RestHandler, CliCommand, CliOption). Calling RestCatalog.RegisterRest(registry, new RestOptions()) re-binds those 20 signatures to a RestController instance. Routes can be declared with path annotations (@"/users/:id" on RestGet, @"status" on CliCommand, @"--verbose" on CliOption) or rest_route(method, path, annotation), supporting both :param / :rest... and {param} / {rest...} templates. Calling rest_config configures prefix or max_body_bytes, rest_cli(argv) dispatches stateless CLI commands in an isolated entry call, and rest_serve() serves HTTP/1.1 requests over stdin/stdout once the body exits.</p>
+<pre><code>using LmCode;
+using LmCode.Rest;
+
+var registry = new Registry();
+var rest = RestCatalog.RegisterRest(registry, new RestOptions { MaxBodyBytes = 1 &lt;&lt; 20 });
+var bytecode = File.ReadAllBytes(args[0]);
+var schema = File.ReadAllBytes(args[1]);
+var program = Program.Load(bytecode, schema, registry);
+rest.Run(program);</code></pre>
+<h2>Invocation result protocol and dry mode</h2>
+<p>Every host invocation reads the optional version-1 manifest from LMCODE_INVOCATION_FILE to determine whether dry mode is active and to allocate one ResultSink per submitted program slot. Inside an _lmcode_ chunk, assignments to $return, $return.field, or $return[key] invoke the 24 standard lmcode_return_* imports on the active slot. After all bodies, R49 rule entries, and application checks complete, WriteFrame emits a single terminal LMCODE_RETURN_BEGIN / LMCODE_RETURN_END envelope on stdout and returns exit code 0 on success, 2 on CLI usage error, 3 on load or runtime error, or 4 on application validation failure.</p>
+<h2>Conformance verification</h2>
+<p>Run dotnet test for the unit, contract, and REST checks, and the conformance runner for the pinned core, stdlib, return, and invocation vectors; lmscript test.lms drives the same gates. The README in the repository lists the current check counts.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-csharp">github.com/lmctl-ai/lmcode-csharp</a>.</p>
+</footer>
+</body>
+</html>

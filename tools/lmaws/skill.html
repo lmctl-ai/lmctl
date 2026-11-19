@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmaws authoring skill — lmaws — lmctl.com tools</title>
+<meta name="description" content="lmaws is the native AWS host for LMScript, implementing the shared lmcloud schema on Go hostkit alongside illustrated AWS inventory, spend analysis, and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmaws/">Overview</a></li>
+<li><a href="/tools/lmaws/skill.html">Skill</a></li>
+<li><a href="/tools/lmaws/guide.html">Guide</a></li>
+<li><a href="/tools/lmaws/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmaws authoring skill</h1>
+<p>lmaws is the native AWS host for LMScript, implementing the shared lmcloud schema on Go hostkit alongside illustrated AWS inventory, spend analysis, and owned-sandbox recipes.</p>
+<h2>Purpose</h2>
+<p>Use lmaws to script AWS S3 object storage, SQS queues, DynamoDB tables, IAM policies, Lambda metadata and functions, EC2 inventory, and Cost Explorer spend analysis from LMScript with deterministic offline fakes, local awssim emulation, or guarded live execution.</p>
+<h2>When to use it</h2>
+<p>Choose lmaws whenever an LMScript program or automation workflow needs typed AWS operations, offline-first AWS simulations, local testing against awssim on 127.0.0.1:4566, or budget-capped live AWS inspection and sandbox lifecycle testing. Never shell out to the aws CLI from LMScript when lmaws provides the typed host operation.</p>
+<h2>Install</h2>
+<p>Declare lmaws in an LMScript _lmcode_ block so the compiler downloads and SHA-256-verifies the platform release asset and compiles against its embedded schema.</p>
+<pre><code>p = _lmcode_ cli="lmaws" install="github:lmctl-ai/lmaws@latest";</code></pre>
+<h2>Commands</h2>
+<p>Run LMScript programs via lmscript or lmctl, or invoke lmaws directly to inspect its schema, signatures, third-party notices, and recovery sweeper.</p>
+<pre><code>lmaws --version
+lmaws --help
+lmaws --notices
+lmaws [cloud] --lmcode-schema --json
+lmaws [cloud] --lmcode-signatures
+lmaws [cloud] --lmcode-signatures --without-std
+lmaws --sweep --dry-run
+lmaws --sweep --apply --all-stale
+lmscript examples/inventory.lms</code></pre>
+<h2>Inputs and outputs</h2>
+<p>Bytecode programs are invoked with lmaws --lmcode FILE under a validated invocation manifest. Inside the program, the cloud context exposes the shared lmcloud API (ObjectMeta, ObjectListPage, QueueMessageList, TableItem, TablePage, Policy, LintReport, FunctionConfig, FunctionInvokeResult, UserPage, Session, CostReport, MetricsReport, CloudError). Recipe programs write deterministic CSV, JSON, SVG, or PNG reports; live spend outputs are confined to ignored .lmaws-local/spend/ directories and mask 12-digit AWS account IDs.</p>
+<h2>Safety rules</h2>
+<p>With no endpoint and no live opt-in, lmaws runs entirely in memory against its offline fake adapter and makes zero AWS calls. Plain HTTP endpoints are restricted to loopback addresses (127.0.0.1:4566 for awssim). Live AWS access requires double opt-in (LMCLOUD_LIVE=1 and LMAWS_LIVE=1), a verified account policy (LMAWS_LIVE_ACCOUNT checked via STS GetCallerIdentity), and a region policy (LMAWS_LIVE_REGION=us-east-1). Live resource creation or deletion requires a third opt-in (LMAWS_LIVE_MUTATE=1), enforces the lmaws-&lt;run-id>- bucket prefix or lmaws_&lt;run-id>_ resource prefix plus the lmaws_test=&lt;run-id> tag, reserves worst-case cost against LMAWS_LIVE_COST_CAP_USD (default $0.05, hard ceiling $0.25), and records every mutation in an fsynced recovery journal for LIFO teardown.</p>
+<h2>Worked examples</h2>
+<p>Example 1: S3 and SQS lifecycle against the offline fake or local awssim emulator.</p>
+<pre><code>p = _lmcode_ cli="lmaws" install="github:lmctl-ai/lmaws@latest";
+  # Optional: point at local awssim instead of the in-process fake
+  # cloud.set_endpoint("all", "http://127.0.0.1:4566");
+  cloud.set_cost_cap_usd(0.05);
+  cloud.bucket_create("lmaws-stage-bkt");
+  cloud.object_put("lmaws-stage-bkt", "events/01.json", "{\"status\":\"ok\"}");
+
+  cloud.queue_create("lmaws-events-q");
+  cloud.queue_send("lmaws-events-q", cloud.object_get("lmaws-stage-bkt", "events/01.json"));
+  let msgs = cloud.queue_receive("lmaws-events-q", 1, 30, 0);
+  assert(msgs.len() == 1, "expected 1 SQS message");
+  cloud.queue_ack("lmaws-events-q", msgs.at(0).receipt());
+
+  cloud.object_delete("lmaws-stage-bkt", "events/01.json");
+  cloud.bucket_delete("lmaws-stage-bkt");
+  cloud.queue_delete("lmaws-events-q");
+  print(cloud.cost_report().summary());
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, "S3/SQS lifecycle failed");</code></pre>
+<p>Example 2: Exposing a DynamoDB table and S3 bucket through standard lmcode_std_v3 REST and CLI handlers.</p>
+<pre><code>p = _lmcode_ cli="lmaws" install="github:lmctl-ai/lmaws@latest";
+  @"/records/:id"
+  fn get_record(x: RestExchange) -> void implements RestGet {
+    let item = cloud.item_get("records-tbl", x.param("id"));
+    if (!item.exists()) {
+      x.status(404);
+      x.send("missing");
+      return;
+    }
+    x.send(item.get_string("payload"));
+  }
+
+  @"put-record"
+  fn cmd_put(x: RestExchange) -> void implements CliCommand {
+    cloud.table_create("records-tbl");
+    let row = cloud.item_new("rec-1").set_string("payload", x.body());
+    cloud.item_put("records-tbl", row);
+    x.send("stored");
+  }
+
+  rest_config("prefix", "/v1");
+  let c = rest_cli(str_split("put-record -- hello-dynamodb", " "));
+  let g = rest_cli(str_split("/v1/records/rec-1", " "));
+  print(c + ":" + g);
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, "REST/CLI table workflow failed");</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Cloud operations map errors to ErrorCode (OK, INVALID_ARGUMENT, NOT_FOUND, CONFLICT, PRECONDITION_FAILED, UNAUTHENTICATED, PERMISSION_DENIED, COST_CAP_EXCEEDED, INTERNAL). Secret values, access keys, and session tokens are redacted from all error messages. Exit code 0 indicates success; exit code 2 indicates CLI usage error or invalid LMAWS_MAX_MEMORY_MB value; exit code 3 indicates runtime cloud error, budget cap refusal, or memory ceiling breach; exit code 4 indicates bytecode load or schema mismatch failure.</p>
+<h2>How to verify</h2>
+<p>Verify the binary version, schema emission, canonical signature count, and Go test suite.</p>
+<pre><code>lmaws --version
+lmaws --lmcode-signatures
+bash test-go.sh</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmaws">github.com/lmctl-ai/lmaws</a>.</p>
+</footer>
+</body>
+</html>

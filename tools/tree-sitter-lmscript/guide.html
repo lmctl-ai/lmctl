@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tree-sitter-lmscript guide — tree-sitter-lmscript — lmctl.com tools</title>
+<meta name="description" content="This guide explains how tree-sitter-lmscript parses outer LMScript syntax, tracks queued data blocks in src/scanner.c, and injects the companion…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/tree-sitter-lmscript/">Overview</a></li>
+<li><a href="/tools/tree-sitter-lmscript/skill.html">Skill</a></li>
+<li><a href="/tools/tree-sitter-lmscript/guide.html">Guide</a></li>
+<li><a href="/tools/tree-sitter-lmscript/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>tree-sitter-lmscript guide</h1>
+<p>This guide explains how tree-sitter-lmscript parses outer LMScript syntax, tracks queued data blocks in src/scanner.c, and injects the companion lmscript_lmcode grammar.</p>
+<h2>Overview</h2>
+<p>LMScript files interleave outer orchestration code with queued data blocks opened by _lmcode_ (or _dsl_) headers and closed by end _lmcode_. The outer parser in grammar.js and src/scanner.c scans queued block markers on a single statement line, captures each physical body in an opaque lmcode_body (or data_body) node excluding the header and closer lines, and serializes pending queue state across incremental edits.</p>
+<h2>Grammar and external scanner rules</h2>
+<p>To support LMScript's compile-time f"..." body template expansion without polluting standalone lmcode, tree-sitter-lmscript includes a companion grammar in lmcode-body/ named lmscript_lmcode. The companion inherits the pinned tree-sitter-lmcode rules and adds single-line formatted string rules inside a root lmscript_lmcode_body node. queries/injections.scm maps lmcode_body to lmscript_lmcode automatically.</p>
+<h2>REST, CLI, and rule entry syntax coverage</h2>
+<p>When an .lms script defines an _lmcode_ block with @"/users/:id" RestGet endpoints, @"status" CliCommand entries, rest_config, rest_route, rest_serve, rest_stop, rest_cli, or $return assignments, the outer parser isolates the block inside data_block_statement -> lmcode_body and the injected lmscript_lmcode parser produces the inner function_declaration, annotation, implements_clause, and return_assignment AST nodes.</p>
+<pre><code># Run the public corpus, 39 Tree-sitter corpus cases, and 3 mutant controls
+npm install --prefix /tmp/lmscript-tree-sitter tree-sitter-cli@0.27.1
+export TREE_SITTER=/tmp/lmscript-tree-sitter/node_modules/.bin/tree-sitter
+npm test</code></pre>
+<h2>Conformance and mutation controls</h2>
+<p>Running npm test regenerates the parser with tree-sitter-cli 0.27.1, runs 39 Tree-sitter corpus cases and contract checks, parses the public corpus with zero ERROR or MISSING nodes, and verifies that three production-copy mutants fail closed.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/tree-sitter-lmscript">github.com/lmctl-ai/tree-sitter-lmscript</a>.</p>
+</footer>
+</body>
+</html>

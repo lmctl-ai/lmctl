@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmproxy reference — lmproxy — lmctl.com tools</title>
+<meta name="description" content="Complete command-line subcommands and flags, Proxy, Url, and Message host methods, standard lmcode_std_v3 REST and CLI interfaces, and exit codes for lmproxy…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmproxy/">Overview</a></li>
+<li><a href="/tools/lmproxy/skill.html">Skill</a></li>
+<li><a href="/tools/lmproxy/guide.html">Guide</a></li>
+<li><a href="/tools/lmproxy/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmproxy reference</h1>
+<p>Complete command-line subcommands and flags, Proxy, Url, and Message host methods, standard lmcode_std_v3 REST and CLI interfaces, and exit codes for lmproxy v0.1.1.</p>
+<h2>Host and CLI subcommands</h2>
+<table>
+<thead><tr><th>Command or flag</th><th>Arguments</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>--version</td><td>none</td><td>Print lmproxy 0.1.1 and exit 0.</td></tr>
+<tr><td>--lmcode-schema</td><td>[--json]</td><td>Print human-readable signatures summary, or exact embedded host schema JSON bytes when --json is passed.</td></tr>
+<tr><td>--lmcode-signatures</td><td>none</td><td>Print all canonical context, function, and method signatures (host + 226 standard library signatures).</td></tr>
+<tr><td>--lmcode</td><td>&lt;file.dslb>...</td><td>Load and execute compiled LMScript bytecode files against the embedded lmproxy schema.</td></tr>
+<tr><td>parse-url</td><td>&lt;URL>...</td><td>Parse one or more URLs with Squid 7 and print one JSON object per line ({valid,scheme,host,host_is_ip,userinfo,port,path,error}).</td></tr>
+<tr><td>parse-request</td><td>&lt;FILE | -></td><td>Parse a raw HTTP/1.x request from FILE or stdin (-) and print JSON ({kind,complete,version,method,target,headers,error}).</td></tr>
+<tr><td>parse-response</td><td>&lt;FILE | -></td><td>Parse a raw HTTP/1.x response from FILE or stdin (-) and print JSON ({kind,complete,version,status,reason,headers,error}).</td></tr>
+<tr><td>forward</td><td>[--port P] [--bind ADDR] [proxy-flags]</td><td>Start the embedded Squid 7 forward proxy daemon (default port 3128, default bind 127.0.0.1).</td></tr>
+<tr><td>intercept</td><td>[--port P] [--bind ADDR] [proxy-flags]</td><td>Start the embedded Squid 7 transparent interception proxy daemon (default port 3129, default bind 127.0.0.1).</td></tr>
+<tr><td>run</td><td>--config &lt;file.conf> [--debug N]</td><td>Run the embedded Squid 7 engine directly using a custom Squid configuration file.</td></tr>
+<tr><td>certgen</td><td>[security_file_certgen-args]</td><td>Internal subcommand invoking the embedded Squid dynamic SSL certificate generator helper.</td></tr>
+<tr><td>--port / -p</td><td>&lt;port></td><td>Listening TCP port for forward (default 3128) or intercept (default 3129).</td></tr>
+<tr><td>--bind / -b</td><td>&lt;address></td><td>Bind IP address for forward or intercept (default 127.0.0.1).</td></tr>
+<tr><td>--ssl-bump</td><td>none</td><td>Enable dynamic SSL-bump TLS decryption and on-the-fly host certificate generation.</td></tr>
+<tr><td>--ca-cert / --ca-key</td><td>&lt;path></td><td>Custom PEM Root CA certificate and private key for --ssl-bump (auto-generated if omitted).</td></tr>
+<tr><td>--tap</td><td>none</td><td>Print real-time intercepted HTTP/HTTPS request and response summaries to stderr.</td></tr>
+<tr><td>--record</td><td>&lt;file.jsonl></td><td>Append structured JSONL traffic records ({timestamp,client,method,url,status,bytes,duration_ms}) to FILE.</td></tr>
+<tr><td>--route</td><td>&lt;PATTERN=HOST:PORT></td><td>Transparently route requests matching domain or regex PATTERN to an alternate backend origin HOST:PORT.</td></tr>
+<tr><td>--redirect</td><td>&lt;PATTERN=URL></td><td>Intercept requests matching PATTERN and respond with an HTTP 307 Temporary Redirect to URL.</td></tr>
+<tr><td>--debug / -d</td><td>&lt;level></td><td>Set Squid debug logging verbosity level.</td></tr>
+</tbody>
+</table>
+<h2>Host context proxy: Proxy, Url, and Message methods</h2>
+<table>
+<thead><tr><th>Type / context</th><th>Method or function signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context proxy: Proxy</td><td>proxy.parse_url(string) -> Url | parse_url(string) -> Url</td><td>Parse a URL string using Squid 7 and return a Url handle (up to 65536 handles per run).</td></tr>
+<tr><td>Proxy / function</td><td>proxy.parse_request(string) -> Message | parse_request(string) -> Message</td><td>Parse a raw HTTP/1.x request string using Squid 7 and return a Message handle.</td></tr>
+<tr><td>Proxy / function</td><td>proxy.parse_response(string) -> Message | parse_response(string) -> Message</td><td>Parse a raw HTTP/1.x response string using Squid 7 and return a Message handle.</td></tr>
+<tr><td>Proxy / function</td><td>proxy.percent_decode(string) -> string | percent_decode(string) -> string</td><td>Percent-decode an URL path or query component string.</td></tr>
+<tr><td>Proxy / function</td><td>proxy.percent_encode(string) -> string | percent_encode(string) -> string</td><td>Percent-encode special characters in a string according to Squid URL rules.</td></tr>
+<tr><td>function println</td><td>println(string) -> void</td><td>Write a line of text to host output.</td></tr>
+<tr><td>Url</td><td>u.raw() -> string | u.valid() -> bool | u.error() -> string</td><td>Return the original unparsed input string, whether parsing succeeded, or the parser error message.</td></tr>
+<tr><td>Url</td><td>u.scheme() | u.host() | u.userinfo() | u.path() -> string</td><td>Return the decomposed URL scheme, hostname or IP literal, userinfo prefix, or path+query string.</td></tr>
+<tr><td>Url</td><td>u.host_is_ip() -> bool | u.port() -> int | u.has_port() -> bool</td><td>Check whether host is an IPv4/IPv6 literal, read the effective port number (0 if none), or check if an explicit port was specified.</td></tr>
+<tr><td>Message</td><td>m.kind() -> string | m.complete() -> bool | m.error() -> string</td><td>Return "request" or "response", whether the HTTP header block parsed completely, or any parse error text.</td></tr>
+<tr><td>Message</td><td>m.version() -> string | m.method() -> string | m.target() -> string</td><td>Return the HTTP version string (such as "HTTP/1.1"), request method, or request target URI.</td></tr>
+<tr><td>Message</td><td>m.status() -> int | m.reason() -> string</td><td>Return the HTTP response status code (0 for requests) and reason phrase.</td></tr>
+<tr><td>Message</td><td>m.header(string) -> string | m.header_count() -> int | m.header_names() -> StrList</td><td>Look up a header value case-insensitively ("" if missing), return distinct header count, or return an independent StrList of header names.</td></tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<table>
+<thead><tr><th>Interface or function</th><th>Signature / annotation</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>RestGet .. RestOptions</td><td>@"/path/:param" fn h(x: RestExchange) -> void implements RestGet</td><td>Bind an HTTP GET, POST, PUT, DELETE, PATCH, HEAD, or OPTIONS route handler.</td></tr>
+<tr><td>RestHandler</td><td>@"/path" fn h(x: RestExchange) -> void implements RestHandler</td><td>Bind a method-agnostic HTTP route handler.</td></tr>
+<tr><td>CliCommand</td><td>@"cmd" fn h(x: RestExchange) -> void implements CliCommand</td><td>Bind a named CLI subcommand dispatched by rest_cli.</td></tr>
+<tr><td>CliOption</td><td>@"--flag" fn h(x: RestExchange) -> void implements CliOption</td><td>Bind a CLI option flag (--flag=val or --flag val) evaluated before the command handler.</td></tr>
+<tr><td>rest_config</td><td>rest_config(key: string, value: string) -> void</td><td>Configure server or CLI settings such as host, port, and session (ephemeral or global).</td></tr>
+<tr><td>rest_route</td><td>rest_route(method: string, path: string, handler: string) -> void</td><td>Dynamically register an HTTP method and route pattern to a handler function name.</td></tr>
+<tr><td>rest_serve / rest_stop</td><td>rest_serve() -> void | rest_stop() -> void</td><td>Start or stop the embedded standard HTTP server loop.</td></tr>
+<tr><td>rest_cli</td><td>rest_cli(args: StrList) -> string</td><td>Dispatch CLI options, commands, or path requests in-process without opening a socket.</td></tr>
+<tr><td>RestExchange</td><td>x.method() | x.path() | x.body() | x.param(string) | x.query(string) | x.header(string) -> string</td><td>Read request method, path, body, :param segment, query parameter, or header.</td></tr>
+<tr><td>RestExchange</td><td>x.has_query(string) | x.has_header(string) -> bool</td><td>Check whether a query parameter or request header is present.</td></tr>
+<tr><td>RestExchange</td><td>x.status(int) | x.set_header(string, string) | x.send(string) | x.json(string) -> void</td><td>Set response status code and headers, and emit plain text or application/json bodies.</td></tr>
+<tr><td>RestExchange</td><td>x.get(string) -> string | x.set(string, string) -> void | x.increment(string) -> int</td><td>Read, write, or atomically increment session state keys across global or ephemeral exchanges.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th>Exit code</th><th>Category</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success</td><td>CLI parser, proxy daemon execution, or _lmcode_ program completed and all assertions passed.</td></tr>
+<tr><td>2</td><td>Usage error</td><td>Invalid command-line flag, malformed --route or --redirect argument, or invocation metadata error.</td></tr>
+<tr><td>3</td><td>Host / load error</td><td>Unreadable input file in parse-request/parse-response, bytecode load failure, arena limit exceeded, or unhandled VM error.</td></tr>
+<tr><td>4</td><td>Contract / output failure</td><td>An assertion (assert, assert_eq) or result schema contract failed, or stdout write failed.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmproxy">github.com/lmctl-ai/lmproxy</a>.</p>
+</footer>
+</body>
+</html>

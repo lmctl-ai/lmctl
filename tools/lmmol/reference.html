@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmmol reference — lmmol — lmctl.com tools</title>
+<meta name="description" content="Reference tables for lmmol entity types, static browse URLs, node and edge fields, semantic search parameters, embedding specifications, and HTTP status codes.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmmol/">Overview</a></li>
+<li><a href="/tools/lmmol/skill.html">Skill</a></li>
+<li><a href="/tools/lmmol/guide.html">Guide</a></li>
+<li><a href="/tools/lmmol/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmmol reference</h1>
+<p>Reference tables for lmmol entity types, static browse URLs, node and edge fields, semantic search parameters, embedding specifications, and HTTP status codes.</p>
+<h2>Entity types and identifiers</h2>
+<table>
+<thead><tr><th>Type slug</th><th>Approximate count</th><th>Identifier format</th><th>Example ID</th><th>Upstream source</th></tr></thead>
+<tbody>
+<tr><td>protein</td><td>575,503</td><td>UniProt accession</td><td>P38398</td><td>UniProtKB / Swiss-Prot</td></tr>
+<tr><td>trial</td><td>589,453</td><td>NCT identifier</td><td>NCT00001496</td><td>ClinicalTrials.gov</td></tr>
+<tr><td>disease</td><td>139,194</td><td>Mondo ID with underscore</td><td>MONDO_0016419</td><td>Mondo Disease Ontology</td></tr>
+<tr><td>gene</td><td>566,984</td><td>Official gene symbol</td><td>BRCA1</td><td>UniProt / ClinVar</td></tr>
+<tr><td>go</td><td>28,507</td><td>Gene Ontology ID</td><td>GO:0006281</td><td>Gene Ontology Consortium</td></tr>
+</tbody>
+</table>
+<h2>Browse layer endpoints (https://lmmol.com)</h2>
+<table>
+<thead><tr><th>Path pattern</th><th>HTTP verb</th><th>Response fields</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>/llms.txt</td><td>GET</td><td>text/plain</td><td>Self-contained machine guide for LLM agents</td></tr>
+<tr><td>/index.json</td><td>GET</td><td>entity types, counts, listing paths</td><td>Root index of the knowledge graph</td></tr>
+<tr><td>/index/list/TYPE/root.json</td><td>GET</td><td>count, shards</td><td>Sharding manifest for an entity type</td></tr>
+<tr><td>/index/list/TYPE/N.json</td><td>GET</td><td>[{id, name}, ...]</td><td>Shard N with up to 1000 entity summaries</td></tr>
+<tr><td>/nodes/TYPE/ID.json</td><td>GET</td><td>id, type, name, search_text, synonyms, native_xrefs, outbound_source_links, attributes, normalized, edges</td><td>Full entity node and its forward edges</td></tr>
+<tr><td>/index/disease/MONDO_ID.json</td><td>GET</td><td>proteins, trials</td><td>Backlinks from a disease to its proteins and clinical trials</td></tr>
+<tr><td>/index/gene/SYMBOL.json</td><td>GET</td><td>proteins</td><td>Backlinks from a gene symbol to its proteins</td></tr>
+<tr><td>/index/clinvar/gene/SYMBOL.json</td><td>GET</td><td>diseases: [{id, name, significance}]</td><td>ClinVar variant-backed disease associations for a gene</td></tr>
+<tr><td>/index/clinvar/disease/MONDO_ID.json</td><td>GET</td><td>genes: [{symbol, significance}]</td><td>ClinVar variant-backed gene associations for a disease</td></tr>
+</tbody>
+</table>
+<h2>Node object schema</h2>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>id</td><td>string</td><td>Stable entity identifier (UniProt accession, NCT ID, MONDO_ID, gene symbol, or GO ID)</td></tr>
+<tr><td>type</td><td>string</td><td>Entity type: protein, trial, disease, gene, or go</td></tr>
+<tr><td>name</td><td>string</td><td>Primary human-readable name or study title</td></tr>
+<tr><td>search_text</td><td>string</td><td>Concatenated descriptive text indexed for semantic vector search</td></tr>
+<tr><td>synonyms</td><td>array of string</td><td>Alternative names, aliases, or gene symbols</td></tr>
+<tr><td>native_xrefs</td><td>array of object</td><td>Cross-references from the upstream source record</td></tr>
+<tr><td>outbound_source_links</td><td>array of string</td><td>Direct HTTPS URLs to the authoritative upstream database records</td></tr>
+<tr><td>attributes</td><td>object</td><td>Type-specific key-value properties such as organism, phase, overall_status, or last_update_year</td></tr>
+<tr><td>normalized</td><td>boolean</td><td>True when a disease node resolves to a canonical MONDO_* identifier</td></tr>
+<tr><td>edges</td><td>array of object</td><td>Forward directional links with relation, source ({type, id}), and target ({type, id})</td></tr>
+</tbody>
+</table>
+<h2>Edge relations</h2>
+<table>
+<thead><tr><th>Relation name</th><th>Source type</th><th>Target type</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>protein_disease</td><td>protein</td><td>disease</td><td>Protein is associated with the target Mondo disease</td></tr>
+<tr><td>protein_has_gene</td><td>protein</td><td>gene</td><td>Protein is encoded by the target gene symbol</td></tr>
+<tr><td>protein_annotated_with_go</td><td>protein</td><td>go</td><td>Protein is annotated with the target Gene Ontology term</td></tr>
+<tr><td>protein_references_paper</td><td>protein</td><td>publication</td><td>Protein record cites the target literature reference</td></tr>
+<tr><td>trial_disease</td><td>trial</td><td>disease</td><td>Clinical trial studies the target Mondo disease condition</td></tr>
+<tr><td>trial_references_paper</td><td>trial</td><td>publication</td><td>Clinical trial cites the target literature reference</td></tr>
+</tbody>
+</table>
+<h2>Semantic search API and filters</h2>
+<table>
+<thead><tr><th>Field or filter</th><th>Location</th><th>Type / example</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>queryVector</td><td>POST body</td><td>array of 384 floats</td><td>Required L2-normalized mean-pooled embedding from all-MiniLM-L6-v2</td></tr>
+<tr><td>topK</td><td>POST body</td><td>integer (e.g. 10)</td><td>Maximum number of ranked hits to return</td></tr>
+<tr><td>indexes</td><td>POST body</td><td>["proteins", "trials"]</td><td>Target vector indexes to search</td></tr>
+<tr><td>filters.proteins.organism</td><td>POST body</td><td>string (e.g. "9606")</td><td>Filter proteins by NCBI taxonomy ID (9606 is human)</td></tr>
+<tr><td>filters.proteins.has_disease_link</td><td>POST body</td><td>boolean (true)</td><td>Restrict to proteins that have at least one disease edge</td></tr>
+<tr><td>filters.trials.phase</td><td>POST body</td><td>string (e.g. "Phase 3")</td><td>Filter clinical trials by study phase</td></tr>
+<tr><td>filters.trials.overall_status</td><td>POST body</td><td>string (e.g. "Recruiting")</td><td>Filter clinical trials by recruitment status</td></tr>
+<tr><td>filters.trials.last_update_year</td><td>POST body</td><td>integer (e.g. 2024)</td><td>Filter clinical trials by year of last update</td></tr>
+</tbody>
+</table>
+<h2>Query embedding configuration</h2>
+<table>
+<thead><tr><th>Parameter</th><th>Required value</th></tr></thead>
+<tbody>
+<tr><td>Model</td><td>Xenova/all-MiniLM-L6-v2 (or sentence-transformers/all-MiniLM-L6-v2)</td></tr>
+<tr><td>Revision</td><td>751bff37182d3f1213fa05d7196b954e230abad9</td></tr>
+<tr><td>Pooling</td><td>mean</td></tr>
+<tr><td>Normalize</td><td>true</td></tr>
+<tr><td>Vector dimension</td><td>384</td></tr>
+</tbody>
+</table>
+<h2>HTTP status codes and curl exit codes</h2>
+<table>
+<thead><tr><th>Code</th><th>Layer</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>200</td><td>HTTP browse / search</td><td>Request succeeded and returned valid JSON</td></tr>
+<tr><td>404</td><td>HTTP browse</td><td>Requested entity ID, shard number, or backlink entry does not exist</td></tr>
+<tr><td>0</td><td>curl / mdbook CLI</td><td>Command completed successfully</td></tr>
+<tr><td>22</td><td>curl -f / --fail</td><td>Server returned an HTTP error response (4xx or 5xx)</td></tr>
+</tbody>
+</table></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmmol">github.com/lmctl-ai/lmmol</a>.</p>
+</footer>
+</body>
+</html>

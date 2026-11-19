@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>n8n — lmctl.com tools</title>
+<meta name="description" content="n8n is an independent, from-scratch workflow runtime for n8n-style JSON graphs built with LMScript, LMCode, and an lmcode-go HTTP host.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/n8n/">Overview</a></li>
+<li><a href="/tools/n8n/skill.html">Skill</a></li>
+<li><a href="/tools/n8n/guide.html">Guide</a></li>
+<li><a href="/tools/n8n/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>n8n</h1>
+<p>n8n is an independent, from-scratch workflow runtime for n8n-style JSON graphs built with LMScript, LMCode, and an lmcode-go HTTP host. It validates linear workflow and connector schemas, resolves whole-field JSON expressions, and executes bounded JSON POST requests tested offline with lmmock.</p>
+<h2>Quick reference</h2>
+<pre><code>npm ci --ignore-scripts --no-audit --no-fund
+npm run build
+npm run demo
+npm test
+./build/lmflow-host --lmcode-schema --json</code></pre>
+<table>
+<thead>
+<tr>
+<th>Component or function</th>
+<th>Signature or invocation</th>
+<th>Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>src/run.lms</td>
+<td>lmscript src/run.lms WORKFLOW.json CONNECTOR.json CREDENTIALS.json</td>
+<td>Validate workflow and connector JSON, compile the LMCode program, and run it on lmflow-host</td>
+</tr>
+<tr>
+<td>src/validate.lms</td>
+<td>flow.validate_all(workflow, connector)</td>
+<td>Verify schemas, unique node IDs/names, credential references, linear connections, and expressions</td>
+</tr>
+<tr>
+<td>input</td>
+<td>input(name: string) -> Json</td>
+<td>Load the validated workflow or connector JSON document inside the LMCode program</td>
+</tr>
+<tr>
+<td>credential</td>
+<td>credential(id: string, field: string) -> string</td>
+<td>Look up a secret field from the external credentials JSON file without exposing it in workflow JSON</td>
+</tr>
+<tr>
+<td>base_url</td>
+<td>base_url(default_url: string) -> string</td>
+<td>Return the effective provider base URL (honoring --base-url, LMFLOW_BASE_URL, or LMMOCK_URL)</td>
+</tr>
+<tr>
+<td>json_put</td>
+<td>json_put(obj: Json, key: string, value: Json) -> Json</td>
+<td>Return a JSON object with key set to scalar Json value (preserving string, number, or bool types)</td>
+</tr>
+<tr>
+<td>http_post_json</td>
+<td>http_post_json(url: string, body: Json) -> HttpResponse</td>
+<td>Send a bounded 10s, 1 MiB application/json POST request with redirects disabled</td>
+</tr>
+<tr>
+<td>workflow_fail</td>
+<td>workflow_fail(message: string) -> void</td>
+<td>Abort workflow execution with a structured run-phase error message</td>
+</tr>
+</tbody>
+</table>
+<pre><code># Build lmflow-host and run the Telegram sendMessage -> getChat workflow against lmmock
+npm run demo</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/n8n/skill.html">Authoring skill</a>: purpose, commands, credential and transport safety rules, worked examples, and verification checks.</li>
+<li><a href="/tools/n8n/guide.html">Guide</a>: clean-room architecture, ten-step execution path, expression resolution, neutral connector specifications, and bounded Go HTTP transport.</li>
+<li><a href="/tools/n8n/reference.html">Reference</a>: complete tables of CLI flags, npm scripts, environment variables, lmflow_host_v1 schema types and functions, JSON schemas, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/n8n">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/n8n">github.com/lmctl-ai/n8n</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmtop — lmctl.com tools</title>
+<meta name="description" content="lmtop is a cross-platform host resource monitor (CPU, memory, disk, network) that runs as a non-interactive newline-delimited JSON server over stdio.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmtop/">Overview</a></li>
+<li><a href="/tools/lmtop/skill.html">Skill</a></li>
+<li><a href="/tools/lmtop/guide.html">Guide</a></li>
+<li><a href="/tools/lmtop/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmtop</h1>
+<p>lmtop is a cross-platform host resource monitor (CPU, memory, disk, network) that runs as a non-interactive newline-delimited JSON server over stdio. It continuously samples 24 lmdebug-aligned metrics into a bounded in-memory ring buffer and answers status, now, history, summary, and stop queries.</p>
+<h2>Quick reference</h2>
+<pre><code>lmtop --help
+lmtop client status
+lmtop client now
+lmtop client summary '{"seconds": 60}'</code></pre>
+<table>
+<thead><tr><th>Interface or flag</th><th>Signature or syntax</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>Server mode (default)</td><td>lmtop [server] [--interval MS] [--cap-mb N]</td><td>Start the background sampling thread and serve newline-delimited JSON requests on stdin/stdout.</td></tr>
+<tr><td>Client one-shot mode</td><td>lmtop client [--id N] [--interval MS] &lt;method> [params-json]</td><td>Spawn a private server, wait for one sample window, run a single query, and stop the server cleanly.</td></tr>
+<tr><td>Client FIFO mode (POSIX)</td><td>lmtop client [--id N] --in PATH --out PATH &lt;method> [params-json]</td><td>Send a request with a fresh id to a long-lived supervised server over named pipes.</td></tr>
+<tr><td>status method</td><td>{"id":1,"method":"status"}</td><td>Return protocol tag (lmtop/1), PID, hostname, platform, uptime, sample counts, missed ticks, and 24-metric catalog.</td></tr>
+<tr><td>now method</td><td>{"id":2,"method":"now"}</td><td>Return the newest sample timestamp, measured dt_s, cpu_count, per-group health status, and all 24 metric values.</td></tr>
+<tr><td>history method</td><td>{"id":3,"method":"history","params":{"seconds":60,"max_points":60}}</td><td>Return time-series columns and downsampled rows over the requested window (always preserving the newest sample).</td></tr>
+<tr><td>summary method</td><td>{"id":4,"method":"summary","params":{"seconds":300}}</td><td>Compute per-metric n, min, mean, median, p95, p99, max, stddev (Welford), first, and last over the window.</td></tr>
+<tr><td>stop method</td><td>{"id":5,"method":"stop"}</td><td>Acknowledge with {"stopping":true} and terminate the server loop cleanly with exit code 0.</td></tr>
+</tbody>
+</table>
+<pre><code># Query a live sample and summary over stdio NDJSON
+printf '{"id":1,"method":"status"}\n{"id":2,"method":"now"}\n{"id":3,"method":"stop"}\n' | lmtop server --interval 200
+
+# Or run a one-shot client query
+lmtop client --interval 200 now</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmtop/skill.html">Skill</a> — agent authoring rules, server and client commands, memory and sampling bounds, exit codes, and verification steps.</li>
+<li><a href="/tools/lmtop/guide.html">Guide</a> — stdio NDJSON protocol, platform backends (Linux procfs, Windows PDH, macOS Mach/IOKit), disk deduplication, and window statistics.</li>
+<li><a href="/tools/lmtop/reference.html">Reference</a> — complete CLI flags, NDJSON request and response schemas, all 24 metric definitions, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmtop">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmtop">github.com/lmctl-ai/lmtop</a>.</p>
+</footer>
+</body>
+</html>

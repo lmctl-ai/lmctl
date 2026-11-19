@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-java — lmctl.com tools</title>
+<meta name="description" content="lmcode-java is a zero-dependency Java 21 SDK (package io.lmctl.lmcode) for running lmcode DSLB v6 bytecode on the JVM or GraalVM Native Image.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-java/">Overview</a></li>
+<li><a href="/tools/lmcode-java/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-java/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-java/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-java</h1>
+<p>lmcode-java is a zero-dependency Java 21 SDK (package io.lmctl.lmcode) for running lmcode DSLB v6 bytecode on the JVM or GraalVM Native Image. It preserves raw bytes in VmString, installs the 226-signature lmcode_std_v3 catalog, and includes the RestController and InvocationResults APIs.</p>
+<h2>Quick reference</h2>
+<pre><code>git clone https://github.com/lmctl-ai/lmcode-java.git
+cd lmcode-java
+mvn -q verify
+./scripts/build-native.sh</code></pre>
+<table><thead><tr><th>Item</th><th>Signature / Value</th><th>Role</th></tr></thead><tbody>
+<tr><td>new Registry()</td><td>io.lmctl.lmcode.Registry</td><td>Create a registry preloaded with all 226 lmcode_std_v3 signatures</td></tr>
+<tr><td>new Registry(false)</td><td>io.lmctl.lmcode.Registry</td><td>Create an empty host registry without standard library bindings</td></tr>
+<tr><td>Program.load(bc, schema, reg)</td><td>io.lmctl.lmcode.Program</td><td>Verify DSLB v6 bytecode, SHA-256 schema hash, imports, and control-flow stack depths</td></tr>
+<tr><td>program.run(ctx, reg)</td><td>void</td><td>Execute the verified program body against a Context</td></tr>
+<tr><td>program.call(idx, ctx, reg, args)</td><td>io.lmctl.lmcode.Value</td><td>Invoke an R49 rule entry by index with a List&lt;Value> argument vector</td></tr>
+<tr><td>Rest.registerRest(reg, opts)</td><td>io.lmctl.lmcode.rest.RestController</td><td>Re-bind the 20 REST/CLI std signatures to a configured stdio HTTP/1.1 and CLI controller</td></tr>
+<tr><td>InvocationResults.fromCommand(files)</td><td>io.lmctl.lmcode.InvocationResults</td><td>Read LMCODE_INVOCATION_FILE, manage per-part ResultSinks, and emit LMCODE_RETURN frames</td></tr>
+</tbody></table>
+<pre><code>import io.lmctl.lmcode.*;
+import io.lmctl.lmcode.rest.*;
+import java.nio.file.*;
+
+public final class HostMain {
+    public static void main(String[] args) throws Exception {
+        Registry reg = new Registry();
+        RestController rest = Rest.registerRest(reg, new RestOptions().maxBodyBytes(1 &lt;&lt; 20));
+        byte[] bc = Files.readAllBytes(Path.of(args[0]));
+        byte[] schema = Files.readAllBytes(Path.of(args[1]));
+        Program prog = Program.load(bc, schema, reg);
+        rest.run(prog, new Context());
+    }
+}</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmcode-java/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-java/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-java/reference.html">Reference</a></li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmcode-java">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-java">github.com/lmctl-ai/lmcode-java</a>.</p>
+</footer>
+</body>
+</html>

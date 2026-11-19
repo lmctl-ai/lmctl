@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-csharp — lmctl.com tools</title>
+<meta name="description" content="lmcode-csharp is a dependency-free .NET 8 SDK (namespace LmCode) for embedding the lmcode DSLB v6 verifier and VM in managed or NativeAOT C# hosts.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-csharp/">Overview</a></li>
+<li><a href="/tools/lmcode-csharp/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-csharp/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-csharp/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-csharp</h1>
+<p>lmcode-csharp is a dependency-free .NET 8 SDK (namespace LmCode) for embedding the lmcode DSLB v6 verifier and VM in managed or NativeAOT C# hosts. It ships the 226-signature lmcode_std_v3 catalog, byte-exact VmString spans, RestCatalog stdio HTTP/CLI controller, and InvocationResults framing.</p>
+<h2>Quick reference</h2>
+<pre><code>git clone https://github.com/lmctl-ai/lmcode-csharp.git
+cd lmcode-csharp
+dotnet build -c Release -warnaserror
+dotnet test</code></pre>
+<table><thead><tr><th>Item</th><th>Signature / Value</th><th>Role</th></tr></thead><tbody>
+<tr><td>new Registry()</td><td>LmCode.Registry</td><td>Create a registry preloaded with all 226 canonical lmcode_std_v3 signatures</td></tr>
+<tr><td>new Registry(false)</td><td>LmCode.Registry</td><td>Create an empty registry without the standard library catalog</td></tr>
+<tr><td>Program.Load(bc, schema, reg)</td><td>LmCode.Program</td><td>Verify DSLB v6 header, SHA-256 schema hash, imports, and control-flow stack depths</td></tr>
+<tr><td>program.Run(ctx, reg)</td><td>void</td><td>Execute the bytecode body against a per-run Context</td></tr>
+<tr><td>program.Call(idx, ctx, reg, args)</td><td>LmCode.Value</td><td>Execute an R49 rule entry by index with IReadOnlyList&lt;Value> arguments</td></tr>
+<tr><td>RestCatalog.RegisterRest(reg, opts)</td><td>LmCode.Rest.RestController</td><td>Re-bind the 20 REST/CLI std signatures to a configured stdio HTTP/1.1 and CLI controller</td></tr>
+<tr><td>InvocationResults.FromCommand(files)</td><td>LmCode.InvocationResults</td><td>Read LMCODE_INVOCATION_FILE, manage per-part ResultSinks, and write LMCODE_RETURN frames</td></tr>
+</tbody></table>
+<pre><code>using LmCode;
+using LmCode.Rest;
+
+var registry = new Registry();
+var rest = RestCatalog.RegisterRest(registry, new RestOptions { MaxBodyBytes = 1 &lt;&lt; 20 });
+var bytecode = File.ReadAllBytes(args[0]);
+var schema = File.ReadAllBytes(args[1]);
+var program = Program.Load(bytecode, schema, registry);
+rest.Run(program);</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmcode-csharp/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-csharp/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-csharp/reference.html">Reference</a></li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmcode-csharp">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-csharp">github.com/lmctl-ai/lmcode-csharp</a>.</p>
+</footer>
+</body>
+</html>

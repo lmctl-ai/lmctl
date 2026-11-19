@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmsearch authoring skill — lmsearch — lmctl.com tools</title>
+<meta name="description" content="lmsearch is a native C++ vector and neural search CLI and lmcode host that unifies ONNX embedding models, AutoFaiss index planning and autotuning, and FAISS…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmsearch/">Overview</a></li>
+<li><a href="/tools/lmsearch/skill.html">Skill</a></li>
+<li><a href="/tools/lmsearch/guide.html">Guide</a></li>
+<li><a href="/tools/lmsearch/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmsearch authoring skill</h1>
+<p>lmsearch is a native C++ vector and neural search CLI and lmcode host that unifies ONNX embedding models, AutoFaiss index planning and autotuning, and FAISS similarity search with programmable SAM callbacks and a lazy in-memory REST server.</p>
+<h2>Purpose</h2>
+<p>Use lmsearch to embed text or documents with ONNX models, plan and tune memory-bounded FAISS indexes (Flat, HNSW, IVF, IVFPQ, OPQ) with AutoFaiss heuristics, filter and rerank vector hits with compiled lmcode rules, or serve interactive query-filter-requery sessions in RAM.</p>
+<h2>When to use it</h2>
+<p>Use lmsearch when you need dense vector similarity search, ONNX embedding pipelines, AutoFaiss quantization and recall evaluation, or lazy in-memory semantic file search. Use lmlucene when you need inverted-index BM25 full-text search, stemmers, or sorted-set facets.</p>
+<h2>Install</h2>
+<p>Install the LMScript compiler and download the native platform release binary with lmscript install, or build build/lmsearch from source with make.</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmscript install github:lmctl-ai/lmsearch@v0.1.16
+lmsearch --version
+lmsearch --lmcode-schema --json
+lmsearch --lmcode-signatures</code></pre>
+<h2>Commands</h2>
+<p>Index and search files directly from the CLI, or launch the single-user lazy in-memory REST server and client:</p>
+<pre><code>lmsearch index README.md durable-memory examples --output build/docs.faiss --model all-MiniLM-L6-v2 --ext .md,.lms
+lmsearch search --index build/docs.faiss --query "AutoFaiss memory budget and ONNX embedding" --ext .md -k 3
+lmsearch serve README.md durable-memory examples --port 8080 --timeout 60 --weights-only-cache &amp;
+lmsearch client --port 8080 query --query "ONNX and FAISS vector search" -k 5
+lmsearch client --port 8080 filter --ext .md --contains AutoFaiss
+lmsearch client --port 8080 requery -k 5
+lmsearch client --port 8080 shutdown</code></pre>
+<p>Script ONNX, AutoFaiss, and FAISS together inside an LMScript _lmcode_ block:</p>
+<pre><code>program = _lmcode_ cli="lmsearch" install="github:lmctl-ai/lmsearch@v0.1.16";
+let model = onnx_embedder(128, 32, 16).pooling(Pooling.MEAN).normalize(true);
+let plan = autotuner(1000, 16).metric(Metric.COSINE).max_memory("16MB").plan();
+let idx = auto_index(plan).embedder(model);
+idx.add_doc(document(1, "ONNX and FAISS vector search").field("tag", "core"));
+idx.add_doc(document(2, "AutoFaiss quantization planner").field("tag", "auto"));
+idx.search_text("vector search", 2).emit("results");
+end _lmcode_
+r = run_lmcode(program);
+assert(r.ok);</code></pre>
+<h2>Inputs and outputs</h2>
+<p>CLI commands accept file and directory paths, --index / --output paths, --model (caching ONNX weights under ~/.cache/lmsearch/models), common metadata filter flags (--ext, --path-prefix, --path-contains, --exclude-path, --contains, --field, --min-score, --max-distance, --min-size, --max-size), and --lmcode FILE.dslb.</p>
+<p>Stdout emits a structured JSON envelope containing ok and result (including emitted SearchResults, AutoPlan, IndexMetrics, OnnxModel summaries, and lazy cache telemetry such as from_memory_cache and lazy_newly_embedded).</p>
+<h2>Safety rules</h2>
+<p>Validate ONNX models with model.check() before indexing to verify IR version, opset schemas, and tensor shape inference. When using lmsearch serve with --weights-only-cache, only pretrained ONNX model weights are persisted on disk; document embeddings and cached broad search hits exist solely in RAM and clear on server exit.</p>
+<p>Always set --timeout SECONDS on lmsearch serve in automated workflows so idle background servers terminate cleanly even if a client script aborts before sending shutdown.</p>
+<h2>Worked examples</h2>
+<p>Run the bundled LMScript examples covering basic vector search, file and directory indexing, hairy SAM filters, AutoFaiss tuning, persistence, and the lazy REST server:</p>
+<pre><code>lmscript examples/basic_search.lms
+lmscript examples/file_and_dir_search.lms
+lmscript examples/hairy_search_filters.lms
+lmscript examples/autofaiss_tuning.lms
+lmscript examples/sam_rules.lms
+lmscript examples/rest_server_lazy_search.lms
+lmscript examples/std_rest_cli.lms</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmsearch exits with code 0 on success. Code 3 indicates CLI usage errors, bytecode load errors, schema hash mismatches, ONNX validation errors, or runtime FAISS/AuditRule failures (including --readonly refusals on run).</p>
+<h2>How to verify</h2>
+<p>Verify the binary version, CLI schema, lmcode schema, canonical signatures, and full test suite.</p>
+<pre><code>lmsearch --version
+lmsearch --schema --json
+lmsearch --lmcode-schema --json
+lmsearch --lmcode-signatures
+make test</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmsearch">github.com/lmctl-ai/lmsearch</a>.</p>
+</footer>
+</body>
+</html>

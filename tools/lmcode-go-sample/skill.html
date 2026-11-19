@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-go-sample skill — lmcode-go-sample — lmctl.com tools</title>
+<meta name="description" content="Use lmcode-go-sample as a verified blueprint for embedding lmcode-go (github.com/lmctl-ai/lmcode-go) in a Go 1.26+ (CGO_ENABLED=0) host application with schema…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-go-sample/">Overview</a></li>
+<li><a href="/tools/lmcode-go-sample/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-go-sample/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-go-sample/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-go-sample skill</h1>
+<p>Use lmcode-go-sample as a verified blueprint for embedding lmcode-go (github.com/lmctl-ai/lmcode-go) in a Go 1.26+ (CGO_ENABLED=0) host application with schema discovery, R49 rule entries, dry mode, and LMCODE_RETURN framing.</p>
+<h2>Purpose</h2>
+<p>Demonstrate a complete, byte-pinned Go 1.26+ (CGO_ENABLED=0) host application that exposes a 45-signature Shop/Ledger domain to DSLB v6 bytecode and passes the shared sample suite.</p>
+<h2>When to use it</h2>
+<p>Use lmcode-go-sample when learning how to bind Go 1.26+ (CGO_ENABLED=0) domain objects, overloaded methods, operators, R49 rule entries, and LMCODE_RETURN result envelopes with lmcode-go (github.com/lmctl-ai/lmcode-go).</p>
+<h2>Install</h2>
+<p>Clone lmctl-ai/lmcode-go-sample and run ./test.sh with Go 1.26+ (CGO_ENABLED=0), Python 3, Node 24, and a DSLB v6 capable lmscript compiler (set LMSCRIPT_BIN to select one).</p>
+<h2>Commands</h2>
+<pre><code>git clone https://github.com/lmctl-ai/lmcode-go-sample.git
+cd lmcode-go-sample
+python3 scripts/sync-suite.py --check
+CGO_ENABLED=0 go build -trimpath -o build/lmcode-go-sample .
+./test.sh
+./build/lmcode-go-sample --version
+./build/lmcode-go-sample --lmcode-schema --json
+./build/lmcode-go-sample --lmcode-signatures
+./build/lmcode-go-sample --lmcode sample-suite/bytecode/001-literals.dslb</code></pre>
+<h2>Inputs and outputs</h2>
+<ul>
+<li>Input: compiled .dslb v6 bytecode files from sample-suite/bytecode/, embedded sample.dsl.json schema, and optional LMCODE_INVOCATION_FILE manifest.</li>
+<li>Output: print trace lines, entry NAME = VALUE lines, tagged host_summary JSON diagnostic, and terminal LMCODE_RETURN_BEGIN / END frame.</li>
+<li>Locks: sdk.lock and suite.lock pinning every vendored SDK and corpus byte by commit SHA and SHA-256.</li>
+</ul>
+<h2>Safety rules</h2>
+<ul>
+<li>Verify sdk.lock and suite.lock before building so vendored SDK and corpus files never drift silently.</li>
+<li>Preserve raw byte strings across Ledger.note and JSON diagnostics without lossy UTF-8 replacement.</li>
+<li>Check LMCODE_INVOCATION_FILE dry mode before seeding or mutating external state so dry runs remain side-effect-free.</li>
+</ul>
+<h2>Worked examples</h2>
+<pre><code>prog = _lmcode_ cli="lmcode-go-sample" install="github:lmctl-ai/lmcode-go-sample@latest";
+  ledger.record(shop.total());
+end _lmcode_
+r = run_lmcode(prog);</code></pre>
+<h2>Errors and exit codes</h2>
+<table><thead><tr><th>Code</th><th>Phase</th><th>Exit</th><th>Condition</th></tr></thead><tbody>
+<tr><td>LOAD_BAD_BYTECODE</td><td>load</td><td>3</td><td>Malformed DSLB v6 header, bad magic or version, truncated section, invalid opcode, or stack depth violation</td></tr>
+<tr><td>LOAD_BAD_SCHEMA</td><td>load</td><td>3</td><td>Host schema JSON fails dsl.schema 2 validation or declares an invalid result contract</td></tr>
+<tr><td>LOAD_SCHEMA_MISMATCH</td><td>load</td><td>3</td><td>32-byte SHA-256 schema hash in DSLB v6 header does not match exact host schema bytes</td></tr>
+<tr><td>LOAD_UNBOUND</td><td>load</td><td>3</td><td>Bytecode imports a context, function, or method signature not registered in the host Registry</td></tr>
+<tr><td>RUN_ERROR</td><td>run</td><td>3</td><td>VM runtime error such as division or remainder by zero</td></tr>
+<tr><td>RUN_HOST</td><td>run</td><td>3</td><td>Host callback failure, invalid encoding, or expired collection handle</td></tr>
+<tr><td>APP_FAIL</td><td>app</td><td>4</td><td>Post-run application domain validation failure or output stream write failure</td></tr>
+</tbody></table>
+<h2>How to verify</h2>
+<pre><code>./test.sh</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-go-sample">github.com/lmctl-ai/lmcode-go-sample</a>.</p>
+</footer>
+</body>
+</html>

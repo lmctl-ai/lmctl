@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmhtml reference — lmhtml — lmctl.com tools</title>
+<meta name="description" content="Command-line flags, native commands, exit codes, host types, methods and standard-library signatures of lmhtml 0.7.6.">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmhtml/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmhtml/">Overview</a></li>
+<li><a href="/tools/lmhtml/skill.html">Skill</a></li>
+<li><a href="/tools/lmhtml/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmhtml/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmhtml/guide.html">Guide</a></li>
+<li><a href="/tools/lmhtml/recipes.html">Recipes</a></li>
+<li><a href="/tools/lmhtml/reference.html">Reference</a></li>
+<li><a href="/tools/lmhtml/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>lmhtml reference</h1>
+<p>Command-line flags, native commands, exit codes, host types, methods and standard-library signatures of lmhtml 0.7.6. Signatures are copied from lmhtml --lmcode-signatures, which prints 305 lines: 2 context objects, 71 host methods on 7 host types, 6 host functions, and the 226 canonical signatures of the lmcode_std_v3 standard catalog.</p>
+<h2 id="cli">Host protocol flags</h2>
+<table>
+<thead><tr><th>Command</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td>lmhtml --version</td><td>Prints lmhtml and the version number.</td></tr>
+<tr><td>lmhtml --lmcode-schema</td><td>Prints the schema summary: contexts, functions and each type with its methods.</td></tr>
+<tr><td>lmhtml --lmcode-schema --json</td><td>Prints the embedded schema JSON (dsl.schema 2, name lmhtml) used by the lmscript compiler.</td></tr>
+<tr><td>lmhtml --lmcode-signatures</td><td>Prints every registered canonical signature, host and standard, one per line.</td></tr>
+<tr><td>lmhtml [--dry-run] --lmcode FILE [FILE ...]</td><td>Runs compiled program files written by run_lmcode. With --dry-run, saves are reported but not written.</td></tr>
+</tbody>
+</table>
+<p>With no arguments or a bad flag the host prints its usage text and a JSON envelope with code CLI_USAGE between the lines LMCODE_RETURN_BEGIN and LMCODE_RETURN_END.</p>
+<h2 id="native">Native commands</h2>
+<table>
+<thead><tr><th>Command</th><th>Flags</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td>lmhtml md2html IN.md [OUT.html]</td><td>--template FILE, --allow-html</td><td>Convert Markdown to HTML. Prints HTML when no output file is given. Raw HTML is disabled unless --allow-html is given.</td></tr>
+<tr><td>lmhtml index DIR</td><td>--order FILE, --check</td><td>Write DIR/index.md. With --check nothing is written and index drift fails.</td></tr>
+<tr><td>lmhtml mdcheck DIR</td><td></td><td>Check the Markdown notes in a directory; broken links fail.</td></tr>
+<tr><td>lmhtml site DIR OUT</td><td>--template FILE</td><td>Build a static note site from a notes directory.</td></tr>
+<tr><td>lmhtml lint PATHS</td><td>--stats, --json, --config FILE, --compare BEFORE</td><td>Count plain-content violations per file and in total. The config file holds DIRECTORY METRIC MAX_COUNT rows.</td></tr>
+<tr><td>lmhtml md-lint PATHS</td><td></td><td>Markdown variant of lint listed in the usage text.</td></tr>
+<tr><td>lmhtml normalize PATHS</td><td>--check</td><td>Remove inline typography, repair entities and unfold prose without changing the text.</td></tr>
+<tr><td>lmhtml clean URL-or-file</td><td>--base URL, --markdown, --check</td><td>Extract main content. Files are processed offline; URL input uses curl. --check fails with a diff if content would be dropped.</td></tr>
+</tbody>
+</table>
+<h3 id="exit-codes">Exit codes</h3>
+<table>
+<thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success.</td></tr>
+<tr><td>2</td><td>Usage error: the usage text is printed.</td></tr>
+<tr><td>3</td><td>Program load failure, host runtime error, or a native command error such as an unknown option or index drift.</td></tr>
+<tr><td>4</td><td>Application failure, such as a report marked failed with fail_if_any, or an output stream error.</td></tr>
+</tbody>
+</table>
+<h2 id="lmscript">Used from lmscript</h2>
+<table>
+<thead><tr><th>Form</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest"; ... end _lmcode_</td><td>Declares a block compiled against the lmhtml schema; install lets lmscript download the release binary.</td></tr>
+<tr><td>r = run_lmcode(p)</td><td>Runs the block on the host and returns a map with ok and result.</td></tr>
+<tr><td>$return.name = value</td><td>Sets a named field of the result, as in the repository README example.</td></tr>
+<tr><td>lmscript --check FILE.lms</td><td>Compiles every block against the host schema without running it.</td></tr>
+</tbody>
+</table>
+<h2 id="types">Context objects and host types</h2>
+<table>
+<thead><tr><th>Name</th><th>Kind</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td>html</td><td>Context object of type Html</td><td>Loading, parsing, link checks, diffs, templates, Markdown and saving.</td></tr>
+<tr><td>report</td><td>Context object of type Report</td><td>Collects findings and writes text or JSON reports.</td></tr>
+<tr><td>Doc</td><td>Host type</td><td>One parsed HTML document.</td></tr>
+<tr><td>DocList</td><td>Host type</td><td>A collection of documents from load_dir.</td></tr>
+<tr><td>Node</td><td>Host type</td><td>One element selected from a document.</td></tr>
+<tr><td>NodeList</td><td>Host type</td><td>Result of a select call.</td></tr>
+<tr><td>ImageSize</td><td>Host type</td><td>Width and height returned by png_size.</td></tr>
+</tbody>
+</table>
+<h3 id="html">Html methods</h3>
+<table>
+<thead><tr><th>Signature</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Html.check_markdown(string) -> void</td><td>Check Markdown notes under a directory (the mdcheck command).</td></tr>
+<tr><td>Html.diff(Doc, Doc) -> int</td><td>Structural difference count; ignores whitespace, comments, attribute order and data-* attributes.</td></tr>
+<tr><td>Html.from_markdown(string) -> Doc</td><td>Markdown to document; the bool form allows raw HTML.</td></tr>
+<tr><td>Html.from_markdown(string, bool) -> Doc</td><td>Markdown to document; the bool form allows raw HTML.</td></tr>
+<tr><td>Html.index_markdown(string, string) -> string</td><td>Return generated index text for a notes directory (the index command).</td></tr>
+<tr><td>Html.link_exists(Doc, string) -> bool</td><td>True when the internal destination exists.</td></tr>
+<tr><td>Html.link_kind(Doc, string) -> string</td><td>Classify a link; kinds include external, special and outside-root. Nothing is fetched.</td></tr>
+<tr><td>Html.load(string) -> Doc</td><td>Load one HTML file.</td></tr>
+<tr><td>Html.load_dir(string) -> DocList</td><td>Load a directory of pages; the three-argument form adds include and exclude globs on relative paths.</td></tr>
+<tr><td>Html.load_dir(string, string, string) -> DocList</td><td>Load a directory of pages; the three-argument form adds include and exclude globs on relative paths.</td></tr>
+<tr><td>Html.parse(string) -> Doc</td><td>Parse an HTML string into a document.</td></tr>
+<tr><td>Html.png_size(string) -> ImageSize</td><td></td></tr>
+<tr><td>Html.render_markdown(string, string, string) -> Doc</td><td></td></tr>
+<tr><td>Html.resolve(Doc, string) -> string</td><td></td></tr>
+<tr><td>Html.save(Doc, string) -> void</td><td>Atomic write confined to the working directory; honours --dry-run.</td></tr>
+<tr><td>Html.save(string, string) -> void</td><td>Atomic write confined to the working directory; honours --dry-run.</td></tr>
+<tr><td>Html.site(string, string, string) -> void</td><td>Build a static note site (the site command).</td></tr>
+<tr><td>Html.write_template(DocList, int, string) -> int</td><td>Write shared subtrees with slot markers for pages sharing at least the given count.</td></tr>
+</tbody>
+</table>
+<h3 id="doc">Doc methods</h3>
+<table>
+<thead><tr><th>Signature</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Doc.byte_size() -> int</td><td></td></tr>
+<tr><td>Doc.classes_used() -> StrList</td><td></td></tr>
+<tr><td>Doc.clean(string) -> string</td><td>Main-content extraction against a base URL (the clean command).</td></tr>
+<tr><td>Doc.css_classes() -> StrList</td><td></td></tr>
+<tr><td>Doc.css_ids() -> StrList</td><td></td></tr>
+<tr><td>Doc.doctype() -> string</td><td></td></tr>
+<tr><td>Doc.ids() -> StrList</td><td></td></tr>
+<tr><td>Doc.links() -> StrList</td><td></td></tr>
+<tr><td>Doc.markdown(string) -> string</td><td></td></tr>
+<tr><td>Doc.markup_errors() -> StrList</td><td></td></tr>
+<tr><td>Doc.normalize() -> string</td><td>Plain-content normalisation (the normalize command).</td></tr>
+<tr><td>Doc.path() -> string</td><td></td></tr>
+<tr><td>Doc.select(string) -> NodeList</td><td></td></tr>
+<tr><td>Doc.source() -> string</td><td></td></tr>
+<tr><td>Doc.source_elements(string) -> StrList</td><td></td></tr>
+<tr><td>Doc.source_inner(string) -> string</td><td></td></tr>
+<tr><td>Doc.source_inner(string, string) -> string</td><td></td></tr>
+<tr><td>Doc.source_outer(string) -> string</td><td></td></tr>
+<tr><td>Doc.summary() -> string</td><td></td></tr>
+<tr><td>Doc.title() -> string</td><td></td></tr>
+</tbody>
+</table>
+<h3 id="doclist">DocList methods</h3>
+<table>
+<thead><tr><th>Signature</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>DocList.at(int) -> Doc</td><td></td></tr>
+<tr><td>DocList.classes_used() -> StrList</td><td></td></tr>
+<tr><td>DocList.css_classes() -> StrList</td><td></td></tr>
+<tr><td>DocList.css_ids() -> StrList</td><td></td></tr>
+<tr><td>DocList.ids() -> StrList</td><td></td></tr>
+<tr><td>DocList.len() -> int</td><td></td></tr>
+</tbody>
+</table>
+<h3 id="node">Node methods</h3>
+<table>
+<thead><tr><th>Signature</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Node.append_html(string) -> Node</td><td></td></tr>
+<tr><td>Node.attr(string) -> string</td><td></td></tr>
+<tr><td>Node.attributes() -> StrList</td><td></td></tr>
+<tr><td>Node.get_attrs(StrList) -> StrMap</td><td>Fresh StrMap of the requested attributes that are present.</td></tr>
+<tr><td>Node.has_attr(string) -> bool</td><td></td></tr>
+<tr><td>Node.hash() -> int</td><td></td></tr>
+<tr><td>Node.insert_after(string) -> Node</td><td></td></tr>
+<tr><td>Node.insert_before(string) -> Node</td><td></td></tr>
+<tr><td>Node.outer_html() -> string</td><td></td></tr>
+<tr><td>Node.parent() -> Node</td><td></td></tr>
+<tr><td>Node.path() -> string</td><td></td></tr>
+<tr><td>Node.prepend_html(string) -> Node</td><td></td></tr>
+<tr><td>Node.remove() -> void</td><td></td></tr>
+<tr><td>Node.replace_with(string) -> Node</td><td></td></tr>
+<tr><td>Node.select(string) -> NodeList</td><td></td></tr>
+<tr><td>Node.set_attr(string, string) -> Node</td><td></td></tr>
+<tr><td>Node.set_attrs(StrMap) -> Node</td><td>Bulk set; all names and values are validated before the first edit.</td></tr>
+<tr><td>Node.tag() -> string</td><td></td></tr>
+<tr><td>Node.text() -> string</td><td></td></tr>
+</tbody>
+</table>
+<h3 id="nodelist">NodeList methods</h3>
+<table>
+<thead><tr><th>Signature</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>NodeList.at(int) -> Node</td><td></td></tr>
+<tr><td>NodeList.len() -> int</td><td></td></tr>
+</tbody>
+</table>
+<h3 id="report">Report methods</h3>
+<table>
+<thead><tr><th>Signature</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Report.add(string, string, int, string) -> void</td><td></td></tr>
+<tr><td>Report.fail_if_any() -> void</td><td>Marks the run failed when the report has entries.</td></tr>
+<tr><td>Report.write_json(string) -> void</td><td></td></tr>
+<tr><td>Report.write_text(string) -> void</td><td></td></tr>
+</tbody>
+</table>
+<h3 id="imagesize">ImageSize methods</h3>
+<table>
+<thead><tr><th>Signature</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>ImageSize.height() -> int</td><td></td></tr>
+<tr><td>ImageSize.width() -> int</td><td></td></tr>
+</tbody>
+</table>
+<h3 id="host-functions">Host functions</h3>
+<table>
+<thead><tr><th>Signature</th></tr></thead>
+<tbody>
+<tr><td>assert_close(float, float, float) -> void</td></tr>
+<tr><td>print(string) -> void</td></tr>
+<tr><td>str_difference(StrList, StrList) -> StrList</td></tr>
+<tr><td>str_text_prefix(string, int) -> string</td></tr>
+<tr><td>str_union(StrList, StrList) -> StrList</td></tr>
+<tr><td>suggest(string, StrList) -> StrList</td></tr>
+</tbody>
+</table>
+<h2 id="std">Standard catalog lmcode_std_v3</h2>
+<p>lmhtml 0.7.6 embeds the 226-signature lmcode_std_v3 catalog from the vendored lmcode-cpp SDK pinned in sdk.lock. The tables list the signatures exactly as the binary reports them.</p>
+<h3 id="std-functions">Standard functions</h3>
+<table>
+<thead><tr><th>Group</th><th>Signatures</th></tr></thead>
+<tbody>
+<tr><td>file</td><td>file_append(string, string) -> void; file_exists(string) -> bool; file_lines(string) -> StrList; file_read(string) -> string; file_write(string, string) -> void</td></tr>
+<tr><td>constructors and json</td><td>float_list() -> FloatList; float_map() -> FloatMap; float_pq() -> FloatPQ; float_queue() -> FloatQueue; float_stack() -> FloatStack; int_list() -> IntList; int_map() -> IntMap; int_pq() -> IntPQ; int_queue() -> IntQueue; int_stack() -> IntStack; json_parse(string) -> Json; str_list() -> StrList; str_map() -> StrMap; str_pq() -> StrPQ; str_queue() -> StrQueue; str_stack() -> StrStack; template_render(string, Json) -> string</td></tr>
+<tr><td>lmcode_return</td><td>lmcode_return_null() -> void; lmcode_return_put(string, FloatList) -> void; lmcode_return_put(string, FloatMap) -> void; lmcode_return_put(string, IntList) -> void; lmcode_return_put(string, IntMap) -> void; lmcode_return_put(string, Json) -> void; lmcode_return_put(string, StrList) -> void; lmcode_return_put(string, StrMap) -> void; lmcode_return_put(string, bool) -> void; lmcode_return_put(string, float) -> void; lmcode_return_put(string, int) -> void; lmcode_return_put(string, string) -> void; lmcode_return_put_null(string) -> void; lmcode_return_set(FloatList) -> void; lmcode_return_set(FloatMap) -> void; lmcode_return_set(IntList) -> void; lmcode_return_set(IntMap) -> void; lmcode_return_set(Json) -> void; lmcode_return_set(StrList) -> void; lmcode_return_set(StrMap) -> void; lmcode_return_set(bool) -> void; lmcode_return_set(float) -> void; lmcode_return_set(int) -> void; lmcode_return_set(string) -> void</td></tr>
+<tr><td>math</td><td>math_abs(float) -> float; math_abs(int) -> int; math_ceil(float) -> float; math_ceil(int) -> int; math_floor(float) -> float; math_floor(int) -> int; math_max(float, float) -> float; math_max(int, int) -> int; math_min(float, float) -> float; math_min(int, int) -> int; math_pow(float, float) -> float; math_pow(int, int) -> int; math_round(float) -> float; math_round(int) -> int; math_sqrt(float) -> float; math_sqrt(int) -> int</td></tr>
+<tr><td>str</td><td>str_base64_decode(string) -> string; str_base64_encode(string) -> string; str_contains(string, string) -> bool; str_ends_with(string, string) -> bool; str_find(string, string) -> int; str_hex_decode(string) -> string; str_hex_encode(string) -> string; str_is_float(string) -> bool; str_is_int(string) -> bool; str_len(string) -> int; str_lower(string) -> string; str_match(string, string) -> bool; str_repeat(string, int) -> string; str_replace(string, string, string) -> string; str_split(string, string) -> StrList; str_starts_with(string, string) -> bool; str_substr(string, int, int) -> string; str_to_float(string) -> float; str_to_int(string) -> int; str_trim(string) -> string; str_upper(string) -> string</td></tr>
+</tbody>
+</table>
+<h3 id="std-types">Standard types</h3>
+<table>
+<thead><tr><th>Type</th><th>Methods</th></tr></thead>
+<tbody>
+<tr><td>FloatList</td><td>add(float) -> FloatList; at(int) -> float; clear() -> FloatList; contains(float) -> bool; index_of(float) -> int; len() -> int; set(int, float) -> FloatList</td></tr>
+<tr><td>FloatMap</td><td>clear() -> FloatMap; get(string) -> float; get_or(string, float) -> float; has(string) -> bool; key_at(int) -> string; keys() -> StrList; len() -> int; remove(string) -> bool; set(string, float) -> FloatMap; values() -> FloatList</td></tr>
+<tr><td>FloatPQ</td><td>clear() -> FloatPQ; empty() -> bool; len() -> int; peek() -> float; pop() -> float; push(float, float) -> FloatPQ</td></tr>
+<tr><td>FloatQueue</td><td>at(int) -> float; clear() -> FloatQueue; empty() -> bool; len() -> int; peek() -> float; pop() -> float; push(float) -> FloatQueue</td></tr>
+<tr><td>FloatStack</td><td>at(int) -> float; clear() -> FloatStack; empty() -> bool; len() -> int; peek() -> float; pop() -> float; push(float) -> FloatStack</td></tr>
+<tr><td>IntList</td><td>add(int) -> IntList; at(int) -> int; clear() -> IntList; contains(int) -> bool; index_of(int) -> int; len() -> int; set(int, int) -> IntList</td></tr>
+<tr><td>IntMap</td><td>clear() -> IntMap; get(string) -> int; get_or(string, int) -> int; has(string) -> bool; key_at(int) -> string; keys() -> StrList; len() -> int; remove(string) -> bool; set(string, int) -> IntMap; values() -> IntList</td></tr>
+<tr><td>IntPQ</td><td>clear() -> IntPQ; empty() -> bool; len() -> int; peek() -> int; pop() -> int; push(int, float) -> IntPQ</td></tr>
+<tr><td>IntQueue</td><td>at(int) -> int; clear() -> IntQueue; empty() -> bool; len() -> int; peek() -> int; pop() -> int; push(int) -> IntQueue</td></tr>
+<tr><td>IntStack</td><td>at(int) -> int; clear() -> IntStack; empty() -> bool; len() -> int; peek() -> int; pop() -> int; push(int) -> IntStack</td></tr>
+<tr><td>Json</td><td>as_bool() -> bool; as_float() -> float; as_int() -> int; as_string() -> string; at(int) -> Json; get(string) -> Json; has(string) -> bool; keys() -> StrList; kind() -> string; len() -> int; to_json() -> string</td></tr>
+<tr><td>StrList</td><td>add(string) -> StrList; at(int) -> string; clear() -> StrList; contains(string) -> bool; index_of(string) -> int; join(string) -> string; len() -> int; set(int, string) -> StrList</td></tr>
+<tr><td>StrMap</td><td>clear() -> StrMap; get(string) -> string; get_or(string, string) -> string; has(string) -> bool; key_at(int) -> string; keys() -> StrList; len() -> int; remove(string) -> bool; set(string, string) -> StrMap; values() -> StrList</td></tr>
+<tr><td>StrPQ</td><td>clear() -> StrPQ; empty() -> bool; len() -> int; peek() -> string; pop() -> string; push(string, float) -> StrPQ</td></tr>
+<tr><td>StrQueue</td><td>at(int) -> string; clear() -> StrQueue; empty() -> bool; len() -> int; peek() -> string; pop() -> string; push(string) -> StrQueue</td></tr>
+<tr><td>StrStack</td><td>at(int) -> string; clear() -> StrStack; empty() -> bool; len() -> int; peek() -> string; pop() -> string; push(string) -> StrStack</td></tr>
+</tbody>
+</table>
+<h2 id="rest">Standard REST and CLI interfaces</h2>
+<p>A function inside a block implements one of ten standard interfaces and carries a route, command or option annotation written as @"..." on the line before it. Each handler takes one RestExchange. The README example dispatches them statelessly with rest_cli.</p>
+<table>
+<thead><tr><th>Interface</th><th>Annotation</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td>RestGet</td><td>route path such as /health</td><td>Handles HTTP GET requests for the route.</td></tr>
+<tr><td>RestPost</td><td>route path such as /health</td><td>Handles HTTP POST requests for the route.</td></tr>
+<tr><td>RestPut</td><td>route path such as /health</td><td>Handles HTTP PUT requests for the route.</td></tr>
+<tr><td>RestDelete</td><td>route path such as /health</td><td>Handles HTTP DELETE requests for the route.</td></tr>
+<tr><td>RestPatch</td><td>route path such as /health</td><td>Handles HTTP PATCH requests for the route.</td></tr>
+<tr><td>RestHead</td><td>route path such as /health</td><td>Handles HTTP HEAD requests for the route.</td></tr>
+<tr><td>RestOptions</td><td>route path such as /health</td><td>Handles HTTP OPTIONS requests for the route.</td></tr>
+<tr><td>RestHandler</td><td>route path</td><td>General route handler interface.</td></tr>
+<tr><td>CliCommand</td><td>command name such as text</td><td>A stateless CLI command.</td></tr>
+<tr><td>CliOption</td><td>option name such as --selector</td><td>A CLI option handler, run before the command.</td></tr>
+</tbody>
+</table>
+<h3 id="rest-functions">REST functions</h3>
+<table>
+<thead><tr><th>Signature</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>rest_cli(StrList) -> string</td><td>Stateless dispatch of options, commands and REST routes from an argument list; returns the response text.</td></tr>
+<tr><td>rest_config(string, string) -> void</td><td>Set a configuration key, for example session to global.</td></tr>
+<tr><td>rest_route(string, string, string) -> void</td><td>Register a route explicitly.</td></tr>
+<tr><td>rest_serve() -> void</td><td>Serve the declared routes.</td></tr>
+<tr><td>rest_stop() -> void</td><td>Stop serving.</td></tr>
+</tbody>
+</table>
+<h3 id="restexchange">RestExchange methods</h3>
+<table>
+<thead><tr><th>Signature</th></tr></thead>
+<tbody>
+<tr><td>RestExchange.body() -> string</td></tr>
+<tr><td>RestExchange.get(string) -> string</td></tr>
+<tr><td>RestExchange.has_header(string) -> bool</td></tr>
+<tr><td>RestExchange.has_query(string) -> bool</td></tr>
+<tr><td>RestExchange.header(string) -> string</td></tr>
+<tr><td>RestExchange.increment(string) -> int</td></tr>
+<tr><td>RestExchange.json(string) -> void</td></tr>
+<tr><td>RestExchange.method() -> string</td></tr>
+<tr><td>RestExchange.param(string) -> string</td></tr>
+<tr><td>RestExchange.path() -> string</td></tr>
+<tr><td>RestExchange.query(string) -> string</td></tr>
+<tr><td>RestExchange.send(string) -> void</td></tr>
+<tr><td>RestExchange.set(string, string) -> void</td></tr>
+<tr><td>RestExchange.set_header(string, string) -> void</td></tr>
+<tr><td>RestExchange.status(int) -> void</td></tr>
+</tbody>
+</table>
+<p>See the <a href="/tools/lmhtml/guide.html">guide</a> for concepts and the <a href="/tools/lmhtml/skill.html">skill</a> for the working procedure.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmhtml">github.com/lmctl-ai/lmhtml</a>.</p>
+</footer>
+</body>
+</html>

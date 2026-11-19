@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmnet guide — lmnet — lmctl.com tools</title>
+<meta name="description" content="lmnet consolidates classic Linux networking utilities and structured kernel introspection into one statically-linked executable with zero external runtime…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmnet/">Overview</a></li>
+<li><a href="/tools/lmnet/skill.html">Skill</a></li>
+<li><a href="/tools/lmnet/guide.html">Guide</a></li>
+<li><a href="/tools/lmnet/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmnet guide</h1>
+<h2>Overview</h2>
+<p>lmnet consolidates classic Linux networking utilities and structured kernel introspection into one statically-linked executable with zero external runtime dependencies. It embeds the upstream iputils ping and tracepath tools, the iperf 3.22 throughput engine, direct rtnetlink and /proc/net parsers, a custom RFC 1035 DNS resolver, a parallel TCP connect scanner, a streaming TCP stdio bridge, and the lmcode-cpp bytecode virtual machine with the 226-signature lmcode_std_v3 standard library.</p>
+<h2>Kernel introspection: rtnetlink and procfs</h2>
+<p>Rather than shelling out to iproute2 or net-tools binaries that may be absent in minimal containers, lmnet talks directly to the Linux kernel and formats results as deterministic JSON or typed DSL objects:</p>
+<ul>
+<li>Interfaces and 64-bit link statistics: lmnet ifaddrs (and net.interfaces) enumerates address-bearing interfaces via libc getifaddrs. lmnet link (and net.links) queries rtnetlink RTM_GETLINK to return every network device, including unaddressed links, along with MTU, MAC address, transmit queue length, and 64-bit RX/TX byte, packet, error, and drop counters from rtnl_link_stats64.</li>
+<li>Routing tables, policy rules, and ARP/NDP neighbors: lmnet route (net.routes) dumps all IPv4 and IPv6 kernel routing tables over rtnetlink (dest, via, dev, proto, scope, metric, table, prefsrc). lmnet rule (net.rules) dumps the policy routing rule list (pref, family, table, action, from, to, fwmark, iif, oif, goto_target). lmnet neigh (net.neighbors) dumps the ARP and IPv6 NDP neighbor cache with lowercased NUD state, hardware MAC, and router/proxy flags.</li>
+<li>Socket tables and process attribution: lmnet sockets (net.sockets) parses /proc/net/tcp, tcp6, udp, udp6, and unix, supports optional protocol filtering (tcp, udp, unix) and --listen filtering, and walks /proc/&lt;pid>/fd when permitted to attribute sockets to owning PIDs and process names. Passing --summary (net.socket_summary) aggregates total, per-family, listening, and per-TCP-state counts (matching ss -s).</li>
+<li>Protocol counters: lmnet counters (net.counters) reads /proc/net/snmp, /proc/net/netstat, and /proc/net/snmp6 and emits nstat-style Section.Field keys (such as Ip.InReceives and TcpExt.TCPSynRetrans) alongside IPv6 counters (such as Ip6InReceives). Missing files on IPv4-only kernels are skipped cleanly.</li>
+</ul>
+<h2>Active probing: DNS, traceroute, port scanning, and TCP pipes</h2>
+<p>For active network diagnostics and testing, lmnet includes four purpose-built engines alongside its vendored iputils and iperf3 subcommands:</p>
+<ul>
+<li>DNS resolution and RFC 1035 queries: lmnet dns (net.dns_lookup) resolves hostnames through the system resolver. lmnet dig (net.dns_query) constructs a raw RFC 1035 DNS packet over a connected UDP socket with a 3-second timeout (defaulting to /etc/resolv.conf nameservers or an explicit @server) and returns the response rcode and typed answer records (name, type, ttl, data).</li>
+<li>Structured UDP/ICMP traceroute: lmnet trace (net.trace) sends one UDP probe per TTL to destination port 33434+ttl and listens for ICMP Time Exceeded or Destination Unreachable replies on a raw ICMP socket (requiring root or CAP_NET_RAW), returning each hop's TTL, responder IP, RTT in milliseconds (-1 for silent hops), and reached flag.</li>
+<li>Parallel TCP connect scanner: lmnet scan (net.scan and net.check) resolves IPv4 or IPv6 targets and probes ports using non-blocking connect, poll, and SO_ERROR across a pool of std::thread workers (default 64, clamped 1..512, per-port timeout default 750 ms, clamped 100..30000 ms). Every probed port is classified as open, closed (ECONNREFUSED), or filtered (timeout or unreachable) and annotated with its well-known service name. Because it uses standard TCP connect calls, it requires no elevated privileges.</li>
+<li>Binary-safe TCP stdio bridge and sockets: lmnet pipe connects to HOST PORT (or binds 0.0.0.0:PORT with --listen and optional --forever) and streams raw bytes between stdin/stdout and the TCP socket using 64 KB poll buffers and half-close shutdown(SHUT_WR) on stdin EOF. In _lmcode_, net.tcp_connect and net.tcp_listen expose blocking TcpConn (send, recv, close) and TcpListener (accept) objects for custom protocol scripting.</li>
+</ul>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<p>lmnet embeds the full 226-signature lmcode_std_v3 catalog (cpp/stdlib/rest.hpp). Any _lmcode_ script can expose Linux network diagnostics as HTTP routes or stateless CLI commands:</p>
+<ul>
+<li>HTTP route interfaces: RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, and RestHandler. Route annotations support static paths (such as @"/counters") and colon-prefixed parameters (such as @"/scan/:host"), read via RestExchange.param.</li>
+<li>Stateless CLI interfaces: CliOption (annotated with @"--flag") and CliCommand (annotated with @"command"). Calling rest_cli(args) parses option flags and invokes the matching command or route handler in-process without binding a network port.</li>
+<li>Server configuration and session state: rest_config("host", "127.0.0.1"), rest_config("port", "8080"), and rest_config("session", "global") configure the embedded HTTP server and shared RestExchange state (get, set, increment). Dynamic bindings can be registered with rest_route(method, path, handler_name), served with rest_serve(), and stopped with rest_stop().</li>
+</ul>
+<pre><code>p = _lmcode_ cli="lmnet" install="github:lmctl-ai/lmnet@latest";
+@"--proto"
+fn opt_proto(x: RestExchange) -> void implements CliOption {
+  x.set("proto", x.query("proto"));
+}
+
+@"socket-count"
+fn cmd_sockets(x: RestExchange) -> void implements CliCommand {
+  let proto = x.get("proto");
+  let sum = net.socket_summary(proto);
+  x.send(proto + ":listening=" + str(sum.listening()));
+}
+
+@"/probe/:host/:port"
+fn get_probe(x: RestExchange) -> void implements RestGet {
+  let ok = net.check(x.param("host"), int(x.param("port")));
+  x.json("{\"host\":\"" + x.param("host") + "\",\"open\":" + str(ok) + "}");
+}
+
+rest_config("session", "global");
+assert_eq(rest_cli(str_split("--proto=tcp socket-count", " ")), "tcp:listening=" + str(net.socket_summary("tcp").listening()));
+end _lmcode_</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmnet">github.com/lmctl-ai/lmnet</a>.</p>
+</footer>
+</body>
+</html>

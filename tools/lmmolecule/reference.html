@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmmolecule reference — lmmolecule — lmctl.com tools</title>
+<meta name="description" content="Complete reference for lmmolecule CLI flags, environment variables, Md, System, and Sim schema methods, and exit codes.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmmolecule/">Overview</a></li>
+<li><a href="/tools/lmmolecule/skill.html">Skill</a></li>
+<li><a href="/tools/lmmolecule/guide.html">Guide</a></li>
+<li><a href="/tools/lmmolecule/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmmolecule reference</h1>
+<p>Complete reference for lmmolecule CLI flags, environment variables, Md, System, and Sim schema methods, and exit codes.</p>
+<h2>Command-line flags and environment variables</h2>
+<table>
+<thead><tr><th>Flag or variable</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>--lmcode FILE [FILE ...]</td><td>Execute compiled LMScript bytecode FILE and print the JSON result envelope</td></tr>
+<tr><td>--dry-run --lmcode FILE</td><td>Validate bytecode FILE against the host without running simulations or file I/O</td></tr>
+<tr><td>--lmcode-schema</td><td>Print human-readable host schema summary</td></tr>
+<tr><td>--lmcode-schema --json</td><td>Print the embedded JSON DSL schema (lmmolecule + lmcode_std_v3)</td></tr>
+<tr><td>--lmcode-signatures</td><td>Print canonical type, method, and function signatures</td></tr>
+<tr><td>--version</td><td>Print the lmmolecule release version</td></tr>
+<tr><td>--notices</td><td>Print embedded third-party open-source license notices (OpenMM, Lepton, PocketFFT, SFMT, L-BFGS)</td></tr>
+<tr><td>LMMOLECULE_MAX_MEMORY_MB</td><td>Override the default 4096 MiB process memory budget</td></tr>
+</tbody>
+</table>
+<h2>Md methods (context object md)</h2>
+<table>
+<thead><tr><th>Method</th><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>system</td><td>() -> System</td><td>Create a new empty molecular system builder</td></tr>
+<tr><td>platform</td><td>(name: string) -> Md</td><td>Select OpenMM execution platform: "reference" (double precision) or "cpu" (SIMD mixed precision)</td></tr>
+<tr><td>threads</td><td>(n: int) -> Md</td><td>Set CPU platform thread count for subsequent simulations (1 for byte-identical reruns)</td></tr>
+<tr><td>eval</td><td>(expr: string) -> float</td><td>Evaluate a Lepton expression with constants pi, e, kB, and one_4pi_eps0</td></tr>
+<tr><td>assert_close</td><td>(actual: float, expected: float, tol: float) -> void</td><td>Assert that |actual - expected| &lt;= tol, failing with exit code 3 otherwise</td></tr>
+<tr><td>print</td><td>(msg: string) -> void</td><td>Write a diagnostic line to stderr</td></tr>
+<tr><td>version</td><td>() -> string</td><td>Return the lmmolecule version string</td></tr>
+</tbody>
+</table>
+<h2>System methods</h2>
+<table>
+<thead><tr><th>Method</th><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>box</td><td>(lx: float, ly: float, lz: float) -> System</td><td>Set orthorhombic periodic box dimensions in nm</td></tr>
+<tr><td>particle</td><td>(mass: float) -> int</td><td>Add a particle at the origin with mass in amu and return its 0-based index</td></tr>
+<tr><td>add_particle</td><td>(mass: float, x: float, y: float, z: float) -> System</td><td>Add a particle with mass (amu) and coordinates (nm)</td></tr>
+<tr><td>count</td><td>() -> int</td><td>Return the current number of particles in the system</td></tr>
+<tr><td>fcc</td><td>(cells: int, a: float, mass: float) -> System</td><td>Populate a 4 * cells^3 face-centered cubic lattice with lattice constant a (nm)</td></tr>
+<tr><td>rocksalt</td><td>(cells: int, a: float, mass_a: float, mass_b: float, q: float) -> System</td><td>Populate an 8 * cells^3 NaCl rock-salt lattice with alternating charges +q and -q</td></tr>
+<tr><td>gas</td><td>(n: int, box_len: float, mass: float, seed: int) -> System</td><td>Place n non-overlapping particles randomly in a cubic box of side box_len (nm)</td></tr>
+<tr><td>load_xyz</td><td>(path: string, mass: float) -> System</td><td>Load particle coordinates (nm) from an XYZ file with uniform mass</td></tr>
+<tr><td>load_pdb</td><td>(path: string) -> System</td><td>Load ATOM/HETATM coordinates (converted from Angstroms to nm), element masses, and CRYST1 box from a PDB file</td></tr>
+<tr><td>water</td><td>(model: string, x: float, y: float, z: float) -> System</td><td>Add one rigid constrained water molecule ("tip3p" or "spce") at (x, y, z) nm</td></tr>
+<tr><td>water_box</td><td>(model: string, n: int, spacing: float, seed: int) -> System</td><td>Populate n^3 rigid water molecules ("tip3p" or "spce") on a cubic grid of spacing nm</td></tr>
+<tr><td>constrain</td><td>(i: int, j: int, d: float) -> System</td><td>Add a rigid distance constraint of length d (nm) between particles i and j</td></tr>
+<tr><td>pos</td><td>(i: int, x: float, y: float, z: float) -> System</td><td>Set initial position (nm) of particle i</td></tr>
+<tr><td>vel</td><td>(i: int, vx: float, vy: float, vz: float) -> System</td><td>Set initial velocity (nm/ps) of particle i</td></tr>
+<tr><td>bond</td><td>(i: int, j: int, r0: float, k: float) -> System</td><td>Add a harmonic bond 0.5 * k * (r - r0)^2 between particles i and j</td></tr>
+<tr><td>angle</td><td>(i: int, j: int, k: int, theta0: float, k_angle: float) -> System</td><td>Add a harmonic bond angle 0.5 * k_angle * (theta - theta0)^2 in radians</td></tr>
+<tr><td>torsion</td><td>(i: int, j: int, k: int, l: int, periodicity: int, phase: float, k_torsion: float) -> System</td><td>Add a periodic dihedral torsion k_torsion * (1 + cos(periodicity * phi - phase))</td></tr>
+<tr><td>lj</td><td>(eps: float, sigma: float, cutoff: float) -> System</td><td>Set default Lennard-Jones 12-6 parameters (eps in kJ/mol, sigma and cutoff in nm)</td></tr>
+<tr><td>lj_particle</td><td>(i: int, eps: float, sigma: float) -> System</td><td>Override Lennard-Jones epsilon and sigma for particle i</td></tr>
+<tr><td>charge</td><td>(i: int, q: float) -> System</td><td>Set partial charge q (in elementary charge e) on particle i</td></tr>
+<tr><td>coulomb</td><td>(method: string, cutoff: float) -> System</td><td>Select electrostatic method ("none", "cutoff" (same as "reaction_field"), "ewald", or "pme") and cutoff (nm)</td></tr>
+<tr><td>dispersion_correction</td><td>(enabled: bool) -> System</td><td>Enable or disable isotropic long-range Lennard-Jones tail correction</td></tr>
+<tr><td>dielectric</td><td>(eps: float) -> System</td><td>Set reaction-field solvent dielectric constant (default 78.3; 1.0 for shifted cutoff)</td></tr>
+<tr><td>exclude</td><td>(i: int, j: int) -> System</td><td>Exclude nonbonded interactions between particle pair (i, j)</td></tr>
+<tr><td>custom_external</td><td>(expr: string, params: string) -> System</td><td>Add a Lepton custom external force field function of x, y, z</td></tr>
+<tr><td>custom_bond</td><td>(i: int, j: int, expr: string) -> System</td><td>Add a Lepton custom bond potential function of distance r between i and j</td></tr>
+<tr><td>custom_nonbonded</td><td>(expr: string, params: string, cutoff: float) -> System</td><td>Add a Lepton custom pairwise nonbonded potential function of r within cutoff</td></tr>
+<tr><td>barostat</td><td>(pressure_bar: float, temp_K: float, freq: int, seed: int) -> System</td><td>Add a Monte Carlo NPT barostat at pressure_bar and temp_K</td></tr>
+<tr><td>andersen</td><td>(temp_K: float, rate: float, seed: int) -> System</td><td>Add an Andersen collision thermostat (for use with verlet integrator)</td></tr>
+<tr><td>sim</td><td>(integrator: string, dt: float, temp_K: float, friction: float, seed: int) -> Sim</td><td>Compile the system into a simulation context ("verlet" or "langevin")</td></tr>
+</tbody>
+</table>
+<h2>Sim methods</h2>
+<table>
+<thead><tr><th>Method</th><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>velocities</td><td>(temp_K: float, seed: int) -> Sim</td><td>Assign Maxwell-Boltzmann velocities at temp_K respecting constraints</td></tr>
+<tr><td>minimize</td><td>(tol: float, max_iter: int) -> Sim</td><td>Run L-BFGS local energy minimization</td></tr>
+<tr><td>report</td><td>(path: string, every: int) -> Sim</td><td>Write thermodynamic columns (step, time, ke, pe, energy, temperature) every N steps</td></tr>
+<tr><td>xyz</td><td>(path: string, every: int) -> Sim</td><td>Append multi-frame XYZ coordinates (in nm) every N steps</td></tr>
+<tr><td>save_xyz</td><td>(path: string) -> Sim</td><td>Write current coordinates (in nm) to a single-frame XYZ file</td></tr>
+<tr><td>save_pdb</td><td>(path: string) -> Sim</td><td>Write current coordinates (in Angstroms) and CRYST1 box to a PDB file</td></tr>
+<tr><td>step</td><td>(n: int) -> Sim</td><td>Advance the simulation by n time steps</td></tr>
+<tr><td>dof</td><td>() -> int</td><td>Return active degrees of freedom (3 * mobile_particles - constraints)</td></tr>
+<tr><td>mark</td><td>() -> Sim</td><td>Record current unwrapped positions as the reference for msd()</td></tr>
+<tr><td>msd</td><td>() -> float</td><td>Return mean squared displacement (nm^2) of mobile particles since mark()</td></tr>
+<tr><td>rdf</td><td>(path: string, rmax: float, bins: int, frames: int, stride: int) -> Sim</td><td>Sample and write all-pair radial distribution function g(r) over frames * stride steps</td></tr>
+<tr><td>rdf_pair</td><td>(path: string, sym_a: string, sym_b: string, rmax: float, bins: int, frames: int, stride: int) -> Sim</td><td>Sample and write element-pair radial distribution function g(r)</td></tr>
+<tr><td>ke / pe / energy</td><td>() -> float</td><td>Return current kinetic, potential, or total energy in kJ/mol</td></tr>
+<tr><td>temperature</td><td>() -> float</td><td>Return instantaneous kinetic temperature in K over dof()</td></tr>
+<tr><td>time</td><td>() -> float</td><td>Return elapsed simulation time in ps</td></tr>
+<tr><td>x / y / z</td><td>(i: int) -> float</td><td>Return x, y, or z position (nm) of particle i</td></tr>
+<tr><td>vx / vy / vz</td><td>(i: int) -> float</td><td>Return x, y, or z velocity (nm/ps) of particle i</td></tr>
+<tr><td>fx / fy / fz</td><td>(i: int) -> float</td><td>Return x, y, or z force (kJ/(mol*nm)) on particle i</td></tr>
+<tr><td>distance</td><td>(i: int, j: int) -> float</td><td>Return Euclidean distance (nm) between particles i and j</td></tr>
+<tr><td>angle_val</td><td>(i: int, j: int, k: int) -> float</td><td>Return bond angle i-j-k in radians</td></tr>
+<tr><td>box_volume</td><td>() -> float</td><td>Return current periodic box volume in nm^3</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th>Code</th><th>Phase</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>run</td><td>Simulation and all assertions completed successfully</td></tr>
+<tr><td>2</td><td>cli</td><td>Invalid CLI flags or metadata query error</td></tr>
+<tr><td>3</td><td>load / run</td><td>Bytecode error, OpenMM exception, non-finite state, failed md.assert_close, or memory budget exceeded</td></tr>
+<tr><td>4</td><td>app</td><td>Application or output verification failure</td></tr>
+</tbody>
+</table></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmmolecule">github.com/lmctl-ai/lmmolecule</a>.</p>
+</footer>
+</body>
+</html>

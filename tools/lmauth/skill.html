@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmauth authoring skill — lmauth — lmctl.com tools</title>
+<meta name="description" content="lmauth is a guided, LLM-drivable authorization helper that collects operator tokens through a local browser page or hidden terminal prompt and stores them…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmauth/">Overview</a></li>
+<li><a href="/tools/lmauth/skill.html">Skill</a></li>
+<li><a href="/tools/lmauth/guide.html">Guide</a></li>
+<li><a href="/tools/lmauth/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmauth authoring skill</h1>
+<p>lmauth is a guided, LLM-drivable authorization helper that collects operator tokens through a local browser page or hidden terminal prompt and stores them write-only in the lmconn credential broker without exposing secrets to the caller.</p>
+<h2>Purpose</h2>
+<p>Use lmauth to guide an operator through fine-grained token creation, verify the authenticated GitHub identity and public repository metadata, and persist the token into an encrypted lmconn database while returning only a random handle and nonsecret receipt to the agent.</p>
+<h2>When to use it</h2>
+<p>Use lmauth when an automated workflow or LLM agent needs a human operator to provision a scoped credential without the raw secret ever entering stdout, stderr, logs, or agent context. Use lmconn directly when invoking downstream HTTP APIs with an already stored credential handle.</p>
+<h2>Install</h2>
+<p>Install the pinned release binary with lmscript install and verify the executable version and embedded schema.</p>
+<pre><code>lmscript install github:lmctl-ai/lmauth@v0.1.15
+lmauth --version
+lmauth --lmcode-schema --json
+lmauth --lmcode-signatures</code></pre>
+<p>Releases are published for Linux x64 and arm64, macOS x64 and arm64, and Windows x64 through a sealed qualification pipeline.</p>
+<h2>Commands</h2>
+<p>Run plan to print the guided fine-grained GitHub token recipe, or run present to collect the token from the operator and store it in lmconn.</p>
+<pre><code>lmauth plan --owner lmctl-ai --repos lmoffice
+lmauth present --owner lmctl-ai --repos lmoffice \
+  --lmconn-node /usr/bin/node \
+  --lmconn-entry /opt/lmconn/bin/lmconn.js \
+  --lmconn-db /var/lib/private-store/credentials.db</code></pre>
+<p>You can also drive the flow from an LMScript _lmcode_ program compiled against the host schema:</p>
+<pre><code>program = _lmcode_ cli="lmauth" install="github:lmctl-ai/lmauth@v0.1.15";
+let recipe = auth_plan("lmctl-ai", "lmpdf");
+let session = auth_present(recipe);
+let credential = auth_collect(session);
+let verification = auth_verify(credential);
+$return = auth_store(credential);
+end _lmcode_
+r = run_lmcode(program);
+print(json_stringify(r));</code></pre>
+<h2>Inputs and outputs</h2>
+<p>The plan and present commands accept --owner and --repos flags naming the target GitHub organization or user and comma-separated repository names. The present command additionally requires absolute paths for --lmconn-node, --lmconn-entry, and --lmconn-db, plus optional --lmconn-key-file and --terminal flags.</p>
+<p>Stdout emits a nonsecret recipe summary or a JSON receipt containing a random handle, verified identity login, and human-attested grant summary. Bytecode invocations conclude with an LMCODE_RETURN_BEGIN and LMCODE_RETURN_END frame.</p>
+<h2>Safety rules</h2>
+<p>The secret token is entered only into the local operator browser page or hidden TTY prompt and piped directly to the lmconn broker over stdin. Calling lmconn cred get with --reveal on a stored lmauth handle is refused by credential policy.</p>
+<p>Repository scope and permission grants are human-attested: lmauth verifies the GitHub account identity and public repository existence, but a read probe does not prove effective write permissions. Keep the operator browser outside agent screenshot or CDP debugging access. On Windows, credential storage deliberately fails closed with private_store_acl_not_implemented.</p>
+<h2>Worked examples</h2>
+<p>Preview a token plan for a repository release workflow and then run a dry bytecode check using an invocation manifest:</p>
+<pre><code>lmauth plan --owner lmctl-ai --repos lmoffice
+lmauth --lmcode tests/flow.lmcodeb</code></pre>
+<p>When LMCODE_INVOCATION_FILE specifies dry: true, lmauth validates the bytecode and returns a dry-no-auth terminal envelope without opening a local operator page or prompting on the terminal.</p>
+<h2>Errors and exit codes</h2>
+<p>lmauth exits with code 0 when planning, dry verification, or credential storage succeeds. Code 2 indicates CLI usage errors, retired builder flags (--first or --last), or a malformed LMCODE_INVOCATION_FILE manifest. Code 3 indicates bytecode load or runtime execution failure. Code 4 indicates an application or policy failure such as non-TTY terminal denial or Windows fail-closed storage.</p>
+<h2>How to verify</h2>
+<p>Verify the binary version, embedded lmcode schema, canonical signatures, and dry plan output without making live identity-provider writes.</p>
+<pre><code>lmauth --version
+lmauth --lmcode-schema --json
+lmauth --lmcode-signatures
+lmauth plan --owner lmctl-ai --repos lmoffice</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmauth">github.com/lmctl-ai/lmauth</a>.</p>
+</footer>
+</body>
+</html>

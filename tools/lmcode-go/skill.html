@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-go skill — lmcode-go — lmctl.com tools</title>
+<meta name="description" content="Use lmcode-go to embed the DSLB v6 virtual machine, 226-signature standard library, and REST/CLI controller into dependency-free Go 1.26+ executables.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-go/">Overview</a></li>
+<li><a href="/tools/lmcode-go/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-go/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-go/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-go skill</h1>
+<p>Use lmcode-go to embed the DSLB v6 virtual machine, 226-signature standard library, and REST/CLI controller into dependency-free Go 1.26+ executables.</p>
+<h2>Purpose</h2>
+<p>Compile static Go host binaries that expose typed Go structs and functions to lmcode bytecode, validate schemas, serve REST/CLI endpoints, and frame structured results.</p>
+<h2>When to use it</h2>
+<p>Use lmcode-go when building a Go command-line tool or service that executes compiled .dslb v6 programs without CGO or third-party Go modules.</p>
+<h2>Install</h2>
+<p>Import github.com/lmctl-ai/lmcode-go and github.com/lmctl-ai/lmcode-go/rest with Go 1.26 or newer and CGO_ENABLED=0.</p>
+<h2>Commands</h2>
+<pre><code>CGO_ENABLED=0 go build ./...
+CGO_ENABLED=0 go test ./...
+go run ./cmd/conformance conformance/vectors
+go run ./cmd/conformance -std conformance/stdlib-vectors
+go run ./cmd/rest-serve app.dslb host.schema.json</code></pre>
+<h2>Inputs and outputs</h2>
+<ul>
+<li>Input: compiled .dslb v6 byte slices, exact embedded schema JSON bytes, and optional LMCODE_INVOCATION_FILE manifest.</li>
+<li>Output: mutated Go pointers in Context, HTTP/1.1 messages on stdout via rest.Controller, or a terminal LMCODE_RETURN envelope.</li>
+<li>Strings: Go string values carry raw bytes without UTF-8 normalization; index by byte or convert to []byte.</li>
+</ul>
+<h2>Safety rules</h2>
+<ul>
+<li>Avoid iterating raw VM strings with Go range loops (which decode UTF-8 runes and replace invalid bytes with U+FFFD); index bytes directly.</li>
+<li>Perform integer math via uint64 conversions when two's-complement wrapping is required on edge values.</li>
+<li>Pass lmcode.Dry(fn) only for read-only preview callbacks so dry runs never mutate external state.</li>
+</ul>
+<h2>Worked examples</h2>
+<pre><code>reg := lmcode.NewRegistry()
+_ = reg.Function("add_tax", []string{"int"}, "int", func(a []lmcode.Value) (lmcode.Value, error) {
+	return lmcode.Int(a[0].Int + 15), nil
+})
+prog, err := lmcode.Load(bytecodeBytes, schemaBytes, reg)
+if err != nil {
+	lmcode.ExitIfError("load", err)
+}</code></pre>
+<h2>Errors and exit codes</h2>
+<table><thead><tr><th>Code</th><th>Phase</th><th>Exit</th><th>Condition</th></tr></thead><tbody>
+<tr><td>LOAD_BAD_BYTECODE</td><td>load</td><td>3</td><td>Malformed DSLB v6 header, bad magic or version, truncated section, invalid opcode, or stack depth violation</td></tr>
+<tr><td>LOAD_BAD_SCHEMA</td><td>load</td><td>3</td><td>Host schema JSON fails dsl.schema 2 validation or declares an invalid result contract</td></tr>
+<tr><td>LOAD_SCHEMA_MISMATCH</td><td>load</td><td>3</td><td>32-byte SHA-256 schema hash in DSLB v6 header does not match exact host schema bytes</td></tr>
+<tr><td>LOAD_UNBOUND</td><td>load</td><td>3</td><td>Bytecode imports a context, function, or method signature not registered in the host Registry</td></tr>
+<tr><td>RUN_ERROR</td><td>run</td><td>3</td><td>VM division or remainder by zero, or loop-free operand stack underflow</td></tr>
+<tr><td>RUN_HOST</td><td>run</td><td>3</td><td>Host callback failure, invalid encoding, expired collection handle, or REST route validation failure</td></tr>
+<tr><td>APP_FAIL</td><td>app</td><td>4</td><td>Post-run application domain validation failure or output stream write failure</td></tr>
+</tbody></table>
+<h2>How to verify</h2>
+<pre><code>bash scripts/sync-std.sh --verify
+bash scripts/sync-rest.sh --verify
+CGO_ENABLED=0 go test ./...</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-go">github.com/lmctl-ai/lmcode-go</a>.</p>
+</footer>
+</body>
+</html>

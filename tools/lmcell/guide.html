@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcell guide: the model, its numerics and its limits — lmcell — lmctl.com tools</title>
+<meta name="description" content="This guide explains what an lmcell simulation is, how the host is built, how a program flows from an _lmcode_ block to CSV files, and where the model stops.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcell/">Overview</a></li>
+<li><a href="/tools/lmcell/skill.html">Skill</a></li>
+<li><a href="/tools/lmcell/guide.html">Guide</a></li>
+<li><a href="/tools/lmcell/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmcell guide: the model, its numerics and its limits</h1>
+<p>This guide explains what an lmcell simulation is, how the host is built, how a program flows from an _lmcode_ block to CSV files, and where the model stops. For commands and copy-ready examples see the skill page; for exact signatures see the reference.</p>
+<h2 id="overview">Overview</h2>
+<p>lmcell is a scripting-only multicellular simulation host. A program builds one simulation in memory with chained builder calls, runs it once, and reads the outcome as numeric matrices. The computing core is serial PhysiCell 1.14.2 with BioFVM, linked statically into a single executable; no XML configuration, kernels or runtime data files are involved. The host follows the common lmcode protocol, so lmscript compiles the block against the schema embedded in the binary, hands the bytecode to the host and receives one result envelope.</p>
+<p>The design goal is checkable science: each of the 16 repository examples asserts a known answer (a closed form, a threshold or a conservation law) before it draws anything, and a wrong number stops the run.</p>
+<h2 id="architecture">Architecture</h2>
+<table>
+<thead>
+<tr><th>Layer</th><th>What it does</th></tr>
+</thead>
+<tbody>
+<tr><td>lmscript</td><td>Compiles the _lmcode_ block against the lmcell schema, downloads the release named by install, starts the host through run_lmcode and returns the envelope</td></tr>
+<tr><td>lmcell host</td><td>Registers the cell context and the Sim, CellType, Result and Matrix types, validates every argument, enforces object and memory limits, writes CSV</td></tr>
+<tr><td>Coordinator</td><td>lmcell's own time loop: applies rules, asks PhysiCell for cycle, death and motility decisions, places daughters, moves cells, reflects them at walls</td></tr>
+<tr><td>PhysiCell</td><td>Cell objects, the single-phase live cycle, stochastic death checks, apoptosis clearance and the motility vector update</td></tr>
+<tr><td>BioFVM</td><td>Implicit 2D diffusion and decay solver and cell secretion and uptake</td></tr>
+<tr><td>lmcode_std_v3</td><td>Standard library available in every block: strings, math, collections, Json, files and the result sink</td></tr>
+</tbody>
+</table>
+<p>OpenMP is disabled through a small serial compatibility header, so runs are single threaded and deterministic for a seed on a given platform. PhysiCell and BioFVM keep process-wide state, which is why one host process can run exactly one simulation.</p>
+<h2 id="workflow">Workflow</h2>
+<ol>
+<li>Create the builder with cell.sim(seed). The seed drives both the placement generator and the stochastic cell decisions.</li>
+<li>Set the domain. Lengths must be whole multiples of the voxel size. Without a domain call the grid is -100..100 on both axes with 20 micrometer voxels.</li>
+<li>Declare substrates, then optional per-side edge values and a diffusion substep.</li>
+<li>Declare cell types and chain their phenotype: cycle, death, radius, motility, chemotaxis, exchange and rules.</li>
+<li>Place cells with seed, scatter or seed_disk.</li>
+<li>Optionally request snapshots with record.</li>
+<li>Call run(duration, max_dt). This validates the whole configuration, freezes the builders and returns an immutable Result.</li>
+<li>Pull matrices from the result, assert on values, save CSV, and return summary values with lmcode_return_put.</li>
+<li>In the outer script, test r.ok and pass the CSV files to a plotting host or to your own analysis.</li>
+</ol>
+<p>Configuration errors are detected before any native global state is touched, so a typo in a rule target fails cleanly. A failure during native initialization or stepping consumes the process: the simulation cannot be retried in the same block.</p>
+<h2 id="domain-model">Domain model</h2>
+<h3 id="space">Space, time and units</h3>
+<p>The domain is a rectangle of square voxels, one voxel thick. Lengths are micrometers and times are minutes; rates are per minute and diffusion coefficients are square micrometers per minute. Concentration units are whatever the caller chooses. Nothing is converted automatically.</p>
+<p>The requested max_dt is turned into a constant actual step, duration divided by the ceiling of duration over max_dt, so the final step is never a partial one. The counts table therefore has that many steps plus one row.</p>
+<h3 id="cells">Cells are point agents</h3>
+<p>A cell has a position, a type, a radius and an alive flag. Its volume is the sphere volume 4·π·r³/3 even though the domain is 2D, and that volume divided by the voxel volume scales its exchange with the substrate fields. Division places a daughter at the same position. Cells do not push, pull or adhere to each other and do not grow in volume; they reflect at the domain boundary. Crowding can influence behavior only through the neighbors signal.</p>
+<p>Apoptotic cells stay in the cell table with alive 0 until PhysiCell's clearance time, so the cells matrix can have more rows than the live count.</p>
+<h3 id="substrates">Substrates</h3>
+<p>Each substrate is a field with a uniform initial value, a diffusion coefficient and a decay rate. The boundary argument is either -1 for no flux on all sides or a value at which every edge voxel center is held. edge overrides one side at a time; the global boundary applies first, then edges in call order, so the last call wins at a corner. A domain that is a single row of voxels has only x edges.</p>
+<p>Every step the cells first secrete and take up, then BioFVM advances diffusion and decay. Secretion relaxes a voxel toward saturation 1.</p>
+<h3 id="motility">Motility and chemotaxis</h3>
+<p>motility(speed, persistence_time) gives a persistent random walk. With chemotaxis(substrate, bias) each new heading is the normalized blend of a random direction, weighted 1 − bias, and the unit gradient of the substrate in the cell's voxel, weighted bias. Bias 0 is an unbiased walk and bias 1 follows the gradient exactly; a zero gradient falls back to the unbiased walk. In a linear gradient the mean drift speed is 0, 2v/π and v for bias 0, 1/2 and 1.</p>
+<h3 id="rules">Hill rules</h3>
+<p>A rule reads a signal s and computes the Hill response H = s^n / (K^n + s^n) from half_max K and hill n. The signal is a declared substrate, sampled in the cell's voxel, or the reserved name neighbors: the number of other live cells in the same voxel, counted once at the start of the step. A substrate may not be named neighbors.</p>
+<table>
+<thead>
+<tr><th>Form</th><th>Effect on the target rate</th><th>Note</th></tr>
+</thead>
+<tbody>
+<tr><td>rule with effect increases</td><td>rate × (1 + H)</td><td>At most doubles the base rate; cannot lift a zero base rate</td></tr>
+<tr><td>rule with effect decreases</td><td>rate × (1 − H)</td><td>Switches the rate off at saturation</td></tr>
+<tr><td>rule_toward</td><td>rate + (saturation − rate) × H</td><td>Reaches any nonnegative rate, also from a zero base</td></tr>
+</tbody>
+</table>
+<p>Targets are cycle entry (the division rate), apoptosis (the death rate) and migration speed. Several rules on one type apply in call order, each starting from the result of the previous one, and every step starts again from the type's base rates. This is a builder-level subset of the PhysiCell hypothesis rules grammar, not an importer for rules files.</p>
+<h3 id="results">Results and matrices</h3>
+<p>run returns a Result that never changes. Each accessor such as counts or profiles copies a table into a new Matrix; the copy is independent of the result. Matrices are zero-based and are saved without a header. Grid rows follow BioFVM ordering with x varying fastest. The record interval produces snapshots at time 0 and at the first step at or after each multiple of the interval.</p>
+<h2 id="numerics">Numerics and accuracy</h2>
+<ul>
+<li>Stochastic rates: division and death are per-step probabilities, so rate × step must stay at or below 0.1; the host refuses coarser steps.</li>
+<li>Pure birth has mean N0·exp(r·t) and pure death N0·exp(−d·t); the repository tests start with 10000 agents and compare with three standard errors plus a small-step allowance.</li>
+<li>Diffusion uses BioFVM's implicit locally one-dimensional solver. It re-applies fixed edges between its split sweeps, so a profile next to a fixed edge sits low by roughly 0.05·D·dt/h² relative, about 5 percent at D·dt/h² = 1. Strong uptake needs uptake × step much smaller than 1.</li>
+<li>diffusion_dt refines only the exchange and diffusion substeps, to step divided by the ceiling of step over dt, without slowing the cell step. Use it when a fixed-edge or uptake-dominated field matters.</li>
+<li>Placements from scatter and seed_disk come from a portable splitmix64 stream derived from the seed and are the same on every platform. The stochastic trajectory itself uses standard-library distributions and can differ between platforms, so compare statistics, not paths, across machines.</li>
+<li>CSV output is written in binary mode with the classic locale and 17 significant digits, so a rerun with the same seed on the same platform is byte-identical.</li>
+</ul>
+<h2 id="patterns">Patterns from the examples</h2>
+<table>
+<thead>
+<tr><th>Question</th><th>Building blocks</th><th>Known answer checked</th></tr>
+</thead>
+<tbody>
+<tr><td>Necrotic core of a spheroid</td><td>Fixed nutrient edges, exchange uptake, two rule_toward rules, seed_disk, record</td><td>Core live fraction below 0.45, rim above 0.8</td></tr>
+<tr><td>Drug penetration from a vessel</td><td>edge on xmin, decay, diffusion_dt</td><td>cosh profile with length √(D/k)</td></tr>
+<tr><td>Contact inhibition</td><td>rule_toward on neighbors for cycle entry, scatter</td><td>Carrying capacity 1 + K·√(r/d − 1) per voxel</td></tr>
+<tr><td>Chemotactic drift</td><td>Linear gradient between fixed edges, motility, chemotaxis</td><td>Drift 0, 2v/π and v</td></tr>
+<tr><td>Clonal selection under therapy</td><td>Two cell types, type_counts, live_of, two host processes</td><td>Each clone grows as exp((b − d)·t)</td></tr>
+<tr><td>Secreted signal</td><td>exchange with secretion and uptake</td><td>Voxel relaxes toward S/(S + U)</td></tr>
+</tbody>
+</table>
+<p>Sweeps over a parameter use one block inside an lmscript function with interpolated parameters, one host process per case. The block language has no arrays of host objects, callbacks or ternary operator; loops and if statements are available, and the standard collections can hold numbers and strings.</p>
+<h2 id="limits">Limits</h2>
+<table>
+<thead>
+<tr><th>Limit</th><th>Value</th></tr>
+</thead>
+<tbody>
+<tr><td>Simulations per host process</td><td>1</td></tr>
+<tr><td>Cell types, substrates</td><td>32 each</td></tr>
+<tr><td>Rules</td><td>1000</td></tr>
+<tr><td>Cells (seeded and total population)</td><td>100000</td></tr>
+<tr><td>Voxels, cell steps</td><td>1000000 each</td></tr>
+<tr><td>Voxels × steps × diffusion substeps</td><td>200 million</td></tr>
+<tr><td>Recorded history values, recorded profile values</td><td>20 million each</td></tr>
+<tr><td>Host objects per kind (Sim, CellType, Result, Matrix)</td><td>10000</td></tr>
+<tr><td>Total memory</td><td>4096 MiB by default, LMCELL_MAX_MEMORY_MB to change</td></tr>
+</tbody>
+</table>
+<p>Outside the model entirely: 3D domains and arbitrary geometry, mechanical interactions and adhesion, continuous volume growth, cell-cell contact such as killing or phagocytosis, intracellular models, PhysiCell XML or rules-file import, checkpoints and MultiCellDS exchange. lmcell is a research modeling host with documented units and step effects; it does not claim a calibrated tissue model from default parameters.</p>
+<h2 id="build">Building from source</h2>
+<pre><code>scripts/sync-deps.sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel 4
+./test.sh</code></pre>
+<p>The build needs CMake 3.24 or newer, a C++17 compiler, git and Python 3; the tests also need lmscript. Dependencies are pinned in deps.lock and the lmcode-cpp SDK in sdk.lock. The host is MIT licensed; PhysiCell and BioFVM are BSD-3-Clause, and lmcell --notices prints all notices.</p>
+<h2 id="next">Where to go next</h2>
+<ul>
+<li><a href="/tools/lmcell/skill.html">Skill</a> for commands, safety rules and verified examples.</li>
+<li><a href="/tools/lmcell/reference.html">Reference</a> for every signature, matrix layout and error.</li>
+<li><a href="https://github.com/lmctl-ai/lmcell/tree/main/examples">Repository examples</a> for the 16 gallery programs.</li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcell">github.com/lmctl-ai/lmcell</a>.</p>
+</footer>
+</body>
+</html>

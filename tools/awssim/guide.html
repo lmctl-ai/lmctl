@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>awssim guide — awssim — lmctl.com tools</title>
+<meta name="description" content="awssim packages Floci 2.3.0 plus a deterministic CLI and SigV4/IAM authentication overlay into a single native GraalVM executable listening on 127.0.0.1:4566.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/awssim/">Overview</a></li>
+<li><a href="/tools/awssim/skill.html">Skill</a></li>
+<li><a href="/tools/awssim/guide.html">Guide</a></li>
+<li><a href="/tools/awssim/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>awssim guide</h1>
+<h2>Overview</h2>
+<p>awssim packages Floci 2.3.0 plus a deterministic CLI and SigV4/IAM authentication overlay into a single native GraalVM executable listening on 127.0.0.1:4566. It provides an offline, container-free local AWS environment for S3, DynamoDB, and SQS that integrates directly with lmaws, the shared lmcloud conformance suite, and the AWS CLI.</p>
+<h2>Architecture and runtime isolation</h2>
+<p>Unlike container-based emulators that require a running Docker daemon or JVM installation, awssim compiles the pinned upstream source archive (verified by SHA-256 in upstream.lock.json) into a standalone binary:</p>
+<ul>
+<li>Loopback-only HTTP listener: binds 127.0.0.1:4566 by default. Health status is served anonymously at GET /_floci/health.</li>
+<li>In-memory or file-backed storage: defaults to ephemeral in-memory state so each test run starts clean; pass --data-dir ./state to persist objects, tables, and queues across restarts.</li>
+<li>Disabled wildcard listeners and isolated namespaces: upstream EC2 emulation is disabled by default to prevent binding a wildcard IMDS listener on port 9169, and Docker resource tags are scoped to the awssim namespace (FLOCI_DOCKER_RESOURCE_NAMESPACE=awssim).</li>
+</ul>
+<h2>Authentication and IAM enforcement (--auth enforce)</h2>
+<p>While open mode (--auth open) accepts any credentials for fast local prototyping, --auth enforce (or SIM_AUTH=enforce) activates two-stage security verification loaded from --auth-config (or SIM_AUTH_CONFIG):</p>
+<ul>
+<li>SigV4 cryptographic verification: validates Authorization header SigV4 signatures for path-style S3 and DynamoDB/SQS JSON requests, including AWS SDK v2 streaming S3 chunk and trailer signature chains, x-amz-date timestamps within a 15-minute window, and signed payload SHA-256 digests. S3 query parameters added by modern SDKs (x-id and fetch-owner) are covered by signature verification without altering the mapped IAM action.</li>
+<li>IAM policy evaluation: each credentials entry maps an accessKeyId and secretAccessKey to an optional IAM policy document in fixed account 000000000000. When a policy is present, access is default-deny; statements support Effect (Allow or Deny), Action, Resource, and optional Sid with * and ? wildcards. Explicit Deny always overrides Allow.</li>
+<li>Fail-closed boundaries: encoded bodies are limited to 16 MiB. S3 copy, multipart, batch POST, versioned requests, encoded slashes, and unmapped routes are rejected with HTTP 403 in enforce mode so secondary resources cannot bypass authorization.</li>
+</ul>
+<h2>Connecting lmaws and LMScript templates</h2>
+<p>lmaws targets awssim whenever its endpoint resolves to http://127.0.0.1:4566 via cloud.set_endpoint("all", "http://127.0.0.1:4566"), LMCLOUD_ENDPOINT, LMAWS_ENDPOINT, or AWS_ENDPOINT_URL. By default, lmaws signs loopback requests with LMAWS_SIM_ACCESS_KEY_ID=test, LMAWS_SIM_SECRET_ACCESS_KEY=test, and LMAWS_SIM_REGION=us-east-1.</p>
+<p>In LMScript test harnesses (such as examples/templates.lms), use _json_ blocks to generate both the --auth-config JSON document and structured SQS/S3 payloads with automatic string escaping, and use expand() for queue URLs and policy ARNs.</p>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<p>awssim itself is a server and ships no lmcode catalog. When an LMScript program is executed by an lmaws host that ships the current 226-signature lmcode_std_v3 catalog (the lmaws v0.1.27 release pinned by awssim CI does not), the 10 standard REST and CLI interfaces (RestGet..RestOptions, RestHandler, CliCommand, CliOption) and rest_config, rest_route, rest_serve, rest_stop, rest_cli are available to wrap emulated AWS resources in HTTP services or CLI commands:</p>
+<pre><code>p = _lmcode_ cli="lmaws" install="github:lmctl-ai/lmaws@latest";
+  @"/queues/:queue/messages"
+  fn post_queue(x: RestExchange) -> void implements RestPost {
+    let id = cloud.queue_send(x.param("queue"), x.body());
+    x.status(201);
+    x.json("{\"messageId\":\"" + id + "\"}");
+  }
+
+  @"--endpoint"
+  fn opt_ep(x: RestExchange) -> void implements CliOption {
+    cloud.set_endpoint("all", x.query("endpoint"));
+  }
+
+  @"init-sim"
+  fn cmd_init(x: RestExchange) -> void implements CliCommand {
+    cloud.queue_create("orders-q");
+    x.send("ready");
+  }
+
+  rest_config("prefix", "/v1");
+  let r1 = rest_cli(str_split("--endpoint http://127.0.0.1:4566 init-sim", " "));
+  print(r1);
+end _lmcode_</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/awssim">github.com/lmctl-ai/awssim</a>.</p>
+</footer>
+</body>
+</html>

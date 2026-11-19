@@ -18,6 +18,7 @@
 <li><a href="/tools/lmscript/skill.html">Skill</a></li>
 <li><a href="/tools/lmscript/tutorial.html">Tutorial</a></li>
 <li><a href="/tools/lmscript/guide.html">Guide</a></li>
+<li><a href="/tools/lmscript/reference.html">Reference</a></li>
 </ul>
 </nav>
 <main>
@@ -39,7 +40,7 @@
 <p>Requires Node.js 24.15 or later.</p>
 <pre><kbd>npm install -g @lmctl-ai/lmctl</kbd>
 <kbd>lmscript --version</kbd>
-<samp>lmscript 0.2.348</samp></pre>
+<samp>lmscript 0.2.482</samp></pre>
 
 <h2 id="commands">Commands</h2>
 <table>
@@ -48,10 +49,14 @@
 <tr><td>lmscript --check FILE</td><td>Static check only. Run after every edit.</td></tr>
 <tr><td>lmscript --check-files FILE</td><td>Check plus existence of path literals (i"…", o"…").</td></tr>
 <tr><td>lmscript --dry-run FILE [ARGS]</td><td>Simulate and print the plan of effects; changes nothing.</td></tr>
-<tr><td>lmscript FILE [ARGS]</td><td>Check, silent dry pass, then the real run.</td></tr>
+<tr><td>lmscript FILE [ARGS]</td><td>Check statically, then run once.</td></tr>
 <tr><td>lmscript -e 'CODE'</td><td>Run a one-line program (quote it for the shell).</td></tr>
-<tr><td>lmscript help NAME</td><td>Signature, description and example of a function; lmscript help lists all; help topics lists topics (csv, json, cmd, dsl, path, methods, …).</td></tr>
-<tr><td>lmscript --lmcode-signatures SCHEMA</td><td>List a DSL schema's functions and methods (experimental LMCode blocks).</td></tr>
+<tr><td>lmscript --lint FILE</td><td>Stops after checking, like --check.</td></tr>
+<tr><td>lmscript --trace FILE.trace FILE</td><td>Run and write an execution trace.</td></tr>
+<tr><td>lmscript --help NAME</td><td>Signature, description and example of a function, built-in or topic (for example run_lmcode, lmcode_build, lmcode); lmscript --help lists all.</td></tr>
+<tr><td>lmscript --lmcode-signatures SCHEMA [--without-std]</td><td>List the canonical signatures of a host schema; with the standard catalog (226 signatures) unless --without-std.</td></tr>
+<tr><td>lmscript --lmcode-schema SCHEMA [--json]</td><td>Schema summary, or the exact schema as JSON.</td></tr>
+<tr><td>lmscript install github:OWNER/REPO[@TAG]</td><td>Attended one-off install of a native lmcode host.</td></tr>
 </tbody>
 </table>
 <p>Options go before the file; every word after the file is script data in ARGV.</p>
@@ -121,14 +126,8 @@ println(f"{len(changed)} changed file(s)");</code></pre>
 1. /home/me/cleanup.lms:1:1 dummy write_file ["out/report.txt","done\n"]
 2. /home/me/cleanup.lms:2:1 dummy delete_file ["out/notes.txt"]
 3. /home/me/cleanup.lms:3:1 handled println ["cleaned up"]</samp></pre>
-<h3 id="example-dsl">Experimental: compile a native program for a native host</h3>
-<p>Experimental; the syntax may change. An LMCode block holds code in a separate, statically typed language that a native host program (for example lmhtml or lmcad) runs. lmscript compiles it at check time against the host's schema and savedsl writes the bytecode; the host runs it.</p><p>The marker _lmcode_ replaces _dsl_; the earlier _dsl_ marker remains accepted. Use lmctl 0.2.420 or newer for the current spelling.</p>
-<p>Native hosts can use the five-language LMCode SDK family: <a href="https://github.com/lmctl-ai/lmcode-cpp">C++</a>, <a href="https://github.com/lmctl-ai/lmcode-rust">Rust</a>, <a href="https://github.com/lmctl-ai/lmcode-go">Go</a>, <a href="https://github.com/lmctl-ai/lmcode-csharp">C#</a>, or <a href="https://github.com/lmctl-ai/lmcode-java">Java</a>. Default registries provide standard functions; host callbacks should cover only host-specific operations.</p>
-<ol>
-<li>With lmctl 0.2.420 or newer, tool users can let lmscript obtain the host schema automatically. For lmhtml use cli="lmhtml" and install="github:lmctl-ai/lmhtml@latest" on the native host declaration. Use the host documentation for available contexts, functions and methods.</li>
-<li>Schema-file input remains available for SDK authors and compatibility testing.</li>
-<li>Write the block using the opening and closing marker lines shown below.</li>
-</ol>
+<h3 id="example-dsl">Run a typed _lmcode_ program in a native host</h3>
+<p>An _lmcode_ block holds code in a separate, statically typed language that a native host program (for example lmhtml or lmcad) runs. The block constructs an opaque immutable program; lmscript compiles it at check time against the host schema, and only run_lmcode executes it. The earlier forms _dsl_, savedsl and dsl_cli are removed and are check errors.</p>
 <pre><code>check = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 let pages = html.load_dir("site");
 for (i in range(0, pages.len())) {
@@ -143,13 +142,38 @@ for (i in range(0, pages.len())) {
 }
 report.write_text("broken.txt");
 end _lmcode_
-savedsl(check, "links.dslb");</code></pre>
-<pre><kbd>lmscript links.lms</kbd>
-<kbd>lmhtml --lmcode links.dslb</kbd>
-<samp>{"ok": true, "result": null}</samp>
+r = run_lmcode(check);
+require(r.ok, "host failed");
+println(r.result);</code></pre>
+<pre><kbd>lmscript --check links.lms</kbd>
+<kbd>lmscript links.lms</kbd>
+<samp>null</samp>
 <kbd>cat broken.txt</kbd>
 <samp>broken-link site/index.html:0: missing.html not found</samp></pre>
-<p>Rules inside LMCode: let x = expr; with inferred types, if/else, for (i in range(a, b)), while with break/continue; types int, float (write 1.0), string, bool and the schema's object types; int and float never mix (float(i) converts); strings join with + and str(x); host lists via xs.len() and xs.at(i). No lmscript functions, lists, maps or user functions inside the block. The compiled value is opaque: only savedsl(value, "file.dslb") accepts it. The host refuses bytecode compiled against a different schema (it checks a SHA-256 of the schema bytes), so recompile when the host changes. The built-in lmscript help dsl text in 0.2.348 is older than the compiler: while/break/continue do work.</p>
+<p>run_lmcode(program, options) returns the whole envelope as a map: {ok, result} for one program. Always test r.ok, because controlled host failures come back as data. Options accept args (a string list) and an optional command template containing exactly one $DSLFILE.</p>
+<h3 id="example-builder">Several programs in one host process</h3>
+<p>load_schema(cli="HOST") or load_schema(schema="FILE") gives a reusable descriptor (the clauses must be literals). lmcode_build(host) creates a builder; builder.add(program) appends a program, and run_lmcode(builder) runs all of them in one host process and returns {ok, result: [...], parts}.</p>
+<pre><code>s = load_schema(cli="lmhtml");
+a = _lmcode_ s;
+$return = 1 + 2;
+end _lmcode_
+b = _lmcode_ s;
+$return = "two";
+end _lmcode_
+builder = lmcode_build(s);
+builder.add(a);
+builder.add(b, fragment=["$DSLFILE"]);
+r = run_lmcode(builder);
+require(r.ok, "host failed");
+println(r.parts);
+println(r.result);</code></pre>
+<pre><kbd>lmscript b.lms</kbd>
+<samp>2
+[3,"two"]</samp></pre>
+<p>lmhtml takes its program files as --lmcode FILE [FILE ...], so the second add passes only the file as its fragment; the default fragment is --lmcode $DSLFILE.</p>
+<p>Rules inside a block: let x = expr; with inferred types, if/else, for (i in range(a, b)), for (item in collection), while with break/continue, switch, and top-level fn definitions; types int, float (write 1.0), string, bool and the schema's object types and enums; int and float never mix (float(i) converts); strings join with + and str(x). ${expr} splices an outer lmscript value as a typed literal, and $return sets the program result. Collections are host objects. The standard catalog lmcode_std_v3 (226 signatures in lmscript 0.2.482) is available in every block, including rest_config, rest_route, rest_serve, rest_stop, rest_cli, the RestExchange methods and the interfaces RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand and CliOption; see the guide for the tables. Hosts check the exact schema bytes, so a block is always compiled against the host that runs it.</p>
+
+
 
 <h2 id="errors-and-exit-codes">Errors and exit codes</h2>
 <table>
@@ -182,7 +206,7 @@ savedsl(check, "links.dslb");</code></pre>
 <li>lmscript --check-files script.lms when the script uses path literals.</li>
 <li>lmscript --dry-run script.lms ARGS: the plan lists exactly the writes, deletes and program runs you intend, with the right arguments.</li>
 <li>Run it; confirm exit code 0 (or the documented code) and that the expected files or output exist, for example by reading them back with read_file/read_json or ls.</li>
-<li>For LMCode: the script exits 0 and writes the .dslb; HOST --lmcode file.dslb prints {"ok": true, …} with exit 0; check the files the host program wrote.</li>
+<li>For _lmcode_ blocks: --check compiles the block without starting the host; after the real run confirm r.ok is true, inspect r.result, and check the files the host program wrote.</li>
 <li>Report what you ran and what you checked; never claim success from exit code 0 alone when files were supposed to change.</li>
 </ol>
 </main>

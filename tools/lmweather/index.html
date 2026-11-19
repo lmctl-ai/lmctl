@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmweather — lmctl.com tools</title>
+<meta name="description" content="lmweather is a self-contained atmospheric and oceanic shallow-water dynamics host for lmscript on the rotating sphere and beta-plane.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmweather/">Overview</a></li>
+<li><a href="/tools/lmweather/skill.html">Skill</a></li>
+<li><a href="/tools/lmweather/guide.html">Guide</a></li>
+<li><a href="/tools/lmweather/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmweather</h1>
+<p>lmweather is a self-contained atmospheric and oceanic shallow-water dynamics host for lmscript on the rotating sphere and beta-plane. It solves spectral transform spherical equations (including Williamson benchmarks) and staggered C-grid channel dynamics with zero external library dependencies.</p>
+<h2>Quick reference</h2>
+<pre><code>npm i -g @lmctl-ai/lmctl
+lmscript rh.lms
+lmweather --version
+lmweather --lmcode-schema --json</code></pre>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Signature</th>
+<th>Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>wx.sphere</td>
+<td>wx.sphere(T: int) -> Sphere</td>
+<td>Create an Earth-scaled spectral shallow-water model at triangular truncation T (4..170)</td>
+</tr>
+<tr>
+<td>wx.planet</td>
+<td>wx.planet(T: int, radius: float, omega: float, g: float) -> Sphere</td>
+<td>Create a spectral spherical model with custom planetary radius, rotation rate, and gravity</td>
+</tr>
+<tr>
+<td>Sphere.williamson6</td>
+<td>s.williamson6() -> Sphere</td>
+<td>Initialize Williamson test case 6 (Rossby-Haurwitz wave 4)</td>
+</tr>
+<tr>
+<td>Sphere.run_dt</td>
+<td>s.run_dt(seconds: float, dt: float) -> Sphere</td>
+<td>Integrate the sphere with explicit RK4 using fixed time step dt (checked against CFL limit)</td>
+</tr>
+<tr>
+<td>Sphere.save_csv</td>
+<td>s.save_csv(path: string) -> void</td>
+<td>Write space-separated Gaussian grid table (lon lat h u v zeta q hs) for gnuplot pm3d</td>
+</tr>
+<tr>
+<td>wx.plane</td>
+<td>wx.plane(nx: int, ny: int, Lx: float, Ly: float) -> Plane</td>
+<td>Create a staggered C-grid beta-plane channel model (periodic in x, free-slip walls in y)</td>
+</tr>
+<tr>
+<td>Plane.fields</td>
+<td>p.fields(h_anom: string, u: string, v: string) -> Plane</td>
+<td>Initialize height anomaly above H and velocity fields from expressions in x and y</td>
+</tr>
+<tr>
+<td>wx.assert_close</td>
+<td>wx.assert_close(actual: float, expected: float, tol: float) -> void</td>
+<td>Assert that two finite numbers agree within absolute tolerance tol</td>
+</tr>
+</tbody>
+</table>
+<pre><code>p = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let s = wx.sphere(42).williamson6();
+let m0 = s.mean_height();
+let e0 = s.energy();
+s.run_dt(7.0 * 86400.0, 900.0);
+wx.print("crest of wave 4 at 45N: " + str(s.wave_crest(4, 45.0)) + " deg");
+wx.assert_close(s.mean_height(), m0, 0.000000001);
+wx.assert_close(s.energy() / e0, 1.0, 0.0001);
+s.save_csv("rh_day7.csv");
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, "rh run failed");</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmweather/skill.html">Authoring skill</a>: purpose, commands, safety rules, worked examples, and verification checks for spherical and beta-plane simulations.</li>
+<li><a href="/tools/lmweather/guide.html">Guide</a>: spectral transform and C-grid dynamical cores, expression mini-language, CFL enforcement, output formats, and memory budget.</li>
+<li><a href="/tools/lmweather/reference.html">Reference</a>: complete tables of CLI flags, environment variables, Wx, Sphere, and Plane methods, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmweather">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmweather">github.com/lmctl-ai/lmweather</a>.</p>
+</footer>
+</body>
+</html>

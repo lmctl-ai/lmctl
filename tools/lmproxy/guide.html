@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmproxy guide — lmproxy — lmctl.com tools</title>
+<meta name="description" content="lmproxy embeds the complete upstream Squid 7 caching proxy and HTTP/1.x parsing engine together with the lmcode-cpp bytecode VM and the 226-signature…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmproxy/">Overview</a></li>
+<li><a href="/tools/lmproxy/skill.html">Skill</a></li>
+<li><a href="/tools/lmproxy/guide.html">Guide</a></li>
+<li><a href="/tools/lmproxy/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmproxy guide</h1>
+<h2>Overview</h2>
+<p>lmproxy embeds the complete upstream Squid 7 caching proxy and HTTP/1.x parsing engine together with the lmcode-cpp bytecode VM and the 226-signature lmcode_std_v3 standard library inside one self-contained executable. It eliminates external squid.conf files, MIME tables, icon directories, and separate certificate-generator helper binaries while providing both live HTTP/HTTPS traffic interception and deterministic parser scripting.</p>
+<h2>Embedded Squid 7 engine and single-binary architecture</h2>
+<p>Standard Squid deployments require multiple auxiliary helper binaries and static configuration trees on disk. lmproxy consolidates the entire stack at compile time and runtime:</p>
+<ul>
+<li>Static engine and symbol isolation: lmproxy compiles Squid 7 and OpenSSL into static archives with external auth, SNMP, ICAP, eCAP, Kerberos, and netfilter helpers stripped out. Squid's entry point is renamed to SquidMain and Squid's security_file_certgen helper is compiled directly into the same executable under the lmproxy certgen subcommand.</li>
+<li>Ephemeral runtime staging: When launched via lmproxy forward or lmproxy intercept, the host automatically creates an ephemeral staging directory under /tmp/lmproxy-XXXXXX containing a generated squid.conf, minimal mime.conf, icons directory, PID file, and 32 MiB in-memory cache (cache_mem 32 MB, maximum_object_size_in_memory 4 MB) with a 1-second clean shutdown lifetime.</li>
+<li>In-process SSL-bump TLS interception: Passing --ssl-bump activates Squid's peek-and-bump pipeline (ssl_bump peek step1, ssl_bump bump all) and points sslcrtd_program back to the running lmproxy binary's certgen subcommand with a 4 MiB certificate database and 16 MiB memory cache. If --ca-cert and --ca-key are omitted, lmproxy dynamically generates a 2048-bit RSA self-signed Root CA using OpenSSL EVP APIs.</li>
+</ul>
+<h2>Traffic tapping, recording, routing, and redirect swapping</h2>
+<p>Both lmproxy forward (standard forward proxy, default port 3128) and lmproxy intercept (transparent interception proxy, default port 3129) support four composable traffic engineering flags across plain HTTP and SSL-bumped HTTPS:</p>
+<ul>
+<li>Real-time traffic tap (--tap): Streams live [INTERCEPT] log lines to stderr showing client IP, HTTP method, full target URL, response status code, payload bytes, and round-trip duration in milliseconds.</li>
+<li>Structured JSONL recording (--record FILE): Appends one JSON object per transited request containing timestamp, client, method, url, status, bytes, and duration_ms for offline audit or downstream analysis.</li>
+<li>Transparent origin routing (--route PATTERN=HOST:PORT): Matches target domains (dstdomain) or URL regular expressions and routes matching requests directly to an alternate backend origin server via Squid cache_peer originserver and never_direct rules without modifying client URLs.</li>
+<li>Dynamic redirect swapping (--redirect PATTERN=URL): Intercepts matching requests and immediately replies with an HTTP 307 Temporary Redirect to the replacement URL using Squid deny_info 307:URL rules.</li>
+</ul>
+<h2>URL decomposition and HTTP/1.x message parsing in LMScript</h2>
+<p>For fast, deterministic protocol validation without opening network sockets, lmproxy exposes Squid 7's internal URL and HTTP/1.x parser classes directly to the CLI (parse-url, parse-request, parse-response) and to _lmcode_ scripts via context proxy: Proxy:</p>
+<ul>
+<li>Squid 7 URL parser (proxy.parse_url): Parses raw URI strings into Url objects exposing raw(), valid(), error(), scheme(), host(), host_is_ip(), userinfo(), port() (returning default scheme port or explicit port, or 0 if unknown), has_port() (true only when an explicit :port was present in the input), and path() (including query string).</li>
+<li>Percent-encoding utilities (proxy.percent_decode and proxy.percent_encode): Apply Squid's RFC 3986 percent-decoding and encoding rules to path and query components.</li>
+<li>HTTP/1.x request and response parsers (proxy.parse_request and proxy.parse_response): Parse raw wire buffers into Message objects exposing kind() ("request" or "response"), complete(), error(), version() (such as "HTTP/1.1"), method(), target(), status(), reason(), case-insensitive header(name) lookup, header_count(), and header_names() as a standard StrList.</li>
+</ul>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<p>In addition to context proxy: Proxy, lmproxy embeds the full 226-signature lmcode_std_v3 standard catalog. Scripts can wrap Squid 7 parsing logic inside standard HTTP endpoints or stateless CLI tools:</p>
+<ul>
+<li>HTTP route interfaces: RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, and RestHandler with static or parameterized (@"/url/:component") route annotations.</li>
+<li>Stateless CLI interfaces: CliOption (@"--flag") and CliCommand (@"cmd"), dispatched in-process via rest_cli(args) without binding a socket.</li>
+<li>Stateful and ephemeral session configuration: rest_config("session", "global") preserves RestExchange key-value state (get, set, increment) across calls, while rest_route, rest_serve, and rest_stop manage embedded HTTP service lifecycles.</li>
+</ul>
+<pre><code>p = _lmcode_ cli="lmproxy" install="github:lmctl-ai/lmproxy@latest";
+@"--header"
+fn opt_hdr(x: RestExchange) -> void implements CliOption {
+  x.set("hdr", x.query("header"));
+}
+
+@"extract-header"
+fn cmd_extract(x: RestExchange) -> void implements CliCommand {
+  let msg = proxy.parse_request(x.body());
+  x.send(msg.header(x.get("hdr")));
+}
+
+@"/decode"
+fn post_decode(x: RestExchange) -> void implements RestPost {
+  x.json("{\"decoded\":\"" + proxy.percent_decode(x.body()) + "\"}");
+}
+
+rest_config("session", "global");
+let raw_req = "GET /v1/data HTTP/1.1\r\nHost: edge.internal\r\nX-Trace: tr-99\r\n\r\n";
+assert_eq(rest_cli(str_split("--header=x-trace extract-header -- " + raw_req, " ")), "tr-99");
+end _lmcode_</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmproxy">github.com/lmctl-ai/lmproxy</a>.</p>
+</footer>
+</body>
+</html>

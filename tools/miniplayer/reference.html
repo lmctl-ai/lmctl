@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>miniplayer reference — miniplayer — lmctl.com tools</title>
+<meta name="description" content="Reference tables for miniplayer CLI subcommands, flags, configuration properties, environment variables, and exit codes.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/miniplayer/">Overview</a></li>
+<li><a href="/tools/miniplayer/skill.html">Skill</a></li>
+<li><a href="/tools/miniplayer/guide.html">Guide</a></li>
+<li><a href="/tools/miniplayer/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>miniplayer reference</h1>
+<p>Reference tables for miniplayer CLI subcommands, flags, configuration properties, environment variables, and exit codes.</p>
+<h2>CLI subcommands and flags</h2>
+<table>
+<thead>
+<tr>
+<th>Subcommand</th>
+<th>Flags</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>miniplayer --version, -v, -V, version</td>
+<td>none</td>
+<td>Print miniplayer semantic version (plus git commit on dev builds).</td>
+</tr>
+<tr>
+<td>miniplayer run</td>
+<td>-m &lt;model>, --file &lt;path>, --system &lt;text>, --system-file &lt;path>, --session &lt;new|id>, --json, --wrapup</td>
+<td>Execute a pure one-shot prompt without tools, cwd preamble, or context files.</td>
+</tr>
+<tr>
+<td>miniplayer classify</td>
+<td>-m &lt;model>, --file &lt;path>, --system &lt;text>, --system-file &lt;path></td>
+<td>Classify input from stdin or --file into compact JSON {"label","reason","confidence"}.</td>
+</tr>
+<tr>
+<td>miniplayer chat</td>
+<td>-m &lt;model>, --no-context-files, --no-wrapup, --system &lt;text>, --system-file &lt;path></td>
+<td>Start the interactive REPL (/exit, /help, /compact, Ctrl-C turn cancellation).</td>
+</tr>
+<tr>
+<td>miniplayer acp</td>
+<td>-m &lt;model>, --no-context-files, --system &lt;text>, --system-file &lt;path></td>
+<td>Run the Agent Client Protocol JSON-RPC daemon over stdin/stdout (supports session/load and session/resume).</td>
+</tr>
+<tr>
+<td>miniplayer models</td>
+<td>--routed, --provider &lt;name>, --source &lt;name>, --max-input-price &lt;usd>, --json</td>
+<td>List catalog models, filter by provider or price, and report API key availability.</td>
+</tr>
+<tr>
+<td>miniplayer providers</td>
+<td>--json</td>
+<td>List all routed providers, SDK types, base URLs, key_env names, and key_set boolean status.</td>
+</tr>
+</tbody>
+</table>
+<h2>Configuration keys (~/.config/miniplayer/config.json)</h2>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type and default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>model</td>
+<td>string</td>
+<td>Default model selector when -m is omitted.</td>
+</tr>
+<tr>
+<td>pool, poolOrdered</td>
+<td>string[], boolean (false)</td>
+<td>Candidate model pool tried in random order or strict order when poolOrdered is true.</td>
+</tr>
+<tr>
+<td>requestTimeoutMs</td>
+<td>integer (60000)</td>
+<td>Timeout in milliseconds for one-shot requests.</td>
+</tr>
+<tr>
+<td>wrapUp</td>
+<td>boolean (true)</td>
+<td>Whether interactive REPL exit triggers a durable-memory summary turn.</td>
+</tr>
+<tr>
+<td>contextFiles</td>
+<td>boolean (true)</td>
+<td>Whether chat and acp sessions include AGENTS.md and durable-memory/index.md.</td>
+</tr>
+<tr>
+<td>compact</td>
+<td>{thresholdRatio: 0.7, thresholdTokens: 100000}</td>
+<td>Context window fraction or token count that triggers automatic conversation compaction.</td>
+</tr>
+<tr>
+<td>tools</td>
+<td>Array&lt;string | {name, command, brief}> ([])</td>
+<td>External tool executables exposed in interactive chat and acp sessions.</td>
+</tr>
+<tr>
+<td>provider</td>
+<td>Record&lt;string, {baseURL?, apiKey?}></td>
+<td>Per-provider baseURL overrides (such as loopback lmmock endpoints).</td>
+</tr>
+</tbody>
+</table>
+<h2>Environment variables</h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MINIPLAYER_CONFIG</td>
+<td>~/.config/miniplayer/config.json</td>
+<td>Path to the JSON configuration file.</td>
+</tr>
+<tr>
+<td>MINIPLAYER_CATALOG</td>
+<td>unset (uses ETag cache)</td>
+<td>Pin model resolution to a local model_list.json file and disable all catalog network requests.</td>
+</tr>
+<tr>
+<td>MINIPLAYER_PRICE_TTL</td>
+<td>21600 (6 hours)</td>
+<td>Catalog cache time-to-live in seconds (0 forces ETag revalidation).</td>
+</tr>
+<tr>
+<td>OLLAMA_HOST</td>
+<td>http://localhost:11434/v1</td>
+<td>Local Ollama server origin for keyless ollama/&lt;model> selectors.</td>
+</tr>
+<tr>
+<td>ANTHROPIC_API_KEY, OPENAI_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY, DEEPSEEK_API_KEY, MOONSHOT_API_KEY, OPENROUTER_API_KEY, XAI_API_KEY, TOGETHER_API_KEY</td>
+<td>unset</td>
+<td>Provider API key environment variables discovered from catalog route key_env metadata.</td>
+</tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Prompt, classification, catalog query, or interactive session completed cleanly.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Missing API key, unknown provider selector, unavailable catalog without cache, or request timeout.</td>
+</tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/miniplayer">github.com/lmctl-ai/miniplayer</a>.</p>
+</footer>
+</body>
+</html>

@@ -20,23 +20,26 @@
 <li><a href="/tools/lmhtml/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmhtml/guide.html">Guide</a></li>
 <li><a href="/tools/lmhtml/recipes.html">Recipes</a></li>
+<li><a href="/tools/lmhtml/reference.html">Reference</a></li>
 <li><a href="/tools/lmhtml/examples/">Examples</a></li>
 </ul>
 </nav>
 <main>
 <h1>lmhtml API</h1>
 <h2>Overview</h2>
-<p>lmhtml 0.7.3 is a native host for link and CSS audits, structural page diffs, shared-template extraction and safe HTML rewrites. It also converts Markdown, generates chapter indexes and builds static note sites.</p>
+<p>lmhtml 0.7.6 is a native host for link and CSS audits, structural page diffs, shared-template extraction and safe HTML rewrites. It also converts Markdown, generates chapter indexes and builds static note sites.</p>
 <h2>Install and run</h2>
-<p>Use Node.js 24.15 or newer with lmscript 0.2.420 or newer. A DSL declaration with cli="lmhtml" install="github:lmctl-ai/lmhtml@latest" downloads the platform release, checks its SHA-256 and compiles against its embedded schema.</p>
+<p>Use Node.js 24.15 or newer with lmscript 0.2.482 or newer. A block declared as p = _lmcode_ with cli="lmhtml" install="github:lmctl-ai/lmhtml@latest" downloads the platform release, checks its SHA-256 and compiles against its embedded schema; r = run_lmcode(p) runs it and returns a map with ok and result, and the block ends with end _lmcode_.</p>
 <pre><code>lmhtml --version
 lmhtml --lmcode-schema
 lmhtml --lmcode-schema --json
 lmhtml --lmcode-signatures
-lmscript audit.lms build/audit.dslb
-lmhtml --lmcode build/audit.dslb</code></pre>
-<p>--lmcode-schema prints a summary, --lmcode-schema --json prints the compiler schema bytes, and --lmcode-signatures prints canonical host signatures. The full member list is available from the released binary; the following summary is copied from lmhtml 0.7.3.</p>
-<h2>DSL contexts and functions</h2>
+lmscript --check audit.lms
+lmscript audit.lms</code></pre>
+<p>--lmcode-schema prints a summary, --lmcode-schema --json prints the compiler schema bytes, and --lmcode-signatures prints canonical host signatures. run_lmcode drives lmhtml --lmcode FILE itself. The full member list, including Node.append_html, prepend_html, set_attrs and get_attrs added since 0.7.3, is in the <a href="/tools/lmhtml/reference.html">reference</a>; the host-specific summary follows.</p>
+<h2>Standard catalog and REST and CLI interfaces</h2>
+<p>lmhtml 0.7.6 embeds the 226-signature lmcode_std_v3 standard catalog. It includes the standard interfaces RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand and CliOption, the functions rest_config, rest_route, rest_serve, rest_stop and rest_cli, and the RestExchange type with 15 methods. A handler is a block function that implements one interface and carries an annotation such as @"/health", @"text" or @"--selector"; rest_cli(args) dispatches options, commands and routes statelessly and returns the response text. The <a href="/tools/lmhtml/reference.html">reference</a> lists every signature.</p>
+<h2>Contexts and functions</h2>
 <pre><code>context html: Html
 context report: Report
 fn str_contains(string, string) -> bool
@@ -101,8 +104,10 @@ Html.save(string, string) -> void
 Html.site(string, string, string) -> void
 Html.write_template(DocList, int, string) -> int</code></pre>
 <h2>Node, report and image methods</h2>
-<pre><code>Node.attr(string) -> string
+<pre><code>Node.append_html(string) -> Node
+Node.attr(string) -> string
 Node.attributes() -> StrList
+Node.get_attrs(StrList) -> StrMap
 Node.has_attr(string) -> bool
 Node.hash() -> int
 Node.insert_after(string) -> Node
@@ -110,10 +115,12 @@ Node.insert_before(string) -> Node
 Node.outer_html() -> string
 Node.parent() -> Node
 Node.path() -> string
+Node.prepend_html(string) -> Node
 Node.remove() -> void
 Node.replace_with(string) -> Node
 Node.select(string) -> NodeList
 Node.set_attr(string, string) -> Node
+Node.set_attrs(StrMap) -> Node
 Node.tag() -> string
 Node.text() -> string
 NodeList.at(int) -> Node
@@ -126,10 +133,11 @@ ImageSize.height() -> int
 ImageSize.width() -> int</code></pre>
 <h2>Host behavior and limits</h2>
 <p>Directory loads can filter relative paths with include and exclude globs. Link checks classify local pages, assets, anchors, external URLs, special schemes and paths outside the site root; they do not fetch external URLs. Structural diffs ignore whitespace, comments, attribute order and data-* attributes. Template extraction finds shared subtrees and inserts slot markers. Saves are atomic and confined to the working directory; use --dry-run before rewriting pages.</p>
-<p>The host accepts bytecode version 5. It has no execution budget or allocation cap, so run only trusted bytecode. HTML saves require valid UTF-8 and can normalize wrappers, tag casing, attribute quoting and optional elements.</p>
+<p>The host has no execution budget or allocation cap, so run only trusted bytecode. HTML saves require valid UTF-8 and can normalize wrappers, tag casing, attribute quoting and optional elements.</p>
 <h2>Markdown and plain-content commands</h2>
 <p>Markdown input uses CommonMark with GFM tables, task lists, strikethrough and autolinks. Raw HTML is disabled by default. Index generation is deterministic; --check reports drift without writing. A trusted site template can use title, summary, path, content and toc placeholders.</p>
-<pre><kbd>lmhtml index notes</kbd>
+<pre><kbd>lmhtml md2html notes/chapter.md build/chapter.html</kbd>
+<kbd>lmhtml index notes</kbd>
 <kbd>lmhtml index notes --check</kbd>
 <kbd>lmhtml mdcheck notes</kbd>
 <kbd>lmhtml site notes build/notes --template shell.html</kbd>

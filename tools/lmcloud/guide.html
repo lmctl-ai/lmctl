@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcloud guide — lmcloud — lmctl.com tools</title>
+<meta name="description" content="lmcloud is the shared procedural cloud architecture for LMScript.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcloud/">Overview</a></li>
+<li><a href="/tools/lmcloud/skill.html">Skill</a></li>
+<li><a href="/tools/lmcloud/guide.html">Guide</a></li>
+<li><a href="/tools/lmcloud/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcloud guide</h1>
+<h2>Overview</h2>
+<p>lmcloud is the shared procedural cloud architecture for LMScript. Instead of declarative infrastructure templates, lmcloud defines a single JSON schema (schema/lmcloud.dsl.json) and a reusable Go runtime library (github.com/lmctl-ai/lmcloud/hostkit) that provider hosts (lmaws, lmazure, lmgcp, lmoci) embed so one LMScript program can run against AWS, Azure, Google Cloud, Oracle Cloud, or local emulators.</p>
+<h2>Architecture and hostkit packages</h2>
+<p>The lmcloud repository is organized into modular Go packages and cross-provider conformance suites:</p>
+<ul>
+<li>schema embeds the canonical lmcloud.dsl.json bytes so every provider binary serves byte-identical schema hashes to the lmscript compiler.</li>
+<li>hostkit implements the canonical error model, endpoint policy validation, naming and payload validators, pagination cursors, retry policies, and provider adapter interfaces (StoreAdapter, QueueAdapter, TablesAdapter, PermissionsAdapter, FunctionAdapter, UserPoolAdapter).</li>
+<li>hostkit/cloudhost registers the shared Cloud methods once, wires dry-run preview behavior, and exposes the standard CLI entry point (cloudhost.Program).</li>
+<li>hostkit/fakeadapter provides a deterministic in-memory and optional file-backed reference implementation of every slice for zero-network testing.</li>
+<li>hostkit/safety implements the Stage 1 live-mode safety foundation, including immutable live-policy.json verification, double opt-in environment checks, append-only fsynced recovery journals with flock leases, regional price tables, reservation-based CostMeter accounting, and LIFO ownership-revalidating sweeps.</li>
+</ul>
+<h2>Emulator and endpoint resolution</h2>
+<p>Every lmcloud host resolves service endpoints using a deterministic precedence chain:</p>
+<pre><code>1. cloud.set_endpoint(service | "all", url)
+2. LMCLOUD_&lt;SVC>_ENDPOINT
+3. LM&lt;PROVIDER>_&lt;SVC>_ENDPOINT
+4. LMCLOUD_ENDPOINT
+5. LM&lt;PROVIDER>_ENDPOINT
+6. Provider-native endpoint variables declared by each host</code></pre>
+<p>Plain HTTP URLs are accepted only for loopback hosts (127.0.0.1, localhost, ::1). Non-loopback HTTP URLs are rejected with INVALID_ARGUMENT before any network socket is opened. When no endpoint is configured and live mode is not enabled, the host automatically uses the in-process fake adapter.</p>
+<table>
+<thead>
+<tr>
+<th>Provider host</th>
+<th>Local emulator</th>
+<th>Default loopback endpoint</th>
+<th>Open versus enforce auth</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>lmaws</td>
+<td>awssim</td>
+<td>http://127.0.0.1:4566</td>
+<td>Open mode accepts test/test SigV4; --auth enforce validates SigV4 signatures and IAM policy statements.</td>
+</tr>
+<tr>
+<td>lmazure</td>
+<td>azuresim</td>
+<td>http://127.0.0.1:4577</td>
+<td>Open mode accepts devstoreaccount1; --auth enforce validates SharedKey HMAC-SHA256 or Bearer tokens and RBAC rules.</td>
+</tr>
+<tr>
+<td>lmgcp</td>
+<td>gcpsim</td>
+<td>http://127.0.0.1:4588</td>
+<td>Open mode shares REST and gRPC on port 4588; --auth enforce validates OAuth Bearer tokens and GCP IAM bindings.</td>
+</tr>
+<tr>
+<td>lmoci</td>
+<td>ocisim</td>
+<td>http://127.0.0.1:4599</td>
+<td>Open mode isolates tenancies by keyId; --auth enforce validates RSA-SHA256 draft-cavage HTTP signatures and OCI IAM policies.</td>
+</tr>
+</tbody>
+</table>
+<h2>Service slices and portable semantics</h2>
+<p>The shared schema covers seven functional slices on the cloud context:</p>
+<ul>
+<li>Slice 1 — Object storage: bucket_create, bucket_delete, bucket_exists, bucket_list, object_put (with optional content-type and StrMap metadata), object_get, object_head, object_delete, object_list (paged via ObjectListPage), and object_list_all.</li>
+<li>Slice 2 — Queues: queue_create, queue_delete, queue_exists, queue_list, queue_send, queue_receive (with max_messages, visibility_timeout_s, and wait_time_s), queue_ack, and queue_nack.</li>
+<li>Slice 3 — Cost and performance: cost_cap_usd, monotone-decreasing set_cost_cap_usd, estimated_cost, cost_report (CostReport and CostLineItem), metrics_reset, and metrics (MetricsReport and OpMetrics with min, p50, p95, max, and mean latency in milliseconds).</li>
+<li>Slice 4 — Permissions: principal_current, policy_new, policy_parse, policy_lint (returning LintReport and LintFinding), policy_attach, policy_attach_principal, policy_detach, policy_detach_principal, and policy_check.</li>
+<li>Slice 5 — Key-value tables: table_create (key-only or sorted with a sort key), table_delete, table_exists, table_list, item_new, item_put (unconditional or conditional on only-if-absent / version token), item_get, item_delete, item_update, item_query, and item_scan.</li>
+<li>Slice 6 — Serverless functions: function_config, function_create, function_update (with optional expect_revision), function_delete, function_exists, function_get, function_list, function_publish_version, function_versions, function_alias_set/get/delete, and synchronous function_invoke.</li>
+<li>Slice 7 — User directories (userpool): userpool_create, userpool_delete, userpool_exists, userpool_list, user_create, user_get, user_delete, user_set_enabled, user_set_password, user_list, user_sign_in, user_verify_token, group_create, group_delete, group_list, group_add_user, group_remove_user, and user_groups.</li>
+</ul>
+<h2>Live safety foundation and cost reservations</h2>
+<p>Live cloud execution is guarded by hostkit/safety so accidental mutations or runaway spend cannot occur:</p>
+<ul>
+<li>Double and triple opt-in gates: live read-only access requires both LMCLOUD_LIVE=1 and the provider's LM&lt;PROVIDER>_LIVE=1 variable, plus a verified account or tenancy identifier and region policy. Live mutations require a further explicit opt-in defined by each provider host.</li>
+<li>Reservation-based CostMeter: before any physical request, page fetch, or existence probe is dispatched, the cost meter reserves the worst-case unit and byte cost against the active cap. If a call would exceed the budget, it fails immediately with ErrorCode.COST_CAP_EXCEEDED without contacting the cloud endpoint.</li>
+<li>Durable recovery journal: every resource creation writes a pre-create intent record with an OwnerNonce and CreateToken to an append-only fsynced journal locked via flock. Teardown and --sweep revalidate ownership tags before deleting resources in LIFO order.</li>
+</ul>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<p>Built on lmcode-go with lmcode_std_v3 (226 standard signatures), every lmcloud host supports the 10 standard SAM interfaces and 5 top-level dispatcher functions for turning cloud scripts into HTTP services or structured command-line utilities:</p>
+<ul>
+<li>HTTP route interfaces: RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, and RestHandler. Annotate a handler function with @"/path/:param" to bind URL path parameters and extract them via x.param("param").</li>
+<li>CLI interfaces: CliCommand (annotated with @"command-name") and CliOption (annotated with @"--flag-name").</li>
+<li>Lifecycle and dispatch functions: rest_config(key, value) configures server settings such as URL prefix or bind port; rest_route(method, pattern, handler_name) registers routes dynamically; rest_serve() and rest_stop() control the HTTP listener; rest_cli(args) dispatches a StrList of CLI tokens or synthetic URL paths in-process and returns the response payload.</li>
+</ul>
+<pre><code>s = load_schema(schema="schema/lmcloud.dsl.json");
+p = _lmcode_ s;
+  @"/queues/:name/messages"
+  fn post_msg(x: RestExchange) -> void implements RestPost {
+    let id = cloud.queue_send(x.param("name"), x.body());
+    x.status(201);
+    x.json("{\"id\":\"" + id + "\"}");
+  }
+
+  rest_config("prefix", "/v1");
+  cloud.queue_create("orders");
+  rest_route("POST", "/queues/:name/messages", "post_msg");
+end _lmcode_</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcloud">github.com/lmctl-ai/lmcloud</a>.</p>
+</footer>
+</body>
+</html>

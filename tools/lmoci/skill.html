@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmoci authoring skill — lmoci — lmctl.com tools</title>
+<meta name="description" content="lmoci is the Oracle Cloud Infrastructure host for LMScript, providing both the shared lmcloud procedural schema on Go hostkit and a 16-section OCI inventory,…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmoci/">Overview</a></li>
+<li><a href="/tools/lmoci/skill.html">Skill</a></li>
+<li><a href="/tools/lmoci/guide.html">Guide</a></li>
+<li><a href="/tools/lmoci/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmoci authoring skill</h1>
+<p>lmoci is the Oracle Cloud Infrastructure host for LMScript, providing both the shared lmcloud procedural schema on Go hostkit and a 16-section OCI inventory, Object Storage, Queue, Streaming, IAM, and Vault/KMS toolset.</p>
+<h2>Purpose</h2>
+<p>Use lmoci to script OCI Object Storage, OCI Queue, Streaming, IAM compartments and policy linting, Vault/KMS metadata, and cross-cloud lmcloud programs against offline fixtures or the local ocisim emulator on 127.0.0.1:4599.</p>
+<h2>When to use it</h2>
+<p>Choose lmoci when running portable lmcloud programs against OCI semantics, when testing signed OCI REST calls and IAM policies against ocisim on port 4599, or when using deterministic JSON CLI subcommands (lmoci os, lmoci iam, lmoci queue, lmoci stream, lmoci vault, lmoci inventory).</p>
+<h2>Install</h2>
+<p>Declare lmoci in an LMScript _lmcode_ block so the compiler downloads and verifies the platform release binary and compiles against its embedded schema.</p>
+<pre><code>p = _lmcode_ cli="lmoci" install="github:lmctl-ai/lmoci@latest";</code></pre>
+<h2>Commands</h2>
+<p>Run LMScript programs with lmscript, or run lmoci directly for schema inspection, signature listing, and direct OCI subcommands.</p>
+<pre><code>lmoci --version
+lmoci --help
+lmoci --notices
+lmoci [cloud] --lmcode-schema --json
+lmoci [cloud] --lmcode-signatures
+lmoci [cloud] --lmcode-signatures --without-std
+lmoci inventory all --demo
+lmoci os namespace --endpoint http://127.0.0.1:4599
+lmoci iam lint-policy --name sandbox-policy --statement "Allow group Devs to manage objects in compartment sandbox"
+lmscript examples/object_storage.lms</code></pre>
+<h2>Inputs and outputs</h2>
+<p>In shared lmcloud mode, programs use context cloud: Cloud and receive typed handles (ObjectMeta, ObjectListPage, QueueMessage, QueueMessageList, TableItem, TablePage, Policy, LintReport, FunctionConfig, FunctionInvokeResult, User, UserPage, Session, CostReport, MetricsReport, CloudError). Direct CLI subcommands emit a deterministic JSON envelope containing ok, area, action, profile, endpoint, data, and error.</p>
+<h2>Safety rules</h2>
+<p>With no endpoint and no live opt-in, lmoci uses its offline in-process fake adapter and makes zero external connections. Plain HTTP endpoints are permitted only for loopback addresses (127.0.0.1:4599 for ocisim). When targeting a loopback emulator without an ~/.oci/config file or LMOCI_SIM_PRIVATE_KEY_PATH, lmoci automatically synthesizes an ephemeral RSA-2048 keypair so draft-cavage OCI HTTP request signing runs end-to-end. Sandbox mutations enforce the lmoci-&lt;runId>- / lmoci_&lt;runId>_ prefix and freeformTags.lmoci_test = &lt;runId>, record creations in a persistent JSON ledger, tear down resources in reverse order, and redact PEM keys, passphrases, and tokens from all output.</p>
+<h2>Worked examples</h2>
+<p>Example 1: Object Storage and Queue round-trip on the shared lmcloud schema.</p>
+<pre><code>p = _lmcode_ cli="lmoci" install="github:lmctl-ai/lmoci@latest";
+  # Optional: target local ocisim on 127.0.0.1:4599
+  # cloud.set_endpoint("all", "http://127.0.0.1:4599");
+  cloud.set_cost_cap_usd(0.05);
+  cloud.bucket_create("lmoci-artifacts");
+  let meta = cloud.object_put("lmoci-artifacts", "manifests/v1.json", "{\"ok\":true}");
+  assert(meta.exists() &amp;&amp; meta.size() == 11, "object put failed");
+
+  cloud.queue_create("lmoci-events");
+  cloud.queue_send("lmoci-events", cloud.object_get("lmoci-artifacts", "manifests/v1.json"));
+  let msgs = cloud.queue_receive("lmoci-events", 1, 30, 0);
+  assert(msgs.len() == 1, "expected 1 message");
+  cloud.queue_ack("lmoci-events", msgs.at(0).receipt());
+
+  cloud.object_delete("lmoci-artifacts", "manifests/v1.json");
+  cloud.bucket_delete("lmoci-artifacts");
+  cloud.queue_delete("lmoci-events");
+  print(cloud.cost_report().summary());
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, "OCI storage and queue workflow failed");</code></pre>
+<p>Example 2: Standard lmcode_std_v3 REST and CLI handlers over OCI Object Storage.</p>
+<pre><code>p = _lmcode_ cli="lmoci" install="github:lmctl-ai/lmoci@latest";
+  @"/buckets/:bucket/objects/:key"
+  fn get_obj(x: RestExchange) -> void implements RestGet {
+    x.send(cloud.object_get(x.param("bucket"), x.param("key")));
+  }
+
+  @"--bucket"
+  fn opt_bkt(x: RestExchange) -> void implements CliOption {
+    x.set("bucket", x.query("bucket"));
+  }
+
+  @"seed-object"
+  fn cmd_seed(x: RestExchange) -> void implements CliCommand {
+    let b = x.get("bucket");
+    cloud.bucket_create(b);
+    cloud.object_put(b, "note.txt", x.body());
+    x.send("seeded:" + b);
+  }
+
+  rest_config("prefix", "/v1");
+  let c = rest_cli(str_split("--bucket oci-bkt seed-object -- oci-payload", " "));
+  let g = rest_cli(str_split("/v1/buckets/oci-bkt/objects/note.txt", " "));
+  print(c + " -> " + g);
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, "OCI REST/CLI example failed");</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Shared cloud operations report errors through ErrorCode (OK, INVALID_ARGUMENT, NOT_FOUND, CONFLICT, PRECONDITION_FAILED, UNAUTHENTICATED, PERMISSION_DENIED, COST_CAP_EXCEEDED, INTERNAL) and cloud.last_error(). In ocisim --auth enforce mode, signature failures return HTTP 401 NotAuthenticated (mapped to UNAUTHENTICATED) and IAM policy denials return HTTP 403 NotAuthorizedOrNotFound (mapped to PERMISSION_DENIED). Exit code 0 indicates success; exit code 2 indicates invalid CLI usage or invalid LMOCI_MAX_MEMORY_MB setting; exit code 3 indicates runtime cloud error, policy denial, or memory budget breach; exit code 4 indicates bytecode load failure. The direct subcommands (cred, inventory, os, iam, queue, stream, vault) are documented in the repository README; a host build that does not ship them rejects them with a CLI_USAGE error and exit code 2.</p>
+<h2>How to verify</h2>
+<p>Verify the binary version, schema emission, and Go conformance suite.</p>
+<pre><code>lmoci --version
+lmoci --lmcode-signatures
+go test ./...</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmoci">github.com/lmctl-ai/lmoci</a>.</p>
+</footer>
+</body>
+</html>

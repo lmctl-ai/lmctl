@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>lmtorch API guide — lmtorch — lmctl.com tools</title>
-<meta name="description" content="The lmtorch DSL host runs a compiled LMScript block in one native process. Tensor values and model state stay in memory until the block returns.">
+<meta name="description" content="The lmtorch lmcode host runs a compiled LMScript block in one native process. Tensor values and model state stay in memory until the block returns.">
 <link rel="stylesheet" href="/tools/style.css">
 <link rel="icon" type="image/png" href="/tools/lmtorch/img/icon.png">
 </head>
@@ -18,20 +18,22 @@
 <li><a href="/tools/lmtorch/skill.html">Skill</a></li>
 <li><a href="/tools/lmtorch/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmtorch/guide.html">Guide</a></li>
+<li><a href="/tools/lmtorch/reference.html">Reference</a></li>
 <li><a href="/tools/lmtorch/examples/">Examples</a></li>
 </ul>
 </nav>
 <main><h1>lmtorch API guide</h1>
-<p>The lmtorch DSL host runs a compiled LMScript block in one native process. Tensor values and model state stay in memory until the block returns.</p>
+<p>The lmtorch lmcode host runs a compiled LMScript block in one native process. Tensor values and model state stay in memory until the block returns.</p>
 <h2>Overview</h2>
 <p>Start with a host block that declares the released executable and the operation to run.</p>
 <h2>Start a host block</h2>
-<p>Declare the released host with cli and install. LMScript asks that binary for its embedded DSL schema and uses the same executable to run the compiled block.</p>
+<p>Declare the released host with cli and install. LMScript asks that binary for its embedded lmcode schema and uses the same executable to run the compiled block.</p>
 <pre><code>p = _lmcode_ cli="lmtorch" install="github:lmctl-ai/lmtorch@v0.5.1";
 let x = torch.tensor("[1.0, 2.0, 3.0]");
 out.set("sum", x.sum().item());
-end _lmcode_</code></pre>
-<p>Use dsl_cli(p) as the command prefix when running the saved bytecode with --lmcode. The host prints one JSON result containing values set through out.</p>
+end _lmcode_
+r = run_lmcode(p);</code></pre>
+<p>run_lmcode(p) compiles the block, invokes the host with --lmcode and returns an object with ok and result; result holds the values set through out. The host flags --lmcode-schema --json, --lmcode-signatures and --lmcode FILE.dslb remain the host protocol. The install value may be @latest or a pinned tag such as @v0.5.1.</p>
 <h2>Tensor creation and operations</h2>
 <p>Torch creates tensors from JSON arrays and provides zeros, ones, full, rand, randn, arange, linspace, eye, and scalar constructors. Tensor methods cover shape, indexing, arithmetic, matrix multiplication, reductions, reshaping, activations, comparisons, and file output.</p>
 <pre><code>let a = torch.tensor("[[1.0, 2.0], [3.0, 4.0]]");
@@ -48,7 +50,8 @@ out.set("gradient", x.grad());</code></pre>
 <p>Build a sequential model by chaining layers such as linear, conv2d, relu, flatten, and dropout. Call forward to evaluate it. Create an SGD, Adam, or AdamW optimizer from the model, then zero gradients, backpropagate a loss, and take a step.</p>
 <h2>Files and runtime limits</h2>
 <p>Use Tensor.save and Torch.load for safetensors, read_csv for numeric CSV input, and write_csv for tabular predictions. Output paths must stay inside the current working directory. The public release is CPU-only and includes its native runtime dependencies.</p>
-<p>See <a href="https://github.com/lmctl-ai/lmtorch/blob/main/docs/dsl-api.md">docs/dsl-api.md</a> for method signatures and <a href="https://github.com/lmctl-ai/lmtorch/tree/main/examples">the source examples</a> for complete programs.</p>
+<p>lmtorch 0.5.1 vendors the lmcode_std_v3 catalog of the lmcode-cpp commit pinned in sdk.lock: 206 canonical signatures (83 functions and 123 methods on 16 standard types). The current lmcode_std_v3 catalog has 226 signatures, adding the REST and CLI interfaces; lmtorch picks those up when it syncs its SDK pin and releases.</p>
+<p>See the <a href="/tools/lmtorch/reference.html">reference</a> for every signature, <a href="https://github.com/lmctl-ai/lmtorch/blob/main/docs/dsl-api.md">docs/dsl-api.md</a> for method signatures and <a href="https://github.com/lmctl-ai/lmtorch/tree/main/examples">the source examples</a> for complete programs.</p>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmtorch">github.com/lmctl-ai/lmtorch</a>.</p>

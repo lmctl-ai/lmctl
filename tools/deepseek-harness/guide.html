@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>deepseek-harness guide — deepseek-harness — lmctl.com tools</title>
+<meta name="description" content="deepseek-harness (dsh) is an open-source AI agent harness created by DeepSeek AI on top of the Cordis plugin framework (A Programming Paradigm for…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/deepseek-harness/">Overview</a></li>
+<li><a href="/tools/deepseek-harness/skill.html">Skill</a></li>
+<li><a href="/tools/deepseek-harness/guide.html">Guide</a></li>
+<li><a href="/tools/deepseek-harness/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>deepseek-harness guide</h1>
+<h2>Overview</h2>
+<p>deepseek-harness (dsh) is an open-source AI agent harness created by DeepSeek AI on top of the Cordis plugin framework (A Programming Paradigm for Spatiotemporal Composability). The lmctl-ai/deepseek-harness repository tracks upstream with zero runtime code diverges while recording durable architectural notes, arm64 build instructions, and RPC protocol details required by lmctl's dsh provider.</p>
+<h2>Why lmctl-ai maintains this fork</h2>
+<p>The lmctl team maintains lmctl-ai/deepseek-harness for three practical engineering reasons documented in durable-memory/why-this-fork.md:</p>
+<ul>
+<li>Reliable arm64 builds: building dsh from source via pnpm install and pnpm run build succeeds on arm64 Linux machines where the published npm binary package fails.</li>
+<li>Authoritative RPC and wire inspection: lmctl's dsh provider adapter interacts with dsh's internal RPC and CLI entry points; keeping a synchronized source tree with durable-memory notes lets maintainers verify protocol changes directly against the implementation.</li>
+<li>Upstream report tracking: because upstream does not accept external pull requests, issues discovered during lmctl integration are documented in durable-memory/upstream-reports.md and filed in upstream GitHub Discussions.</li>
+</ul>
+<h2>Wire protocol, environment overrides, and headless execution</h2>
+<p>When running dsh in automated pipelines or mock E2E qualification suites (such as provider-mock-e2e):</p>
+<ul>
+<li>Headless entry point: invoke dsh --profile headless "&lt;prompt>" with stdin closed. It prints the plain-text model response to stdout.</li>
+<li>Anthropic Messages transport: although DeepSeek offers an OpenAI-compatible API, the installed dsh default configuration communicates using the Anthropic Messages protocol (POST /v1/messages). When mocking dsh with lmmock, ensure the Anthropic Messages stream handler is active at DEEPSEEK_BASE_URL.</li>
+<li>Trusted environment-tier overrides: export DSH_HOME to a fresh temporary directory, set DSH_TELEMETRY_DISABLED=1, and pass DEEPSEEK_API_KEY and DEEPSEEK_BASE_URL=http://127.0.0.1:PORT/v1 via the process environment.</li>
+</ul>
+<h2>Web UI and development workflow</h2>
+<p>Running npx @deepseek-ai/dsh web or pnpm dsh web launches the local Web UI on http://127.0.0.1:3080. On a local desktop session it opens the default browser automatically; over SSH or when --no-open is passed, it prints the loopback URL without launching a browser. For live plugin and frontend development, pnpm run dev:web builds, serves, and hot-reloads client bundles in one terminal.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/deepseek-harness">github.com/lmctl-ai/deepseek-harness</a>.</p>
+</footer>
+</body>
+</html>

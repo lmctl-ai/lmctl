@@ -188,3 +188,9 @@ Autorun team scripts use scripts/tools/quickrun-template.lms and the same tools/
 Run python3 scripts/tools/generate-example-book.py --refresh-host-flag-spellings for a flag-only refresh of manifest-owned example scripts and pages. This preserves existing script structure, render assets and source provenance. Full book generation also normalizes host options when reading pinned source snapshots, modernizes the removed dsl marker and savedsl form to the lmcode marker with run_lmcode, and refuses sources that still run their block through the removed dsl_cli. The separate language plumbing migration remains independent.
 
 For typed books, run python3 scripts/tools/pull-books.py --refresh-host-flag-spellings. It refreshes only text in books-lock-owned pages and scripts and records the spelling overlay; input, capture and media hashes and the original source pin remain unchanged. Neither maintenance command executes a host or publishes content.
+
+## Full lmctl-ai tool catalog and quick-reference index pages
+
+Every active tool, SDK, sample, grammar, emulator and harness repository in lmctl-ai (90 repositories, plus lmscript) has a section under tools/TOOL/. Each tool's authored tools/TOOL/index.html serves as an immediate quick reference for both LLM agents and human readers: installation and invocation commands, CLI flags and host protocol table, domain API or schema summary table, a minimal runnable example, and links to detail pages (skill.html, guide.html, reference.html, tutorial.html, recipes.html, examples/). Each remote repository lmctl-ai/TOOL links back to https://www.lmctl.com/tools/TOOL/ and its detail pages near the top of README.md.
+
+When TOOLS_SCOPE=catalog runs in scripts/tools/check.lms and scripts/tools/decorate.lms, html.load_dir excludes tools/\*/\*.html so the catalog pass checks only site-level pages under tools/ rather than re-loading every tool subdirectory into one host document arena.

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmdebug reference — lmdebug — lmctl.com tools</title>
+<meta name="description" content="Complete command-line subcommand and flag reference, domain schema contexts and methods (lmdebug, net, sys, proc, detect, shark), standard lmcode_std_v3 REST…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmdebug/">Overview</a></li>
+<li><a href="/tools/lmdebug/skill.html">Skill</a></li>
+<li><a href="/tools/lmdebug/guide.html">Guide</a></li>
+<li><a href="/tools/lmdebug/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmdebug reference</h1>
+<p>Complete command-line subcommand and flag reference, domain schema contexts and methods (lmdebug, net, sys, proc, detect, shark), standard lmcode_std_v3 REST and CLI interfaces, and exit codes for lmdebug.</p>
+<h2>Host and CLI subcommands</h2>
+<table>
+<thead><tr><th>Subcommand or flag</th><th>Arguments and options</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>--version</td><td>none</td><td>Print the lmdebug version string and exit 0.</td></tr>
+<tr><td>caps</td><td>none</td><td>Print platform, OS, architecture, effective root/capability bits, supported commands, and mutating verbs as JSON.</td></tr>
+<tr><td>--lmcode-schema</td><td>[--json]</td><td>Print the embedded lmdebug schema summary or raw schema JSON bytes.</td></tr>
+<tr><td>--lmcode-signatures</td><td>none</td><td>Print canonical context, function, and method signatures including the 226 standard lmcode_std_v3 signatures.</td></tr>
+<tr><td>--lmcode</td><td>[--dry-run] [--plan-format json|text] [--dry-loop-limit N] &lt;file.dslb> [...]</td><td>Execute compiled LMScript bytecode, or emit an lmscript.host_plan.v1 host-effect plan when --dry-run is passed.</td></tr>
+<tr><td>pcap</td><td>[--version | --lmcode-schema [--json] | --lmcode-signatures | [--dry-run] --lmcode &lt;file.dslb>]</td><td>Run the packet-capture and protocol-analysis sub-host exposing context shark: Shark.</td></tr>
+<tr><td>dns / dig</td><td>dns &lt;host> | dig &lt;name> [TYPE] [@server]</td><td>Resolve IPv4/IPv6 addresses via getaddrinfo or send an RFC 1035 UDP DNS query and emit JSON records.</td></tr>
+<tr><td>ifaddrs / link</td><td>ifaddrs | link | link set &lt;iface> [up|down] [mtu N] [--apply] [--force] [--if-match ID] [--audit-file PATH]</td><td>List interface addresses or dump rtnetlink link devices and 64-bit counters; plan or apply link state and MTU changes.</td></tr>
+<tr><td>ethtool</td><td>&lt;iface> [-i|--driver-info|-S|--statistics]</td><td>Query link speed, duplex, autoneg, carrier, driver/firmware metadata, or NIC statistics via SIOCETHTOOL as JSON.</td></tr>
+<tr><td>route / rule / neigh</td><td>route | rule | neigh</td><td>Dump kernel IPv4/IPv6 routing tables, policy routing rules, or ARP/NDP neighbor tables over rtnetlink as JSON.</td></tr>
+<tr><td>counters / sockets</td><td>counters | sockets [tcp|udp|unix] [--listen] [--summary]</td><td>Read /proc/net protocol counters or inspect socket tables with PID ownership attribution and state summaries.</td></tr>
+<tr><td>trace / tracepath / mtr</td><td>trace &lt;host> [maxttl] [--pmtu] [-l len] | tracepath &lt;host> | mtr &lt;host> [--cycles N] [--interval MS] [--timeout MS] [--max-ttl N]</td><td>Run IPv4 UDP traceroute, path-MTU discovery, or multi-cycle per-hop loss and latency statistics as JSON (requires root or CAP_NET_RAW).</td></tr>
+<tr><td>arping</td><td>&lt;iface> &lt;host> [--count N] [--interval MS] [--timeout MS]</td><td>Send bounded IPv4 ARP reachability probes on an Ethernet interface (requires root or CAP_NET_RAW).</td></tr>
+<tr><td>scan / pipe</td><td>scan &lt;host> [--ports SPEC] [--timeout MS] [--concurrency N] | pipe &lt;host> &lt;port> | pipe --listen &lt;port> [--forever]</td><td>Run unprivileged parallel TCP connect port scans or open a binary-safe TCP stdio bridge.</td></tr>
+<tr><td>ping / iperf3</td><td>ping &lt;host> [options] | iperf3 [options]</td><td>Run the statically linked iputils ping engine or iperf3 throughput client/server engine.</td></tr>
+<tr><td>sys cpu / mem / disk / top</td><td>sys cpu [--interval MS] | sys mem | sys disk [--interval MS] [--count N] | sys top [--interval MS] [--count N] [--top N] [--sort cpu|mem|disk]</td><td>Sample aggregate and per-core CPU deltas, memory/swap/PSI pressure, per-device disk I/O rates, or top processes as JSON.</td></tr>
+<tr><td>sys set</td><td>&lt;KEY=VALUE> [--apply] [--force] [--if-match ID] [--audit-file PATH]</td><td>Plan or apply a persistent /proc/sys sysctl modification through the mutation framework.</td></tr>
+<tr><td>proc [list] / show / kill</td><td>proc [list] [--user U] [--name TEXT] [--pid PID] [--sort pid|cpu|mem|name] [--top N] [--fds] [--net] | proc show &lt;PID> [--fds] [--net] [--maps] | proc kill &lt;PID> [--signal SIG] [--apply] [--force] [--if-match ID] [--audit-file PATH]</td><td>Enumerate processes, deep-inspect one PID, or plan/send a reuse-safe signal via pidfd_send_signal.</td></tr>
+<tr><td>detect scan / autoruns</td><td>detect scan &lt;PATH> [--rules PATH] [--max-size MB] | detect autoruns [--root DIR] [--json]</td><td>Scan files or directories with embedded static libyara rules or enumerate Linux persistence locations and suspicion rankings.</td></tr>
+<tr><td>detect hashes</td><td>detect hashes import &lt;PATH> [--db PATH] [--format auto|plain|malwarebazaar-sha256|threatfox-ioc] [--source NAME] [--apply] | detect hashes scan &lt;PATH> [--db PATH] [--recursive] | detect hashes status [--db PATH]</td><td>Import SHA-256/MD5 feeds into an offline LMHASH01 signature store, scan files against the store, or check database status.</td></tr>
+<tr><td>detect quarantine / restore</td><td>detect quarantine &lt;PATH> [--quarantine-dir DIR] [--rule NAME:SEVERITY] [--apply] [--force] | detect restore &lt;ID> [--quarantine-dir DIR] [--apply] [--force]</td><td>Plan or execute file quarantine into a 0700 store with SHA-256 sidecar metadata, or restore a quarantined file by ID.</td></tr>
+</tbody>
+</table>
+<h2>Capabilities, Networking, and System contexts (lmdebug, net, sys)</h2>
+<table>
+<thead><tr><th>Context or type</th><th>Method signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context lmdebug: Meta</td><td>lmdebug.caps_json() -> string | lmdebug.apply_enabled() -> bool | lmdebug.force_enabled() -> bool | lmdebug.changes_remaining() -> int</td><td>Return the capability JSON document, check whether --apply or --force is active, or inspect remaining mutation budget.</td></tr>
+<tr><td>context net: Net</td><td>net.dns_lookup(string) -> StrList | net.dns_query(string, string, string) -> DnsResult</td><td>Resolve host addresses via getaddrinfo or send a UDP RFC 1035 DNS query (name, type, server) and inspect rcode, answers, and error.</td></tr>
+<tr><td>Net</td><td>net.interfaces() -> InterfaceList | net.links() -> LinkList | net.link_set(string, string, int) -> Change</td><td>List interfaces with addresses (name, addr, netmask, family, mtu, up, loopback), dump rtnetlink link counters, or plan a link state/MTU change.</td></tr>
+<tr><td>Net</td><td>net.ethtool_link(string) -> EthtoolLink | net.ethtool_driver(string) -> EthtoolDriver | net.ethtool_stats(string) -> EthtoolStats</td><td>Query interface link settings (speed_mbps, duplex, autoneg, port, link_detected), driver info, or NIC statistics via SIOCETHTOOL.</td></tr>
+<tr><td>Net</td><td>net.routes() -> RouteList | net.rules() -> RuleList | net.neighbors() -> NeighborList | net.counters() -> CounterList</td><td>Dump kernel routing tables, policy routing rules, ARP/NDP neighbors over rtnetlink, or /proc/net protocol counters.</td></tr>
+<tr><td>Net</td><td>net.sockets(string, bool) -> SocketList | net.socket_summary(string) -> SocketSummary</td><td>List sockets filtered by protocol and listen_only flag with PID/process ownership, or compute per-family and TCP state totals.</td></tr>
+<tr><td>Net</td><td>net.scan(string, string) -> ScanResult | net.check(string, int) -> bool</td><td>Run a parallel TCP connect port scan over a port specification or perform a 750 ms boolean single-port check.</td></tr>
+<tr><td>Net</td><td>net.tcp_connect(string, int) -> TcpConn | net.tcp_listen(int) -> TcpListener</td><td>Open a blocking TCP client connection or bind a local TCP listener for deterministic loopback tests.</td></tr>
+<tr><td>Net</td><td>net.trace(string, int) -> TraceResult | net.mtr(string, int) -> MtrResult | net.arping(string, string, int, int, int) -> ArpingResult</td><td>Run IPv4 UDP traceroute, multi-cycle MTR loss/latency analysis, or explicit-interface ARP probes (errors reported via .error()).</td></tr>
+<tr><td>context sys: Sys</td><td>sys.cpu() | sys.cpu(int) -> CpuResult | sys.mem() -> MemResult</td><td>Sample aggregate and per-core CPU utilization percentages over an interval, or read physical memory, swap, and PSI pressure.</td></tr>
+<tr><td>Sys</td><td>sys.disk() | sys.disk(int) -> DiskResult | sys.top() | sys.top(int, int) -> TopResult | sys.set(string, string) -> Change</td><td>Measure block-device I/O byte rates, IOPS, and await, rank top processes by CPU/RSS/disk, or plan a /proc/sys sysctl change.</td></tr>
+</tbody>
+</table>
+<h2>Process, Detection, Change, and Packet Capture contexts (proc, detect, shark)</h2>
+<table>
+<thead><tr><th>Context or type</th><th>Method signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context proc: Proc</td><td>proc.list() -> ProcList | proc.show(int) -> ProcShow | proc.kill(int, string) -> Change</td><td>Enumerate /proc processes, deep-inspect one PID (limits, fds, net, maps, uid, gid, threads), or plan/send a reuse-safe pidfd signal.</td></tr>
+<tr><td>context detect: Detect</td><td>detect.scan(string) -> DetectScanResult | detect.autoruns() | detect.autoruns(string) -> AutorunList</td><td>Scan files or directories with embedded static libyara rules or enumerate Linux persistence locations and suspicion rankings.</td></tr>
+<tr><td>Detect</td><td>detect.hash_import(string) -> Change | detect.hashes_scan(string) -> HashScanResult | detect.quarantine(string) -> Change | detect.restore(string) -> Change</td><td>Plan an LMHASH01 feed import, scan files against offline SHA-256/MD5 signatures, or plan file quarantine and restoration.</td></tr>
+<tr><td>Change</td><td>ch.action() | ch.result() | ch.detail() | ch.plan_id() -> string | ch.dry_run() | ch.applied() | ch.needs_force() -> bool | ch.warnings() -> StrList</td><td>Inspect the dry-run or applied mutation envelope returned by net.link_set, sys.set, proc.kill, and detect mutations.</td></tr>
+<tr><td>context shark: Shark</td><td>shark.interfaces() -> SharkIfaceList | shark.compile_filter(string, int) -> BpfProgram | shark.live(string, int, int, int, bool, bool, string) -> Capture</td><td>Enumerate libpcap capture interfaces, compile cBPF filter expressions offline, or capture live packets when permitted.</td></tr>
+<tr><td>Shark / Capture</td><td>shark.capture() | shark.open(string) -> Capture | c.count(string) -> int | c.save_pcapng(string) | c.save_fields_csv(string, string, string) -> void</td><td>Create synthetic packet traces or open pcap/pcapng files, count packets matching display filters, and export CSV field projections or pcapng files.</td></tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<table>
+<thead><tr><th>Interface or function</th><th>Signature / annotation</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>RestGet .. RestOptions</td><td>@"/path/:param" fn h(x: RestExchange) -> void implements RestGet</td><td>Bind an HTTP GET, POST, PUT, DELETE, PATCH, HEAD, or OPTIONS route handler.</td></tr>
+<tr><td>RestHandler</td><td>@"/path" fn h(x: RestExchange) -> void implements RestHandler</td><td>Bind a method-agnostic HTTP route handler.</td></tr>
+<tr><td>CliCommand</td><td>@"cmd" fn h(x: RestExchange) -> void implements CliCommand</td><td>Bind a named CLI subcommand dispatched by rest_cli.</td></tr>
+<tr><td>CliOption</td><td>@"--flag" fn h(x: RestExchange) -> void implements CliOption</td><td>Bind a CLI option flag (--flag=val or --flag val) evaluated before the command handler.</td></tr>
+<tr><td>rest_config / rest_route</td><td>rest_config(key: string, val: string) -> void | rest_route(method: string, path: string, handler: string) -> void</td><td>Configure host, port, or session (ephemeral or global) and dynamically register HTTP route handlers.</td></tr>
+<tr><td>rest_serve / rest_stop / rest_cli</td><td>rest_serve() -> void | rest_stop() -> void | rest_cli(args: StrList) -> string</td><td>Start or stop the embedded standard HTTP server or dispatch CLI options, commands, and routes in-process.</td></tr>
+<tr><td>RestExchange</td><td>x.method() | x.path() | x.body() | x.param(string) | x.query(string) | x.header(string) | x.get(string) -> string | x.has_query(string) | x.has_header(string) -> bool | x.status(int) | x.set_header(string, string) | x.send(string) | x.json(string) | x.set(string, string) -> void | x.increment(string) -> int</td><td>Inspect request metadata, emit plain text or JSON responses, and read or mutate ephemeral/global session state.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th>Exit code</th><th>Category</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success</td><td>CLI subcommand, dry-run plan, or _lmcode_ bytecode program succeeded and all assertions passed.</td></tr>
+<tr><td>1</td><td>Operation error</td><td>Direct CLI diagnostic or subcommand failed at runtime.</td></tr>
+<tr><td>2</td><td>Usage error</td><td>Invalid CLI argument, unknown flag, or non-integer LMDEBUG_MAX_MEMORY_MB value.</td></tr>
+<tr><td>3</td><td>Host / VM error</td><td>Bytecode load failure, schema mismatch, unhandled VM runtime exception, or exceeding the 4096 MiB memory limit.</td></tr>
+<tr><td>4</td><td>Contract failure</td><td>An application assertion (assert, assert_eq) failed inside an _lmcode_ script.</td></tr>
+<tr><td>5</td><td>Policy refusal</td><td>Mutation permanently refused by safety policy (e.g., write-only sysctls vm.drop_caches or vm.compact_memory, or signaling PID 1).</td></tr>
+<tr><td>6</td><td>Plan drift</td><td>The fresh plan_id computed during --apply did not match the --if-match sha256:&lt;64hex> digest.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmdebug">github.com/lmctl-ai/lmdebug</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcloud reference — lmcloud — lmctl.com tools</title>
+<meta name="description" content="Reference tables for the shared lmcloud CLI contract, ErrorCode enumeration, Cloud context methods, result types, standard lmcode_std_v3 REST and CLI…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcloud/">Overview</a></li>
+<li><a href="/tools/lmcloud/skill.html">Skill</a></li>
+<li><a href="/tools/lmcloud/guide.html">Guide</a></li>
+<li><a href="/tools/lmcloud/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcloud reference</h1>
+<p>Reference tables for the shared lmcloud CLI contract, ErrorCode enumeration, Cloud context methods, result types, standard lmcode_std_v3 REST and CLI signatures, and process exit codes.</p>
+<h2>Host CLI flags</h2>
+<table>
+<thead>
+<tr>
+<th>Flag or argument</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>[cloud] --version, -V</td>
+<td>Print the host binary name and semantic version string.</td>
+</tr>
+<tr>
+<td>[cloud] --help, -h</td>
+<td>Print usage, endpoint precedence, live safety gates, and simulator environment variables.</td>
+</tr>
+<tr>
+<td>[cloud] --notices</td>
+<td>Print embedded third-party software license notices.</td>
+</tr>
+<tr>
+<td>[cloud] --lmcode-schema [--json]</td>
+<td>Emit the raw embedded schema/lmcloud.dsl.json bytes used by lmscript for SHA-256 schema binding.</td>
+</tr>
+<tr>
+<td>[cloud] --lmcode-signatures</td>
+<td>Print all sorted canonical signatures (shared lmcloud host signatures plus 226 lmcode_std_v3 standard signatures).</td>
+</tr>
+<tr>
+<td>[cloud] --lmcode-signatures --without-std</td>
+<td>Print only the shared lmcloud host signatures without standard library declarations.</td>
+</tr>
+<tr>
+<td>[cloud] [--lmcode|--first|--last] FILE ...</td>
+<td>Execute one or more compiled .dslb bytecode files under the validated invocation manifest.</td>
+</tr>
+<tr>
+<td>--sweep</td>
+<td>Host-provided extra flag (registered by a provider host, not by hostkit itself) to inspect or clean up run-owned resources recorded in durable recovery journals.</td>
+</tr>
+</tbody>
+</table>
+<h2>ErrorCode enumeration and CloudError methods</h2>
+<table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Signature or value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ErrorCode</td>
+<td>OK, INVALID_ARGUMENT, NOT_FOUND, CONFLICT, PRECONDITION_FAILED, UNAUTHENTICATED, PERMISSION_DENIED, COST_CAP_EXCEEDED, INTERNAL</td>
+<td>Normalized cross-provider status codes returned by CloudError.code().</td>
+</tr>
+<tr>
+<td>CloudError.ok</td>
+<td>ok() -> bool</td>
+<td>True when the last operation succeeded (ErrorCode.OK).</td>
+</tr>
+<tr>
+<td>CloudError.code</td>
+<td>code() -> ErrorCode</td>
+<td>Normalized ErrorCode value for the failure.</td>
+</tr>
+<tr>
+<td>CloudError.http_status</td>
+<td>http_status() -> int</td>
+<td>Underlying HTTP status code (such as 400, 401, 403, 404, 409, 412, or 500), or 0 for local validation failures.</td>
+</tr>
+<tr>
+<td>CloudError.provider_code</td>
+<td>provider_code() -> string</td>
+<td>Original provider or simulator error code string (such as NoSuchBucket, BlobNotFound, or NotAuthorizedOrNotFound).</td>
+</tr>
+<tr>
+<td>CloudError.message</td>
+<td>message() -> string</td>
+<td>Secret-redacted diagnostic message.</td>
+</tr>
+</tbody>
+</table>
+<h2>Cloud context methods</h2>
+<table>
+<thead>
+<tr>
+<th>Slice</th>
+<th>Method signatures</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Configuration and errors</td>
+<td>provider() -> string; endpoint(service: string) -> string; set_endpoint(service: string, url: string) -> Cloud; abort_on_error() -> bool; set_abort_on_error(abort: bool) -> Cloud; last_error() -> CloudError</td>
+<td>Inspect provider identifier, override loopback simulator endpoints per service or for all services, and control error handling mode.</td>
+</tr>
+<tr>
+<td>Object storage</td>
+<td>bucket_create(name: string) -> bool; bucket_delete(name: string) -> bool; bucket_exists(name: string) -> bool; bucket_list() -> StrList; object_put(bucket: string, key: string, body: string) -> ObjectMeta; object_put(bucket: string, key: string, body: string, content_type: string, metadata: StrMap) -> ObjectMeta; object_get(bucket: string, key: string) -> string; object_head(bucket: string, key: string) -> ObjectMeta; object_delete(bucket: string, key: string) -> void; object_list(bucket: string, prefix: string) -> ObjectListPage; object_list(bucket: string, prefix: string, max_keys: int, page_token: string) -> ObjectListPage; object_list_all(bucket: string, prefix: string) -> StrList</td>
+<td>Create and delete buckets, upload and download UTF-8 or binary-safe payloads, inspect ETag and metadata, and paginate keys lexicographically.</td>
+</tr>
+<tr>
+<td>Queues</td>
+<td>queue_create(name: string) -> bool; queue_delete(name: string) -> bool; queue_exists(name: string) -> bool; queue_list() -> StrList; queue_send(name: string, body: string) -> string; queue_receive(name: string) -> QueueMessageList; queue_receive(name: string, max_messages: int, visibility_timeout_s: int, wait_time_s: int) -> QueueMessageList; queue_ack(name: string, receipt: string) -> void; queue_nack(name: string, receipt: string, visibility_timeout_s: int) -> string</td>
+<td>Manage FIFO/standard message queues, receive batches with visibility timeouts, acknowledge completions, or extend/reset visibility via queue_nack.</td>
+</tr>
+<tr>
+<td>Cost and metrics</td>
+<td>cost_cap_usd() -> float; set_cost_cap_usd(cap: float) -> Cloud; estimated_cost() -> float; cost_report() -> CostReport; metrics_reset() -> Cloud; metrics() -> MetricsReport</td>
+<td>Set monotone-decreasing USD cost caps, query accumulated cost estimates, and export per-operation latency and byte counters.</td>
+</tr>
+<tr>
+<td>Tables</td>
+<td>table_create(name: string) -> bool; table_create(name: string, sorted: bool) -> bool; table_delete(name: string) -> bool; table_exists(name: string) -> bool; table_list() -> StrList; item_new(pk: string) -> TableItem; item_new(pk: string, sk: string) -> TableItem; item_put(table: string, item: TableItem) -> TableItem; item_put(table: string, item: TableItem, condition: string) -> TableItem; item_get(table: string, pk: string) -> TableItem; item_get(table: string, pk: string, sk: string) -> TableItem; item_delete(table: string, pk: string) -> void; item_delete(table: string, pk: string, sk: string) -> void; item_update(table: string, pk: string, patch: TableItem) -> TableItem; item_update(table: string, pk: string, sk: string, patch: TableItem) -> TableItem; item_query(table: string, pk: string) -> TablePage; item_query(table: string, pk: string, sk_begin: string, sk_end: string, limit: int, page_token: string) -> TablePage; item_scan(table: string) -> TablePage; item_scan(table: string, limit: int, page_token: string) -> TablePage</td>
+<td>Create partition-key or composite partition-and-sort-key tables, perform optimistic concurrency writes, query sort-key ranges, and scan pages.</td>
+</tr>
+<tr>
+<td>Permissions</td>
+<td>principal_current() -> string; policy_new() -> Policy; policy_parse(json: string) -> Policy; policy_lint(policy: Policy) -> LintReport; policy_attach(kind: string, target: string, policy: Policy) -> void; policy_attach_principal(principal: string, policy: Policy) -> void; policy_detach(kind: string, target: string) -> void; policy_detach_principal(principal: string) -> void; policy_check(principal: string, action: string, resource: string) -> bool</td>
+<td>Author portable allow/deny policies, lint for least-privilege violations, attach policies to resources or principals, and evaluate point access decisions.</td>
+</tr>
+<tr>
+<td>Serverless functions</td>
+<td>function_config(runtime: string, handler: string) -> FunctionConfig; function_create(name: string, cfg: FunctionConfig) -> bool; function_update(name: string, cfg: FunctionConfig) -> FunctionConfig; function_update(name: string, cfg: FunctionConfig, expect_revision: string) -> FunctionConfig; function_delete(name: string) -> bool; function_exists(name: string) -> bool; function_get(name: string) -> FunctionConfig; function_get(name: string, qualifier: string) -> FunctionConfig; function_list() -> StrList; function_publish_version(name: string) -> string; function_publish_version(name: string, description: string) -> string; function_versions(name: string) -> StrList; function_alias_set(name: string, alias: string, version: string) -> void; function_alias_get(name: string, alias: string) -> string; function_alias_delete(name: string, alias: string) -> bool; function_invoke(name: string, payload: string) -> FunctionInvokeResult; function_invoke(name: string, qualifier: string, payload: string) -> FunctionInvokeResult</td>
+<td>Configure, deploy, version, alias, and synchronously invoke serverless functions from inline code or object-storage packages.</td>
+</tr>
+<tr>
+<td>User directories</td>
+<td>userpool_create(name: string) -> bool; userpool_delete(name: string) -> bool; userpool_exists(name: string) -> bool; userpool_list() -> StrList; user_create(pool: string, username: string) -> User; user_create(pool: string, username: string, attrs: StrMap) -> User; user_get(pool: string, username: string) -> User; user_delete(pool: string, username: string) -> void; user_set_enabled(pool: string, username: string, enabled: bool) -> void; user_set_password(pool: string, username: string, password: string) -> void; user_list(pool: string) -> UserPage; user_list(pool: string, limit: int, page_token: string) -> UserPage; user_sign_in(pool: string, username: string, password: string) -> Session; user_verify_token(pool: string, token: string) -> Session; group_create(pool: string, group: string) -> bool; group_delete(pool: string, group: string) -> bool; group_list(pool: string) -> StrList; group_add_user(pool: string, group: string, username: string) -> void; group_remove_user(pool: string, group: string, username: string) -> void; user_groups(pool: string, username: string) -> StrList</td>
+<td>Manage portable user pools, users, password policies, group memberships, and signed session tokens with claim verification.</td>
+</tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<table>
+<thead>
+<tr>
+<th>Interface or function</th>
+<th>Signature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RestGet .. RestOptions, RestHandler</td>
+<td>fn handler(x: RestExchange) -> void implements RestGet | RestPost | RestPut | RestDelete | RestPatch | RestHead | RestOptions | RestHandler</td>
+<td>SAM interfaces for HTTP route handlers annotated with @"/route/:param".</td>
+</tr>
+<tr>
+<td>CliCommand, CliOption</td>
+<td>fn cmd(x: RestExchange) -> void implements CliCommand | CliOption</td>
+<td>SAM interfaces for CLI subcommands (@"cmd") and options (@"--flag").</td>
+</tr>
+<tr>
+<td>rest_config</td>
+<td>fn rest_config(key: string, value: string) -> void</td>
+<td>Configure REST/CLI dispatcher settings such as route prefix, host, or port.</td>
+</tr>
+<tr>
+<td>rest_route</td>
+<td>fn rest_route(method: string, pattern: string, handler: string) -> void</td>
+<td>Register an HTTP method and URL pattern with a named handler function.</td>
+</tr>
+<tr>
+<td>rest_serve, rest_stop</td>
+<td>fn rest_serve() -> void; fn rest_stop() -> void</td>
+<td>Start or stop the embedded HTTP server for registered routes.</td>
+</tr>
+<tr>
+<td>rest_cli</td>
+<td>fn rest_cli(args: StrList) -> string</td>
+<td>Dispatch CLI arguments or synthetic route paths in-process and return the response string.</td>
+</tr>
+<tr>
+<td>RestExchange</td>
+<td>method(), path(), body(), param(name), query(name), header(name), get(key), set(key, val), has_query(name), has_header(name), increment(key), status(code), send(text), json(payload), set_header(name, val)</td>
+<td>Request and response exchange methods available inside REST and CLI handlers.</td>
+</tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Exit code</th>
+<th>Category</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>OK</td>
+<td>Command or bytecode execution succeeded and all assertions passed.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>CLI_USAGE</td>
+<td>Invalid command-line flags, malformed invocation manifest, or invalid memory budget environment variable.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>APP_FAIL / RUN_HOST</td>
+<td>Runtime cloud error (when abort_on_error is true), cost cap breach, assertion failure, or memory ceiling exceeded.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>LOAD_FAIL</td>
+<td>Bytecode file read error, schema hash mismatch, or result contract decoding error.</td>
+</tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcloud">github.com/lmctl-ai/lmcloud</a>.</p>
+</footer>
+</body>
+</html>

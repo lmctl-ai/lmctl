@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmprobe — lmctl.com tools</title>
+<meta name="description" content="lmprobe is a one-shot, AST-aware structural code-search CLI and 63-operation lmcode host for symbol graphs, Git history, secret scans, and guarded edits.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmprobe/">Overview</a></li>
+<li><a href="/tools/lmprobe/skill.html">Skill</a></li>
+<li><a href="/tools/lmprobe/guide.html">Guide</a></li>
+<li><a href="/tools/lmprobe/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmprobe</h1>
+<p>lmprobe is a one-shot, AST-aware structural code-search CLI and 63-operation lmcode host for symbol graphs, Git history, secret scans, and guarded edits.</p>
+<h2>Quick reference</h2>
+<pre><code>npm install -g @lmctl-ai/lmprobe
+lmprobe --version
+lmprobe --lmcode-schema --json
+lmprobe --lmcode-signatures
+lmprobe find "\.rs$" . --json
+lmprobe git status --json</code></pre>
+<table>
+<thead>
+<tr><th>Item</th><th>Kind</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>def / ref / callers / callees / impact</td><td>CLI commands</td><td>Find symbol definitions, references, call graphs, and transitive change impact.</td></tr>
+<tr><td>edit / fix / delete</td><td>CLI commands</td><td>Preview-first text and AST replacements and deletions (edit and fix write with --apply [--force]; delete executes with --force).</td></tr>
+<tr><td>git / history / secrets / aws</td><td>CLI commands</td><td>Read-only Git records, commit churn/co-change history, secret scanning, and AWS queries.</td></tr>
+<tr><td>--infile FILE.graphql --outfile OUT.json</td><td>CLI flags</td><td>Execute composable GraphQL queries across repository sensors.</td></tr>
+<tr><td>probe_&lt;operation>(json) -> string</td><td>63 host functions</td><td>Invoke any lmprobe sensor from an _lmcode_ program and parse lmprobe.result.v1 JSON.</td></tr>
+<tr><td>RestGet..RestOptions, CliCommand, CliOption</td><td>SAM interfaces</td><td>Standard lmcode_std_v3 REST and stateless CLI handler interfaces.</td></tr>
+</tbody>
+</table>
+<pre><code>program = _lmcode_ cli="lmprobe";
+$return = json_parse(probe_git_status("{}"));
+end _lmcode_
+r = run_lmcode(program);
+println(json_stringify(r));</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmprobe/skill.html">Skill</a> for setup, preview-first editing safety rules, and verification commands.</li>
+<li><a href="/tools/lmprobe/guide.html">Guide</a> for AST sensors, Git/history/AWS layers, and REST/CLI interfaces.</li>
+<li><a href="/tools/lmprobe/reference.html">Reference</a> for CLI commands, all 63 probe_* host functions, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmprobe">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmprobe">github.com/lmctl-ai/lmprobe</a>.</p>
+</footer>
+</body>
+</html>

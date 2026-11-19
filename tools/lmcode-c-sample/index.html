@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-c-sample — lmctl.com tools</title>
+<meta name="description" content="lmcode-c-sample is the reference C11 domain library and C++17 host application demonstrating how to wrap a pure C library with lmcode-cpp.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-c-sample/">Overview</a></li>
+<li><a href="/tools/lmcode-c-sample/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-c-sample/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-c-sample/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-c-sample</h1>
+<p>lmcode-c-sample is the reference C11 domain library and C++17 host application demonstrating how to wrap a pure C library with lmcode-cpp. It exposes the 45-signature Shop/Ledger/Money domain alongside the lmcode_std_v3 standard catalog and passes the canonical DSLB v6 sample suite.</p>
+<h2>Quick reference</h2>
+<pre><code>git clone https://github.com/lmctl-ai/lmcode-c-sample.git
+cd lmcode-c-sample
+make test-domain
+./test.sh</code></pre>
+<table><thead><tr><th>Aspect</th><th>Value</th><th>Role</th></tr></thead><tbody>
+<tr><td>Language &amp; toolchain</td><td>C11 + C++17</td><td>Reference host implementation embedding lmcode-cpp (dslvm.hpp)</td></tr>
+<tr><td>Domain schema</td><td>45 host signatures</td><td>Shop, Items, Money, Ledger, Currency enum, operators, and Adjuster/Score interfaces</td></tr>
+<tr><td>Standard catalog</td><td>lmcode_std_v3</td><td>Preloaded standard catalog plus opt-in print and assert_close testing helpers</td></tr>
+<tr><td>--lmcode-schema [--json]</td><td>Discovery flag</td><td>Print human summary or exact embedded dsl.schema: 2 JSON bytes (exit 0)</td></tr>
+<tr><td>--lmcode-signatures</td><td>Discovery flag</td><td>Print sorted canonical host and standard signatures (exit 0)</td></tr>
+<tr><td>--lmcode / --first / --last</td><td>Execution flags</td><td>Run one or more compiled DSLB v6 chunks, dispatch @item/@total entries, and frame results</td></tr>
+</tbody></table>
+<pre><code>./build/lmcode-c-sample --version
+./build/lmcode-c-sample --lmcode-schema --json
+./build/lmcode-c-sample --lmcode-signatures
+./build/lmcode-c-sample --lmcode sample-suite/bytecode/001-literals.dslb</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmcode-c-sample/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-c-sample/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-c-sample/reference.html">Reference</a></li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmcode-c-sample">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-c-sample">github.com/lmctl-ai/lmcode-c-sample</a>.</p>
+</footer>
+</body>
+</html>

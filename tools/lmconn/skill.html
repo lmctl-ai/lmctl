@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmconn authoring skill — lmconn — lmctl.com tools</title>
+<meta name="description" content="lmconn is a connector CLI and cli.schema.v1 module for AI-agent workflows.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmconn/">Overview</a></li>
+<li><a href="/tools/lmconn/skill.html">Skill</a></li>
+<li><a href="/tools/lmconn/guide.html">Guide</a></li>
+<li><a href="/tools/lmconn/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmconn authoring skill</h1>
+<p>lmconn is a connector CLI and cli.schema.v1 module for AI-agent workflows. It stores credentials and OAuth2 tokens in a local SQLite database and provides 56 typed operations across HTTP, OAuth2, LLM providers, GitHub, Valkey, LDAPv3, SAML 2.0, MCP, ACP, and npm with a uniform JSON stdout envelope.</p>
+<h2>Purpose</h2>
+<p>Use lmconn to manage API credentials and OAuth2 grants locally without a background server, invoke cloud or local LLM providers, call authenticated REST APIs with automatic token refresh, query Valkey key-value stores, run LDAPv3 directory operations, exercise SAML 2.0 identity flows, interact with stdio MCP and ACP servers, and publish npm tarballs using nonexportable broker credentials.</p>
+<h2>When to use it</h2>
+<p>Choose lmconn when an LMScript workflow or agent needs a unified, JSON-envelope CLI or importable cli.schema.v1 module to talk to external SaaS APIs, OAuth2 providers, LDAPv3 directories, SAML 2.0 identity services, Valkey caches, or MCP tool servers while keeping credentials out of scripts and process argv. Use lmcurl when you need deep HTTP assertion suites, XPath/HTML scraping, or high-concurrency load testing, and use lmldap, lmsaml, or lmvalkey when launching the backing servers themselves.</p>
+<h2>Install</h2>
+<p>Download a standalone Bun-compiled release binary for Linux (x64, arm64), macOS (x64, arm64), or Windows (x64), or link from a source checkout running Node.js 22.5 or newer (which provides built-in node:sqlite with zero npm dependencies):</p>
+<pre><code>curl -L https://github.com/lmctl-ai/lmconn/releases/latest/download/lmconn-linux-x64.tar.gz | tar xz
+./lmconn-linux-x64 --version
+lmconn --cli-schema --json</code></pre>
+<h2>Commands</h2>
+<p>Every lmconn command takes an area, subcommand, and flags, or accepts a structured dispatch payload via --input-json when invoked by lmscript through cli.schema.v1:</p>
+<pre><code># Credential store and broker mode
+lmconn cred set github api_key --env GITHUB_TOKEN
+lmconn cred list
+lmconn cred get github api_key
+lmconn cred store github --stdin
+lmconn cred oauth-store github --stdin
+
+# OAuth2 authorization, device code, status, and refresh
+lmconn oauth authorize github --scope read:user --port 15847
+lmconn oauth device github --scope read:user
+lmconn oauth status github
+lmconn oauth refresh github
+lmconn oauth list
+
+# HTTP requests and GitHub connector
+lmconn http request https://api.github.com/user --auth github
+lmconn github user
+lmconn github repos lmctl-ai --limit 5
+
+# LLM providers
+lmconn llm providers
+lmconn llm chat deepseek --prompt "Summarize the status"
+lmconn llm probe deepseek
+
+# Valkey connector (native RESP or lmvalkey REST)
+lmconn valkey ping --host 127.0.0.1 --port 6379 --mode resp
+lmconn valkey set cache:key "value" --host 127.0.0.1 --port 6379
+lmconn valkey get cache:key --host 127.0.0.1 --port 6379
+
+# LDAPv3 connector (native ASN.1 BER or lmldap REST)
+lmconn ldap ping --host 127.0.0.1 --port 3389
+lmconn ldap whoami --host 127.0.0.1 --port 3389 --bind-dn "cn=admin,dc=example,dc=com" --bind-pw secret
+lmconn ldap search --url "ldap://127.0.0.1:3389/dc=example,dc=com?cn,mail?sub?(cn=Alice)" --format json
+lmconn ldap compare "cn=Alice,dc=example,dc=com" sn Smith --port 3389
+
+# SAML 2.0 connector (against lmsaml)
+lmconn saml ping --host 127.0.0.1 --port 8080
+lmconn saml metadata --host 127.0.0.1 --port 8080
+lmconn saml assertion --user alice --audience "https://sp.example.com" --acs-url "https://sp.example.com/acs"
+
+# MCP, ACP, and npm connectors
+lmconn mcp tools --command "npx" --arg "-y" --arg "@modelcontextprotocol/server-everything"
+lmconn acp chat --command "my-acp-agent" --prompt "hello"
+lmconn npm pack --dir . --out pkg.tgz</code></pre>
+<h2>Inputs and outputs</h2>
+<p>Commands accept standard CLI flags or --input-json with an operation and parameter object. Except for --cli-schema --json (which outputs the raw cli.schema.v1 document), stdout always carries exactly one single-line JSON envelope per invocation: {"ok":true,"result":...} on success or {"ok":false,"error":{"code":"...","message":"..."}} on failure. Any human-oriented notices or device-code login instructions are written to stderr. Note that in http request, an HTTP 4xx or 5xx response from the remote server still produces a successful CLI run (exit code 0, envelope ok: true); inspect result.status and result.ok for the HTTP-level outcome.</p>
+<h2>Safety rules</h2>
+<p>Follow these credential and execution boundaries when automating lmconn:</p>
+<ul>
+<li>Never pass secret values on the command line with --value in shared environments; use --env VAR or pipe secrets over --stdin so credentials never appear in process listings.</li>
+<li>cred list, oauth list, oauth status, and llm providers never print secret values or tokens. Only cred get --reveal outputs a stored legacy value, and broker-stored entries (LMCONN_STORE_MODE=broker or cred store) are nonexportable and refuse reveal entirely.</li>
+<li>Pass --readonly when executing untrusted or inspection-only workflows; the schema dispatcher rejects any operation marked access: "write" before executing the handler.</li>
+<li>Isolate test credentials by setting LMCONN_DB to a temporary SQLite file path rather than mutating the user default ~/.lmconn/creds.db.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>The first example imports schema/lmconn.cli.schema.v1.json directly into an LMScript program and calls typed connector functions:</p>
+<pre><code>import "schema/lmconn.cli.schema.v1.json";
+
+r_repos = lmconn.github_repos("lmctl-ai", {limit: 3});
+require(r_repos.status == "ok" &amp;&amp; r_repos.result.ok, json_stringify(r_repos));
+println("Fetched " + str(r_repos.result.result.count) + " repositories");</code></pre>
+<p>The second example uses lmconn from the command line against local Valkey and OpenLDAP (lmldap) instances:</p>
+<pre><code>lmconn valkey set user:alice '{"mail":"alice@example.com"}' --port 6379
+lmconn ldap search --url "ldap://127.0.0.1:3389/dc=example,dc=com?cn,mail?sub?(cn=Alice)"</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmconn uses three process exit codes paired with machine-readable error codes in the JSON envelope:</p>
+<ul>
+<li>Exit code 0 indicates that the command executed and emitted {"ok":true,"result":...}.</li>
+<li>Exit code 1 indicates a runtime or connector error (such as MISSING_KEY, NOT_FOUND, NETWORK, TIMEOUT, AUTH_FAILED, RECONNECT, or BROKER_PROTECTED) and emits {"ok":false,"error":{"code":...,"message":...}}.</li>
+<li>Exit code 2 indicates a command-line usage error, unknown operation, or missing required parameter (USAGE). A --readonly refusal emits READONLY with exit code 1.</li>
+</ul>
+<h2>How to verify</h2>
+<p>Verify the lmconn installation, schema parity, and test suite with the following commands:</p>
+<pre><code>lmconn --version
+lmconn --cli-schema --json > /tmp/lmconn-schema.json
+cmp /tmp/lmconn-schema.json schema/lmconn.cli.schema.v1.json
+LMCONN_DB=/tmp/lmconn-verify.db lmconn cred list
+rm -f /tmp/lmconn-verify.db</code></pre>
+<p>In a repository checkout, run npm test to execute the full unit, OAuth2 PKCE/device-code, lmmock HTTP/LLM preset, Valkey, SAML 2.0, and live lmldap integration tests.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmconn">github.com/lmctl-ai/lmconn</a>.</p>
+</footer>
+</body>
+</html>

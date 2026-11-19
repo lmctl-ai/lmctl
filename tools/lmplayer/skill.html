@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmplayer authoring skill — lmplayer — lmctl.com tools</title>
+<meta name="description" content="lmplayer is an open-source AI coding agent forked from OpenCode and tailored for non-interactive CLI automation, unattended scripts, background shell jobs,…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmplayer/">Overview</a></li>
+<li><a href="/tools/lmplayer/skill.html">Skill</a></li>
+<li><a href="/tools/lmplayer/guide.html">Guide</a></li>
+<li><a href="/tools/lmplayer/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmplayer authoring skill</h1>
+<p>lmplayer is an open-source AI coding agent forked from OpenCode and tailored for non-interactive CLI automation, unattended scripts, background shell jobs, internal cron scheduling, and durable-memory compaction.</p>
+<h2>Purpose</h2>
+<p>Use lmplayer to execute unattended coding prompts from the command line or lmctl workflows, run a single-user FIFO-gated REST service, manage background shell jobs and recurring session cron tasks, and collect structured session-metrics/v1 telemetry.</p>
+<h2>When to use it</h2>
+<p>Choose lmplayer when a task requires an agentic coding runtime with non-interactive permission resolution (permission_ask: deny or allow), positive tool provisioning (such as the bash-only lean profile or structured-tool secured profile), zero-config local Ollama support (ollama/&lt;model> and +tools), or durable-memory organize compaction.</p>
+<h2>Install</h2>
+<p>Build the standalone single-file native executable from source using Bun 1.3.14 and install it onto PATH.</p>
+<pre><code>bun install
+cd packages/opencode
+bun run build --single --skip-install
+install -m 755 dist/opencode-linux-x64/bin/lmplayer "$HOME/.local/bin/lmplayer"
+lmplayer --version</code></pre>
+<h2>Commands</h2>
+<p>Run prompts directly, manage configuration and providers, inspect session health and metrics, or start the REST server or TUI.</p>
+<pre><code>lmplayer --version
+lmplayer "Explain this repository"
+lmplayer run --model "&lt;provider/model>" --effort high "Fix the failing test"
+lmplayer run --agent lean --model "ollama/qwen2.5+tools" "List workspace files"
+lmplayer config get
+lmplayer config set compaction.mode organize
+lmplayer config set permission_ask deny
+lmplayer config verify
+lmplayer models --json
+lmplayer models verify "&lt;provider/model>"
+lmplayer providers list --json
+lmplayer session ls --json
+lmplayer session metrics "&lt;sessionID>" --json
+lmplayer session health "&lt;sessionID>" --json
+lmplayer serve --hostname 127.0.0.1 --port 4096
+lmplayer tui</code></pre>
+<h2>Inputs and outputs</h2>
+<p>lmplayer accepts prompt text as positional CLI arguments, via stdin piping, or over HTTP in serve mode. Configuration is read from the current directory's .opencode directory and ~/.config/lmplayer/opencode.json (or the file named by OPENCODE_CONFIG). Passing --format json to lmplayer run emits newline-delimited JSON event parts, and lmplayer session metrics &lt;id> --json outputs the session-metrics/v1 JSON document containing token counts, estimated cost, latency, tool invocations, and modified file paths.</p>
+<h2>Safety rules</h2>
+<p>In unattended run and serve workflows, always set permission_ask to deny (the default) so residual ask rules fail safely instead of hanging on an interactive prompt. Use the secured agent profile and set tool_workdir.extra_roots to [] when restricting structured Linux tools (git, gh, rg, find, tar, unzip) to the workspace root. Local Ollama models default to chat-only; append +tools only for models that reliably support tool calling. When testing against lmmock or isolated harnesses, isolate XDG directories and set OPENCODE_DISABLE_AUTOUPDATE=true and OPENCODE_DISABLE_DEFAULT_PLUGINS=true.</p>
+<h2>Worked examples</h2>
+<p>Example 1: Unattended headless execution with isolated configuration and JSON output inspection.</p>
+<pre><code>lmplayer config set permission_ask deny
+lmplayer config set compaction.mode organize
+lmplayer config verify
+lmplayer run --model "ollama/qwen2.5" --format json "Summarize main.go in one sentence"
+lmplayer session ls --json</code></pre>
+<p>Example 2: Using model-facing background shell jobs and internal 5-field cron schedules inside a session.</p>
+<pre><code># 1. Start a background shell command via the bash tool:
+{"command": "bun run test", "background": true}
+
+# 2. Poll or inspect captured output via the job tool:
+{"action": "get", "jobID": "job_01"}
+{"action": "output", "jobID": "job_01"}
+
+# 3. Register a recurring 15-minute health prompt via the cron tool:
+{"action": "create", "cron": "*/15 * * * *", "prompt": "Check build status", "recurring": true}</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Exit code 0 indicates the prompt, configuration check, or session query completed cleanly. Non-zero exit codes indicate invalid CLI flags, failed configuration or model verification (lmplayer config verify / models verify), provider authentication errors, or unhandled runtime exceptions. Permission denials under permission_ask: "deny" are returned in-band to the model as structured tool rejection messages without crashing the session.</p>
+<h2>How to verify</h2>
+<p>Verify the installed binary version, and validate the active configuration; config verify prints Config OK on success.</p>
+<pre><code>lmplayer --version
+lmplayer config verify</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmplayer">github.com/lmctl-ai/lmplayer</a>.</p>
+</footer>
+</body>
+</html>

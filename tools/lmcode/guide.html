@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode guide — lmcode — lmctl.com tools</title>
+<meta name="description" content="This guide explains the lmcode architecture across the schema contract, DSLB v6 bytecode loader, 226-signature standard catalog, REST/CLI stdio lifecycle, and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode/">Overview</a></li>
+<li><a href="/tools/lmcode/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode guide</h1>
+<p>This guide explains the lmcode architecture across the schema contract, DSLB v6 bytecode loader, 226-signature standard catalog, REST/CLI stdio lifecycle, and invocation result framing.</p>
+<h2>Overview</h2>
+<p>An lmcode deployment separates compilation from execution. The host binary embeds a dsl.schema: 2 JSON document and exposes it via --lmcode-schema --json. The lmscript compiler type-checks an _lmcode_ block against that exact schema and emits a portable DSLB v6 binary containing the 32-byte SHA-256 schema digest, typed import table, constant pool, code instructions, and R49 entry metadata. At runtime, the host SDK verifies the digest, binds imports against its in-memory Registry, and executes the body and selected rule entries without invoking Node.js or a compiler.</p>
+<h2>Registry and virtual machine embedding</h2>
+<p>Every compliant runtime provides a Registry pre-populated with lmcode_std_v3 (226 canonical signatures). Host authors register only their domain contexts, functions, and methods. During Program.load, the verifier checks instruction boundaries, paired range and while loops, read-only loop slots, and operand stack depths before any instruction runs. Each run executes against a fresh or host-supplied Context that owns domain handles and per-run collection arenas.</p>
+<h2>REST and stateless CLI controller lifecycle</h2>
+<p>The lmcode_std_v3 catalog includes 20 REST/CLI functions and methods plus 10 standard interfaces (RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand, and CliOption). Routes support both :param / :rest... and {param} / {rest...} segment templates. Calling rest_config(key, value) configures route prefixes (such as prefix = /api), body limits (max_body_bytes), or session modes prior to serving. Calling rest_cli(args) dispatches a stateless command vector across @"--flag" CliOption entries, @"cmd" CliCommand entries, or matching REST routes in an isolated entry call and returns the response body string. Calling rest_serve() freezes routes and instructs the host controller to pump HTTP/1.1 requests from stdin to stdout after the body completes, stopping on EOF, rest_stop(), or a framing error.</p>
+<pre><code>program = _lmcode_ schema="host.schema.json";
+
+@"/users/:id"
+fn get_user(x: RestExchange) -> void implements RestGet {
+  x.json("{\"id\":\"" + x.param("id") + "\"}");
+}
+
+@"status"
+fn cli_status(x: RestExchange) -> void implements CliCommand {
+  x.send("ok:" + x.param("arg0"));
+}
+
+rest_config("prefix", "/api");
+$return.preview = rest_cli(qw/status ready/);
+rest_serve();
+end _lmcode_</code></pre>
+<h2>Invocation result protocol and dry mode</h2>
+<p>Every host invocation reads the optional version-1 manifest from LMCODE_INVOCATION_FILE to determine whether dry mode is active and to allocate one ResultSink per submitted program slot. Inside an _lmcode_ chunk, assignments to $return, $return.field, or $return[key] invoke the 24 standard lmcode_return_* imports on the active slot. After all bodies, R49 rule entries, and application checks complete, WriteFrame emits a single terminal LMCODE_RETURN_BEGIN / LMCODE_RETURN_END envelope on stdout and returns exit code 0 on success, 2 on CLI usage error, 3 on load or runtime error, or 4 on application validation failure.</p>
+<h2>Conformance verification</h2>
+<p>Every runtime SDK pins and replays the canonical conformance suites from lmcode: 410 core bytecode vectors, 271 standard library vectors covering all 226 lmcode_std_v3 signatures, 9 return fixtures, 28 invocation-envelope goldens, 29 malformed-metadata goldens, the shared REST/CLI suite scenarios, and the 123-case Shop/Ledger sample suite.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode">github.com/lmctl-ai/lmcode</a>.</p>
+</footer>
+</body>
+</html>

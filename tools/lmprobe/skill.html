@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmprobe authoring skill — lmprobe — lmctl.com tools</title>
+<meta name="description" content="lmprobe is a one-shot, AST-aware structural code-search CLI and 63-operation lmcode host built on a fork of ast-grep for symbol navigation, call and impact…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmprobe/">Overview</a></li>
+<li><a href="/tools/lmprobe/skill.html">Skill</a></li>
+<li><a href="/tools/lmprobe/guide.html">Guide</a></li>
+<li><a href="/tools/lmprobe/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmprobe authoring skill</h1>
+<p>lmprobe is a one-shot, AST-aware structural code-search CLI and 63-operation lmcode host built on a fork of ast-grep for symbol navigation, call and impact graphs, Git history analysis, secret scanning, and preview-first code edits.</p>
+<h2>Purpose</h2>
+<p>Use lmprobe to gather structured JSON evidence from source repositories—including definitions, references, callers, callees, transitive impact, Git churn and co-change history, secret scans, and read-only AWS queries—or to preview and apply guarded text and AST edits.</p>
+<h2>When to use it</h2>
+<p>Use lmprobe when an AI agent or developer needs one-shot structural code navigation, call-graph impact analysis, GraphQL query composition over repository sensors, or preview-first code modifications with automatic recovery copies.</p>
+<h2>Install</h2>
+<p>Install the prebuilt native binary globally from npm for Linux (x64, arm64), macOS (x64, arm64), or Windows (x64).</p>
+<pre><code>npm install -g @lmctl-ai/lmprobe
+lmprobe --version
+lmprobe --lmcode-schema --json
+lmprobe --lmcode-signatures</code></pre>
+<p>Prefer a global install over npx @lmctl-ai/lmprobe in repeated agent loops to avoid per-invocation package resolution overhead.</p>
+<h2>Commands</h2>
+<p>Run one-shot CLI queries with --json, execute a GraphQL program via --infile, or preview and apply edits:</p>
+<pre><code>lmprobe find "\.rs$" . --json
+lmprobe def main --json
+lmprobe callers execute --json
+lmprobe git status --json
+lmprobe edit notes.txt -p oldword -r newword --word --json
+lmprobe edit notes.txt -p oldword -r newword --word --apply --force --json
+lmprobe --infile expression.graphql --outfile result.json</code></pre>
+<p>Invoke any of the 63 operations from an LMScript _lmcode_ program:</p>
+<pre><code>program = _lmcode_ cli="lmprobe";
+$return = json_parse(probe_git_status("{}"));
+end _lmcode_
+r = run_lmcode(program);
+println(json_stringify(r));</code></pre>
+<h2>Inputs and outputs</h2>
+<p>CLI commands accept symbol names, regex patterns, path filters, --json (emitting the versioned lmprobe.result.v1 envelope), or --infile FILE.graphql and --outfile FILE.json. In _lmcode_ mode, each probe_&lt;operation>(json_args) function accepts a JSON object string matching crates/lmprobe/lmcode/operations.json and returns a serialized lmprobe.result.v1 JSON string.</p>
+<p>Every --lmcode invocation writes a terminal LMCODE_RETURN envelope containing the program's $return value.</p>
+<h2>Safety rules</h2>
+<p>Mutating commands (edit, fix, delete) are preview-first by default: they compute and report proposed changes without touching disk unless --apply is explicitly passed (edit, fix) or --force is passed (delete). Modifying a dirty Git working tree or an untracked non-Git file additionally requires --force, and recovery copies are saved before writing.</p>
+<p>All lmprobe git, history, and aws query subcommands are strictly read-only. In lmcode invocation dry mode, the runtime intercepts callbacks before dispatch and returns JSON null without invoking the CLI engine or touching the filesystem.</p>
+<h2>Worked examples</h2>
+<p>Inspect Git status and log records, scan for secrets, query AWS caller identity, or combine multiple probe_* calls inside an _lmcode_ script:</p>
+<pre><code>lmprobe git diff --staged --json
+lmprobe git log --max-count 10 --json
+lmprobe secrets . --json
+lmprobe aws catalog --json
+lmprobe aws query sts get-caller-identity --json</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmprobe exits with code 0 when a query, preview, edit, or bytecode program succeeds. By default a query with no matching results exits with code 1; pass --exit-zero-on-no-match to get 0 instead. Other non-zero exit codes indicate usage, load, or runtime errors, with structured sensor and policy errors reported in the lmprobe.result.v1 error payload.</p>
+<h2>How to verify</h2>
+<p>Verify the installed binary version, embedded lmcode schema, 63 operation signatures, and a read-only JSON status query.</p>
+<pre><code>lmprobe --version
+lmprobe --lmcode-schema --json
+lmprobe --lmcode-signatures
+lmprobe git status --json</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmprobe">github.com/lmctl-ai/lmprobe</a>.</p>
+</footer>
+</body>
+</html>

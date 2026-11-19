@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmmolecule — lmctl.com tools</title>
+<meta name="description" content="lmmolecule is a native molecular dynamics host for LMScript built on OpenMM 8.2.0, supporting crystal lattices, rigid water models, Lepton custom potentials,…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmmolecule/">Overview</a></li>
+<li><a href="/tools/lmmolecule/skill.html">Skill</a></li>
+<li><a href="/tools/lmmolecule/guide.html">Guide</a></li>
+<li><a href="/tools/lmmolecule/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmmolecule</h1>
+<p>lmmolecule is a native molecular dynamics host for LMScript built on OpenMM 8.2.0, supporting crystal lattices, rigid water models, Lepton custom potentials, and thermodynamic analysis.</p>
+<h2>Quick reference</h2>
+<p>Install lmctl and run any published molecular dynamics script directly, or declare cli="lmmolecule" in an LMScript _lmcode_ block.</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmmolecule/main/examples/morse_dimer.lms</code></pre>
+<table>
+<thead><tr><th>Object or method</th><th>Signature</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>md.system</td><td>() -> System</td><td>Create a new molecular dynamics system builder</td></tr>
+<tr><td>md.platform / md.threads</td><td>(name: string) -> Md / (n: int) -> Md</td><td>Select reference or cpu platform and set CPU thread count</td></tr>
+<tr><td>System.fcc / rocksalt / gas</td><td>lattice and gas builders -> System</td><td>Generate FCC crystals, NaCl rock-salt lattices, or non-overlapping gases</td></tr>
+<tr><td>System.water / water_box</td><td>("tip3p"|"spce", ...) -> System</td><td>Place rigid constrained TIP3P or SPC/E water molecules</td></tr>
+<tr><td>System.bond / angle / torsion / constrain</td><td>bonded terms -> System</td><td>Add harmonic bonds, angles, periodic dihedrals, and SHAKE/SETTLE constraints</td></tr>
+<tr><td>System.lj / charge / coulomb</td><td>nonbonded terms -> System</td><td>Configure Lennard-Jones 12-6 and Coulomb electrostatics (none, cutoff, ewald, pme)</td></tr>
+<tr><td>System.custom_external / custom_bond / custom_nonbonded</td><td>Lepton expressions -> System</td><td>Compile custom analytical potentials with OpenMM Lepton</td></tr>
+<tr><td>System.sim</td><td>(integrator, dt, temp_K, friction, seed) -> Sim</td><td>Create a Verlet or Langevin simulation context</td></tr>
+<tr><td>Sim.minimize / velocities / step</td><td>simulation control -> Sim</td><td>Run L-BFGS energy minimization, seed velocities, and advance time steps</td></tr>
+<tr><td>Sim.report / xyz / rdf / msd</td><td>observables and files</td><td>Write thermodynamic CSVs, XYZ trajectories, g(r) histograms, and compute MSD</td></tr>
+</tbody>
+</table>
+<p>Minimize and equilibrate an FCC argon crystal in LMScript:</p>
+<pre><code>p = _lmcode_ cli="lmmolecule" install="github:lmctl-ai/lmmolecule@latest";
+let sys = md.system().fcc(3, 0.54, 39.948).lj(0.996, 0.3405, 0.78);
+let sim = sys.sim("langevin", 0.002, 120.0, 5.0, 42);
+sim.minimize(0.001, 200).velocities(120.0, 42).step(500);
+md.print("T = " + str(sim.temperature()));
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, "simulation failed");</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmmolecule/skill.html">Skill</a>: installation, commands, safety rules, verification steps, and worked examples for LLM agents.</li>
+<li><a href="/tools/lmmolecule/guide.html">Guide</a>: OpenMM unit conventions, system builders, force fields, integrators, and observables.</li>
+<li><a href="/tools/lmmolecule/reference.html">Reference</a>: complete tables of CLI flags, Md, System, and Sim methods, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmmolecule">Source repository and releases</a></p></main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmmolecule">github.com/lmctl-ai/lmmolecule</a>.</p>
+</footer>
+</body>
+</html>

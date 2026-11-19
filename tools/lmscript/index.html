@@ -18,42 +18,107 @@
 <li><a href="/tools/lmscript/skill.html">Skill</a></li>
 <li><a href="/tools/lmscript/tutorial.html">Tutorial</a></li>
 <li><a href="/tools/lmscript/guide.html">Guide</a></li>
+<li><a href="/tools/lmscript/reference.html">Reference</a></li>
 </ul>
 </nav>
 <main>
 <h1>lmscript</h1>
 <figure><img src="/tools/lmscript/img/logo.png" alt="lmscript logo" width="256" height="256"></figure>
-<h2>Overview</h2>
-<p>lmscript is an experimental scripting language and CLI for file operations, structured data, subprocesses, and agent workflows.</p>
-<p>It is not a general-purpose application language: there are no classes, closures or packages from a registry, and scripts run with your full local permissions (no sandbox).</p>
-<h2 id="install">Install</h2>
-<p>lmscript is part of the @lmctl-ai/lmctl npm package (which also installs lmctl). It needs Node.js 24.15 or later on Linux, macOS or Windows.</p>
-<pre><kbd>npm install -g @lmctl-ai/lmctl</kbd></pre>
+<p>lmscript is a small scripting language and CLI for file operations, structured data, subprocesses, agent workflows and typed _lmcode_ programs that native lmcode hosts execute. This page is the quick reference; scripts run with the operator's full local authority (no sandbox), so run only trusted scripts.</p>
+<h2 id="install">Install and run</h2>
+<p>lmscript ships in the @lmctl-ai/lmctl npm package, which also installs lmctl.</p>
+<pre><code>npm i -g @lmctl-ai/lmctl
+lmscript --version
+lmscript --check script.lms
+lmscript --dry-run script.lms
+lmscript script.lms arg1 arg2
+lmscript -e 'println("hi");'
+lmscript --help run_lmcode</code></pre>
 <pre><kbd>lmscript --version</kbd>
-<samp>lmscript 0.2.348</samp></pre>
-<h2 id="example">A first look</h2>
-<pre><code>names = ["Ada", "Grace"];
-for (n in names) {
-  println(f"Hello, {n}!");
-}</code></pre>
-<h2 id="links">Links</h2>
-<ul>
-<li>Package and versions: <a href="https://www.npmjs.com/package/@lmctl-ai/lmctl">npmjs.com/package/@lmctl-ai/lmctl</a></li>
-<li>Issues and questions: <a href="https://github.com/lmctl-ai/lmctl/issues">github.com/lmctl-ai/lmctl/issues</a></li>
-<li>License: proprietary, free during the public preview; the full text is the LICENSE file inside the npm package.</li>
-<li>lmctl documentation: <a href="https://lmctl.com/lmctl/">lmctl.com/lmctl</a></li>
-</ul>
+<samp>lmscript 0.2.482</samp></pre>
+<h2 id="modes">CLI modes and exit codes</h2>
+<table>
+<thead><tr><th>Mode</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td>lmscript FILE [ARGS]</td><td>Checks statically, then runs once.</td></tr>
+<tr><td>--check</td><td>Static check only, including compiling _lmcode_ blocks; never starts a host.</td></tr>
+<tr><td>--lint</td><td>Stops after checking, like --check.</td></tr>
+<tr><td>--dry-run</td><td>Checks, then evaluates statements with effects off and prints PLAN.</td></tr>
+<tr><td>--trace FILE</td><td>Writes an execution trace to FILE.</td></tr>
+</tbody>
+</table>
+<table>
+<thead><tr><th>Exit code</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success.</td></tr>
+<tr><td>1</td><td>Ordinary runtime failure (for example a failed require).</td></tr>
+<tr><td>2</td><td>Static check failure; nothing ran.</td></tr>
+<tr><td>other</td><td>Explicit exit(N) codes and signals keep their codes.</td></tr>
+</tbody>
+</table>
+<h2 id="flags">CLI flags</h2>
+<table>
+<thead><tr><th>Flag or form</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>--check, --lint</td><td>Check only.</td></tr>
+<tr><td>--dry-run</td><td>Print the plan of effects without performing them.</td></tr>
+<tr><td>--plan-format text|json</td><td>Plan format; valid only with --dry-run.</td></tr>
+<tr><td>--dry-loop-limit N</td><td>Loop iteration limit for the dry run.</td></tr>
+<tr><td>--trace FILE</td><td>Execution trace file.</td></tr>
+<tr><td>--resumepoint PATH</td><td>Start at a named resume point of a recover block.</td></tr>
+<tr><td>--pref FILE</td><td>Properties file.</td></tr>
+<tr><td>--check-files</td><td>Also verify path literals against the file system.</td></tr>
+<tr><td>--base-dir dir, --source-name label</td><td>Base directory and the source label used in diagnostics.</td></tr>
+<tr><td>--saveas FILE</td><td>Listed in the usage line of lmscript --help.</td></tr>
+<tr><td>FILE, https URL of an .lms file, -, -e CODE</td><td>Script source: file, URL, standard input or inline code; words after it are script arguments.</td></tr>
+<tr><td>lmscript install github:OWNER/REPO[@TAG]</td><td>Attended one-off install of a native host; an omitted tag means @latest. Also npm:@lmctl-ai/TOOL@VERSION|latest.</td></tr>
+<tr><td>--lmcode-signatures SCHEMA [--without-std]</td><td>Print the canonical signatures of a host schema, with or without the standard catalog.</td></tr>
+<tr><td>--lmcode-schema SCHEMA [--without-std] [--json]</td><td>Print a schema summary, or the exact schema as JSON.</td></tr>
+<tr><td>--help, --help NAME</td><td>List all functions and topics, or explain one function, built-in or topic (for example lmcode).</td></tr>
+</tbody>
+</table>
+<h2 id="lmcode">lmcode quick reference</h2>
+<table>
+<thead><tr><th>Construct</th><th>Signature</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>_lmcode_ block</td><td>p = _lmcode_ cli="X" install="github:lmctl-ai/X@latest"; ... end _lmcode_</td><td>Constructs an opaque immutable program compiled against the host schema; it does not execute.</td></tr>
+<tr><td>load_schema</td><td>load_schema(cli="X") or load_schema(schema="FILE")</td><td>Reusable schema descriptor; write p = _lmcode_ s; to use it.</td></tr>
+<tr><td>run_lmcode</td><td>run_lmcode(program_or_builder: lmcode, options?: map): map</td><td>Runs one program or one sealed builder in a single host process. Single result {ok, result}; builder result {ok, result: [...], parts}. Options: args, command.</td></tr>
+<tr><td>lmcode_build</td><td>lmcode_build(host: lmcode schema | string | string list): lmcode_builder</td><td>One-process builder; builder.add(program) then run_lmcode(builder).</td></tr>
+<tr><td>Standard catalog</td><td>lmcode_std_v3, 226 signatures</td><td>Available in every block; includes rest_config, rest_route, rest_serve, rest_stop, rest_cli and the RestExchange methods.</td></tr>
+<tr><td>Standard interfaces</td><td>RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand, CliOption</td><td>REST endpoint and stateless CLI interfaces of the standard catalog.</td></tr>
+</tbody>
+</table>
+<h2 id="example">Minimal _lmcode_ example</h2>
+<p>A complete script: the block is compiled against the lmhtml host schema at check time, and run_lmcode executes it in the host and returns the result envelope.</p>
+<pre><code>check = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
+let pages = html.load_dir("site");
+for (i in range(0, pages.len())) {
+  let page = pages.at(i);
+  let links = page.links();
+  for (j in range(0, links.len())) {
+    let url = links.at(j);
+    if (!html.link_exists(page, url)) {
+      report.add("broken-link", page.path(), 0, url + " not found");
+    }
+  }
+}
+report.write_text("broken.txt");
+end _lmcode_
+r = run_lmcode(check);
+require(r.ok, "host failed");
+println(r.result);</code></pre>
+<pre><code>lmscript --check links.lms
+lmscript links.lms</code></pre>
 <h2 id="docs">Documentation</h2>
-<dl>
-<dt><a href="/tools/lmscript/tutorial.html">Tutorial</a></dt>
-<dd>Runnable lessons for variables, control flow, data, files, processes, native tools and agent teams. See the <a href="/lmscript/">lmscript tutorial series</a>.</dd>
-<dt><a href="/tools/lmscript/guide.html">User guide</a></dt>
-<dd>The language and CLI reference: syntax, values, control flow, functions, modules, data blocks, commands, the standard library and the experimental LMCode blocks.</dd>
-<dt><a href="/tools/lmscript/skill.html">Skill</a></dt>
-<dd>What an LLM agent needs to write correct lmscript: idioms, pitfalls, forbidden forms and the verification loop.</dd>
-<dt><a href="/lmscript/guide.html">lmscript user reference</a></dt>
-<dd>CLI behavior, invocation properties, lmctl functions and common fixes.</dd>
-</dl>
+<ul>
+<li><a href="/tools/lmscript/skill.html">Skill</a>: what an LLM agent needs to write correct lmscript.</li>
+<li><a href="/tools/lmscript/guide.html">User guide</a>: language, CLI, lmcode blocks and the standard catalog.</li>
+<li><a href="/tools/lmscript/tutorial.html">Tutorial</a>: runnable first steps.</li>
+<li><a href="/tools/lmscript/reference.html">Reference</a>: every built-in function, CLI flag, the 226 standard lmcode signatures and the REST and CLI interfaces.</li>
+<li>Package: <a href="https://www.npmjs.com/package/@lmctl-ai/lmctl">npmjs.com/package/@lmctl-ai/lmctl</a></li>
+<li>Repository and issues: <a href="https://github.com/lmctl-ai/lmctl">github.com/lmctl-ai/lmctl</a></li>
+</ul>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmctl">github.com/lmctl-ai/lmctl</a>.</p>

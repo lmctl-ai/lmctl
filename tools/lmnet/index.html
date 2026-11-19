@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmnet — lmctl.com tools</title>
+<meta name="description" content="lmnet is a statically-linked Linux network diagnostics CLI and LMScript host combining iputils ping and tracepath, iperf3, rtnetlink, procfs, DNS, and TCP…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmnet/">Overview</a></li>
+<li><a href="/tools/lmnet/skill.html">Skill</a></li>
+<li><a href="/tools/lmnet/guide.html">Guide</a></li>
+<li><a href="/tools/lmnet/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmnet</h1>
+<p>lmnet is a statically-linked Linux network diagnostics CLI and LMScript host combining iputils ping and tracepath, iperf3, rtnetlink, procfs, DNS, and TCP scanning. It provides both direct JSON command-line introspection and strongly-typed _lmcode_ scripting via the net context and standard REST and CLI interfaces.</p>
+<h2>Quick reference</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl@latest
+lmnet --version
+lmnet --lmcode-schema
+lmnet --lmcode-signatures</code></pre>
+<table>
+<thead><tr><th>Interface or flag</th><th>Signature or syntax</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>CLI host bytecode</td><td>lmnet [--dry-run] --lmcode prog.dslb</td><td>Execute or dry-validate compiled LMScript bytecode against the embedded lmnet schema.</td></tr>
+<tr><td>CLI schema and signatures</td><td>lmnet --lmcode-schema [--json] | --lmcode-signatures</td><td>Print human-readable schema summary, raw host schema JSON, or canonical signatures.</td></tr>
+<tr><td>CLI ping, tracepath, iperf3</td><td>lmnet ping HOST | lmnet tracepath HOST | lmnet iperf3 [opts]</td><td>Run the embedded upstream iputils ping, iputils tracepath, or iperf 3.22 throughput engines.</td></tr>
+<tr><td>CLI DNS and route queries</td><td>lmnet dns HOST | lmnet dig NAME [TYPE] [@srv] | lmnet ifaddrs|link|route|rule|neigh</td><td>Emit structured JSON for DNS resolution, RFC 1035 queries, interfaces, 64-bit link stats, routes, rules, and ARP/NDP neighbors.</td></tr>
+<tr><td>CLI sockets and counters</td><td>lmnet sockets [tcp|udp|unix] [--listen] [--summary] | lmnet counters</td><td>Dump /proc/net socket tables with process attribution, ss-style summaries, or flat kernel protocol counters as JSON.</td></tr>
+<tr><td>CLI trace, scan, and pipe</td><td>lmnet trace HOST [ttl] | lmnet scan HOST [--ports SPEC] | lmnet pipe HOST PORT</td><td>Run UDP/ICMP traceroute, parallel TCP connect port scans, or binary-safe TCP stdio streaming bridges.</td></tr>
+<tr><td>context net: Net (kernel)</td><td>net.interfaces() | net.links() | net.routes() | net.rules() | net.neighbors()</td><td>Inspect Linux interfaces, rtnetlink link statistics, routing tables, policy rules, and ARP/NDP neighbors in LMScript.</td></tr>
+<tr><td>Net (DNS, sockets, TCP)</td><td>net.dns_lookup() | net.dns_query() | net.sockets() | net.scan() | net.tcp_connect()</td><td>Query DNS resolvers, inspect socket tables and protocol counters, scan TCP ports, or exchange raw TCP stream bytes.</td></tr>
+<tr><td>Standard REST and CLI</td><td>RestGet..RestOptions, RestHandler, CliCommand, CliOption</td><td>Expose _lmcode_ functions as HTTP routes (:param) or stateless CLI flags and subcommands via rest_serve and rest_cli.</td></tr>
+</tbody>
+</table>
+<pre><code>p = _lmcode_ cli="lmnet" install="github:lmctl-ai/lmnet@latest";
+let links = net.links();
+assert(links.len() > 0);
+let addrs = net.dns_lookup("localhost");
+assert(addrs.len() > 0);
+
+@"--dev"
+fn opt_dev(x: RestExchange) -> void implements CliOption {
+  x.set("dev", x.query("dev"));
+}
+
+@"link-check"
+fn cmd_link(x: RestExchange) -> void implements CliCommand {
+  let target = x.get("dev");
+  for (i in range(0, links.len())) {
+    if (links.at(i).name() == target) {
+      x.send(target + ":up=" + str(links.at(i).up()));
+    }
+  }
+}
+
+rest_config("session", "global");
+assert_eq(rest_cli(str_split("--dev=lo link-check", " ")), "lo:up=true");
+end _lmcode_
+res = run_lmcode(p);
+require(res.ok, json_stringify(res));</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmnet/skill.html">Skill</a> — agent authoring rules, Linux CLI subcommands, privilege and timeout bounds, exit codes, and verification steps.</li>
+<li><a href="/tools/lmnet/guide.html">Guide</a> — static architecture, rtnetlink and procfs introspection, DNS/trace/scan/pipe engines, and standard REST and CLI interfaces.</li>
+<li><a href="/tools/lmnet/reference.html">Reference</a> — complete CLI subcommands, Net context types and methods, standard lmcode_std_v3 interfaces, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmnet">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmnet">github.com/lmctl-ai/lmnet</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmphysics guide — lmphysics — lmctl.com tools</title>
+<meta name="description" content="Project Chrono contact formulations, integrator and solver selection, mechanism modeling, pose export, and the standard lmcode_std_v3 library for lmphysics.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmphysics/">Overview</a></li>
+<li><a href="/tools/lmphysics/skill.html">Skill</a></li>
+<li><a href="/tools/lmphysics/guide.html">Guide</a></li>
+<li><a href="/tools/lmphysics/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmphysics guide</h1>
+<p>Project Chrono contact formulations, integrator and solver selection, mechanism modeling, pose export, and the standard lmcode_std_v3 library for lmphysics.</p>
+<h2>Overview</h2>
+<p>lmphysics embeds Project Chrono, Bullet collision detection, Eigen linear algebra, an expression evaluator for time-dependent loads and motors, and the lmcode-cpp runtime into a single executable. Scripts construct a System world using either non-smooth contact complementarity (nsc) or smooth penalty contact (smc), attach bodies and joints, step forward at a fixed time step, verify conservation or closed-form oracles, and export CSV time series.</p>
+<h2>Contact formulations, integrators, and solvers</h2>
+<p>Choosing the right combination of contact mode, time integrator, and solver is essential for physical accuracy and numerical stability:</p>
+<table>
+<thead><tr><th>Scenario</th><th>Recommended configuration</th><th>Behavior and trade-offs</th></tr></thead>
+<tbody>
+<tr><td>Collisions, sliding friction, and stacks (NSC)</td><td>phys.system("nsc"), default integrator("euler"), solver("psor", 100) or solver("apgd", 200)</td><td>Handles non-smooth impacts and Coulomb friction cone complementarity; use apgd with higher iterations for tall stacks.</td></tr>
+<tr><td>Smooth mechanisms and energy conservation</td><td>integrator("hht") (presets sparse_lu, 30 Newton iterations, rtol 1e-6, atol 1e-9)</td><td>Conserves pendulum and gyroscope mechanical energy closely; cannot be used with active NSC contacts or over-constrained 3D planar loops.</td></tr>
+<tr><td>Constant acceleration, springs, and redundant planar linkages</td><td>integrator("trapezoidal") with default PSOR solver</td><td>Exact for constant forces and stable for planar four-bar or slider-crank linkages built from 3D joints.</td></tr>
+<tr><td>Penalty contact with material stiffness (SMC)</td><td>phys.system("smc") with material(name, mu, e) and stiffness(name, young, poisson)</td><td>Resolves contact via Hertzian spring-dashpot forces using Young's modulus (default 2e7 Pa) and Poisson ratio (default 0.3).</td></tr>
+</tbody>
+</table>
+<h2>Practical contact and mechanism rules</h2>
+<ul>
+<li>Collision margins and restitution: Chrono's default NSC collision envelope (0.03 m) and margin (0.01 m) stabilize stacked boxes, but early contact detection reduces isolated rebound height below e^2 h. Call System.collision_margins(0.0, 0.0) for exact restitution impacts, or System.collision_margins(0.002, 0.001) for sharp edge-tipping balance problems (such as the harmonic overhang puzzle).</li>
+<li>Avoiding the first-step friction hop: NSC cone complementarity maintains a sliding gap of mu * |v| * dt above the floor. Starting a moving block at z = 0 causes an initial upward hop; start sliding blocks a few millimeters above the surface or reduce dt.</li>
+<li>Cylinder orientation and rolling: cylinder local axes lie along the y axis for both inertia tensors and collision shapes. Because Bullet's cylinder-box contact rolls 2% to 5% off the analytic acceleration on ramps, use a sphere with custom cylinder or hoop inertia via Body.mass_props(m, ixx, iyy, izz) when testing exact rolling races.</li>
+<li>Joints and time expressions: set Body.pos and Body.rot_axis before creating joints. Rotational and linear motors (motor_speed, motor_angle, motor_torque, motor_position, motor_linear_speed, motor_force) and applied loads (Body.force, Body.torque) accept math expressions in t such as "2.5" or "0.5*sin(3.0*t)".</li>
+</ul>
+<h2>Multi-host plotting and 3D pose rendering</h2>
+<p>System.record(name, columns) logs comma-separated body or joint columns at t = 0 and after every recorded step (controlled by System.record_every(n)), and System.save_csv(path) flushes the table to disk. Body columns include mass, x, y, z, qw, qx, qy, qz (Hamilton quaternion, scalar first), vx, vy, vz, wx, wy, wz, lx, ly, lz, speed, and ke. Joint columns include angle, travel, length, force, torque, effort, fx, fy, fz, tx, ty, and tz. Subsequent _lmcode_ blocks in the same LMScript file can plot curves with lmplot, draw free-body diagrams with lmdraw, or pass recorded positions and quaternions to lmcad and lmblender.</p>
+<h2>Standard lmcode_std_v3 library</h2>
+<p>Alongside context phys: Phys, lmphysics includes the standard lmcode_std_v3 catalog (cpp/std/lmcode-std.schema.json) of string, encoding, math, collection (IntList, FloatList, StrList, IntMap, FloatMap, StrMap, stacks, queues, priority queues), JSON, template, file, and return-framing functions. The pinned catalog in this repository does not include the REST and CLI interfaces (RestGet, CliCommand, rest_serve and related functions).</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmphysics">github.com/lmctl-ai/lmphysics</a>.</p>
+</footer>
+</body>
+</html>

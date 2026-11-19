@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcad reference — lmcad — lmctl.com tools</title>
+<meta name="description" content="Command-line flags, exit codes, host types, methods, functions, limits and standard-library signatures of lmcad 0.1.5, generated from the release binary (lmcad…">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmcad/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcad/">Overview</a></li>
+<li><a href="/tools/lmcad/skill.html">Skill</a></li>
+<li><a href="/tools/lmcad/tutorial.html">Tutorial</a></li>
+<li><a href="/tools/lmcad/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmcad/guide.html">Guide</a></li>
+<li><a href="/tools/lmcad/reference.html">Reference</a></li>
+<li><a href="/tools/lmcad/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>lmcad reference</h1>
+<p>Command-line flags, exit codes, host types, methods, functions, limits and standard-library signatures of lmcad 0.1.5, generated from the release binary (lmcad --lmcode-schema and lmcad --lmcode-signatures) and the repository README. Types in signatures are int, float, string, bool and the host or standard types named here.</p>
+<h2 id="cli">Command line</h2>
+<table>
+<thead><tr><th>Command</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td>lmcad --version</td><td>Prints lmcad X.Y.Z. The release tag vX.Y.Z and the binary version must agree for install="github:lmctl-ai/lmcad@latest".</td></tr>
+<tr><td>lmcad --lmcode-schema</td><td>Prints a compact summary: the context line, then free functions, then members grouped by type.</td></tr>
+<tr><td>lmcad --lmcode-schema --json</td><td>Prints the embedded schema bytes exactly (dsl.schema 2, name lmcad). This is the compiler input.</td></tr>
+<tr><td>lmcad --lmcode-signatures</td><td>Prints the canonical signature list of the host registry, host and standard: 271 lines in 0.1.5.</td></tr>
+<tr><td>lmcad --lmcode FILE [FILE ...]</td><td>Runs compiled program files in argument order. Objects and scene state persist between files; locals are fresh for each file. The first failure stops execution.</td></tr>
+</tbody>
+</table>
+<p>With no arguments or an unknown flag the host prints its usage line and exits 2. Failures also print a JSON result between the lines LMCODE_RETURN_BEGIN and LMCODE_RETURN_END.</p>
+<h3 id="exit-codes">Exit codes</h3>
+<table>
+<thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success; one JSON result line per completed block.</td></tr>
+<tr><td>2</td><td>Invalid command line. The host prints its usage line and a CLI_USAGE result (phase cli).</td></tr>
+<tr><td>3</td><td>Program file load failure or a block or host run failure.</td></tr>
+<tr><td>4</td><td>Another application failure.</td></tr>
+</tbody>
+</table>
+<h3 id="lmscript">Used from lmscript</h3>
+<table>
+<thead><tr><th>Form</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>p = _lmcode_ cli="lmcad" install="github:lmctl-ai/lmcad@latest"; ... end _lmcode_</td><td>Declares a block compiled against the schema the lmcad binary reports. install lets lmscript download the released binary when needed.</td></tr>
+<tr><td>r = run_lmcode(p)</td><td>Runs the block on the host and returns a result with ok and result; the repository examples print r.stderr and r.stdout on failure.</td></tr>
+<tr><td>lmscript --check FILE.lms</td><td>Compiles every block against the host schema without running it.</td></tr>
+<tr><td>lmctl autorun URL</td><td>Downloads and runs an example .lms, fetching the released lmcad.</td></tr>
+</tbody>
+</table>
+<h2 id="types">Context and host types</h2>
+<table>
+<thead><tr><th>Name</th><th>Kind</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td>scene</td><td>Context object of type Scene</td><td>The one entry point of a block.</td></tr>
+<tr><td>Scene</td><td>Host type</td><td>Solids, sketches, lights, cameras, renders, exports and assertions.</td></tr>
+<tr><td>Shape</td><td>Host type</td><td>Handle to an OpenCASCADE solid: transforms, booleans, edge treatment, volume and bounds.</td></tr>
+<tr><td>Sketch</td><td>Host type</td><td>Straight-segment 2D polygon to extrude or revolve.</td></tr>
+<tr><td>Material</td><td>Host type</td><td>Display color and Blinn-Phong surface parameters.</td></tr>
+<tr><td>Camera</td><td>Host type</td><td>View returned by camera and fit_camera.</td></tr>
+<tr><td>Light</td><td>Host type</td><td>Directional or fill light.</td></tr>
+<tr><td>Animation</td><td>Host type</td><td>APNG writer.</td></tr>
+<tr><td>Keyframes</td><td>Host type</td><td>Collection read from CSV; supports len, at and for-in iteration.</td></tr>
+<tr><td>Keyframe</td><td>Host type</td><td>One CSV row: time, position and color.</td></tr>
+</tbody>
+</table>
+<p>The schema declares no enum types.</p>
+<h3 id="functions">Host functions</h3>
+<table>
+<thead><tr><th>Signature</th><th>Returns</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>material()</td><td>Material</td><td>Creates a material; chain color, roughness, specular and shininess.</td></tr>
+<tr><td>read_keyframes_csv(string)</td><td>Keyframes</td><td>Reads keyframes from a CSV file path.</td></tr>
+</tbody>
+</table>
+<h2 id="scene">Scene methods</h2>
+<table>
+<thead><tr><th>Signature</th><th>Returns</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Scene.ambient(float)</td><td>Scene</td><td>Sets the ambient light level; returns the scene for chaining.</td></tr>
+<tr><td>Scene.animation(string, int, int, int)</td><td>Animation</td><td>Opens an APNG writer: path, width, height, frames per second (integer 1 to 240).</td></tr>
+<tr><td>Scene.assert_close(float, float, float)</td><td>void</td><td>Fails the run unless actual and expected agree within the tolerance: actual, expected, tolerance.</td></tr>
+<tr><td>Scene.background(float, float, float)</td><td>Scene</td><td>Sets the background color from red, green, blue components.</td></tr>
+<tr><td>Scene.box(float, float, float, Material)</td><td>Shape</td><td>Box solid from three dimensions and a material.</td></tr>
+<tr><td>Scene.camera(float, float, float, float, float, float, float)</td><td>Camera</td><td>Creates an explicit camera from seven numbers (field of view, then position and target coordinates as used in the tutorial).</td></tr>
+<tr><td>Scene.cylinder(float, float, Material)</td><td>Shape</td><td>Cylinder solid from radius, height and a material.</td></tr>
+<tr><td>Scene.directional_light(float, float, float, float)</td><td>Light</td><td>Adds a directional light: direction x, y, z and intensity.</td></tr>
+<tr><td>Scene.export_obj(string)</td><td>void</td><td>Writes the scene mesh as text OBJ to the path.</td></tr>
+<tr><td>Scene.export_stl(string)</td><td>void</td><td>Writes the scene mesh as binary STL to the path.</td></tr>
+<tr><td>Scene.extrude(Sketch, float, Material)</td><td>Shape</td><td>Extrudes a closed sketch by a height into a solid.</td></tr>
+<tr><td>Scene.fill_light(float, float, float, float)</td><td>Light</td><td>Adds a fill light: direction x, y, z and intensity.</td></tr>
+<tr><td>Scene.fit_camera(float, float)</td><td>Camera</td><td>Fits the camera to the scene: field of view and margin. Explicit look_at or clipping settings turn off automatic fitting.</td></tr>
+<tr><td>Scene.render_png(string, int, int)</td><td>void</td><td>Renders the scene to a PNG: path, width, height.</td></tr>
+<tr><td>Scene.render_ppm(string, int, int)</td><td>void</td><td>Renders the scene to an RGB PPM: path, width, height.</td></tr>
+<tr><td>Scene.revolve_y(Sketch, Material)</td><td>Shape</td><td>Revolves a closed sketch around the y axis into a solid.</td></tr>
+<tr><td>Scene.sketch()</td><td>Sketch</td><td>Starts an empty 2D sketch.</td></tr>
+<tr><td>Scene.sphere(float, Material)</td><td>Shape</td><td>Sphere solid from radius and a material.</td></tr>
+<tr><td>Scene.supersample(int)</td><td>Scene</td><td>Sets n by n supersampling, n from 1 to 8; output dimensions stay unchanged.</td></tr>
+<tr><td>Scene.tube_between(float, float, float, float, float, float, float, Material)</td><td>Shape</td><td>Solid cylindrical segment between two 3D endpoints: x1, y1, z1, x2, y2, z2, radius, material.</td></tr>
+</tbody>
+</table>
+<h2 id="shape">Shape methods</h2>
+<table>
+<thead><tr><th>Signature</th><th>Returns</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Shape.chamfer(float)</td><td>Shape</td><td>Chamfers the edges by a distance.</td></tr>
+<tr><td>Shape.color(float, float, float)</td><td>Shape</td><td>Sets the display color from red, green, blue.</td></tr>
+<tr><td>Shape.cut(Shape)</td><td>Shape</td><td>Boolean difference: removes the argument shape.</td></tr>
+<tr><td>Shape.fillet(float)</td><td>Shape</td><td>Rounds the edges by a radius.</td></tr>
+<tr><td>Shape.hollow(float)</td><td>Shape</td><td>Shells the solid to a wall thickness.</td></tr>
+<tr><td>Shape.hollow_top(float)</td><td>Shape</td><td>Shells the solid to a wall thickness, leaving the top open.</td></tr>
+<tr><td>Shape.intersect(Shape)</td><td>Shape</td><td>Boolean intersection with the argument shape.</td></tr>
+<tr><td>Shape.max_x()</td><td>float</td><td>Bounding-box maximum x.</td></tr>
+<tr><td>Shape.max_y()</td><td>float</td><td>Bounding-box maximum y.</td></tr>
+<tr><td>Shape.max_z()</td><td>float</td><td>Bounding-box maximum z.</td></tr>
+<tr><td>Shape.min_x()</td><td>float</td><td>Bounding-box minimum x.</td></tr>
+<tr><td>Shape.min_y()</td><td>float</td><td>Bounding-box minimum y.</td></tr>
+<tr><td>Shape.min_z()</td><td>float</td><td>Bounding-box minimum z.</td></tr>
+<tr><td>Shape.mirror(string)</td><td>Shape</td><td>Mirrors the shape; the string selects the mirror plane or axis.</td></tr>
+<tr><td>Shape.name(string)</td><td>Shape</td><td>Names the shape.</td></tr>
+<tr><td>Shape.position(float, float, float)</td><td>Shape</td><td>Places the shape at x, y, z.</td></tr>
+<tr><td>Shape.rotate(float, float, float)</td><td>Shape</td><td>Rotates the shape by three angles.</td></tr>
+<tr><td>Shape.scale(float, float, float)</td><td>Shape</td><td>Scales the shape by x, y, z factors.</td></tr>
+<tr><td>Shape.translate(float, float, float)</td><td>Shape</td><td>Moves the shape by dx, dy, dz.</td></tr>
+<tr><td>Shape.union(Shape)</td><td>Shape</td><td>Boolean union with the argument shape.</td></tr>
+<tr><td>Shape.visible(bool)</td><td>Shape</td><td>Shows or hides the shape in renders.</td></tr>
+<tr><td>Shape.volume()</td><td>float</td><td>B-rep volume of the solid.</td></tr>
+</tbody>
+</table>
+<h2 id="sketch">Sketch methods</h2>
+<table>
+<thead><tr><th>Signature</th><th>Returns</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Sketch.close()</td><td>Sketch</td><td>Closes the polygon.</td></tr>
+<tr><td>Sketch.point(float, float)</td><td>Sketch</td><td>Appends a vertex x, y; segments are straight.</td></tr>
+</tbody>
+</table>
+<h2 id="material">Material methods</h2>
+<table>
+<thead><tr><th>Signature</th><th>Returns</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Material.color(float, float, float)</td><td>Material</td><td>Sets red, green, blue.</td></tr>
+<tr><td>Material.roughness(float)</td><td>Material</td><td>Sets roughness.</td></tr>
+<tr><td>Material.shininess(float)</td><td>Material</td><td>Sets Blinn-Phong shininess.</td></tr>
+<tr><td>Material.specular(float)</td><td>Material</td><td>Sets specular strength.</td></tr>
+</tbody>
+</table>
+<h2 id="camera">Camera methods</h2>
+<table>
+<thead><tr><th>Signature</th><th>Returns</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Camera.clipping(float, float)</td><td>Camera</td><td>Sets near and far clipping distances.</td></tr>
+<tr><td>Camera.look_at(float, float, float, float, float, float)</td><td>Camera</td><td>Sets eye position and target from six coordinates.</td></tr>
+</tbody>
+</table>
+<h2 id="light">Light methods</h2>
+<table>
+<thead><tr><th>Signature</th><th>Returns</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Light.intensity(float)</td><td>Light</td><td>Sets the light intensity.</td></tr>
+</tbody>
+</table>
+<h2 id="animation">Animation methods</h2>
+<table>
+<thead><tr><th>Signature</th><th>Returns</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Animation.add_frame()</td><td>Animation</td><td>Renders the current scene as the next frame.</td></tr>
+<tr><td>Animation.finish()</td><td>void</td><td>Finishes the file and atomically replaces the destination; an unfinished animation is discarded.</td></tr>
+</tbody>
+</table>
+<h2 id="keyframes">Keyframes methods</h2>
+<table>
+<thead><tr><th>Signature</th><th>Returns</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Keyframes.at(int)</td><td>Keyframe</td><td>Keyframe at a zero-based index.</td></tr>
+<tr><td>Keyframes.len()</td><td>int</td><td>Number of keyframes.</td></tr>
+</tbody>
+</table>
+<h2 id="keyframe">Keyframe methods</h2>
+<table>
+<thead><tr><th>Signature</th><th>Returns</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Keyframe.b()</td><td>float</td><td>Blue color component.</td></tr>
+<tr><td>Keyframe.g()</td><td>float</td><td>Green color component.</td></tr>
+<tr><td>Keyframe.r()</td><td>float</td><td>Red color component.</td></tr>
+<tr><td>Keyframe.time()</td><td>float</td><td>Time value of the keyframe.</td></tr>
+<tr><td>Keyframe.x()</td><td>float</td><td>Position x.</td></tr>
+<tr><td>Keyframe.y()</td><td>float</td><td>Position y.</td></tr>
+<tr><td>Keyframe.z()</td><td>float</td><td>Position z.</td></tr>
+</tbody>
+</table>
+<h2 id="limits">Host limits</h2>
+<table>
+<thead><tr><th>Item</th><th>Limit</th></tr></thead>
+<tbody>
+<tr><td>Sketch coordinates</td><td>within ±500 units</td></tr>
+<tr><td>Part extent</td><td>1000 units</td></tr>
+<tr><td>Faces per shape</td><td>2000</td></tr>
+<tr><td>Edges per shape</td><td>10,000</td></tr>
+<tr><td>Triangles</td><td>1,000,000</td></tr>
+<tr><td>Supersampling</td><td>1 to 8; each raster dimension times n at most 8192</td></tr>
+<tr><td>Pixels per frame</td><td>16,777,216</td></tr>
+<tr><td>Animation frames</td><td>240</td></tr>
+<tr><td>Total animation frame pixels</td><td>64,000,000</td></tr>
+<tr><td>Animation frame rate</td><td>integer 1 through 240</td></tr>
+</tbody>
+</table>
+<h2 id="formats">Output formats</h2>
+<table>
+<thead><tr><th>Format</th><th>Produced by</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>PNG</td><td>Scene.render_png</td><td>Still images; deterministic encoding.</td></tr>
+<tr><td>PPM</td><td>Scene.render_ppm</td><td>Simple RGB raster.</td></tr>
+<tr><td>APNG</td><td>Scene.animation, Animation.add_frame, Animation.finish</td><td>Loops forever with exact rational frame delays.</td></tr>
+<tr><td>STL</td><td>Scene.export_stl</td><td>Binary triangle mesh; write-only.</td></tr>
+<tr><td>OBJ</td><td>Scene.export_obj</td><td>Text mesh; write-only.</td></tr>
+</tbody>
+</table>
+<h2 id="std">Standard library</h2>
+<p>lmcad 0.1.5 ships 206 standard-library signatures (the lmcode_std_v3 catalog at 206). The current lmcode_std_v3 catalog has 226 signatures, adding the REST and CLI interfaces; lmcad picks those up when it syncs and releases, and the 0.1.5 binary does not register them.</p>
+<h3 id="std-functions">Standard functions</h3>
+<table>
+<thead><tr><th>Group</th><th>Signature</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>Collections</td><td>float_list()</td><td>FloatList</td></tr>
+<tr><td>Collections</td><td>float_map()</td><td>FloatMap</td></tr>
+<tr><td>Collections</td><td>float_pq()</td><td>FloatPQ</td></tr>
+<tr><td>Collections</td><td>float_queue()</td><td>FloatQueue</td></tr>
+<tr><td>Collections</td><td>float_stack()</td><td>FloatStack</td></tr>
+<tr><td>Collections</td><td>int_list()</td><td>IntList</td></tr>
+<tr><td>Collections</td><td>int_map()</td><td>IntMap</td></tr>
+<tr><td>Collections</td><td>int_pq()</td><td>IntPQ</td></tr>
+<tr><td>Collections</td><td>int_queue()</td><td>IntQueue</td></tr>
+<tr><td>Collections</td><td>int_stack()</td><td>IntStack</td></tr>
+<tr><td>Collections</td><td>str_list()</td><td>StrList</td></tr>
+<tr><td>Collections</td><td>str_map()</td><td>StrMap</td></tr>
+<tr><td>Collections</td><td>str_pq()</td><td>StrPQ</td></tr>
+<tr><td>Collections</td><td>str_queue()</td><td>StrQueue</td></tr>
+<tr><td>Collections</td><td>str_stack()</td><td>StrStack</td></tr>
+<tr><td>Files</td><td>file_append(string, string)</td><td>void</td></tr>
+<tr><td>Files</td><td>file_exists(string)</td><td>bool</td></tr>
+<tr><td>Files</td><td>file_lines(string)</td><td>StrList</td></tr>
+<tr><td>Files</td><td>file_read(string)</td><td>string</td></tr>
+<tr><td>Files</td><td>file_write(string, string)</td><td>void</td></tr>
+<tr><td>JSON and templates</td><td>json_parse(string)</td><td>Json</td></tr>
+<tr><td>JSON and templates</td><td>template_render(string, Json)</td><td>string</td></tr>
+<tr><td>Math</td><td>math_abs(float)</td><td>float</td></tr>
+<tr><td>Math</td><td>math_abs(int)</td><td>int</td></tr>
+<tr><td>Math</td><td>math_ceil(float)</td><td>float</td></tr>
+<tr><td>Math</td><td>math_ceil(int)</td><td>int</td></tr>
+<tr><td>Math</td><td>math_floor(float)</td><td>float</td></tr>
+<tr><td>Math</td><td>math_floor(int)</td><td>int</td></tr>
+<tr><td>Math</td><td>math_max(float, float)</td><td>float</td></tr>
+<tr><td>Math</td><td>math_max(int, int)</td><td>int</td></tr>
+<tr><td>Math</td><td>math_min(float, float)</td><td>float</td></tr>
+<tr><td>Math</td><td>math_min(int, int)</td><td>int</td></tr>
+<tr><td>Math</td><td>math_pow(float, float)</td><td>float</td></tr>
+<tr><td>Math</td><td>math_pow(int, int)</td><td>int</td></tr>
+<tr><td>Math</td><td>math_round(float)</td><td>float</td></tr>
+<tr><td>Math</td><td>math_round(int)</td><td>int</td></tr>
+<tr><td>Math</td><td>math_sqrt(float)</td><td>float</td></tr>
+<tr><td>Math</td><td>math_sqrt(int)</td><td>int</td></tr>
+<tr><td>Return values</td><td>lmcode_return_null()</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_put(string, FloatList)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_put(string, FloatMap)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_put(string, IntList)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_put(string, IntMap)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_put(string, Json)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_put(string, StrList)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_put(string, StrMap)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_put(string, bool)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_put(string, float)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_put(string, int)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_put(string, string)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_put_null(string)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_set(FloatList)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_set(FloatMap)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_set(IntList)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_set(IntMap)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_set(Json)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_set(StrList)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_set(StrMap)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_set(bool)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_set(float)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_set(int)</td><td>void</td></tr>
+<tr><td>Return values</td><td>lmcode_return_set(string)</td><td>void</td></tr>
+<tr><td>Strings</td><td>str_base64_decode(string)</td><td>string</td></tr>
+<tr><td>Strings</td><td>str_base64_encode(string)</td><td>string</td></tr>
+<tr><td>Strings</td><td>str_contains(string, string)</td><td>bool</td></tr>
+<tr><td>Strings</td><td>str_ends_with(string, string)</td><td>bool</td></tr>
+<tr><td>Strings</td><td>str_find(string, string)</td><td>int</td></tr>
+<tr><td>Strings</td><td>str_hex_decode(string)</td><td>string</td></tr>
+<tr><td>Strings</td><td>str_hex_encode(string)</td><td>string</td></tr>
+<tr><td>Strings</td><td>str_is_float(string)</td><td>bool</td></tr>
+<tr><td>Strings</td><td>str_is_int(string)</td><td>bool</td></tr>
+<tr><td>Strings</td><td>str_len(string)</td><td>int</td></tr>
+<tr><td>Strings</td><td>str_lower(string)</td><td>string</td></tr>
+<tr><td>Strings</td><td>str_match(string, string)</td><td>bool</td></tr>
+<tr><td>Strings</td><td>str_repeat(string, int)</td><td>string</td></tr>
+<tr><td>Strings</td><td>str_replace(string, string, string)</td><td>string</td></tr>
+<tr><td>Strings</td><td>str_split(string, string)</td><td>StrList</td></tr>
+<tr><td>Strings</td><td>str_starts_with(string, string)</td><td>bool</td></tr>
+<tr><td>Strings</td><td>str_substr(string, int, int)</td><td>string</td></tr>
+<tr><td>Strings</td><td>str_to_float(string)</td><td>float</td></tr>
+<tr><td>Strings</td><td>str_to_int(string)</td><td>int</td></tr>
+<tr><td>Strings</td><td>str_trim(string)</td><td>string</td></tr>
+<tr><td>Strings</td><td>str_upper(string)</td><td>string</td></tr>
+</tbody>
+</table>
+<h3 id="std-types">Standard types and methods</h3>
+<table>
+<thead><tr><th>Type</th><th>Signature</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>FloatList</td><td>FloatList.add(float)</td><td>FloatList</td></tr>
+<tr><td>FloatList</td><td>FloatList.at(int)</td><td>float</td></tr>
+<tr><td>FloatList</td><td>FloatList.clear()</td><td>FloatList</td></tr>
+<tr><td>FloatList</td><td>FloatList.contains(float)</td><td>bool</td></tr>
+<tr><td>FloatList</td><td>FloatList.index_of(float)</td><td>int</td></tr>
+<tr><td>FloatList</td><td>FloatList.len()</td><td>int</td></tr>
+<tr><td>FloatList</td><td>FloatList.set(int, float)</td><td>FloatList</td></tr>
+<tr><td>FloatMap</td><td>FloatMap.clear()</td><td>FloatMap</td></tr>
+<tr><td>FloatMap</td><td>FloatMap.get(string)</td><td>float</td></tr>
+<tr><td>FloatMap</td><td>FloatMap.get_or(string, float)</td><td>float</td></tr>
+<tr><td>FloatMap</td><td>FloatMap.has(string)</td><td>bool</td></tr>
+<tr><td>FloatMap</td><td>FloatMap.key_at(int)</td><td>string</td></tr>
+<tr><td>FloatMap</td><td>FloatMap.keys()</td><td>StrList</td></tr>
+<tr><td>FloatMap</td><td>FloatMap.len()</td><td>int</td></tr>
+<tr><td>FloatMap</td><td>FloatMap.remove(string)</td><td>bool</td></tr>
+<tr><td>FloatMap</td><td>FloatMap.set(string, float)</td><td>FloatMap</td></tr>
+<tr><td>FloatMap</td><td>FloatMap.values()</td><td>FloatList</td></tr>
+<tr><td>FloatPQ</td><td>FloatPQ.clear()</td><td>FloatPQ</td></tr>
+<tr><td>FloatPQ</td><td>FloatPQ.empty()</td><td>bool</td></tr>
+<tr><td>FloatPQ</td><td>FloatPQ.len()</td><td>int</td></tr>
+<tr><td>FloatPQ</td><td>FloatPQ.peek()</td><td>float</td></tr>
+<tr><td>FloatPQ</td><td>FloatPQ.pop()</td><td>float</td></tr>
+<tr><td>FloatPQ</td><td>FloatPQ.push(float, float)</td><td>FloatPQ</td></tr>
+<tr><td>FloatQueue</td><td>FloatQueue.at(int)</td><td>float</td></tr>
+<tr><td>FloatQueue</td><td>FloatQueue.clear()</td><td>FloatQueue</td></tr>
+<tr><td>FloatQueue</td><td>FloatQueue.empty()</td><td>bool</td></tr>
+<tr><td>FloatQueue</td><td>FloatQueue.len()</td><td>int</td></tr>
+<tr><td>FloatQueue</td><td>FloatQueue.peek()</td><td>float</td></tr>
+<tr><td>FloatQueue</td><td>FloatQueue.pop()</td><td>float</td></tr>
+<tr><td>FloatQueue</td><td>FloatQueue.push(float)</td><td>FloatQueue</td></tr>
+<tr><td>FloatStack</td><td>FloatStack.at(int)</td><td>float</td></tr>
+<tr><td>FloatStack</td><td>FloatStack.clear()</td><td>FloatStack</td></tr>
+<tr><td>FloatStack</td><td>FloatStack.empty()</td><td>bool</td></tr>
+<tr><td>FloatStack</td><td>FloatStack.len()</td><td>int</td></tr>
+<tr><td>FloatStack</td><td>FloatStack.peek()</td><td>float</td></tr>
+<tr><td>FloatStack</td><td>FloatStack.pop()</td><td>float</td></tr>
+<tr><td>FloatStack</td><td>FloatStack.push(float)</td><td>FloatStack</td></tr>
+<tr><td>IntList</td><td>IntList.add(int)</td><td>IntList</td></tr>
+<tr><td>IntList</td><td>IntList.at(int)</td><td>int</td></tr>
+<tr><td>IntList</td><td>IntList.clear()</td><td>IntList</td></tr>
+<tr><td>IntList</td><td>IntList.contains(int)</td><td>bool</td></tr>
+<tr><td>IntList</td><td>IntList.index_of(int)</td><td>int</td></tr>
+<tr><td>IntList</td><td>IntList.len()</td><td>int</td></tr>
+<tr><td>IntList</td><td>IntList.set(int, int)</td><td>IntList</td></tr>
+<tr><td>IntMap</td><td>IntMap.clear()</td><td>IntMap</td></tr>
+<tr><td>IntMap</td><td>IntMap.get(string)</td><td>int</td></tr>
+<tr><td>IntMap</td><td>IntMap.get_or(string, int)</td><td>int</td></tr>
+<tr><td>IntMap</td><td>IntMap.has(string)</td><td>bool</td></tr>
+<tr><td>IntMap</td><td>IntMap.key_at(int)</td><td>string</td></tr>
+<tr><td>IntMap</td><td>IntMap.keys()</td><td>StrList</td></tr>
+<tr><td>IntMap</td><td>IntMap.len()</td><td>int</td></tr>
+<tr><td>IntMap</td><td>IntMap.remove(string)</td><td>bool</td></tr>
+<tr><td>IntMap</td><td>IntMap.set(string, int)</td><td>IntMap</td></tr>
+<tr><td>IntMap</td><td>IntMap.values()</td><td>IntList</td></tr>
+<tr><td>IntPQ</td><td>IntPQ.clear()</td><td>IntPQ</td></tr>
+<tr><td>IntPQ</td><td>IntPQ.empty()</td><td>bool</td></tr>
+<tr><td>IntPQ</td><td>IntPQ.len()</td><td>int</td></tr>
+<tr><td>IntPQ</td><td>IntPQ.peek()</td><td>int</td></tr>
+<tr><td>IntPQ</td><td>IntPQ.pop()</td><td>int</td></tr>
+<tr><td>IntPQ</td><td>IntPQ.push(int, float)</td><td>IntPQ</td></tr>
+<tr><td>IntQueue</td><td>IntQueue.at(int)</td><td>int</td></tr>
+<tr><td>IntQueue</td><td>IntQueue.clear()</td><td>IntQueue</td></tr>
+<tr><td>IntQueue</td><td>IntQueue.empty()</td><td>bool</td></tr>
+<tr><td>IntQueue</td><td>IntQueue.len()</td><td>int</td></tr>
+<tr><td>IntQueue</td><td>IntQueue.peek()</td><td>int</td></tr>
+<tr><td>IntQueue</td><td>IntQueue.pop()</td><td>int</td></tr>
+<tr><td>IntQueue</td><td>IntQueue.push(int)</td><td>IntQueue</td></tr>
+<tr><td>IntStack</td><td>IntStack.at(int)</td><td>int</td></tr>
+<tr><td>IntStack</td><td>IntStack.clear()</td><td>IntStack</td></tr>
+<tr><td>IntStack</td><td>IntStack.empty()</td><td>bool</td></tr>
+<tr><td>IntStack</td><td>IntStack.len()</td><td>int</td></tr>
+<tr><td>IntStack</td><td>IntStack.peek()</td><td>int</td></tr>
+<tr><td>IntStack</td><td>IntStack.pop()</td><td>int</td></tr>
+<tr><td>IntStack</td><td>IntStack.push(int)</td><td>IntStack</td></tr>
+<tr><td>Json</td><td>Json.as_bool()</td><td>bool</td></tr>
+<tr><td>Json</td><td>Json.as_float()</td><td>float</td></tr>
+<tr><td>Json</td><td>Json.as_int()</td><td>int</td></tr>
+<tr><td>Json</td><td>Json.as_string()</td><td>string</td></tr>
+<tr><td>Json</td><td>Json.at(int)</td><td>Json</td></tr>
+<tr><td>Json</td><td>Json.get(string)</td><td>Json</td></tr>
+<tr><td>Json</td><td>Json.has(string)</td><td>bool</td></tr>
+<tr><td>Json</td><td>Json.keys()</td><td>StrList</td></tr>
+<tr><td>Json</td><td>Json.kind()</td><td>string</td></tr>
+<tr><td>Json</td><td>Json.len()</td><td>int</td></tr>
+<tr><td>Json</td><td>Json.to_json()</td><td>string</td></tr>
+<tr><td>StrList</td><td>StrList.add(string)</td><td>StrList</td></tr>
+<tr><td>StrList</td><td>StrList.at(int)</td><td>string</td></tr>
+<tr><td>StrList</td><td>StrList.clear()</td><td>StrList</td></tr>
+<tr><td>StrList</td><td>StrList.contains(string)</td><td>bool</td></tr>
+<tr><td>StrList</td><td>StrList.index_of(string)</td><td>int</td></tr>
+<tr><td>StrList</td><td>StrList.join(string)</td><td>string</td></tr>
+<tr><td>StrList</td><td>StrList.len()</td><td>int</td></tr>
+<tr><td>StrList</td><td>StrList.set(int, string)</td><td>StrList</td></tr>
+<tr><td>StrMap</td><td>StrMap.clear()</td><td>StrMap</td></tr>
+<tr><td>StrMap</td><td>StrMap.get(string)</td><td>string</td></tr>
+<tr><td>StrMap</td><td>StrMap.get_or(string, string)</td><td>string</td></tr>
+<tr><td>StrMap</td><td>StrMap.has(string)</td><td>bool</td></tr>
+<tr><td>StrMap</td><td>StrMap.key_at(int)</td><td>string</td></tr>
+<tr><td>StrMap</td><td>StrMap.keys()</td><td>StrList</td></tr>
+<tr><td>StrMap</td><td>StrMap.len()</td><td>int</td></tr>
+<tr><td>StrMap</td><td>StrMap.remove(string)</td><td>bool</td></tr>
+<tr><td>StrMap</td><td>StrMap.set(string, string)</td><td>StrMap</td></tr>
+<tr><td>StrMap</td><td>StrMap.values()</td><td>StrList</td></tr>
+<tr><td>StrPQ</td><td>StrPQ.clear()</td><td>StrPQ</td></tr>
+<tr><td>StrPQ</td><td>StrPQ.empty()</td><td>bool</td></tr>
+<tr><td>StrPQ</td><td>StrPQ.len()</td><td>int</td></tr>
+<tr><td>StrPQ</td><td>StrPQ.peek()</td><td>string</td></tr>
+<tr><td>StrPQ</td><td>StrPQ.pop()</td><td>string</td></tr>
+<tr><td>StrPQ</td><td>StrPQ.push(string, float)</td><td>StrPQ</td></tr>
+<tr><td>StrQueue</td><td>StrQueue.at(int)</td><td>string</td></tr>
+<tr><td>StrQueue</td><td>StrQueue.clear()</td><td>StrQueue</td></tr>
+<tr><td>StrQueue</td><td>StrQueue.empty()</td><td>bool</td></tr>
+<tr><td>StrQueue</td><td>StrQueue.len()</td><td>int</td></tr>
+<tr><td>StrQueue</td><td>StrQueue.peek()</td><td>string</td></tr>
+<tr><td>StrQueue</td><td>StrQueue.pop()</td><td>string</td></tr>
+<tr><td>StrQueue</td><td>StrQueue.push(string)</td><td>StrQueue</td></tr>
+<tr><td>StrStack</td><td>StrStack.at(int)</td><td>string</td></tr>
+<tr><td>StrStack</td><td>StrStack.clear()</td><td>StrStack</td></tr>
+<tr><td>StrStack</td><td>StrStack.empty()</td><td>bool</td></tr>
+<tr><td>StrStack</td><td>StrStack.len()</td><td>int</td></tr>
+<tr><td>StrStack</td><td>StrStack.peek()</td><td>string</td></tr>
+<tr><td>StrStack</td><td>StrStack.pop()</td><td>string</td></tr>
+<tr><td>StrStack</td><td>StrStack.push(string)</td><td>StrStack</td></tr>
+</tbody>
+</table>
+<h2 id="rest">Standard REST and CLI interfaces</h2>
+<p>These belong to the current 226-signature lmcode_std_v3 catalog. They are not registered by lmcad 0.1.5 (lmcad --lmcode-signatures lists none of them), so blocks for this release cannot call them; the table records what arrives when lmcad syncs to the current catalog.</p>
+<table>
+<thead><tr><th>Item</th><th>Kind</th><th>Status in lmcad 0.1.5</th></tr></thead>
+<tbody>
+<tr><td>RestGet</td><td>Standard interface</td><td>Not available</td></tr>
+<tr><td>RestPost</td><td>Standard interface</td><td>Not available</td></tr>
+<tr><td>RestPut</td><td>Standard interface</td><td>Not available</td></tr>
+<tr><td>RestDelete</td><td>Standard interface</td><td>Not available</td></tr>
+<tr><td>RestPatch</td><td>Standard interface</td><td>Not available</td></tr>
+<tr><td>RestHead</td><td>Standard interface</td><td>Not available</td></tr>
+<tr><td>RestOptions</td><td>Standard interface</td><td>Not available</td></tr>
+<tr><td>RestHandler</td><td>Standard interface</td><td>Not available</td></tr>
+<tr><td>CliCommand</td><td>Standard interface</td><td>Not available</td></tr>
+<tr><td>CliOption</td><td>Standard interface</td><td>Not available</td></tr>
+<tr><td>rest_config(string, string) -> void</td><td>Standard function</td><td>Not available</td></tr>
+<tr><td>rest_route(string, string, string) -> void</td><td>Standard function</td><td>Not available</td></tr>
+<tr><td>rest_serve() -> void</td><td>Standard function</td><td>Not available</td></tr>
+<tr><td>rest_stop() -> void</td><td>Standard function</td><td>Not available</td></tr>
+<tr><td>rest_cli(StrList) -> string</td><td>Standard function</td><td>Not available</td></tr>
+<tr><td>RestExchange (15 methods)</td><td>Standard type</td><td>Not available</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcad">github.com/lmctl-ai/lmcad</a>.</p>
+</footer>
+</body>
+</html>

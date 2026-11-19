@@ -20,41 +20,45 @@
 <li><a href="/tools/lmhtml/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmhtml/guide.html">Guide</a></li>
 <li><a href="/tools/lmhtml/recipes.html">Recipes</a></li>
+<li><a href="/tools/lmhtml/reference.html">Reference</a></li>
 <li><a href="/tools/lmhtml/examples/">Examples</a></li>
 </ul>
 </nav>
 <main>
 <h1>lmhtml script authoring skill</h1>
 <h2>Purpose</h2>
-<p>Write, compile and verify lmscript programs that inspect or transform HTML documents through the lmhtml host API.</p>
+<p>Write, check and verify lmscript programs that inspect or transform HTML documents through the lmhtml host API.</p>
 <h2>When to use it</h2>
 <p>Use lmhtml for checking internal links, auditing CSS classes and IDs, comparing page structure, finding shared markup, or applying consistent edits across pages.</p>
 <h2>Install</h2>
-<p>For an LMScript program, install Node.js 24.15 or newer and lmscript 0.2.420 or newer. Compile with the published compiler. Declare the released host with cli="lmhtml" install="github:lmctl-ai/lmhtml@latest"; lmscript downloads the matching platform binary and verifies its release checksum. The binary prints lmhtml X.Y.Z with --version and exposes its schema with --lmcode-schema --json. Source builds need C++17, CMake, Ninja and the project setup described in the <a href="https://github.com/lmctl-ai/lmhtml#build">README</a>.</p>
+<p>For an LMScript program, install Node.js 24.15 or newer and lmscript 0.2.482 or newer. Write host code in a block that starts with p = _lmcode_ and ends with end _lmcode_, and run it with r = run_lmcode(p). Declare the released host with cli="lmhtml" install="github:lmctl-ai/lmhtml@latest"; lmscript downloads the matching platform binary and verifies its release checksum. The binary prints lmhtml X.Y.Z with --version and exposes its schema with --lmcode-schema --json. Source builds need C++17, CMake, Ninja and the project setup described in the <a href="https://github.com/lmctl-ai/lmhtml#build">README</a>.</p>
 <h2>Commands</h2>
 <pre><code>lmhtml --lmcode-schema
 lmhtml --lmcode-schema --json
 lmhtml --lmcode-signatures
-npx --yes --package=@lmctl-ai/lmctl -- lmscript check.lms build/check.dslb
-lmhtml --lmcode build/check.dslb</code></pre>
+lmscript --check check.lms
+lmscript check.lms</code></pre>
+<p>run_lmcode writes the compiled program file and calls lmhtml --lmcode FILE itself; add --dry-run to that host protocol to report saves without writing.</p>
+<p>lmhtml 0.7.6 embeds the 226-signature lmcode_std_v3 standard catalog. It includes the standard interfaces RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand and CliOption, the functions rest_config, rest_route, rest_serve, rest_stop and rest_cli, and the RestExchange type with 15 methods. A handler is a block function that implements one interface and carries an annotation such as @"/health", @"text" or @"--selector"; rest_cli(args) dispatches options, commands and routes statelessly and returns the response text. The <a href="/tools/lmhtml/reference.html">reference</a> lists every signature.</p>
+
 <p>Start from the <a href="/tools/lmhtml/examples/">runnable examples</a> or use the <a href="/tools/lmhtml/get_started.html">provider-session quickstart</a>.</p>
 <p>Markdown notes use the same document tree. Native commands need only the host:</p>
-<pre><kbd>lmhtml md2html notes/chapter.md build/chapter.html</kbd>
+<pre><kbd>lmhtml md2html notes/chapter.md build/chapter.html --template shell.html</kbd>
 <kbd>lmhtml index notes</kbd>
-<kbd>lmhtml index notes --check</kbd>
+<kbd>lmhtml index notes --order order.txt --check</kbd>
 <kbd>lmhtml mdcheck notes</kbd>
 <kbd>lmhtml site notes build/notes --template shell.html</kbd></pre>
 <p>Raw HTML is disabled by default. Front matter may override title and summary. Use html.from_markdown or html.render_markdown for DSL post-processing, then html.save. Index drift and broken links fail with non-zero status. Web output must stay below the working directory and must not overlap its input.</p>
 <h2>Inputs and outputs</h2>
-<ul><li>For tool use, declare cli="lmhtml" and install="github:lmctl-ai/lmhtml@latest" on the LMCode line so lmscript obtains the matching host schema automatically.</li><li>Use html.load(path) for one document and html.load_dir(path) for a host collection of documents.</li><li>Methods return host objects such as Doc, Node, DocList and StrList; collections support len(), at(i) and foreach.</li><li>The host writes reports, transformed HTML, or JSON as directed by script calls. A successful DSL run prints {"ok": true, "result": null}. Native index/check/site commands are quiet on success; md2html prints HTML when no output file is supplied.</li></ul>
+<ul><li>For tool use, declare cli="lmhtml" and install="github:lmctl-ai/lmhtml@latest" on the _lmcode_ line so lmscript obtains the matching host schema automatically.</li><li>Use html.load(path) for one document and html.load_dir(path) for a host collection of documents.</li><li>Methods return host objects such as Doc, Node, DocList and StrList; collections support len(), at(i) and foreach.</li><li>The host writes reports, transformed HTML, or JSON as directed by script calls. run_lmcode returns a map with ok and result; set result fields with $return.name = value or lmcode_return_set. Native index/check/site commands are quiet on success; md2html prints HTML when no output file is supplied.</li></ul>
 <h2>Safety rules</h2>
-<ul><li>Only process synthetic or authorized site content. Use a scratch copy when demonstrating edits.</li><li>External links are classified but not fetched. Decide explicitly how to handle external, special and outside-root link kinds.</li><li>Use --dry-run for scripts that save HTML; it reports intended writes without changing files.</li><li>Saving is constrained to the working directory and performed atomically. Keep input and output directories separate for reviewable changes.</li><li>The bytecode VM has no execution budget or allocation cap. Run only trusted bytecode.</li><li>There are no DSL list values; use schema collection objects and for (item in collection).</li></ul>
+<ul><li>Only process synthetic or authorized site content. Use a scratch copy when demonstrating edits.</li><li>External links are classified but not fetched. Decide explicitly how to handle external, special and outside-root link kinds.</li><li>Use --dry-run for scripts that save HTML; it reports intended writes without changing files.</li><li>Saving is constrained to the working directory and performed atomically. Keep input and output directories separate for reviewable changes.</li><li>The bytecode VM has no execution budget or allocation cap. Run only trusted bytecode.</li><li>Use the typed collection objects of the schema and the standard catalog, such as StrList and StrMap, with len() and at(i).</li></ul>
 <h2>Worked examples</h2>
 <ol><li>Link audit: loop over html.load_dir("site"), then each document's links(); skip policy-approved kinds with html.link_kind(doc, url), and report missing internal destinations with html.link_exists(doc, url).</li><li>Class audit: compare pages.classes_used() with pages.css_classes() using str_difference; call suggest(name, candidates) for near matches.</li><li>Structural comparison: html.diff(before, after) ignores normalized whitespace, comments, attribute order and data-* noise.</li><li>Template extraction: html.write_template(pages, minimum_count, output_path) emits shared subtrees and slot markers.</li><li>Shared edit: select a node, call replace_with or set_attr, and save a copy with html.save(doc, output_path).</li></ol>
 <h2>Errors and exit codes</h2>
-<p>Exit 0 means success. Exit 2 reports usage or bytecode compilation problems; exit 3 reports bytecode load or host runtime errors; exit 4 reports an application failure such as a report explicitly marked as failed. A missing file, invalid selector, or out-of-range collection access is a runtime failure. Compile errors point to a source location.</p>
+<p>Exit 0 means success. Exit 2 reports usage problems; exit 3 reports program load or host runtime errors, and native command errors such as index drift; exit 4 reports an application failure such as a report explicitly marked as failed. A missing file, invalid selector, or out-of-range collection access is a runtime failure. Compile errors point to a source location.</p>
 <h2>How to verify</h2>
-<ol><li>Compile tool programs with cli="lmhtml" and install="github:lmctl-ai/lmhtml@latest"; the local version-matched binary on PATH takes precedence over a download.</li><li>Compare lmscript --lmcode-signatures schema.json with lmhtml --lmcode-signatures when validating a host adapter.</li><li>Run the bytecode against a synthetic site first and inspect both the JSON result line and report file.</li><li>For edits, use --dry-run, review the destination files, then run normally and re-diff.</li><li>Repeat the run and compare outputs when deterministic reports matter.</li></ol>
+<ol><li>Check tool programs with lmscript --check, declaring cli="lmhtml" and install="github:lmctl-ai/lmhtml@latest"; the local version-matched binary on PATH takes precedence over a download.</li><li>Run lmhtml --lmcode-signatures and confirm the methods you call are listed; 0.7.6 prints 305 lines, of which 226 are the lmcode_std_v3 catalog.</li><li>Run the script against a synthetic site first and inspect both the run_lmcode result and the report file.</li><li>For edits, use --dry-run, review the destination files, then run normally and re-diff.</li><li>Repeat the run and compare outputs when deterministic reports matter.</li></ol>
 <h3>Plain content for agents</h3>
 <p>Use lint to measure unnecessary decoration and entities, normalize to remove them without changing the text, and clean to extract main content for agents. Plain prose has no inline code or emphasis. Copyable commands belong in blocks. Text needs only ampersand and less-than escapes; attributes need only ampersand and quote escapes.</p>
 <pre><code>lmhtml lint --stats --json skills tools durable-memory
@@ -65,7 +69,7 @@ lmhtml clean page.html --base https://example.org/docs/page.html
 lmhtml clean page.html --check
 lmhtml clean https://example.org/docs/page.html --markdown</code></pre>
 <p>clean is deterministic and offline for files. URL input uses curl and requires network access; it runs no JavaScript. Extraction removes navigation, forms, scripts, styles and common advertising/cookie containers, resolves links and prints byte counts and a bytes/4 token estimate on stderr. Heuristics can miss unusual site layouts: inspect extracted content before relying on it. clean --check compares extraction with the page's main content and fails with a diff if content would be dropped.</p>
-<p>normalize preserves code-block alignment, removes inline typography, repairs entities and unfolds prose. lint counts violations per file and in total, with densities per 100 words; --config FILE accepts DIRECTORY METRIC MAX_COUNT rows. Defaults are zero, with h2/h3 anchors retained. The DSL equivalents are Doc.normalize() and Doc.clean(base_url).</p>
+<p>normalize preserves code-block alignment, removes inline typography, repairs entities and unfolds prose. lint counts violations per file and in total, with densities per 100 words; --config FILE accepts DIRECTORY METRIC MAX_COUNT rows. Defaults are zero, with h2/h3 anchors retained. normalize --check reports without rewriting. The block equivalents are Doc.normalize() and Doc.clean(base_url).</p>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmhtml">github.com/lmctl-ai/lmhtml</a>.</p>

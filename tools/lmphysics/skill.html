@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmphysics authoring skill — lmphysics — lmctl.com tools</title>
+<meta name="description" content="lmphysics is a self-contained Project Chrono rigid-body dynamics, contact, joint, and mechanism simulation host for LMScript.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmphysics/">Overview</a></li>
+<li><a href="/tools/lmphysics/skill.html">Skill</a></li>
+<li><a href="/tools/lmphysics/guide.html">Guide</a></li>
+<li><a href="/tools/lmphysics/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmphysics authoring skill</h1>
+<p>lmphysics is a self-contained Project Chrono rigid-body dynamics, contact, joint, and mechanism simulation host for LMScript.</p>
+<h2>Purpose</h2>
+<p>Use lmphysics to simulate 3D rigid bodies, non-smooth complementarity (NSC) and penalty (SMC) contact, friction, restitution, gyroscopic precession, pendulums, springs, dampers, rotational and linear motors, gear trains, Cardan joints, and planar or spatial linkages, exporting time-series trajectories and joint reactions to CSV.</p>
+<h2>When to use it</h2>
+<p>Choose lmphysics for Newtonian rigid-body dynamics, multi-body mechanisms, collision stacks, rolling and sliding friction, and driven oscillators in SI units (meters, kilograms, seconds, radians). Do not use it for deformable finite-element meshes, fluid dynamics, or radiative particle transport (use lmparticle for photon transport).</p>
+<h2>Install</h2>
+<p>Install the lmctl CLI globally, or declare cli="lmphysics" and install="github:lmctl-ai/lmphysics@latest" on an LMScript _lmcode_ block so the runtime downloads and verifies the self-contained native executable (Linux glibc 2.35 or newer, macOS, or Windows).</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmphysics --version
+lmphysics --notices
+lmphysics --lmcode-schema --json</code></pre>
+<h2>Commands</h2>
+<p>lmphysics runs as an lmcode host invoked through run_lmcode(p) in LMScript or directly from the command line for schema inspection, signature listing, and compiled bytecode execution.</p>
+<pre><code>lmphysics --version
+lmphysics --notices
+lmphysics --lmcode-schema
+lmphysics --lmcode-schema --json
+lmphysics --lmcode-signatures
+lmphysics --lmcode build/program.dslb
+lmctl autorun examples/pendulum.lms</code></pre>
+<h2>Inputs and outputs</h2>
+<p>Programs use context phys: Phys alongside the standard lmcode_std_v3 catalog. Calling phys.system("nsc") or phys.system("smc") returns a System in a right-handed coordinate frame with default gravity (0, 0, -9.81) m/s2.</p>
+<ul>
+<li>Bodies: System creates ground, box, sphere, cylinder (local axis along y), and floor (fixed 200x200x2 m slab with top at z = 0) handles. Body methods configure initial position (pos), velocity (vel), axis-angle orientation (rot_axis), angular velocity (omega), custom mass and diagonal inertia (mass_props), collision attachment (collide), time-expression forces and torques in world coordinates (force, torque), and linear/quadratic air drag (drag).</li>
+<li>Joints, springs, and motors: System connects body pairs with revolute, prismatic, cylindrical, universal (Cardan), gear, lock, spherical, distance, spring, spring_at, motor_speed, motor_angle, motor_torque, motor_position, motor_linear_speed, and motor_force constraints.</li>
+<li>Outputs: Body and Joint getters read instantaneous positions, velocities, angular momenta, kinetic energy, unwrapped joint angles, linear travel, motor effort, and world-frame reaction forces. System.record(name, columns) and System.save_csv(path) log time histories (including Hamilton quaternions qw, qx, qy, qz) to CSV for plotting or 3D rendering.</li>
+</ul>
+<h2>Safety rules</h2>
+<ul>
+<li>Position and orient bodies with Body.pos and Body.rot_axis before creating joints; joint anchor points and axes are captured in world coordinates at joint creation time.</li>
+<li>Define and configure contact materials with System.material and System.stiffness before attaching them to bodies via Body.collide or System.floor; redefining an already-attached material is refused with exit code 3.</li>
+<li>Call System.record(name, columns) before the first step() or run(t_end) call, and choose an integrator compatible with the system: use hht for smooth energy-conserving mechanisms without NSC contact or redundant 3D constraints, trapezoidal for redundant linkages or constant-acceleration springs, and euler with psor or apgd for NSC collisions and stacks.</li>
+<li>Use System.collision_margins(0.0, 0.0) for isolated exact-restitution impacts (apex = e^2 h), or default margins (0.03, 0.01) for stable multi-box stacks.</li>
+<li>Total host memory is capped by LMPHYSICS_MAX_MEMORY_MB (default 4096 MiB); use System.record_every(n) on long runs to subsample CSV rows.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>Simulate a 60-degree revolute pendulum with the energy-conserving HHT integrator, verify mechanical energy conservation to 0.01%, and export its trajectory and pin reaction forces to CSV:</p>
+<pre><code>p = _lmcode_ cli="lmphysics" install="github:lmctl-ai/lmphysics@latest";
+let s = phys.system("nsc");
+s.integrator("hht").timestep(0.0005);
+let pin = s.ground("pin");
+let bob = s.sphere("bob", 0.05, 2000.0).pos(0.866, 0.0, -0.5);
+let hinge = s.revolute("hinge", pin, bob, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+s.record("bob", "x,z,vx,vz").record("hinge", "angle,fx,fz");
+let e0 = s.energy();
+s.run(5.0);
+phys.assert_close(s.energy() / e0, 1.0, 0.0001);
+s.save_csv("pendulum.csv");
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, "simulation failed: " + json_stringify(r));</code></pre>
+<p>Simulate an isolated bouncing ball with coefficient of restitution 0.8 and zero collision margins, verifying that the first rebound apex matches e^2 times the drop height:</p>
+<pre><code>p = _lmcode_ cli="lmphysics" install="github:lmctl-ai/lmphysics@latest";
+let s = phys.system("nsc");
+s.timestep(0.0005).collision_margins(0.0, 0.0).bounce_speed(0.05);
+s.material("bouncy", 0.2, 0.8);
+s.floor("ground", "bouncy");
+let ball = s.sphere("ball", 0.1, 1000.0).pos(0.0, 0.0, 1.1).collide("bouncy");
+s.run(0.75);
+phys.assert_close(ball.z() - 0.1, 0.64, 0.01);
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Each invocation prints a single terminal LMCODE_RETURN frame. Exit code 0 indicates success. Exit code 2 indicates CLI usage errors, invalid LMPHYSICS_MAX_MEMORY_MB values, or malformed invocation manifest metadata. Exit code 3 indicates bytecode load failure, schema mismatch, NaN/infinite body state, direct-solver factorization failure, incompatible NSC contact with a linear solver, failed phys.assert_close, or exceeding LMPHYSICS_MAX_MEMORY_MB. Exit code 4 indicates an application or file output error.</p>
+<h2>How to verify</h2>
+<p>Check schema and signature parity between the lmphysics binary and the lmscript compiler:</p>
+<pre><code>lmphysics --version
+lmphysics --lmcode-schema --json > /tmp/lmphysics.schema.json
+lmphysics --lmcode-signatures > /tmp/lmphysics.sigs.txt
+lmscript --lmcode-signatures /tmp/lmphysics.schema.json > /tmp/lmphysics.compiler.txt
+diff -u /tmp/lmphysics.compiler.txt /tmp/lmphysics.sigs.txt</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmphysics">github.com/lmctl-ai/lmphysics</a>.</p>
+</footer>
+</body>
+</html>

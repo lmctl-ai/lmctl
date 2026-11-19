@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmlucene authoring skill — lmlucene — lmctl.com tools</title>
+<meta name="description" content="lmlucene exposes Apache Lucene 10.5.2 indexing, full-text and vector KNN search, facets, and custom SAM analysis and scoring callbacks to typed _lmcode_ blocks…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmlucene/">Overview</a></li>
+<li><a href="/tools/lmlucene/skill.html">Skill</a></li>
+<li><a href="/tools/lmlucene/guide.html">Guide</a></li>
+<li><a href="/tools/lmlucene/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmlucene authoring skill</h1>
+<p>lmlucene exposes Apache Lucene 10.5.2 indexing, full-text and vector KNN search, facets, and custom SAM analysis and scoring callbacks to typed _lmcode_ blocks inside LMScript.</p>
+<h2>Purpose</h2>
+<p>Use lmlucene to build in-memory or persistent NIOFSDirectory Lucene indexes, run parsed, Boolean, numeric-range, facet-drilldown, or Euclidean KNN vector queries, and customize tokenization or BM25 similarity scoring directly from LMScript.</p>
+<h2>When to use it</h2>
+<p>Use lmlucene when a task needs full-text inverted indexes, stemmers, phrase and wildcard queries, term vectors, sorted-set facets, or custom per-field BM25 weighting in a standalone native executable. Use lmsearch when your primary workflow is ONNX neural model embedding combined with FAISS and AutoFaiss vector quantization.</p>
+<h2>Install</h2>
+<p>Install the LMScript compiler and download the standalone GraalVM native release binary for Linux, macOS, or Windows with lmscript install.</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmscript install github:lmctl-ai/lmlucene@latest
+lmlucene --version
+lmlucene --lmcode-schema --json
+lmlucene --lmcode-signatures</code></pre>
+<h2>Commands</h2>
+<p>Compile an _lmcode_ block targeting lmlucene and execute it with run_lmcode:</p>
+<pre><code>program = _lmcode_ cli="lmlucene" install="github:lmctl-ai/lmlucene@latest";
+let directory = memory_directory();
+let analyzer = standard_analyzer();
+let writer = index_writer(directory, writer_config(analyzer));
+writer.add(document().keyword("id", "1", true).text("body", "Hello Lucene", true));
+let reader = writer.reader();
+index_searcher(reader).search(term_query("body", "lucene"), 10).emit("matches");
+end _lmcode_
+r = run_lmcode(program);
+assert(r.ok);</code></pre>
+<p>With a compiled bytecode file (the repository examples write them under lmcode/build), you can also invoke the lmaws-style CLI runner with dry-run or JSON input options:</p>
+<pre><code>lmlucene run --program lmcode/build/basic.dslb
+lmlucene run --program lmcode/build/basic.dslb --dryrun
+lmlucene run --input-json "{\"op\":\"run\",\"params\":{\"program\":\"lmcode/build/basic.dslb\"}}"</code></pre>
+<h2>Inputs and outputs</h2>
+<p>Programs create documents with analyzed text, exact keyword, stored-only, numeric point/doc-value, facet, and float-vector fields, index them through IndexWriter into memory_directory() or fs_directory(path), and query them through IndexSearcher.</p>
+<p>Stdout emits a single JSON envelope containing ok and result. TopDocs.emit(label) adds stored document fields, doc IDs, and scores to result.searches; token streams, facets, and reported explanations appear in result.details.</p>
+<h2>Safety rules</h2>
+<p>Call writer.commit() or writer.close() to persist filesystem index changes; unclosed writers are automatically rolled back on exit or failure, and all open resources close in reverse acquisition order. Readers are immutable point-in-time snapshots: open a new reader via writer.reader() or directory_reader(dir) to observe committed writes.</p>
+<p>In TokenTransform SAM rules, apply the same rule_analyzer at both indexing and query time and never return an empty replacement token. In FieldWeight SAM rules, always return a finite, nonnegative weight factor so Lucene's score monotonicity invariants hold.</p>
+<h2>Worked examples</h2>
+<p>Run the persistent indexing and query scripts or the 32-example gallery covering phrase/fuzzy queries, facets, pagination, sorting, KNN, and SAM rules:</p>
+<pre><code>lmscript lmcode/examples/basic.lms
+lmscript lmcode/examples/rules.lms
+lmscript lmcode/examples/index.lms /tmp/lmlucene-demo
+lmscript lmcode/examples/query.lms /tmp/lmlucene-demo "lucene AND rules"
+lmscript lmcode/examples/run-gallery.lms</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmlucene exits with code 0 on success. Code 2 indicates CLI usage errors or compilation failures. Code 3 indicates bytecode load errors, schema hash mismatches, runtime Lucene exceptions, or policy refusals (such as passing --readonly to run).</p>
+<h2>How to verify</h2>
+<p>Verify the binary version, CLI schema, lmcode schema, canonical signatures, and integration test suite.</p>
+<pre><code>lmlucene --version
+lmlucene --schema
+lmlucene --lmcode-schema --json
+lmlucene --lmcode-signatures
+./lmcode/test.sh</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmlucene">github.com/lmctl-ai/lmlucene</a>.</p>
+</footer>
+</body>
+</html>

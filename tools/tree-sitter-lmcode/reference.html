@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tree-sitter-lmcode reference — tree-sitter-lmcode — lmctl.com tools</title>
+<meta name="description" content="Reference tables for tree-sitter-lmcode AST node types, external scanner tokens, verification scripts, and exit codes.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/tree-sitter-lmcode/">Overview</a></li>
+<li><a href="/tools/tree-sitter-lmcode/skill.html">Skill</a></li>
+<li><a href="/tools/tree-sitter-lmcode/guide.html">Guide</a></li>
+<li><a href="/tools/tree-sitter-lmcode/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>tree-sitter-lmcode reference</h1>
+<p>Reference tables for tree-sitter-lmcode AST node types, external scanner tokens, verification scripts, and exit codes.</p>
+<h2>AST node and grammar surface</h2>
+<table><thead><tr><th>Node / Artifact</th><th>Kind</th><th>Description</th></tr></thead><tbody>
+<tr><td>function_declaration</td><td>Named AST node</td><td>Fields: name, parameters, return_type, body; optional annotation and implements_clause children</td></tr>
+<tr><td>annotation</td><td>Named AST node</td><td>Leading @identifier or @"path/template" attached to a function_declaration</td></tr>
+<tr><td>implements_clause</td><td>Named AST node</td><td>Trailing implements InterfaceName clause on a rule or REST/CLI entry</td></tr>
+<tr><td>return_assignment</td><td>Named AST node</td><td>Assignment statement targeting $return, $return.field, or $return[key_expr]</td></tr>
+<tr><td>map_entry</td><td>Named AST node</td><td>Key-value pair separated by => inside %{ ... } map literals</td></tr>
+<tr><td>splice</td><td>Named AST node</td><td>Outer-language ${...} splice expression parsed with nested brace and string tracking</td></tr>
+<tr><td>heredoc_start / heredoc_body</td><td>AST node + extra</td><td>Expression-position heredoc tag and FIFO-paired raw body token</td></tr>
+<tr><td>end_of_file</td><td>Scanner sentinel</td><td>Zero-width EOF check ensuring unclosed queued heredocs fail closed</td></tr>
+</tbody></table>
+<h2>Standard REST and CLI interfaces recognized by the grammar</h2>
+<table><thead><tr><th>Interface</th><th>Canonical declaration</th><th>Behavior</th></tr></thead><tbody>
+<tr><td>RestGet</td><td>interface RestGet(exchange: RestExchange) -> void</td><td>HTTP GET endpoint bound by path annotation such as @"/users/:id"</td></tr>
+<tr><td>RestPost</td><td>interface RestPost(exchange: RestExchange) -> void</td><td>HTTP POST endpoint bound by path annotation such as @"/users"</td></tr>
+<tr><td>RestPut</td><td>interface RestPut(exchange: RestExchange) -> void</td><td>HTTP PUT endpoint bound by path annotation such as @"/users/:id"</td></tr>
+<tr><td>RestDelete</td><td>interface RestDelete(exchange: RestExchange) -> void</td><td>HTTP DELETE endpoint bound by path annotation such as @"/users/:id"</td></tr>
+<tr><td>RestPatch</td><td>interface RestPatch(exchange: RestExchange) -> void</td><td>HTTP PATCH endpoint bound by path annotation such as @"/users/:id"</td></tr>
+<tr><td>RestHead</td><td>interface RestHead(exchange: RestExchange) -> void</td><td>HTTP HEAD endpoint bound by path annotation</td></tr>
+<tr><td>RestOptions</td><td>interface RestOptions(exchange: RestExchange) -> void</td><td>HTTP OPTIONS endpoint bound by path annotation</td></tr>
+<tr><td>RestHandler</td><td>interface RestHandler(exchange: RestExchange) -> void</td><td>Method-prefixed (@"POST /users") or rest_route(method, path, annotation) handler</td></tr>
+<tr><td>CliCommand</td><td>interface CliCommand(exchange: RestExchange) -> void</td><td>Stateless CLI subcommand entry dispatched by rest_cli(args)</td></tr>
+<tr><td>CliOption</td><td>interface CliOption(exchange: RestExchange) -> void</td><td>Stateless CLI flag or option entry dispatched before CliCommand by rest_cli(args)</td></tr>
+</tbody></table>
+<h2>Verification exit statuses</h2>
+<table><thead><tr><th>Exit code</th><th>Stage</th><th>Result</th><th>Condition</th></tr></thead><tbody>
+<tr><td>0</td><td>parse / test</td><td>Exit 0</td><td>All grammar generation, corpus cases, negative syntax-refusal checks, incremental edit gates, and mutation controls pass</td></tr>
+<tr><td>1</td><td>conformance</td><td>Exit 1</td><td>A corpus fixture produces unexpected ERROR or MISSING nodes, or a negative refusal fixture parses without syntax errors</td></tr>
+<tr><td>1</td><td>freshness</td><td>Exit 1</td><td>Generated src/parser.c, grammar.json, or node-types.json differs from grammar.js after tree-sitter generate</td></tr>
+<tr><td>2</td><td>cli / pin</td><td>Exit 2</td><td>Missing TREE_SITTER CLI binary, mismatched tree-sitter-cli version (requires 0.27.1), or missing live corpus root</td></tr>
+</tbody></table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/tree-sitter-lmcode">github.com/lmctl-ai/tree-sitter-lmcode</a>.</p>
+</footer>
+</body>
+</html>

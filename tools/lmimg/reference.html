@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmimg reference — lmimg — lmctl.com tools</title>
+<meta name="description" content="Complete reference for lmimg 0.1.4. Signatures are copied from lmimg --lmcode-signatures; parameter names come from the repository README and examples.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmimg/">Overview</a></li>
+<li><a href="/tools/lmimg/skill.html">Skill</a></li>
+<li><a href="/tools/lmimg/guide.html">Guide</a></li>
+<li><a href="/tools/lmimg/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmimg reference</h1>
+<p>Complete reference for lmimg 0.1.4. Signatures are copied from lmimg --lmcode-signatures; parameter names come from the repository README and examples. Where the public documentation does not name a parameter, only its type is shown.</p>
+<h2 id="cli">CLI flags</h2>
+<table>
+<thead>
+<tr><th>Invocation</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td>lmimg --version</td><td>Print the version, for example lmimg 0.1.4</td></tr>
+<tr><td>lmimg --notices</td><td>Print third-party notices: ImageMagick, zlib, libpng, libjpeg-turbo, libtiff, libwebp, stb_truetype and the embedded Roboto font</td></tr>
+<tr><td>lmimg --lmcode-schema --json</td><td>Print the compiler schema as JSON with keys dsl.schema (2), name (lmimg), types (6), functions (0) and context (1)</td></tr>
+<tr><td>lmimg --lmcode-schema</td><td>Schema output without JSON</td></tr>
+<tr><td>lmimg --lmcode-signatures</td><td>List exact signatures, 279 lines: 1 context line, 72 host methods, 206 standard signatures</td></tr>
+<tr><td>lmimg --lmcode FILE [FILE ...]</td><td>Run compiled bytecode files</td></tr>
+<tr><td>--dry-run</td><td>With --lmcode: verify bytecode without running image operations</td></tr>
+</tbody>
+</table>
+<h2 id="exit">Exit codes and environment</h2>
+<table>
+<thead>
+<tr><th>Code</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>Success</td></tr>
+<tr><td>2</td><td>Usage error (failure frame with phase cli, code CLI_USAGE) or invalid LMIMG_MAX_MEMORY_MB</td></tr>
+<tr><td>3</td><td>Bytecode-load or execution failure with JSON on stdout and a diagnostic on stderr; also exceeding the memory budget, with one stderr line naming LMIMG_MAX_MEMORY_MB</td></tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr><th>Variable</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>LMIMG_MAX_MEMORY_MB</td><td>Total memory budget as a positive whole number of MiB; default 4096. The host counts C++ allocations and conservatively charges native image storage.</td></tr>
+</tbody>
+</table>
+<p>A host error inside a block reaches the outer script as a map with ok false, phase run, code RUN_HOST, message, line and column.</p>
+<h2 id="types">Context and host types</h2>
+<table>
+<thead>
+<tr><th>Name</th><th>Kind</th><th>Role</th></tr>
+</thead>
+<tbody>
+<tr><td>img</td><td>context of type Img</td><td>Factory for images and builders, plus utilities</td></tr>
+<tr><td>Image</td><td>type</td><td>An RGBA raster, 8 bits per channel; edits mutate and return the receiver</td></tr>
+<tr><td>Curve</td><td>type</td><td>Tone curve builder for curves and curves_rgb</td></tr>
+<tr><td>Layers</td><td>type</td><td>Layer stack with blend modes, opacity, offsets and masks</td></tr>
+<tr><td>Montage</td><td>type</td><td>Grid sheet builder</td></tr>
+<tr><td>Animation</td><td>type</td><td>GIF frame sequence builder</td></tr>
+</tbody>
+</table>
+<h2 id="img">Img methods (context img)</h2>
+<table>
+<thead>
+<tr><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>img.canvas(int, int, float, float, float, float) -> Image</td><td>New image of width w and height h filled with colour r, g, b, a</td></tr>
+<tr><td>img.pattern(int, int, string, string, string, string) -> Image</td><td>New w by h image whose R, G, B and A channels are expression strings over normalized x and y; expressions may use hash(x,y,seed) for white noise and noise(x,y,seed) for smooth value noise</td></tr>
+<tr><td>img.open(string) -> Image</td><td>Load an image file; first frame of an animated input</td></tr>
+<tr><td>img.hald(int) -> Image</td><td>Identity Hald CLUT of side level cubed; level 2..16</td></tr>
+<tr><td>img.curve() -> Curve</td><td>New curve builder</td></tr>
+<tr><td>img.layers(int, int) -> Layers</td><td>New layer stack of width w and height h</td></tr>
+<tr><td>img.montage() -> Montage</td><td>New montage builder</td></tr>
+<tr><td>img.animation() -> Animation</td><td>New animation builder</td></tr>
+<tr><td>img.panel(Image, Image, int) -> Image</td><td>Two images side by side with a gap in pixels</td></tr>
+<tr><td>img.text_width(string, float) -> float</td><td>Width in pixels of text at the given size in the embedded font</td></tr>
+<tr><td>img.eval(string) -> float</td><td>Evaluate a scalar expression string</td></tr>
+<tr><td>img.assert_true(bool) -> void</td><td>Fail the run when the condition is false</td></tr>
+<tr><td>img.assert_close(float, float, float) -> void</td><td>Fail the run when two values differ by more than the tolerance</td></tr>
+<tr><td>img.print(string) -> void</td><td>Print a value as text</td></tr>
+</tbody>
+</table>
+<h2 id="image">Image methods</h2>
+<table>
+<thead>
+<tr><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>copy() -> Image</td><td>Independent copy</td></tr>
+<tr><td>save(string) -> void</td><td>Write the image to a path; PNG, JPEG, TIFF, WebP, GIF, BMP and PNM are supported</td></tr>
+<tr><td>width() -> int, height() -> int</td><td>Dimensions in pixels</td></tr>
+<tr><td>pixel(int, int, int) -> float</td><td>Channel value at x, y, channel</td></tr>
+<tr><td>set_pixel(int, int, float, float, float, float) -> Image</td><td>Set the pixel at x, y to r, g, b, a</td></tr>
+<tr><td>resize(int, int) -> Image</td><td>Resize to a width and height (bilinear resampling)</td></tr>
+<tr><td>crop(int, int, int, int) -> Image</td><td>Crop to a rectangle</td></tr>
+<tr><td>rotate(float, float, float, float, float) -> Image</td><td>Rotate; non-right angles yield the ImageMagick shear-based extent, slightly larger than the bounding box</td></tr>
+<tr><td>flip(bool) -> Image</td><td>Mirror the image</td></tr>
+<tr><td>perspective(float, float, float, float, float, float, float, float) -> Image</td><td>Perspective transform; bilinear, out-of-frame samples are transparent</td></tr>
+<tr><td>lens(float) -> Image</td><td>Lens distortion with one coefficient; bilinear, out-of-frame samples are transparent</td></tr>
+<tr><td>levels(float, float, float) -> Image</td><td>Levels adjustment</td></tr>
+<tr><td>curves(Curve) -> Image</td><td>Apply one tone curve</td></tr>
+<tr><td>curves_rgb(Curve, Curve, Curve) -> Image</td><td>Apply separate curves to r, g and b</td></tr>
+<tr><td>hsl(float, float, float) -> Image</td><td>Hue, saturation and lightness adjustment</td></tr>
+<tr><td>channelmix(float x 9) -> Image</td><td>Channel mixer with nine float coefficients</td></tr>
+<tr><td>grayscale() -> Image</td><td>Rec.709 luma of the gamma-encoded values</td></tr>
+<tr><td>sepia(float) -> Image</td><td>Sepia treatment</td></tr>
+<tr><td>invert() -> Image</td><td>Invert colours</td></tr>
+<tr><td>threshold(float) -> Image</td><td>Threshold to two levels</td></tr>
+<tr><td>normalize() -> Image, equalize() -> Image</td><td>Contrast normalization and histogram equalization</td></tr>
+<tr><td>colormap(string) -> Image</td><td>False colour: gray, heat, viridis or coolwarm</td></tr>
+<tr><td>clut(Image) -> Image</td><td>Apply a Hald CLUT image with trilinear interpolation</td></tr>
+<tr><td>blur(float, float) -> Image</td><td>Blur; feathers alpha (premultiplied)</td></tr>
+<tr><td>sharpen(float, float) -> Image</td><td>Sharpen; acts on RGB and keeps alpha</td></tr>
+<tr><td>edges(float) -> Image</td><td>Edge detection; acts on RGB and keeps alpha</td></tr>
+<tr><td>morphology(string, int) -> Image</td><td>Morphological operation by name with radius 0..16</td></tr>
+<tr><td>unsharp(float, float, float, float) -> Image</td><td>Unsharp mask</td></tr>
+<tr><td>vignette(float, float) -> Image</td><td>Vignette</td></tr>
+<tr><td>tilt_shift(float, float, float) -> Image</td><td>Selective-focus band</td></tr>
+<tr><td>blend(Image, string, float, int, int) -> Image</td><td>Composite another image with mode, opacity and offset x, y</td></tr>
+<tr><td>mask(Image) -> Image</td><td>Apply an image mask</td></tr>
+<tr><td>selection(int, int, int, int) -> Image</td><td>Rectangular selection x, y, w, h: clears alpha outside</td></tr>
+<tr><td>heal(int, int, int, int, int) -> Image</td><td>Heal a patch with a planar fit of the surrounding ring</td></tr>
+<tr><td>rect(float x 8) -> Image</td><td>Filled rectangle: four geometry values then r, g, b, a</td></tr>
+<tr><td>circle(float x 7) -> Image</td><td>Filled circle: centre x, centre y, radius, then r, g, b, a</td></tr>
+<tr><td>line(float x 9) -> Image</td><td>Line: x1, y1, x2, y2, then r, g, b, a, then width</td></tr>
+<tr><td>text(float, float, string, float, float, float, float, float) -> Image</td><td>ASCII text at x, y with size, then r, g, b, a</td></tr>
+<tr><td>mean(int), stddev(int), min(int), max(int) -> float</td><td>Statistics; the int argument selects what is measured</td></tr>
+<tr><td>histogram(string) -> void</td><td>Write a 256-bin histogram CSV to a path</td></tr>
+<tr><td>psnr(Image) -> float</td><td>PSNR over normalized RGBA; positive infinity for identical images; equal dimensions required</td></tr>
+<tr><td>ssim(Image) -> float</td><td>One global luma window with sample covariance and constants 0.01 squared and 0.03 squared; equal dimensions required</td></tr>
+<tr><td>property(string) -> string</td><td>Read a property by key</td></tr>
+<tr><td>metadata(string, string) -> Image</td><td>Set a metadata key to a value</td></tr>
+</tbody>
+</table>
+<h2 id="builders">Curve, Layers, Montage and Animation methods</h2>
+<table>
+<thead>
+<tr><th>Signature</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Curve.point(float, float) -> Curve</td><td>Add a control point x, y</td></tr>
+<tr><td>Layers.add(Image, string, float, int, int) -> Layers</td><td>Add a layer with mode, opacity and offset x, y</td></tr>
+<tr><td>Layers.masked(Image, Image, string, float, int, int) -> Layers</td><td>Add a layer with an image mask, mode, opacity and offset x, y</td></tr>
+<tr><td>Layers.render() -> Image</td><td>Flatten the stack</td></tr>
+<tr><td>Montage.add(Image) -> Montage</td><td>Add a tile</td></tr>
+<tr><td>Montage.render(int, int, float, float, float, float) -> Image</td><td>Render with columns, gap and background r, g, b, a</td></tr>
+<tr><td>Animation.add(Image, int) -> Animation</td><td>Add a frame with a delay in centiseconds</td></tr>
+<tr><td>Animation.size() -> int</td><td>Number of frames</td></tr>
+<tr><td>Animation.save(string) -> void</td><td>Write an animated GIF</td></tr>
+</tbody>
+</table>
+<h2 id="enums">Modes and named values</h2>
+<table>
+<thead>
+<tr><th>Set</th><th>Values</th></tr>
+</thead>
+<tbody>
+<tr><td>Blend and layer modes</td><td>over, multiply, screen, overlay, difference, darken, lighten, addition, subtract, divide (straight-alpha source-over, opacity applied to the source alpha)</td></tr>
+<tr><td>Colormaps</td><td>gray, heat, viridis, coolwarm</td></tr>
+<tr><td>File formats</td><td>PNG, JPEG, TIFF, WebP, GIF, BMP, PNM (PPM, PGM, PBM)</td></tr>
+<tr><td>Pattern expression functions</td><td>hash(x,y,seed), noise(x,y,seed), plus arithmetic on normalized x and y</td></tr>
+</tbody>
+</table>
+<p>curves_rgb, threshold, invert, normalize, equalize, colormap, clut, hald, text_width, the divide mode and the hash and noise expression functions were added in 0.1.2.</p>
+<h2 id="std">Standard library lmcode_std_v3 in lmimg 0.1.4</h2>
+<p>lmimg 0.1.4 ships 206 standard signatures: 83 function signatures and 123 container and Json methods. All are callable inside an lmimg block.</p>
+<table>
+<thead>
+<tr><th>Group</th><th>Names</th></tr>
+</thead>
+<tbody>
+<tr><td>Result</td><td>lmcode_return_set, lmcode_return_put, lmcode_return_null, lmcode_return_put_null</td></tr>
+<tr><td>Files</td><td>file_read, file_write, file_append, file_exists, file_lines</td></tr>
+<tr><td>Math</td><td>math_abs, math_ceil, math_floor, math_max, math_min, math_pow, math_round, math_sqrt</td></tr>
+<tr><td>Strings</td><td>str_len, str_lower, str_upper, str_trim, str_contains, str_starts_with, str_ends_with, str_find, str_match, str_replace, str_repeat, str_split, str_substr, str_to_int, str_to_float, str_is_int, str_is_float, str_base64_encode, str_base64_decode, str_hex_encode, str_hex_decode</td></tr>
+<tr><td>JSON and templates</td><td>json_parse(string) -> Json, template_render(string, Json) -> string</td></tr>
+<tr><td>Container constructors</td><td>int_list, float_list, str_list, int_map, float_map, str_map, int_queue, float_queue, str_queue, int_stack, float_stack, str_stack, int_pq, float_pq, str_pq</td></tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr><th>Type</th><th>Methods</th></tr>
+</thead>
+<tbody>
+<tr><td>IntList, FloatList (7 each)</td><td>add, at, clear, contains, index_of, len, set</td></tr>
+<tr><td>StrList (8)</td><td>add, at, clear, contains, index_of, join, len, set</td></tr>
+<tr><td>IntMap, FloatMap, StrMap (10 each)</td><td>clear, get, get_or, has, key_at, keys, len, remove, set, values</td></tr>
+<tr><td>IntQueue, FloatQueue, StrQueue, IntStack, FloatStack, StrStack (7 each)</td><td>at, clear, empty, len, peek, pop, push</td></tr>
+<tr><td>IntPQ, FloatPQ, StrPQ (6 each)</td><td>clear, empty, len, peek, pop, push</td></tr>
+<tr><td>Json (11)</td><td>as_bool, as_float, as_int, as_string, at, get, has, keys, kind, len, to_json</td></tr>
+</tbody>
+</table>
+<h2 id="rest">Standard REST and CLI interfaces</h2>
+<p>The current lmcode_std_v3 catalog has 226 canonical signatures. The 20 added after the 206 that lmimg 0.1.4 ships are the standard REST and CLI module. lmimg 0.1.4 lists no rest signatures; it picks them up when it syncs to the current catalog and releases.</p>
+<table>
+<thead>
+<tr><th>Part of the current catalog</th><th>Names</th><th>In lmimg 0.1.4</th></tr>
+</thead>
+<tbody>
+<tr><td>Standard interfaces</td><td>RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand, CliOption</td><td>No</td></tr>
+<tr><td>Functions</td><td>rest_config(string, string) -> void, rest_route(string, string, string) -> void, rest_serve() -> void, rest_stop() -> void, rest_cli(StrList) -> string</td><td>No</td></tr>
+<tr><td>RestExchange</td><td>15 methods on the request and response exchange object</td><td>No</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmimg">github.com/lmctl-ai/lmimg</a>.</p>
+</footer>
+</body>
+</html>

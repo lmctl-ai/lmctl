@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>provider-mock-e2e authoring skill — provider-mock-e2e — lmctl.com tools</title>
+<meta name="description" content="provider-mock-e2e qualifies 13 real coding agent CLIs (Claude Code, Codex, Gemini, Copilot, OpenCode, Kimi, Qwen, Pi, DSH, Miniplayer, lmplayer, Agy, and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/provider-mock-e2e/">Overview</a></li>
+<li><a href="/tools/provider-mock-e2e/skill.html">Skill</a></li>
+<li><a href="/tools/provider-mock-e2e/guide.html">Guide</a></li>
+<li><a href="/tools/provider-mock-e2e/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>provider-mock-e2e authoring skill</h1>
+<p>provider-mock-e2e qualifies 13 real coding agent CLIs (Claude Code, Codex, Gemini, Copilot, OpenCode, Kimi, Qwen, Pi, DSH, Miniplayer, lmplayer, Agy, and Hermes) installed via lminstall against a checksum-verified lmmock loopback server across Linux, macOS, and Windows.</p>
+<h2>Purpose</h2>
+<p>Use provider-mock-e2e to prove that real, unmodified coding agent binaries can be configured in a fresh temporary HOME, routed to a local loopback lmmock server without vendor credentials, and verified for exact reply extraction, request auditing, and semantic wrong-reply failure detection.</p>
+<h2>When to use it</h2>
+<p>Choose provider-mock-e2e when adding or upgrading a provider CLI in lmctl or lminstall, when verifying cross-platform argv and environment isolation on Linux, macOS, and Windows, or when diagnosing wire-protocol changes across Anthropic Messages, OpenAI Responses, OpenAI Chat Completions, and Gemini streamGenerateContent routes.</p>
+<h2>Install</h2>
+<p>Clone lmctl-ai/provider-mock-e2e, ensure Python 3, Node with a private @lmctl-ai/lmctl compiler (LMSCRIPT_JS), and lminstall are available, and install the target provider via lminstall before running scripts/prepare.py and scripts/run.py.</p>
+<pre><code>git clone https://github.com/lmctl-ai/provider-mock-e2e.git
+cd provider-mock-e2e
+lminstall status claude --json</code></pre>
+<h2>Commands</h2>
+<p>Prepare the verified lmmock fixture, run a provider probe through scripts/run.py or scripts/probe.py (prepare.py takes no arguments and writes settings.json under MOCK_ROOT, by default provider-mock-tools under RUNNER_TEMP or /tmp), and clean up detached Hermes gateway processes when applicable.</p>
+<pre><code>npm install --prefix /tmp/compiler --no-audit --no-fund @lmctl-ai/lmctl@0.2.448
+export LMSCRIPT_JS=/tmp/compiler/node_modules/@lmctl-ai/lmctl/bin/lmscript
+python3 scripts/prepare.py
+python3 scripts/run.py claude --settings /tmp/provider-mock-tools/settings.json --out build/claude
+python3 scripts/run.py codex --settings /tmp/provider-mock-tools/settings.json --out build/codex
+python3 scripts/run.py gemini --settings /tmp/provider-mock-tools/settings.json --out build/gemini
+python3 scripts/run.py agy --settings /tmp/provider-mock-tools/settings.json --out build/agy
+python3 scripts/probe.py miniplayer --binary /path/to/miniplayer --settings /tmp/provider-mock-tools/settings.json --out build/miniplayer</code></pre>
+<h2>Inputs and outputs</h2>
+<p>scripts/run.py queries lminstall status &lt;provider> --json, asserts state == "installed", and passes the owned binary path to scripts/probe.py. scripts/probe.py starts the prepared lmmock binary with lmmock exec and re-runs itself as a child, which requires the LMMOCK_URL it receives to be an http://127.0.0.1:PORT or http://[::1]:PORT loopback origin, creates an empty temporary HOME and work directory, sends the prompt Reply with exactly PROVIDER_MOCK_OK_129. Do not call any tools., extracts the provider-specific reply from JSON/JSONL/plain stdout, asserts observed == "PROVIDER_MOCK_OK_129", runs the same oracle against a deliberately wrong expected string to prove the assertion fires, and writes stdout.txt, stderr.txt, version.txt, request.json, result.json, config.json, and audit.jsonl into the --out directory.</p>
+<h2>Safety rules</h2>
+<p>Never use a global PATH fallback when locating a provider CLI; always resolve the binary owned by lminstall. Refuse any LMMOCK_URL that is not plain HTTP on 127.0.0.1 or ::1, and never accept or pass live vendor API keys (always use fixed dummy key synthetic-mock-key-129). Scrub inherited environment variables down to the minimal OS set (clean_env) and redirect HOME, USERPROFILE, XDG_CONFIG_HOME, XDG_DATA_HOME, XDG_CACHE_HOME, XDG_STATE_HOME, LOCALAPPDATA, and APPDATA into the temporary directory. For Hermes, always execute scripts/cleanup-hermes.py in a finally block to verify the HOME/process-start fingerprint and reap its detached gateway PID before removing the temporary HOME.</p>
+<h2>Worked examples</h2>
+<p>Example: Configuring and running probes for Claude Code, Codex, and Miniplayer against a loopback lmmock origin.</p>
+<pre><code>npm install --prefix /tmp/compiler --no-audit --no-fund @lmctl-ai/lmctl@0.2.448
+export LMSCRIPT_JS=/tmp/compiler/node_modules/@lmctl-ai/lmctl/bin/lmscript
+python3 scripts/prepare.py
+for p in claude codex gemini copilot opencode kimi qwen pi dsh miniplayer lmplayer agy hermes; do
+  python3 scripts/run.py "$p" \
+    --settings /tmp/provider-mock-tools/settings.json \
+    --out "build/${p}-report"
+done</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Exit code 0 indicates the provider exited with 0, returned the exact string PROVIDER_MOCK_OK_129, passed the lmmock request audit, and raised AssertionError as required on the negative wrong-reply control. Any non-zero provider exit, non-loopback LMMOCK_URL, missing lminstall binary, wrong reply text, or un-reaped Hermes gateway raises an unhandled Python exception and exits non-zero.</p>
+<h2>How to verify</h2>
+<p>Check that the target provider is installed in lminstall, run scripts/run.py (scripts/probe.py starts lmmock exec itself and the mock exits with the probe), and inspect result.json, request.json, and audit.jsonl in the --out directory.</p>
+<pre><code>lminstall status miniplayer --json
+python3 scripts/run.py miniplayer --settings /tmp/provider-mock-tools/settings.json --out build/miniplayer</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/provider-mock-e2e">github.com/lmctl-ai/provider-mock-e2e</a>.</p>
+</footer>
+</body>
+</html>

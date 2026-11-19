@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmpdf authoring skill — lmpdf — lmctl.com tools</title>
+<meta name="description" content="lmpdf is a self-contained Rust and Typst lmcode host for LMScript that generates deterministic, tagged PDF/A-2b and PDF/UA-1 documents and slide decks from the…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmpdf/">Overview</a></li>
+<li><a href="/tools/lmpdf/skill.html">Skill</a></li>
+<li><a href="/tools/lmpdf/guide.html">Guide</a></li>
+<li><a href="/tools/lmpdf/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmpdf authoring skill</h1>
+<p>lmpdf is a self-contained Rust and Typst lmcode host for LMScript that generates deterministic, tagged PDF/A-2b and PDF/UA-1 documents and slide decks from the same typed calls as lmoffice docx and lmoffice pptx.</p>
+<h2>Purpose</h2>
+<p>Use lmpdf to produce archival PDF/A-2b and accessible PDF/UA-1 documents (lmpdf docx) and 16:9 presentation slide decks (lmpdf pptx) with bundled Latin, Arabic RTL, and CJK fonts, or to inspect generated PDFs for page, image, table, and hyperlink counts and extracted text.</p>
+<h2>When to use it</h2>
+<p>Choose lmpdf whenever the final deliverable is a byte-identical, self-contained PDF/A-2b and PDF/UA-1 document or presentation deck, or when you want to render an existing lmoffice docx or lmoffice pptx script directly to PDF by changing only the cli and install attributes. Use lmoffice instead when you need editable .docx, .xlsx, or .pptx Open XML packages.</p>
+<h2>Install</h2>
+<p>Install the lmctl toolchain globally with npm, or declare install="github:lmctl-ai/lmpdf@v0.2.19" on an LMScript _lmcode_ block so the resolver downloads and verifies the platform release binary (lmpdf-linux-x64, lmpdf-linux-arm64, lmpdf-macos-x64, lmpdf-macos-arm64, or lmpdf-windows-x64.exe).</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmpdf --version
+lmpdf docx --lmcode-schema --json
+lmpdf pptx --lmcode-schema --json</code></pre>
+<h2>Commands</h2>
+<p>lmpdf provides two format routes (lmpdf docx and lmpdf pptx) that expose their embedded schemas and execute compiled bytecode, plus top-level inspection and Markdown extraction utilities.</p>
+<pre><code>lmpdf --version
+lmpdf docx --lmcode-schema
+lmpdf docx --lmcode-schema --json
+lmpdf docx --lmcode-signatures
+lmpdf docx --lmcode build/doc.dslb
+lmpdf docx --to-markdown output.pdf
+lmpdf pptx --lmcode-schema
+lmpdf pptx --lmcode-schema --json
+lmpdf pptx --lmcode-signatures
+lmpdf pptx --lmcode build/deck.dslb
+lmpdf inspect output.pdf</code></pre>
+<h2>Inputs and outputs</h2>
+<p>The lmpdf docx and lmpdf pptx subcommands expose context docx: DocxHost and context pptx: PptxHost alongside the standard lmcode_std_v3 catalog. The output PDF path is passed to docx.create(path) or pptx.create(path), and save() writes the tagged PDF/A-2b and PDF/UA-1 file and emits a terminal LMCODE_RETURN frame.</p>
+<ul>
+<li>Document route (lmpdf docx): supports headings, paragraphs, bullets, numbered lists, legal clauses, signatures, 1-based tables with repeating header rows and cell shading, page sizes, portrait/landscape orientation, margins, multi-column sections, running headers and footers with {PAGE} and {NUMPAGES} fields, generated table of contents, footnotes, tab stops, Markdown bodies (Docx.markdown and Docx.markdown_file), and XHTML/CSS profiles (Docx.html_doc and Docx.html_xml).</li>
+<li>Presentation route (lmpdf pptx): renders 16:9 slides (1280x720 px / 960x540 pt canvas) with theme palettes, title_slide, section_header, and two_content layouts, positioned text and bullet boxes, shapes, lines, arrows, tables, charts, speaker notes, and slide-separated Markdown decks (Pptx.markdown).</li>
+<li>Bundled fonts and international scripts: includes Latin families plus Noto Naskh Arabic (right-to-left with joined glyph shaping) and Kosugi (Japanese CJK) without reading system fonts.</li>
+</ul>
+<h2>Safety rules</h2>
+<ul>
+<li>Supply an explicit boolean dry field whenever invoking lmpdf with LMCODE_INVOCATION_FILE; missing or non-boolean dry values fail before dispatch with exit code 2.</li>
+<li>Do not pass retired execution and schema flags or --first and --last; they are refused with exit code 2.</li>
+<li>In dry mode, domain callbacks return SDK typed dummies and validate html_doc or html_xml markup in memory without creating or modifying any PDF, image, or directory on disk.</li>
+<li>Use 1-based row and column indices for table cells in both docx and pptx routes, and ensure output parent directories exist before calling save().</li>
+</ul>
+<h2>Worked examples</h2>
+<p>Generate a tagged PDF/A-2b and PDF/UA-1 document using the docx context:</p>
+<pre><code>output = ARGV.len() > 0 ? ARGV[0] : "hello.pdf";
+p = _lmcode_ cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.2.19";
+let doc = docx.create(${output});
+doc.title("Hello PDF").author("Harborline Devices").font("Calibri").font_size(11.0);
+doc.heading("Hello PDF", 1);
+doc.paragraph("The same document calls target both lmoffice docx and lmpdf docx.");
+doc.footer_fields("Page {PAGE} of {NUMPAGES}").save();
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));</code></pre>
+<p>Generate a multi-page invoice PDF from an inline Markdown table and inspect its page count:</p>
+<pre><code>body = """# Quarterly Invoice
+
+| Item | Quantity | Amount |
+| :--- | ---: | ---: |
+| Sensor calibration | 12 | $4,800.00 |
+| Telemetry gateway | 3 | $2,250.00 |
+""";
+p = _lmcode_ cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.2.19";
+let d = docx.create("invoice.pdf");
+d.title("Quarterly Invoice").author("Harborline Devices");
+d.markdown(${body}).footer_fields("Page {PAGE} of {NUMPAGES}").save();
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmpdf writes exactly one LMCODE_RETURN_BEGIN / LMCODE_RETURN_END frame per invocation. Exit code 0 indicates success. Exit code 2 indicates CLI argument errors, retired flags, or malformed invocation manifest metadata. Exit code 3 indicates bytecode load failure, schema mismatch, or VM runtime errors (such as division by zero or invalid html_doc markup in dry validation). Exit code 4 indicates application, layout, missing input file, or filesystem output failures.</p>
+<h2>How to verify</h2>
+<p>Verify schema parity against the lmscript compiler, inspect the generated PDF structure with lmpdf inspect, and optionally check archival conformance with qpdf or veraPDF:</p>
+<pre><code>lmpdf --version
+lmpdf docx --lmcode-schema --json > /tmp/lmpdf-docx.schema.json
+lmpdf docx --lmcode-signatures > /tmp/lmpdf-docx.sigs.txt
+lmscript --lmcode-signatures /tmp/lmpdf-docx.schema.json > /tmp/lmpdf-docx.compiler.txt
+diff -u /tmp/lmpdf-docx.compiler.txt /tmp/lmpdf-docx.sigs.txt
+lmpdf inspect hello.pdf</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmpdf">github.com/lmctl-ai/lmpdf</a>.</p>
+</footer>
+</body>
+</html>

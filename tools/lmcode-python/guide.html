@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-python guide — lmcode-python — lmctl.com tools</title>
+<meta name="description" content="This guide explains the lmcode-python package architecture, raw byte-string handling, R49 rule entry and RestController dispatch, and conformance verification.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-python/">Overview</a></li>
+<li><a href="/tools/lmcode-python/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-python/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-python/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-python guide</h1>
+<p>This guide explains the lmcode-python package architecture, raw byte-string handling, R49 rule entry and RestController dispatch, and conformance verification.</p>
+<h2>Overview</h2>
+<p>lmcode-python is implemented in pure Python 3.9+ with zero external package dependencies and no native compilation step. load(bytecode, schema, registry) validates the DSLB v6 header, verifies the 32-byte SHA-256 schema hash, binds all imports against Registry, and performs structural loop and operand stack depth verification on the body and every R49 entry.</p>
+<h2>Registry and virtual machine embedding</h2>
+<p>Registry() installs all 206 canonical lmcode_std_v3 signatures automatically. Host objects are declared with registry.context(name, type_name) and bound per run with context.set(name, obj). Function callbacks receive (context, args) and method callbacks receive (context, receiver, args). Setting raw_strings=True delivers byte strings as 1-codepoint-per-byte str objects and accepts bytes or bytearray return values.</p>
+<h2>REST and stateless CLI controller lifecycle</h2>
+<p>The released lmcode-python pins the 206-signature catalog, and its REST module is opt-in: calling lmcode.rest.register_rest(registry, max_body_bytes=1048576) adds the REST signatures and returns a RestController instance. The 226-signature catalog with the standard REST and CLI interfaces and rest_config and rest_cli is not in this release; see docs/rest.md in the repository for the routing forms it supports. After the body runs, rest.run(program) serves HTTP/1.1 over sys.stdin.buffer / sys.stdout.buffer.</p>
+<pre><code>from pathlib import Path
+from lmcode import Context, Registry, load
+from lmcode.rest import register_rest
+
+registry = Registry()
+rest = register_rest(registry, max_body_bytes=1 &lt;&lt; 20)
+program = load(Path("app.dslb").read_bytes(), Path("host.schema.json").read_bytes(), registry)
+rest.run(program, Context())</code></pre>
+<h2>Invocation result protocol and dry mode</h2>
+<p>Every host invocation reads the optional version-1 manifest from LMCODE_INVOCATION_FILE to determine whether dry mode is active and to allocate one ResultSink per submitted program slot. Inside an _lmcode_ chunk, assignments to $return, $return.field, or $return[key] invoke the 24 standard lmcode_return_* imports on the active slot. After all bodies, R49 rule entries, and application checks complete, WriteFrame emits a single terminal LMCODE_RETURN_BEGIN / LMCODE_RETURN_END envelope on stdout and returns exit code 0 on success, 2 on CLI usage error, 3 on load or runtime error, or 4 on application validation failure.</p>
+<h2>Conformance verification</h2>
+<p>Run python3 -m unittest discover -s tests, python3 scripts/check-verifier-mutations.py, python3 -m lmcode.conformance conformance/vectors, python3 scripts/run-rest-suite.py, python3 scripts/run-return-vectors.py, and python3 scripts/run-invocation-vectors.py to verify full cross-runtime parity.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-python">github.com/lmctl-ai/lmcode-python</a>.</p>
+</footer>
+</body>
+</html>

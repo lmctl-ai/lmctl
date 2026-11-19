@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmclient guide — lmclient — lmctl.com tools</title>
+<meta name="description" content="Protocol areas, bundled JDBC engines, memory governance, and standard lmcode_std_v3 REST and CLI interfaces in lmclient.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmclient/">Overview</a></li>
+<li><a href="/tools/lmclient/skill.html">Skill</a></li>
+<li><a href="/tools/lmclient/guide.html">Guide</a></li>
+<li><a href="/tools/lmclient/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmclient guide</h1>
+<p>Protocol areas, bundled JDBC engines, memory governance, and standard lmcode_std_v3 REST and CLI interfaces in lmclient.</p>
+<h2>Overview</h2>
+<p>lmclient unifies six non-HTTP data and messaging protocol areas (JDBC databases, Redis, SMTP/IMAP mail, AMQP queues, MQTT, and MongoDB) inside one GraalVM native executable. It runs both as a direct JSON-output CLI and as an lmcode bytecode host with 28 domain signatures (2 functions and 26 methods) and the 226-signature lmcode_std_v3 standard library.</p>
+<h2>Bundled JDBC drivers and resource budgets</h2>
+<p>The native executable bundles five JDBC drivers without requiring an external JVM: SQLite-JDBC, DuckDB, H2, PostgreSQL, and Microsoft SQL Server. On the JVM distribution, additional third-party JDBC drivers can be loaded dynamically with --driver-jar and --driver-class.</p>
+<p>Memory is governed by LMCLIENT_MAX_MEMORY_MB (default 4096 MiB, minimum 16 MiB). Up to 75 percent of the budget is allocated to the Java heap, while each active SQLite or DuckDB native engine receives a one-eighth memory-manager cap. A program may keep up to two native-engine connections and 64 total connections open concurrently, and result sets default to 10000 rows (configurable up to 1000000 via --max-rows).</p>
+<h2>JDBC Connection and Result domain objects</h2>
+<p>Inside an _lmcode_ block, connect(url) and connect_file(url, credentials_path) open a Connection handle. Connection supports transactional DDL and DML execution (begin, commit, rollback, exec), analytical queries (query, explain), and schema introspection (schemas, tables, views, columns, keys, foreign_keys, indexes, and diff against a second Connection).</p>
+<pre><code>program = _lmcode_ cli="lmclient" install="github:lmctl-ai/lmclient@latest";
+let c = connect("jdbc:h2:mem:shop");
+c.exec("CREATE TABLE items(id INT PRIMARY KEY, name VARCHAR(40), price DOUBLE);");
+c.exec("INSERT INTO items VALUES (1, 'Keyboard', 79.50), (2, 'Monitor', 249.00);");
+let r = c.query("SELECT name, price FROM items ORDER BY id");
+file_write("items.txt", r.table());
+c.close();
+end _lmcode_</code></pre>
+<h2>Protocol areas beyond JDBC</h2>
+<p>Each non-JDBC subcommand family shares the same JSON stdout contract and exit codes (0 success, 2 usage, 3 runtime failure):</p>
+<ul>
+<li>redis: ping, get, set (with --ttl), del, lpush, rpop, lrange, and publish over redis:// URLs.</li>
+<li>mail: send over SMTP, read newest message headers over IMAP, and ping, with credential redaction.</li>
+<li>queue: AMQP (RabbitMQ) ping, publish to a durable queue, and destructive consume with --limit and --timeout.</li>
+<li>mqtt: MQTT ping, pub with --qos, and sub with --limit and --timeout over tcp:// brokers.</li>
+<li>mongo: MongoDB ping, insert, find, and delete.</li>
+</ul>
+<h2>Standard REST and stateless CLI interfaces</h2>
+<p>DslHost registers all 226 canonical lmcode_std_v3 signatures alongside HostApi.BINDINGS and uses Program.callIsolated() so annotated RestGet..RestOptions, RestHandler, CliCommand, and CliOption callbacks can open and query JDBC connections without registry reentry.</p>
+<pre><code>program = _lmcode_ cli="lmclient" install="github:lmctl-ai/lmclient@latest";
+@"--table"
+fn opt_table(x: RestExchange) -> void implements CliOption {
+  x.set("table", x.query("table"));
+}
+
+@"count"
+fn cmd_count(x: RestExchange) -> void implements CliCommand {
+  let c = connect("jdbc:h2:mem:rest_cli_db;DB_CLOSE_DELAY=-1");
+  let q = c.query("SELECT COUNT(*) FROM " + x.get("table"));
+  x.send("count=" + q.text(0, 0));
+  c.close();
+}
+
+@"/rows/:id"
+fn get_row(x: RestExchange) -> void implements RestGet {
+  let c = connect("jdbc:h2:mem:rest_cli_db;DB_CLOSE_DELAY=-1");
+  let q = c.query("SELECT label FROM items WHERE id = " + x.param("id"));
+  x.send("row=" + q.text(0, 0));
+  c.close();
+}
+
+let init = connect("jdbc:h2:mem:rest_cli_db;DB_CLOSE_DELAY=-1");
+init.exec("CREATE TABLE items(id INT PRIMARY KEY, label VARCHAR(20)); INSERT INTO items VALUES (1, 'alpha'), (2, 'beta');");
+init.close();
+
+rest_config("prefix", "/api");
+let cli_out = rest_cli(str_split("--table items count", " "));
+let get_out = rest_cli(str_split("/api/rows/2", " "));
+file_write("rest_cli.txt", cli_out + "|" + get_out);
+end _lmcode_</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmclient">github.com/lmctl-ai/lmclient</a>.</p>
+</footer>
+</body>
+</html>

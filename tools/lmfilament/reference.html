@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmfilament reference — lmfilament — lmctl.com tools</title>
+<meta name="description" content="Every signature on this page was read from the output of lmfilament --lmcode-signatures and --lmcode-schema --json of the released lmfilament 0.3.21, which…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmfilament/">Overview</a></li>
+<li><a href="/tools/lmfilament/skill.html">Skill</a></li>
+<li><a href="/tools/lmfilament/guide.html">Guide</a></li>
+<li><a href="/tools/lmfilament/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmfilament reference</h1>
+<p>Every signature on this page was read from the output of lmfilament --lmcode-signatures and --lmcode-schema --json of the released lmfilament 0.3.21, which embeds Filament 1.78.1. Notes describe only what the repository README and examples state.</p>
+<h2 id="context">Context objects</h2>
+<table>
+<thead>
+<tr><th>Name</th><th>Type</th><th>Role</th></tr>
+</thead>
+<tbody>
+<tr><td>fil</td><td>Filament</td><td>The only context object: factory for materials, meshes, textures and scenes</td></tr>
+</tbody>
+</table>
+<h2 id="types">Host types</h2>
+<table>
+<thead>
+<tr><th>Type</th><th>Methods</th><th>Created by</th></tr>
+</thead>
+<tbody>
+<tr><td>Filament</td><td>19</td><td>The fil context object</td></tr>
+<tr><td>Material</td><td>7</td><td>fil.material, fil.material_file</td></tr>
+<tr><td>Mesh</td><td>6</td><td>fil.box, sphere, icosphere, cylinder, cone, capsule, plane, ring, triangle, text, tube_between, mesh_obj</td></tr>
+<tr><td>Texture</td><td>7</td><td>fil.texture, texture_checker, texture_file</td></tr>
+<tr><td>Scene</td><td>14</td><td>fil.scene</td></tr>
+<tr><td>Part</td><td>5</td><td>Scene.add_part</td></tr>
+<tr><td>Node</td><td>4</td><td>Scene.node</td></tr>
+<tr><td>Total</td><td>62</td><td>The schema declares no host functions; everything is a method</td></tr>
+</tbody>
+</table>
+<h2 id="filament">Filament methods</h2>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>box</td><td>(float, float, float) -> Mesh</td><td>Procedural box mesh</td></tr>
+<tr><td>capsule</td><td>(float, float, int) -> Mesh</td><td>Procedural capsule mesh</td></tr>
+<tr><td>cone</td><td>(float, float, int) -> Mesh</td><td>Procedural cone mesh</td></tr>
+<tr><td>cylinder</td><td>(float, float, int) -> Mesh</td><td>Procedural cylinder mesh</td></tr>
+<tr><td>icosphere</td><td>(float, int) -> Mesh</td><td>Procedural icosphere mesh</td></tr>
+<tr><td>material</td><td>(string, string) -> Material</td><td>Compile Filament material source given as a string; the examples pass a name and the source text</td></tr>
+<tr><td>material_file</td><td>(string) -> Material</td><td>Compile a Filament material source file</td></tr>
+<tr><td>mesh_obj</td><td>(string) -> Mesh</td><td>Import an OBJ file; vt is flipped so v = 0 is the top image row</td></tr>
+<tr><td>plane</td><td>(float, float) -> Mesh</td><td>Procedural plane mesh</td></tr>
+<tr><td>ring</td><td>(float, float, int) -> Mesh</td><td>Procedural ring mesh</td></tr>
+<tr><td>scene</td><td>() -> Scene</td><td>Create a scene on the Filament engine (noop backend)</td></tr>
+<tr><td>sphere</td><td>(float, int) -> Mesh</td><td>Procedural sphere mesh; examples pass radius and segment count</td></tr>
+<tr><td>text</td><td>(string, float) -> Mesh</td><td>Voxel text mesh from a 5x7 font</td></tr>
+<tr><td>texture</td><td>(int, int) -> Texture</td><td>Create an image of the given width and height</td></tr>
+<tr><td>texture_checker</td><td>(int, int, float, float, float, float, float, float) -> Texture</td><td>Create a generated checker image</td></tr>
+<tr><td>texture_file</td><td>(string) -> Texture</td><td>Load a PNG, JPEG, BMP or TGA image</td></tr>
+<tr><td>triangle</td><td>() -> Mesh</td><td>The vertex-colored triangle of the upstream hellotriangle sample</td></tr>
+<tr><td>tube_between</td><td>(float, float, float, float, float, float, float) -> Mesh</td><td>Tube mesh between two points; examples pass start x y z, end x y z and a radius</td></tr>
+<tr><td>version</td><td>() -> string</td><td>Embedded Filament version string; 1.78.1 in lmfilament 0.3.21</td></tr>
+</tbody>
+</table>
+<h2 id="material">Material methods</h2>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>name</td><td>() -> string</td><td>Material name</td></tr>
+<tr><td>package_size</td><td>() -> int</td><td>Size of the compiled filamat package in bytes</td></tr>
+<tr><td>save</td><td>(string) -> void</td><td>Write the compiled package to a file</td></tr>
+<tr><td>set_float</td><td>(string, float) -> Material</td><td>Set a float parameter by name; returns the material</td></tr>
+<tr><td>set_float3</td><td>(string, float, float, float) -> Material</td><td>Set a float3 parameter such as baseColor</td></tr>
+<tr><td>set_float4</td><td>(string, float, float, float, float) -> Material</td><td>Set a float4 parameter</td></tr>
+<tr><td>set_texture</td><td>(string, Texture) -> Material</td><td>Bind a texture to a sampler2d parameter such as albedo</td></tr>
+</tbody>
+</table>
+<h2 id="mesh">Mesh methods</h2>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>compute_tangents</td><td>() -> Mesh</td><td>Compute tangent frames; returns the mesh</td></tr>
+<tr><td>has_colors</td><td>() -> bool</td><td>Whether the mesh has vertex colors</td></tr>
+<tr><td>has_tangents</td><td>() -> bool</td><td>Whether the mesh has tangent frames</td></tr>
+<tr><td>save_obj</td><td>(string) -> void</td><td>Export the mesh as an OBJ file</td></tr>
+<tr><td>triangle_count</td><td>() -> int</td><td>Number of triangles</td></tr>
+<tr><td>vertex_count</td><td>() -> int</td><td>Number of vertices</td></tr>
+</tbody>
+</table>
+<h2 id="texture">Texture methods</h2>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>filter</td><td>(string) -> Texture</td><td>Sampling filter; the examples use linear and nearest</td></tr>
+<tr><td>height</td><td>() -> int</td><td>Height in pixels</td></tr>
+<tr><td>pixel</td><td>(int, int, float, float, float) -> Texture</td><td>Set one pixel: x, y and a color of three floats</td></tr>
+<tr><td>repeat</td><td>(float, float) -> Texture</td><td>UV repeat factors</td></tr>
+<tr><td>save_png</td><td>(string) -> void</td><td>Write the image as PNG</td></tr>
+<tr><td>width</td><td>() -> int</td><td>Width in pixels</td></tr>
+<tr><td>wrap</td><td>(string) -> Texture</td><td>Wrap mode; the examples use repeat, clamp and mirror</td></tr>
+</tbody>
+</table>
+<h2 id="scene">Scene methods</h2>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>add</td><td>(Mesh, Material) -> Scene</td><td>Add a renderable from a mesh and a material; returns the scene</td></tr>
+<tr><td>add_at</td><td>(Mesh, Material, float, float, float) -> Scene</td><td>Add a renderable at a position x y z</td></tr>
+<tr><td>add_part</td><td>(Mesh, Material) -> Part</td><td>Add a renderable and return a Part that can be transformed, parented and hidden</td></tr>
+<tr><td>camera</td><td>(float, float, float, float, float, float, float) -> Scene</td><td>Set the camera; the examples pass a field of view, an eye position and a target position</td></tr>
+<tr><td>directional_light</td><td>(float, float, float, float, float, float, float) -> Scene</td><td>Add a directional light; the examples pass color r g b, intensity 110000.0 and a direction x y z</td></tr>
+<tr><td>light_count</td><td>() -> int</td><td>Number of lights in the scene</td></tr>
+<tr><td>node</td><td>() -> Node</td><td>Create a scene-graph node (Filament TransformManager)</td></tr>
+<tr><td>point_light</td><td>(float, float, float, float, float) -> Scene</td><td>Add a point light</td></tr>
+<tr><td>render_frames</td><td>(int) -> int</td><td>Drive the Filament render loop for the given number of frames; no pixels are produced</td></tr>
+<tr><td>render_png</td><td>(string, int, int) -> void</td><td>Write a CPU preview picture: path, width, height</td></tr>
+<tr><td>renderable_count</td><td>() -> int</td><td>Number of renderables in the scene</td></tr>
+<tr><td>shadows</td><td>(bool) -> Scene</td><td>Turn the preview shadow map on or off</td></tr>
+<tr><td>skybox</td><td>(float, float, float) -> Scene</td><td>Solid skybox color r g b</td></tr>
+<tr><td>sun</td><td>(float) -> Scene</td><td>Add a sun light</td></tr>
+</tbody>
+</table>
+<h2 id="part">Part methods</h2>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>parent</td><td>(Node) -> Part</td><td>Parent the part to a node</td></tr>
+<tr><td>rotate</td><td>(float, float, float) -> Part</td><td>Rotate the part; three floats</td></tr>
+<tr><td>scale</td><td>(float, float, float) -> Part</td><td>Scale the part</td></tr>
+<tr><td>translate</td><td>(float, float, float) -> Part</td><td>Move the part; returns the part</td></tr>
+<tr><td>visible</td><td>(bool) -> Part</td><td>Show or hide the part</td></tr>
+</tbody>
+</table>
+<h2 id="node">Node methods</h2>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>parent</td><td>(Node) -> Node</td><td>Parent the node to another node</td></tr>
+<tr><td>rotate</td><td>(float, float, float) -> Node</td><td>Rotate the node; three floats</td></tr>
+<tr><td>scale</td><td>(float, float, float) -> Node</td><td>Scale the node</td></tr>
+<tr><td>translate</td><td>(float, float, float) -> Node</td><td>Move the node; returns the node</td></tr>
+</tbody>
+</table>
+<h2 id="enums">Enumerated string values</h2>
+<table>
+<thead>
+<tr><th>Parameter</th><th>Values used in the repository examples</th></tr>
+</thead>
+<tbody>
+<tr><td>Texture.filter</td><td>linear, nearest</td></tr>
+<tr><td>Texture.wrap</td><td>repeat, clamp, mirror</td></tr>
+<tr><td>Material.set_texture sampler name used by the preview</td><td>albedo, baseColor, color or emissive, else the first sampler</td></tr>
+<tr><td>fil.texture_file formats</td><td>PNG, JPEG, BMP, TGA</td></tr>
+</tbody>
+</table>
+<h2 id="cli">CLI flags</h2>
+<pre><code>usage: lmfilament --version | --lmcode-schema [--json] | --lmcode-signatures | --lmcode FILE [FILE ...]</code></pre>
+<table>
+<thead>
+<tr><th>Flag</th><th>Behavior</th></tr>
+</thead>
+<tbody>
+<tr><td>--version</td><td>Print lmfilament and the version</td></tr>
+<tr><td>--lmcode-schema</td><td>Print all signatures as text</td></tr>
+<tr><td>--lmcode-schema --json</td><td>Print the embedded schema JSON with the keys dsl.schema (2), name, types, functions and context</td></tr>
+<tr><td>--lmcode-signatures</td><td>Print all signatures as text: 1 context line, 206 standard signatures and 62 host methods</td></tr>
+<tr><td>--lmcode FILE [FILE ...]</td><td>Run the compiled programs; this is the protocol that run_lmcode drives</td></tr>
+</tbody>
+</table>
+<h2 id="exit">Exit codes and result frame</h2>
+<table>
+<thead>
+<tr><th>Exit</th><th>Phase</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>none</td><td>Success, also for --version and the schema flags</td></tr>
+<tr><td>2</td><td>cli</td><td>Usage error; code CLI_USAGE</td></tr>
+<tr><td>3</td><td>load</td><td>A program file could not be read; code LOAD_BAD_BYTECODE</td></tr>
+</tbody>
+</table>
+<p>Only the exit codes observed with lmfilament 0.3.21 are listed. A failed invocation ends with one result frame on stdout:</p>
+<pre><kbd>lmfilament</kbd>
+<samp>usage: lmfilament --version | --lmcode-schema [--json] | --lmcode-signatures | --lmcode FILE [FILE ...]
+LMCODE_RETURN_BEGIN
+{"ok":false,"phase":"cli","code":"CLI_USAGE","message":"expected --lmcode FILE [FILE ...]"}
+LMCODE_RETURN_END</samp></pre>
+<pre><kbd>lmfilament --lmcode missing.dslb</kbd>
+<samp>LMCODE_RETURN_BEGIN
+{"ok":false,"phase":"load","code":"LOAD_BAD_BYTECODE","message":"cannot read missing.dslb"}
+LMCODE_RETURN_END</samp></pre>
+<h2 id="std">Standard library (lmcode_std_v3)</h2>
+<p>lmfilament 0.3.21 ships 206 standard signatures: 83 function signatures and 123 method signatures on 16 standard types. They need no import and are callable in any lmfilament block next to the fil context. The result sink functions fill the result field of the run_lmcode envelope.</p>
+<h3 id="std-groups">Function groups</h3>
+<table>
+<thead>
+<tr><th>Group</th><th>Signatures</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>String</td><td>17</td><td>Byte-string search, slicing, case, split, replace, numeric parsing and glob match</td></tr>
+<tr><td>Encoding</td><td>4</td><td>Base64 and hexadecimal encode and decode</td></tr>
+<tr><td>Math</td><td>16</td><td>Integer and float overloads of abs, ceil, floor, max, min, pow, round and sqrt</td></tr>
+<tr><td>File</td><td>5</td><td>Whole-file read, write, append, existence test and line split</td></tr>
+<tr><td>Collection constructors</td><td>15</td><td>Create empty lists, maps, queues, stacks and priority queues of int, float and string</td></tr>
+<tr><td>JSON and templates</td><td>2</td><td>Parse JSON text into a Json value; render a text template from a Json value</td></tr>
+<tr><td>Result sink</td><td>24</td><td>Set the value that run_lmcode returns as result: one value, or named fields</td></tr>
+<tr><td>Collection and Json methods</td><td>123</td><td>Methods of the 16 standard types listed below</td></tr>
+<tr><td>Total</td><td>206</td><td>83 function signatures plus 123 method signatures</td></tr>
+</tbody>
+</table>
+<h3 id="std-functions">Standard functions</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>file_append</td><td>(string, string) -> void</td></tr>
+<tr><td>file_exists</td><td>(string) -> bool</td></tr>
+<tr><td>file_lines</td><td>(string) -> StrList</td></tr>
+<tr><td>file_read</td><td>(string) -> string</td></tr>
+<tr><td>file_write</td><td>(string, string) -> void</td></tr>
+<tr><td>float_list</td><td>() -> FloatList</td></tr>
+<tr><td>float_map</td><td>() -> FloatMap</td></tr>
+<tr><td>float_pq</td><td>() -> FloatPQ</td></tr>
+<tr><td>float_queue</td><td>() -> FloatQueue</td></tr>
+<tr><td>float_stack</td><td>() -> FloatStack</td></tr>
+<tr><td>int_list</td><td>() -> IntList</td></tr>
+<tr><td>int_map</td><td>() -> IntMap</td></tr>
+<tr><td>int_pq</td><td>() -> IntPQ</td></tr>
+<tr><td>int_queue</td><td>() -> IntQueue</td></tr>
+<tr><td>int_stack</td><td>() -> IntStack</td></tr>
+<tr><td>json_parse</td><td>(string) -> Json</td></tr>
+<tr><td>lmcode_return_null</td><td>() -> void</td></tr>
+<tr><td>lmcode_return_put</td><td>(string, FloatList) -> void</td></tr>
+<tr><td>lmcode_return_put</td><td>(string, FloatMap) -> void</td></tr>
+<tr><td>lmcode_return_put</td><td>(string, IntList) -> void</td></tr>
+<tr><td>lmcode_return_put</td><td>(string, IntMap) -> void</td></tr>
+<tr><td>lmcode_return_put</td><td>(string, Json) -> void</td></tr>
+<tr><td>lmcode_return_put</td><td>(string, StrList) -> void</td></tr>
+<tr><td>lmcode_return_put</td><td>(string, StrMap) -> void</td></tr>
+<tr><td>lmcode_return_put</td><td>(string, bool) -> void</td></tr>
+<tr><td>lmcode_return_put</td><td>(string, float) -> void</td></tr>
+<tr><td>lmcode_return_put</td><td>(string, int) -> void</td></tr>
+<tr><td>lmcode_return_put</td><td>(string, string) -> void</td></tr>
+<tr><td>lmcode_return_put_null</td><td>(string) -> void</td></tr>
+<tr><td>lmcode_return_set</td><td>(FloatList) -> void</td></tr>
+<tr><td>lmcode_return_set</td><td>(FloatMap) -> void</td></tr>
+<tr><td>lmcode_return_set</td><td>(IntList) -> void</td></tr>
+<tr><td>lmcode_return_set</td><td>(IntMap) -> void</td></tr>
+<tr><td>lmcode_return_set</td><td>(Json) -> void</td></tr>
+<tr><td>lmcode_return_set</td><td>(StrList) -> void</td></tr>
+<tr><td>lmcode_return_set</td><td>(StrMap) -> void</td></tr>
+<tr><td>lmcode_return_set</td><td>(bool) -> void</td></tr>
+<tr><td>lmcode_return_set</td><td>(float) -> void</td></tr>
+<tr><td>lmcode_return_set</td><td>(int) -> void</td></tr>
+<tr><td>lmcode_return_set</td><td>(string) -> void</td></tr>
+<tr><td>math_abs</td><td>(float) -> float</td></tr>
+<tr><td>math_abs</td><td>(int) -> int</td></tr>
+<tr><td>math_ceil</td><td>(float) -> float</td></tr>
+<tr><td>math_ceil</td><td>(int) -> int</td></tr>
+<tr><td>math_floor</td><td>(float) -> float</td></tr>
+<tr><td>math_floor</td><td>(int) -> int</td></tr>
+<tr><td>math_max</td><td>(float, float) -> float</td></tr>
+<tr><td>math_max</td><td>(int, int) -> int</td></tr>
+<tr><td>math_min</td><td>(float, float) -> float</td></tr>
+<tr><td>math_min</td><td>(int, int) -> int</td></tr>
+<tr><td>math_pow</td><td>(float, float) -> float</td></tr>
+<tr><td>math_pow</td><td>(int, int) -> int</td></tr>
+<tr><td>math_round</td><td>(float) -> float</td></tr>
+<tr><td>math_round</td><td>(int) -> int</td></tr>
+<tr><td>math_sqrt</td><td>(float) -> float</td></tr>
+<tr><td>math_sqrt</td><td>(int) -> int</td></tr>
+<tr><td>str_base64_decode</td><td>(string) -> string</td></tr>
+<tr><td>str_base64_encode</td><td>(string) -> string</td></tr>
+<tr><td>str_contains</td><td>(string, string) -> bool</td></tr>
+<tr><td>str_ends_with</td><td>(string, string) -> bool</td></tr>
+<tr><td>str_find</td><td>(string, string) -> int</td></tr>
+<tr><td>str_hex_decode</td><td>(string) -> string</td></tr>
+<tr><td>str_hex_encode</td><td>(string) -> string</td></tr>
+<tr><td>str_is_float</td><td>(string) -> bool</td></tr>
+<tr><td>str_is_int</td><td>(string) -> bool</td></tr>
+<tr><td>str_len</td><td>(string) -> int</td></tr>
+<tr><td>str_list</td><td>() -> StrList</td></tr>
+<tr><td>str_lower</td><td>(string) -> string</td></tr>
+<tr><td>str_map</td><td>() -> StrMap</td></tr>
+<tr><td>str_match</td><td>(string, string) -> bool</td></tr>
+<tr><td>str_pq</td><td>() -> StrPQ</td></tr>
+<tr><td>str_queue</td><td>() -> StrQueue</td></tr>
+<tr><td>str_repeat</td><td>(string, int) -> string</td></tr>
+<tr><td>str_replace</td><td>(string, string, string) -> string</td></tr>
+<tr><td>str_split</td><td>(string, string) -> StrList</td></tr>
+<tr><td>str_stack</td><td>() -> StrStack</td></tr>
+<tr><td>str_starts_with</td><td>(string, string) -> bool</td></tr>
+<tr><td>str_substr</td><td>(string, int, int) -> string</td></tr>
+<tr><td>str_to_float</td><td>(string) -> float</td></tr>
+<tr><td>str_to_int</td><td>(string) -> int</td></tr>
+<tr><td>str_trim</td><td>(string) -> string</td></tr>
+<tr><td>str_upper</td><td>(string) -> string</td></tr>
+<tr><td>template_render</td><td>(string, Json) -> string</td></tr>
+</tbody>
+</table>
+<h3 id="std-types">Standard types and methods</h3>
+<h4>FloatList</h4>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>add</td><td>(float) -> FloatList</td></tr>
+<tr><td>at</td><td>(int) -> float</td></tr>
+<tr><td>clear</td><td>() -> FloatList</td></tr>
+<tr><td>contains</td><td>(float) -> bool</td></tr>
+<tr><td>index_of</td><td>(float) -> int</td></tr>
+<tr><td>len</td><td>() -> int</td></tr>
+<tr><td>set</td><td>(int, float) -> FloatList</td></tr>
+</tbody>
+</table>
+<h4>FloatMap</h4>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>clear</td><td>() -> FloatMap</td></tr>
+<tr><td>get</td><td>(string) -> float</td></tr>
+<tr><td>get_or</td><td>(string, float) -> float</td></tr>
+<tr><td>has</td><td>(string) -> bool</td></tr>
+<tr><td>key_at</td><td>(int) -> string</td></tr>
+<tr><td>keys</td><td>() -> StrList</td></tr>
+<tr><td>len</td><td>() -> int</td></tr>
+<tr><td>remove</td><td>(string) -> bool</td></tr>
+<tr><td>set</td><td>(string, float) -> FloatMap</td></tr>
+<tr><td>values</td><td>() -> FloatList</td></tr>
+</tbody>
+</table>
+<h4>FloatPQ</h4>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>clear</td><td>() -> FloatPQ</td></tr>
+<tr><td>empty</td><td>() -> bool</td></tr>
+<tr><td>len</td><td>() -> int</td></tr>
+<tr><td>peek</td><td>() -> float</td></tr>
+<tr><td>pop</td><td>() -> float</td></tr>
+<tr><td>push</td><td>(float, float) -> FloatPQ</td></tr>
+</tbody>
+</table>
+<h4>FloatQueue</h4>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>at</td><td>(int) -> float</td></tr>
+<tr><td>clear</td><td>() -> FloatQueue</td></tr>
+<tr><td>empty</td><td>() -> bool</td></tr>
+<tr><td>len</td><td>() -> int</td></tr>
+<tr><td>peek</td><td>() -> float</td></tr>
+<tr><td>pop</td><td>() -> float</td></tr>
+<tr><td>push</td><td>(float) -> FloatQueue</td></tr>
+</tbody>
+</table>
+<h4>FloatStack</h4>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>at</td><td>(int) -> float</td></tr>
+<tr><td>clear</td><td>() -> FloatStack</td></tr>
+<tr><td>empty</td><td>() -> bool</td></tr>
+<tr><td>len</td><td>() -> int</td></tr>
+<tr><td>peek</td><td>() -> float</td></tr>
+<tr><td>pop</td><td>() -> float</td></tr>
+<tr><td>push</td><td>(float) -> FloatStack</td></tr>
+</tbody>
+</table>
+<h4>IntList</h4>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>add</td><td>(int) -> IntList</td></tr>
+<tr><td>at</td><td>(int) -> int</td></tr>
+<tr><td>clear</td><td>() -> IntList</td></tr>
+<tr><td>contains</td><td>(int) -> bool</td></tr>
+<tr><td>index_of</td><td>(int) -> int</td></tr>
+<tr><td>len</td><td>() -> int</td></tr>
+<tr><td>set</td><td>(int, int) -> IntList</td></tr>
+</tbody>
+</table>
+<h4>IntMap</h4>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>clear</td><td>() -> IntMap</td></tr>
+<tr><td>get</td><td>(string) -> int</td></tr>
+<tr><td>get_or</td><td>(string, int) -> int</td></tr>
+<tr><td>has</td><td>(string) -> bool</td></tr>
+<tr><td>key_at</td><td>(int) -> string</td></tr>
+<tr><td>keys</td><td>() -> StrList</td></tr>
+<tr><td>len</td><td>() -> int</td></tr>
+<tr><td>remove</td><td>(string) -> bool</td></tr>
+<tr><td>set</td><td>(string, int) -> IntMap</td></tr>
+<tr><td>values</td><td>() -> IntList</td></tr>
+</tbody>
+</table>
+<h4>IntPQ</h4>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>clear</td><td>() -> IntPQ</td></tr>
+<tr><td>empty</td><td>() -> bool</td></tr>
+<tr><td>len</td><td>() -> int</td></tr>
+<tr><td>peek</td><td>() -> int</td></tr>
+<tr><td>pop</td><td>() -> int</td></tr>
+<tr><td>push</td><td>(int, float) -> IntPQ</td></tr>
+</tbody>
+</table>
+<h4>IntQueue</h4>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>at</td><td>(int) -> int</td></tr>
+<tr><td>clear</td><td>() -> IntQueue</td></tr>
+<tr><td>empty</td><td>() -> bool</td></tr>
+<tr><td>len</td><td>() -> int</td></tr>
+<tr><td>peek</td><td>() -> int</td></tr>
+<tr><td>pop</td><td>() -> int</td></tr>
+<tr><td>push</td><td>(int) -> IntQueue</td></tr>
+</tbody>
+</table>
+<h4>IntStack</h4>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>at</td><td>(int) -> int</td></tr>
+<tr><td>clear</td><td>() -> IntStack</td></tr>
+<tr><td>empty</td><td>() -> bool</td></tr>
+<tr><td>len</td><td>() -> int</td></tr>
+<tr><td>peek</td><td>() -> int</td></tr>
+<tr><td>pop</td><td>() -> int</td></tr>
+<tr><td>push</td><td>(int) -> IntStack</td></tr>
+</tbody>
+</table>
+<h4>Json</h4>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>as_bool</td><td>() -> bool</td></tr>
+<tr><td>as_float</td><td>() -> float</td></tr>
+<tr><td>as_int</td><td>() -> int</td></tr>
+<tr><td>as_string</td><td>() -> string</td></tr>
+<tr><td>at</td><td>(int) -> Json</td></tr>
+<tr><td>get</td><td>(string) -> Json</td></tr>
+<tr><td>has</td><td>(string) -> bool</td></tr>
+<tr><td>keys</td><td>() -> StrList</td></tr>
+<tr><td>kind</td><td>() -> string</td></tr>
+<tr><td>len</td><td>() -> int</td></tr>
+<tr><td>to_json</td><td>() -> string</td></tr>
+</tbody>
+</table>
+<h4>StrList</h4>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>add</td><td>(string) -> StrList</td></tr>
+<tr><td>at</td><td>(int) -> string</td></tr>
+<tr><td>clear</td><td>() -> StrList</td></tr>
+<tr><td>contains</td><td>(string) -> bool</td></tr>
+<tr><td>index_of</td><td>(string) -> int</td></tr>
+<tr><td>join</td><td>(string) -> string</td></tr>
+<tr><td>len</td><td>() -> int</td></tr>
+<tr><td>set</td><td>(int, string) -> StrList</td></tr>
+</tbody>
+</table>
+<h4>StrMap</h4>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>clear</td><td>() -> StrMap</td></tr>
+<tr><td>get</td><td>(string) -> string</td></tr>
+<tr><td>get_or</td><td>(string, string) -> string</td></tr>
+<tr><td>has</td><td>(string) -> bool</td></tr>
+<tr><td>key_at</td><td>(int) -> string</td></tr>
+<tr><td>keys</td><td>() -> StrList</td></tr>
+<tr><td>len</td><td>() -> int</td></tr>
+<tr><td>remove</td><td>(string) -> bool</td></tr>
+<tr><td>set</td><td>(string, string) -> StrMap</td></tr>
+<tr><td>values</td><td>() -> StrList</td></tr>
+</tbody>
+</table>
+<h4>StrPQ</h4>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>clear</td><td>() -> StrPQ</td></tr>
+<tr><td>empty</td><td>() -> bool</td></tr>
+<tr><td>len</td><td>() -> int</td></tr>
+<tr><td>peek</td><td>() -> string</td></tr>
+<tr><td>pop</td><td>() -> string</td></tr>
+<tr><td>push</td><td>(string, float) -> StrPQ</td></tr>
+</tbody>
+</table>
+<h4>StrQueue</h4>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>at</td><td>(int) -> string</td></tr>
+<tr><td>clear</td><td>() -> StrQueue</td></tr>
+<tr><td>empty</td><td>() -> bool</td></tr>
+<tr><td>len</td><td>() -> int</td></tr>
+<tr><td>peek</td><td>() -> string</td></tr>
+<tr><td>pop</td><td>() -> string</td></tr>
+<tr><td>push</td><td>(string) -> StrQueue</td></tr>
+</tbody>
+</table>
+<h4>StrStack</h4>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>at</td><td>(int) -> string</td></tr>
+<tr><td>clear</td><td>() -> StrStack</td></tr>
+<tr><td>empty</td><td>() -> bool</td></tr>
+<tr><td>len</td><td>() -> int</td></tr>
+<tr><td>peek</td><td>() -> string</td></tr>
+<tr><td>pop</td><td>() -> string</td></tr>
+<tr><td>push</td><td>(string) -> StrStack</td></tr>
+</tbody>
+</table>
+<h3 id="std-rest">Standard REST and CLI interfaces (current catalog, not yet in this host)</h3>
+<p>The current lmcode_std_v3 catalog in lmcode-cpp has 226 canonical signatures. The 20 signatures beyond the 206 that lmfilament vendors are the former lmcode_std_rest_v1 module: 5 functions and 15 RestExchange methods, together with 10 standard interfaces. lmfilament does not ship them yet; it picks them up when it syncs its lmcode-cpp SDK and publishes a release. Until then a lmfilament program that calls rest_route or declares a RestGet handler does not compile against the lmfilament schema.</p>
+<table>
+<thead>
+<tr><th>Interface</th><th>Signature</th><th>Role</th></tr>
+</thead>
+<tbody>
+<tr><td>RestGet</td><td>(RestExchange exchange) -> void</td><td>Handler for GET routes</td></tr>
+<tr><td>RestPost</td><td>(RestExchange exchange) -> void</td><td>Handler for POST routes</td></tr>
+<tr><td>RestPut</td><td>(RestExchange exchange) -> void</td><td>Handler for PUT routes</td></tr>
+<tr><td>RestDelete</td><td>(RestExchange exchange) -> void</td><td>Handler for DELETE routes</td></tr>
+<tr><td>RestPatch</td><td>(RestExchange exchange) -> void</td><td>Handler for PATCH routes</td></tr>
+<tr><td>RestHead</td><td>(RestExchange exchange) -> void</td><td>Handler for HEAD routes</td></tr>
+<tr><td>RestOptions</td><td>(RestExchange exchange) -> void</td><td>Handler for OPTIONS routes</td></tr>
+<tr><td>RestHandler</td><td>(RestExchange exchange) -> void</td><td>Generic handler bound by rest_route to an annotation name</td></tr>
+<tr><td>CliCommand</td><td>(RestExchange exchange) -> void</td><td>Handler for a command dispatched by rest_cli</td></tr>
+<tr><td>CliOption</td><td>(RestExchange exchange) -> void</td><td>Handler for an option dispatched by rest_cli</td></tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr><th>Function</th><th>Signature</th><th>Behavior</th></tr>
+</thead>
+<tbody>
+<tr><td>rest_config</td><td>(string, string) -> void</td><td>Store a configuration key and value; the keys prefix and base_path set the route prefix and max_body_bytes sets the request body limit</td></tr>
+<tr><td>rest_route</td><td>(string, string, string) -> void</td><td>Register method, path template and handler annotation; templates accept {param} and {rest...} or :param and :rest... placeholders</td></tr>
+<tr><td>rest_serve</td><td>() -> void</td><td>Request serving after the program body; routes are frozen from this call on</td></tr>
+<tr><td>rest_stop</td><td>() -> void</td><td>Stop serving</td></tr>
+<tr><td>rest_cli</td><td>(StrList) -> string</td><td>Stateless CLI mode: dispatch an argument vector to options, commands and REST routes and return the response text</td></tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr><th>RestExchange method</th><th>Signature</th><th>Behavior</th></tr>
+</thead>
+<tbody>
+<tr><td>method</td><td>() -> string</td><td>Request method</td></tr>
+<tr><td>path</td><td>() -> string</td><td>Request path</td></tr>
+<tr><td>query</td><td>(string) -> string</td><td>Query parameter value, empty when absent</td></tr>
+<tr><td>has_query</td><td>(string) -> bool</td><td>Whether a query parameter is present</td></tr>
+<tr><td>param</td><td>(string) -> string</td><td>Route template parameter value, empty when absent</td></tr>
+<tr><td>header</td><td>(string) -> string</td><td>Request header value; repeated headers are joined with a comma and a space</td></tr>
+<tr><td>has_header</td><td>(string) -> bool</td><td>Whether a request header is present</td></tr>
+<tr><td>body</td><td>() -> string</td><td>Request body bytes</td></tr>
+<tr><td>status</td><td>(int) -> void</td><td>Set the response status; values outside 200..599 are a host error</td></tr>
+<tr><td>set_header</td><td>(string, string) -> void</td><td>Set a response header; Content-Length, Connection and Transfer-Encoding are managed by the server</td></tr>
+<tr><td>send</td><td>(string) -> void</td><td>Set the response body</td></tr>
+<tr><td>json</td><td>(string) -> void</td><td>Set the response body and the Content-Type application/json</td></tr>
+<tr><td>get</td><td>(string) -> string</td><td>Read a shared state value, empty when absent</td></tr>
+<tr><td>set</td><td>(string, string) -> void</td><td>Write a shared state value</td></tr>
+<tr><td>increment</td><td>(string) -> int</td><td>Increment a shared named counter and return it</td></tr>
+</tbody>
+</table>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/tools/lmfilament/">lmfilament quick reference</a></li>
+<li><a href="/tools/lmfilament/skill.html">lmfilament skill</a></li>
+<li><a href="/tools/lmfilament/guide.html">lmfilament guide</a></li>
+<li><a href="https://github.com/lmctl-ai/lmfilament">GitHub repository lmctl-ai/lmfilament</a></li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmfilament">github.com/lmctl-ai/lmfilament</a>.</p>
+</footer>
+</body>
+</html>

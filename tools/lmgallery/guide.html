@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmgallery guide — lmgallery — lmctl.com tools</title>
+<meta name="description" content="lmgallery demonstrates how multiple domain-specific LMScript hosts collaborate inside a single script to compute quantitative results and turn them into plots,…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmgallery/">Overview</a></li>
+<li><a href="/tools/lmgallery/skill.html">Skill</a></li>
+<li><a href="/tools/lmgallery/guide.html">Guide</a></li>
+<li><a href="/tools/lmgallery/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmgallery guide</h1>
+<p>lmgallery demonstrates how multiple domain-specific LMScript hosts collaborate inside a single script to compute quantitative results and turn them into plots, 3D renders, diagrams, office documents, and PDF reports.</p>
+<h2>Overview</h2>
+<p>Each native host in the lmctl ecosystem focuses on one computational or visual domain and embeds its own schema. An LMScript program can declare multiple _lmcode_ blocks bound to different hosts, execute each block in turn with run_lmcode, and pass intermediate files from simulation hosts to rendering or document hosts.</p>
+<h2>Multi-host composition architecture</h2>
+<p>Every script in examples/ follows a strict zero-setup contract so it can execute via lmctl from an empty working directory without cloning the repository:</p>
+<ul>
+<li>Declare each host block with cli and install set to a released GitHub repository tag or @latest.</li>
+<li>Generate all input data and intermediate files inside the current working directory.</li>
+<li>Verify every host invocation with require(r.ok, ...) before consuming its output files in the next host block.</li>
+<li>Write the final rendered visual artifact to images/showcase-NN-name.png or .gif.</li>
+</ul>
+<pre><code># 1. Compute trajectory in lmspace
+orb = _lmcode_ cli="lmspace" install="github:lmctl-ai/lmspace@latest";
+let earth = space.body("earth", 398600.4418);
+let sat = space.body("sat", 0.000000000001, 7000.0, 0.0, 0.0, 0.0, 8.8, 0.0);
+let out = space.system().add(earth).add(sat).propagate(20000.0, 801, 5.0, "rk45", 0.000000000001);
+out.save_csv("orbit.csv");
+end _lmcode_
+r1 = run_lmcode(orb);
+require(r1.ok, "orbit propagation failed");
+
+# 2. Plot the satellite path (columns 8 and 9 are x and y in km) in lmplot
+fig = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/orbit.png", 900, 600);
+plot.cmd("set datafile separator ','");
+plot.cmd("plot 'orbit.csv' using 8:9 with lines lw 2 title 'Orbit'");
+end _lmcode_
+r2 = run_lmcode(fig);
+require(r2.ok, "orbit plot failed");</code></pre>
+<h2>Cross-host data handoff conventions</h2>
+<p>Because each host writes tabular output in its native format, compositions must configure downstream readers to match the upstream producer:</p>
+<ul>
+<li>lmnum save_csv writes whitespace-separated numeric rows without a header line.</li>
+<li>lmspace save_csv writes comma-separated numeric rows without a header line.</li>
+<li>lmphysics save_csv writes comma-separated rows with a header row naming each body.column field.</li>
+<li>lmfluid sample(...).save_csv writes comma-separated x,y,0,value rows.</li>
+</ul>
+<p>When plotting mixed whitespace and comma-separated files in lmplot, remember that gnuplot's set datafile separator ',' applies to subsequent plot commands until reset.</p>
+<h2>Document and report pipelines</h2>
+<p>Most compositions from 26 through 50 extend the compute-and-visualize pattern to document-as-code workflows. A domain host such as lmnum, lmfinance, lmweather, lmphysics, lmspace, lmssl, lmhtml, or lmcloud computes metrics and writes structured tables; lmvideo renders high-resolution charts, terminal snapshots, or 3D figures; lmoffice assembles Word documents (.docx), Excel workbooks (.xlsx), or PowerPoint decks (.pptx); and lmpdf renders publication-grade PDFs and page previews.</p>
+<h2>Manifests and repository maintenance</h2>
+<p>The gallery is driven by two JSON manifests in the repository root:</p>
+<ul>
+<li>catalog.json records the 16 featured hosts, their descriptions, upstream generating scripts, local preview paths under docs/images/, and SHA-256 digests.</li>
+<li>showcases.json records the 50 multi-host compositions, their script paths under examples/, the ordered list of hosts in each pipeline, and the target preview image under docs/images/.</li>
+</ul>
+<p>After editing catalog.json or showcases.json, run python3 scripts/build-readme.py to regenerate README.md, examples/README.md, and docs/ATTRIBUTION.md. Run ./examples/render-all.sh to re-execute the compositions and update docs/images/.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmgallery">github.com/lmctl-ai/lmgallery</a>.</p>
+</footer>
+</body>
+</html>

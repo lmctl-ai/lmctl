@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lminstall guide — lminstall — lmctl.com tools</title>
+<meta name="description" content="Zero-shell installation engine, provider channels, isolated launch profiles, and loopback credential bridging in lminstall.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lminstall/">Overview</a></li>
+<li><a href="/tools/lminstall/skill.html">Skill</a></li>
+<li><a href="/tools/lminstall/guide.html">Guide</a></li>
+<li><a href="/tools/lminstall/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lminstall guide</h1>
+<p>Zero-shell installation engine, provider channels, isolated launch profiles, and loopback credential bridging in lminstall.</p>
+<h2>Overview</h2>
+<p>lminstall replaces ad-hoc curl-pipe-sh scripts, global npm installs, and manual PATH management with a single static Go executable. All HTTP downloads, SHA-256 and SHA-512 checks, tar/zip archive extraction, npm registry packument resolution, pure-Go Git cloning, and launcher generation happen in-process inside Go.</p>
+<h2>Provider catalog and official distribution channels</h2>
+<p>The embedded manifest (internal/install/providers.json) covers 15 live coding provider CLIs plus the claudemock fixture indicator across these installer channels:</p>
+<ul>
+<li>Native release archives and vendor manifests (no Node required): claude (downloads.claude.ai manifest and SHA-256 payload), codex (GitHub rust-v* release archives), copilot (GitHub release archive verified against SHA256SUMS.txt), opencode (GitHub release archive), kimi (native manifest and SHA-256 binary), qwen (standalone vendor archive bundling its own Node), lmplayer (official release archive), agy (official Antigravity updater manifest and SHA-512 artifact), and muse (muse-stable manifest with SHA-256 and exact size verification).</li>
+<li>In-process Go npm client (requires node on PATH to run the installed JS CLI, but no npm binary): gemini (@google/gemini-cli), pi (@earendil-works/pi-coding-agent), dsh (@deepseek-ai/dsh), lmctl (@lmctl-ai/lmctl providing lmctl and lmscript), and miniplayer (GitHub source tarball installed via the Go npm resolver). Package lifecycle scripts are never executed.</li>
+<li>Self-bootstrapping pure-Go Git + pinned uv/Python/PM channel: hermes clones the latest stable tag in-process (depth 1, no git executable) and bootstraps checksum-pinned uv and Python 3.14 inside its owned prefix.</li>
+<li>Aggregate mono-repo installer: lminstall lmctl --root ABS --release latest installs both lmctl and lmscript launchers and package trees from GitHub releases.</li>
+</ul>
+<h2>Owned prefixes, receipts, and atomic upgrades</h2>
+<p>Each provider resides in its own subdirectory under --root (or LMINSTALL_ROOT) with an ownership marker and channel receipt. Installs are idempotent once the managed binary passes --version; broken or partial installs are repaired automatically on the next install. Upgrades stage and verify the candidate binary at a private temporary path before replacing the active executable, leaving the previous working installation intact if verification fails. Concurrent operations on the same provider fail immediately rather than blocking on a lock loop.</p>
+<h2>Configure, run, and env isolation</h2>
+<p>lminstall separates binary installation from model routing and credentials through three launch subcommands:</p>
+<ol>
+<li>lminstall configure writes profile.json and nonsecret config previews into an owned, absolute --profile-dir for either the mock backend (literal loopback HTTP against lmmock) or the ollama-cloud backend (https://ollama.com for Claude). It never reads the secret value of --credential-env.</li>
+<li>lminstall run executes the managed provider binary with arguments after -- using a fresh ephemeral HOME, USERPROFILE, XDG directory set, and working directory that are deleted on exit. An in-memory Go loopback bridge injects the secret from --credential-env into upstream requests while presenting only a random placeholder token to the child process and scrubbing raw and encoded secret bytes from stdout and stderr.</li>
+<li>lminstall env renders a persistent mock-backend runtime directory (--runtime-dir) and prints environment bindings (--format plan, github-env, or sh) so multi-turn orchestrators like lmctl seed and lmctl prompt can invoke the provider repeatedly with shared session state.</li>
+</ol>
+<h2>GitHub Actions integration</h2>
+<p>The repository provides three composable GitHub Actions (lmctl-ai/lminstall, lmctl-ai/lminstall/configure, and lmctl-ai/lminstall/env) that build lminstall with CGO_ENABLED=0, install the requested providers, export bin_dir to GITHUB_PATH, and configure isolated profiles for CI testing.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lminstall">github.com/lmctl-ai/lminstall</a>.</p>
+</footer>
+</body>
+</html>

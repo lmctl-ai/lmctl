@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmvalkey authoring skill — lmvalkey — lmctl.com tools</title>
+<meta name="description" content="lmvalkey is a standalone, single-executable Valkey server with an integrated HTTP JSON REST listener and an embedded lmcode-cpp bytecode runtime.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvalkey/">Overview</a></li>
+<li><a href="/tools/lmvalkey/skill.html">Skill</a></li>
+<li><a href="/tools/lmvalkey/guide.html">Guide</a></li>
+<li><a href="/tools/lmvalkey/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmvalkey authoring skill</h1>
+<p>lmvalkey is a standalone, single-executable Valkey server with an integrated HTTP JSON REST listener and an embedded lmcode-cpp bytecode runtime. It serves a unified in-memory key-value datastore to native Redis/Valkey (RESP) clients, HTTP REST clients, and compiled _lmcode_ scripts.</p>
+<h2>Purpose</h2>
+<p>Use lmvalkey to run a zero-dependency in-memory key-value store, bridge native RESP clients (such as lmconn valkey) and HTTP REST clients (such as curl or lmcurl) over shared live data, execute pipelined _lmcode_ key-value batches, and expose custom key-value workflows through the 226-signature lmcode_std_v3 REST and CLI interfaces.</p>
+<h2>When to use it</h2>
+<p>Choose lmvalkey when an agent workflow or integration test needs a fast in-memory cache, pub/sub or data-structure server, dual RESP and HTTP REST access to the same keys, or scripted batch pipelines inside LMScript. Use lmsqlite or lmpostgres when you need relational SQL queries, lmferret when you need MongoDB wire-protocol document storage, and lmconn when you only need a lightweight client to query an already running Valkey server.</p>
+<h2>Install</h2>
+<p>Install the lmctl toolchain with npm install -g @lmctl-ai/lmctl@latest. Pre-built standalone binaries for Linux (x64 and arm64), macOS (x64 and arm64), and Windows (x64) are published on GitHub Releases and downloaded automatically when an LMScript program specifies cli="lmvalkey" and install="github:lmctl-ai/lmvalkey@latest".</p>
+<pre><code>lmscript --version
+lmvalkey --version
+lmvalkey --lmcode-schema --json
+lmvalkey --lmcode-signatures</code></pre>
+<h2>Commands</h2>
+<p>lmvalkey runs either as a long-lived dual-protocol Valkey server (accepting standard Valkey configuration flags plus --rest-port) or as an _lmcode_ bytecode execution and introspection host.</p>
+<pre><code># Host introspection and bytecode execution
+lmvalkey --lmcode-schema --json
+lmvalkey --lmcode-signatures
+lmvalkey --lmcode build/program.dslb
+
+# Start dual-protocol Valkey server (RESP on 6379, HTTP REST on 8080)
+lmvalkey --port 6379 --rest-port 8080
+lmvalkey --port 6379 --rest-port 8080 --daemonize yes
+
+# Query REST interface with curl and native RESP interface with lmconn
+curl -s http://127.0.0.1:8080/ping
+curl -s -X POST http://127.0.0.1:8080/set/user:42 -d '{"name":"Alice"}'
+curl -s http://127.0.0.1:8080/get/user:42
+curl -s -X POST http://127.0.0.1:8080/cmd -H "Content-Type: application/json" -d '{"command":"MGET","args":["user:42"]}'
+lmconn valkey get user:42 --port 6379 --mode resp</code></pre>
+<h2>Inputs and outputs</h2>
+<p>In _lmcode_ mode, lmvalkey exposes context valkey: Valkey, type Batch, function print(string), and the 226 standard lmcode_std_v3 functions and methods. The host connects to VALKEY_HOST (or REDIS_HOST, default 127.0.0.1) on VALKEY_PORT (or REDIS_PORT, default 6379); if no live server is listening on that socket, it transparently falls back to an isolated in-process memory map so unit tests run offline without daemon setup. HTTP REST requests return {"ok":true,"result":...} or {"ok":false,"error":"..."}, while _lmcode_ runs emit an LMCODE_RETURN_BEGIN / LMCODE_RETURN_END JSON envelope.</p>
+<h2>Safety rules</h2>
+<p>Follow these networking and data isolation rules when deploying or scripting lmvalkey:</p>
+<ul>
+<li>Bind the server to loopback (--bind 127.0.0.1) whenever --rest-port is enabled: the integrated HTTP REST interface (and HTTP auto-detection on the native port) is designed for local agent and microservice access and intentionally bypasses requirepass authentication.</li>
+<li>Set VALKEY_HOST and VALKEY_PORT explicitly when running _lmcode_ scripts against a non-default server port so the script connects to the target instance instead of silently falling back to the standalone in-memory map on port 6379.</li>
+<li>Use valkey.batch() for multi-key initialization or bulk reads in _lmcode_ scripts to collapse N socket round-trips into a single pipelined send and receive cycle.</li>
+<li>Avoid running unbounded KEYS * scans on large production datasets; prefer prefix-scoped queries or explicit key tracking.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>The first example writes and reads keys through context valkey, then constructs a pipelined Batch to execute multiple SET and GET operations in one round-trip:</p>
+<pre><code>p = _lmcode_ cli="lmvalkey" install="github:lmctl-ai/lmvalkey@latest";
+assert_eq(valkey.set("session:1", "active"), true);
+assert_eq(valkey.exists("session:1"), true);
+assert_eq(valkey.get("session:1"), "active");
+
+let b = valkey.batch();
+b.set("metric:cpu", "42%").set("metric:mem", "68%").get("metric:cpu").get("metric:mem");
+assert_eq(b.len(), 4);
+let out = b.exec();
+assert_eq(out, "[\"OK\",\"OK\",\"42%\",\"68%\"]");
+assert_eq(valkey.del("session:1"), 1);
+end _lmcode_
+res = run_lmcode(p);
+require(res.ok, json_stringify(res));</code></pre>
+<p>The second example combines valkey key-value storage with the standard lmcode_std_v3 CliOption, CliCommand, and RestGet interfaces:</p>
+<pre><code>p = _lmcode_ cli="lmvalkey" install="github:lmctl-ai/lmvalkey@latest";
+@"--prefix"
+fn opt_prefix(x: RestExchange) -> void implements CliOption {
+  x.set("prefix", x.query("prefix"));
+}
+
+@"kv-set"
+fn set_kv(x: RestExchange) -> void implements CliCommand {
+  let k = x.get("prefix") + ":" + x.query("key");
+  valkey.set(k, x.body());
+  x.send("OK:" + k);
+}
+
+@"/kv/:key"
+fn get_kv(x: RestExchange) -> void implements RestGet {
+  let k = x.get("prefix") + ":" + x.param("key");
+  x.json("{\"key\":\"" + k + "\",\"value\":\"" + valkey.get(k) + "\"}");
+}
+
+rest_config("session", "global");
+assert_eq(rest_cli(str_split("--prefix=app --key=user1 kv-set -- Alice", " ")), "OK:app:user1");
+assert_eq(rest_cli(str_split("--prefix=app /kv/user1", " ")), "{\"key\":\"app:user1\",\"value\":\"Alice\"}");
+end _lmcode_
+res = run_lmcode(p);
+require(res.ok, json_stringify(res));</code></pre>
+<h2>Errors and exit codes</h2>
+<p>In _lmcode_ execution mode, lmvalkey emits a structured JSON result envelope between LMCODE_RETURN_BEGIN and LMCODE_RETURN_END markers and exits with a deterministic status code:</p>
+<ul>
+<li>Exit code 0 indicates that the bytecode program or schema/signature inspection completed and all assertions passed.</li>
+<li>Exit code 2 indicates a CLI usage error in host mode (such as passing --lmcode without a bytecode file path, code CLI_USAGE).</li>
+<li>Exit code 3 indicates a bytecode load failure (phase "load", such as corrupt bytecode or schema hash mismatch) or a runtime execution error (phase "run", such as a RESP server error reply, lost connection, or assertion failure).</li>
+</ul>
+<h2>How to verify</h2>
+<p>Verify the installed lmvalkey binary by checking its version, embedded schema JSON, and 245 canonical signatures against the LMScript compiler:</p>
+<pre><code>lmvalkey --version
+lmvalkey --lmcode-schema --json > /tmp/lmvalkey-schema.json
+lmvalkey --lmcode-signatures > /tmp/lmvalkey-sigs.txt
+lmscript --lmcode-signatures /tmp/lmvalkey-schema.json > /tmp/lmvalkey-compiler-sigs.txt
+diff -u /tmp/lmvalkey-compiler-sigs.txt /tmp/lmvalkey-sigs.txt</code></pre>
+<p>In a source checkout, run ./test.sh or tests/integration-test.sh to verify live dual-protocol RESP/REST synchronization, authentication bypass behavior on REST endpoints, and _lmcode_ batch and REST/CLI execution.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvalkey">github.com/lmctl-ai/lmvalkey</a>.</p>
+</footer>
+</body>
+</html>

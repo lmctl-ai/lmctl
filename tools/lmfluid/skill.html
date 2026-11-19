@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmfluid skill — lmfluid — lmctl.com tools</title>
+<meta name="description" content="Use lmfluid from an lmscript program to solve small finite-element problems (Poisson, heat, linear elasticity) and 2D lattice-Boltzmann flows, check the…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmfluid/">Overview</a></li>
+<li><a href="/tools/lmfluid/skill.html">Skill</a></li>
+<li><a href="/tools/lmfluid/guide.html">Guide</a></li>
+<li><a href="/tools/lmfluid/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmfluid skill</h1>
+<p>Use lmfluid from an lmscript program to solve small finite-element problems (Poisson, heat, linear elasticity) and 2D lattice-Boltzmann flows, check the numbers against known answers and export CSV. This page is the operating procedure for an agent; the model behind it is explained in the guide.</p>
+<h2 id="purpose">Purpose</h2>
+<p>lmfluid is an lmcode host: a native binary that executes compiled _lmcode_ blocks. Its schema exposes one context object, fluid, from which a block builds meshes, finite-element problems, lattice-Boltzmann simulations and result matrices. The finite-element part is serial MFEM with H1 elements of order 1 to 3; the flow part is an original D2Q9 BGK solver in lattice units.</p>
+<h2 id="when">When to use it</h2>
+<ul>
+<li>Steady diffusion or Poisson problems on rectangles, boxes or an imported MFEM mesh.</li>
+<li>Transient heat conduction with backward Euler time stepping.</li>
+<li>Isotropic linear elasticity (plane strain in 2D, full 3D on boxes), including stresses from field gradients.</li>
+<li>Low-Mach 2D flow: body-force channel flow, lid-driven cavity, periodic boxes, with staircase obstacles and force measurement.</li>
+<li>Do not use it for Navier-Stokes finite elements, inlet or outlet boundaries, turbulence, free surfaces, multiphase flow, eigenvalue problems, adaptive refinement, roller boundary conditions, or MPI and GPU runs. These are outside the host.</li>
+</ul>
+<h2 id="install">Install</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl</code></pre>
+<p>That installs lmscript and lmctl. The host itself needs no manual install: a block that declares install="github:lmctl-ai/lmfluid@latest" makes lmscript download the release binary (0.2.2 at the time of writing) into its tool cache on the first real run. Linux binaries need dynamic glibc 2.35 or newer; macOS arm64 and x64 and Windows x64 need no extra runtime libraries. Set GITHUB_TOKEN when running many scripts, because resolving @latest uses the rate-limited GitHub API. The repository states lmscript 0.2.460 as its tested compiler; the examples on this page were run with lmscript 0.2.482.</p>
+<h2 id="commands">Commands</h2>
+<pre><code># run a script (compiles each _lmcode_ block, runs it in lmfluid)
+lmscript model.lms
+
+# compile-check only; needs the host schema cached by one earlier real run
+lmscript --check model.lms
+
+# run a published example straight from the repository
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmfluid/main/examples/quickstart.lms
+
+# host protocol, normally used by lmscript rather than by you
+lmfluid --version
+lmfluid --notices
+lmfluid --lmcode-schema --json
+lmfluid --lmcode-signatures
+lmfluid --lmcode FILE.dslb
+lmfluid --dry-run --lmcode FILE.dslb
+
+# raise the memory budget (MiB, default 4096)
+LMFLUID_MAX_MEMORY_MB=16384 lmscript big.lms</code></pre>
+<p>Inside a script the block form is fixed: assign the block to a variable, end it with end _lmcode_, then call run_lmcode on the variable and test the ok field of what it returns.</p>
+<h2 id="io">Inputs and outputs</h2>
+<ul>
+<li>Input: the block text. Numbers are passed as int or float literals (write 1.0, not 1, where a float is required). Coefficients, sources, boundary data, initial conditions and obstacles are expression strings in x, y, z, t with arithmetic, ^, pi and functions such as sin, cos, exp, log, sqrt, abs, min, max and sign.</li>
+<li>Optional input: an MFEM mesh v1.0 or v1.2 text file through fluid.load_mesh. Other mesh formats are rejected.</li>
+<li>Output files: matrix.save_csv writes headerless CSV with 17 significant digits in deterministic order. Finite-element samples have columns x, y, z, u, or x, y, z, ux, uy and uz when present. Lattice samples have x, y, rho, ux, uy, speed at cell centres ix+0.5, iy+0.5. Vorticity matrices have x, y, omega, solid. mesh.save writes an MFEM mesh file.</li>
+<li>Returned value: run_lmcode returns a map. On success ok is true and result holds whatever the block set with the standard lmcode_return_set or lmcode_return_put functions (null when it set nothing). On failure ok is false and the map carries phase, code, message, line and column.</li>
+<li>Diagnostics: fluid.print, solver warnings and error text go to stderr. Stdout of the host carries only the result frame.</li>
+<li>Indices are zero-based everywhere: matrix rows and columns, lattice cells, field components and gradient directions.</li>
+</ul>
+<h2 id="safety">Safety rules</h2>
+<ul>
+<li>save_csv and mesh.save overwrite the named path without asking, and the standard file_write and file_append functions are unrestricted. Write into a build or output directory you created, and create the directory first in the outer script with mkdir, as the repository examples do.</li>
+<li>Always check r.ok after run_lmcode. A failed block does not stop the outer script by itself.</li>
+<li>Put an assertion on a known value in every block (fluid.assert_close, fluid.assert_true). A solver that runs is not proof that the model is right.</li>
+<li>Keep lattice speeds below about 0.1. The solver warns on stderr above Mach 0.3 and stops with an error at speed 0.45; a relaxation time tau = 0.5 + 3 nu below 0.51 also warns.</li>
+<li>Stay inside the caps: at most 100000 mesh elements, 1 million degrees of freedom, 1 million lattice cells, 5 million sample points, 10 million entries per matrix made by fluid.matrix, and 10 million steps per run call. The whole program is bounded by the memory budget; raise LMFLUID_MAX_MEMORY_MB deliberately instead of removing checks.</li>
+<li>Point queries outside the mesh fail. Sampling an imported non-rectangular mesh can hit bounding-box points outside the domain and fail the same way.</li>
+<li>Use --dry-run (or lmscript --check) when you only want to know whether a program compiles and loads: neither solves nor writes files.</li>
+</ul>
+<h2 id="examples">Worked examples</h2>
+<p>All output below was produced with lmscript 0.2.482 and the released lmfluid 0.2.2 on Linux x64.</p>
+<h3 id="ex-poisson">Poisson with an exact answer</h3>
+<p>The problem -Δu = -4 with u = x² + y² on every edge has that same polynomial as its solution, which order 2 elements reproduce.</p>
+<pre><code>prog = _lmcode_ cli="lmfluid" install="github:lmctl-ai/lmfluid@latest";
+let field = fluid.poisson(fluid.rect(12, 12, 1.0, 1.0), 2).source("-4").dirichlet(0, "x*x+y*y").solve();
+fluid.assert_close(field.value(0.5, 0.5), 0.5, 0.000001);
+fluid.assert_close(field.l2_error("x*x+y*y"), 0.0, 0.000001);
+field.sample(41, 41).save_csv("poisson.csv");
+lmcode_return_put("center", field.value(0.5, 0.5));
+lmcode_return_put("dofs", field.dofs());
+end _lmcode_
+r = run_lmcode(prog);
+println(json_stringify(r));
+assert(r.ok);</code></pre>
+<pre><kbd>lmscript poisson.lms</kbd>
+<samp>{"ok":true,"result":{"center":0.4999999999940105,"dofs":625}}</samp></pre>
+<p>The file poisson.csv then has 1681 rows of x, y, z, u.</p>
+<h3 id="ex-heat">Heat eigenmode with a returned profile</h3>
+<pre><code>prog = _lmcode_ cli="lmfluid" install="github:lmctl-ai/lmfluid@latest";
+let mesh = fluid.rect(20, 20, 1.0, 1.0);
+let problem = fluid.heat(mesh, 1).diffusion("1.0").initial("sin(pi*x)*sin(pi*y)").dirichlet(0, "0.0");
+let field = problem.evolve(0.01, 0.001);
+fluid.assert_close(field.value(0.5, 0.5), 0.8208687174155399, 0.003);
+let samples = float_list();
+samples.add(field.value(0.25, 0.5)).add(field.value(0.5, 0.5)).add(field.value(0.75, 0.5));
+lmcode_return_put("time", field.time());
+lmcode_return_put("profile", samples);
+end _lmcode_
+r = run_lmcode(prog);
+println(json_stringify(r));
+assert(r.ok);</code></pre>
+<pre><kbd>lmscript heat.lms</kbd>
+<samp>{"ok":true,"result":{"time":0.01,"profile":[0.5813274444465232,0.8221211561090354,0.5813274444401473]}}</samp></pre>
+<p>The exact centre value is exp(-2π²t) = 0.82087 at t = 0.01; the tolerance covers the backward Euler time error.</p>
+<h3 id="ex-elastic">Elasticity patch test with a gradient</h3>
+<pre><code>prog = _lmcode_ cli="lmfluid" install="github:lmctl-ai/lmfluid@latest";
+let mesh = fluid.rect(8, 8, 1.0, 1.0);
+let field = fluid.elasticity(mesh, 1).lame(1.0, 1.0).displacement(0, "x", "2.0*y", "0.0").solve();
+fluid.assert_close(field.l2_error_vector("x", "2.0*y", "0.0"), 0.0, 0.02);
+lmcode_return_put("components", field.components());
+lmcode_return_put("ux", field.value(0.5, 0.5, 0.0, 0));
+lmcode_return_put("duy_dy", field.gradient(0.5, 0.5, 0.0, 1, 1));
+end _lmcode_
+r = run_lmcode(prog);
+println(json_stringify(r));
+assert(r.ok);</code></pre>
+<pre><kbd>lmscript beam.lms</kbd>
+<samp>{"ok":true,"result":{"components":2,"ux":0.499999999974519,"duy_dy":1.999999999965893}}</samp></pre>
+<h3 id="ex-channel">Body-force channel flow</h3>
+<pre><code>prog = _lmcode_ cli="lmfluid" install="github:lmctl-ai/lmfluid@latest";
+let flow = fluid.channel(24, 12, 0.1, 0.0001).run(2000);
+let exact = 0.0001 * 12.0 * 12.0 / (8.0 * 0.1);
+fluid.print("tau = " + str(flow.tau()));
+lmcode_return_put("u_center", flow.velocity(12, 6, 0));
+lmcode_return_put("u_exact_max", exact);
+lmcode_return_put("mass", flow.mass());
+lmcode_return_put("steps", flow.steps());
+flow.sample().save_csv("channel.csv");
+end _lmcode_
+r = run_lmcode(prog);
+println(json_stringify(r));
+assert(r.ok);</code></pre>
+<pre><kbd>lmscript channel.lms</kbd>
+<samp>tau = 0.8
+{"ok":true,"result":{"u_center":0.01780998058205736,"u_exact_max":0.018000000000000002,"mass":287.99999999996584,"steps":2000}}</samp></pre>
+<p>The value u_exact_max is the steady Poiseuille maximum gH²/8ν for H = 12, and the sampled cell near the centreline is within about 1 percent of it after 2000 steps. The tau line is fluid.print output on stderr.</p>
+<h2 id="errors">Errors and exit codes</h2>
+<table>
+<thead>
+<tr><th>Host exit</th><th>Phase</th><th>Meaning</th><th>Fix</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td></td><td>Every part loaded and ran (or was validated in dry mode)</td><td></td></tr>
+<tr><td>2</td><td>cli</td><td>Usage or invocation metadata error, including an invalid LMFLUID_MAX_MEMORY_MB or --dry-run contradicting real-mode metadata; code CLI_USAGE</td><td>Use only the documented flags; set the budget to a positive whole number of MiB</td></tr>
+<tr><td>3</td><td>load or run</td><td>Bytecode could not be read or verified, or a host call failed: failed assertion, invalid argument, limit, unstable flow, memory budget</td><td>Read message, line and column; correct the model</td></tr>
+<tr><td>4</td><td>app</td><td>Application or output contract failure reported by the SDK result frame</td><td>Check what the block returns with the lmcode_return functions</td></tr>
+</tbody>
+</table>
+<p>Through run_lmcode these arrive as a map rather than as a process exit. A finite-element order of 4 gives:</p>
+<pre><code>prog = _lmcode_ cli="lmfluid" install="github:lmctl-ai/lmfluid@latest";
+let field = fluid.poisson(fluid.rect(4, 4, 1.0, 1.0), 4).solve();
+end _lmcode_
+r = run_lmcode(prog);
+println(json_stringify(r));</code></pre>
+<pre><kbd>lmscript fail.lms</kbd>
+<samp>dsl line 2:19: FEM order outside allowed range
+{"ok":false,"phase":"run","code":"RUN_HOST","message":"dsl line 2:19: FEM order outside allowed range","line":2,"column":19}</samp></pre>
+<p>A failed assertion has the same shape, with a message such as dsl line 2:7: assert_close failed: 1 vs 2. Calling the host directly shows the frame and the exit code:</p>
+<pre><kbd>lmfluid --lmcode missing.dslb</kbd>
+<samp>LMCODE_RETURN_BEGIN
+{"ok":false,"phase":"load","code":"LOAD_BAD_BYTECODE","message":"cannot read missing.dslb"}
+LMCODE_RETURN_END</samp></pre>
+<p>That command exits 3. An unknown flag prints the usage text and a CLI_USAGE frame and exits 2. Compile-time problems (unknown method, wrong argument type, no cached schema for --check) are reported by lmscript before the host starts, with exit 2 from lmscript.</p>
+<h2 id="verify">How to verify</h2>
+<ol>
+<li>Run lmscript --check model.lms after one real run has cached the schema; exit 0 means every block compiles against the host schema.</li>
+<li>Run the script and require r.ok. Print json_stringify(r) on failure to see phase, code, message, line and column.</li>
+<li>Assert a known answer inside the block: an exact solution through l2_error, a conservation law such as flow.mass, or a closed form such as the Poiseuille maximum.</li>
+<li>Refine once (more elements, higher order, more steps) and confirm the value moves toward the reference at the expected rate: L2 error orders 2, 3 and 4 for orders 1, 2 and 3 on smooth solutions.</li>
+<li>Rerun and compare CSV bytes: output is byte-identical on the same platform and agrees to rounding across platforms.</li>
+<li>Confirm the host with lmfluid --version and, when in doubt about a method, list lmfluid --lmcode-signatures.</li>
+</ol>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmfluid">github.com/lmctl-ai/lmfluid</a>.</p>
+</footer>
+</body>
+</html>

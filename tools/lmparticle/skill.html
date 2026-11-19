@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmparticle authoring skill — lmparticle — lmctl.com tools</title>
+<meta name="description" content="lmparticle is a seeded Monte Carlo photon transport host for LMScript with embedded NIST XCOM cross sections for radiation shielding, detector response,…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmparticle/">Overview</a></li>
+<li><a href="/tools/lmparticle/skill.html">Skill</a></li>
+<li><a href="/tools/lmparticle/guide.html">Guide</a></li>
+<li><a href="/tools/lmparticle/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmparticle authoring skill</h1>
+<p>lmparticle is a seeded Monte Carlo photon transport host for LMScript with embedded NIST XCOM cross sections for radiation shielding, detector response, radiographic imaging, and collision kerma calculations.</p>
+<h2>Purpose</h2>
+<p>Use lmparticle to evaluate photon attenuation, half-value and tenth-value layers, scatter buildup factors, NaI(Tl) and semiconductor detector pulse-height spectra, radiographic contrast, and multi-layer energy deposition from 1 keV to 20 MeV.</p>
+<h2>When to use it</h2>
+<p>Choose lmparticle for photon transport problems (photoelectric absorption, Compton scattering, Rayleigh coherent scattering, and pair production with 511 keV annihilation at rest) where collision kerma and photon fluences or spectra are required. Do not use it when secondary electron or positron transport, bremsstrahlung, X-ray fluorescence, or radiotherapy charged-particle disequilibrium in thin layers dominates.</p>
+<h2>Install</h2>
+<p>Install the lmctl CLI globally, or declare cli="lmparticle" and install="github:lmctl-ai/lmparticle@latest" in an LMScript _lmcode_ block so the runtime downloads and verifies the self-contained 2.5 MB release binary (Linux glibc 2.35 or newer, macOS, or Windows).</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmparticle --version
+lmparticle --notices
+lmparticle --lmcode-schema --json</code></pre>
+<h2>Commands</h2>
+<p>lmparticle runs as an lmcode host controlled by LMScript via run_lmcode(p) or directly from the command line for schema inspection, signature verification, and bytecode execution.</p>
+<pre><code>lmparticle --version
+lmparticle --notices
+lmparticle --lmcode-schema
+lmparticle --lmcode-schema --json
+lmparticle --lmcode-signatures
+lmparticle --lmcode invocation.json
+lmctl autorun examples/depth_dose.lms</code></pre>
+<h2>Inputs and outputs</h2>
+<p>Programs use context rad: Rad alongside the standard lmcode_std_v3 catalog. All energies are in MeV, lengths in cm, and densities in g/cm3. Tallies in Result are normalized per source photon and paired with _err methods returning the standard error of the mean.</p>
+<ul>
+<li>Materials: rad.builtin(name) loads water, air, lead, iron, aluminum, copper, tungsten, silicon, germanium, concrete, nai, polyethylene, tissue, bone, or pmma. Custom mixtures use rad.material(name, density).element(symbol, mass_fraction) over the 19 built-in elements (H, C, N, O, Na, Mg, Al, Si, P, S, Ar, K, Ca, Fe, Cu, Ge, I, W, Pb) or custom XCOM tables registered with rad.element_table(symbol, Z, text).</li>
+<li>Geometry: rad.geometry() creates a Geometry supporting axis-aligned box, infinite slab, sphere, and z-axis cylinder regions. Earlier regions take priority where regions overlap; space outside all regions is vacuum.</li>
+<li>Sources and simulation: rad.source() configures point or disc spatial origins, isotropic, beam, or cone angular distributions, and monoenergetic or multi-line spectra. rad.simulation(geometry, source) configures forward-crossing scoring planes, energy spectra, per-history pulse-height regions, energy cutoffs, implicit capture, track recording, and the xoshiro256** seed.</li>
+<li>Outputs: Result getters query collision kerma (deposited and deposited_uncollided), plane crossings, escape fractions, interaction counts, and pulse-height window fractions, while save_regions, save_plane_spectrum, save_leakage_spectrum, save_pulse_height, and save_tracks write space-separated data files for downstream plotting.</li>
+</ul>
+<h2>Safety rules</h2>
+<ul>
+<li>Keep photon energies between 0.001 MeV (1 keV minimum cutoff) and 20 MeV, and ensure all densities, mass fractions, coordinates, and weights are finite numbers.</li>
+<li>Do not combine Sim.implicit_capture(weight_cutoff) with Sim.pulse_height(region); weighted histories cannot form an analog per-history pulse-height distribution, and the host refuses the combination with exit code 3.</li>
+<li>Remember that _lmcode_ has no scientific notation literals (write 0.001 rather than 1e-3) and that rad.print writes to stderr so stdout remains reserved for the terminal LMCODE_RETURN frame.</li>
+<li>Memory consumption is bounded by LMPARTICLE_MAX_MEMORY_MB (default 4096 MiB); exceeding the budget aborts cleanly with exit code 3.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>Transmit a 662 keV Cs-137 pencil beam through a 1 cm lead slab and verify that the uncollided plane crossing matches the narrow-beam exponential attenuation law:</p>
+<pre><code>p = _lmcode_ cli="lmparticle" install="github:lmctl-ai/lmparticle@latest";
+let pb = rad.builtin("lead");
+let g = rad.geometry();
+g.slab("shield", pb, 0.0, 1.0);
+let s = rad.source();
+s.point(0.0, 0.0, -1.0).beam(0.0, 0.0, 1.0).energy(0.662);
+let r = rad.simulation(g, s).plane("exit", "z", 1.0).seed(1).run(200000);
+rad.print("uncollided " + str(r.plane_uncollided("exit")) + " +- " + str(r.plane_uncollided_err("exit")));
+rad.assert_close(r.plane_uncollided("exit"), pow(2.718281828459045, -pb.mu(0.662)), 0.005);
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));</code></pre>
+<p>Simulate the pulse-height spectrum of a 3x3 inch NaI(Tl) crystal irradiated by a 662 keV point source and save the histogram for plotting:</p>
+<pre><code>p = _lmcode_ cli="lmparticle" install="github:lmctl-ai/lmparticle@latest";
+let nai = rad.builtin("nai");
+let g = rad.geometry().cylinder("crystal", nai, 0.0, 0.0, 3.81, 0.0, 7.62);
+let s = rad.source().point(0.0, 0.0, -10.0).beam(0.0, 0.0, 1.0).energy(0.662);
+let r = rad.simulation(g, s).spectrum(140, 0.7).pulse_height("crystal").seed(7).run(100000);
+rad.assert_true(r.pulse_fraction("crystal", 0.65, 0.67) > 0.1);
+r.save_pulse_height("crystal", "nai_spectrum.dat");
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Each invocation emits one terminal LMCODE_RETURN frame. Exit code 0 indicates success. Exit code 2 indicates CLI argument or invocation manifest validation errors. Exit code 3 indicates bytecode load failure, schema mismatch, runtime assertion failure (assert_close or assert_true), invalid physics configuration, or exceeding LMPARTICLE_MAX_MEMORY_MB. Exit code 4 indicates an application or output file write failure.</p>
+<h2>How to verify</h2>
+<p>Check schema and signature parity against the lmscript compiler and run a known-answer Beer-Lambert attenuation test:</p>
+<pre><code>lmparticle --version
+lmparticle --lmcode-schema --json > /tmp/lmparticle.schema.json
+lmparticle --lmcode-signatures > /tmp/lmparticle.sigs.txt
+lmscript --lmcode-signatures /tmp/lmparticle.schema.json > /tmp/lmparticle.compiler.txt
+diff -u /tmp/lmparticle.compiler.txt /tmp/lmparticle.sigs.txt</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmparticle">github.com/lmctl-ai/lmparticle</a>.</p>
+</footer>
+</body>
+</html>

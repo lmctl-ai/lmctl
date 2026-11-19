@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmfinance skill — lmfinance — lmctl.com tools</title>
+<meta name="description" content="Use lmfinance from an LMScript _lmcode_ block to price options, bonds, swaps, caps, floors and swaptions with QuantLib, compute Greeks and risk figures, and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmfinance/">Overview</a></li>
+<li><a href="/tools/lmfinance/skill.html">Skill</a></li>
+<li><a href="/tools/lmfinance/guide.html">Guide</a></li>
+<li><a href="/tools/lmfinance/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmfinance skill</h1>
+<p>Use lmfinance from an LMScript _lmcode_ block to price options, bonds, swaps, caps, floors and swaptions with QuantLib, compute Greeks and risk figures, and calibrate volatility models. Every command and output on this page was run with lmscript 0.2.482 and the lmfinance 0.1.4 release.</p>
+<h2 id="purpose">Purpose</h2>
+<p>lmfinance exposes QuantLib through seven context objects (market, instrument, model, pricing, risk, calibration, lmf). A program builds curves, instruments, models and engines by chained method calls, asks for prices and sensitivities as floats, checks them with assertions, and writes tables to text files or returns values to the calling script. Results are deterministic: the evaluation date defaults to 2024-01-02 and never comes from the system clock, and Monte Carlo needs an explicit seed.</p>
+<h2 id="when">When to use it</h2>
+<ul>
+<li>Price European, American, barrier or Asian options under Black-Scholes-Merton or Heston with analytic, binomial, finite-difference, Monte Carlo or Barone-Adesi-Whaley engines.</li>
+<li>Build a flat, zero-rate or bootstrapped yield curve and read discount factors, zero rates and forward rates.</li>
+<li>Value fixed-rate and zero bonds (clean price, yield, duration, convexity, DV01) and vanilla interest-rate swaps (NPV, par rate, annuity, DV01).</li>
+<li>Value caps, floors and swaptions with the Black formula and invert prices to implied volatilities.</li>
+<li>Compute parametric or empirical value at risk and expected shortfall, or fit a Heston model to volatility quotes.</li>
+</ul>
+<p>Do not use it for live market data, trading, calendars other than the built-in conventions, multi-curve discounting, callable or floating-rate bonds, or short-rate models: none of these exist in the host.</p>
+<h2 id="install">Install</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl</code></pre>
+<p>That installs lmscript and lmctl. The host itself needs no manual installation: a block that declares cli="lmfinance" install="github:lmctl-ai/lmfinance@latest" makes lmscript use lmfinance from PATH or download the release binary for the platform into its tool cache on the first real run. Linux binaries need dynamic glibc 2.35 or newer. If an unrelated program named lmfinance is first on PATH, remove it or put the real host first.</p>
+<p>lmscript --check needs the host schema; it is cached by the first real run of a block with the install attribute. On a fresh machine run the script once before relying on --check.</p>
+<h2 id="commands">Commands</h2>
+<table>
+<thead>
+<tr><th>Command</th><th>Use</th></tr>
+</thead>
+<tbody>
+<tr><td>lmscript FILE.lms</td><td>Compile the _lmcode_ blocks and run the script; run_lmcode starts the host</td></tr>
+<tr><td>lmscript --check FILE.lms</td><td>Compile and type-check the blocks against the host schema without running</td></tr>
+<tr><td>lmscript --dry-run FILE.lms</td><td>Print the plan; the host run is simulated and run_lmcode returns ok true, result null, dry true</td></tr>
+<tr><td>lmctl URL</td><td>Run a published example script from its raw URL in the current directory</td></tr>
+<tr><td>lmfinance --version</td><td>Print the host version</td></tr>
+<tr><td>lmfinance --lmcode-schema --json</td><td>Print the embedded schema</td></tr>
+<tr><td>lmfinance --lmcode-signatures</td><td>Print every callable signature, one per line</td></tr>
+<tr><td>lmfinance --notices</td><td>Print third-party license notices</td></tr>
+<tr><td>lmfinance [--dry-run] --lmcode FILE [FILE ...]</td><td>Host protocol used by run_lmcode for compiled programs; not meant to be typed by hand</td></tr>
+</tbody>
+</table>
+<h2 id="io">Inputs and outputs</h2>
+<ul>
+<li>Input is the program text between the _lmcode_ line and end _lmcode_. The block language has let, for (i in range(a, b)), if, arithmetic, string concatenation with +, str, float, pow, sqrt and abs. It has no exp or log (write pow(2.718281828459045, x)), and host objects cannot be stored in lists.</li>
+<li>Float parameters require float literals: write 100.0, not 100. Rates and volatilities are decimals, maturities are years, tenors are strings such as 3M or 5Y, dates are YYYY-MM-DD.</li>
+<li>run_lmcode(prog) returns an object with ok and result. On failure it carries ok false, phase, code, message, line and column instead of raising, so the script must test r.ok.</li>
+<li>result is null unless the block calls the standard result sink: lmcode_return_set(value) for one value or lmcode_return_put(name, value) for named fields.</li>
+<li>lmf.print writes a line to the script's standard output. lmf.save_text(path, text) writes any text file.</li>
+<li>Curve.save_csv(path, max_years, points) writes space-separated rows of time, zero rate, discount factor and forward rate. risk.save_profile(option, model, engine, low_spot, high_spot, points, path) writes rows of spot, price, delta and gamma. Neither file has a header line.</li>
+<li>risk.series(path) reads whitespace- or comma-separated numbers from a file; one non-numeric header line is allowed.</li>
+</ul>
+<h2 id="safety">Safety rules</h2>
+<ul>
+<li>Output files are created or truncated without confirmation, relative to the current directory. Create target directories first (mkdir in the outer script) and do not point save_csv, save_profile or save_text at files you need to keep.</li>
+<li>The standard file functions (file_write, file_append) are unrestricted byte writes with no sandbox. Treat paths that come from untrusted input as dangerous.</li>
+<li>Always check r.ok after run_lmcode; a failed assertion or QuantLib error does not stop the outer script by itself.</li>
+<li>Call market.set_date before building curves. Curves are anchored to the evaluation date at which they were built.</li>
+<li>Monte Carlo seeds must be 1 or larger. Large path counts are checked against the memory budget before simulating; raise LMFINANCE_MAX_MEMORY_MB only when the machine has the memory.</li>
+<li>Objects are never freed during a run. Loops that create millions of curves, models or results grow until the memory budget stops the program.</li>
+<li>The numbers are model outputs under fixed textbook conventions, not market quotes or investment advice. State the conventions when reporting results.</li>
+</ul>
+<h2 id="examples">Worked examples</h2>
+<h3 id="ex-option">Price an option and return the numbers</h3>
+<pre><code># bs.lms
+prog = _lmcode_ cli="lmfinance" install="github:lmctl-ai/lmfinance@latest";
+let m = model.black_scholes(100.0, 0.05, 0.0, 0.2);
+let call = instrument.european_call(100.0, 1.0);
+let res = pricing.price(call, m, pricing.analytic());
+lmf.print("price " + str(res.price()) + " delta " + str(res.delta()));
+lmf.assert_close(res.price(), 10.4506, 0.00005);
+lmcode_return_put("price", res.price());
+lmcode_return_put("delta", res.delta());
+end _lmcode_
+r = run_lmcode(prog);
+println(json_stringify(r));
+require(r.ok, "pricing run failed");</code></pre>
+<pre><kbd>lmscript bs.lms</kbd>
+<samp>price 10.4505835721856 delta 0.636830651175619
+{"ok":true,"result":{"price":10.450583572185577,"delta":0.6368306511756194}}</samp></pre>
+<h3 id="ex-curve">Bootstrap a curve and price a bond and a swap</h3>
+<p>This is examples/bond_curve.lms from the repository. The curve is built from deposit and swap quotes, reprices its own inputs, and is written to build/examples/curve.csv.</p>
+<pre><code>mkdir("build/examples");
+p = _lmcode_ cli="lmfinance" install="github:lmctl-ai/lmfinance@latest";
+market.set_date("2024-01-02");
+let curve = market.bootstrap_curve()
+  .deposit("3M", 0.0300).deposit("6M", 0.0310)
+  .swap("2Y", 0.0350).swap("5Y", 0.0400).swap("10Y", 0.0420).swap("30Y", 0.0410).build();
+curve.save_csv("build/examples/curve.csv", 30.0, 120);
+lmf.print("5y zero rate " + str(curve.zero(5.0)) + ", discount factor " + str(curve.discount(5.0)));
+lmf.assert_close(pricing.swap_par_rate(instrument.swap(1.0, 0.04, 5.0), curve), 0.0400, 0.0000001);
+lmf.assert_close(pricing.swap_par_rate(instrument.swap(1.0, 0.04, 30.0), curve), 0.0410, 0.0000001);
+let bond = instrument.bond(100.0, 0.045, 7.0, 2);
+let clean = pricing.bond_clean_price(bond, curve);
+let ytm = pricing.bond_yield(bond, clean);
+lmf.print("bond price " + str(clean) + ", yield " + str(ytm) + ", modified duration " + str(pricing.bond_duration(bond, ytm)));
+lmf.print("DV01 per 100 face: " + str(risk.bond_dv01(bond, curve)));
+lmf.assert_close(pricing.bond_price_from_yield(bond, ytm), clean, 0.00001);
+lmf.check(clean > 100.0, "coupon 4.5% above the 7y rate prices over par");
+let swap = instrument.swap(10000000.0, 0.04, 5.0);
+lmf.assert_close(pricing.swap_npv(swap, curve), 0.0, 0.01);
+lmf.print("swap DV01 on 10mm: " + str(risk.swap_dv01(swap, curve)));
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok);</code></pre>
+<pre><kbd>lmscript bond_curve.lms</kbd>
+<samp>5y zero rate 0.0393682606026068, discount factor 0.82132096413317
+bond price 102.607265385808, yield 0.0406823456712827, modified duration 5.97449256081373
+DV01 per 100 face: 0.0625244693126277
+swap DV01 on 10mm: 4631.7195172942</samp></pre>
+<h3 id="ex-risk">Rate and equity risk of a small book</h3>
+<p>This is examples/portfolio_risk.lms: DV01 of a bond and a receiver swap on a zero curve, then 10-day 99% normal value at risk and expected shortfall.</p>
+<pre><code>p = _lmcode_ cli="lmfinance" install="github:lmctl-ai/lmfinance@latest";
+market.set_date("2024-01-02");
+let curve = market.zero_curve().zero(1.0, 0.040).zero(5.0, 0.042).zero(10.0, 0.044).build();
+let bond = instrument.bond(1000000.0, 0.043, 8.0, 2);
+let swap = instrument.swap(5000000.0, 0.042, 5.0).receiver();
+let bond_dv01 = risk.bond_dv01(bond, curve);
+let swap_dv01 = risk.swap_dv01(swap, curve);
+lmf.print("bond DV01 " + str(bond_dv01) + ", receiver swap DV01 " + str(swap_dv01));
+lmf.check(bond_dv01 > 0.0, "a long bond loses when rates rise");
+lmf.check(swap_dv01 &lt; 0.0, "a receiver swap loses when rates rise");
+let m = model.black_scholes(100.0, 0.042, 0.0, 0.25);
+let call = instrument.european_call(105.0, 0.5);
+let value = 10000.0 * pricing.price(call, m, pricing.analytic()).price();
+let var99 = risk.var_normal(value + 1000000.0, 0.15, 0.99, 10.0);
+let es99 = risk.es_normal(value + 1000000.0, 0.15, 0.99, 10.0);
+lmf.print("10-day 99% VaR " + str(var99) + ", ES " + str(es99));
+lmf.check(es99 > var99, "expected shortfall exceeds VaR");
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok);</code></pre>
+<pre><kbd>lmscript portfolio_risk.lms</kbd>
+<samp>bond DV01 682.710483783041, receiver swap DV01 -2298.77368069818
+10-day 99% VaR 73567.8336761393, ES 84284.0567715592</samp></pre>
+<h2 id="errors">Errors and exit codes</h2>
+<table>
+<thead>
+<tr><th>Where</th><th>Code</th><th>Meaning</th><th>Fix</th></tr>
+</thead>
+<tbody>
+<tr><td>lmfinance host</td><td>0</td><td>Success</td><td>None</td></tr>
+<tr><td>lmfinance host</td><td>2</td><td>Bad flags, missing program file argument, invalid LMFINANCE_MAX_MEMORY_MB, or --dry-run contradicting real-mode invocation metadata; usage text on stderr and a cli failure frame</td><td>Let run_lmcode call the host; set the variable to a positive whole number of MiB</td></tr>
+<tr><td>lmfinance host</td><td>3</td><td>Program load or run error: unreadable or mismatched bytecode, failed assert_close or check, QuantLib error, invalid argument, memory budget exceeded</td><td>Read message, line and column in the run_lmcode result</td></tr>
+<tr><td>lmfinance host</td><td>4</td><td>Application failure (APP_FAIL) or failure writing output</td><td>Check that standard output is writable</td></tr>
+<tr><td>lmscript</td><td>2</td><td>Compile error in a block, for example a wrong argument type or unknown method, or the host schema is not available</td><td>Fix the reported line and column; run once with install to cache the schema</td></tr>
+<tr><td>lmscript</td><td>1</td><td>The outer script failed, for example require(r.ok, ...) after a failed host run</td><td>Inspect the printed run_lmcode result</td></tr>
+</tbody>
+</table>
+<p>A run-time failure is reported in the value returned by run_lmcode, and the host message is also echoed. This block asks a binomial result for vega, which that engine does not provide:</p>
+<pre><code>prog = _lmcode_ cli="lmfinance" install="github:lmctl-ai/lmfinance@latest";
+let m = model.black_scholes(100.0, 0.05, 0.0, 0.2);
+let put = instrument.american_put(100.0, 1.0);
+let res = pricing.price(put, m, pricing.binomial(500));
+lmf.print("vega " + str(res.vega()));
+end _lmcode_
+r = run_lmcode(prog);
+println(json_stringify(r));</code></pre>
+<pre><kbd>lmscript fail.lms</kbd>
+<samp>dsl line 5:29: Result.vega: this engine does not provide it; use the risk functions (bumped Greeks)
+{"ok":false,"phase":"run","code":"RUN_HOST","message":"dsl line 5:29: Result.vega: this engine does not provide it; use the risk functions (bumped Greeks)","line":5,"column":29}</samp></pre>
+<p>A failed assertion has the same shape, with a message such as: dsl line 2:5: assert_close failed: 1 vs 2 (tolerance 0.001). A compile error is reported by lmscript before the host runs; passing the integer 100 where a float is required gives:</p>
+<pre><kbd>lmscript --check bad.lms</kbd>
+<samp>error:bad.lms:2:29: _lmcode_: method ModelApi.black_scholes expects float for argument 1; found int</samp></pre>
+<p>The file path in that message was shortened from an absolute path.</p>
+<h2 id="verify">How to verify</h2>
+<ol>
+<li>Run lmscript --check on the script: exit 0 means every block type-checks against the lmfinance schema.</li>
+<li>Run the script and require r.ok. Print json_stringify(r) while developing.</li>
+<li>Put known answers in the block with lmf.assert_close and lmf.check. Useful anchors from the repository tests: the Black-Scholes call with spot 100, strike 100, rate 5%, volatility 20% and one year is 10.4506 and the put 5.5735; the American put on the same market converges to 6.0903; a par bond prices at 100.</li>
+<li>Cross-check engines against each other: a binomial or finite-difference price should approach the analytic one, and a Monte Carlo price should lie within about four standard errors (Result.stderr).</li>
+<li>Check written files exist and have the expected number of rows.</li>
+<li>Confirm the host version and surface when a result looks wrong:</li>
+</ol>
+<pre><kbd>lmfinance --version</kbd>
+<samp>lmfinance 0.1.4</samp></pre>
+<p>When lmscript downloaded the host, the binary is in the lmscript tool cache rather than on PATH; lmf.version() inside a block returns the same string.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmfinance">github.com/lmctl-ai/lmfinance</a>.</p>
+</footer>
+</body>
+</html>

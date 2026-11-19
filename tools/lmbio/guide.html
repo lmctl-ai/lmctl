@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmbio guide: reaction networks, solvers and limits — lmbio — lmctl.com tools</title>
+<meta name="description" content="This guide explains how lmbio thinks about a model and what its numbers mean. For commands see the skill page; for signatures see the reference.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmbio/">Overview</a></li>
+<li><a href="/tools/lmbio/skill.html">Skill</a></li>
+<li><a href="/tools/lmbio/guide.html">Guide</a></li>
+<li><a href="/tools/lmbio/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmbio guide: reaction networks, solvers and limits</h1>
+<p>This guide explains how lmbio thinks about a model and what its numbers mean. For commands see the skill page; for signatures see the reference.</p>
+<h2 id="overview">Overview</h2>
+<p>lmbio describes biology as a reaction network: compartments hold species, reactions move substance between species at a rate given by an expression, and parameters name the constants. The same network can be integrated deterministically, solved for a steady state, sampled stochastically or differentiated with respect to a parameter. The repository ships 18 examples in three groups (gene circuits and noise; enzymes, metabolism and chemistry; medicine, epidemics and populations), and every example checks its own numbers against a known answer before it draws anything.</p>
+<h2 id="architecture">Architecture</h2>
+<ul>
+<li>The host is a C++17 program built on the lmcode-cpp SDK pinned in sdk.lock (commit 20325f7a13cbb8470af88ae3448bf0e04d40e507), which provides the bytecode VM and the standard library.</li>
+<li>SUNDIALS 7.2.1 (BSD-3-Clause) provides CVODE and KINSOL; pugixml 1.15 (MIT) parses and writes SBML. Both are pinned by commit in deps.lock.</li>
+<li>There is no libSBML, RoadRunner, LLVM, GPL or LGPL scientific dependency.</li>
+<li>Linux releases link the scientific libraries, libstdc++ and libgcc statically and use only dynamic glibc 2.35 or newer; macOS uses only system libraries; Windows statically links the MinGW runtimes. No external runtime data is required.</li>
+<li>The schema is embedded in the binary and printed by --lmcode-schema --json; lmscript compiles a block against it and the host verifies the bytecode against the same schema when it loads.</li>
+</ul>
+<h2 id="workflow">Workflow</h2>
+<ol>
+<li>Build the model: bio.model or bio.load_sbml, then compartment, species, param, reaction, mass_action, rule and rate_rule.</li>
+<li>Optionally set tolerances with tol and call validate.</li>
+<li>Compute: simulate for a time course, steady_state, ssa for one stochastic trajectory, or sensitivity.</li>
+<li>Check: compare result values with bio.assert_close and bio.assert_true; a wrong result stops the run.</li>
+<li>Export: save_csv for other hosts, save_sbml for the model.</li>
+<li>Draw: a second block for lmplot or lmdraw reads the CSV, as in the repository examples.</li>
+</ol>
+<h2 id="domain-model">Domain model</h2>
+<h3 id="rates">Rates and concentrations</h3>
+<p>Kinetic laws are reaction extents, substance per time. A concentration species receives stoichiometry times rate divided by compartment volume. Compartments have a fixed, positive size. mass_action writes the law for you: for 2 A -> D with constant k it is k*V*A^2 for ODEs and the propensity k*A*(A-1) for SSA.</p>
+<h3 id="rules">Rules</h3>
+<p>An assignment rule defines a quantity by an expression and is evaluated in dependency order; cycles and unknown names are errors. A rate rule gives a quantity its own differential equation.</p>
+<h3 id="results">Results</h3>
+<p>Every solver returns a Result: a matrix whose columns are time, the species in creation order and the parameters in identifier order. Simulation does not change the initial values stored in the model, so a model can be run many times with set between runs for a scan.</p>
+<h3 id="restarts">Restarts instead of events</h3>
+<p>There are no events. A dose or medium change is modelled by set_state with the previous result, a set that applies the jump, a further simulate, and append to join the pieces; a jump at the joint keeps both rows. The pk_dosing example compares 400 mg twice daily with 800 mg once daily this way and uses integral for exposure.</p>
+<h2 id="numerics">Numerics and accuracy</h2>
+<ul>
+<li>simulate uses the CVODE BDF method, which suits stiff systems: the robertson_switch example integrates rate constants spanning nine orders of magnitude from 1e-6 to 1e5.</li>
+<li>steady_state verifies the residual of the solution it returns.</li>
+<li>ssa is the Gillespie direct method with an integer seed. The same seed reproduces a trajectory byte for byte on the same platform; math libraries on other platforms can change it.</li>
+<li>sensitivity is a central finite difference of two extra CVODE runs, not CVODES forward sensitivity: pick a relative step that dominates solver error or tighten tol.</li>
+<li>max, min and time_of_max are sampled extremes, integral is a trapezoid sum and crossing interpolates linearly, so their accuracy follows the number of output points.</li>
+</ul>
+<h2 id="limits">Limits</h2>
+<ul>
+<li>Kinetic laws are reaction extents (substance per time); a concentration species receives stoichiometry times rate divided by compartment volume. SBML hasOnlySubstanceUnits species use amounts.</li>
+<li>Boundary and constant species do not change through reactions. Local kinetic parameters shadow global symbols in their reaction.</li>
+<li>Assignment rules are evaluated in dependency order; cycles and unknown names are errors.</li>
+<li>SBML is a subset with no conformance claim: the reader handles L3V1 and L3V2 fixed compartments, species, parameters, reactions, local parameters, arithmetic MathML and assignment and rate rules. Packages, events, delays, algebraic rules, initial assignments, function definitions, piecewise, dynamic compartments and conversion factors are rejected with a message. Units are not converted or checked.</li>
+<li>There are no events. Doses and other discontinuities are modelled by restarting a run from the previous end state with set_state and append; time-dependent inputs can use min, max, sign and floor in rate expressions, but such models cannot be exported to SBML.</li>
+<li>SSA: species values are molecule counts in unit-volume compartments and rate expressions are propensities. Initial counts and stoichiometric coefficients must be nonnegative integers. Hand-written propensities must include combinatorics, k*X*(X-1) for 2 X ->; mass_action writes them for you. No rules or explicit time dependence. mass_action propensities are not stored in SBML; a reloaded model uses its ODE law for SSA.</li>
+<li>Sensitivities are central finite differences of two extra CVODE runs, not CVODES forward sensitivities: pick a step that dominates solver error or tighten tol.</li>
+<li>Model and result objects live until the host exits; a program may use at most 4096 MiB in total by default (LMBIO_MAX_MEMORY_MB changes it) and stops with a run error, exit 3, beyond that.</li>
+</ul>
+<h2 id="build">Building from source</h2>
+<pre><code>scripts/sync-deps.sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel 4
+./test.sh</code></pre>
+<p>This requires CMake 3.24+, C++17, git, Python 3, and lmscript for the tests. test.sh runs the native regression tests, every example with its known-answer assertions, a byte-identical rerun check and schema, dependency pin and error code checks.</p>
+<h2 id="next">Where to go next</h2>
+<ul>
+<li><a href="/tools/lmbio/">Quick reference</a></li>
+<li><a href="/tools/lmbio/skill.html">Skill: write, run and verify an lmbio program</a></li>
+<li><a href="/tools/lmbio/guide.html">Guide: concepts, architecture, numerics and limits</a></li>
+<li><a href="/tools/lmbio/reference.html">Reference: every type, method, flag and exit code</a></li>
+<li><a href="https://github.com/lmctl-ai/lmbio">GitHub repository lmctl-ai/lmbio</a></li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmbio">github.com/lmctl-ai/lmbio</a>.</p>
+</footer>
+</body>
+</html>

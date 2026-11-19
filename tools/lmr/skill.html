@@ -18,6 +18,7 @@
 <li><a href="/tools/lmr/skill.html">Skill</a></li>
 <li><a href="/tools/lmr/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmr/guide.html">Guide</a></li>
+<li><a href="/tools/lmr/reference.html">Reference</a></li>
 <li><a href="/tools/lmr/examples/">Examples</a></li>
 </ul>
 </nav>
@@ -32,37 +33,35 @@
 <pre><code>lmscript --version
 lmr --version
 lmr --lmcode-schema --json</code></pre>
-<p>The v0.5.1 release embeds the lmr-specific schema from native/schema/lmr.dsl.json. The standard StrList methods come from the LMScript standard library and are not repeated in the host schema. Compare the released binary's JSON bytes with that file when validating a release.</p>
+<p>Each release embeds the lmr-specific schema from native/schema/lmr.dsl.json: one context object out, 166 functions and 50 types. Standard types such as StrList come from the lmcode standard library and are not repeated in the host schema. The lmcode-cpp SDK that lmr vendors carries lmcode_std_v3 with 206 signatures; the current upstream catalog has 226, including the standard REST and CLI interfaces, which lmr gains only when it syncs the SDK and releases.</p>
 <h2>Commands</h2>
-<p>Declare the released host in an LMScript program. Then compile and run the saved bytecode through that same binary.</p>
-<pre><code>p = _lmcode_ cli="lmr" install="github:lmctl-ai/lmr@v0.5.1";
-let q = norm().q_vec(parse_vec("0.975"));
-out.check_close(q.at(0), 1.959963984540054, 0.00000000000001, "normal quantile");
+<p>Declare the host in an _lmcode_ block and execute it with run_lmcode, which compiles the block against the host schema, runs the host and returns ok and result.</p>
+<pre><code>p = _lmcode_ cli="lmr" install="github:lmctl-ai/lmr@latest";
+let z = norm().q_vec(parse_vec("0.975")).at(0);
+out.check_close(z, 1.959963984540054, 0.00000000000001, "normal 97.5% quantile");
+out.set("z", z);
 end _lmcode_
-
-if (!file_exists("build")) { mkdir("build"); }
-out = "build/analysis.dslb";
-savedsl(p, out);
-r = system ${dsl_cli(p)} --lmcode ${out};
-if (r.code != 0) { println(str(r.stderr)); lm_exit(r.code); }
-println(r.stdout);</code></pre>
+r = run_lmcode(p);
+require(r.ok, "run failed: " + r.get("message", "unknown"));
+println(sprintf("Normal 97.5%% quantile: %.10f", r.result.values.z));</code></pre>
+<p>Compile without running using lmscript --check FILE.lms. The host protocol underneath is lmr --lmcode-schema --json, lmr --lmcode-signatures and lmr --lmcode FILE.dslb; the <a href="/tools/lmr/reference.html">reference</a> lists every flag.</p>
 <p>Run the <a href="/tools/lmr/examples/normal-quantile.html">normal quantile example</a> for a complete program with an expected-value check.</p>
 <h2>Inputs and outputs</h2>
 <p>The host accepts typed LMScript values, such as numeric vectors, frames, formulas, and operation options. Results use typed objects with status, estimates, diagnostics, metadata, warnings, and output vectors appropriate to each operation.</p>
-<p>Use parse_vec to read numeric text, including NA, NaN, Inf, and -Inf. The DSL uses floating-point NaN for missing values. Values exported through out.set appear in the stdout JSON result; non-finite numbers serialize as JSON null. Random operations require a seed when deterministic output is needed.</p>
+<p>Use parse_vec to read numeric text, including NA, NaN, Inf, and -Inf. The DSL uses floating-point NaN for missing values. Values exported through out.set appear under result.values of the run_lmcode result, next to the checks and failures counts; non-finite numbers serialize as JSON null. Random operations require a seed when deterministic output is needed.</p>
 <p>Input limits depend on the native operation; see the <a href="/tools/lmr/guide.html">API guide</a> for operation-specific limits and result fields.</p>
 <h2>Safety rules</h2>
 <p>lmr exposes a fixed operation catalog. Optimization, integration, root finding, and nonlinear models use reverse communication: write the objective or model in the DSL and supply values through the solver object. Formula text uses the supported native formula parser; it is not evaluated as R code. The host does not run arbitrary R scripts or load user packages.</p>
-<p>Review an LMScript file before running it. The compiler and native host execute with your local file permissions, and an LMScript program can invoke other local programs through system.</p>
+<p>Review an LMScript file before running it. The compiler and native host execute with your local file permissions, an LMScript program can invoke other local programs through system, and an install declaration downloads a release binary.</p>
 <h2>Worked examples</h2>
 <ul>
 <li><a href="/tools/lmr/examples/normal-quantile.html">Normal quantile</a> checks a standard-normal quantile.</li>
 <li><a href="/tools/lmr/examples/linear-fit.html">Linear fit</a> recovers the intercept and slope from exact points.</li>
 <li><a href="/tools/lmr/examples/rosenbrock-minimum.html">Rosenbrock minimum</a> checks BFGS convergence against the known optimum.</li>
 </ul>
-<p>The <a href="https://github.com/lmctl-ai/lmr/tree/main/examples/dsl">lmr repository</a> includes longer tutorials and analysis flows.</p>
+<p>The <a href="https://github.com/lmctl-ai/lmr/tree/main/examples">lmr repository examples</a> include longer tutorials and analysis flows.</p>
 <h2>Errors and exit codes</h2>
-<p>The host exits with code 0 when execution succeeds and all out.check assertions pass. Code 2 indicates command-line usage errors, code 3 indicates a load or execution error, and code 4 indicates an application failure such as a failed check.</p>
+<p>The host exits with code 0 when execution succeeds and all out.check assertions pass. Code 2 indicates command-line usage errors, code 3 indicates a load or execution error, and code 4 indicates an application failure such as a failed check. From LMScript, test r.ok after run_lmcode instead of reading the process code.</p>
 <p>When installation fails, verify the platform has a published release asset and that the tool cache can be written. When a schema mismatch appears, compare the embedded JSON and canonical signatures against the released schema using the compiler version required by the project.</p>
 <h2>How to verify</h2>
 <p>Check the version, schema bytes, and canonical signatures. Then run a fresh-cache example so lmscript downloads the released host and validates its checksum.</p>

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmspace authoring skill — lmspace — lmctl.com tools</title>
+<meta name="description" content="Guidance for authoring, running, and verifying lmscript orbital mechanics and SPICE astronomy programs on the lmspace host.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmspace/">Overview</a></li>
+<li><a href="/tools/lmspace/skill.html">Skill</a></li>
+<li><a href="/tools/lmspace/guide.html">Guide</a></li>
+<li><a href="/tools/lmspace/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmspace authoring skill</h1>
+<p>Guidance for authoring, running, and verifying lmscript orbital mechanics and SPICE astronomy programs on the lmspace host.</p>
+<h2>Purpose</h2>
+<p>Help write valid, deterministic lmscript programs for lmspace covering two-body Kepler propagation, classical orbital elements, Hohmann and Lambert transfers, symplectic and RK45 N-body integration, and NASA NAIF CSPICE frame and ephemeris queries.</p>
+<h2>When to use it</h2>
+<p>Use lmspace when an lmscript workflow needs orbital propagation, trajectory matrices, delta-v transfer budgets, energy and angular momentum invariants, or SPICE coordinate transformations and ephemeris lookups exported to CSV or handed off to plotting and rendering tools.</p>
+<h2>Install</h2>
+<p>Install the lmctl toolchain with npm i -g @lmctl-ai/lmctl or download the latest platform binary from <a href="https://github.com/lmctl-ai/lmspace/releases/latest">GitHub Releases</a>. Linux binaries require dynamic glibc 2.35 or newer (Ubuntu 22.04+); CSPICE N0067 and C++ runtime libraries are linked statically. Declare install="github:lmctl-ai/lmspace@latest" on the _lmcode_ block so run_lmcode resolves or downloads the matching release automatically.</p>
+<h2>Commands</h2>
+<pre><code>lmscript orbit.lms
+lmspace --version
+lmspace --notices
+lmspace --lmcode-schema
+lmspace --lmcode-schema --json
+lmspace --lmcode-signatures
+lmspace --dry-run --lmcode FILE [FILE ...]
+lmspace --lmcode FILE [FILE ...]</code></pre>
+<h2>Inputs and outputs</h2>
+<ul>
+<li>Inputs are lmscript _lmcode_ blocks compiled against the embedded lmspace.host.json schema, plus optional user-supplied SPICE binary (DAF/DAS) or text (\begindata) kernels.</li>
+<li>Context object space of type Space manages bodies, N-body systems, and SPICE kernels across builder blocks within one invocation.</li>
+<li>Outputs include State, Vector, Elements, and 0-based Matrix objects, comma-separated trajectory files written via Matrix.save_csv(path), and text files written via file_write(path, content).</li>
+<li>Stdout carries only the single SDK JSON terminal result frame; host print(msg) output and energy-drift warnings go to stderr.</li>
+</ul>
+<h2>Safety rules</h2>
+<ul>
+<li>Use consistent units across every calculation: when lengths are in kilometers and time is in seconds, gravitational parameters mu = G * mass must be in km^3/s^2, and all angles (i, raan, argp, nu, M) must be in radians.</li>
+<li>Choose symplectic for fixed-step second-order kick-drift-kick leapfrog or rk45 for adaptive Dormand-Prince 5(4); inspect system.energy_drift() or space.energy_drift() after propagation and reduce step size or switch to rk45 if relative drift exceeds 1e-3.</li>
+<li>Keep propagation grids within host bounds: grid points must be in [2, 1000000], bodies at most 10,000, and total matrix cells at most 100,000,000 within the default 4096 MiB memory budget (configurable via LMSPACE_MAX_MEMORY_MB).</li>
+<li>Never expect lmspace to download SPICE kernels automatically; load explicit local kernel files with space.load_kernel(path), and load a leap-second kernel before calling space.time(utc_string).</li>
+<li>Remember that adding a body to a system with system.add(body) copies its state and propagation leaves initial bodies unchanged.</li>
+</ul>
+<h2>Worked examples</h2>
+<pre><code>p = _lmcode_ cli="lmspace" install="github:lmctl-ai/lmspace@latest";
+let mu = 398600.4418;
+let orbit = elements(7000.0, 0.1, 0.2, 0.3, 0.4, 0.5);
+let initial = orbit.to_state(mu);
+let after_one_orbit = initial.propagate(mu, period(7000.0, mu));
+space_assert_close(after_one_orbit.position().x(), initial.position().x(), 0.000001);
+
+let transfer = hohmann(7000.0, 42164.0, mu);
+space_assert_close(transfer.get(0, 0), 2.336795782386, 0.000000001);
+transfer.save_csv("transfer.csv");
+
+let b1 = space.body("primary", 0.5, -0.5, 0.0, 0.0, 0.0, -0.5, 0.0);
+let b2 = space.body("secondary", 0.5, 0.5, 0.0, 0.0, 0.0, 0.5, 0.0);
+let sys = space.system().add(b1).add(b2);
+let traj = sys.propagate(6.283185307179586, 200, 0.005, "symplectic", 0.00000001);
+space_assert_close(sys.energy_drift(), 0.0, 0.0001);
+traj.save_csv("binary.csv");
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, "lmspace calculation failed");</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Exit 0 indicates that all bytecode slots loaded and completed. Exit 2 reports invalid command-line syntax, contradictory --dry-run metadata, or an invalid LMSPACE_MAX_MEMORY_MB setting. Exit 3 reports bytecode load, schema mismatch, runtime domain errors (non-positive mu, collinear Lambert endpoints, parabolic element conversion, missing SPICE kernel coverage, failed assertion), or memory budget exhaustion. Exit 4 reports application-level failures tagged APP_FAIL or an output failure.</p>
+<h2>How to verify</h2>
+<ol>
+<li>Run lmspace --version and lmspace --lmcode-schema --json to confirm the binary and embedded schema matches schema/lmspace.host.json.</li>
+<li>Validate compiled bytecode without running numerical integrations or writing files by passing --dry-run --lmcode.</li>
+<li>Use space_assert_close(actual, expected, tolerance) to verify orbital periods, delta-v values, round-trip element conversions, and position vectors against finite tolerances.</li>
+<li>Check space.energy_drift() or system.energy_drift() after N-body propagation to ensure relative energy drift stays well below 1e-3.</li>
+</ol>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmspace">github.com/lmctl-ai/lmspace</a>.</p>
+</footer>
+</body>
+</html>

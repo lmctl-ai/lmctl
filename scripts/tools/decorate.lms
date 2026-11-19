@@ -2,6 +2,7 @@ import "roles.lms";
 tool_scope = ARGV.len() > 2 ? ARGV[2] : "";
 markup_only = ARGV.len() > 3 ? ARGV[3] == "1" : false;
 initial_pattern = tool_scope == "" ? "tools/**/*.html" : tool_scope == "catalog" ? "tools/*.html" : "tools/" + tool_scope + "/**/*.html";
+initial_exclude = tool_scope == "catalog" ? "tools/*/*.html" : "";
 directories = tool_scope != "" && tool_scope != "catalog" ? "tools/" + tool_scope + "|" : join(sort(glob("tools/*/")), "|") + "|";
 p = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@latest";
 # Source-preserving pre formatting (kept identical in check/decorate).
@@ -289,7 +290,7 @@ let layout = region(template_source, "layout");
 let site_layout = str_replace(layout, "{{ICON}}", favicon("/tools/img/icon.png"));
 # Refuse malformed authored source before changing any file; common shells are
 # replaceable, but token repair must never silently rewrite authored content.
-for (page in html.load_dir(".", ${initial_pattern}, "")) {
+for (page in html.load_dir(".", ${initial_pattern}, ${initial_exclude})) {
   if (basename(page.path()) == "index.html") { continue; }
   for (problem in page.markup_errors()) { report.add("markup", page.path(), 0, problem); }
 }

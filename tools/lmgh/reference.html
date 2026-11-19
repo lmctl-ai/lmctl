@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmgh reference — lmgh — lmctl.com tools</title>
+<meta name="description" content="CLI flags, Gh and Report context methods, domain object methods, and exit codes for lmgh.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmgh/">Overview</a></li>
+<li><a href="/tools/lmgh/skill.html">Skill</a></li>
+<li><a href="/tools/lmgh/guide.html">Guide</a></li>
+<li><a href="/tools/lmgh/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmgh reference</h1>
+<p>CLI flags, Gh and Report context methods, domain object methods, and exit codes for lmgh.</p>
+<h2>CLI flags and environment</h2>
+<table>
+<thead>
+<tr><th>Flag or variable</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>--version</td><td>Print the lmgh build version and exit 0.</td></tr>
+<tr><td>--lmcode-schema [--json]</td><td>Print the embedded schema/lmgh.dsl.json bytes.</td></tr>
+<tr><td>--lmcode-signatures</td><td>Print sorted canonical host and standard library signatures.</td></tr>
+<tr><td>--lmcode FILE</td><td>Execute a compiled DSLB v6 bytecode file (repeatable for builder parts).</td></tr>
+<tr><td>LMGH_GH</td><td>Environment variable selecting a specific gh executable (requires gh >= 2.45.0, &lt; 3.0.0).</td></tr>
+<tr><td>LMCODE_INVOCATION_FILE</td><td>Optional absolute path to a v1 JSON invocation manifest with boolean dry.</td></tr>
+</tbody>
+</table>
+<h2>Gh context methods and top-level functions</h2>
+<table>
+<thead>
+<tr><th>Signature</th><th>Return type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Gh.dry_run(enabled: bool) / Gh.is_dry_run()</td><td>self / bool</td><td>Enable or inspect operation-level dry-run mode for write methods.</td></tr>
+<tr><td>Gh.repo_view(owner: string, repo: string)</td><td>Repo</td><td>Fetch repository metadata, counts, flags, and topics.</td></tr>
+<tr><td>Gh.file_text(owner: string, repo: string, path: string)</td><td>string</td><td>Fetch UTF-8 text of a file from the repository.</td></tr>
+<tr><td>Gh.issue_list(owner: string, repo: string, state: string, limit: int) / Gh.issue_view(owner: string, repo: string, num: int)</td><td>IssueList / Issue</td><td>List or view issues in a repository.</td></tr>
+<tr><td>Gh.pr_list(owner: string, repo: string, state: string, limit: int) / Gh.pr_view(owner: string, repo: string, num: int)</td><td>PrList / Pr</td><td>List or view pull requests in a repository.</td></tr>
+<tr><td>Gh.pr_triage(owner: string, repo: string, num: int)</td><td>Triage</td><td>Aggregate CI check counts, review counts, mergeability, and readiness for a PR.</td></tr>
+<tr><td>Gh.release_list(owner: string, repo: string, limit: int)</td><td>ReleaseList</td><td>List recent releases for a repository.</td></tr>
+<tr><td>Gh.run_list(owner: string, repo: string, limit: int) / Gh.run_failed_log(owner: string, repo: string, id: int)</td><td>RunList / string</td><td>List workflow runs or fetch the failed-job log text for a run ID.</td></tr>
+<tr><td>Gh.search_repos(q: string, limit: int) / search_issues(q: string, limit: int) / search_prs(q: string, limit: int)</td><td>RepoList / IssueList / PrList</td><td>Search repositories, issues, or pull requests across GitHub.</td></tr>
+<tr><td>Gh.issue_create(owner: string, repo: string, title: string, body: string) / issue_close(owner: string, repo: string, num: int, reason: string)</td><td>Issue / string</td><td>Create or close an issue (honors dry_run).</td></tr>
+<tr><td>Gh.pr_comment(owner: string, repo: string, num: int, body: string) / label_add(owner: string, repo: string, num: int, label: string) / pr_merge(owner: string, repo: string, num: int, method: string)</td><td>string</td><td>Comment on, label, or merge an issue or pull request (honors dry_run).</td></tr>
+<tr><td>Gh.release_create(owner: string, repo: string, tag: string, title: string, notes: string, draft: bool, prerelease: bool)</td><td>string</td><td>Create a GitHub release (honors dry_run).</td></tr>
+<tr><td>Gh.pr_prepare(owner: string, repo: string, title: string, body: string, base: string, head: string, draft: bool) / Gh.pr_submit(owner: string, repo: string, path: string)</td><td>string / Pr</td><td>Write a reviewable PR TOML file and submit it after human verification.</td></tr>
+<tr><td>Gh.pr_review_prepare(owner: string, repo: string, num: int, event: string, body: string) / Gh.pr_review_submit(owner: string, repo: string, num: int, path: string)</td><td>string / Review</td><td>Write a PR review verdict TOML file and submit it after human verification.</td></tr>
+<tr><td>fn pr_create_toml(toml: string)</td><td>Json</td><td>Validate and create a pull request from an inline [pr] TOML table.</td></tr>
+</tbody>
+</table>
+<h2>Domain types and Report context</h2>
+<table>
+<thead>
+<tr><th>Type</th><th>Methods</th></tr>
+</thead>
+<tbody>
+<tr><td>Repo / RepoList</td><td>name(), full_name(), description(), url(), default_branch(), license(), homepage(), pushed_at(), stars(), forks(), open_issues(), is_archived(), is_private(), topics(); RepoList: len(), at(int).</td></tr>
+<tr><td>Issue / IssueList</td><td>number(), title(), state(), author(), url(), repo(), created_at(), body(), comments(), labels(); IssueList: len(), at(int).</td></tr>
+<tr><td>Pr / PrList</td><td>number(), title(), state(), author(), url(), base(), head(), created_at(), updated_at(), mergeable(), is_draft(), labels(); PrList: len(), at(int).</td></tr>
+<tr><td>Triage</td><td>number(), title(), state(), author(), url(), mergeable(), summary(), checks_total(), checks_passed(), checks_failing(), approved(), changes_requested(), review_decision(), ok().</td></tr>
+<tr><td>Release / ReleaseList</td><td>tag(), name(), url(), published_at(), is_draft(), is_prerelease(); ReleaseList: len(), at(int).</td></tr>
+<tr><td>Run / RunList</td><td>id(), name(), display_title(), status(), conclusion(), url(), branch(), event(), created_at(), updated_at(); RunList: len(), at(int), failing().</td></tr>
+<tr><td>Review / Strings</td><td>Review: id(), url(), state(), summary(), confirmed(); Strings: len(), at(int).</td></tr>
+<tr><td>Report (context report)</td><td>add(code: string, target: string, message: string), len(), write_text(path: string), write_json(path: string), fail_if_any().</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr><th>Code</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>Execution or introspection succeeded.</td></tr>
+<tr><td>2</td><td>CLI usage error, retired --first/--last flag, or malformed LMCODE_INVOCATION_FILE metadata.</td></tr>
+<tr><td>3</td><td>Bytecode load failure, schema mismatch, or gh/API runtime failure.</td></tr>
+<tr><td>4</td><td>Application failure (APP_FAIL), including report.fail_if_any() on non-empty findings or unreadable inputs.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmgh">github.com/lmctl-ai/lmgh</a>.</p>
+</footer>
+</body>
+</html>

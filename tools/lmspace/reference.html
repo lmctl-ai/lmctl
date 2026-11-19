@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmspace reference — lmspace — lmctl.com tools</title>
+<meta name="description" content="Complete reference for lmspace command-line flags, environment variables, host schema types and methods, global functions, standard catalog, and exit codes.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmspace/">Overview</a></li>
+<li><a href="/tools/lmspace/skill.html">Skill</a></li>
+<li><a href="/tools/lmspace/guide.html">Guide</a></li>
+<li><a href="/tools/lmspace/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmspace reference</h1>
+<p>Complete reference for lmspace command-line flags, environment variables, host schema types and methods, global functions, standard catalog, and exit codes.</p>
+<h2>Command-line flags</h2>
+<table>
+<thead>
+<tr>
+<th>Flag or invocation</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>lmspace --version</td>
+<td>Print lmspace X.Y.Z to stdout and exit 0</td>
+</tr>
+<tr>
+<td>lmspace --notices</td>
+<td>Print embedded third-party license notices (including Caltech/JPL/NASA CSPICE N0067 notices) and exit 0</td>
+</tr>
+<tr>
+<td>lmspace --lmcode-schema</td>
+<td>Print the canonical registry signatures, one per line, to stdout and exit 0</td>
+</tr>
+<tr>
+<td>lmspace --lmcode-schema --json</td>
+<td>Print the exact embedded lmspace.host.json schema bytes to stdout and exit 0</td>
+</tr>
+<tr>
+<td>lmspace --lmcode-signatures</td>
+<td>Print canonical sorted registry signatures for parity verification with lmscript and exit 0</td>
+</tr>
+<tr>
+<td>lmspace --lmcode FILE [FILE ...]</td>
+<td>Load and verify all bytecode files against the embedded schema, then execute each slot in order</td>
+</tr>
+<tr>
+<td>lmspace --dry-run --lmcode FILE [FILE ...]</td>
+<td>Load and verify all bytecode files and schema contracts without executing numerical work or writing files</td>
+</tr>
+</tbody>
+</table>
+<h2>Environment variables</h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LMSPACE_MAX_MEMORY_MB</td>
+<td>4096</td>
+<td>Total memory budget in MiB for propagation tables and host objects; exceeding it stops execution with exit code 3</td>
+</tr>
+<tr>
+<td>LMCODE_INVOCATION_FILE</td>
+<td>unset</td>
+<td>Internal SDK invocation envelope path supplied automatically by run_lmcode</td>
+</tr>
+</tbody>
+</table>
+<h2>Context objects</h2>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>space</td>
+<td>Space</td>
+<td>Root orbital mechanics and SPICE context shared across bytecode blocks in one invocation</td>
+</tr>
+</tbody>
+</table>
+<h2>Host types and methods</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Method signature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Space</td>
+<td>Space.angular_momentum() -> Vector</td>
+<td>Compute total mass-weighted angular momentum vector (with mu as mass, G=1) of all bodies in space</td>
+</tr>
+<tr>
+<td>Space</td>
+<td>Space.body(name: string, mu: float) -> Body</td>
+<td>Create a body at the origin with zero velocity and positive gravitational parameter mu</td>
+</tr>
+<tr>
+<td>Space</td>
+<td>Space.body(name: string, mu: float, x: float, y: float, z: float, vx: float, vy: float, vz: float) -> Body</td>
+<td>Create a body with positive gravitational parameter mu and Cartesian position (x, y, z) and velocity (vx, vy, vz)</td>
+</tr>
+<tr>
+<td>Space</td>
+<td>Space.clear_kernels() -> void</td>
+<td>Unload all SPICE kernels currently loaded in the host process</td>
+</tr>
+<tr>
+<td>Space</td>
+<td>Space.energy() -> float</td>
+<td>Compute total mass-weighted mechanical energy (kinetic plus potential, mu as mass) of all bodies in space</td>
+</tr>
+<tr>
+<td>Space</td>
+<td>Space.energy_drift() -> float</td>
+<td>Return the largest relative energy change recorded during the most recent space.propagate call</td>
+</tr>
+<tr>
+<td>Space</td>
+<td>Space.ephemeris(target: string, observer: string, frame: string, et: float) -> Matrix</td>
+<td>Query geometric 1x6 state matrix (km and km/s, aberration NONE) from loaded SPICE kernels at ephemeris time et</td>
+</tr>
+<tr>
+<td>Space</td>
+<td>Space.frame(from: string, to: string, et: float) -> Matrix</td>
+<td>Return the 3x3 coordinate rotation matrix from reference frame from to frame to at ephemeris time et</td>
+</tr>
+<tr>
+<td>Space</td>
+<td>Space.load_kernel(path: string) -> void</td>
+<td>Validate and load a local binary (DAF/DAS) or text (\begindata) SPICE kernel or metakernel</td>
+</tr>
+<tr>
+<td>Space</td>
+<td>Space.propagate(duration: float, points: int, step: float, method: string, tol: float) -> Matrix</td>
+<td>Propagate all bodies created in space over duration across points rows using symplectic or rk45</td>
+</tr>
+<tr>
+<td>Space</td>
+<td>Space.system() -> System</td>
+<td>Create an empty independent N-body System</td>
+</tr>
+<tr>
+<td>Space</td>
+<td>Space.time(text: string) -> float</td>
+<td>Convert a time string to SPICE ephemeris time (ET seconds past J2000); requires a loaded leap-second kernel for UTC</td>
+</tr>
+<tr>
+<td>System</td>
+<td>System.add(body: Body) -> System</td>
+<td>Copy the current state of body into the system and return the system for chaining</td>
+</tr>
+<tr>
+<td>System</td>
+<td>System.angular_momentum() -> Vector</td>
+<td>Compute total mass-weighted angular momentum vector of bodies in this system</td>
+</tr>
+<tr>
+<td>System</td>
+<td>System.energy() -> float</td>
+<td>Compute total mass-weighted mechanical energy of bodies in this system</td>
+</tr>
+<tr>
+<td>System</td>
+<td>System.energy_drift() -> float</td>
+<td>Return the largest relative energy change recorded during the most recent system.propagate call</td>
+</tr>
+<tr>
+<td>System</td>
+<td>System.propagate(duration: float, points: int, step: float, method: string, tol: float) -> Matrix</td>
+<td>Propagate the bodies in this system over duration across points rows using symplectic or rk45</td>
+</tr>
+<tr>
+<td>Body</td>
+<td>Body.elements(central_mu: float) -> Elements</td>
+<td>Convert the body Cartesian state to classical orbital elements around central_mu</td>
+</tr>
+<tr>
+<td>Body</td>
+<td>Body.mu() -> float</td>
+<td>Return the body gravitational parameter mu</td>
+</tr>
+<tr>
+<td>Body</td>
+<td>Body.name() -> string</td>
+<td>Return the body name</td>
+</tr>
+<tr>
+<td>Body</td>
+<td>Body.propagate(central_mu: float, dt: float) -> State</td>
+<td>Propagate the body analytically for dt along its two-body Keplerian orbit around central_mu</td>
+</tr>
+<tr>
+<td>Body</td>
+<td>Body.state() -> State</td>
+<td>Return the initial Cartesian State of the body</td>
+</tr>
+<tr>
+<td>State</td>
+<td>State.elements(central_mu: float) -> Elements</td>
+<td>Convert this Cartesian state to classical orbital elements around central_mu</td>
+</tr>
+<tr>
+<td>State</td>
+<td>State.position() -> Vector</td>
+<td>Return the 3D position Vector</td>
+</tr>
+<tr>
+<td>State</td>
+<td>State.propagate(central_mu: float, dt: float) -> State</td>
+<td>Propagate this Cartesian state analytically for dt along a two-body Keplerian orbit around central_mu</td>
+</tr>
+<tr>
+<td>State</td>
+<td>State.velocity() -> Vector</td>
+<td>Return the 3D velocity Vector</td>
+</tr>
+<tr>
+<td>Elements</td>
+<td>Elements.a() -> float</td>
+<td>Return the semi-major axis a</td>
+</tr>
+<tr>
+<td>Elements</td>
+<td>Elements.e() -> float</td>
+<td>Return the orbital eccentricity e</td>
+</tr>
+<tr>
+<td>Elements</td>
+<td>Elements.i() -> float</td>
+<td>Return the orbital inclination i in radians</td>
+</tr>
+<tr>
+<td>Elements</td>
+<td>Elements.raan() -> float</td>
+<td>Return the right ascension of the ascending node in radians</td>
+</tr>
+<tr>
+<td>Elements</td>
+<td>Elements.argp() -> float</td>
+<td>Return the argument of periapsis in radians</td>
+</tr>
+<tr>
+<td>Elements</td>
+<td>Elements.nu() -> float</td>
+<td>Return the true anomaly in radians</td>
+</tr>
+<tr>
+<td>Elements</td>
+<td>Elements.to_state(central_mu: float) -> State</td>
+<td>Convert these classical orbital elements to a Cartesian State around central_mu</td>
+</tr>
+<tr>
+<td>Vector</td>
+<td>Vector.get(index: int) -> float</td>
+<td>Return component 0 (x), 1 (y), or 2 (z)</td>
+</tr>
+<tr>
+<td>Vector</td>
+<td>Vector.x() -> float</td>
+<td>Return the x coordinate</td>
+</tr>
+<tr>
+<td>Vector</td>
+<td>Vector.y() -> float</td>
+<td>Return the y coordinate</td>
+</tr>
+<tr>
+<td>Vector</td>
+<td>Vector.z() -> float</td>
+<td>Return the z coordinate</td>
+</tr>
+<tr>
+<td>Matrix</td>
+<td>Matrix.rows() -> int</td>
+<td>Return the number of rows in the matrix</td>
+</tr>
+<tr>
+<td>Matrix</td>
+<td>Matrix.cols() -> int</td>
+<td>Return the number of columns in the matrix</td>
+</tr>
+<tr>
+<td>Matrix</td>
+<td>Matrix.get(row: int, col: int) -> float</td>
+<td>Return the value at 0-based (row, col)</td>
+</tr>
+<tr>
+<td>Matrix</td>
+<td>Matrix.save_csv(path: string) -> void</td>
+<td>Write the matrix to path as comma-separated values with 17 significant digits per cell</td>
+</tr>
+</tbody>
+</table>
+<h2>Global functions</h2>
+<table>
+<thead>
+<tr>
+<th>Function signature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>vector(x: float, y: float, z: float) -> Vector</td>
+<td>Create a 3D Vector with components (x, y, z)</td>
+</tr>
+<tr>
+<td>state(position: Vector, velocity: Vector) -> State</td>
+<td>Create a Cartesian State from position and velocity vectors</td>
+</tr>
+<tr>
+<td>elements(a: float, e: float, i: float, raan: float, argp: float, nu: float) -> Elements</td>
+<td>Create classical orbital Elements (all angles in radians)</td>
+</tr>
+<tr>
+<td>from_elements(elem: Elements, central_mu: float) -> State</td>
+<td>Convert classical orbital elements to a Cartesian State around central_mu</td>
+</tr>
+<tr>
+<td>to_elements(st: State, central_mu: float) -> Elements</td>
+<td>Convert a Cartesian State to classical orbital elements around central_mu</td>
+</tr>
+<tr>
+<td>kepler(M: float, e: float) -> float</td>
+<td>Solve Kepler equation M = E - e * sin(E) for eccentric anomaly E in radians (0 &lt;= e &lt; 1)</td>
+</tr>
+<tr>
+<td>period(a: float, central_mu: float) -> float</td>
+<td>Return the two-body orbital period 2 * pi * sqrt(a^3 / central_mu) for positive a and central_mu</td>
+</tr>
+<tr>
+<td>hohmann(r1: float, r2: float, central_mu: float) -> Matrix</td>
+<td>Return a 1x3 Matrix containing departure delta-v, arrival delta-v, and transfer time between circular radii r1 and r2</td>
+</tr>
+<tr>
+<td>lambert(r1: Vector, r2: Vector, dt: float, central_mu: float, prograde: bool) -> Matrix</td>
+<td>Solve the zero-revolution Lambert problem and return a 2x3 Matrix of departure (row 0) and arrival (row 1) velocity components</td>
+</tr>
+<tr>
+<td>assert_close(actual: float, expected: float, tolerance: float) -> void</td>
+<td>SDK numeric assertion checking abs(actual - expected) &lt;= tolerance; rejects NaN and negative tolerances</td>
+</tr>
+<tr>
+<td>space_assert_close(actual: float, expected: float, tolerance: float) -> void</td>
+<td>Strict finite-only physical assertion requiring finite actual, expected, and non-negative finite tolerance</td>
+</tr>
+<tr>
+<td>print(message: string) -> void</td>
+<td>Write a diagnostic line to stderr without disturbing the stdout result frame</td>
+</tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 catalog</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pinned catalog file</td>
+<td>cpp/std/lmcode-std.schema.json (206 canonical signatures)</td>
+</tr>
+<tr>
+<td>Contents</td>
+<td>String, encoding, math, file, JSON, template, collection, and return-framing declarations; no REST or CLI interfaces</td>
+</tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Exit code</th>
+<th>Phase</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>ok</td>
+<td>Command or all bytecode slots completed without error</td>
+</tr>
+<tr>
+<td>2</td>
+<td>cli</td>
+<td>Invalid command-line arguments, contradictory --dry-run flag, or invalid LMSPACE_MAX_MEMORY_MB value</td>
+</tr>
+<tr>
+<td>3</td>
+<td>load / run</td>
+<td>Bytecode load failure, schema mismatch, domain/physics error, missing SPICE kernel coverage, assertion failure, or memory budget exceeded</td>
+</tr>
+<tr>
+<td>4</td>
+<td>app</td>
+<td>Application error raised with code APP_FAIL, or an output failure</td>
+</tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmspace">github.com/lmctl-ai/lmspace</a>.</p>
+</footer>
+</body>
+</html>

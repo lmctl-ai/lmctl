@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmfilament guide — lmfilament — lmctl.com tools</title>
+<meta name="description" content="This guide explains how lmfilament is put together and how a scene script flows from text to a picture.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmfilament/">Overview</a></li>
+<li><a href="/tools/lmfilament/skill.html">Skill</a></li>
+<li><a href="/tools/lmfilament/guide.html">Guide</a></li>
+<li><a href="/tools/lmfilament/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmfilament guide</h1>
+<p>This guide explains how lmfilament is put together and how a scene script flows from text to a picture. For commands and rules see the skill page; for signatures see the reference.</p>
+<h2 id="overview">Overview</h2>
+<p>lmfilament drives Google Filament from LMScript with one static executable. It embeds Filament 1.78.1, including the material compiler, the engine and the geometry tools, and exposes them to an _lmcode_ block through one context object named fil. The same host pattern is used by lmhtml and lmcad: the outer LMScript program holds the block as a value, run_lmcode compiles it, starts the host and returns an envelope with ok and result.</p>
+<h2 id="real">What is real and what is a preview</h2>
+<table>
+<thead>
+<tr><th>Area</th><th>Status</th></tr>
+</thead>
+<tbody>
+<tr><td>Material compilation from mat source to a filamat package</td><td>Real; all upstream sample materials compile</td></tr>
+<tr><td>Engine, scene, camera, light, renderable and material-instance objects</td><td>Real Filament objects</td></tr>
+<tr><td>Procedural meshes, OBJ import and export, tangent frames</td><td>Real</td></tr>
+<tr><td>Filament pixels</td><td>Not available: a fully static binary cannot load a GPU driver, so Filament runs on its noop backend and render_frames drives the render loop without output</td></tr>
+<tr><td>Pictures from Scene.render_png</td><td>A small CPU preview rasterizer: Lambert shading from the scene lights, base color from material parameters or the albedo texture, unlit vertex colors, optional shadow map</td></tr>
+</tbody>
+</table>
+<h2 id="architecture">Architecture</h2>
+<ol>
+<li>lmscript reads the .lms file, resolves cli="lmfilament" and, through install="github:lmctl-ai/lmfilament@latest", the release binary in its tool cache.</li>
+<li>The compiler type-checks the block against the schema embedded in the host: 7 host types with 62 methods, the context fil, and the 206 standard signatures.</li>
+<li>run_lmcode passes the compiled program to the host with the --lmcode protocol. The host creates a Filament engine, which logs that the resolved backend is Noop.</li>
+<li>The host answers with one result frame between LMCODE_RETURN_BEGIN and LMCODE_RETURN_END; run_lmcode turns it into the envelope the script tests with r.ok.</li>
+</ol>
+<h2 id="model">Domain model</h2>
+<dl>
+<dt>Material</dt>
+<dd>Filament material source compiled by the embedded material compiler, from an inline string or a file. Parameters are set by name with set_float, set_float3, set_float4 and set_texture. The examples set baseColor before each add to give each renderable its own color from one compiled material.</dd>
+<dt>Mesh</dt>
+<dd>Geometry from a procedural factory (box, sphere, icosphere, cylinder, cone, capsule, plane, ring, triangle, text, tube_between) or from an OBJ file. Meshes carry UVs with v = 0 at the top row of the image.</dd>
+<dt>Texture</dt>
+<dd>An image created empty, as a checker, or loaded from PNG, JPEG, BMP or TGA. Pixel, filter, wrap and repeat shape it; save_png writes it. It is uploaded to Filament when its material is added to a scene.</dd>
+<dt>Scene</dt>
+<dd>Holds renderables, lights, a camera and a skybox color. add and add_at place a mesh with a material; add_part returns a Part handle.</dd>
+<dt>Part and Node</dt>
+<dd>A Part is one renderable that can be translated, rotated, scaled, hidden and parented. A Node is an empty transform from Scene.node, backed by the Filament TransformManager; parts and nodes parented to it move with it, which is how the scene-graph and model-viewer examples pose a robot.</dd>
+</dl>
+<h2 id="workflow">Workflow</h2>
+<ol>
+<li>Create output directories in the outer script with mkdir.</li>
+<li>Compile materials with fil.material or fil.material_file.</li>
+<li>Create textures, set filter and wrap, then bind them with set_texture.</li>
+<li>Create the scene, set skybox and camera, add meshes with materials, add lights, optionally call shadows(true).</li>
+<li>Call render_frames to drive the Filament loop, then render_png for the preview picture.</li>
+<li>Return facts with lmcode_return_put, test r.ok and assert in the outer script.</li>
+</ol>
+<p>For animation, the homepage clip examples write 240 frames and then encode them with ffmpeg into MP4 and GIF files; the outer script computes the time value and the block moves and hides parts with translate and visible.</p>
+<h2 id="textures">Textures in the preview</h2>
+<p>The CPU preview samples the albedo image: the sampler named albedo, baseColor, color or emissive, else the first one, with mip-mapped trilinear or nearest filtering. Other maps such as roughness, metallic, normal and ao are uploaded to Filament but not used for shading. Set filtering and wrapping before the material is added to a scene.</p>
+<h2 id="shadows">Shadows</h2>
+<p>Scene.shadows(true) enables the shadow map of the preview rasterizer. The repository shadows example describes it as an orthographic depth pass along the light, 2048 x 2048, with 3 x 3 PCF. The cascaded shadow maps of Filament itself need a GPU.</p>
+<h2 id="examples">Examples in the repository</h2>
+<p>The examples directory holds 38 scripts: ports of upstream Filament C++ samples (hellotriangle, hellopbr, suzanne, lightbulb, shadowtest, material_sandbox, texturedquad, heightfield and others), Magnum Python examples (primitives, scene graph, model viewer, text), scenes from lmblender and lmcad (molecules, DNA helix, Cornell box, Saturn, truss bridge) and texture demonstrations. Materials are inlined, so most run from any directory; the two Suzanne examples and texturedquad need files from a Filament checkout. The examples strobecolor, point_sprites and compile-sample-materials produce no picture.</p>
+<h2 id="limits">Limits</h2>
+<ul>
+<li>No GPU rendering and no Filament PBR output; the picture is a preview.</li>
+<li>The heightfield example notes that the height texture is not wired yet.</li>
+<li>Release binaries are Linux x64 and arm64 with glibc 2.35 or newer; macOS and Windows are not produced by the current release lane.</li>
+<li>lmfilament 0.3.21 ships 206 standard signatures. The current lmcode_std_v3 catalog has 226, adding the REST and CLI interfaces; lmfilament picks them up when it syncs and releases.</li>
+<li>Releases after v0.3.20 are published under the Lattice Systems Binary License 1.0; the README, docs, images and examples are MIT. Implementation source is maintained privately.</li>
+</ul>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="/tools/lmfilament/">lmfilament quick reference</a></li>
+<li><a href="/tools/lmfilament/skill.html">lmfilament skill</a></li>
+<li><a href="/tools/lmfilament/reference.html">lmfilament reference</a></li>
+<li><a href="https://github.com/lmctl-ai/lmfilament">GitHub repository lmctl-ai/lmfilament</a></li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmfilament">github.com/lmctl-ai/lmfilament</a>.</p>
+</footer>
+</body>
+</html>

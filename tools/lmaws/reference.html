@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmaws reference — lmaws — lmctl.com tools</title>
+<meta name="description" content="Reference tables for lmaws command-line flags, environment variables, endpoint precedence, shared Cloud methods, standard lmcode_std_v3 REST and CLI…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmaws/">Overview</a></li>
+<li><a href="/tools/lmaws/skill.html">Skill</a></li>
+<li><a href="/tools/lmaws/guide.html">Guide</a></li>
+<li><a href="/tools/lmaws/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmaws reference</h1>
+<p>Reference tables for lmaws command-line flags, environment variables, endpoint precedence, shared Cloud methods, standard lmcode_std_v3 REST and CLI signatures, and exit codes.</p>
+<h2>CLI flags</h2>
+<table>
+<thead>
+<tr>
+<th>Flag or subcommand</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>[cloud] --version, -V</td>
+<td>Print lmaws version string (for example lmaws 0.1.0).</td>
+</tr>
+<tr>
+<td>[cloud] --help, -h</td>
+<td>Print usage, endpoint resolution order, live mode gates, and simulator environment variables.</td>
+</tr>
+<tr>
+<td>[cloud] --notices</td>
+<td>Print embedded third-party notices for lmcode-go, lmcloud hostkit, and AWS SDK for Go v2.</td>
+</tr>
+<tr>
+<td>[cloud] --lmcode-schema [--json]</td>
+<td>Emit raw embedded schema JSON bytes for lmscript compiler verification.</td>
+</tr>
+<tr>
+<td>[cloud] --lmcode-signatures [--without-std]</td>
+<td>Print canonical sorted DSL signatures with or without the 226 lmcode_std_v3 standard signatures.</td>
+</tr>
+<tr>
+<td>[cloud] [--lmcode|--first|--last] FILE ...</td>
+<td>Execute compiled .dslb bytecode files under the validated invocation manifest.</td>
+</tr>
+<tr>
+<td>--sweep [--apply|--dry-run] [--all-stale] [RUN_ID]</td>
+<td>Dry-run or apply LIFO cleanup of run-owned AWS resources from the recovery journal.</td>
+</tr>
+</tbody>
+</table>
+<h2>Environment variables</h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LMCLOUD_ENDPOINT, LMAWS_ENDPOINT, AWS_ENDPOINT_URL</td>
+<td>unset (in-process fake)</td>
+<td>Loopback HTTP emulator origin (such as http://127.0.0.1:4566 for awssim) for all services.</td>
+</tr>
+<tr>
+<td>LMCLOUD_STORAGE_ENDPOINT, LMAWS_STORAGE_ENDPOINT, AWS_ENDPOINT_URL_S3</td>
+<td>unset</td>
+<td>Service-specific endpoint override for S3 object storage.</td>
+</tr>
+<tr>
+<td>LMCLOUD_QUEUE_ENDPOINT, LMAWS_QUEUE_ENDPOINT, AWS_ENDPOINT_URL_SQS</td>
+<td>unset</td>
+<td>Service-specific endpoint override for SQS queues.</td>
+</tr>
+<tr>
+<td>LMAWS_SIM_ACCESS_KEY_ID, LMAWS_SIM_SECRET_ACCESS_KEY</td>
+<td>test / test</td>
+<td>SigV4 credentials used when connecting to loopback awssim endpoints.</td>
+</tr>
+<tr>
+<td>LMAWS_SIM_REGION</td>
+<td>us-east-1</td>
+<td>SigV4 signing region for loopback emulator requests.</td>
+</tr>
+<tr>
+<td>LMAWS_COMPAT_STRIP_S3_XID</td>
+<td>1</td>
+<td>Strip S3 ?x-id= query parameter for compatibility with older awssim releases.</td>
+</tr>
+<tr>
+<td>LMCLOUD_LIVE, LMAWS_LIVE</td>
+<td>0</td>
+<td>Both must be set to 1 to enable Stage 1 read-only live AWS access.</td>
+</tr>
+<tr>
+<td>LMAWS_LIVE_MUTATE</td>
+<td>0</td>
+<td>Set to 1 (alongside LMCLOUD_LIVE=1 and LMAWS_LIVE=1) to permit Stage 2 owned mutations.</td>
+</tr>
+<tr>
+<td>LMAWS_LIVE_ACCOUNT, LMAWS_LIVE_REGION</td>
+<td>required in live mode</td>
+<td>Expected 12-digit AWS account ID (verified via STS) and allowed region (us-east-1).</td>
+</tr>
+<tr>
+<td>LMAWS_LIVE_COST_CAP_USD</td>
+<td>0.05 (ceiling 0.25)</td>
+<td>Maximum USD cost reservation cap for a live run.</td>
+</tr>
+<tr>
+<td>LMAWS_MAX_MEMORY_MB</td>
+<td>4096</td>
+<td>Process memory budget in whole MiB; invalid values exit 2, breaches exit 3.</td>
+</tr>
+</tbody>
+</table>
+<h2>Shared Cloud context methods</h2>
+<table>
+<thead>
+<tr>
+<th>Domain</th>
+<th>Methods on cloud (type Cloud)</th>
+<th>AWS mapping</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S3 object storage</td>
+<td>bucket_create, bucket_delete, bucket_exists, bucket_list, object_put, object_get, object_head, object_delete, object_list, object_list_all</td>
+<td>S3 CreateBucket, DeleteBucket, HeadBucket, ListBuckets, PutObject, GetObject, HeadObject, DeleteObject, ListObjectsV2 (path-style on loopback).</td>
+</tr>
+<tr>
+<td>SQS queues</td>
+<td>queue_create, queue_delete, queue_exists, queue_list, queue_send, queue_receive, queue_ack, queue_nack</td>
+<td>SQS CreateQueue, DeleteQueue, GetQueueUrl, ListQueues, SendMessage, ReceiveMessage, DeleteMessage, ChangeMessageVisibility.</td>
+</tr>
+<tr>
+<td>DynamoDB tables</td>
+<td>table_create, table_delete, table_exists, table_list, item_new, item_put, item_get, item_delete, item_update, item_query, item_scan</td>
+<td>DynamoDB CreateTable (pk and optional sk), DeleteTable, DescribeTable, ListTables, PutItem (with ConditionExpression), GetItem, DeleteItem, UpdateItem, Query, Scan.</td>
+</tr>
+<tr>
+<td>IAM permissions</td>
+<td>principal_current, policy_new, policy_parse, policy_lint, policy_attach, policy_attach_principal, policy_detach, policy_detach_principal, policy_check</td>
+<td>IAM policy grammar validation, least-privilege linting, resource/principal policy attachment, and evaluation.</td>
+</tr>
+<tr>
+<td>Lambda functions</td>
+<td>function_config, function_create, function_update, function_delete, function_exists, function_get, function_list, function_publish_version, function_versions, function_alias_set, function_alias_get, function_alias_delete, function_invoke</td>
+<td>Lambda function lifecycle, revision fencing, version publishing, alias routing, and synchronous invocation.</td>
+</tr>
+<tr>
+<td>Cognito userpools</td>
+<td>userpool_create, userpool_delete, userpool_exists, userpool_list, user_create, user_get, user_delete, user_set_enabled, user_set_password, user_list, user_sign_in, user_verify_token, group_create, group_delete, group_list, group_add_user, group_remove_user, user_groups</td>
+<td>Cognito User Pool directory, user attributes, group memberships, and signed session token verification.</td>
+</tr>
+<tr>
+<td>Cost and metrics</td>
+<td>cost_cap_usd, set_cost_cap_usd, estimated_cost, cost_report, metrics_reset, metrics, provider, endpoint, set_endpoint, abort_on_error, set_abort_on_error, last_error</td>
+<td>Pre-request cost reservations, per-operation latency quantiles (p50/p95/max), and normalized CloudError reporting.</td>
+</tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Signature</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RestGet .. RestOptions, RestHandler</td>
+<td>fn h(x: RestExchange) -> void implements RestGet | RestPost | RestPut | RestDelete | RestPatch | RestHead | RestOptions | RestHandler</td>
+<td>HTTP route handler interfaces supporting @"/path/:param" route patterns.</td>
+</tr>
+<tr>
+<td>CliCommand, CliOption</td>
+<td>fn c(x: RestExchange) -> void implements CliCommand | CliOption</td>
+<td>CLI subcommand (@"name") and flag (@"--opt") interfaces.</td>
+</tr>
+<tr>
+<td>rest_config, rest_route, rest_serve, rest_stop, rest_cli</td>
+<td>rest_config(k, v); rest_route(m, p, h); rest_serve(); rest_stop(); rest_cli(args) -> string</td>
+<td>Configure and run embedded HTTP routes or invoke CLI/REST handlers in-process.</td>
+</tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Execution succeeded.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Invalid CLI flags, malformed invocation manifest, or invalid LMAWS_MAX_MEMORY_MB setting.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Cloud operation error, cost cap exceeded, assertion failure, or memory limit breach.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Bytecode file or schema contract loading failure.</td>
+</tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmaws">github.com/lmctl-ai/lmaws</a>.</p>
+</footer>
+</body>
+</html>

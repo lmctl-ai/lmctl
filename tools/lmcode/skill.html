@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode skill — lmcode — lmctl.com tools</title>
+<meta name="description" content="Use the lmcode specification to author schema-bound _lmcode_ blocks, validate DSLB v6 bytecode, and verify cross-runtime conformance.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode/">Overview</a></li>
+<li><a href="/tools/lmcode/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode skill</h1>
+<p>Use the lmcode specification to author schema-bound _lmcode_ blocks, validate DSLB v6 bytecode, and verify cross-runtime conformance.</p>
+<h2>Purpose</h2>
+<p>Define the exact language syntax, dsl.schema: 2 contract, DSLB v6 binary layout, lmcode_std_v3 226-signature catalog, REST/CLI stdio protocol, and conformance vectors shared by all lmcode runtimes.</p>
+<h2>When to use it</h2>
+<p>Use lmcode when designing a new host schema, writing _lmcode_ programs with rule entries or REST/CLI endpoints, implementing a new language runtime SDK, or auditing cross-runtime conformance.</p>
+<h2>Install</h2>
+<p>Clone lmctl-ai/lmcode and install @lmctl-ai/lmctl (0.2.444 or newer; CI pins a newer compiler in scripts/ci/compiler-version) with Node.js and Python 3 to run the grammar and conformance checks. Released hosts may still ship the 206-signature catalog without the REST/CLI interfaces.</p>
+<h2>Commands</h2>
+<pre><code>git clone https://github.com/lmctl-ai/lmcode.git
+cd lmcode
+python3 tests/grammar/tree_sitter_differential.py --json /tmp/tree-sitter-diff.json</code></pre>
+<h2>Inputs and outputs</h2>
+<ul>
+<li>Input: dsl.schema: 2 JSON files, _lmcode_ source blocks, and compiled .dslb v6 bytecode files.</li>
+<li>Output: canonical signature lists, verified DSLB v6 chunks, HTTP/1.1 responses over stdio, and LMCODE_RETURN JSON envelopes.</li>
+<li>Locks: std/rest/lmcode-rest.schema.json (the 20 REST/CLI signatures + 10 standard interfaces of the 226-signature catalog) and tests/rest-suite (shared HTTP/1.1 and CLI scenarios).</li>
+</ul>
+<h2>Safety rules</h2>
+<ul>
+<li>Never execute unverified bytecode or bypass the 32-byte SHA-256 schema hash check in the DSLB v6 header.</li>
+<li>Keep stdout reserved for protocol frames during rest_serve() or LMCODE_RETURN framing; send diagnostics to stderr.</li>
+<li>Treat VM strings as raw byte sequences that may contain interior NUL bytes or non-UTF-8 bytes.</li>
+</ul>
+<h2>Worked examples</h2>
+<pre><code># Check both Tree-sitter grammars against the pinned compiler
+python3 tests/grammar/tree_sitter_differential.py --json /tmp/tree-sitter-diff.json
+# List the REST/CLI fragment declarations (20 signatures + 10 interfaces)
+python3 -m json.tool std/rest/lmcode-rest.schema.json</code></pre>
+<h2>Errors and exit codes</h2>
+<table><thead><tr><th>Code</th><th>Phase</th><th>Exit</th><th>Condition</th></tr></thead><tbody>
+<tr><td>LOAD_BAD_BYTECODE</td><td>load</td><td>3</td><td>Malformed DSLB v6 header, bad magic or version, truncated section, invalid opcode, or stack depth violation</td></tr>
+<tr><td>LOAD_BAD_SCHEMA</td><td>load</td><td>3</td><td>Host schema JSON fails dsl.schema 2 validation or declares an invalid result contract</td></tr>
+<tr><td>LOAD_SCHEMA_MISMATCH</td><td>load</td><td>3</td><td>32-byte SHA-256 schema hash in DSLB v6 header does not match exact host schema bytes</td></tr>
+<tr><td>LOAD_UNBOUND</td><td>load</td><td>3</td><td>Bytecode imports a context, function, or method signature not registered in the host Registry</td></tr>
+<tr><td>RUN_ERROR</td><td>run</td><td>3</td><td>VM division or remainder by zero, or loop-free operand stack underflow</td></tr>
+<tr><td>RUN_HOST</td><td>run</td><td>3</td><td>Host callback failure, invalid encoding, expired collection handle, or REST route validation failure</td></tr>
+<tr><td>APP_FAIL</td><td>app</td><td>4</td><td>Post-run application domain validation failure or output stream write failure</td></tr>
+</tbody></table>
+<h2>How to verify</h2>
+<pre><code>python3 tests/grammar/tree_sitter_differential.py --json /tmp/tree-sitter-diff.json</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode">github.com/lmctl-ai/lmcode</a>.</p>
+</footer>
+</body>
+</html>

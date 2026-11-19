@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-go guide — lmcode-go — lmctl.com tools</title>
+<meta name="description" content="This guide details how lmcode-go embeds the DSLB v6 loader and VM in pure Go, binds host structs and dry callbacks, serves REST and stateless CLI traffic, and…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-go/">Overview</a></li>
+<li><a href="/tools/lmcode-go/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-go/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-go/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-go guide</h1>
+<p>This guide details how lmcode-go embeds the DSLB v6 loader and VM in pure Go, binds host structs and dry callbacks, serves REST and stateless CLI traffic, and verifies conformance.</p>
+<h2>Overview</h2>
+<p>Package lmcode has zero external dependencies in go.mod. NewRegistry() constructs a registry containing all 226 lmcode_std_v3 signatures. Load() checks the DSLB v6 magic header, compares the 32-byte SHA-256 digest of the supplied schema slice, binds all imported signatures, and verifies loop pairing and stack heights across the body and R49 entries.</p>
+<h2>Registry and virtual machine embedding</h2>
+<p>Host objects are stored as Go interface pointers inside lmcode.Context via ctx.Set(name, ptr) or returned from methods via lmcode.Object(typeName, ptr). Method callbacks receive (self any, args []lmcode.Value) and cast self to the concrete Go pointer type. Optional dry-mode callbacks are passed with lmcode.Dry(callback); when omitted, dry execution skips the host callback and synthesizes a zero value matching the declared return type.</p>
+<h2>REST and stateless CLI controller lifecycle</h2>
+<p>The standard catalog includes the 20 REST/CLI signatures and 10 standard interfaces (RestGet..RestOptions, RestHandler, CliCommand, CliOption). Calling rest.Register(reg, rest.Options{}) binds those signatures to a rest.Controller controller. Programs declare endpoints using path-annotated interface entries (@"/items/:id" implementing RestGet, @"status" implementing CliCommand, @"--json" implementing CliOption) or rest_route(method, path, annotation). Both :param / :rest... and {param} / {rest...} placeholders are supported. Calling rest_config configures route prefixes or max_body_bytes, rest_cli(args) dispatches a stateless CLI invocation in an isolated entry call, and rest_serve() starts sequential HTTP/1.1 request handling over stdin/stdout after the body returns.</p>
+<pre><code>package main
+
+import (
+	"os"
+	lmcode "github.com/lmctl-ai/lmcode-go"
+	"github.com/lmctl-ai/lmcode-go/rest"
+)
+
+func main() {
+	reg := lmcode.NewRegistry()
+	srv, _ := rest.Register(reg, rest.Options{MaxBodyBytes: 1 &lt;&lt; 20})
+	bc, _ := os.ReadFile(os.Args[1])
+	schema, _ := os.ReadFile(os.Args[2])
+	prog, err := lmcode.Load(bc, schema, reg)
+	lmcode.ExitIfError("load", err)
+	err = srv.Run(prog, lmcode.NewContext())
+	lmcode.ExitIfError("run", err)
+}</code></pre>
+<h2>Invocation result protocol and dry mode</h2>
+<p>Every host invocation reads the optional version-1 manifest from LMCODE_INVOCATION_FILE to determine whether dry mode is active and to allocate one ResultSink per submitted program slot. Inside an _lmcode_ chunk, assignments to $return, $return.field, or $return[key] invoke the 24 standard lmcode_return_* imports on the active slot. After all bodies, R49 rule entries, and application checks complete, WriteFrame emits a single terminal LMCODE_RETURN_BEGIN / LMCODE_RETURN_END envelope on stdout and returns exit code 0 on success, 2 on CLI usage error, 3 on load or runtime error, or 4 on application validation failure.</p>
+<h2>Conformance verification</h2>
+<p>Run CGO_ENABLED=0 go test ./... to execute the unit tests, verifier mutation tests, 39 REST/CLI conformance scenarios in-memory and via cmd/rest-serve, and run cmd/conformance over the 410 core and 271 stdlib vectors.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-go">github.com/lmctl-ai/lmcode-go</a>.</p>
+</footer>
+</body>
+</html>

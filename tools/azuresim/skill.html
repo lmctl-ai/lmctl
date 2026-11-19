@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>azuresim authoring skill — azuresim — lmctl.com tools</title>
+<meta name="description" content="azuresim is a standalone native local Azure Storage emulator on 127.0.0.1:4577 built on Floci-AZ 0.15.0 with a real-Azure semantics and authentication overlay.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/azuresim/">Overview</a></li>
+<li><a href="/tools/azuresim/skill.html">Skill</a></li>
+<li><a href="/tools/azuresim/guide.html">Guide</a></li>
+<li><a href="/tools/azuresim/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>azuresim authoring skill</h1>
+<p>azuresim is a standalone native local Azure Storage emulator on 127.0.0.1:4577 built on Floci-AZ 0.15.0 with a real-Azure semantics and authentication overlay.</p>
+<h2>Purpose</h2>
+<p>Use azuresim to run Azure Blob Storage and Azure Queue Storage locally in one native process without Docker, Java, or an Azure subscription, and to test SharedKey HMAC-SHA256 signatures, Bearer tokens, and storage access policies with lmazure.</p>
+<h2>When to use it</h2>
+<p>Choose azuresim when testing LMScript programs, lmazure workflows, or Azure SDK applications against local Blob and Queue HTTP wire endpoints on 127.0.0.1:4577 in open mode or --auth enforce mode.</p>
+<h2>Install</h2>
+<p>Download the prebuilt azuresim release executable and verify its SHA256SUMS digest, or build the native binary from the pinned source lock using GraalVM 25.</p>
+<pre><code>python3 scripts/build.py --native
+./target/azuresim --version</code></pre>
+<h2>Commands</h2>
+<p>Run azuresim in the foreground with in-memory or durable storage, or enable authentication and permission enforcement.</p>
+<pre><code>azuresim --version
+azuresim --help
+azuresim serve
+azuresim start --port 4577 --data-dir ./data
+azuresim serve --auth enforce --auth-config auth.json</code></pre>
+<h2>Inputs and outputs</h2>
+<p>Blob requests target http://127.0.0.1:4577/devstoreaccount1/&lt;container>/&lt;blob> and Queue requests target http://127.0.0.1:4577/devstoreaccount1-queue/&lt;queue>/messages. Service responses retain official Azure Storage XML and header wire formats. CLI usage and startup errors emit a JSON envelope {"ok":false,"error":"..."} on stdout, while server logs go to stderr.</p>
+<h2>Safety rules</h2>
+<p>azuresim binds exclusively to IPv4 loopback (127.0.0.1), disables TLS, and disables Event Hubs and Service Bus boot sidecars so an idle Blob and Queue session never launches Docker containers or binds extra ports. Other upstream services remain present and may require Docker when explicitly used. Always use the standard Azurite/azuresim development account (devstoreaccount1) or dummy tokens in --auth-config files; never place live Azure Storage keys in repository files. Wait for the first successful HTTP probe before sending workload requests.</p>
+<h2>Worked examples</h2>
+<p>Example 1: Direct curl round-trip for Azure Blob and Queue Storage against a running azuresim server.</p>
+<pre><code>curl -f -X PUT "http://127.0.0.1:4577/devstoreaccount1/demo?restype=container"
+curl -f -X PUT -H "x-ms-blob-type: BlockBlob" --data-binary "hello Azure" http://127.0.0.1:4577/devstoreaccount1/demo/hello.txt
+curl -f http://127.0.0.1:4577/devstoreaccount1/demo/hello.txt
+curl -f -X PUT http://127.0.0.1:4577/devstoreaccount1-queue/demo
+curl -f -X POST -H "Content-Type: application/xml" --data "&lt;QueueMessage>&lt;MessageText>hello&lt;/MessageText>&lt;/QueueMessage>" http://127.0.0.1:4577/devstoreaccount1-queue/demo/messages</code></pre>
+<p>Example 2: Driving azuresim from LMScript via lmazure and standard lmcode_std_v3 REST/CLI handlers.</p>
+<pre><code>p = _lmcode_ cli="lmazure" install="github:lmctl-ai/lmazure@latest";
+  @"/storage/:container/:key"
+  fn read_blob(x: RestExchange) -> void implements RestGet {
+    x.send(cloud.object_get(x.param("container"), x.param("key")));
+  }
+
+  @"seed-azure"
+  fn cmd_seed(x: RestExchange) -> void implements CliCommand {
+    cloud.set_endpoint("all", "http://127.0.0.1:4577");
+    cloud.bucket_create("sim-container");
+    cloud.object_put("sim-container", "note.txt", x.body());
+    x.send("seeded");
+  }
+
+  rest_config("prefix", "/v1");
+  let s = rest_cli(str_split("seed-azure -- azuresim-payload", " "));
+  let g = rest_cli(str_split("/v1/storage/sim-container/note.txt", " "));
+  print(s + ":" + g);
+end _lmcode_</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Invalid CLI arguments or invalid auth configuration exit with code 2 and a JSON error envelope. Emulator startup failures (such as an occupied port) exit with code 3 and the same JSON envelope. Normal completion, --version, and --help exit with code 0. Missing container or queue deletions return HTTP 404 ContainerNotFound or QueueNotFound matching real Azure semantics.</p>
+<h2>How to verify</h2>
+<p>Run the CLI, storage, auth, and pinned lmazure client verification scripts against the built executable.</p>
+<pre><code>python3 scripts/test-cli.py target/azuresim
+python3 scripts/test-storage.py target/azuresim
+python3 scripts/test-auth.py target/azuresim
+python3 scripts/fetch-client.py
+python3 scripts/test-lmazure.py target/azuresim target/lmazure</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/azuresim">github.com/lmctl-ai/azuresim</a>.</p>
+</footer>
+</body>
+</html>

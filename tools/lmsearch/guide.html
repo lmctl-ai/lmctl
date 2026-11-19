@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmsearch guide — lmsearch — lmctl.com tools</title>
+<meta name="description" content="ONNX embedding graphs, AutoFaiss index planning, FAISS vector search, SAM callback interfaces, and lazy in-memory REST serving in lmsearch.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmsearch/">Overview</a></li>
+<li><a href="/tools/lmsearch/skill.html">Skill</a></li>
+<li><a href="/tools/lmsearch/guide.html">Guide</a></li>
+<li><a href="/tools/lmsearch/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmsearch guide</h1>
+<p>ONNX embedding graphs, AutoFaiss index planning, FAISS vector search, SAM callback interfaces, and lazy in-memory REST serving in lmsearch.</p>
+<h2>Overview</h2>
+<p>lmsearch integrates three C++ vector search subsystems—ONNX embedding models, AutoFaiss index recommendation and hyperparameter autotuning, and FAISS vector indexing—under the lmcode-cpp stack virtual machine. Policy decisions at every stage can be customized through eight domain SAM interfaces plus the 10 standard lmcode_std_v3 REST and CLI interfaces.</p>
+<h2>ONNX embedding and AutoFaiss planning layers</h2>
+<p>The OnnxModel layer constructs or loads embedding graphs via onnx_embedder(vocab, hidden, out_dim), onnx_mlp_embedder(vocab, hidden, mid, out_dim), onnx_pretrained(model_id), or onnx_load(path). Models support MEAN, CLS, MAX, and NONE pooling, L2 output normalization, static graph validation (check()), and post-embedding transformation via @embed (implements EmbeddingTransform).</p>
+<p>The AutoTuner layer implements AutoFaiss heuristics in native C++. Given dataset cardinality, vector dimension, metric (L2, IP, COSINE), and memory/latency constraints (max_memory, max_query_ms), autotuner(nb_vectors, dim).plan() evaluates Flat, HNSW, IVF,Flat, IVF,PQ, and OPQ,IVF,PQ candidates and produces an AutoPlan with estimated byte footprints and recommended nprobe or ef_search parameters. A @policy rule (implements IndexPolicy) can override the chosen index factory key, and @audit (implements AuditRule) gates recall_1_at_k, recall_k_at_k, and ms_per_query on IndexMetrics.</p>
+<h2>FAISS search and programmable SAM rules</h2>
+<p>FaissIndex supports direct construction (flat_index, hnsw_index, ivf_flat_index, ivf_pq_index, faiss_index) or plan-driven construction (auto_index(plan)). During file ingestion and querying, five SAM callbacks customize behavior:</p>
+<ul>
+<li>@ignore (implements IgnoreRule: (Document) -> bool): Prunes files or directory subtrees alongside .gitignore and .lmsearchignore.</li>
+<li>@file_filter (implements FileFilter: (Document) -> bool): Gates file ingestion and enriches Document metadata fields before ONNX embedding runs.</li>
+<li>@config (implements SearchConfig: (FaissIndex) -> void): Applies programmatic filter chains and index parameters.</li>
+<li>@filter (implements VectorFilter: (int, Document) -> bool): Acts as a programmable faiss::IDSelector predicate during FAISS search.</li>
+<li>@rerank (implements Reranker: (SearchHit, string) -> float): Rescores candidate FAISS hits using document fields and query text.</li>
+</ul>
+<pre><code>program = _lmcode_ cli="lmsearch";
+@filter
+fn only_docs(id: int, doc: Document) -> bool implements VectorFilter {
+  return doc.ext() == ".md" &amp;&amp; doc.in_git();
+}
+
+@rerank
+fn boost_readme(hit: SearchHit, q: string) -> float implements Reranker {
+  if (str_contains(hit.path(), "README")) { return hit.score() + 0.25; }
+  return hit.score();
+}
+end _lmcode_</code></pre>
+<h2>Single-user REST server with lazy in-memory index</h2>
+<p>Running lmsearch serve (or driving it from _lmcode_ with rest_client(url)) starts a single-user, global-session HTTP server with a three-step interactive search loop:</p>
+<ol>
+<li>Catalog paths lazily without reading or embedding files upfront.</li>
+<li>On GET /query?q=TEXT&amp;k=K, lazily read and ONNX-embed only candidate files matching the broad filter that are not yet in RAM, run FAISS search, and cache the full broad hit list in server memory (cached_broad_hits).</li>
+<li>On GET /filter?... followed by GET /requery?k=K (or GET /view?k=K), filter the cached broad hits directly in RAM (from_memory_cache: true, lazy_newly_embedded: 0) without disk I/O or ONNX inference.</li>
+</ol>
+<h2>Standard REST and stateless CLI interfaces</h2>
+<p>lmsearch registers all 226 canonical lmcode_std_v3 signatures, supporting RestGet..RestOptions, RestHandler, CliCommand, CliOption, :param and {param} route placeholders, rest_config, rest_route, rest_serve, rest_stop, and rest_cli inside _lmcode_ programs.</p>
+<pre><code>program = _lmcode_ cli="lmsearch";
+@"--dim"
+fn opt_dim(x: RestExchange) -> void implements CliOption {
+  x.set("dim", x.query("dim"));
+}
+
+@"/plan/:count"
+fn get_plan(x: RestExchange) -> void implements RestGet {
+  let p = autotuner(str_to_int(x.param("count")), str_to_int(x.get("dim"))).plan();
+  x.json("{\"index_key\":\"" + p.index_key() + "\"}");
+}
+
+rest_config("session", "global");
+print(rest_cli(str_split("--dim=32 /plan/5000", " ")));
+end _lmcode_</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmsearch">github.com/lmctl-ai/lmsearch</a>.</p>
+</footer>
+</body>
+</html>

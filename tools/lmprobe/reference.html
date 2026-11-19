@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmprobe reference — lmprobe — lmctl.com tools</title>
+<meta name="description" content="CLI commands, flags, the 63 probe_* lmcode host functions, standard REST and CLI interfaces, and exit codes for lmprobe.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmprobe/">Overview</a></li>
+<li><a href="/tools/lmprobe/skill.html">Skill</a></li>
+<li><a href="/tools/lmprobe/guide.html">Guide</a></li>
+<li><a href="/tools/lmprobe/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmprobe reference</h1>
+<p>CLI commands, flags, the 63 probe_* lmcode host functions, standard REST and CLI interfaces, and exit codes for lmprobe.</p>
+<h2>CLI command groups and global flags</h2>
+<table>
+<thead>
+<tr><th>Command or flag</th><th>Category</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>def / ref / search / context / discover</td><td>Symbols</td><td>Locate symbol definitions, references, fuzzy symbol matches, context bundles, and project layouts.</td></tr>
+<tr><td>callers / callees / impact / trace</td><td>Call graph</td><td>Map incoming callers, outgoing callees, transitive change impact, and log-injected command traces that restore source files afterwards.</td></tr>
+<tr><td>imports / exports / decorations / ast-diff</td><td>Structure</td><td>Extract module imports/exports, annotations/decorators, and structural AST diffs.</td></tr>
+<tr><td>find / grep / edit / fix / delete</td><td>Files &amp; edits</td><td>Search paths or text, and preview or apply text/AST edits (--apply [--force]) and deletions (delete --force).</td></tr>
+<tr><td>git status|diff|log|show|blame|branch|remote|rev-parse|ls-files</td><td>Git</td><td>Read-only Git repository inspection returning parsed JSON records.</td></tr>
+<tr><td>history blame|churn|co-change|commit|diff|evolution|introduced|todos</td><td>History</td><td>Analyze commit churn, file co-change coupling, symbol evolution, and blame history.</td></tr>
+<tr><td>secrets / secrets-recipes / secrets-sources / crypto-sites / async-leaks / config-keys / route-anchors / openapi-facts</td><td>Scanners</td><td>Scan for secrets, cryptographic call sites, async leaks, config keys, HTTP routes, and OpenAPI facts.</td></tr>
+<tr><td>aws catalog / aws query</td><td>Cloud</td><td>Inspect the read-only AWS operation catalog or run a read-only AWS CLI query.</td></tr>
+<tr><td>--json / --infile FILE.graphql / --outfile FILE.json</td><td>Program I/O</td><td>Emit the versioned lmprobe.result.v1 JSON envelope or run a GraphQL sensor program.</td></tr>
+<tr><td>--lmcode FILE / --lmcode-schema [--json] / --lmcode-signatures</td><td>lmcode host</td><td>Execute compiled DSLB bytecode or inspect the 63-operation host schema and 289 total signatures.</td></tr>
+</tbody>
+</table>
+<h2>Domain host functions (host.schema.json — 63 operations)</h2>
+<table>
+<thead>
+<tr><th>Function group</th><th>Registered probe_* functions (all signature (string) -> string)</th></tr>
+</thead>
+<tbody>
+<tr><td>Symbol &amp; AST navigation</td><td>probe_def_symbol, probe_ref_symbol, probe_search_symbols, probe_list_kinds, probe_ast_diff, probe_context_bundle, probe_diff_context, probe_discover_projects, probe_py_slice_candidates, probe_query_graphql.</td></tr>
+<tr><td>Call graph &amp; hierarchy</td><td>probe_callers_of, probe_callees_of, probe_callsite_args, probe_impact_of, probe_trace_exec, probe_overrides_of, probe_subtypes_of, probe_supertypes_of, probe_imports_of, probe_exports_of, probe_decorations_of.</td></tr>
+<tr><td>File search &amp; mutations</td><td>probe_find_paths, probe_find_delete, probe_delete_paths, probe_grep_text, probe_edit_preview, probe_edit_text, probe_fix_preview, probe_fix_ast.</td></tr>
+<tr><td>Git &amp; commit history</td><td>probe_git_status, probe_git_diff, probe_git_log, probe_git_show, probe_git_blame, probe_git_branch, probe_git_remote, probe_git_rev_parse, probe_git_ls_files, probe_history_blame, probe_history_churn, probe_history_co_change, probe_history_commit, probe_history_diff, probe_history_evolution, probe_history_introduced, probe_history_todos, probe_evolution_of, probe_pr_triage.</td></tr>
+<tr><td>Security, API &amp; AWS scanners</td><td>probe_secrets_scan, probe_secrets_recipes_list, probe_secrets_recipes_show, probe_secrets_sources_list, probe_secrets_sources_show, probe_crypto_sites, probe_async_leaks, probe_guard_sites, probe_resource_sites, probe_http_client_calls, probe_config_keys, probe_route_anchors, probe_openapi_facts, probe_aws_catalog, probe_aws_query.</td></tr>
+</tbody>
+</table>
+<h2>Standard REST and CLI interfaces (lmcode_std_v3)</h2>
+<table>
+<thead>
+<tr><th>Interface or function</th><th>Signature</th><th>Role</th></tr>
+</thead>
+<tbody>
+<tr><td>RestGet..RestOptions, RestHandler</td><td>(exchange: RestExchange) -> void</td><td>SAM interfaces for @"/path/:param" HTTP route handlers.</td></tr>
+<tr><td>CliCommand, CliOption</td><td>(exchange: RestExchange) -> void</td><td>SAM interfaces for @"cmd" subcommands and @"--opt" options via rest_cli.</td></tr>
+<tr><td>rest_config, rest_route, rest_serve, rest_stop, rest_cli</td><td>Standard router functions</td><td>Configure and execute in-memory CLI commands or HTTP/1.1 endpoints inside _lmcode_.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr><th>Code</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>Command, GraphQL query, edit preview/apply, or bytecode execution succeeded.</td></tr>
+<tr><td>1</td><td>No results matched (pass --exit-zero-on-no-match to return 0 instead).</td></tr>
+<tr><td>Other non-zero</td><td>Usage, load, or runtime error; details are in the lmprobe.result.v1 error payload or on stderr.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmprobe">github.com/lmctl-ai/lmprobe</a>.</p>
+</footer>
+</body>
+</html>

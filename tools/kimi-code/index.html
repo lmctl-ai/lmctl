@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kimi-code — lmctl.com tools</title>
+<meta name="description" content="kimi-code is the lmctl-maintained fork of Moonshot AI's Kimi Code CLI, patching stale ACP runtime bindings after session restore and batching queued prompts.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/kimi-code/">Overview</a></li>
+<li><a href="/tools/kimi-code/skill.html">Skill</a></li>
+<li><a href="/tools/kimi-code/guide.html">Guide</a></li>
+<li><a href="/tools/kimi-code/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>kimi-code</h1>
+<p>kimi-code is the lmctl-maintained fork of Moonshot AI's Kimi Code CLI, patching stale ACP runtime bindings after session restore and batching queued prompts.</p>
+<h2>Quick reference</h2>
+<p>Run Kimi Code CLI interactively in the terminal, execute headless JSON-streaming prompts, or start the Agent Client Protocol (ACP) server for lmctl and IDEs.</p>
+<pre><code>kimi --version
+kimi
+kimi -p "Explain the main directories of this repository" --output-format stream-json
+kimi acp</code></pre>
+<table>
+<thead>
+<tr>
+<th>Command or setting</th>
+<th>Usage</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Interactive TUI</td>
+<td>kimi</td>
+<td>Launch the terminal coding agent with /login, /mcp-config, video input, and subagents (coder, explore, plan).</td>
+</tr>
+<tr>
+<td>Headless prompt</td>
+<td>kimi -p "&lt;prompt>" --output-format stream-json</td>
+<td>Execute a non-interactive prompt and emit structured JSONL events (assistant role content).</td>
+</tr>
+<tr>
+<td>ACP server</td>
+<td>kimi acp</td>
+<td>Run the Agent Client Protocol stdio server for lmctl Teamfiles, Zed, and JetBrains IDEs.</td>
+</tr>
+<tr>
+<td>Config file</td>
+<td>~/.kimi-code/config.toml</td>
+<td>Declare default_model, [providers.&lt;name>], and [models.&lt;name>] for custom or loopback endpoints.</td>
+</tr>
+<tr>
+<td>Disable auto-update</td>
+<td>[upgrade] auto_install = false in ~/.kimi-code/tui.toml</td>
+<td>Prevent background auto-updates from replacing the patched lmctl-ai binary with stock builds.</td>
+</tr>
+</tbody>
+</table>
+<p>Runnable configuration and headless prompt example targeting an OpenAI-compatible or loopback endpoint:</p>
+<pre><code>mkdir -p ~/.kimi-code
+cat &lt;&lt;'EOF' > ~/.kimi-code/tui.toml
+[upgrade]
+auto_install = false
+EOF
+kimi --version
+kimi -p "Reply with KIMI_READY" --output-format stream-json</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/kimi-code/skill.html">Skill</a> — LLM agent authoring rules, fork patches, headless and ACP commands, and verification steps for kimi-code.</li>
+<li><a href="/tools/kimi-code/guide.html">Guide</a> — Detailed explanation of the acp-runtime-after-reap fix, batched queued prompt delivery, config.toml routing, and auto-update protection.</li>
+<li><a href="/tools/kimi-code/reference.html">Reference</a> — CLI flags, config.toml and tui.toml schemas, subagents, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/kimi-code">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/kimi-code">github.com/lmctl-ai/kimi-code</a>.</p>
+</footer>
+</body>
+</html>

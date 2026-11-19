@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmweather reference — lmweather — lmctl.com tools</title>
+<meta name="description" content="Complete reference for lmweather command-line flags, environment variables, Wx, Sphere, and Plane methods, and exit codes.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmweather/">Overview</a></li>
+<li><a href="/tools/lmweather/skill.html">Skill</a></li>
+<li><a href="/tools/lmweather/guide.html">Guide</a></li>
+<li><a href="/tools/lmweather/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmweather reference</h1>
+<p>Complete reference for lmweather command-line flags, environment variables, Wx, Sphere, and Plane methods, and exit codes.</p>
+<h2>Command-line flags</h2>
+<table>
+<thead>
+<tr>
+<th>Flag or invocation</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>lmweather --version</td>
+<td>Print lmweather X.Y.Z to stdout and exit 0</td>
+</tr>
+<tr>
+<td>lmweather --notices</td>
+<td>Print embedded license and numerical method notices to stdout and exit 0</td>
+</tr>
+<tr>
+<td>lmweather --lmcode-schema</td>
+<td>Print human-readable registered context, type, and method signatures to stdout and exit 0</td>
+</tr>
+<tr>
+<td>lmweather --lmcode-schema --json</td>
+<td>Print exact embedded lmweather.dsl.json schema bytes to stdout and exit 0</td>
+</tr>
+<tr>
+<td>lmweather --lmcode-signatures</td>
+<td>Print canonical sorted registry signatures for parity checks with lmscript and exit 0</td>
+</tr>
+<tr>
+<td>lmweather --lmcode FILE [FILE ...]</td>
+<td>Load and verify all bytecode files against the embedded schema, then run each slot in order</td>
+</tr>
+<tr>
+<td>lmweather --dry-run --lmcode FILE [FILE ...]</td>
+<td>Load and verify all bytecode files and schema contracts without running simulations or writing files</td>
+</tr>
+</tbody>
+</table>
+<h2>Environment variables</h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LMWEATHER_MAX_MEMORY_MB</td>
+<td>4096</td>
+<td>Total host memory ceiling in MiB; allocations beyond this limit stop execution with exit code 3</td>
+</tr>
+<tr>
+<td>LMCODE_INVOCATION_FILE</td>
+<td>unset</td>
+<td>Internal SDK invocation metadata path supplied automatically by run_lmcode</td>
+</tr>
+</tbody>
+</table>
+<h2>Context objects</h2>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>wx</td>
+<td>Wx</td>
+<td>Root weather and climate dynamics context shared across bytecode blocks in one invocation</td>
+</tr>
+</tbody>
+</table>
+<h2>Wx methods</h2>
+<table>
+<thead>
+<tr>
+<th>Method signature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Wx.sphere(T: int) -> Sphere</td>
+<td>Create an Earth-scaled spectral shallow-water sphere at triangular truncation T in [4, 170]</td>
+</tr>
+<tr>
+<td>Wx.planet(T: int, radius: float, omega: float, g: float) -> Sphere</td>
+<td>Create a spectral shallow-water sphere at truncation T with custom radius (m), rotation omega (rad/s), and gravity g (m/s^2)</td>
+</tr>
+<tr>
+<td>Wx.plane(nx: int, ny: int, Lx: float, Ly: float) -> Plane</td>
+<td>Create a staggered C-grid beta-plane channel with nx by ny cells and physical dimensions Lx by Ly (m)</td>
+</tr>
+<tr>
+<td>Wx.assert_close(actual: float, expected: float, tol: float) -> void</td>
+<td>Assert that actual and expected are finite and differ by at most non-negative tol</td>
+</tr>
+<tr>
+<td>Wx.assert_true(cond: bool) -> void</td>
+<td>Assert that cond is true, raising a run error on false</td>
+</tr>
+<tr>
+<td>Wx.print(msg: string) -> void</td>
+<td>Write a diagnostic message line to stderr</td>
+</tr>
+<tr>
+<td>Wx.save_text(path: string, text: string) -> void</td>
+<td>Write arbitrary text content to path</td>
+</tr>
+<tr>
+<td>Wx.version() -> string</td>
+<td>Return the lmweather version string</td>
+</tr>
+</tbody>
+</table>
+<h2>Sphere methods</h2>
+<table>
+<thead>
+<tr>
+<th>Method signature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sphere.williamson1(alpha: float) -> Sphere</td>
+<td>Initialize Williamson TC1 cosine-bell passive tracer and solid-body winds at tilt alpha (radians) in advect_only mode</td>
+</tr>
+<tr>
+<td>Sphere.williamson2(alpha: float) -> Sphere</td>
+<td>Initialize Williamson TC2 steady global nonlinear geostrophic flow at rotation axis tilt alpha (radians)</td>
+</tr>
+<tr>
+<td>Sphere.williamson5() -> Sphere</td>
+<td>Initialize Williamson TC5 zonal flow over a 2000 m conical mid-latitude mountain</td>
+</tr>
+<tr>
+<td>Sphere.williamson6() -> Sphere</td>
+<td>Initialize Williamson TC6 Rossby-Haurwitz wave 4</td>
+</tr>
+<tr>
+<td>Sphere.fields(h: string, u: string, v: string) -> Sphere</td>
+<td>Initialize fluid thickness h (m) and wind components u, v (m/s) from expressions in lon, lat (radians)</td>
+</tr>
+<tr>
+<td>Sphere.orography(hs: string) -> Sphere</td>
+<td>Set surface mountain height hs (m) from an expression in lon, lat (radians)</td>
+</tr>
+<tr>
+<td>Sphere.tracer(q: string) -> Sphere</td>
+<td>Initialize a passive scalar tracer field q from an expression in lon, lat (radians)</td>
+</tr>
+<tr>
+<td>Sphere.advect_only() -> Sphere</td>
+<td>Freeze dynamical winds and height so only the passive tracer q is advected</td>
+</tr>
+<tr>
+<td>Sphere.mode(n: int, m: int, amp: float, depth: float) -> Sphere</td>
+<td>Initialize a single spherical-harmonic height perturbation Y_n^m of amplitude amp (m) on resting depth (m)</td>
+</tr>
+<tr>
+<td>Sphere.perturb(amp: float, seed: int, max_wave: int) -> Sphere</td>
+<td>Add seeded deterministic spectral height perturbations up to degree max_wave with amplitude amp (m)</td>
+</tr>
+<tr>
+<td>Sphere.tilt(alpha: float) -> Sphere</td>
+<td>Tilt the planetary rotation axis in the Coriolis parameter by angle alpha (radians)</td>
+</tr>
+<tr>
+<td>Sphere.diffusion(nu4: float) -> Sphere</td>
+<td>Set del^4 hyperdiffusion coefficient nu4 (m^4/s); default 0</td>
+</tr>
+<tr>
+<td>Sphere.mark_reference() -> Sphere</td>
+<td>Record the current height and tracer fields as the reference snapshot for error_l2/linf and tracer_error_l2/linf</td>
+</tr>
+<tr>
+<td>Sphere.run(seconds: float) -> Sphere</td>
+<td>Integrate forward by seconds using automatically selected stable_dt() steps</td>
+</tr>
+<tr>
+<td>Sphere.run_dt(seconds: float, dt: float) -> Sphere</td>
+<td>Integrate forward by seconds using explicit RK4 step dt (must satisfy the RK4 CFL stability limit)</td>
+</tr>
+<tr>
+<td>Sphere.stable_dt() -> float</td>
+<td>Return a safe RK4 time step (s) based on current maximum gravity-wave and advection speeds</td>
+</tr>
+<tr>
+<td>Sphere.time() -> float</td>
+<td>Return elapsed integration time in seconds since the last state initialization</td>
+</tr>
+<tr>
+<td>Sphere.truncation() -> int</td>
+<td>Return the triangular spectral truncation T</td>
+</tr>
+<tr>
+<td>Sphere.nlat() -> int</td>
+<td>Return the number of Gaussian latitude rings</td>
+</tr>
+<tr>
+<td>Sphere.nlon() -> int</td>
+<td>Return the number of longitude points per ring</td>
+</tr>
+<tr>
+<td>Sphere.mean_height() -> float</td>
+<td>Return global area-weighted mean fluid thickness (m)</td>
+</tr>
+<tr>
+<td>Sphere.energy() -> float</td>
+<td>Return global mean total mechanical energy (kinetic_energy + potential_energy, m^3/s^2)</td>
+</tr>
+<tr>
+<td>Sphere.kinetic_energy() -> float</td>
+<td>Return global area-weighted mean of h * |v|^2 / 2 (m^3/s^2)</td>
+</tr>
+<tr>
+<td>Sphere.potential_energy() -> float</td>
+<td>Return global area-weighted mean of g * h^2 / 2 + g * h * hs (m^3/s^2)</td>
+</tr>
+<tr>
+<td>Sphere.enstrophy() -> float</td>
+<td>Return global area-weighted mean potential enstrophy eta^2 / (2 * h)</td>
+</tr>
+<tr>
+<td>Sphere.max_wind() -> float</td>
+<td>Return maximum wind speed |v| (m/s) on the Gaussian grid</td>
+</tr>
+<tr>
+<td>Sphere.error_l2() -> float</td>
+<td>Return normalized Williamson L2 height error against the reference state</td>
+</tr>
+<tr>
+<td>Sphere.error_linf() -> float</td>
+<td>Return normalized Williamson L-infinity height error against the reference state</td>
+</tr>
+<tr>
+<td>Sphere.height_at(lat: float, lon: float) -> float</td>
+<td>Synthesize exact spectral fluid thickness h (m) at (lat, lon) in degrees</td>
+</tr>
+<tr>
+<td>Sphere.u_at(lat: float, lon: float) -> float</td>
+<td>Synthesize exact zonal wind u (m/s) at (lat, lon) in degrees</td>
+</tr>
+<tr>
+<td>Sphere.v_at(lat: float, lon: float) -> float</td>
+<td>Synthesize exact meridional wind v (m/s) at (lat, lon) in degrees</td>
+</tr>
+<tr>
+<td>Sphere.vorticity_at(lat: float, lon: float) -> float</td>
+<td>Synthesize exact relative vorticity zeta (1/s) at (lat, lon) in degrees</td>
+</tr>
+<tr>
+<td>Sphere.mode_coefficient(n: int, m: int, part: string) -> float</td>
+<td>Return the real ("re") or imaginary ("im") spectral height coefficient for degree n, order m</td>
+</tr>
+<tr>
+<td>Sphere.wave_crest(m: int, lat: float) -> float</td>
+<td>Return the longitude crest (degrees, modulo wavelength) of zonal wavenumber m at latitude lat (degrees)</td>
+</tr>
+<tr>
+<td>Sphere.tracer_at(lat: float, lon: float) -> float</td>
+<td>Synthesize passive tracer value q at (lat, lon) in degrees</td>
+</tr>
+<tr>
+<td>Sphere.tracer_mean() -> float</td>
+<td>Return global area-weighted mean of passive tracer q</td>
+</tr>
+<tr>
+<td>Sphere.tracer_mass() -> float</td>
+<td>Return global area-weighted mean of thickness-weighted tracer h * q</td>
+</tr>
+<tr>
+<td>Sphere.tracer_min() -> float</td>
+<td>Return minimum grid value of passive tracer q</td>
+</tr>
+<tr>
+<td>Sphere.tracer_max() -> float</td>
+<td>Return maximum grid value of passive tracer q</td>
+</tr>
+<tr>
+<td>Sphere.tracer_error_l2() -> float</td>
+<td>Return normalized Williamson L2 tracer error against the reference tracer state</td>
+</tr>
+<tr>
+<td>Sphere.tracer_error_linf() -> float</td>
+<td>Return normalized Williamson L-infinity tracer error against the reference tracer state</td>
+</tr>
+<tr>
+<td>Sphere.save_csv(path: string) -> void</td>
+<td>Write Gaussian grid table (lon lat h u v zeta q hs) grouped by latitude for gnuplot pm3d</td>
+</tr>
+<tr>
+<td>Sphere.save_zonal_mean(path: string) -> void</td>
+<td>Write zonal-mean table (lat h_mean u_mean) across Gaussian latitudes</td>
+</tr>
+<tr>
+<td>Sphere.save_spectrum(path: string) -> void</td>
+<td>Write spherical harmonic energy spectrum (n ke pe) for total wavenumbers n = 1..T</td>
+</tr>
+</tbody>
+</table>
+<h2>Plane methods</h2>
+<table>
+<thead>
+<tr>
+<th>Method signature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Plane.depth(H: float) -> Plane</td>
+<td>Set resting fluid depth H (m); must be called before fields, perturb, or run</td>
+</tr>
+<tr>
+<td>Plane.gravity(g: float) -> Plane</td>
+<td>Set gravitational acceleration g (m/s^2); default 9.80616</td>
+</tr>
+<tr>
+<td>Plane.coriolis(f0: float, beta: float) -> Plane</td>
+<td>Set reference Coriolis parameter f0 (1/s) and meridional gradient beta (1/(m*s))</td>
+</tr>
+<tr>
+<td>Plane.linear() -> Plane</td>
+<td>Use equations linearized about resting depth H</td>
+</tr>
+<tr>
+<td>Plane.nonlinear() -> Plane</td>
+<td>Use full nonlinear vector-invariant shallow-water equations (default)</td>
+</tr>
+<tr>
+<td>Plane.viscosity(nu: float) -> Plane</td>
+<td>Set Laplacian kinematic viscosity nu (m^2/s); default 0</td>
+</tr>
+<tr>
+<td>Plane.drag(r: float) -> Plane</td>
+<td>Set linear Rayleigh bottom drag coefficient r (1/s); default 0</td>
+</tr>
+<tr>
+<td>Plane.fields(h_anom: string, u: string, v: string) -> Plane</td>
+<td>Initialize height anomaly above H (m) and velocities u, v (m/s) from expressions in x, y (m)</td>
+</tr>
+<tr>
+<td>Plane.perturb(amp: float, seed: int) -> Plane</td>
+<td>Add seeded deterministic smoothed height noise of amplitude amp (m)</td>
+</tr>
+<tr>
+<td>Plane.run(seconds: float) -> Plane</td>
+<td>Integrate forward by seconds using automatically selected stable_dt() steps</td>
+</tr>
+<tr>
+<td>Plane.run_dt(seconds: float, dt: float) -> Plane</td>
+<td>Integrate forward by seconds using explicit RK4 step dt (checked against CFL stability limit)</td>
+</tr>
+<tr>
+<td>Plane.stable_dt() -> float</td>
+<td>Return a safe RK4 time step (s) for the current grid spacing and wave/flow speed</td>
+</tr>
+<tr>
+<td>Plane.time() -> float</td>
+<td>Return elapsed integration time in seconds</td>
+</tr>
+<tr>
+<td>Plane.wave_speed() -> float</td>
+<td>Return linear shallow-water gravity wave speed sqrt(g * H) (m/s)</td>
+</tr>
+<tr>
+<td>Plane.rossby_radius() -> float</td>
+<td>Return Rossby radius of deformation sqrt(g * H) / |f0| (m)</td>
+</tr>
+<tr>
+<td>Plane.mean_depth() -> float</td>
+<td>Return domain-averaged total fluid depth (m)</td>
+</tr>
+<tr>
+<td>Plane.energy() -> float</td>
+<td>Return domain-averaged mechanical energy (kinetic plus available potential, m^3/s^2)</td>
+</tr>
+<tr>
+<td>Plane.max_speed() -> float</td>
+<td>Return maximum flow speed |v| (m/s) across the channel</td>
+</tr>
+<tr>
+<td>Plane.pv_anomaly_rms() -> float</td>
+<td>Return RMS discrete linear potential vorticity anomaly zeta - f0 * (h - H) / H across interior corners</td>
+</tr>
+<tr>
+<td>Plane.h_at(x: float, y: float) -> float</td>
+<td>Return total fluid depth h (m) bilinearly interpolated at (x, y) in meters</td>
+</tr>
+<tr>
+<td>Plane.u_at(x: float, y: float) -> float</td>
+<td>Return zonal velocity u (m/s) interpolated at (x, y) in meters</td>
+</tr>
+<tr>
+<td>Plane.v_at(x: float, y: float) -> float</td>
+<td>Return meridional velocity v (m/s) interpolated at (x, y) in meters</td>
+</tr>
+<tr>
+<td>Plane.zonal_amplitude(m: int, row: int) -> float</td>
+<td>Return Fourier height amplitude (m) of zonal harmonic m along grid row</td>
+</tr>
+<tr>
+<td>Plane.zonal_crest(m: int, row: int) -> float</td>
+<td>Return x position (m, modulo wavelength) of the height crest of zonal harmonic m along grid row</td>
+</tr>
+<tr>
+<td>Plane.v_zonal_crest(m: int, row: int) -> float</td>
+<td>Return x position (m, modulo wavelength) of the meridional velocity crest of zonal harmonic m along grid row</td>
+</tr>
+<tr>
+<td>Plane.harmonic_energy(m: int) -> float</td>
+<td>Return channel-averaged kinetic energy per unit mass (m^2/s^2) in zonal harmonic m</td>
+</tr>
+<tr>
+<td>Plane.save_csv(path: string) -> void</td>
+<td>Write channel grid table (x y h u v zeta) grouped by y for gnuplot pm3d</td>
+</tr>
+<tr>
+<td>Plane.save_row(j: int, path: string) -> void</td>
+<td>Write 1D zonal slice (x h) along 0-based grid row j</td>
+</tr>
+<tr>
+<td>Plane.save_column(i: int, path: string) -> void</td>
+<td>Write 1D meridional slice (y h) along 0-based grid column i</td>
+</tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Exit code</th>
+<th>Phase</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>ok</td>
+<td>Command or all bytecode slots completed without error</td>
+</tr>
+<tr>
+<td>2</td>
+<td>cli</td>
+<td>Invalid command-line arguments, contradictory --dry-run flag, or invalid LMWEATHER_MAX_MEMORY_MB value</td>
+</tr>
+<tr>
+<td>3</td>
+<td>load / run</td>
+<td>Bytecode load failure, schema mismatch, expression syntax error, RK4 CFL stability limit exceeded, non-finite instability, assertion failure, or memory budget exceeded</td>
+</tr>
+<tr>
+<td>4</td>
+<td>app</td>
+<td>Application error raised with code APP_FAIL</td>
+</tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmweather">github.com/lmctl-ai/lmweather</a>.</p>
+</footer>
+</body>
+</html>

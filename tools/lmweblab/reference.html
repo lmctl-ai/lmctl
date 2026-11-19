@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmweblab reference — lmweblab — lmctl.com tools</title>
+<meta name="description" content="Complete reference for lmweblab lifecycle commands, CLI flags, environment variables, lmaws Web APIs, importable recipes, 12-scenario catalog entries, standard…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmweblab/">Overview</a></li>
+<li><a href="/tools/lmweblab/skill.html">Skill</a></li>
+<li><a href="/tools/lmweblab/guide.html">Guide</a></li>
+<li><a href="/tools/lmweblab/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmweblab reference</h1>
+<p>Complete reference for lmweblab lifecycle commands, CLI flags, environment variables, lmaws Web APIs, importable recipes, 12-scenario catalog entries, and exit codes.</p>
+<h2>Lifecycle commands and CLI flags</h2>
+<table>
+<thead>
+<tr>
+<th>Command or flag</th>
+<th>Context</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>all</td>
+<td>web_stack.lms / scenarios</td>
+<td>Run up, test (plus phase2 and re-test if requested), and always run down even on failure</td>
+</tr>
+<tr>
+<td>up</td>
+<td>web_stack.lms / scenarios</td>
+<td>Provision tagged stack resources and write private state under .lmweblab-local/</td>
+</tr>
+<tr>
+<td>test</td>
+<td>web_stack.lms / scenarios</td>
+<td>Execute lmcurl HTTP contract assertions, XSS escaping checks, and p95 load latency checks</td>
+</tr>
+<tr>
+<td>phase2</td>
+<td>lmaws/web_stack.lms</td>
+<td>Attach validated ACM certificate, enable redirect-to-https on CloudFront, and wait Deployed</td>
+</tr>
+<tr>
+<td>status</td>
+<td>web_stack.lms / scenarios</td>
+<td>Read masked state and live provider inventory without acquiring the lifecycle write lock</td>
+</tr>
+<tr>
+<td>down</td>
+<td>web_stack.lms / scenarios</td>
+<td>Tear down all run-owned resources in reverse dependency order and verify zero leftovers</td>
+</tr>
+<tr>
+<td>--offline</td>
+<td>All drivers</td>
+<td>Use deterministic synthetic transport and loopback fixtures at $0.00 cost (default)</td>
+</tr>
+<tr>
+<td>--live</td>
+<td>All drivers</td>
+<td>Execute against real AWS in us-east-1 using AWS_PROFILE=lmaws and LMWEBLAB_DOMAIN</td>
+</tr>
+<tr>
+<td>--phase2 / --acm</td>
+<td>web_stack.lms / scenario 01</td>
+<td>Enable Phase 2 ACM DNS-validated certificate and HTTPS redirection</td>
+</tr>
+<tr>
+<td>--run-id RUN_ID</td>
+<td>All drivers</td>
+<td>Specify an explicit lowercase hexadecimal run identifier instead of generating a fresh timestamp ID</td>
+</tr>
+</tbody>
+</table>
+<h2>Environment variables</h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LMWEBLAB_LIVE</td>
+<td>0</td>
+<td>Set to 1 (together with --live) to authorize live AWS provisioning</td>
+</tr>
+<tr>
+<td>LMAWS_LIVE</td>
+<td>0</td>
+<td>Native lmaws live mutation gate; the drivers set it to 1 for live runs and 0 otherwise</td>
+</tr>
+<tr>
+<td>AWS_PROFILE</td>
+<td>lmaws</td>
+<td>Required least-privilege AWS profile for live runs; administrator profiles are forbidden</td>
+</tr>
+<tr>
+<td>AWS_REGION</td>
+<td>us-east-1</td>
+<td>Target AWS region enforced by native lmaws and OpenTofu guards</td>
+</tr>
+<tr>
+<td>LMWEBLAB_DOMAIN</td>
+<td>example.com</td>
+<td>Public Route 53 hosted-zone domain name used for site and application DNS records</td>
+</tr>
+<tr>
+<td>LMWEBLAB_RUN_ID</td>
+<td>auto / cafe01</td>
+<td>Run identifier used to scope resource names (lmaws-site-&lt;run>) and lmaws_test=&lt;run> tags</td>
+</tr>
+<tr>
+<td>LMWEBLAB_WORKER_LIVE_GO</td>
+<td>0</td>
+<td>Additional confirmation flag (set to 1) required for live execution of Scenario 07 SQS worker</td>
+</tr>
+</tbody>
+</table>
+<h2>Native lmaws Web stack APIs</h2>
+<table>
+<thead>
+<tr>
+<th>Method signature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cloud.web_stack(run_id: string, domain: string, state_path: string) -> Web</td>
+<td>Open a persistent run-scoped web stack session storing raw provider IDs in state_path</td>
+</tr>
+<tr>
+<td>Web.step(operation: string, json_args: string) -> Row</td>
+<td>Execute a guarded provisioning step (bucket, certificate, distribution, dns_site, compute, dns_app, https, invalidate)</td>
+</tr>
+<tr>
+<td>Web.status() -> Rows</td>
+<td>Return masked resource status and phase timings for the current run</td>
+</tr>
+<tr>
+<td>Web.leftovers() -> Rows</td>
+<td>Query live AWS provider state for any remaining resources belonging to this run</td>
+</tr>
+<tr>
+<td>Web.down() -> Row</td>
+<td>Tear down all owned stack resources in reverse order and assert zero remaining leftovers</td>
+</tr>
+<tr>
+<td>Cloud.web_find(run_id: string, domain: string) -> Rows</td>
+<td>Independent read-only account inventory across S3, CloudFront, ACM, Route 53, and EC2 for run_id</td>
+</tr>
+<tr>
+<td>settle(seconds) on a cloud.serverless_stack session</td>
+<td>Wait and sweep delayed CloudWatch log groups after Lambda teardown before final leftover audit</td>
+</tr>
+</tbody>
+</table>
+<h2>Importable step recipes (lmaws/recipes/steps.lms)</h2>
+<table>
+<thead>
+<tr>
+<th>Function signature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>web_bucket(opts: map, site_dir: string) -> map</td>
+<td>Create private tagged S3 bucket with Block Public Access and upload the five static site assets</td>
+</tr>
+<tr>
+<td>web_certificate(opts: map) -> map</td>
+<td>Request ACM certificate in us-east-1, create Route 53 DNS validation CNAME, and wait for issuance</td>
+</tr>
+<tr>
+<td>web_distribution(opts: map) -> map</td>
+<td>Create tagged CloudFront distribution and SigV4 OAC (attaching prepared certificate if present) and wait Deployed</td>
+</tr>
+<tr>
+<td>web_site_dns(opts: map) -> map</td>
+<td>Create Route 53 alias A record pointing to the CloudFront distribution and wait INSYNC</td>
+</tr>
+<tr>
+<td>web_compute(opts: map, settings: map) -> map</td>
+<td>Launch tagged Spot t4g.nano/t3.nano instance with 8 GiB gp3 disk, caller /32 security group, and Python user-data server</td>
+</tr>
+<tr>
+<td>web_app_dns(opts: map) -> map</td>
+<td>Create Route 53 A record (TTL 60) for the Spot instance public IPv4 and wait INSYNC</td>
+</tr>
+<tr>
+<td>web_https(opts: map) -> map</td>
+<td>Update CloudFront viewer protocol policy to redirect-to-https and wait Deployed</td>
+</tr>
+<tr>
+<td>web_invalidate(opts: map) -> map</td>
+<td>Create a CloudFront cache invalidation restricted strictly to the current run distribution</td>
+</tr>
+</tbody>
+</table>
+<h2>Scenario catalog (scenarios/01..12)</h2>
+<table>
+<thead>
+<tr>
+<th>Scenario directory</th>
+<th>AWS services</th>
+<th>Verified contract</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>01-static-site-s3-cloudfront</td>
+<td>S3, CloudFront OAC, Route 53, ACM</td>
+<td>200 OK static assets, gzip CSS, custom 404, optional ACM TLS and 301 HTTPS redirect, 0 leftovers</td>
+</tr>
+<tr>
+<td>02-dynamic-page-spot-nano</td>
+<td>EC2 Spot nano, Security Group (/32), Route 53, SSM</td>
+<td>HTML-escaped ?echo= XSS check, monotonic /api/info counter and timestamps, p95 load check, 0 leftovers</td>
+</tr>
+<tr>
+<td>03-lambda-function-url-hello</td>
+<td>Lambda (python3.12), Function URL, CloudFront, Route 53, CloudWatch Logs</td>
+<td>JSON schema check, cold vs warm latency, CloudFront alias delivery, 4-VU load p95, 0 leftovers</td>
+</tr>
+<tr>
+<td>04-lambda-dynamodb-guestbook</td>
+<td>Lambda Function URL, DynamoDB (PAY_PER_REQUEST, TTL), CloudWatch Logs</td>
+<td>POST/GET guestbook entries, HTML escaping, cursor pagination, TTL attribute check, 0 leftovers</td>
+</tr>
+<tr>
+<td>05-static-plus-api</td>
+<td>S3 (OAC), CloudFront (multi-origin / and /api/*), Lambda Function URL, Route 53</td>
+<td>Same-origin cached static HTML and uncached /api/* JSON without CORS, 4-VU load p95, 0 leftovers</td>
+</tr>
+<tr>
+<td>06-scheduled-report</td>
+<td>EventBridge (rate(1 minute)), Lambda, S3, DynamoDB, CloudWatch Logs</td>
+<td>Manual and scheduled EventBridge executions persisted in S3 and DynamoDB, HTML report fetch, 0 leftovers</td>
+</tr>
+<tr>
+<td>07-sqs-worker</td>
+<td>Lambda, SQS queue, SQS DLQ, DynamoDB</td>
+<td>Async job completion via SQS worker and poison message routing to DLQ, list-verified mapping cleanup, 0 leftovers</td>
+</tr>
+<tr>
+<td>08-session-login-demo</td>
+<td>Lambda Function URL, DynamoDB (TTL)</td>
+<td>Login cookie issuance, authenticated session read, logout invalidation, and expiry, 0 leftovers</td>
+</tr>
+<tr>
+<td>09-url-shortener</td>
+<td>Lambda Function URL, DynamoDB</td>
+<td>Short-code registration, 301/302 redirect, 404 on unknown code, atomic hit counter increment, 0 leftovers</td>
+</tr>
+<tr>
+<td>10-presigned-upload-gallery</td>
+<td>Lambda Function URL, S3, CloudFront</td>
+<td>Presigned S3 PUT upload, CloudFront gallery fetch, content-type and byte-size enforcement, 0 leftovers</td>
+</tr>
+<tr>
+<td>11-weighted-dns-two-backends</td>
+<td>Route 53 weighted A records, S3, CloudFront OAC, EC2 Spot nano</td>
+<td>90/10 -> 50/50 -> 0/100 traffic split verified via DoH ECS /24 sampling within 3-sigma binomial bands, 0 leftovers</td>
+</tr>
+<tr>
+<td>12-maintenance-page-failover</td>
+<td>Route 53, S3, CloudFront, EC2 Spot nano</td>
+<td>Live DNS cutover from dynamic application to static maintenance page and restoration, 0 leftovers</td>
+</tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Exit code</th>
+<th>Component</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Drivers and hosts</td>
+<td>All lifecycle steps, HTTP assertions, teardown operations, and zero-leftover checks passed</td>
+</tr>
+<tr>
+<td>1</td>
+<td>lmscript driver</td>
+<td>Lifecycle step or HTTP contract assertion failed (the all driver attempts down.lms before exiting 1)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>lmcode hosts</td>
+<td>Invalid CLI syntax or contradictory invocation metadata</td>
+</tr>
+<tr>
+<td>3</td>
+<td>lmcode hosts</td>
+<td>Bytecode load failure, safety/ownership/cost-cap refusal, AWS provider error, or HTTP contract failure</td>
+</tr>
+<tr>
+<td>4</td>
+<td>lmcode hosts</td>
+<td>Application-level failure tagged APP_FAIL</td>
+</tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmweblab">github.com/lmctl-ai/lmweblab</a>.</p>
+</footer>
+</body>
+</html>

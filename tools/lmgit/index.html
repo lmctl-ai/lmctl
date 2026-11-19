@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmgit — lmctl.com tools</title>
+<meta name="description" content="lmgit is a native lmcode host that exposes Git repositories, commits, branches, status entries, and audit reports to type-checked LMScript programs.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmgit/">Overview</a></li>
+<li><a href="/tools/lmgit/skill.html">Skill</a></li>
+<li><a href="/tools/lmgit/guide.html">Guide</a></li>
+<li><a href="/tools/lmgit/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmgit</h1>
+<p>lmgit is a native lmcode host that exposes Git repositories, commits, branches, status entries, and audit reports to type-checked LMScript programs.</p>
+<h2>Quick reference</h2>
+<pre><code>lmscript install github:lmctl-ai/lmgit@v0.2.14
+lmgit --version
+lmgit --lmcode-schema --json
+lmgit --lmcode-signatures
+lmscript examples/repo-status.lms .</code></pre>
+<table>
+<thead>
+<tr><th>Item</th><th>Kind</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>--lmcode FILE</td><td>CLI flag</td><td>Execute compiled lmcode bytecode (repeatable for builder invocations).</td></tr>
+<tr><td>git.open(path) / git.clone(url, dest)</td><td>Host methods</td><td>Open a local Git working tree or clone a remote repository.</td></tr>
+<tr><td>Repo.current_branch / is_clean / status</td><td>Host methods</td><td>Inspect active branch, clean state, and per-file index/worktree flags.</td></tr>
+<tr><td>Repo.log / branches / tags / diff / show</td><td>Host methods</td><td>Inspect commit history, branches, tags, diffs, and revisions.</td></tr>
+<tr><td>Repo.checkout / branch_create / commit / push / tag_create</td><td>Host methods</td><td>Mutate repository state (honoring git.dry_run(true)).</td></tr>
+<tr><td>report.add / write_json / fail_if_any</td><td>Report context</td><td>Accumulate repository audit findings and fail with exit code 4.</td></tr>
+</tbody>
+</table>
+<pre><code>schema = load_schema(cli="lmgit" install="github:lmctl-ai/lmgit@v0.2.14");
+program = _lmcode_ schema;
+let repo = git.open(".");
+$return.branch = repo.current_branch();
+$return.clean = repo.is_clean();
+end _lmcode_
+result = run_lmcode(program);
+require(result.ok, "git host failed");
+print(json_stringify(result.result));</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmgit/skill.html">Skill</a> for setup, dry-run safety rules, and verification commands.</li>
+<li><a href="/tools/lmgit/guide.html">Guide</a> for repository domain objects, dual dry-run policy, and REST/CLI interfaces.</li>
+<li><a href="/tools/lmgit/reference.html">Reference</a> for CLI flags, Git and Repo signatures, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmgit">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmgit">github.com/lmctl-ai/lmgit</a>.</p>
+</footer>
+</body>
+</html>

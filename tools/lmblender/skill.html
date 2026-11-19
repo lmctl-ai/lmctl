@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Use lmblender to build and check a rendered scene — lmblender — lmctl.com tools</title>
-<meta name="description" content="Use lmblender when a task needs a procedural 3D scene, a CPU-rendered image, an animation, or a mesh export from LMScript.">
+<meta name="description" content="Use lmblender when a task needs a procedural 3D scene, a CPU-rendered image, an animation, or a render of imported mesh geometry from LMScript.">
 <link rel="stylesheet" href="/tools/style.css">
 
 </head>
@@ -19,16 +19,17 @@
 <li><a href="/tools/lmblender/tutorial.html">Tutorial</a></li>
 <li><a href="/tools/lmblender/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmblender/guide.html">Guide</a></li>
+<li><a href="/tools/lmblender/reference.html">Reference</a></li>
 <li><a href="/tools/lmblender/examples/">Examples</a></li>
 </ul>
 </nav>
 <main><h1>Use lmblender to build and check a rendered scene</h1>
-<p>Use lmblender when a task needs a procedural 3D scene, a CPU-rendered image, an animation, or a mesh export from LMScript. The host uses Cycles and executes compiled DSL bytecode directly. It does not start Blender or run Python.</p>
+<p>Use lmblender when a task needs a procedural 3D scene, a CPU-rendered image, an animation, or a render of imported mesh geometry from LMScript. The host uses Cycles and executes compiled DSL bytecode directly. It does not start Blender or run Python.</p>
 <h2>Purpose</h2>
 <p>Translate a concrete visual or geometry request into a small, reproducible LMScript program. The program should create the geometry, assign materials, set the camera and lights, render to a path inside the working directory, and check a measurable property such as triangle count or volume when applicable.</p>
 <h2>When to use it</h2>
 <ul>
-<li>Use lmblender for a 3D still image, a frame sequence, APNG output, or an OBJ, STL, or image-based mesh workflow.</li>
+<li>Use lmblender for a 3D still image, an EXR, a frame sequence, APNG output, or a render of imported OBJ, STL, PLY or glTF geometry.</li>
 <li>Use it for scripted variations, repeatable product scenes, technical diagrams, and visual checks of imported geometry.</li>
 <li>Use Blender itself when the task depends on a Blender UI, Python add-ons, simulation systems, or a feature not exposed by the lmblender API.</li>
 </ul>
@@ -36,16 +37,15 @@
 <p>Install lmscript through the lmctl package. The host is fetched automatically the first time the script runs. Pin the exact version when reproducible output matters. This book uses lmblender v0.3.6.</p>
 <pre><kbd>npm install -g @lmctl-ai/lmctl</kbd></pre>
 <pre><kbd>lmscript --version</kbd></pre>
-<pre><samp>lmscript 0.2.388</samp></pre>
-<p>Declare the released host in the scene block and save bytecode before running it:</p>
+<pre><samp>lmscript 0.2.482</samp></pre>
+<p>Declare the released host on the _lmcode_ block and execute it with run_lmcode, which compiles the block against the host schema, runs the host and returns a record with ok and result:</p>
 <pre><code>p = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@v0.3.6";
 let ball = scene.uv_sphere(1.0, 48, 24, true);
 scene.studio_setup();
 scene.render_png("build/ball.png", 16, 640, 480);
 end _lmcode_
-savedsl(p, "build/ball.dslb");
-r = system ${dsl_cli(p)} --lmcode build/ball.dslb;
-if (r.code != 0) { println(trim(r.stdout)); exit(1); }</code></pre>
+r = run_lmcode(p);
+if (!r.ok) { println("lmblender failed"); exit(1); }</code></pre>
 <h2>Commands</h2>
 <p>Run a complete lmscript file from an empty working directory. Output paths are relative to that directory. Make each output directory before calling the host.</p>
 <pre><kbd>lmscript scene.lms</kbd></pre>
@@ -55,9 +55,10 @@ if (r.code != 0) { println(trim(r.stdout)); exit(1); }</code></pre>
 <li>lmblender --lmcode-schema prints a compact API summary.</li>
 <li>lmblender --lmcode-schema --json prints the embedded schema.</li>
 <li>lmblender --lmcode-signatures prints the registered DSL signatures.</li>
-<li>lmblender --presets lists embedded scene presets.</li>
+<li>lmblender --presets lists embedded scene presets, and lmblender --preset-show NAME prints one preset as JSON.</li>
+<li>lmblender --lmcode FILE.dslb runs compiled bytecode; this is the host protocol that run_lmcode drives.</li>
 </ul>
-<p>For renders that can take longer than sixty seconds, use an argument list and pass an explicit timeout in milliseconds to system. Keep the render within the example-book limit of 180 seconds.</p>
+<p>For renders that can take longer than sixty seconds, save the bytecode with savedsl(p, "build/scene.dslb"), build an argument list and pass an explicit timeout in milliseconds to system, as the repository examples do. Keep the render within the example-book limit of 180 seconds.</p>
 <pre><code>argv = dsl_cli(p);
 push(argv, "--lmcode");
 push(argv, "build/scene.dslb");
@@ -67,7 +68,8 @@ r = system(argv, 240000);</code></pre>
 <ul>
 <li>PNG is the display-transformed still image format. EXR preserves scene-linear image data.</li>
 <li>Image sequences and APNG use inclusive first and last frame numbers.</li>
-<li>OBJ, PLY, STL, and glTF are supported mesh inputs. OBJ and STL are supported mesh exports.</li>
+<li>OBJ/MTL, STL, ASCII PLY and glTF 2.0 triangle meshes are supported inputs. The 0.3.6 schema has no mesh export method.</li>
+<li>The host vendors the lmcode_std_v3 standard library with 206 signatures (files, strings, math, Json, typed containers). The current catalog has 226 including the REST and CLI interfaces, which lmblender 0.3.6 does not ship.</li>
 <li>Mesh methods expose vertex count, triangle count, material count, and axis-aligned bounds.</li>
 <li>Host failures print a JSON object with the error code, a message, and a source line and column when available.</li>
 </ul>
@@ -75,7 +77,7 @@ r = system(argv, 240000);</code></pre>
 <ul>
 <li>Work in a fresh directory and write outputs only to paths created for the task.</li>
 <li>Treat scene scripts and imported files as trusted input. Do not run an unknown LMScript file without reviewing its filesystem and system calls.</li>
-<li>Keep image and mesh inputs within documented size and geometry limits. Do not claim a mesh is ready to manufacture based only on a successful export.</li>
+<li>Keep image and mesh inputs within documented size and geometry limits. Do not claim a mesh is ready to manufacture based only on a successful render.</li>
 <li>Set a camera explicitly for predictable composition. Check that the render file exists and has the requested dimensions.</li>
 <li>On Linux arm64, use v0.3.6 or newer for denoising on CPUs without SVE, including AWS Graviton2. The v0.3.4 and earlier arm64 releases can fault with an illegal instruction when denoising is enabled.</li>
 </ul>
@@ -87,15 +89,14 @@ let ball = scene.uv_sphere(1.0, 48, 24, true);
 scene.studio_setup();
 scene.render_png("build/ball.png", 16, 640, 480);
 end _lmcode_
-savedsl(p, "build/ball.dslb");
-r = system ${dsl_cli(p)} --lmcode build/ball.dslb;
-if (r.code != 0) { println(trim(r.stdout)); exit(1); }</code></pre>
-<p>For a geometric model, inspect the result before adding presentation details:</p>
+r = run_lmcode(p);
+if (!r.ok) { println("lmblender failed"); exit(1); }</code></pre>
+<p>For a geometric model, check a count before adding presentation details (expect_int is the only assertion in the schema):</p>
 <pre><code>let box = scene.cube(2.0);
-scene.expect_int(box.triangle_count(), 12);
-scene.assert_close(box.volume(), 8.0, 0.000001);</code></pre>
+scene.expect_int(box.triangle_count(), 12);</code></pre>
 <p>The <a href="/tools/lmblender/examples/cornell-box.html">Cornell box</a> shows indirect lighting. The <a href="/tools/lmblender/examples/gear-pair-render.html">gear pair</a> combines a mesh generator with lmblender's renderer. Browse the <a href="/tools/lmblender/examples/">example book</a> for twelve complete scenes and their runnable source.</p>
 <h2>Errors and exit codes</h2>
+<p>Exit code 0 is success, 2 is a usage error or unknown preset name, 3 is a load or run error reported as a JSON line with ok false, phase, code and message, and 4 is APP_FAIL or a failed schema write. See the <a href="/tools/lmblender/reference.html">reference</a> for the full tables.</p>
 <ul>
 <li>LOAD_BAD_BYTECODE or LOAD_SCHEMA_MISMATCH: compile the source again with the schema that matches the installed host.</li>
 <li>RUN_HOST: a call used an invalid range, missing input, or unsupported combination. Follow the JSON message and correct that argument.</li>

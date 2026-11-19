@@ -1,0 +1,1199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmpy reference — lmpy — lmctl.com tools</title>
+<meta name="description" content="Complete reference for the lmpy numerical host as released in lmpy 0.1.46: command-line flags, exit codes, the result frame, every host type, method and…">
+<link rel="stylesheet" href="/tools/style.css">
+<link rel="icon" type="image/png" href="/tools/lmpy/img/icon.png">
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmpy/">Overview</a></li>
+<li><a href="/tools/lmpy/skill.html">Skill</a></li>
+<li><a href="/tools/lmpy/get_started.html">Quickruns</a></li>
+<li><a href="/tools/lmpy/guide.html">Guide</a></li>
+<li><a href="/tools/lmpy/reference.html">Reference</a></li>
+<li><a href="/tools/lmpy/examples/">Examples</a></li>
+</ul>
+</nav>
+<main><h1>lmpy reference</h1>
+<p>Complete reference for the lmpy numerical host as released in lmpy 0.1.46: command-line flags, exit codes, the result frame, every host type, method and function, the out context object, the expression grammar, and the standard lmcode catalog it ships. The host tables are generated from the output of lmpy --api-md, which the repository keeps as native/API.md.</p>
+<p>See also the <a href="/tools/lmpy/">quick reference</a>, the <a href="/tools/lmpy/skill.html">skill</a> and the <a href="/tools/lmpy/guide.html">guide</a>.</p>
+<h2 id="cli">Command-line flags</h2>
+<table>
+<thead>
+<tr><th>Command</th><th>Result</th></tr>
+</thead>
+<tbody>
+<tr><td>lmpy --lmcode FILE [FILE ...]</td><td>Runs the bytecode files in order. Every input is loaded before any part executes. Prints exactly one result frame; several files return a result array in registration order.</td></tr>
+<tr><td>lmpy --dry-run --lmcode FILE [FILE ...]</td><td>Validates and loads the inputs without running callbacks and returns null results. A dry flag that contradicts real-mode invocation metadata is refused as a usage error.</td></tr>
+<tr><td>lmpy --lmcode-schema</td><td>Prints the plain-text API summary: the context line, then functions and types with their signatures.</td></tr>
+<tr><td>lmpy --lmcode-schema --json</td><td>Prints the exact schema bytes the bytecode binds to (the same bytes as native/schema/lmpy.dsl.json and the release asset lmpy.dsl.json).</td></tr>
+<tr><td>lmpy --schema [--json]</td><td>Older alias of --lmcode-schema still accepted by the 0.1.46 command line.</td></tr>
+<tr><td>lmpy --lmcode-signatures</td><td>Prints the canonical signatures of the whole registry, one per line: 757 lines in 0.1.46 (551 host lines including the context line, plus 206 standard catalog signatures).</td></tr>
+<tr><td>lmpy --api-md</td><td>Prints the generated API reference as Markdown.</td></tr>
+<tr><td>lmpy --version</td><td>Prints the release identity in the form lmpy X.Y.Z.</td></tr>
+<tr><td>lmpy --help, lmpy -h</td><td>Prints the usage text and exits 0.</td></tr>
+</tbody>
+</table>
+<h2 id="exit-codes">Exit codes</h2>
+<table>
+<thead>
+<tr><th>Code</th><th>Meaning</th><th>Frame phase</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>Success.</td><td>none (ok is true)</td></tr>
+<tr><td>2</td><td>Usage error: missing or invalid arguments, invalid invocation metadata. LMScript compile errors in the calling program also exit 2, from lmscript.</td><td>cli</td></tr>
+<tr><td>3</td><td>Load or run-time error: unreadable or mismatched bytecode, or a failing host call such as a singular matrix.</td><td>load or run</td></tr>
+<tr><td>4</td><td>Application failure: out.fail was called or at least one out.check, out.close or out.close_rel failed.</td><td>app</td></tr>
+</tbody>
+</table>
+<h2 id="result-frame">Result frame</h2>
+<p>The host writes one frame to standard output: a line LMCODE_RETURN_BEGIN, one JSON document, and a line LMCODE_RETURN_END. run_lmcode decodes it and returns the JSON document as an LMScript map.</p>
+<table>
+<thead>
+<tr><th>Field</th><th>Present when</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>ok</td><td>always</td><td>true on success, false on any failure.</td></tr>
+<tr><td>result</td><td>ok is true</td><td>By default an object with values (everything recorded with out.put, in order) and checks. An explicit lmcode_return_set, lmcode_return_put or lmcode_return_null call replaces this default result. Dry runs return null.</td></tr>
+<tr><td>result.checks.passed, result.checks.failed, result.checks.failures</td><td>default result</td><td>Counts of passed and failed checks and the list of failures, each with name and detail.</td></tr>
+<tr><td>phase</td><td>ok is false</td><td>cli, load, run or app.</td></tr>
+<tr><td>code</td><td>ok is false</td><td>An error code such as CLI_USAGE, LOAD_BAD_BYTECODE, LOAD_SCHEMA_MISMATCH, LOAD_UNBOUND, RUN_HOST, RUN_ERROR or APP_FAIL.</td></tr>
+<tr><td>message</td><td>ok is false</td><td>The diagnostic. Run-time messages start with dsl line N:C and name the operation.</td></tr>
+<tr><td>line, column</td><td>run-time errors with a source position</td><td>The position inside the lmcode block.</td></tr>
+</tbody>
+</table>
+<h2 id="block">Block declaration and runner</h2>
+<table>
+<thead>
+<tr><th>Form</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>prog = _lmcode_ cli="lmpy" install="github:lmctl-ai/lmpy@latest"; ... end _lmcode_</td><td>Compiles the block against the schema printed by the lmpy binary. When lmpy is not installed, lmscript downloads the release asset for the platform into its tool cache and verifies its SHA-256 digest.</td></tr>
+<tr><td>prog = _lmcode_ schema="path/to/lmpy.dsl.json"; ... end _lmcode_</td><td>Compiles against a schema file, as the repository examples under examples/dsl do.</td></tr>
+<tr><td>r = run_lmcode(prog);</td><td>Runs the block on the declared host and returns the decoded frame: r.ok, r.result, or r.phase, r.code and r.message on failure.</td></tr>
+<tr><td>r = run_lmcode(prog, {command: [bin, "--lmcode", "$DSLFILE"]});</td><td>Runs the block with an explicit host command; the repository runner examples/dsl/lmpy.lms uses this form with the LMPY environment variable or lmpy on PATH.</td></tr>
+</tbody>
+</table>
+<h2 id="context">Context objects</h2>
+<table>
+<thead>
+<tr><th>Name</th><th>Type</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>out</td><td>Out</td><td>values and checks returned to the caller as JSON</td></tr>
+</tbody>
+</table>
+<h2>Vectors</h2>
+<p>Vec is a 1-D float64 array (numpy ndarray of rank 1). Methods return new vectors unless marked in place. Arithmetic operators are elementwise; mixing a Vec with a float broadcasts the float.</p>
+<h3>Vectors: functions</h3>
+<table>
+<thead>
+<tr><th>Signature</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>arange(float, float, float) -> Vec</td><td>start, start+step, ... below stop (numpy.arange)</td></tr>
+<tr><td>arange(int) -> Vec</td><td>0, 1, ..., n-1 as floats</td></tr>
+<tr><td>concat(Vec, Vec) -> Vec</td><td>concatenation</td></tr>
+<tr><td>full(int, float) -> Vec</td><td>n copies of a value</td></tr>
+<tr><td>linspace(float, float, int) -> Vec</td><td>n evenly spaced values from start to stop inclusive (numpy.linspace)</td></tr>
+<tr><td>ones(int) -> Vec</td><td>n ones</td></tr>
+<tr><td>vec() -> Vec</td><td>empty vector</td></tr>
+<tr><td>vec(float) -> Vec</td><td>one-element vector</td></tr>
+<tr><td>vec(float, float) -> Vec</td><td>two-element vector</td></tr>
+<tr><td>vec(float, float, float) -> Vec</td><td>three-element vector</td></tr>
+<tr><td>vec(float, float, float, float) -> Vec</td><td>four-element vector</td></tr>
+<tr><td>vec(float, float, float, float, float) -> Vec</td><td>5-element vector</td></tr>
+<tr><td>vec(float, float, float, float, float, float) -> Vec</td><td>6-element vector</td></tr>
+<tr><td>vec(float, float, float, float, float, float, float) -> Vec</td><td>7-element vector</td></tr>
+<tr><td>vec(float, float, float, float, float, float, float, float) -> Vec</td><td>8-element vector</td></tr>
+<tr><td>vec(string) -> Vec</td><td>parse numbers separated by spaces/commas (brackets allowed, nan accepted): vec("1 2.5 -3")</td></tr>
+<tr><td>zeros(int) -> Vec</td><td>n zeros</td></tr>
+</tbody>
+</table>
+<h3>Type Vec</h3>
+<p>1-D float64 array. Operators: +, -, * elementwise (Vec or float on either side), unary -.</p>
+<p>Operators: * → mul, + → add, - → sub, neg → neg, r* → mul, r+ → add, r- → rsub</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>abs() -> Vec</td><td>elementwise absolute value</td></tr>
+<tr><td>add(Vec) -> Vec</td><td>elementwise sum</td></tr>
+<tr><td>add(float) -> Vec</td><td>add a scalar</td></tr>
+<tr><td>all_finite() -> bool</td><td>true when no element is NaN or infinite</td></tr>
+<tr><td>apply(string) -> Vec</td><td>evaluate an expression in x for each element: v.apply("exp(-x^2/2)")</td></tr>
+<tr><td>apply(string, string, Vec) -> Vec</td><td>evaluate an expression in x and a second named vector elementwise: x.apply("x*w", "w", w)</td></tr>
+<tr><td>argmax() -> int</td><td>index of the first maximum</td></tr>
+<tr><td>argmin() -> int</td><td>index of the first minimum</td></tr>
+<tr><td>argsort() -> Vec</td><td>indexes that sort ascending (stable)</td></tr>
+<tr><td>at(int) -> float</td><td>element i (negative counts from the end)</td></tr>
+<tr><td>ceil() -> Vec</td><td>elementwise ceiling</td></tr>
+<tr><td>clip(float, float) -> Vec</td><td>clamp each element to [lo, hi]</td></tr>
+<tr><td>copy() -> Vec</td><td>independent copy</td></tr>
+<tr><td>cos() -> Vec</td><td>elementwise cosine</td></tr>
+<tr><td>count() -> int</td><td>number of nonzero, non-NaN entries (count of a mask)</td></tr>
+<tr><td>cumsum() -> Vec</td><td>cumulative sum</td></tr>
+<tr><td>diff() -> Vec</td><td>first differences x[i+1]-x[i]</td></tr>
+<tr><td>div(Vec) -> Vec</td><td>elementwise quotient (IEEE: x/0 is inf or nan)</td></tr>
+<tr><td>div(float) -> Vec</td><td>divide by a scalar</td></tr>
+<tr><td>dot(Vec) -> float</td><td>inner product</td></tr>
+<tr><td>eq(float) -> Vec</td><td>mask (1.0/0.0) of x == c</td></tr>
+<tr><td>eq(Vec) -> Vec</td><td>elementwise mask of x == y</td></tr>
+<tr><td>exp() -> Vec</td><td>elementwise exponential</td></tr>
+<tr><td>extend(Vec) -> Vec</td><td>in place: append another vector; returns the vector</td></tr>
+<tr><td>find() -> Vec</td><td>indexes of the nonzero, non-NaN entries (numpy.flatnonzero of a mask)</td></tr>
+<tr><td>floor() -> Vec</td><td>elementwise floor</td></tr>
+<tr><td>fmt(int) -> string</td><td>space-separated values with fixed decimals</td></tr>
+<tr><td>ge(float) -> Vec</td><td>mask (1.0/0.0) of x >= c</td></tr>
+<tr><td>ge(Vec) -> Vec</td><td>elementwise mask of x >= y</td></tr>
+<tr><td>gt(float) -> Vec</td><td>mask (1.0/0.0) of x > c</td></tr>
+<tr><td>gt(Vec) -> Vec</td><td>elementwise mask of x > y</td></tr>
+<tr><td>isnan() -> Vec</td><td>elementwise 1.0 where NaN, else 0.0</td></tr>
+<tr><td>json() -> string</td><td>JSON array text</td></tr>
+<tr><td>le(float) -> Vec</td><td>mask (1.0/0.0) of x &lt;= c</td></tr>
+<tr><td>le(Vec) -> Vec</td><td>elementwise mask of x &lt;= y</td></tr>
+<tr><td>len() -> int</td><td>length</td></tr>
+<tr><td>log() -> Vec</td><td>elementwise natural logarithm</td></tr>
+<tr><td>log10() -> Vec</td><td>elementwise base-10 logarithm</td></tr>
+<tr><td>log1p() -> Vec</td><td>elementwise log(1 + x)</td></tr>
+<tr><td>lt(float) -> Vec</td><td>mask (1.0/0.0) of x &lt; c</td></tr>
+<tr><td>lt(Vec) -> Vec</td><td>elementwise mask of x &lt; y</td></tr>
+<tr><td>max() -> float</td><td>maximum (NaN if any NaN)</td></tr>
+<tr><td>mean() -> float</td><td>arithmetic mean</td></tr>
+<tr><td>median() -> float</td><td>median</td></tr>
+<tr><td>min() -> float</td><td>minimum (NaN if any NaN)</td></tr>
+<tr><td>mul(Vec) -> Vec</td><td>elementwise product</td></tr>
+<tr><td>mul(float) -> Vec</td><td>scale by a scalar</td></tr>
+<tr><td>ne(float) -> Vec</td><td>mask (1.0/0.0) of x != c</td></tr>
+<tr><td>ne(Vec) -> Vec</td><td>elementwise mask of x != y</td></tr>
+<tr><td>neg() -> Vec</td><td>negation</td></tr>
+<tr><td>norm() -> float</td><td>Euclidean norm</td></tr>
+<tr><td>pow(float) -> Vec</td><td>elementwise power</td></tr>
+<tr><td>prod() -> float</td><td>product</td></tr>
+<tr><td>push(float) -> Vec</td><td>in place: append x; returns the vector</td></tr>
+<tr><td>quantile(float) -> float</td><td>quantile q in [0,1], linear interpolation (numpy default)</td></tr>
+<tr><td>reverse() -> Vec</td><td>reversed copy</td></tr>
+<tr><td>round() -> Vec</td><td>elementwise round half to even (numpy.round)</td></tr>
+<tr><td>rsub(float) -> Vec</td><td>scalar minus each element</td></tr>
+<tr><td>set(int, float) -> Vec</td><td>in place: element i = x; returns the vector</td></tr>
+<tr><td>sin() -> Vec</td><td>elementwise sine</td></tr>
+<tr><td>slice(int, int) -> Vec</td><td>elements [start, stop) (numpy slicing; negative indexes count from the end, out-of-range clamps)</td></tr>
+<tr><td>sort() -> Vec</td><td>ascending copy (NaN last)</td></tr>
+<tr><td>sqrt() -> Vec</td><td>elementwise square root</td></tr>
+<tr><td>square() -> Vec</td><td>elementwise x*x</td></tr>
+<tr><td>std(int) -> float</td><td>standard deviation with ddof</td></tr>
+<tr><td>sub(Vec) -> Vec</td><td>elementwise difference</td></tr>
+<tr><td>sub(float) -> Vec</td><td>subtract a scalar</td></tr>
+<tr><td>sum() -> float</td><td>sum (compensated)</td></tr>
+<tr><td>take(Vec) -> Vec</td><td>elements at the given (float, integral) indexes</td></tr>
+<tr><td>tanh() -> Vec</td><td>elementwise hyperbolic tangent</td></tr>
+<tr><td>unique() -> Vec</td><td>sorted distinct values</td></tr>
+<tr><td>var(int) -> float</td><td>variance with ddof (0 population, 1 sample)</td></tr>
+<tr><td>where(Vec) -> Vec</td><td>elements whose mask entry is nonzero (boolean indexing x[mask])</td></tr>
+</tbody>
+</table>
+<h2>Text lists</h2>
+<p>StrVec is a list of strings: column names, labels, path lists.</p>
+<h3>Text lists: functions</h3>
+<table>
+<thead>
+<tr><th>Signature</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>split(string, string) -> StrVec</td><td>split text on a separator (no trimming)</td></tr>
+<tr><td>strs() -> StrVec</td><td>empty list</td></tr>
+<tr><td>strs(string) -> StrVec</td><td>comma-separated names, trimmed: strs("x1, x2")</td></tr>
+<tr><td>strs(int, string) -> StrVec</td><td>n copies of one string (a label column)</td></tr>
+</tbody>
+</table>
+<h3>Type StrVec</h3>
+<p>List of strings.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>at(int) -> string</td><td>element i</td></tr>
+<tr><td>contains(string) -> bool</td><td>membership</td></tr>
+<tr><td>index(string) -> int</td><td>first position or -1</td></tr>
+<tr><td>join(string) -> string</td><td>join with a separator</td></tr>
+<tr><td>json() -> string</td><td>JSON array text</td></tr>
+<tr><td>len() -> int</td><td>length</td></tr>
+<tr><td>push(string) -> StrVec</td><td>in place: append; returns the list</td></tr>
+</tbody>
+</table>
+<h2>Matrices</h2>
+<p>Mat is a dense float64 matrix. * is the matrix product (numpy @) when both sides are matrices, a matrix-vector product with a Vec, and scaling with a float; use hadamard for the elementwise product.</p>
+<h3>Matrices: functions</h3>
+<table>
+<thead>
+<tr><th>Signature</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>cols(Vec) -> Mat</td><td>one-column matrix</td></tr>
+<tr><td>cols(Vec, Vec) -> Mat</td><td>column_stack of two vectors</td></tr>
+<tr><td>cols(Vec, Vec, Vec) -> Mat</td><td>column_stack of three vectors</td></tr>
+<tr><td>cols(Vec, Vec, Vec, Vec) -> Mat</td><td>column_stack of four vectors</td></tr>
+<tr><td>diag(Vec) -> Mat</td><td>diagonal matrix</td></tr>
+<tr><td>eye(int) -> Mat</td><td>n x n identity</td></tr>
+<tr><td>mat(int, int) -> Mat</td><td>rows x cols zeros</td></tr>
+<tr><td>mat(Vec, int, int) -> Mat</td><td>reshape a vector, row-major, to rows x cols</td></tr>
+<tr><td>mat(string) -> Mat</td><td>parse rows separated by ; (or JSON nested arrays): mat("1 2; 3 4")</td></tr>
+</tbody>
+</table>
+<h3>Type Mat</h3>
+<p>Dense float64 matrix. Operators: +, - (Mat), * (Mat, Vec or float), unary -, float * Mat.</p>
+<p>Operators: * → mul, + → add, - → sub, neg → neg, r* → mul</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>add(Mat) -> Mat</td><td>elementwise sum</td></tr>
+<tr><td>add_col(Vec) -> Mat</td><td>new matrix with the vector appended as a last column</td></tr>
+<tr><td>at(int, int) -> float</td><td>element (i, j)</td></tr>
+<tr><td>block(int, int, int, int) -> Mat</td><td>sub-matrix (row, col, nrows, ncols)</td></tr>
+<tr><td>col(int) -> Vec</td><td>column j</td></tr>
+<tr><td>col_means() -> Vec</td><td>mean of each column</td></tr>
+<tr><td>col_sums() -> Vec</td><td>sum of each column</td></tr>
+<tr><td>cols() -> int</td><td>column count</td></tr>
+<tr><td>flatten() -> Vec</td><td>row-major values</td></tr>
+<tr><td>hadamard(Mat) -> Mat</td><td>elementwise product</td></tr>
+<tr><td>hstack(Mat) -> Mat</td><td>columns of this then other</td></tr>
+<tr><td>json() -> string</td><td>nested JSON arrays, row-major</td></tr>
+<tr><td>max_abs_diff(Mat) -> float</td><td>max |a - b| (shapes must match)</td></tr>
+<tr><td>mul(Mat) -> Mat</td><td>matrix product (numpy @)</td></tr>
+<tr><td>mul(Vec) -> Vec</td><td>matrix-vector product</td></tr>
+<tr><td>mul(float) -> Mat</td><td>scale</td></tr>
+<tr><td>neg() -> Mat</td><td>negation</td></tr>
+<tr><td>row(int) -> Vec</td><td>row i</td></tr>
+<tr><td>row_sums() -> Vec</td><td>sum of each row</td></tr>
+<tr><td>rows() -> int</td><td>row count</td></tr>
+<tr><td>set(int, int, float) -> Mat</td><td>in place: element (i, j) = x; returns the matrix</td></tr>
+<tr><td>sub(Mat) -> Mat</td><td>elementwise difference</td></tr>
+<tr><td>sum() -> float</td><td>sum of all elements</td></tr>
+<tr><td>t() -> Mat</td><td>transpose</td></tr>
+<tr><td>take_rows(Vec) -> Mat</td><td>rows at the given indexes</td></tr>
+<tr><td>vstack(Mat) -> Mat</td><td>rows of this then other</td></tr>
+<tr><td>with_intercept() -> Mat</td><td>new matrix with a leading column of ones (sm.add_constant)</td></tr>
+</tbody>
+</table>
+<h2>Options and results</h2>
+<p>Operations take an optional Opts (named options, validated: an unknown key is an error) and return a Res (named, typed result fields). Field and option names follow pycli's JSON names.</p>
+<h3>Options and results: functions</h3>
+<table>
+<thead>
+<tr><th>Signature</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>opts() -> Opts</td><td>empty options</td></tr>
+</tbody>
+</table>
+<h3>Type Opts</h3>
+<p>Named options builder: opts().set("method", "BFGS").set("tol", 1e-8).</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>has(string) -> bool</td><td>whether a key is set</td></tr>
+<tr><td>set(string, float) -> Opts</td><td>in place: float option</td></tr>
+<tr><td>set(string, int) -> Opts</td><td>in place: int option</td></tr>
+<tr><td>set(string, string) -> Opts</td><td>in place: string option</td></tr>
+<tr><td>set(string, bool) -> Opts</td><td>in place: bool option</td></tr>
+<tr><td>set(string, Vec) -> Opts</td><td>in place: vector option</td></tr>
+<tr><td>set(string, StrVec) -> Opts</td><td>in place: name-list option</td></tr>
+<tr><td>set(string, Mat) -> Opts</td><td>in place: matrix option</td></tr>
+</tbody>
+</table>
+<h3>Type Res</h3>
+<p>Typed result fields. Reading a missing field or the wrong kind is a run-time error that lists the fields.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>flag(string) -> bool</td><td>bool field</td></tr>
+<tr><td>has(string) -> bool</td><td>whether a field exists</td></tr>
+<tr><td>int(string) -> int</td><td>int field</td></tr>
+<tr><td>json() -> string</td><td>the whole result as JSON text</td></tr>
+<tr><td>keys() -> StrVec</td><td>field names in order</td></tr>
+<tr><td>mat(string) -> Mat</td><td>matrix field</td></tr>
+<tr><td>num(string) -> float</td><td>float field (an int field widens)</td></tr>
+<tr><td>ok() -> bool</td><td>status == "OK"</td></tr>
+<tr><td>res(string) -> Res</td><td>nested result field</td></tr>
+<tr><td>status() -> string</td><td>the status field ("OK", "NO_CONVERGENCE", ...)</td></tr>
+<tr><td>strs(string) -> StrVec</td><td>name-list field</td></tr>
+<tr><td>text(string) -> string</td><td>string field</td></tr>
+<tr><td>vec(string) -> Vec</td><td>vector field</td></tr>
+</tbody>
+</table>
+<h2>Utilities</h2>
+<p>Formatting and numeric helpers that the DSL's built-ins (str, float, int, sqrt, pow, ...) do not cover.</p>
+<h3>Utilities: functions</h3>
+<table>
+<thead>
+<tr><th>Signature</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>atan2(float, float) -> float</td><td>atan2(y, x)</td></tr>
+<tr><td>eval(string) -> float</td><td>evaluate a constant expression (pycli expression grammar)</td></tr>
+<tr><td>eval(string, string, float) -> float</td><td>evaluate an expression in one named variable</td></tr>
+<tr><td>eval(string, StrVec, Vec) -> float</td><td>evaluate an expression with named variables bound to values</td></tr>
+<tr><td>exp(float) -> float</td><td>e^x</td></tr>
+<tr><td>fmt(float, int) -> string</td><td>fixed decimals: fmt(3.14159, 2) is "3.14"</td></tr>
+<tr><td>fmt_g(float, int) -> string</td><td>printf %.Ng (significant digits)</td></tr>
+<tr><td>hypot(float, float) -> float</td><td>sqrt(x^2 + y^2) without overflow</td></tr>
+<tr><td>inf() -> float</td><td>+infinity</td></tr>
+<tr><td>is_finite(float) -> bool</td><td>x is neither NaN nor infinite</td></tr>
+<tr><td>is_nan(float) -> bool</td><td>x is NaN</td></tr>
+<tr><td>log(float) -> float</td><td>natural log</td></tr>
+<tr><td>log10(float) -> float</td><td>base-10 log</td></tr>
+<tr><td>nan() -> float</td><td>quiet NaN</td></tr>
+<tr><td>pad(string, int) -> string</td><td>left-justify to a width (negative width right-justifies)</td></tr>
+<tr><td>pi() -> float</td><td>π</td></tr>
+<tr><td>tan(float) -> float</td><td>tangent</td></tr>
+</tbody>
+</table>
+<h2>Reporting</h2>
+<p>The out context object collects named values and checks. The host returns them in one terminal invocation frame with JSON payload {"ok": true, "result": {"values": {...}, "checks": {...}}}; a failed check makes the run an application failure (exit 4) whose message names every failed check.</p>
+<h3>Type Out</h3>
+<p>Result collector (the context variable out).</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>check(string, bool) -> bool</td><td>record a named check; returns the condition</td></tr>
+<tr><td>close(string, float, float, float) -> bool</td><td>check |got - want| &lt;= tol (NaN fails)</td></tr>
+<tr><td>close(string, Vec, Vec, float) -> bool</td><td>check every |got[i] - want[i]| &lt;= tol (lengths must match)</td></tr>
+<tr><td>close_rel(string, float, float, float) -> bool</td><td>check |got - want| &lt;= rtol * max(|want|, 1e-300)</td></tr>
+<tr><td>fail(string) -> void</td><td>stop now with an application failure (exit 4)</td></tr>
+<tr><td>log(string) -> void</td><td>write a line to stderr (stdout is reserved for the JSON result)</td></tr>
+<tr><td>put(string, float) -> void</td><td>record a float</td></tr>
+<tr><td>put(string, int) -> void</td><td>record an int</td></tr>
+<tr><td>put(string, string) -> void</td><td>record a string</td></tr>
+<tr><td>put(string, bool) -> void</td><td>record a bool</td></tr>
+<tr><td>put(string, Vec) -> void</td><td>record a vector (JSON array)</td></tr>
+<tr><td>put(string, StrVec) -> void</td><td>record a list of strings</td></tr>
+<tr><td>put(string, Mat) -> void</td><td>record a matrix (nested arrays)</td></tr>
+<tr><td>put(string, Res) -> void</td><td>record a whole result object</td></tr>
+<tr><td>put(string, Frame) -> void</td><td>record a table as {columns, rows, data}</td></tr>
+</tbody>
+</table>
+<h2>Tables</h2>
+<p>Frame is a column table (pandas DataFrame subset): numeric columns are float64 with NaN for missing values; other columns are text. Expressions in filter/mutate see the numeric columns by name plus row (0-based index). Frames are immutable: every method returns a new frame.</p>
+<h3>Tables: functions</h3>
+<table>
+<thead>
+<tr><th>Signature</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>csv(string) -> Frame</td><td>parse CSV text (same rules as read_csv)</td></tr>
+<tr><td>frame() -> Frame</td><td>empty frame (add columns with with)</td></tr>
+<tr><td>read_csv(string) -> Frame</td><td>read a CSV file with a header row (a column is numeric when every cell parses; empty/NA/nan are NaN)</td></tr>
+<tr><td>read_csv(string, Opts) -> Frame</td><td>read_csv with options: sep (one char), header (bool), names (StrVec), text (StrVec: columns kept as text)</td></tr>
+</tbody>
+</table>
+<h3>Type Frame</h3>
+<p>Column table.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>cell(string, int) -> string</td><td>one cell as text (column, row)</td></tr>
+<tr><td>col(string) -> Vec</td><td>numeric column as a vector</td></tr>
+<tr><td>csv() -> string</td><td>the frame as CSV text</td></tr>
+<tr><td>drop(StrVec) -> Frame</td><td>all columns except these</td></tr>
+<tr><td>filter(string) -> Frame</td><td>rows where the expression is nonzero: f.filter("x > 0 &amp; y &lt; 3")</td></tr>
+<tr><td>has(string) -> bool</td><td>whether a column exists</td></tr>
+<tr><td>head(int) -> Frame</td><td>first n rows</td></tr>
+<tr><td>is_missing(string, int) -> bool</td><td>whether a cell is missing (NaN, or an absent text value after a join)</td></tr>
+<tr><td>is_numeric(string) -> bool</td><td>whether a column is numeric</td></tr>
+<tr><td>json() -> string</td><td>{columns, rows, data} JSON text</td></tr>
+<tr><td>mutate(string, string) -> Frame</td><td>new frame with column NAME = expression over numeric columns: f.mutate("bmi", "w / (h/100)^2")</td></tr>
+<tr><td>names() -> StrVec</td><td>column names in order</td></tr>
+<tr><td>ncols() -> int</td><td>column count</td></tr>
+<tr><td>nrows() -> int</td><td>row count</td></tr>
+<tr><td>num(string, int) -> float</td><td>one numeric cell (column, row)</td></tr>
+<tr><td>rename(string, string) -> Frame</td><td>rename one column</td></tr>
+<tr><td>select(StrVec) -> Frame</td><td>these columns, in this order</td></tr>
+<tr><td>sort(string, bool) -> Frame</td><td>stable sort by one column (ascending when true; NaN last)</td></tr>
+<tr><td>tail(int) -> Frame</td><td>last n rows</td></tr>
+<tr><td>take(Vec) -> Frame</td><td>rows at these indexes</td></tr>
+<tr><td>text(string) -> StrVec</td><td>any column as text (numbers formatted, NaN as empty)</td></tr>
+<tr><td>to_mat(StrVec) -> Mat</td><td>numeric columns as a matrix (rows x len(names))</td></tr>
+<tr><td>where(string, string) -> Frame</td><td>rows whose column (as text) equals a value</td></tr>
+<tr><td>with(string, Vec) -> Frame</td><td>new frame with a numeric column added or replaced</td></tr>
+<tr><td>with(string, StrVec) -> Frame</td><td>new frame with a text column added or replaced</td></tr>
+<tr><td>write_csv(string) -> void</td><td>write the frame as CSV (atomic replace)</td></tr>
+</tbody>
+</table>
+<h2>Table operations</h2>
+<p>Grouping, joins, rolling windows, time resampling, reshaping and summaries (pycli frame_groupby, frame_merge, frame_rolling, frame_resample, frame_inspect). An aggregation spec is "col:agg|agg, col:agg"; result columns are named col__agg like pycli. Aggregations: sum, mean, count (non-missing), size (rows), min, max, std and var (ddof 1), median, first, last, nunique, prod.</p>
+<h3>Table operations: functions</h3>
+<table>
+<thead>
+<tr><th>Signature</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>format_time(float) -> string</td><td>seconds since 1970 UTC as YYYY-MM-DD HH:MM:SS</td></tr>
+<tr><td>parse_time(string) -> float</td><td>ISO-8601 text as seconds since 1970 UTC</td></tr>
+</tbody>
+</table>
+<h3>More methods of Frame</h3>
+<table>
+<thead>
+<tr><th>Method</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>concat(Frame) -> Frame</td><td>rows of this frame then the other (same column names and kinds)</td></tr>
+<tr><td>describe() -> Frame</td><td>summary of the numeric columns: a stat column (count, mean, std, min, 25%, 50%, 75%, max) and one column each (pandas describe)</td></tr>
+<tr><td>dropna() -> Frame</td><td>rows with no missing value in any column</td></tr>
+<tr><td>dropna(StrVec) -> Frame</td><td>rows with no missing value in these columns</td></tr>
+<tr><td>fillna(string, float) -> Frame</td><td>replace NaN in a numeric column</td></tr>
+<tr><td>groupby(StrVec, string) -> Frame</td><td>group by key columns and aggregate: f.groupby(strs("region"), "sales:sum|mean"); groups sorted, a missing key is its own group (pandas dropna=False)</td></tr>
+<tr><td>groupby(StrVec, string, bool) -> Frame</td><td>groupby; the bool drops rows whose key is missing (pandas dropna=True)</td></tr>
+<tr><td>merge(Frame, StrVec, string) -> Frame</td><td>database join on key columns, how = inner, left, right or outer (pandas.merge: outer is sorted by key; clashing names get _x/_y)</td></tr>
+<tr><td>merge(Frame, StrVec, string, Opts) -> Frame</td><td>merge with options: validate (one_to_one, one_to_many, many_to_one, many_to_many), indicator (bool: adds _merge = left_only/right_only/both), suffixes (StrVec of two)</td></tr>
+<tr><td>pivot(string, string, string, string) -> Frame</td><td>pivot table (index column, columns column, values column, agg): one row per index value, one column per distinct columns value (sorted)</td></tr>
+<tr><td>resample(string, string, string) -> Frame</td><td>time bins over an ISO-8601 text (or epoch-seconds) column: rule 15min, 1h, 1D (bins from midnight of the first day, labelled left), W/W-DAY (weeks ending on DAY, labelled right), MS/ME, QS/QE, YS/YE; empty bins are kept (pandas resample)</td></tr>
+<tr><td>rolling(string, int, string) -> Vec</td><td>trailing window aggregate of a numeric column (pandas rolling: the first window-1 values are NaN)</td></tr>
+<tr><td>rolling(string, int, string, Opts) -> Vec</td><td>rolling with min_periods (int) and center (bool)</td></tr>
+<tr><td>shift(string, int) -> Vec</td><td>a numeric column shifted by n rows (positive: later rows see earlier values; vacated cells NaN)</td></tr>
+<tr><td>times(string) -> Vec</td><td>an ISO-8601 text column as seconds since 1970-01-01 UTC (offsets applied)</td></tr>
+<tr><td>unique(string) -> StrVec</td><td>distinct values of a column as text, in first-seen order (missing omitted)</td></tr>
+<tr><td>value_counts(string) -> Frame</td><td>frame {value (text), count} sorted by count descending, then value</td></tr>
+</tbody>
+</table>
+<h3>More methods of Vec</h3>
+<table>
+<thead>
+<tr><th>Method</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>rolling(int, string) -> Vec</td><td>trailing window aggregate (same rules as Frame.rolling)</td></tr>
+</tbody>
+</table>
+<h2>Array files</h2>
+<p>NumPy .npy and .safetensors arrays (pycli's artifact formats). Reads accept the dtypes pycli accepts (&lt;f8 &lt;f4 &lt;i8 &lt;i4 |u1 |b1; F64 F32 I64 I32 U8 BOOL), rank 1 or 2; writes are float64 and atomic.</p>
+<h3>Array files: functions</h3>
+<table>
+<thead>
+<tr><th>Signature</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>mat_frame(Mat, StrVec) -> Frame</td><td>a matrix as a frame with these column names (pycli array_to_frame)</td></tr>
+<tr><td>read_npy(string) -> Mat</td><td>a .npy file as a matrix (a rank-1 array becomes one column)</td></tr>
+<tr><td>read_npy_vec(string) -> Vec</td><td>a rank-1 (or single-column) .npy file as a vector</td></tr>
+<tr><td>read_safetensors(string, string) -> Mat</td><td>one tensor (file, key) as a matrix (rank 1 becomes one column)</td></tr>
+<tr><td>read_safetensors_vec(string, string) -> Vec</td><td>one rank-1 tensor (file, key) as a vector</td></tr>
+<tr><td>read_text(string) -> string</td><td>read a whole text file</td></tr>
+<tr><td>remove_file(string) -> bool</td><td>delete a file; false when it did not exist</td></tr>
+<tr><td>write_npy(string, Vec) -> void</td><td>write a vector as a rank-1 float64 .npy</td></tr>
+<tr><td>write_npy(string, Mat) -> void</td><td>write a matrix as a rank-2 float64 .npy</td></tr>
+<tr><td>write_safetensors(string, string, Vec) -> void</td><td>write a vector as one F64 tensor (file, key, data)</td></tr>
+<tr><td>write_safetensors(string, string, Mat) -> void</td><td>write a matrix as one F64 tensor (file, key, data)</td></tr>
+<tr><td>write_text(string, string) -> void</td><td>write a text file (atomic replace)</td></tr>
+</tbody>
+</table>
+<h2>Linear algebra</h2>
+<p>Dense solves, least squares, matrix properties, decompositions and matrix functions on Mat (pycli la_solve, la_lstsq, la_props, la_decomp, la_matrix_fn; Eigen 3.4 underneath). A singular or ill-posed input is a run-time error, except lstsq, which reports status RANK_DEFICIENT.</p>
+<h3>More methods of Mat</h3>
+<table>
+<thead>
+<tr><th>Method</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>cholesky() -> Mat</td><td>lower-triangular L with A = L L^T (must be symmetric positive definite)</td></tr>
+<tr><td>cond() -> float</td><td>2-norm condition number s_max / s_min</td></tr>
+<tr><td>det() -> float</td><td>determinant</td></tr>
+<tr><td>eig() -> Res</td><td>general eigenvalues: fields values_re, values_im (sorted by real part, then imaginary), real (bool: all imaginary parts 0)</td></tr>
+<tr><td>eigh() -> Res</td><td>symmetric eigen-decomposition: fields values (ascending), vectors (columns), reconstruction_error</td></tr>
+<tr><td>expm() -> Mat</td><td>matrix exponential (Padé scaling and squaring)</td></tr>
+<tr><td>inv() -> Mat</td><td>inverse (singular matrices are refused)</td></tr>
+<tr><td>is_symmetric(float) -> bool</td><td>max |A - A^T| &lt;= tol</td></tr>
+<tr><td>logm() -> Mat</td><td>principal matrix logarithm (real result required)</td></tr>
+<tr><td>lstsq(Vec) -> Res</td><td>least squares (SVD, numpy.linalg.lstsq): x, rank, singular_values, residues, residual_norm, status OK/RANK_DEFICIENT</td></tr>
+<tr><td>lstsq(Vec, Opts) -> Res</td><td>least squares with rcond (relative singular-value cutoff; default eps * max(m, n))</td></tr>
+<tr><td>lu() -> Res</td><td>LU with partial pivoting A = P L U (scipy.linalg.lu): fields p, l, u</td></tr>
+<tr><td>norm() -> float</td><td>Frobenius norm</td></tr>
+<tr><td>norm(string) -> float</td><td>matrix norm: fro, nuc, 1, -1, 2, -2, inf, -inf (numpy ord)</td></tr>
+<tr><td>pinv() -> Mat</td><td>Moore-Penrose pseudo-inverse (cutoff eps * max(m, n) * s_max)</td></tr>
+<tr><td>qr() -> Res</td><td>reduced QR A = Q R (Householder): fields q, r, reconstruction_error</td></tr>
+<tr><td>rank() -> int</td><td>numerical rank (SVD, tolerance s_max * max(m, n) * eps)</td></tr>
+<tr><td>slogdet() -> Res</td><td>sign and log|det| (numpy.linalg.slogdet): fields sign, logabsdet</td></tr>
+<tr><td>solve(Vec) -> Vec</td><td>x with A x = b (LU with partial pivoting; singular matrices are refused)</td></tr>
+<tr><td>solve(Vec, string) -> Vec</td><td>solve with assume_a = gen, sym (exactly symmetric) or pos (Cholesky; must be positive definite)</td></tr>
+<tr><td>solve(Mat) -> Mat</td><td>X with A X = B (several right-hand sides)</td></tr>
+<tr><td>sqrtm() -> Mat</td><td>principal matrix square root (real result required)</td></tr>
+<tr><td>svd() -> Res</td><td>thin SVD A = U diag(s) Vt: fields u (Mat), s (Vec, descending), vt (Mat), reconstruction_error</td></tr>
+<tr><td>trace() -> float</td><td>sum of the diagonal</td></tr>
+</tbody>
+</table>
+<h2>Sparse matrices</h2>
+<p>Sparse is a compressed sparse matrix (pycli la_sparse). Build it from COO triplets (duplicates add up, like scipy) or entry by entry, then solve directly (solve, SuperLU-style sparse LU), iteratively (cg, gmres, bicgstab; options rtol, atol, maxiter, x0, gmres restart) or find eigenvalues of a symmetric matrix (eigsh, implicitly restarted Lanczos as in ARPACK).</p>
+<h3>Sparse matrices: functions</h3>
+<table>
+<thead>
+<tr><th>Signature</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>sparse(int, int) -> Sparse</td><td>empty rows x cols sparse matrix (fill with add)</td></tr>
+<tr><td>sparse(Vec, Vec, Vec, int, int) -> Sparse</td><td>from COO triplets (row indexes, column indexes, values, rows, cols); duplicates are summed</td></tr>
+<tr><td>sparse(Mat) -> Sparse</td><td>from a dense matrix (zeros dropped)</td></tr>
+<tr><td>speye(int) -> Sparse</td><td>n x n sparse identity</td></tr>
+<tr><td>tridiag(int, float, float, float) -> Sparse</td><td>n x n tridiagonal matrix with constant (lower, diagonal, upper) bands</td></tr>
+</tbody>
+</table>
+<h3>Type Sparse</h3>
+<p>Sparse float64 matrix. Operator * multiplies by a Vec.</p>
+<p>Operators: * → mul</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>add(int, int, float) -> Sparse</td><td>in place: A[i, j] += x; returns the matrix</td></tr>
+<tr><td>bicgstab(Vec, Opts) -> Res</td><td>BiCGSTAB for general A: rtol, atol, maxiter, x0</td></tr>
+<tr><td>cg(Vec) -> Res</td><td>conjugate gradient for symmetric positive definite A: x, status, iterations, residual_norm, relative_residual</td></tr>
+<tr><td>cg(Vec, Opts) -> Res</td><td>cg with rtol (default 1e-5), atol, maxiter (default 10 n), x0</td></tr>
+<tr><td>cols() -> int</td><td>column count</td></tr>
+<tr><td>eigsh(int, Opts) -> Res</td><td>k eigenvalues of a symmetric matrix (ARPACK-style Lanczos): which LA, SA, LM or SM (default LM), seed (start vector), ncv, tol, maxiter; fields w (ascending), vectors (Mat, columns), max_residual, nconv, status</td></tr>
+<tr><td>gmres(Vec, Opts) -> Res</td><td>restarted GMRES: rtol, atol, restart (default 20), maxiter, x0</td></tr>
+<tr><td>mul(Vec) -> Vec</td><td>matrix-vector product</td></tr>
+<tr><td>nnz() -> int</td><td>stored nonzeros (after summing duplicates)</td></tr>
+<tr><td>rows() -> int</td><td>row count</td></tr>
+<tr><td>solve(Vec) -> Vec</td><td>direct sparse LU solve (scipy spsolve); singular matrices are refused</td></tr>
+<tr><td>t() -> Sparse</td><td>transpose</td></tr>
+<tr><td>to_dense() -> Mat</td><td>dense copy</td></tr>
+</tbody>
+</table>
+<h2>Statistics</h2>
+<p>Probability distributions (pycli stats_dist, stats_dist_to), special functions (special_fn, special_fn_to), numpy-compatible random numbers and classical tests. Distributions follow scipy.stats 1.16 parameter names and formulas (each family is a port of its scipy class; special functions are scipy's own xsf/Cephes code or Boost.Math with scipy's policies). dist(name, opts) takes the scipy parameters plus loc (and scale for continuous families); pycli's names are accepted too: uniform low/high, gamma shape, lognorm mu/sigma (of the underlying normal), poisson lam. Families: norm, t, uniform, expon, gamma, beta, lognorm, chi2, genextreme, genpareto, skewnorm, johnsonsu, levy_stable (S1), nct, ncf, vonmises, truncnorm, weibull_min, cauchy, laplace, logistic, gumbel_r, pareto, rayleigh, f, poisson, binom, zipf, betabinom, nbinom, geom. Probabilities outside [0, 1] are errors; NaN inputs give NaN. Discrete ppf(0) and isf(1) are the first support point (pycli). Random variates reproduce numpy.random.Generator(PCG64(seed)) exactly for the numpy-sampled families (pycli's rvs; nct, skewnorm, betabinom and levy_stable use PCG64(seed) and its jumped() stream as pycli did); the quantile-sampled families (genextreme, genpareto, johnsonsu, truncnorm, weibull_min, cauchy, gumbel_r, pareto) use numpy's uniform stream through lmpy's quantile function. Deviations from scipy: Student t cdf/ppf use Boost (scipy: CDFLIB), Bessel/Airy outside [-10, 10] use Boost (scipy: AMOS), levy_stable integrates with Gauss-Kronrod (scipy: QUADPACK), Poisson ppf uses the generic discrete search.</p>
+<h3>Statistics: functions</h3>
+<table>
+<thead>
+<tr><th>Signature</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>airy(float) -> Res</td><td>Airy functions (scipy.special.airy): fields ai, aip, bi, bip</td></tr>
+<tr><td>airy(Vec) -> Res</td><td>Airy functions elementwise: Vec fields ai, aip, bi, bip</td></tr>
+<tr><td>dist(string) -> Dist</td><td>distribution with default parameters (families without shape parameters: norm, uniform, expon, cauchy, laplace, logistic, gumbel_r, rayleigh)</td></tr>
+<tr><td>dist(string, Opts) -> Dist</td><td>distribution with parameters (scipy names; unknown or missing ones are errors that list the valid ones)</td></tr>
+<tr><td>dist_names() -> StrVec</td><td>the 31 distribution families</td></tr>
+<tr><td>logsumexp(Vec) -> float</td><td>log(sum(exp(v))) without overflow (scipy.special.logsumexp)</td></tr>
+<tr><td>pearsonr(Vec, Vec) -> Res</td><td>Pearson correlation with the two-sided p-value of the exact beta null (scipy.stats.pearsonr): statistic, pvalue, df</td></tr>
+<tr><td>rng(int) -> Rng</td><td>generator seeded like numpy.random.default_rng(seed) (seed >= 0)</td></tr>
+<tr><td>special(string, float) -> float</td><td>scipy.special function by name (pycli special_fn): name/arity: erf/1, erfc/1, erfcx/1, erfinv/1, erfcinv/1, expit/1, logit/1, log_expit/1, ndtr/1, log_ndtr/1, ndtri/1, ndtri_exp/1, ellipk/1, ellipe/1, gamma/1, gammaln/1, digamma/1, psi/1, zeta/1, lambertw/1, i0e/1, cosm1/1, gammainc/2, gammaincc/2, gammaincinv/2, gammainccinv/2, zeta/2, polygamma/2, lambertw/2, jv/2, yv/2, iv/2, kv/2, spherical_jn/2, struve/2, owens_t/2, boxcox/2, inv_boxcox/2, boxcox1p/2, inv_boxcox1p/2, xlogy/2, xlog1py/2, beta/2, betaln/2, poch/2, betainc/3, betaincc/3, betaincinv/3, betainccinv/3, hyp2f1/4. NaN outside the domain (pycli DOMAIN_ERROR), +-inf at poles (NON_FINITE)</td></tr>
+<tr><td>special(string, Vec) -> Vec</td><td>scipy.special function by name (pycli special_fn): elementwise</td></tr>
+<tr><td>special(string, float, float) -> float</td><td>scipy.special function by name (pycli special_fn): two arguments</td></tr>
+<tr><td>special(string, float, Vec) -> Vec</td><td>scipy.special function by name (pycli special_fn): scalar first argument, vector second (e.g. jv(v, x))</td></tr>
+<tr><td>special(string, Vec, float) -> Vec</td><td>scipy.special function by name (pycli special_fn): vector first argument, scalar second (e.g. boxcox(x, lmbda))</td></tr>
+<tr><td>special(string, Vec, Vec) -> Vec</td><td>scipy.special function by name (pycli special_fn): two vectors of one length (length-1 vectors broadcast)</td></tr>
+<tr><td>special(string, float, float, float) -> float</td><td>scipy.special function by name (pycli special_fn): three arguments (betainc family)</td></tr>
+<tr><td>special(string, float, float, Vec) -> Vec</td><td>scipy.special function by name (pycli special_fn): three arguments, vector last</td></tr>
+<tr><td>special(string, Vec, Vec, Vec) -> Vec</td><td>scipy.special function by name (pycli special_fn): three vectors</td></tr>
+<tr><td>special(string, float, float, float, float) -> float</td><td>scipy.special function by name (pycli special_fn): four arguments (hyp2f1)</td></tr>
+<tr><td>special(string, float, float, float, Vec) -> Vec</td><td>scipy.special function by name (pycli special_fn): four arguments, vector last</td></tr>
+<tr><td>special(string, Vec, Vec, Vec, Vec) -> Vec</td><td>scipy.special function by name (pycli special_fn): four vectors</td></tr>
+<tr><td>special_names() -> StrVec</td><td>names accepted by special()</td></tr>
+<tr><td>ttest_1samp(Vec, float) -> Res</td><td>one-sample t test against popmean (scipy.stats.ttest_1samp, two-sided): statistic, pvalue, df</td></tr>
+<tr><td>ttest_ind(Vec, Vec) -> Res</td><td>two-sample t test with pooled variance (scipy.stats.ttest_ind, two-sided)</td></tr>
+<tr><td>ttest_ind(Vec, Vec, Opts) -> Res</td><td>two-sample t test; option equal_var (default true; false = Welch)</td></tr>
+</tbody>
+</table>
+<h3>Type Dist</h3>
+<p>A frozen probability distribution (dist("gamma", opts().set("a", 3.0).set("scale", 2.0))).</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>cdf(float) -> float</td><td>cumulative distribution function</td></tr>
+<tr><td>cdf(Vec) -> Vec</td><td>cumulative distribution function (elementwise)</td></tr>
+<tr><td>interval(float) -> Vec</td><td>central interval [ppf((1-c)/2), ppf((1+c)/2)] with confidence c in [0, 1]</td></tr>
+<tr><td>is_discrete() -> bool</td><td>true for the discrete families</td></tr>
+<tr><td>isf(float) -> float</td><td>inverse survival function; p must be in [0, 1]</td></tr>
+<tr><td>isf(Vec) -> Vec</td><td>inverse survival function; p must be in [0, 1] (elementwise)</td></tr>
+<tr><td>logcdf(float) -> float</td><td>log cdf</td></tr>
+<tr><td>logcdf(Vec) -> Vec</td><td>log cdf (elementwise)</td></tr>
+<tr><td>logpdf(float) -> float</td><td>log density (log mass for a discrete family)</td></tr>
+<tr><td>logpdf(Vec) -> Vec</td><td>log density (log mass for a discrete family) (elementwise)</td></tr>
+<tr><td>logpmf(float) -> float</td><td>log probability mass (discrete families only)</td></tr>
+<tr><td>logpmf(Vec) -> Vec</td><td>log probability mass, elementwise (discrete families only)</td></tr>
+<tr><td>logsf(float) -> float</td><td>log survival function</td></tr>
+<tr><td>logsf(Vec) -> Vec</td><td>log survival function (elementwise)</td></tr>
+<tr><td>mean() -> float</td><td>mean (inf or NaN where undefined, as scipy)</td></tr>
+<tr><td>median() -> float</td><td>median ppf(0.5)</td></tr>
+<tr><td>moments() -> Res</td><td>pycli fn=moments: fields mean, var, skew, kurtosis (excess, as scipy), moments_undefined (names of the non-finite ones), status</td></tr>
+<tr><td>name() -> string</td><td>family name</td></tr>
+<tr><td>params() -> Res</td><td>the resolved parameters (scipy names, plus loc and scale)</td></tr>
+<tr><td>pdf(float) -> float</td><td>density (the mass function for a discrete family, as pycli fn=pdf)</td></tr>
+<tr><td>pdf(Vec) -> Vec</td><td>density (the mass function for a discrete family, as pycli fn=pdf) (elementwise)</td></tr>
+<tr><td>pmf(float) -> float</td><td>probability mass (discrete families only)</td></tr>
+<tr><td>pmf(Vec) -> Vec</td><td>probability mass, elementwise (discrete families only)</td></tr>
+<tr><td>ppf(float) -> float</td><td>quantile function (inverse cdf); p must be in [0, 1]</td></tr>
+<tr><td>ppf(Vec) -> Vec</td><td>quantile function (inverse cdf); p must be in [0, 1] (elementwise)</td></tr>
+<tr><td>rvs(int, int) -> Vec</td><td>n random variates from seed (pycli fn=rvs; numpy Generator(PCG64(seed)); a shorter n is a prefix of a longer one)</td></tr>
+<tr><td>sf(float) -> float</td><td>survival function 1 - cdf</td></tr>
+<tr><td>sf(Vec) -> Vec</td><td>survival function 1 - cdf (elementwise)</td></tr>
+<tr><td>std() -> float</td><td>standard deviation</td></tr>
+<tr><td>support() -> Vec</td><td>[lower, upper] end of the support</td></tr>
+<tr><td>var() -> float</td><td>variance</td></tr>
+</tbody>
+</table>
+<h3>Type Rng</h3>
+<p>A numpy-compatible random generator: the stream of numpy.random.default_rng(seed) (PCG64 + SeedSequence). Methods advance it in place.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>beta(int, float, float) -> Vec</td><td>n beta variates (Generator.beta)</td></tr>
+<tr><td>binomial(int, int, float) -> Vec</td><td>n binomial counts with trials and p (Generator.binomial)</td></tr>
+<tr><td>choice(Vec, int, bool) -> Vec</td><td>n elements of a vector, with or without replacement (Generator.choice, shuffle=True)</td></tr>
+<tr><td>exponential(int, float) -> Vec</td><td>n exponential variates with the given scale (Generator.exponential)</td></tr>
+<tr><td>gamma(int, float, float) -> Vec</td><td>n gamma variates (shape, scale) (Generator.gamma)</td></tr>
+<tr><td>integers(int, int, int) -> Vec</td><td>n integers in [lo, hi) (Generator.integers, int64, Lemire's method)</td></tr>
+<tr><td>jumped() -> Rng</td><td>an independent generator: this state advanced by (phi - 1) * 2^128 draws (PCG64.jumped)</td></tr>
+<tr><td>normal(int, float, float) -> Vec</td><td>n normal variates with mean mu and standard deviation sd (Generator.normal)</td></tr>
+<tr><td>permutation(int) -> Vec</td><td>a random permutation of 0..n-1 (Generator.permutation)</td></tr>
+<tr><td>poisson(int, float) -> Vec</td><td>n Poisson counts (Generator.poisson)</td></tr>
+<tr><td>random(int) -> Vec</td><td>n uniforms in [0, 1) (Generator.random)</td></tr>
+<tr><td>shuffle(Vec) -> Vec</td><td>a shuffled copy of a vector (Generator.permutation of an array)</td></tr>
+<tr><td>standard_normal(int) -> Vec</td><td>n standard normal variates (Generator.standard_normal)</td></tr>
+<tr><td>uniform(int, float, float) -> Vec</td><td>n uniforms in [lo, hi) (Generator.uniform)</td></tr>
+</tbody>
+</table>
+<h2>Optimisation, roots, quadrature and linear programming</h2>
+<p>Minimisation (minimize, scipy.optimize.minimize), nonlinear least squares (least_squares, scipy.optimize.least_squares with curve_fit covariances), bracketed and multivariate roots (root_scalar, root), adaptive quadrature (quad, QUADPACK) and LP/MILP (linprog, HiGHS). Objectives, models and equations are expression strings in pycli's grammar; the unknowns are named by a StrVec, and option keys starting with $ bind constants and data vectors (opts().set("$x", xs)). Numerical outcomes are a status (OK, NO_CONVERGENCE, EVAL_LIMIT, TIME_LIMIT, NON_FINITE, NUMERICAL_FAILURE, ...); bad input is a run-time error. Every expression evaluation counts against max_evals (default 500000) and the optional time_limit (seconds); a stopped run reports the best point so far.</p>
+<h3>Optimisation, roots, quadrature and linear programming: functions</h3>
+<table>
+<thead>
+<tr><th>Signature</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>least_squares(string, string, StrVec, Vec, Opts) -> Res</td><td>fit model(row) to the response data vector (pycli opt_least_squares): residual_i = (model - response_i) / sigma_i, every $ data vector read row by row; options: method (trf, dogbox, lm), loss (linear, soft_l1, huber, cauchy, arctan), f_scale, tol (ftol = xtol = gtol, default 1e-10), max_nfev (default 1000), lower/upper, absolute_sigma, max_evals, time_limit, $name bindings, sigma (float or Vec). Result: x, par, std_err, se, cov (curve_fit convention), cov_status, cost, rss, residuals, status, nfev, optimality, jacobian_condition</td></tr>
+<tr><td>least_squares(StrVec, StrVec, Vec, Opts) -> Res</td><td>minimise the sum of squared residual expressions (concatenated; one naming a data vector yields one residual per row, one with a reducer or none yields one); options: method (trf, dogbox, lm), loss (linear, soft_l1, huber, cauchy, arctan), f_scale, tol (ftol = xtol = gtol, default 1e-10), max_nfev (default 1000), lower/upper, absolute_sigma, max_evals, time_limit, $name bindings. Result as the model form</td></tr>
+<tr><td>linprog(Vec) -> Res</td><td>minimise c.x subject to x >= 0 (HiGHS; see the Opts form)</td></tr>
+<tr><td>linprog(Vec, Opts) -> Res</td><td>LP/MILP with HiGHS (pycli opt_linprog, scipy linprog method highs): options A_ub, b_ub, A_eq, b_eq (Mat/Vec), lower/upper (Vec; default 0 and +inf), integrality (Vec of 0/1), maximize, time_limit (default 10 s), node_limit, maxiter, mip_rel_gap. Result: x, fun (= objective), slack, con, status, message, nit, mip, ineqlin_marginals, eqlin_marginals, lower_marginals, upper_marginals, duals {ub, eq, lower, upper}, mip_gap, mip_node_count, primal_feasible, optimality_verified</td></tr>
+<tr><td>minimize(string, StrVec, Vec) -> Res</td><td>minimise an expression over the named unknowns from x0 (pycli opt_minimize, BFGS): x, par, fun, status, message, nit, nfev, njev, evals</td></tr>
+<tr><td>minimize(string, StrVec, Vec, Opts) -> Res</td><td>minimize with options: method (Nelder-Mead, Powell, BFGS, L-BFGS-B, SLSQP; default SLSQP with constraints, L-BFGS-B with bounds, else BFGS), tol, maxiter (default 1000), max_evals, time_limit, gradient (StrVec, one expression per unknown; checked against finite differences at x0), lower/upper (Vec; NaN or +-inf = open), eq/ineq (StrVec; ineq means expr >= 0; SLSQP), nonfinite (inf|error), $name bindings; result adds constraint_violation with constraints</td></tr>
+<tr><td>quad(string, string, float, float) -> Res</td><td>integral of f(var) from a to b (pycli num_quad; QUADPACK QAGS, QAGI for inf()/-inf() limits): value, abserr, neval, subdivisions, status</td></tr>
+<tr><td>quad(string, string, float, float, Opts) -> Res</td><td>quad with options epsabs, epsrel (default 1.49e-8), limit (subintervals, default 50), points (Vec of break points, QAGP), max_evals, time_limit, $name bindings</td></tr>
+<tr><td>root(StrVec, StrVec, Vec) -> Res</td><td>solve n equations = 0 in n named unknowns from x0 with MINPACK hybr (pycli opt_root); success is verified by max|f| &lt;= residual_tol: x, par, fun, residual_norm, residual_max, nfev, status, evals</td></tr>
+<tr><td>root(StrVec, StrVec, Vec, Opts) -> Res</td><td>root with options method (hybr, lm; brentq with bracket), bracket (Vec lower, upper: one equation, x0 ignored), xtol (default 1e-12), residual_tol (default 1e-8), maxiter (brentq only), max_evals, time_limit, $name bindings</td></tr>
+<tr><td>root_scalar(string, string, float, float) -> Res</td><td>bracketed root of f(var) on [lower, upper] with brentq (pycli num_root): root, f_root, iterations, function_calls, status, evals</td></tr>
+<tr><td>root_scalar(string, string, float, float, Opts) -> Res</td><td>root_scalar with options method (brentq, bisect, ridder, toms748), xtol (default 2e-12), rtol (default 4 eps), maxiter (default 100), max_evals, time_limit, $name bindings</td></tr>
+</tbody>
+</table>
+<h2>Ordinary differential equations</h2>
+<p>Initial value problems dy/dt = f(t, y) with expression right-hand sides (pycli ode_solve, ode_solve_to; scipy.integrate.solve_ivp). rhs[i] is the expression for d(state[i])/dt in the state names, t, y[i] and $-bound constants (opts().set("$beta", 0.3)). Methods RK45 (default), RK23, DOP853, Radau, BDF are ports of scipy's solvers (same step control, dense output and finite-difference Jacobian); LSODA is an automatic switch from RK45 to BDF when Hairer's stiffness test fires, not ODEPACK. Options (pycli names and defaults): method, rtol (1e-6), atol (1e-9, float or one per state), t_eval (ordered times; t0/t1 are added when missing) or max_output_points (101 uniform samples), max_step, first_step, events (StrVec of expressions whose zeros are located by brentq on the dense output), direction (Vec of -1/0/1), terminal (Vec: 0 = record only, k = stop at the k-th occurrence), max_events (32: a non-terminal event stops the run with EVENT_LIMIT at that count), max_evals (200000 expression evaluations), max_steps (10000 accepted steps). Result statuses: OK, STEP_SIZE_TOO_SMALL, NO_CONVERGENCE, EVAL_LIMIT, STEP_LIMIT, EVENT_LIMIT, NON_FINITE (a NaN/inf RHS or event value stops the run); a non-OK run keeps the samples computed so far and ends at the last accepted state.</p>
+<h3>Ordinary differential equations: functions</h3>
+<table>
+<thead>
+<tr><th>Signature</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>ode(StrVec, StrVec, Vec, float, float) -> Res</td><td>solve an initial value problem ode(rhs, state, y0, t0, t1) with RK45 at rtol 1e-6, atol 1e-9 on 101 points; result: status, message, termination (end/event/failed), method, final_time, final_state, state_names, t (Vec), y (Mat: one row per time, one column per state), event_counts, event_t, event_y (Mat), event_index (grouped by event), nfev, njev, nlu, steps, rhs_calls, event_calls, evals, nonfinite_evals, success, partial_trajectory, effective_output_points, endpoints_added</td></tr>
+<tr><td>ode(StrVec, StrVec, Vec, float, float, Opts) -> Res</td><td>solve an initial value problem with options (method, rtol, atol, t_eval, events, ... and $ constants); same result fields</td></tr>
+<tr><td>ode_sol(StrVec, StrVec, Vec, float, float) -> OdeSol</td><td>like ode, keeping the dense output for evaluation at any time inside the integrated range</td></tr>
+<tr><td>ode_sol(StrVec, StrVec, Vec, float, float, Opts) -> OdeSol</td><td>like ode with options, keeping the dense output (DOP853 then spends 3 extra RHS calls per step, as in scipy)</td></tr>
+</tbody>
+</table>
+<h3>Type OdeSol</h3>
+<p>Dense ODE solution (solve_ivp dense_output): the piecewise interpolant of every accepted step plus the run's result.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>eval(float) -> Vec</td><td>state vector at time t (t must lie in the integrated range)</td></tr>
+<tr><td>eval(Vec) -> Mat</td><td>states at several times: one row per time, one column per state</td></tr>
+<tr><td>res() -> Res</td><td>the run's result (the fields of ode)</td></tr>
+<tr><td>t_max() -> float</td><td>end of the integrated range (the terminal event time when one stopped the run)</td></tr>
+<tr><td>t_min() -> float</td><td>start of the integrated range</td></tr>
+</tbody>
+</table>
+<h2>Interpolation</h2>
+<p>1-D interpolants and n-D radial basis functions (pycli interp_eval, interp_eval_to; scipy.interpolate). interp(kind, x, y[, opts]) builds an Interp once; evaluate, differentiate and integrate it as often as needed. Kinds: linear (make_interp_spline k=1), nearest (interp1d nearest), cubic (CubicSpline, option bc_type not-a-knot (default) / natural / clamped / periodic), pchip (monotone Fritsch-Carlson, PchipInterpolator), akima, makima (Akima1DInterpolator), smoothing (make_smoothing_spline; lam >= 0, omitted = generalised cross-validation; lam / h^3 is capped at 1e11 as in pycli), rbf (RBFInterpolator; kernel thin_plate_spline (default), linear, cubic, quintic, multiquadric, inverse_multiquadric, inverse_quadratic, gaussian; epsilon (1), smoothing (0), degree). x must be finite and strictly increasing (rbf: one row per node). Option extrapolate: error (default: a point outside the nodes is a run-time error), nan, or extend (the end polynomial; rbf: the nodes' bounding box is the range). At a node a piecewise interpolant takes its right-hand piece. An rbf whose system is singular or that misses its own nodes by more than 1e-6 of the data scale has status SINGULAR / ILL_CONDITIONED and cannot be evaluated.</p>
+<h3>Interpolation: functions</h3>
+<table>
+<thead>
+<tr><th>Signature</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>interp(string, Vec, Vec) -> Interp</td><td>build a 1-D interpolant of kind linear, nearest, cubic, pchip, akima, makima, smoothing or rbf (default options)</td></tr>
+<tr><td>interp(string, Vec, Vec, Opts) -> Interp</td><td>build a 1-D interpolant with options (bc_type, lam, kernel, epsilon, smoothing, degree, extrapolate)</td></tr>
+<tr><td>interp(string, Mat, Vec) -> Interp</td><td>build an n-D radial basis function interpolant (kind must be rbf; one row of x per node)</td></tr>
+<tr><td>interp(string, Mat, Vec, Opts) -> Interp</td><td>build an n-D radial basis function interpolant with options (kernel, epsilon, smoothing, degree, extrapolate)</td></tr>
+</tbody>
+</table>
+<h3>Type Interp</h3>
+<p>Interpolant built by interp: piecewise polynomial (PPoly form) or radial basis function.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>coeffs() -> Mat</td><td>PPoly coefficients: one row per power (highest first), one column per interval in the local variable x - knot (nearest/rbf: the rbf weights as one column, nearest: the node values)</td></tr>
+<tr><td>deriv(float, int) -> float</td><td>derivative of order nu at x (0 = value; above the degree it is 0; right-hand value at a node)</td></tr>
+<tr><td>deriv(Vec, int) -> Vec</td><td>derivative of order nu at each x</td></tr>
+<tr><td>eval(float) -> float</td><td>value at x</td></tr>
+<tr><td>eval(Vec) -> Vec</td><td>values at each x</td></tr>
+<tr><td>eval(Mat) -> Vec</td><td>rbf values at the points (one row per point)</td></tr>
+<tr><td>info() -> Res</td><td>fields: status, message, kind, n_nodes, extrapolate, bc_type (cubic), lam (smoothing: the given or GCV value), interpolation_error (rbf)</td></tr>
+<tr><td>integrate(float, float) -> float</td><td>definite integral from a to b (negative when b &lt; a; bounds in the node range unless extrapolate is extend)</td></tr>
+<tr><td>knots() -> Vec</td><td>breakpoints of the piecewise polynomial (the nodes; rbf: empty)</td></tr>
+<tr><td>status() -> string</td><td>OK, or SINGULAR / ILL_CONDITIONED for an rbf that could not be built</td></tr>
+</tbody>
+</table>
+<h2>Signal processing</h2>
+<p>IIR filter design and filtering (iir -> Filter, pycli sig_filter), spectral estimates (periodogram, welch, csd, coherence, spectrogram; pycli sig_spectrum), peak finding (find_peaks, peak_prominences, peak_widths; pycli sig_peaks), FFT (pocketfft), windows, detrending, convolution and Savitzky-Golay smoothing. Ports of scipy.signal 1.16: the same zpk prototypes, bilinear transform and pole-zero pairing (zpk2sos, pairing nearest), the same padding in filtfilt (odd extension, scipy's default padlen) and the same find_peaks selection order. Frequencies are in Hz when fs is given, otherwise fractions of the Nyquist frequency (scipy's convention).</p>
+<h3>Signal processing: functions</h3>
+<table>
+<thead>
+<tr><th>Signature</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>coherence(Vec, Vec, float) -> Res</td><td>magnitude-squared coherence |Pxy|^2 / (Pxx Pyy): fields f, cxy, df, n_segments, n_bins, peak_index, peak_freq</td></tr>
+<tr><td>coherence(Vec, Vec, float, Opts) -> Res</td><td>coherence with window, nperseg, noverlap, nfft, detrend</td></tr>
+<tr><td>convolve(Vec, Vec, string) -> Vec</td><td>discrete linear convolution (numpy.convolve), mode full, same or valid</td></tr>
+<tr><td>csd(Vec, Vec, float) -> Res</td><td>cross spectral density (Welch): fields f, pxy_re, pxy_im, magnitude, df, n_segments, n_bins, peak_index, peak_freq</td></tr>
+<tr><td>csd(Vec, Vec, float, Opts) -> Res</td><td>csd with the welch options</td></tr>
+<tr><td>detrend(Vec, string) -> Vec</td><td>remove the mean (constant) or the least-squares line (linear) (scipy.signal.detrend)</td></tr>
+<tr><td>fft(Vec, Vec) -> Res</td><td>complex FFT of re + i im (numpy.fft.fft): fields re, im</td></tr>
+<tr><td>fftfreq(int, float) -> Vec</td><td>sample frequencies of fft (numpy.fft.fftfreq)</td></tr>
+<tr><td>fftshift(Vec) -> Vec</td><td>move the zero-frequency term to the centre (numpy.fft.fftshift)</td></tr>
+<tr><td>filtfilt(Vec, Vec, Vec) -> Vec</td><td>zero-phase filtering with b/a (scipy filtfilt: odd extension, padlen 3*max(len(a), len(b)))</td></tr>
+<tr><td>filtfilt(Vec, Vec, Vec, Opts) -> Vec</td><td>filtfilt with padtype (odd, even, constant, none) and padlen</td></tr>
+<tr><td>find_peaks(Vec) -> Res</td><td>all local maxima (scipy find_peaks, pycli sig_peaks): fields status (OK or NO_PEAKS), indices, n_peaks</td></tr>
+<tr><td>find_peaks(Vec, Opts) -> Res</td><td>find_peaks with height, threshold, prominence, width, plateau_size (a minimum, or Vec (min, max), nan = open), distance, wlen, rel_height; adds scipy's properties for the options given: peak_heights, left/right_thresholds, prominences, left/right_bases, widths, width_heights, left/right_ips, plateau_sizes, left/right_edges</td></tr>
+<tr><td>freqz(Vec, Vec, Vec) -> Res</td><td>frequency response of b/a at angular frequencies w (rad/sample): fields freqs, magnitude, phase</td></tr>
+<tr><td>freqz(Vec, Vec, Vec, float) -> Res</td><td>frequency response of b/a at frequencies in Hz for sampling frequency fs</td></tr>
+<tr><td>ifft(Vec, Vec) -> Res</td><td>inverse complex FFT with 1/n scaling (numpy.fft.ifft): fields re, im</td></tr>
+<tr><td>iir(string, int, float) -> Filter</td><td>design a digital IIR filter (pycli sig_filter): kind butter, cheby1, cheby2, ellip, bessel; order 1..20; cutoff in Hz with fs, else a fraction of Nyquist; one cutoff = lowpass, two = bandpass by default</td></tr>
+<tr><td>iir(string, int, Vec) -> Filter</td><td>iir with one (low/high) or two (band) cutoff frequencies</td></tr>
+<tr><td>iir(string, int, float, Opts) -> Filter</td><td>iir with options: btype lowpass/highpass/bandpass/bandstop, fs (Hz), rp (dB, cheby1/ellip), rs (dB, cheby2/ellip), norm (bessel: phase (default), delay, mag)</td></tr>
+<tr><td>iir(string, int, Vec, Opts) -> Filter</td><td>iir with cutoff frequencies and options (see above)</td></tr>
+<tr><td>irfft(Vec, Vec, int) -> Vec</td><td>inverse of rfft with output length n (numpy.fft.irfft)</td></tr>
+<tr><td>lfilter(Vec, Vec, Vec) -> Vec</td><td>filter x with transfer function b/a, zero initial state (scipy lfilter, direct form II transposed)</td></tr>
+<tr><td>peak_prominences(Vec, Vec) -> Res</td><td>prominence of each peak index (scipy peak_prominences): fields prominences, left_bases, right_bases</td></tr>
+<tr><td>peak_prominences(Vec, Vec, Opts) -> Res</td><td>peak_prominences with wlen (window length in samples)</td></tr>
+<tr><td>peak_widths(Vec, Vec) -> Res</td><td>width of each peak at half prominence (scipy peak_widths): fields widths, width_heights, left_ips, right_ips</td></tr>
+<tr><td>peak_widths(Vec, Vec, Opts) -> Res</td><td>peak_widths with rel_height (default 0.5) and wlen</td></tr>
+<tr><td>periodogram(Vec, float) -> Res</td><td>periodogram (pycli sig_spectrum method periodogram; boxcar window, constant detrend, density): fields status, method, window, n_samples, n_segments, n_bins, df, f, pxx, total_power, enbw, peak_index, peak_freq</td></tr>
+<tr><td>periodogram(Vec, float, Opts) -> Res</td><td>periodogram with window (name or Vec), nfft, detrend (constant, linear, none), return_onesided, scaling (density, spectrum)</td></tr>
+<tr><td>rfft(Vec) -> Res</td><td>real-input FFT (numpy.fft.rfft): fields re, im (n/2+1 values)</td></tr>
+<tr><td>rfft(Vec, int) -> Res</td><td>rfft of x truncated or zero-padded to n</td></tr>
+<tr><td>rfft_abs(Vec) -> Vec</td><td>magnitudes |rfft(x)|</td></tr>
+<tr><td>rfftfreq(int, float) -> Vec</td><td>sample frequencies of rfft for n samples spaced d apart (numpy.fft.rfftfreq)</td></tr>
+<tr><td>savgol(Vec, int, int) -> Vec</td><td>Savitzky-Golay smoothing (scipy savgol_filter, mode interp): window_length, polyorder</td></tr>
+<tr><td>savgol(Vec, int, int, Opts) -> Vec</td><td>savgol with deriv, delta, mode (interp, mirror, nearest, constant, wrap), cval</td></tr>
+<tr><td>savgol_coeffs(int, int) -> Vec</td><td>Savitzky-Golay convolution coefficients (scipy savgol_coeffs)</td></tr>
+<tr><td>sos_filter(Mat) -> Filter</td><td>a Filter from given second-order sections (n x 6, a0 = 1 in column 3); frequencies as fractions of Nyquist</td></tr>
+<tr><td>sos_filter(Mat, float) -> Filter</td><td>a Filter from second-order sections with a sampling frequency fs (Hz)</td></tr>
+<tr><td>spectrogram(Vec, float) -> Res</td><td>spectrogram (scipy defaults: tukey 0.25 window, nperseg 256, noverlap nperseg/8, density): fields f, t, sxx (Mat, frequencies x times)</td></tr>
+<tr><td>spectrogram(Vec, float, Opts) -> Res</td><td>spectrogram with window, nperseg, noverlap, nfft, detrend, return_onesided, scaling</td></tr>
+<tr><td>welch(Vec, float) -> Res</td><td>Welch PSD (hann, nperseg 256 or the signal length, 50% overlap): same fields as periodogram</td></tr>
+<tr><td>welch(Vec, float, Opts) -> Res</td><td>Welch PSD with window, nperseg, noverlap, nfft, detrend, return_onesided, scaling, average (mean, median)</td></tr>
+<tr><td>window(string, int) -> Vec</td><td>periodic window of length n as scipy get_window: hann, hamming, blackman, boxcar, bartlett, flattop, parzen, bohman, blackmanharris, nuttall, barthann, cosine, triang, tukey (alpha 0.5)</td></tr>
+<tr><td>window(string, int, Opts) -> Vec</td><td>window with sym (bool, symmetric instead of periodic) and the shape parameter alpha (tukey), beta (kaiser) or std (gaussian)</td></tr>
+</tbody>
+</table>
+<h3>Type Filter</h3>
+<p>Digital IIR filter in second-order sections (scipy iirfilter(..., output='sos')).</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>ba() -> Res</td><td>transfer-function coefficients b, a (scipy zpk2tf; poorly conditioned for high orders: prefer sos)</td></tr>
+<tr><td>filter(Vec) -> Vec</td><td>causal filtering with zero initial state (scipy sosfilt)</td></tr>
+<tr><td>filtfilt(Vec) -> Vec</td><td>zero-phase forward-backward filtering (scipy sosfiltfilt: odd extension, padlen 3*(2*n_sections+1-...))</td></tr>
+<tr><td>filtfilt(Vec, Opts) -> Vec</td><td>sosfiltfilt with options padtype (odd, even, constant, none) and padlen (int)</td></tr>
+<tr><td>fs() -> float</td><td>sampling frequency (NaN when frequencies are fractions of Nyquist)</td></tr>
+<tr><td>gain(float) -> float</td><td>|H| at one frequency (Hz with fs, else a fraction of Nyquist)</td></tr>
+<tr><td>info() -> Res</td><td>pycli sig_filter fields: status, family, order, btype, n_sections, sos, max_pole_radius, stable, marginal</td></tr>
+<tr><td>marginal() -> bool</td><td>a pole within 1e-6 of the unit circle (rings for a very long time)</td></tr>
+<tr><td>max_pole_radius() -> float</td><td>largest pole modulus of the rounded sections (50-digit arithmetic, as pycli)</td></tr>
+<tr><td>n_sections() -> int</td><td>number of second-order sections</td></tr>
+<tr><td>order() -> int</td><td>filter order as designed (for sos_filter: the number of nonzero denominator terms)</td></tr>
+<tr><td>response(Vec) -> Res</td><td>frequency response at the given frequencies (Hz with fs, else fractions of Nyquist): fields freqs, magnitude, phase (radians)</td></tr>
+<tr><td>sos() -> Mat</td><td>second-order sections (n_sections x 6: b0 b1 b2 a0 a1 a2)</td></tr>
+<tr><td>stable() -> bool</td><td>all poles strictly inside the unit circle (max_pole_radius &lt; 1)</td></tr>
+<tr><td>status() -> string</td><td>OK, or UNSTABLE (filter and filtfilt refuse an unstable filter)</td></tr>
+<tr><td>zpk() -> Res</td><td>zeros, poles and gain of the digital design: fields z_re, z_im, p_re, p_im, k (designed filters only)</td></tr>
+</tbody>
+</table>
+<h2>Spatial</h2>
+<p>Nearest neighbours, distance matrices and convex hulls on point matrices whose rows are points (pycli spatial_knn, spatial_dist, spatial_hull; scipy.spatial semantics). Neighbour rows are ordered by distance and then by point index; indices are 0-based and returned as float matrices.</p>
+<h3>Spatial: functions</h3>
+<table>
+<thead>
+<tr><th>Signature</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>cdist(Mat, Mat, string) -> Mat</td><td>distance matrix between the rows of a and b (scipy cdist; pycli spatial_dist): euclidean, sqeuclidean, cityblock, chebyshev, minkowski, cosine, correlation, hamming, jaccard (non-zero is true), canberra, braycurtis, mahalanobis</td></tr>
+<tr><td>cdist(Mat, Mat, string, Opts) -> Mat</td><td>cdist with options: p (minkowski), vi (Mat, mahalanobis inverse covariance, symmetric within 1e-12), allow_nan (undefined pairs become NaN instead of an error)</td></tr>
+<tr><td>cdist(Mat, string) -> Mat</td><td>distance matrix of the rows of a with themselves (symmetric, zero diagonal for a true metric)</td></tr>
+<tr><td>hull(Mat) -> Res</td><td>convex hull of 2-D or 3-D points (scipy ConvexHull, Qhull Qt; pycli spatial_hull convex_hull): status OK/DEGENERATE, volume, area, vertices (Vec of indices; 2-D counter-clockwise from the lowest index), simplices (Mat: edges in 2-D, outward counter-clockwise triangles in 3-D), n_vertices, n_simplices, n_points, dim</td></tr>
+<tr><td>knn(Mat, Mat, int) -> Res</td><td>k nearest points of every query row, Euclidean (pycli spatial_knn): indices, distances (queries x k), status, n_points, n_queries, k, p, search</td></tr>
+<tr><td>knn(Mat, Mat, int, Opts) -> Res</td><td>knn with options: p (Minkowski norm in [1, 64] or inf(); default 2)</td></tr>
+<tr><td>knn(Mat, int) -> Res</td><td>k nearest points of every point among the points themselves (a point is its own nearest neighbour)</td></tr>
+<tr><td>knn(Mat, int, Opts) -> Res</td><td>self-query knn with options: p, exclude_self (drop each point from its own list)</td></tr>
+<tr><td>knn_radius(Mat, Mat, float) -> Res</td><td>all points within a distance (inclusive) of every query (pycli spatial_knn radius mode): counts per query, flat indices and distances (CSR layout), n_pairs</td></tr>
+<tr><td>knn_radius(Mat, Mat, float, Opts) -> Res</td><td>knn_radius with options: p, max_pairs (default 1000000; more is an error)</td></tr>
+<tr><td>knn_radius(Mat, float, Opts) -> Res</td><td>radius neighbours of every point among the points themselves; options p, max_pairs, exclude_self</td></tr>
+<tr><td>pdist(Mat, string) -> Vec</td><td>condensed pairwise distances (scipy pdist): d(0,1), d(0,2), ..., d(n-2,n-1)</td></tr>
+<tr><td>pdist(Mat, string, Opts) -> Vec</td><td>pdist with the cdist options</td></tr>
+</tbody>
+</table>
+<h2>Graphs</h2>
+<p>Directed or undirected graphs with string node names, built edge by edge or from a frame's edge list; shortest paths (Dijkstra, Bellman-Ford, BFS hops, Yen's k shortest simple paths, all pairs) and flows (maximum flow, minimum cut, minimum-cost flow) with pycli's graph_paths / graph_flow result fields and statuses (OK, UNREACHABLE, NEGATIVE_CYCLE, INFEASIBLE, UNBALANCED, NUMERICAL_FAILURE). Node lists are sorted by name (numerically when every name is an integer). Parallel edges keep the smallest weight for paths and add capacities for flows.</p>
+<h3>Graphs: functions</h3>
+<table>
+<thead>
+<tr><th>Signature</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>graph(bool) -> Graph</td><td>empty graph (true: directed); add edges with edge</td></tr>
+<tr><td>graph(Frame, string, string, bool) -> Graph</td><td>graph from an edge list frame (from column, to column, directed) with unit weights</td></tr>
+<tr><td>graph(Frame, string, string, string, bool) -> Graph</td><td>graph from an edge list frame with a weight column (from, to, weight, directed)</td></tr>
+<tr><td>graph(Frame, string, string, bool, Opts) -> Graph</td><td>graph from an edge list frame with options weight (column; default unit weights) and capacity (column, for flows)</td></tr>
+</tbody>
+</table>
+<h3>Type Graph</h3>
+<p>Graph: nodes are strings; each edge has a weight (path length, or the unit cost for min_cost_flow) and an optional capacity.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>all_distances() -> Res</td><td>all-pairs Dijkstra distances (scipy csgraph): nodes (sorted), distance (Mat, NaN = unreachable), n_unreachable_pairs</td></tr>
+<tr><td>all_distances(Opts) -> Res</td><td>all pairs with method dijkstra, bellman_ford (Johnson; status NEGATIVE_CYCLE with cycle) or bfs</td></tr>
+<tr><td>directed() -> bool</td><td>whether the graph is directed</td></tr>
+<tr><td>distances(string) -> Res</td><td>Dijkstra distances from a source to every reachable node (pycli graph_paths without a target): nodes, distance, hops, predecessor ("" for the source), n_reachable, n_unreachable</td></tr>
+<tr><td>distances(string, Opts) -> Res</td><td>distances with method dijkstra, bellman_ford or bfs</td></tr>
+<tr><td>edge(string, string, float) -> Graph</td><td>in place: add an edge u -> v (both ways when undirected) with a weight; returns the graph</td></tr>
+<tr><td>edge(string, string, float, float) -> Graph</td><td>in place: add an edge with a weight and a capacity (for flows); returns the graph</td></tr>
+<tr><td>has_node(string) -> bool</td><td>whether a node exists</td></tr>
+<tr><td>k_shortest(string, string, int) -> Res</td><td>the k shortest simple paths, shortest first (Yen; networkx shortest_simple_paths): k_found, paths (StrVec of comma-joined node names), lengths, hops; status UNREACHABLE when there is none</td></tr>
+<tr><td>k_shortest(string, string, int, Opts) -> Res</td><td>k_shortest with method dijkstra (weights) or bfs (edge counts)</td></tr>
+<tr><td>max_flow(string, string) -> Res</td><td>maximum flow (Dinitz; pycli graph_flow max_flow): value, flow_from, flow_to, flow (edges with positive flow, sorted), n_flow_edges, integral, tolerance</td></tr>
+<tr><td>min_cost_flow(string, string, float) -> Res</td><td>cheapest way to send an integer amount from source to sink (edge weight = unit cost; integer capacities and costs): status OK/INFEASIBLE, cost, flow_from, flow_to, flow</td></tr>
+<tr><td>min_cost_flow(StrVec, Vec) -> Res</td><td>minimum-cost flow for node supplies (positive) and demands (negative); status UNBALANCED when they do not sum to zero</td></tr>
+<tr><td>min_cut(string, string) -> Res</td><td>minimum s-t cut (networkx minimum_cut partition): value, cut_from, cut_to, cut_capacity, n_cut_edges, source_side, source_side_size</td></tr>
+<tr><td>n_edges() -> int</td><td>edges as added (parallel edges and self loops included)</td></tr>
+<tr><td>n_nodes() -> int</td><td>node count</td></tr>
+<tr><td>node(string) -> Graph</td><td>in place: add a node (no-op when present); returns the graph</td></tr>
+<tr><td>nodes() -> StrVec</td><td>node names in sorted order</td></tr>
+<tr><td>shortest_path(string, string) -> Res</td><td>Dijkstra shortest path (pycli graph_paths with a target): status OK/UNREACHABLE, path (StrVec), length, hops, n_reachable, n_unreachable, n_nodes, n_edges</td></tr>
+<tr><td>shortest_path(string, string, Opts) -> Res</td><td>shortest path with method dijkstra (non-negative weights), bellman_ford (negative weights; status NEGATIVE_CYCLE with cycle) or bfs (fewest edges; length = hops)</td></tr>
+</tbody>
+</table>
+<h2>Statistical models</h2>
+<p>Regression models and time-series statistics after statsmodels 0.14 (pycli sm_ols, sm_glm, sm_arima, sm_tsa_acf, sm_tsa_tools). Model terms are strings: a numeric column x1, an interaction x1:x2, a categorical C(g) or C(g, ref) (treatment coding; the reference defaults to the first sorted level; columns are named g[T.level]; a text column is categorical without C), an expression I(x1^2) (pycli expression grammar over the numeric columns and $ scalar bindings), raw powers poly(x, 3) (named x, x^2, x^3), 1/const to place the intercept and 0/-1 to drop it. Results keep pycli's field names; undefined uncertainty (rank deficiency, no residual degrees of freedom) is NaN. Common options of ols/glm: cov_type (nonrobust, HC0-HC3, cluster with groups), use_t, alpha (interval level 1-alpha), na_action (error or drop), include (StrVec: fitted, residuals), intercept (bool).</p>
+<h3>Statistical models: functions</h3>
+<table>
+<thead>
+<tr><th>Signature</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>acf(Vec, int) -> Res</td><td>sample autocorrelation at lags 0..nlags (pycli sm_tsa_acf kind acf; statsmodels acf, divide by n): n, lags, values, ci_lower, ci_upper (Bartlett, 95%), status</td></tr>
+<tr><td>acf(Vec, int, Opts) -> Res</td><td>acf with options: adjusted (divide by n - k), alpha, qstat (adds Ljung-Box qstat and pvalues for lags 1..nlags), fft (accepted; sums are direct)</td></tr>
+<tr><td>adfuller(Vec) -> Res</td><td>augmented Dickey-Fuller unit-root test (pycli sm_tsa_tools adfuller; constant, AIC lag choice): statistic, p_value (MacKinnon), used_lag, nobs, critical_values {1%, 5%, 10%}, icbest, maxlag</td></tr>
+<tr><td>adfuller(Vec, Opts) -> Res</td><td>adfuller with options: regression (c, ct, ctt, n), maxlag (int; default ceil(12 (n/100)^(1/4)) clipped), autolag (AIC, BIC, t-stat, none)</td></tr>
+<tr><td>arima(Vec, int, int, int) -> Res</td><td>ARIMA(p, d, q) by exact maximum likelihood (pycli sm_arima; statsmodels SARIMAX state space): coefficients {names, estimate, std_err (opg), statistic, p_value, ci_lower, ci_upper}, params, param_names, bse, sigma2, llf, aic, bic, hqic, nobs_effective, residuals, converged, status (NaN = missing)</td></tr>
+<tr><td>arima(Vec, int, int, int, Opts) -> Res</td><td>ARIMA with options: trend (n, c, t, ct; c is the regression intercept), seasonal_order (Vec [P, D, Q, s]), exog (Mat), exog_names, exog_future (Mat), forecast_steps (adds forecast {mean, lower, upper}), alpha, cov_type (opg, oim, approx, none), method (lbfgs/bfgs), maxiter (200), start_params (Vec, statsmodels order), enforce_stationarity, enforce_invertibility</td></tr>
+<tr><td>glm(Frame, string, StrVec, string) -> Res</td><td>GLM by IRLS (pycli sm_glm) with family gaussian, poisson, binomial, gamma, inverse_gaussian or negative_binomial and its default link: coefficients, deviance, null_deviance, pearson_chi2, scale, llf, aic, bic, df_model, df_resid, converged, n_iter, status</td></tr>
+<tr><td>glm(Frame, string, StrVec, string, Opts) -> Res</td><td>GLM with options: link, offset / exposure (columns; exposure needs the log link), var_weights (alias weights), freq_weights, nb_alpha (negative binomial dispersion, default 1), maxiter (100), tol (1e-8, absolute deviance change), cov_type, groups, use_t, alpha, na_action, include, intercept</td></tr>
+<tr><td>glm(Frame, string, string, string) -> Res</td><td>GLM with a +-joined right-hand side: glm(f, "count", "C(group)", "poisson")</td></tr>
+<tr><td>glm(Frame, string, string, string, Opts) -> Res</td><td>GLM with a +-joined right-hand side and options</td></tr>
+<tr><td>kpss(Vec) -> Res</td><td>KPSS stationarity test (pycli sm_tsa_tools kpss; level, automatic lags): statistic, p_value (table interpolation), p_value_bounded none/above/below, lags, critical_values {10%, 5%, 2.5%, 1%}</td></tr>
+<tr><td>kpss(Vec, Opts) -> Res</td><td>kpss with options: regression (c or ct), nlags ("auto", "legacy" or an int)</td></tr>
+<tr><td>ljung_box(Vec, int) -> Res</td><td>Ljung-Box test of no autocorrelation for lags 1..m (pycli sm_tsa_tools ljung_box): lags, statistic, p_value, model_df</td></tr>
+<tr><td>ljung_box(Vec, int, Opts) -> Res</td><td>ljung_box with options: model_df (fitted ARMA parameters; lags model_df+1..m are tested against chi2(lag - model_df)), boxpierce (adds bp_statistic, bp_p_value)</td></tr>
+<tr><td>ljung_box(Vec, Vec) -> Res</td><td>ljung_box at an explicit strictly increasing list of lags</td></tr>
+<tr><td>ljung_box(Vec, Vec, Opts) -> Res</td><td>ljung_box at explicit lags with options (model_df, boxpierce)</td></tr>
+<tr><td>ols(Frame, string, StrVec) -> Res</td><td>OLS of column y on the terms (pycli sm_ols): coefficients {names, estimate, std_err, statistic, p_value, ci_lower, ci_upper}, n_obs, r2, r2_adj, sigma, f_statistic, f_p_value, llf, aic, bic, ssr, df_model, df_resid, rank, condition_number, durbin_watson, jarque_bera, omnibus, skew, kurtosis, coding, status</td></tr>
+<tr><td>ols(Frame, string, StrVec, Opts) -> Res</td><td>OLS/WLS with options: weights (column: WLS), cov_type, groups (cluster column), use_t, alpha, na_action, include, intercept</td></tr>
+<tr><td>ols(Frame, string, string) -> Res</td><td>OLS with the terms written as one right-hand side joined by +: ols(f, "y", "x1 + x2 + C(g, a) + x1:x2")</td></tr>
+<tr><td>ols(Frame, string, string, Opts) -> Res</td><td>OLS/WLS with a +-joined right-hand side and options</td></tr>
+<tr><td>pacf(Vec, int) -> Res</td><td>partial autocorrelation at lags 0..nlags by Yule-Walker with n denominator (pycli sm_tsa_acf kind pacf, method ywm = R's pacf): values, ci_lower, ci_upper (+-z/sqrt(n))</td></tr>
+<tr><td>pacf(Vec, int, Opts) -> Res</td><td>pacf with options: method (ywm, ywadjusted, ols, ols-inefficient, ols-adjusted, ldadjusted, ldb), alpha; nlags &lt; n/2</td></tr>
+</tbody>
+</table>
+<h2>Machine learning</h2>
+<p>scikit-learn 1.7.2 subset (pycli ml_fit, ml_predict, ml_cv, ml_metrics). ml_fit(kind, x, y) fits a supervised Estimator (kinds linear, ridge, lasso, elastic_net, logistic, linear_svc, gaussian_nb, lda, knn_classifier, knn_regressor; classes are the sorted distinct y values) and ml_fit(kind, x) an unsupervised one (kmeans, pca, standard_scaler). Hyperparameters use pycli's ml-spec names and defaults (alpha, l1_ratio, C, tol, max_iter, class_weight, var_smoothing, n_components, n_neighbors, weights, n_clusters, n_init, init, seed, whiten, fit_intercept) plus scale (pycli preprocess.scale). Estimator status is OK, RANK_DEFICIENT (linear) or NO_CONVERGENCE. Random forests and gradient boosting are not supported. k-means and shuffled CV draw from numpy's RandomState(seed) (MT19937), as sklearn does.</p>
+<h3>Machine learning: functions</h3>
+<table>
+<thead>
+<tr><th>Signature</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>adjusted_rand_score(Vec, Vec) -> float</td><td>adjusted Rand index of two labelings (sklearn.metrics.adjusted_rand_score; 1 = same partition)</td></tr>
+<tr><td>kmeans(Mat, int) -> Estimator</td><td>k-means with k clusters (sklearn KMeans, Lloyd, k-means++, n_init 10, seed 0)</td></tr>
+<tr><td>kmeans(Mat, int, Opts) -> Estimator</td><td>k-means with options seed, n_init, max_iter, tol, init</td></tr>
+<tr><td>label_encode(StrVec) -> Res</td><td>text labels to codes (sklearn LabelEncoder): fields codes (Vec, 0-based index into classes), classes (sorted StrVec)</td></tr>
+<tr><td>load_model(string) -> Estimator</td><td>read a model written by Estimator.save (JSON, format lmpy_model 1)</td></tr>
+<tr><td>ml_cv(string, Mat, Vec, int) -> Res</td><td>k-fold cross-validation (pycli ml_cv): stratified for classifiers (accuracy), kfold for regressors (r2), no shuffle</td></tr>
+<tr><td>ml_cv(string, Mat, Vec, int, Opts) -> Res</td><td>cross-validation with options cv (kfold|stratified|group|timeseries), shuffle, seed, groups (Vec), metrics (StrVec: accuracy, f1_macro, roc_auc, log_loss | mse, mae, r2), scoring, and the kind's hyperparameters and scale. Result: status, scores, mean, std (scoring metric), metric_scores/metric_mean/metric_std (per metric), train_rows, test_rows, test_fold, completed_folds</td></tr>
+<tr><td>ml_fit(string, Mat, Vec) -> Estimator</td><td>fit a supervised model (pycli ml_fit): kind, features x (rows x p), target y (class labels or values)</td></tr>
+<tr><td>ml_fit(string, Mat, Vec, Opts) -> Estimator</td><td>fit a supervised model with hyperparameters and scale (standardise features first; learned from the training rows)</td></tr>
+<tr><td>ml_fit(string, Mat) -> Estimator</td><td>fit an unsupervised model: kmeans (2 clusters), pca (2 components) or standard_scaler</td></tr>
+<tr><td>ml_fit(string, Mat, Opts) -> Estimator</td><td>fit an unsupervised model with options: kmeans n_clusters, n_init (10), max_iter (300), tol (1e-8), init (k-means++|random), seed (0); pca n_components, whiten</td></tr>
+<tr><td>ml_metrics(Vec, Vec) -> Res</td><td>metrics of predictions (pycli ml_metrics): classification (integral labels, &lt;= 30) gives accuracy, balanced_accuracy, precision, recall, f1, confusion_matrix, labels; otherwise r2, mse, rmse, mae. status OK or UNDEFINED (see undefined)</td></tr>
+<tr><td>ml_metrics(Vec, Vec, Opts) -> Res</td><td>metrics with options metrics (StrVec), kind (auto|classification|regression), average (binary|macro|micro|weighted), pos_label, zero_division (undefined|0|1), y_score (Vec: roc_auc, log_loss, brier)</td></tr>
+<tr><td>ml_metrics(Vec, Opts) -> Res</td><td>metrics from y_true and options only (y_pred and/or y_score given as options)</td></tr>
+</tbody>
+</table>
+<h3>Type Estimator</h3>
+<p>A fitted scikit-learn-style model: predict, predict_proba, decision_function, transform, score, params, save.</p>
+<table>
+<thead>
+<tr><th>Method</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>centers() -> Mat</td><td>k-means cluster centres (one row per cluster)</td></tr>
+<tr><td>classes() -> Vec</td><td>sorted class labels (classifiers)</td></tr>
+<tr><td>coef() -> Mat</td><td>coefficients as a matrix: one row per decision function (regressors and binary classifiers: 1 row)</td></tr>
+<tr><td>decision_function(Mat) -> Mat</td><td>decision scores (logistic, linear_svc, lda); binary models give one column, positive for classes()[1]</td></tr>
+<tr><td>inertia() -> float</td><td>k-means within-cluster sum of squared distances</td></tr>
+<tr><td>intercept() -> Vec</td><td>intercepts, one per decision function (regressors: one value)</td></tr>
+<tr><td>json() -> string</td><td>the model file text (JSON)</td></tr>
+<tr><td>kind() -> string</td><td>the family (linear, logistic, kmeans, ...)</td></tr>
+<tr><td>labels() -> Vec</td><td>k-means cluster index of every training row</td></tr>
+<tr><td>n_iter() -> int</td><td>iterations used (lasso/elastic_net epochs, logistic/linear_svc Newton steps, k-means Lloyd iterations of the best run)</td></tr>
+<tr><td>ok() -> bool</td><td>status is OK</td></tr>
+<tr><td>params() -> Res</td><td>fitted attributes (sklearn names without the trailing underscore): coef, intercept, classes, rank, theta, var, means, priors, scalings, cluster_centers, inertia, labels, components, mean, explained_variance(_ratio), singular_values, scale, n_iter ...</td></tr>
+<tr><td>predict(Mat) -> Vec</td><td>predictions: class labels, regression values or cluster indexes (pycli ml_predict kind predict)</td></tr>
+<tr><td>predict_proba(Mat) -> Mat</td><td>class probabilities, one column per class in classes() order (logistic, gaussian_nb, lda, knn_classifier)</td></tr>
+<tr><td>save(string) -> void</td><td>write the model as JSON (atomic replace); load_model reads it back with identical predictions</td></tr>
+<tr><td>score(Mat, Vec) -> float</td><td>accuracy (classifiers) or R^2 (regressors) on x, y</td></tr>
+<tr><td>status() -> string</td><td>OK, RANK_DEFICIENT (linear: minimum-norm solution kept) or NO_CONVERGENCE</td></tr>
+<tr><td>task() -> string</td><td>regression, classification, clustering, decomposition or scaling</td></tr>
+<tr><td>transform(Mat) -> Mat</td><td>standard_scaler: standardised x; pca: component scores; lda: discriminant axes; kmeans: distances to the centres</td></tr>
+</tbody>
+</table>
+<h2 id="expressions">Expression grammar</h2>
+<p>Objectives, models, right-hand sides, filters and mutations are expression strings parsed by the host's closed grammar, defined in expr-spec.json in the repository. They are not LMScript and cannot call host functions.</p>
+<table>
+<thead>
+<tr><th>Item</th><th>Values</th></tr>
+</thead>
+<tbody>
+<tr><td>Operators</td><td>+ - * / ^ &lt; &lt;= > >= == != &amp; |</td></tr>
+<tr><td>Precedence, lowest to highest</td><td>|; &amp;; &lt; &lt;= > >= == !=; + -; * /; unary -; ^</td></tr>
+<tr><td>Constants</td><td>pi, e</td></tr>
+<tr><td>Functions of one argument</td><td>exp, log, log1p, expm1, log2, log10, sqrt, abs, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, floor, ceiling, trunc, round, sign, gamma, lgamma, digamma, pnorm, dnorm, qnorm, plogis</td></tr>
+<tr><td>Functions of two arguments</td><td>atan2, pmin, pmax, beta, lbeta, choose, lchoose</td></tr>
+<tr><td>Functions of three arguments</td><td>ifelse</td></tr>
+<tr><td>Reducers over a data vector</td><td>sum, mean, prod, min, max</td></tr>
+<tr><td>Reserved names</td><td>list</td></tr>
+<tr><td>Bindings</td><td>Option keys that start with $ bind a scalar or a data vector for the expressions of that operation; a bound vector x is read as x[i] or through a reducer.</td></tr>
+</tbody>
+</table>
+<h2 id="std">Standard catalog lmcode_std_v3 as shipped</h2>
+<p>lmpy 0.1.46 vendors the lmcode-cpp runtime at the commit pinned in native/sdk.lock. Its standard catalog is named lmcode_std_v3 and has 206 canonical signatures: 83 function signatures and 123 methods on 16 types. The runtime installs them and lmscript declares them, so they are callable in every lmpy block although the lmpy schema lists only host members. The tables below are read from the vendored native/cpp/std/lmcode-std.schema.json.</p>
+<h3>Strings</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Signatures</th></tr>
+</thead>
+<tbody>
+<tr><td>str_contains</td><td>str_contains(string, string) -> bool</td></tr>
+<tr><td>str_ends_with</td><td>str_ends_with(string, string) -> bool</td></tr>
+<tr><td>str_find</td><td>str_find(string, string) -> int</td></tr>
+<tr><td>str_is_float</td><td>str_is_float(string) -> bool</td></tr>
+<tr><td>str_is_int</td><td>str_is_int(string) -> bool</td></tr>
+<tr><td>str_len</td><td>str_len(string) -> int</td></tr>
+<tr><td>str_lower</td><td>str_lower(string) -> string</td></tr>
+<tr><td>str_match</td><td>str_match(string, string) -> bool</td></tr>
+<tr><td>str_repeat</td><td>str_repeat(string, int) -> string</td></tr>
+<tr><td>str_replace</td><td>str_replace(string, string, string) -> string</td></tr>
+<tr><td>str_split</td><td>str_split(string, string) -> StrList</td></tr>
+<tr><td>str_starts_with</td><td>str_starts_with(string, string) -> bool</td></tr>
+<tr><td>str_substr</td><td>str_substr(string, int, int) -> string</td></tr>
+<tr><td>str_to_float</td><td>str_to_float(string) -> float</td></tr>
+<tr><td>str_to_int</td><td>str_to_int(string) -> int</td></tr>
+<tr><td>str_trim</td><td>str_trim(string) -> string</td></tr>
+<tr><td>str_upper</td><td>str_upper(string) -> string</td></tr>
+</tbody>
+</table>
+<h3>Encoding and templates</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Signatures</th></tr>
+</thead>
+<tbody>
+<tr><td>str_base64_decode</td><td>str_base64_decode(string) -> string</td></tr>
+<tr><td>str_base64_encode</td><td>str_base64_encode(string) -> string</td></tr>
+<tr><td>str_hex_decode</td><td>str_hex_decode(string) -> string</td></tr>
+<tr><td>str_hex_encode</td><td>str_hex_encode(string) -> string</td></tr>
+<tr><td>template_render</td><td>template_render(string, Json) -> string</td></tr>
+</tbody>
+</table>
+<h3>Math</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Signatures</th></tr>
+</thead>
+<tbody>
+<tr><td>math_abs</td><td>math_abs(int) -> int; math_abs(float) -> float</td></tr>
+<tr><td>math_ceil</td><td>math_ceil(int) -> int; math_ceil(float) -> float</td></tr>
+<tr><td>math_floor</td><td>math_floor(int) -> int; math_floor(float) -> float</td></tr>
+<tr><td>math_max</td><td>math_max(int, int) -> int; math_max(float, float) -> float</td></tr>
+<tr><td>math_min</td><td>math_min(int, int) -> int; math_min(float, float) -> float</td></tr>
+<tr><td>math_pow</td><td>math_pow(int, int) -> int; math_pow(float, float) -> float</td></tr>
+<tr><td>math_round</td><td>math_round(int) -> int; math_round(float) -> float</td></tr>
+<tr><td>math_sqrt</td><td>math_sqrt(int) -> int; math_sqrt(float) -> float</td></tr>
+</tbody>
+</table>
+<h3>Files</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Signatures</th></tr>
+</thead>
+<tbody>
+<tr><td>file_append</td><td>file_append(string, string) -> void</td></tr>
+<tr><td>file_exists</td><td>file_exists(string) -> bool</td></tr>
+<tr><td>file_lines</td><td>file_lines(string) -> StrList</td></tr>
+<tr><td>file_read</td><td>file_read(string) -> string</td></tr>
+<tr><td>file_write</td><td>file_write(string, string) -> void</td></tr>
+</tbody>
+</table>
+<h3>Collection constructors and JSON</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Signatures</th></tr>
+</thead>
+<tbody>
+<tr><td>float_list</td><td>float_list() -> FloatList</td></tr>
+<tr><td>float_map</td><td>float_map() -> FloatMap</td></tr>
+<tr><td>float_pq</td><td>float_pq() -> FloatPQ</td></tr>
+<tr><td>float_queue</td><td>float_queue() -> FloatQueue</td></tr>
+<tr><td>float_stack</td><td>float_stack() -> FloatStack</td></tr>
+<tr><td>int_list</td><td>int_list() -> IntList</td></tr>
+<tr><td>int_map</td><td>int_map() -> IntMap</td></tr>
+<tr><td>int_pq</td><td>int_pq() -> IntPQ</td></tr>
+<tr><td>int_queue</td><td>int_queue() -> IntQueue</td></tr>
+<tr><td>int_stack</td><td>int_stack() -> IntStack</td></tr>
+<tr><td>json_parse</td><td>json_parse(string) -> Json</td></tr>
+<tr><td>str_list</td><td>str_list() -> StrList</td></tr>
+<tr><td>str_map</td><td>str_map() -> StrMap</td></tr>
+<tr><td>str_pq</td><td>str_pq() -> StrPQ</td></tr>
+<tr><td>str_queue</td><td>str_queue() -> StrQueue</td></tr>
+<tr><td>str_stack</td><td>str_stack() -> StrStack</td></tr>
+</tbody>
+</table>
+<h3>Result helpers</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Signatures</th></tr>
+</thead>
+<tbody>
+<tr><td>lmcode_return_null</td><td>lmcode_return_null() -> void</td></tr>
+<tr><td>lmcode_return_put</td><td>lmcode_return_put(string, bool) -> void; lmcode_return_put(string, float) -> void; lmcode_return_put(string, FloatList) -> void; lmcode_return_put(string, FloatMap) -> void; lmcode_return_put(string, int) -> void; lmcode_return_put(string, IntList) -> void; lmcode_return_put(string, IntMap) -> void; lmcode_return_put(string, Json) -> void; lmcode_return_put(string, StrList) -> void; lmcode_return_put(string, StrMap) -> void; lmcode_return_put(string, string) -> void</td></tr>
+<tr><td>lmcode_return_put_null</td><td>lmcode_return_put_null(string) -> void</td></tr>
+<tr><td>lmcode_return_set</td><td>lmcode_return_set(bool) -> void; lmcode_return_set(float) -> void; lmcode_return_set(FloatList) -> void; lmcode_return_set(FloatMap) -> void; lmcode_return_set(int) -> void; lmcode_return_set(IntList) -> void; lmcode_return_set(IntMap) -> void; lmcode_return_set(Json) -> void; lmcode_return_set(StrList) -> void; lmcode_return_set(StrMap) -> void; lmcode_return_set(string) -> void</td></tr>
+</tbody>
+</table>
+<h3>Standard types and methods</h3>
+<table>
+<thead>
+<tr><th>Type</th><th>Methods</th></tr>
+</thead>
+<tbody>
+<tr><td>FloatList</td><td>add(float) -> FloatList; at(int) -> float; clear() -> FloatList; contains(float) -> bool; index_of(float) -> int; len() -> int; set(int, float) -> FloatList</td></tr>
+<tr><td>FloatMap</td><td>len() -> int; has(string) -> bool; get(string) -> float; get_or(string, float) -> float; set(string, float) -> FloatMap; key_at(int) -> string; remove(string) -> bool; clear() -> FloatMap; keys() -> StrList; values() -> FloatList</td></tr>
+<tr><td>FloatPQ</td><td>push(float, float) -> FloatPQ; pop() -> float; peek() -> float; len() -> int; empty() -> bool; clear() -> FloatPQ</td></tr>
+<tr><td>FloatQueue</td><td>push(float) -> FloatQueue; pop() -> float; peek() -> float; len() -> int; empty() -> bool; clear() -> FloatQueue; at(int) -> float</td></tr>
+<tr><td>FloatStack</td><td>push(float) -> FloatStack; pop() -> float; peek() -> float; len() -> int; empty() -> bool; clear() -> FloatStack; at(int) -> float</td></tr>
+<tr><td>IntList</td><td>add(int) -> IntList; at(int) -> int; clear() -> IntList; contains(int) -> bool; index_of(int) -> int; len() -> int; set(int, int) -> IntList</td></tr>
+<tr><td>IntMap</td><td>len() -> int; has(string) -> bool; get(string) -> int; get_or(string, int) -> int; set(string, int) -> IntMap; key_at(int) -> string; remove(string) -> bool; clear() -> IntMap; keys() -> StrList; values() -> IntList</td></tr>
+<tr><td>IntPQ</td><td>push(int, float) -> IntPQ; pop() -> int; peek() -> int; len() -> int; empty() -> bool; clear() -> IntPQ</td></tr>
+<tr><td>IntQueue</td><td>push(int) -> IntQueue; pop() -> int; peek() -> int; len() -> int; empty() -> bool; clear() -> IntQueue; at(int) -> int</td></tr>
+<tr><td>IntStack</td><td>push(int) -> IntStack; pop() -> int; peek() -> int; len() -> int; empty() -> bool; clear() -> IntStack; at(int) -> int</td></tr>
+<tr><td>Json</td><td>kind() -> string; len() -> int; at(int) -> Json; get(string) -> Json; has(string) -> bool; keys() -> StrList; as_string() -> string; as_int() -> int; as_float() -> float; as_bool() -> bool; to_json() -> string</td></tr>
+<tr><td>StrList</td><td>add(string) -> StrList; at(int) -> string; clear() -> StrList; contains(string) -> bool; index_of(string) -> int; join(string) -> string; len() -> int; set(int, string) -> StrList</td></tr>
+<tr><td>StrMap</td><td>clear() -> StrMap; get(string) -> string; get_or(string, string) -> string; has(string) -> bool; key_at(int) -> string; len() -> int; remove(string) -> bool; set(string, string) -> StrMap; keys() -> StrList; values() -> StrList</td></tr>
+<tr><td>StrPQ</td><td>push(string, float) -> StrPQ; pop() -> string; peek() -> string; len() -> int; empty() -> bool; clear() -> StrPQ</td></tr>
+<tr><td>StrQueue</td><td>push(string) -> StrQueue; pop() -> string; peek() -> string; len() -> int; empty() -> bool; clear() -> StrQueue; at(int) -> string</td></tr>
+<tr><td>StrStack</td><td>push(string) -> StrStack; pop() -> string; peek() -> string; len() -> int; empty() -> bool; clear() -> StrStack; at(int) -> string</td></tr>
+</tbody>
+</table>
+<h2 id="std-rest">Standard REST and CLI interfaces</h2>
+<p>The current lmcode_std_v3 catalog in lmcode-cpp has 226 canonical signatures. The 20 additional signatures are the former lmcode_std_rest_v1 module: five functions and 15 RestExchange methods, together with 10 standard interfaces. lmpy 0.1.46 does not ship them: its vendored catalog is the 206-signature one above, and lmpy --lmcode-signatures lists no rest_ function and no RestExchange method. lmpy picks them up when it syncs the lmcode-cpp runtime and publishes a release. They are listed here so a program can be planned against the catalog; do not call them in a block that targets lmpy 0.1.46.</p>
+<h3>Interfaces</h3>
+<table>
+<thead>
+<tr><th>Interface</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>CliCommand</td><td>(exchange: RestExchange) -> void</td></tr>
+<tr><td>CliOption</td><td>(exchange: RestExchange) -> void</td></tr>
+<tr><td>RestDelete</td><td>(exchange: RestExchange) -> void</td></tr>
+<tr><td>RestGet</td><td>(exchange: RestExchange) -> void</td></tr>
+<tr><td>RestHandler</td><td>(exchange: RestExchange) -> void</td></tr>
+<tr><td>RestHead</td><td>(exchange: RestExchange) -> void</td></tr>
+<tr><td>RestOptions</td><td>(exchange: RestExchange) -> void</td></tr>
+<tr><td>RestPatch</td><td>(exchange: RestExchange) -> void</td></tr>
+<tr><td>RestPost</td><td>(exchange: RestExchange) -> void</td></tr>
+<tr><td>RestPut</td><td>(exchange: RestExchange) -> void</td></tr>
+</tbody>
+</table>
+<h3>Functions</h3>
+<table>
+<thead>
+<tr><th>Function</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>rest_config</td><td>rest_config(string, string) -> void</td></tr>
+<tr><td>rest_route</td><td>rest_route(string, string, string) -> void</td></tr>
+<tr><td>rest_serve</td><td>rest_serve() -> void</td></tr>
+<tr><td>rest_stop</td><td>rest_stop() -> void</td></tr>
+<tr><td>rest_cli</td><td>rest_cli(StrList) -> string</td></tr>
+</tbody>
+</table>
+<p>Route templates accept {param} and {rest...} placeholders as well as :param and :rest... placeholders.</p>
+<h3>RestExchange methods</h3>
+<table>
+<thead>
+<tr><th>Method</th><th>Signature</th></tr>
+</thead>
+<tbody>
+<tr><td>method</td><td>method() -> string</td></tr>
+<tr><td>path</td><td>path() -> string</td></tr>
+<tr><td>query</td><td>query(string) -> string</td></tr>
+<tr><td>has_query</td><td>has_query(string) -> bool</td></tr>
+<tr><td>param</td><td>param(string) -> string</td></tr>
+<tr><td>header</td><td>header(string) -> string</td></tr>
+<tr><td>has_header</td><td>has_header(string) -> bool</td></tr>
+<tr><td>body</td><td>body() -> string</td></tr>
+<tr><td>status</td><td>status(int) -> void</td></tr>
+<tr><td>set_header</td><td>set_header(string, string) -> void</td></tr>
+<tr><td>send</td><td>send(string) -> void</td></tr>
+<tr><td>json</td><td>json(string) -> void</td></tr>
+<tr><td>get</td><td>get(string) -> string</td></tr>
+<tr><td>set</td><td>set(string, string) -> void</td></tr>
+<tr><td>increment</td><td>increment(string) -> int</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmpy">github.com/lmctl-ai/lmpy</a>.</p>
+</footer>
+</body>
+</html>

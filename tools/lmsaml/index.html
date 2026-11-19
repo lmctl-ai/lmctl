@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmsaml — lmctl.com tools</title>
+<meta name="description" content="lmsaml is a single-binary SAML 2.0 Identity Provider, Service Provider, REST API server, and LMScript host built in pure Go.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmsaml/">Overview</a></li>
+<li><a href="/tools/lmsaml/skill.html">Skill</a></li>
+<li><a href="/tools/lmsaml/guide.html">Guide</a></li>
+<li><a href="/tools/lmsaml/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmsaml</h1>
+<p>lmsaml is a single-binary SAML 2.0 Identity Provider, Service Provider, REST API server, and LMScript host built in pure Go. It generates RSA-2048 X.509 certificates, serves SAML 2.0 SSO/SLO and metadata endpoints, signs and verifies XML assertions, and runs _lmcode_ scripts.</p>
+<h2>Quick reference</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl@latest
+lmsaml --version
+lmsaml --lmcode-schema --json
+lmsaml --lmcode-signatures</code></pre>
+<table>
+<thead><tr><th>Interface or flag</th><th>Signature or syntax</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>CLI SAML 2.0 server</td><td>lmsaml [--port 8080] [--rest-port 8081] [--host 127.0.0.1] [--require-auth]</td><td>Start the turnkey SAML 2.0 Identity Provider, built-in Service Provider, and JSON REST API.</td></tr>
+<tr><td>CLI host bytecode</td><td>lmsaml [--dry-run] --lmcode prog.dslb</td><td>Execute or dry-validate compiled LMScript bytecode against the embedded lmsaml schema.</td></tr>
+<tr><td>CLI schema and signatures</td><td>lmsaml --lmcode-schema [--json] | --lmcode-signatures</td><td>Print the embedded schema JSON or all canonical host and lmcode_std_v3 signatures.</td></tr>
+<tr><td>SAML 2.0 IdP &amp; SP routes</td><td>GET /idp/metadata | GET|POST /idp/sso | GET /sp/metadata | POST /sp/acs | GET /sp/hello</td><td>Serve IdP and SP EntityDescriptor XML, Single Sign-On, Assertion Consumer Service, and SP-initiated AuthnRequest redirects.</td></tr>
+<tr><td>REST directory &amp; assertions</td><td>/ping | /users/{id} | /services/{id} | POST /authn | POST /assertion | POST /verify</td><td>Manage bcrypt users and SP metadata, authenticate credentials, and issue or verify RSA-SHA256 signed SAML 2.0 responses.</td></tr>
+<tr><td>context saml: Saml (directory)</td><td>saml.ping() | saml.metadata() | saml.sp_metadata() | saml.add_user() | saml.authenticate()</td><td>Query IdP/SP metadata, provision and list users, and verify user passwords from LMScript.</td></tr>
+<tr><td>Saml (assertions)</td><td>saml.issue_assertion(user, audience) | saml.verify_assertion(xml_or_b64)</td><td>Issue RSA-SHA256 + Exclusive C14N signed SAML 2.0 assertions and cryptographically verify signatures and claims.</td></tr>
+<tr><td>Batch pipeline</td><td>saml.batch().ping().add_user(u, json).get_user(u).exec() -> string</td><td>Queue multiple SAML directory and assertion operations and execute them as a single JSON array batch.</td></tr>
+<tr><td>Standard REST and CLI</td><td>RestGet..RestOptions, RestHandler, CliCommand, CliOption</td><td>Expose _lmcode_ functions as HTTP routes (:param) or stateless CLI flags and commands via rest_serve and rest_cli.</td></tr>
+</tbody>
+</table>
+<pre><code>p = _lmcode_ cli="lmsaml" install="github:lmctl-ai/lmsaml@latest";
+assert_eq(saml.ping(), "PONG");
+assert_eq(saml.add_user("alice", "{\"email\":\"alice@example.com\",\"password\":\"secret123\"}"), true);
+assert_eq(saml.authenticate("alice", "secret123"), true);
+
+let issued = json_parse(saml.issue_assertion("alice", ""));
+let verified = json_parse(saml.verify_assertion(issued.get("saml_response_b64").as_string()));
+assert_eq(verified.get("valid").as_bool(), true);
+
+@"/sso-user/:name"
+fn get_sso_user(x: RestExchange) -> void implements RestGet {
+  x.json(saml.get_user(x.param("name")));
+}
+assert(str_contains(rest_cli(str_split("/sso-user/alice", " ")), "alice@example.com"));
+end _lmcode_
+res = run_lmcode(p);
+require(res.ok, json_stringify(res));</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmsaml/skill.html">Skill</a> — agent authoring rules, server and CLI commands, XML-DSig security rules, exit codes, and verification steps.</li>
+<li><a href="/tools/lmsaml/guide.html">Guide</a> — SAML 2.0 IdP/SP architecture, XML-DSig and XML-Enc security hardening, REST API and Batch execution, and standard REST and CLI interfaces.</li>
+<li><a href="/tools/lmsaml/reference.html">Reference</a> — complete CLI flags, HTTP endpoints, Saml and Batch host methods, standard lmcode_std_v3 interfaces, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmsaml">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmsaml">github.com/lmctl-ai/lmsaml</a>.</p>
+</footer>
+</body>
+</html>

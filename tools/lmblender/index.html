@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>lmblender — lmctl.com tools</title>
-<meta name="description" content="lmblender runs lmscript scene descriptions through a standalone CPU renderer based on Blender's Cycles engine.">
+<meta name="description" content="lmblender is Blender's Cycles path tracer as one static executable, driven by short lmscript scenes: no Blender install, no Python, no GPU.">
 <link rel="stylesheet" href="/tools/style.css">
 
 </head>
@@ -19,26 +19,105 @@
 <li><a href="/tools/lmblender/tutorial.html">Tutorial</a></li>
 <li><a href="/tools/lmblender/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmblender/guide.html">Guide</a></li>
+<li><a href="/tools/lmblender/reference.html">Reference</a></li>
 <li><a href="/tools/lmblender/examples/">Examples</a></li>
 </ul>
 </nav>
 <main><h1>lmblender</h1>
 <figure><img src="/tools/lmblender/img/logo.png" alt="lmblender logo: a ringed planet rendered with CPU Cycles" width="256" height="256"><figcaption>A compact scene rendered with lmblender v0.3.6.</figcaption></figure>
-<h2>Overview</h2>
-<p>lmblender runs lmscript scene descriptions through a standalone CPU renderer based on Blender's Cycles engine. It builds the scene directly in C++; it does not launch Blender or execute Python. Render still images, image sequences and APNG animations, inspect mesh properties, and export common mesh formats.</p>
-<p>The book pins lmblender v0.3.6, which includes the rendering fixes described in the current release notes. Linux arm64 preview renders on this page were produced with the v0.3.6 release binary on an AWS Graviton2 host. Denoising was enabled; the SVE denoiser crash in v0.3.4 and earlier is fixed in this release.</p>
+<p>lmblender is Blender's Cycles path tracer as one static executable, driven by short lmscript scenes: no Blender install, no Python, no GPU. A program builds a scene through the scene context object and renders PNG, EXR, image sequences or APNG on the CPU.</p>
+<h2 id="install">Install and run</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmblender/main/examples/cornell-box.lms
+lmscript hello.lms</code></pre>
+<p>The first run fetches the lmblender release for the platform (Linux x64/arm64, macOS x64/arm64, Windows x64) named by install= on the block. The current release is 0.3.6.</p>
+<h2 id="example">Minimal program</h2>
+<pre><code>mkdir("images");
+prog = _lmcode_ cli="lmblender" install="github:lmctl-ai/lmblender@latest";
+let ball = scene.uv_sphere(1.0, 48, 32, true);
+ball.set_material(scene.material(0.1, 0.3, 0.8, 0.0, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0));
+scene.studio_setup();
+scene.render_png("images/hello.png", 32, 640, 480);
+end _lmcode_
+r = run_lmcode(prog);
+if (!r.ok) { println("lmblender failed"); exit(1); }
+println("wrote images/hello.png");</code></pre>
+<p>Output directories must exist before the host runs. For renders that take minutes, save the bytecode and call the host with an explicit timeout in milliseconds, as the repository examples do:</p>
+<pre><code>savedsl(prog, "build/scene.dslb");
+argv = dsl_cli(prog);
+push(argv, "--lmcode");
+push(argv, "build/scene.dslb");
+r = system(argv, 3600000);
+println(trim(r.stdout));
+if (r.code != 0) { println(trim(f"lmblender exit {r.code}: {r.stderr}")); exit(1); }</code></pre>
+<h2 id="cli">Host protocol and flags</h2>
+<table>
+<thead>
+<tr><th>Command</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td>lmblender --version</td><td>Prints lmblender version with the DSL bytecode version, the Cycles version and the OpenImageDenoise version (or that it is disabled). Exit 0.</td></tr>
+<tr><td>lmblender --lmcode-schema</td><td>Prints a compact summary: context and function signatures, then methods grouped by type.</td></tr>
+<tr><td>lmblender --lmcode-schema --json</td><td>Prints the embedded schema JSON byte for byte (same bytes as schema/lmblender.dsl.json merged with the vendored std).</td></tr>
+<tr><td>lmblender --schema --json</td><td>Older spelling of the same embedded schema output.</td></tr>
+<tr><td>lmblender --schema</td><td>Embedded schema followed by one newline (kept for compatibility).</td></tr>
+<tr><td>lmblender --lmcode-signatures</td><td>Prints every registered signature, one per line. Exit 0.</td></tr>
+<tr><td>lmblender --lmcode FILE.dslb</td><td>Loads compiled bytecode, binds the scene context object, runs the program and prints one JSON result line.</td></tr>
+<tr><td>lmblender --presets</td><td>Lists embedded scene presets as name, tab, description.</td></tr>
+<tr><td>lmblender --preset-show NAME</td><td>Prints one embedded preset as JSON; exit 2 when the name is unknown.</td></tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr><th>Exit code</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>Success. The run prints a JSON line with ok true and a result.</td></tr>
+<tr><td>2</td><td>Usage error (wrong arguments) or unknown preset name for --preset-show. Compile failures reported by lmscript also use 2.</td></tr>
+<tr><td>3</td><td>Load or run error: JSON line with ok false, phase load or run, code, message and line/column when available.</td></tr>
+<tr><td>4</td><td>APP_FAIL (phase app, an unexpected host failure), or a failed write of the schema to stdout.</td></tr>
+</tbody>
+</table>
+<h2 id="api">Host objects and main calls</h2>
+<p>The host binds one context object, scene, of type Scene (69 methods). Mesh (18 methods) and Material (9 methods) are handles. Coordinates are right-handed and Z-up, distances are scene units, colors are linear floats in 0..1, and every call is positional.</p>
+<table>
+<thead>
+<tr><th>Area</th><th>Signatures</th></tr>
+</thead>
+<tbody>
+<tr><td>Primitives (Scene)</td><td>plane(float) -> Mesh; cube(float) -> Mesh; uv_sphere(float, int, int, bool) -> Mesh; cylinder(float, float, int, bool) -> Mesh; cone(float, float, int, bool) -> Mesh; torus(float, float, int, int, bool) -> Mesh; capsule(float, float, int, int) -> Mesh; tube_between(float, float, float, float, float, float, float) -> Mesh; label(string, float, float, float, float) -> Mesh</td></tr>
+<tr><td>Imports and instances (Scene)</td><td>import_obj(string) -> Mesh; import_stl(string) -> Mesh; import_ply(string) -> Mesh; import_gltf(string) -> Mesh; instance_mesh(Mesh, float, float, float, float, float, float) -> Mesh</td></tr>
+<tr><td>Materials (Scene)</td><td>material(float, float, float, float, float, float, float, float, float, float) -> Material; checker_material(float, float, float, float, float, float, float, float) -> Material; noise_material(float, float, float, float, float, float, float, float) -> Material; ramp_material(float, float, float, float, float, float, float, float) -> Material; image_material(string, float) -> Material; material_from_palette(string) -> Material</td></tr>
+<tr><td>Camera (Scene)</td><td>camera_look_at(float, float, float, float, float, float, float) -> void; camera_orthographic(float, float, float, float, float, float, float) -> void; fit_camera(float) -> void; camera_dof(float, float) -> void; camera_keyframe(int, float, float, float, float, float, float, string) -> void</td></tr>
+<tr><td>Lights and world (Scene)</td><td>studio_setup() -> void; point_light(float, float, float, float, float, float, float) -> void; sun_light(float, float, float, float, float, float, float, float) -> void; spot_light(float, float, float, float, float, float, float, float, float, float, float, float) -> void; area_light(float, float, float, float, float, float, float, float, float, float, float) -> void; world_color(float, float, float, float) -> void; sky_texture(float, float, float) -> void; environment_texture(string, float, float) -> void; ground_plane(float, float, float, float, float) -> void</td></tr>
+<tr><td>Render (Scene)</td><td>render_png(string, int, int, int) -> void; render_exr(string, int, int, int) -> void; render_passes(string, int, int, int) -> void; render_sequence(string, int, int, int, int, int) -> void; render_apng(string, int, int, int, int, int, int) -> void; render_settings(int, int, bool) -> void; render_preset(string) -> void; render_timeout(int) -> void; set_view_transform(string) -> void; set_threads(int) -> void</td></tr>
+<tr><td>Checks (Scene)</td><td>expect_int(int, int) -> void; version() -> string</td></tr>
+<tr><td>Mesh</td><td>set_material(Material) -> void; set_smooth(bool) -> void; translate(float, float, float) -> void; scale(float, float, float) -> void; rotate_x(float) -> void; rotate_y(float) -> void; rotate_z(float) -> void; vertex_count() -> int; triangle_count() -> int; material_count() -> int; keyframe_transform(int, float, float, float, string) -> void; keyframe_visible(int, bool, string) -> void</td></tr>
+<tr><td>Material</td><td>subsurface(float, float, float, float, float) -> void; volume(string, float, float, float, float) -> void; keyframe_color(int, float, float, float, string) -> void; bump(float, float, float) -> void; texture_maps(string, string, string, string) -> void; mix_with(Material, float) -> void; mix_with_texture(Material, string) -> void; backface_culling(bool) -> void; keyframe_emission_strength(int, float, string) -> void</td></tr>
+</tbody>
+</table>
+<p>The standard library vendored by lmblender 0.3.6 is lmcode_std_v3 with 206 signatures (files, strings, math, Json, typed lists, maps, queues, stacks and priority queues). The current catalog has 226 including the REST and CLI interfaces, which lmblender does not ship yet.</p>
+<h2 id="limits">Limits</h2>
 <ul>
-<li><a href="https://github.com/lmctl-ai/lmblender">Source repository</a></li>
-<li><a href="https://github.com/lmctl-ai/lmblender/releases/tag/v0.3.6">v0.3.6 release</a></li>
-<li><a href="/tools/lmblender/tutorial.html">Tutorial</a>: grow one scene from a sphere to imported geometry, animation, and view transforms.</li>
-<li><a href="/tools/lmblender/guide.html">API guide</a>: host setup, core methods, file formats, and limits.</li>
-<li><a href="/tools/lmblender/get_started.html">Quickruns</a>: task scripts for a solo Lead or a Lead, Coder, and Reviewer.</li>
-<li><a href="/tools/lmblender/examples/">Examples</a>: twelve rendered scenes with runnable sources and Blender comparison notes.</li>
+<li>CPU only; point, area, spot and sun lamps are not hit by reflected or refracted rays, so use an emissive mesh when a lamp must appear in a mirror or make a caustic.</li>
+<li>scene.material has no IOR parameter; label text is uppercase letters and spaces only.</li>
+<li>Imports: OBJ/MTL, STL, ASCII PLY and glTF 2.0 triangles.</li>
+<li>Mesh rotation is not animated; keys cover mesh translation and visibility, camera, material colour and emission, and point-light strength.</li>
 </ul>
+<h2 id="gallery">Gallery</h2>
 <figure><img src="/tools/lmblender/examples/img/cornell-box.png" alt="Two white blocks inside a Cornell box with red and green walls" width="240" height="240"><figcaption><a href="/tools/lmblender/examples/cornell-box.html">Cornell box</a>: indirect light carries color from the walls onto the white blocks.</figcaption></figure>
 <figure><img src="/tools/lmblender/examples/img/caustic-ball-lens.png" alt="Glass spheres focus bright caustic patterns onto a floor" width="320" height="198"><figcaption><a href="/tools/lmblender/examples/caustic-ball-lens.html">Ball lens</a>: refracted light makes a focused caustic.</figcaption></figure>
 <figure><img src="/tools/lmblender/examples/img/saturn-rings.png" alt="A ringed planet against a dark background" width="480" height="298"><figcaption><a href="/tools/lmblender/examples/saturn-rings.html">Saturn rings</a>: layer a planet, rings, and directional light.</figcaption></figure>
-<p>Start with <a href="/tools/lmblender/tutorial.html">the first render</a> or ask an agent to build a scene from the <a href="/tools/lmblender/get_started.html">quickrun scripts</a>.</p>
+<h2 id="more">More</h2>
+<ul>
+<li><a href="/tools/lmblender/skill.html">Skill</a>: when and how an agent should use lmblender.</li>
+<li><a href="/tools/lmblender/guide.html">Guide</a>: host setup, core methods, file formats and limits.</li>
+<li><a href="/tools/lmblender/reference.html">Reference</a>: every method, flag, exit code and std signature.</li>
+<li><a href="/tools/lmblender/tutorial.html">Tutorial</a>: grow one scene from a sphere to imported geometry and animation.</li>
+<li><a href="/tools/lmblender/get_started.html">Quickruns</a>: task scripts for a solo Lead or a Lead, Coder and Reviewer.</li>
+<li><a href="/tools/lmblender/examples/">Examples</a>: rendered scenes with runnable sources.</li>
+<li><a href="https://github.com/lmctl-ai/lmblender">github.com/lmctl-ai/lmblender</a></li>
+</ul>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmblender">github.com/lmctl-ai/lmblender</a>.</p>

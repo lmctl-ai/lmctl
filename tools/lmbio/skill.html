@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmbio skill: simulate reaction networks from LMScript — lmbio — lmctl.com tools</title>
+<meta name="description" content="Use this page to write, run and verify an lmbio program.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmbio/">Overview</a></li>
+<li><a href="/tools/lmbio/skill.html">Skill</a></li>
+<li><a href="/tools/lmbio/guide.html">Guide</a></li>
+<li><a href="/tools/lmbio/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmbio skill: simulate reaction networks from LMScript</h1>
+<p>Use this page to write, run and verify an lmbio program. Every fact comes from the lmbio repository at main (version 0.1.3); no command output is reproduced here because the published release could not be run with the current lmscript (see Install).</p>
+<h2 id="purpose">Purpose</h2>
+<p>lmbio models gene circuits, enzymes, drugs, epidemics and molecular noise as reaction networks. It integrates stiff ODEs with CVODE, finds steady states with KINSOL, runs Gillespie SSA with a seed, computes finite-difference sensitivities and reads and writes an SBML subset. Results are matrices that you check with assertions and save as CSV; lmbio draws nothing itself.</p>
+<h2 id="when">When to use it</h2>
+<ul>
+<li>Use it for well-mixed kinetics: mass-action and Hill networks, enzyme mechanisms, pharmacokinetic dosing, SIR-type epidemics, population models and low-copy-number noise.</li>
+<li>Use it when every number must be checked against a known answer (a closed form, a threshold, a conservation law) before anything is drawn.</li>
+<li>Do not use it for models that need events, delays, algebraic rules, dynamic compartments or SBML packages: the host rejects them.</li>
+<li>For charts and diagrams pass the CSV files to lmplot and lmdraw, as the repository examples do.</li>
+</ul>
+<h2 id="install">Install</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmscript --version</code></pre>
+<p>A block that starts with cli="lmbio" install="github:lmctl-ai/lmbio@latest" makes lmscript download the release binary on first use. Linux binaries require dynamic glibc 2.35 or newer (Ubuntu 22.04+). If an unrelated program called lmbio is already on PATH, lmscript picks it first and schema discovery fails; remove it from PATH or put this host first.</p>
+<p>Release status, checked with lmscript 0.2.482: the main branch of the repository (version 0.1.3 in CMakeLists.txt) answers the --lmcode-schema, --lmcode-signatures and --lmcode flags, but the v0.1.3 release binary that install="github:lmctl-ai/lmbio@latest" downloaded on the day this page was written still printed a usage line with the older --dsl-schema, --dsl-signatures and --dsl flags, so current lmscript stopped with a schema host exited 2 error. Until a release built from main is published, build the host from source and put it first on PATH.</p>
+<pre><code>git clone https://github.com/lmctl-ai/lmbio
+cd lmbio
+scripts/sync-deps.sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel 4</code></pre>
+<p>Building requires CMake 3.24+, C++17, git and Python 3.</p>
+<h2 id="commands">Commands</h2>
+<table>
+<thead>
+<tr><th>Command</th><th>Use</th></tr>
+</thead>
+<tbody>
+<tr><td>lmscript FILE.lms</td><td>Compile the block, start the host and return the result envelope to the script</td></tr>
+<tr><td>lmscript --check FILE.lms</td><td>Compile and type-check the block against the lmbio schema without running</td></tr>
+<tr><td>lmctl URL</td><td>Run an example script from a raw GitHub URL in the current folder</td></tr>
+<tr><td>lmbio --version, --notices</td><td>Version and embedded license notices</td></tr>
+<tr><td>lmbio --lmcode-schema --json</td><td>Embedded schema JSON</td></tr>
+<tr><td>lmbio --lmcode-signatures</td><td>Callable signatures as text</td></tr>
+<tr><td>lmbio [--dry-run] --lmcode FILE.dslb ...</td><td>The host protocol that run_lmcode drives; rarely typed by hand</td></tr>
+</tbody>
+</table>
+<p>Inside a block the usual order is: bio.model, compartment, species, param, reactions and rules, optional tol and validate, then simulate, steady_state, ssa or sensitivity, then assertions and save_csv.</p>
+<h2 id="io">Inputs and outputs</h2>
+<ul>
+<li>Input is the block text, plus an SBML file when you call bio.load_sbml.</li>
+<li>Kinetic laws and rules are expression strings. They support arithmetic, powers, scientific notation and common elementary functions such as exp, log, sin, sqrt, min, max and sign.</li>
+<li>Numeric literals in the block itself use decimal notation, and the block language has pow and sqrt but no exp or log: write pow(2.718281828459045, x).</li>
+<li>The block language has no callback values; the model is built only through the builder methods.</li>
+<li>A Result holds the column time, then species in creation order, then parameters in identifier order. Rows are zero-based.</li>
+<li>result.save_csv writes a comma-separated matrix with a header; CSV is the exchange format for other hosts. model.save_sbml writes SBML L3V2 MathML.</li>
+<li>run_lmcode returns a map with ok and result; result holds what the block set with lmcode_return_set or lmcode_return_put.</li>
+</ul>
+<h2 id="safety">Safety rules</h2>
+<ul>
+<li>Always test r.ok after run_lmcode, for example with require(r.ok, "message").</li>
+<li>Simulation does not change initial model values; to continue a run, call set_state with the previous result.</li>
+<li>For SSA use integer counts and unit-volume compartments, and include combinatorics in hand-written propensities or use mass_action.</li>
+<li>A seed reproduces an SSA trajectory byte for byte on the same platform only; across platforms check statistics, not exact paths.</li>
+<li>Units are not converted or checked; state them in comments.</li>
+<li>Memory is capped at 4096 MiB per program by default; raise it deliberately with LMBIO_MAX_MEMORY_MB, since models and results live until the host exits.</li>
+<li>Create output directories in the outer script (mkdir) before saving into them.</li>
+</ul>
+<h2 id="examples">Worked examples</h2>
+<h3 id="ex-conversion">First-order conversion with a closed-form check</h3>
+<p>A converts to B at rate k*A. The run checks exp(-0.7*4) and mass conservation, then saves the time course. This is the model from the repository README, executed with run_lmcode.</p>
+<pre><code>prog = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+let m = bio.model("conversion").compartment("cell", 1.0);
+m.species("A", "cell", 1.0).species("B", "cell", 0.0);
+m.param("k", 0.7).reaction("convert", "A -> B", "k*A");
+let result = m.simulate(0.0, 4.0, 41);
+bio.assert_close(result.final("A"), 0.060810062625, 0.000001);
+bio.assert_close(result.final("A") + result.final("B"), 1.0, 0.000001);
+result.save_csv("conversion.csv");
+lmcode_return_put("A", result.final("A"));
+lmcode_return_put("rows", result.rows());
+end _lmcode_
+r = run_lmcode(prog);
+println(json_stringify(r));
+require(r.ok, "conversion failed");</code></pre>
+<h3 id="ex-ssa">One seeded Gillespie trajectory</h3>
+<p>Immigration and loss at low copy number, from examples/stochastic.lms: a source reaction with an empty left side and a sink with an empty right side.</p>
+<pre><code>mkdir("build");
+prog = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+let m = bio.model("immigration_death").compartment("cell", 1.0).species("X", "cell", 0.0).param("birth", 3.0).param("death", 1.0).reaction("immigration", " -> X", "birth").reaction("loss", "X ->", "death*X");
+let r = m.ssa(10.0, 101, 424242);
+bio.assert_true(r.final("X") >= 0.0);
+r.save_csv("build/stochastic.csv");
+end _lmcode_
+r = run_lmcode(prog);
+require(r.ok, "ssa failed");</code></pre>
+<h2 id="errors">Errors and exit codes</h2>
+<table>
+<thead>
+<tr><th>Host exit</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>Success, also for --version, --notices and the schema flags</td></tr>
+<tr><td>2</td><td>Usage error: unknown or missing flags, no file, or an invalid LMBIO_MAX_MEMORY_MB value; the usage text goes to stderr</td></tr>
+<tr><td>3</td><td>Bytecode load error or run error: a host validation message, a failed assertion or an exceeded memory budget</td></tr>
+</tbody>
+</table>
+<p>A wrong numerical result is an error by design: a failed bio.assert_close or bio.assert_true stops the run. If lmscript reports unexpected argument '--lmcode-schema', a different program named lmbio is first on PATH. If it reports a usage line that lists --dsl flags, the host binary predates the --lmcode protocol.</p>
+<h2 id="verify">How to verify</h2>
+<ul>
+<li>Run lmbio --lmcode-schema --json and confirm the schema name is lmbio with the context object bio.</li>
+<li>Run lmscript --check FILE.lms to type-check a block before running it.</li>
+<li>Put a known answer in the block with bio.assert_close and require r.ok in the outer script.</li>
+<li>Rerun and compare CSV files: the repository test suite checks that result files are byte-identical on rerun.</li>
+<li>In a source checkout, ./test.sh builds the host and runs the native regression tests and every example.</li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmbio">github.com/lmctl-ai/lmbio</a>.</p>
+</footer>
+</body>
+</html>

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>lmpy — lmctl.com tools</title>
-<meta name="description" content="lmpy is a native numerical host for LMScript programs.">
+<meta name="description" content="lmpy is a native numerical host for LMScript: linear algebra, statistics, tables, optimisation, differential equations, signal processing, graphs, statistical…">
 <link rel="stylesheet" href="/tools/style.css">
 <link rel="icon" type="image/png" href="/tools/lmpy/img/icon.png">
 </head>
@@ -18,21 +18,107 @@
 <li><a href="/tools/lmpy/skill.html">Skill</a></li>
 <li><a href="/tools/lmpy/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmpy/guide.html">Guide</a></li>
+<li><a href="/tools/lmpy/reference.html">Reference</a></li>
 <li><a href="/tools/lmpy/examples/">Examples</a></li>
 </ul>
 </nav>
 <main><h1>lmpy</h1>
 <figure><img src="/tools/lmpy/img/logo.png" alt="lmpy logo" width="256" height="256"></figure>
-<p>lmpy is a native numerical host for LMScript programs. It provides linear algebra, statistics, optimisation, signal processing, tables, time series and machine learning in one executable.</p>
-<p>Start with the <a href="/tools/lmpy/get_started.html">quickstart</a>, browse the <a href="/tools/lmpy/examples/">example book</a>, or read the <a href="/tools/lmpy/guide.html">API guide</a>.</p>
-<h2>Install from LMScript</h2>
-<p>Declare lmpy with cli and install in an LMScript LMCode block. The compiler downloads the matching release binary when it is not already installed, verifies the release asset digest, and compiles against that binary's embedded schema.</p>
-<pre><code>p = _lmcode_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";</code></pre>
-<h2>What it can do</h2>
+<p>lmpy is a native numerical host for LMScript: linear algebra, statistics, tables, optimisation, differential equations, signal processing, graphs, statistical models and machine learning in one executable, with no Python, R or Docker at run time. A program is an LMScript _lmcode_ block that lmscript type-checks against the lmpy schema and run_lmcode executes, returning checked JSON values.</p>
+<h2 id="install">Install and run</h2>
+<p>Install the LMScript compiler once; the block declaration downloads the lmpy release binary for your platform (Linux x64 and arm64, macOS x64 and arm64, Windows x64) into the lmscript tool cache and verifies its SHA-256 digest.</p>
+<pre><code>npm i -g @lmctl-ai/lmctl
+lmscript --check program.lms
+lmscript program.lms</code></pre>
+<p>The repository examples need lmscript 0.2.460 or newer. This page describes lmpy 0.1.46, the release that install="github:lmctl-ai/lmpy@latest" resolved to when it was written.</p>
+<h2 id="example">Minimal program</h2>
+<pre><code>p = _lmcode_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";
+let q = dist("norm").ppf(0.975);
+out.close("normal 97.5% quantile", q, 1.959963984540054, 0.00000000000001);
+let x = mat("1 2 3; 0 1 4; 5 6 0").solve(vec(14.0, 14.0, 17.0));
+out.close("known linear-system solution", x, vec(1.0, 2.0, 3.0), 0.000000000001);
+out.put("quantile", q);
+out.put("solution", x);
+end _lmcode_
+
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));
+println(json_stringify(r.result));</code></pre>
+<pre><kbd>lmscript quick.lms</kbd>
+<samp>{"values":{"quantile":1.959963984540054,"solution":[1,2,3]},"checks":{"passed":2,"failed":0,"failures":[]}}</samp></pre>
+<h2 id="protocol">Host protocol and flags</h2>
+<table>
+<thead>
+<tr><th>Command or form</th><th>What it does</th></tr>
+</thead>
+<tbody>
+<tr><td>_lmcode_ cli="lmpy" install="github:lmctl-ai/lmpy@latest"; ... end _lmcode_</td><td>Declares the host; lmscript reads the binary's embedded schema and compiles the block against it</td></tr>
+<tr><td>_lmcode_ schema="lmpy.dsl.json"; ... end _lmcode_</td><td>Compiles against a schema file instead of asking a binary</td></tr>
+<tr><td>run_lmcode(p)</td><td>Runs the block on lmpy and returns the decoded frame: ok and result, or ok, phase, code and message</td></tr>
+<tr><td>lmpy --lmcode FILE [FILE ...]</td><td>Host side of run_lmcode: runs compiled bytecode and prints one LMCODE_RETURN_BEGIN / JSON / LMCODE_RETURN_END frame</td></tr>
+<tr><td>lmpy --dry-run --lmcode FILE [FILE ...]</td><td>Loads and validates without running; results are null</td></tr>
+<tr><td>lmpy --lmcode-schema</td><td>Plain-text API summary</td></tr>
+<tr><td>lmpy --lmcode-schema --json</td><td>Exact schema bytes the bytecode binds to</td></tr>
+<tr><td>lmpy --lmcode-signatures</td><td>Canonical signatures, one per line (757 in 0.1.46)</td></tr>
+<tr><td>lmpy --api-md</td><td>Generated API reference as Markdown</td></tr>
+<tr><td>lmpy --version</td><td>Release identity, lmpy X.Y.Z</td></tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr><th>Exit code</th><th>Frame phase</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td>0</td><td>none</td><td>Success</td></tr>
+<tr><td>2</td><td>cli</td><td>Usage error; lmscript compile errors also exit 2</td></tr>
+<tr><td>3</td><td>load, run</td><td>Bytecode load error or run-time error</td></tr>
+<tr><td>4</td><td>app</td><td>out.fail or a failed check</td></tr>
+</tbody>
+</table>
+<h2 id="surface">Signature counts</h2>
+<table>
+<thead>
+<tr><th>Surface</th><th>Count in lmpy 0.1.46</th></tr>
+</thead>
+<tbody>
+<tr><td>Host types</td><td>15: Vec, StrVec, Mat, Opts, Res, Out, Frame, Sparse, Dist, Rng, OdeSol, Interp, Filter, Graph, Estimator</td></tr>
+<tr><td>Host signatures</td><td>551 lines: the out context, 211 function signatures and 339 methods</td></tr>
+<tr><td>Standard catalog shipped</td><td>lmcode_std_v3 with 206 signatures (str_, math_, file_, collections, Json, encoding, template_render, lmcode_return_)</td></tr>
+<tr><td>Current lmcode_std_v3 in lmcode-cpp</td><td>226 signatures; the 20 added REST and CLI signatures are not in lmpy 0.1.46 and arrive when lmpy syncs its runtime and releases</td></tr>
+</tbody>
+</table>
+<h2 id="api">Main objects and functions</h2>
+<table>
+<thead>
+<tr><th>Name</th><th>Kind</th><th>Create or call</th><th>Use</th></tr>
+</thead>
+<tbody>
+<tr><td>out</td><td>context object (Out)</td><td>out.put(name, value), out.check(name, bool), out.close(name, got, want, tol), out.close_rel, out.log, out.fail</td><td>Record returned values and named checks; a failed check makes the run fail with exit 4</td></tr>
+<tr><td>Vec</td><td>type</td><td>vec(1.0, 2.0), vec("1 2.5 -3"), arange(5), linspace(0.0, 1.0, 5), zeros(n), ones(n), full(n, x)</td><td>1-D float64 array; elementwise +, -, * and methods such as add, mul, sum, mean, std, sort, slice, apply</td></tr>
+<tr><td>StrVec</td><td>type</td><td>strs("x1, x2"), split(text, sep)</td><td>Names of columns, unknowns and labels</td></tr>
+<tr><td>Mat</td><td>type</td><td>mat("1 2; 3 4"), mat(rows, cols), cols(v1, v2), eye(n), diag(v)</td><td>Dense matrix; * is the matrix product; solve, lstsq, inv, det, decompositions and matrix functions</td></tr>
+<tr><td>Opts</td><td>type</td><td>opts().set("method", "BFGS").set("tol", 0.000001)</td><td>Named options for an operation; unknown keys are errors; keys starting with $ bind names in expressions</td></tr>
+<tr><td>Res</td><td>type</td><td>returned by operations</td><td>Typed result fields: ok(), status(), num, int, vec, mat, res, strs, text, flag, keys, json</td></tr>
+<tr><td>Frame</td><td>type</td><td>read_csv(path), csv(text), frame()</td><td>Immutable column table: filter, mutate, select, sort, groupby, merge, rolling, resample</td></tr>
+<tr><td>Sparse</td><td>type</td><td>sparse(rows, cols), sparse(dense), speye(n), tridiag(n, lower, diagonal, upper)</td><td>Sparse matrix with direct and iterative solvers and eigsh</td></tr>
+<tr><td>Dist, Rng</td><td>types</td><td>dist("norm"), dist("gamma", opts().set("a", 3.0)), rng(seed)</td><td>31 distribution families with pdf, cdf, ppf, rvs; numpy-compatible seeded random numbers</td></tr>
+<tr><td>minimize, least_squares, root_scalar, root, quad, linprog</td><td>functions</td><td>minimize(expr, strs("x, y"), x0, opts)</td><td>Optimisation, roots, quadrature and LP/MILP on expression strings</td></tr>
+<tr><td>ode, OdeSol</td><td>function, type</td><td>ode(rhs, states, y0, t0, t1, opts)</td><td>Initial value problems with events</td></tr>
+<tr><td>interp, Interp</td><td>function, type</td><td>interp(kind, x, y)</td><td>Linear, cubic, pchip, akima, smoothing and rbf interpolants</td></tr>
+<tr><td>iir, Filter, welch, find_peaks, fft</td><td>functions, type</td><td>see reference</td><td>Filter design and filtering, spectra, peaks</td></tr>
+<tr><td>graph, Graph</td><td>function, type</td><td>graph(directed)</td><td>Shortest paths and flows on named nodes</td></tr>
+<tr><td>ols, glm, arima, acf</td><td>functions</td><td>ols(frame, "y", strs("x1, x2"))</td><td>Regression and time-series models returning Res</td></tr>
+<tr><td>ml_fit, Estimator</td><td>function, type</td><td>ml_fit(kind, x, y)</td><td>Linear, logistic, SVC, naive Bayes, LDA, kNN, k-means, PCA, scaler</td></tr>
+</tbody>
+</table>
+<h2 id="pages">Detail pages</h2>
 <ul>
-<li>Fit and solve linear systems, least-squares models and sparse problems.</li>
-<li>Run distributions, optimisation, root finding, quadrature and differential equations.</li>
-<li>Analyze tables, time series, signals, spatial data, graphs and machine-learning models.</li>
+<li><a href="/tools/lmpy/skill.html">Skill</a>: how an agent installs, runs, checks and verifies lmpy programs.</li>
+<li><a href="/tools/lmpy/guide.html">Guide</a>: concepts, architecture, the value model, expressions and limits.</li>
+<li><a href="/tools/lmpy/reference.html">Reference</a>: every type, method, function, flag and exit code.</li>
+<li><a href="/tools/lmpy/get_started.html">Quickruns</a>: a first checked program and provider sessions.</li>
+<li><a href="/tools/lmpy/examples/">Examples</a>: the example book with release-installed scripts.</li>
+<li><a href="https://github.com/lmctl-ai/lmpy">github.com/lmctl-ai/lmpy</a>: source, releases and the generated native/API.md.</li>
 </ul>
 </main>
 <footer>

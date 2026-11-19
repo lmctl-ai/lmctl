@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmplayer guide — lmplayer — lmctl.com tools</title>
+<meta name="description" content="lmplayer is an open-source AI coding agent designed for unattended automation, scripted CLI pipelines, and single-user REST services.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmplayer/">Overview</a></li>
+<li><a href="/tools/lmplayer/skill.html">Skill</a></li>
+<li><a href="/tools/lmplayer/guide.html">Guide</a></li>
+<li><a href="/tools/lmplayer/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmplayer guide</h1>
+<h2>Overview</h2>
+<p>lmplayer is an open-source AI coding agent designed for unattended automation, scripted CLI pipelines, and single-user REST services. Derived from OpenCode (baseline 9f69463f1d), lmplayer replaces interactive-TUI-first defaults with non-interactive CLI execution, persisted background shell jobs, an internal five-field cron scheduler, durable-memory organize compaction, and deterministic file-based permissions.</p>
+<h2>Non-interactive CLI, FIFO service gate, and configuration</h2>
+<p>Running lmplayer "your prompt" or piping stdin executes immediately without opening a full-screen TUI (use lmplayer tui when an interactive terminal UI is wanted). In service mode (lmplayer serve --hostname 127.0.0.1 --port 4096), a process-wide FIFO execution gate serializes turn execution across sessions while keeping read-only health, metrics, and control endpoints responsive and allowing in-process subagents to bypass the gate.</p>
+<p>Project configuration discovery is strictly bounded to the starting directory and its immediate .opencode directory rather than walking parent directories, preventing accidental inheritance from outer workspaces. Application storage uses XDG directories named lmplayer (~/.config/lmplayer, ~/.local/share/lmplayer).</p>
+<h2>Background shell jobs, internal cron, and durable-memory compaction</h2>
+<p>Three runtime capabilities support long-running autonomous sessions:</p>
+<ul>
+<li>Background shell execution: passing background: true to the bash tool spawns the command asynchronously, persists a job record, returns a job ID immediately, and wakes the session with a follow-up turn upon completion. The job tool exposes list, get, output, and stop actions.</li>
+<li>Session-scoped internal cron: the cron tool creates, lists, and deletes one-shot or recurring five-field local-time cron schedules (expiring after seven days) that inject scheduled prompts through the FIFO execution gate without touching the host OS crontab.</li>
+<li>Durable-memory organize compaction: the default organize mode rewrites a session-owned durable-memory/index.md Markdown file during context compaction and injects that organized Markdown memory into subsequent turns (traditional summary mode remains selectable via compaction.mode: "summary").</li>
+</ul>
+<h2>Positive tool provisioning, structured Linux tools, and local Ollama</h2>
+<p>Agent profiles can restrict tool definitions and filesystem scope:</p>
+<ul>
+<li>Positive provisioning: profiles declare a provision list naming the exact tools exposed to the model. The built-in lean profile uses a concise system prompt and a bash-only toolset.</li>
+<li>Structured Linux tools and secured profile: dedicated tools for git, gh, rg, find, tar, and unzip allow operation-specific permission rules and working-directory confinement via tool_workdir.extra_roots (set to [] to confine to the workspace).</li>
+<li>Zero-config Ollama routing: model selectors of the form ollama/&lt;model> connect to OLLAMA_HOST (or per-model @host) without an API key. Ollama models default to chat-only; appending +tools (for example ollama/qwen2.5+tools) explicitly enables tool calling.</li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmplayer">github.com/lmctl-ai/lmplayer</a>.</p>
+</footer>
+</body>
+</html>

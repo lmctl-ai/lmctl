@@ -19,6 +19,7 @@
 <li><a href="/tools/lmcad/tutorial.html">Tutorial</a></li>
 <li><a href="/tools/lmcad/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmcad/guide.html">Guide</a></li>
+<li><a href="/tools/lmcad/reference.html">Reference</a></li>
 <li><a href="/tools/lmcad/examples/">Examples</a></li>
 </ul>
 </nav>
@@ -27,26 +28,53 @@
 <h2>Purpose</h2>
 <p>Help write valid, useful lmscript programs for lmcad and verify their geometry, renders and exports.</p>
 <h2>When to use it</h2>
-<p>Use this guide when a task needs a parametric solid, a still render, a mesh export, a looped field of parts, or a keyframed APNG from lmcad.</p>
+<p>Use this skill when a task needs a parametric solid, a checked volume, a still render, an STL or OBJ export, a looped field of parts, or a keyframed APNG, all without a GPU or display.</p>
 <h2>Install</h2>
-<p>Install lmcad from <a href="https://github.com/lmctl-ai/lmcad/releases/latest">Releases</a> and install the published lmscript package. Confirm the host prints lmcad X.Y.Z with --version and emits its schema with --lmcode-schema --json. The schema bytes must match schema/lmcad.dsl.json. For generated examples and quickruns, use the released host with install="github:lmctl-ai/lmcad@latest". Source builds need the OpenCASCADE prefix documented in the <a href="https://github.com/lmctl-ai/lmcad#build-opencascade-once">project README</a>.</p>
+<p>Install the published lmscript package; a block that names install="github:lmctl-ai/lmcad@latest" makes lmscript download the released lmcad for Linux x64 or Linux arm64. Binaries are also on the <a href="https://github.com/lmctl-ai/lmcad/releases/latest">Releases</a> page. Confirm the host prints lmcad X.Y.Z with --version and emits its schema with --lmcode-schema --json.</p>
+<pre><code>npm install -g @lmctl-ai/lmctl</code></pre>
 <h2>Commands</h2>
-<pre><code>npx --yes --package=@lmctl-ai/lmctl -- lmscript model.lms build/model.dslb
-lmcad --lmcode build/model.dslb
+<pre><code>lmscript --check model.lms
+lmscript model.lms
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmcad/main/examples/box-volume.lms
 lmcad --version
 lmcad --lmcode-schema
 lmcad --lmcode-schema --json
-lmcad --lmcode-signatures</code></pre>
+lmcad --lmcode-signatures
+lmcad --lmcode FILE [FILE ...]</code></pre>
+<p>Write the block as p = _lmcode_ cli="lmcad" install="github:lmctl-ai/lmcad@latest"; ... end _lmcode_ and execute it with r = run_lmcode(p). The --lmcode flags are the host protocol that lmscript drives; running saved bytecode by hand is only needed for reruns.</p>
 <h2>Inputs and outputs</h2>
-<ul><li>Inputs are DSL source files, JSON schemas for compilation, and optional CSV keyframes.</li><li>Bytecode is compiled for the lmcad schema and run by the lmcad host.</li><li>Outputs include PNG, APNG, PPM, STL and OBJ. Host methods can also export numeric volumes and bounding-box coordinates through the DSL.</li></ul>
+<ul><li>Input is an lmscript file with one or more _lmcode_ blocks, plus optional CSV keyframes read by read_keyframes_csv.</li><li>Each block is compiled against the schema the lmcad binary reports and run by that binary; run_lmcode returns a result with ok and result.</li><li>Outputs are PNG, PPM, APNG, binary STL and text OBJ files. Volumes and bounding-box coordinates are available inside the block.</li><li>lmcad 0.1.5 ships 206 standard-library signatures (the lmcode_std_v3 catalog at 206). The current lmcode_std_v3 catalog has 226 signatures, adding the REST and CLI interfaces; lmcad picks those up when it syncs and releases, and the 0.1.5 binary does not register them.</li></ul>
 <h2>Safety rules</h2>
-<ul><li>Use finite positive dimensions and keep image and animation sizes within host limits.</li><li>Keep bytecode trusted: the VM intentionally has no run-time execution budget or allocation caps.</li><li>Use unique local names. Host function names, context variables and type names are reserved by the compiler.</li><li>There are no DSL lists; use schema collection objects with len(), at(i) and for (item in collection).</li><li>Cast integer loop indices with float(i) before float arithmetic or float-only method calls.</li></ul>
+<ul><li>Use finite positive dimensions and stay inside the host limits: sketch coordinates within ±500 units, part extent 1000, 240 animation frames, 64,000,000 total frame pixels.</li><li>Treat scripts as trusted input: the VM has no run-time execution budget.</li><li>Outer lmscript variables are not visible inside a block.</li><li>Use unique local names; host function names, the scene context and type names are reserved.</li><li>Cast integer loop indices with float(i) before passing them to float parameters.</li><li>Always call finish() on an animation; an unfinished animation is discarded.</li><li>Do not call the REST or CLI standard interfaces; this release does not register them.</li></ul>
 <h2>Worked examples</h2>
-<ol><li>Primitive: scene.box(x, y, z, material()), scene.sphere(radius, material()), or scene.cylinder(radius, height, material()).</li><li>Boolean and edge treatment: base.cut(tool), a.union(b), a.intersect(b), shape.fillet(radius), then inspect shape.volume().</li><li>Sketch feature: chain scene.sketch().point(x,y), call close(), then scene.extrude(sketch, height, material()) or scene.revolve_y(sketch, material()).</li><li>Camera and lighting: use scene.fit_camera(42.0, 1.2), directional_light, fill_light and ambient.</li><li>Loops: use for (i in range(0, n)) to place repeated solids. A foreach variable is read-only and scoped to its loop.</li><li>Animation: load keyframes with read_keyframes_csv(path), interpolate with lerp or ease, then call add_frame() and finish().</li></ol>
+<p>A complete program from the repository examples (box-volume.lms):</p>
+<pre><code>mkdir("images");
+p = _lmcode_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
+let shape = scene.box(2.0, 3.0, 4.0, material().color(0.2, 0.55, 0.85));
+scene.assert_close(shape.volume(), 24.0, 0.000001);
+scene.fit_camera(42.0, 1.2);
+scene.directional_light(-0.5, -1.0, -0.4, 0.8);
+scene.ambient(0.2);
+scene.render_png("images/box-volume.png", 320, 240);
+end _lmcode_
+r = run_lmcode(p);
+if (!r.ok) { println(r.stderr + r.stdout); }
+assert(r.ok);
+println("wrote images/box-volume.png");</code></pre>
+<ol><li>Primitive: scene.box(x, y, z, material()), scene.sphere(radius, material()), scene.cylinder(radius, height, material()) or scene.tube_between for a segment between two points.</li><li>Boolean and edge treatment: base.cut(tool), a.union(b), a.intersect(b), shape.fillet(radius), then inspect shape.volume().</li><li>Sketch feature: chain scene.sketch().point(x, y), call close(), then scene.extrude(sketch, height, material()) or scene.revolve_y(sketch, material()).</li><li>Camera and lighting: scene.fit_camera(42.0, 1.2), directional_light, fill_light and ambient.</li><li>Loops: for (i in range(0, n)) places repeated solids.</li><li>Animation: load keyframes with read_keyframes_csv(path), interpolate, then call add_frame() per frame and finish().</li></ol>
 <h2>Errors and exit codes</h2>
-<p>Compiler errors exit 2 and include source locations. lmcad exits 2 for invalid arguments, 3 for bytecode load or run failures, and 4 for an application failure. A common compile-time error is passing an integer where a float is required; use an explicit conversion. A common run-time error is an invalid OCCT fillet or a render without a camera.</p>
+<table>
+<thead><tr><th>Exit code</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success; one JSON result line per completed block.</td></tr>
+<tr><td>2</td><td>Invalid command line. The host prints its usage line and a CLI_USAGE result (phase cli).</td></tr>
+<tr><td>3</td><td>Program file load failure or a block or host run failure.</td></tr>
+<tr><td>4</td><td>Another application failure.</td></tr>
+</tbody>
+</table>
+<p>When run_lmcode returns ok false, print r.stderr and r.stdout as the repository examples do. A common compile error is passing an integer where a float is required. Common run errors are an OCCT fillet or shell that is too large, a render without a camera, and a failed assert_close.</p>
 <h2>How to verify</h2>
-<ol><li>Compile using the lmcad schema.</li><li>Run lmcad --lmcode-signatures and compare it with compiler signatures for the same schema.</li><li>Run the bytecode and inspect the JSON result and expected files.</li><li>Use shape.volume() with scene.assert_close for numeric assertions.</li><li>View the PNG and check dimensions, silhouette, lighting and background. Re-run and compare bytes when determinism matters.</li></ol>
+<ol><li>Run lmscript --check on the file to compile every block against the lmcad schema.</li><li>Run the file and assert r.ok.</li><li>Put shape.volume() and scene.assert_close in the block so a wrong model fails instead of rendering.</li><li>Check that the expected PNG, APNG, STL or OBJ files exist and view the PNG for silhouette, lighting and background.</li><li>Compare lmcad --lmcode-signatures with lmscript --lmcode-signatures on the schema JSON when a host and compiler mismatch is suspected.</li></ol>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmcad">github.com/lmctl-ai/lmcad</a>.</p>

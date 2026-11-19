@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmpdf reference — lmpdf — lmctl.com tools</title>
+<meta name="description" content="Complete CLI subcommands and flags, Docx and Pptx schema types and methods, standard lmcode_std_v3 catalog, and exit codes for lmpdf.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmpdf/">Overview</a></li>
+<li><a href="/tools/lmpdf/skill.html">Skill</a></li>
+<li><a href="/tools/lmpdf/guide.html">Guide</a></li>
+<li><a href="/tools/lmpdf/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmpdf reference</h1>
+<p>Complete CLI subcommands and flags, Docx and Pptx schema types and methods, standard lmcode_std_v3 catalog, and exit codes for lmpdf.</p>
+<h2>CLI subcommands and flags</h2>
+<table>
+<thead><tr><th>Command or flag</th><th>Arguments</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>lmpdf --version</td><td>none</td><td>Print the lmpdf version string and exit 0.</td></tr>
+<tr><td>lmpdf docx --lmcode-schema</td><td>[--json]</td><td>Print human-readable docx schema summary or exact embedded JSON schema bytes.</td></tr>
+<tr><td>lmpdf docx --lmcode-signatures</td><td>[--without-std]</td><td>Print canonical signatures for the docx route (optionally excluding lmcode_std_v3).</td></tr>
+<tr><td>lmpdf docx --lmcode</td><td>[--no-tagged] FILE [--lmcode FILE ...]</td><td>Execute one or more compiled bytecode files against the docx PDF layout route.</td></tr>
+<tr><td>lmpdf docx --to-markdown</td><td>FILE.pdf</td><td>Extract Markdown text from a PDF document.</td></tr>
+<tr><td>lmpdf pptx --lmcode-schema</td><td>[--json]</td><td>Print human-readable pptx schema summary or exact embedded JSON schema bytes.</td></tr>
+<tr><td>lmpdf pptx --lmcode-signatures</td><td>[--without-std]</td><td>Print canonical signatures for the pptx route (optionally excluding lmcode_std_v3).</td></tr>
+<tr><td>lmpdf pptx --lmcode</td><td>[--no-tagged] FILE [--lmcode FILE ...]</td><td>Execute one or more compiled bytecode files against the pptx 16:9 slide deck PDF route.</td></tr>
+<tr><td>lmpdf inspect</td><td>FILE.pdf [--markdown]</td><td>Inspect a PDF file and return a JSON summary containing page, image, table, and link counts plus extracted text.</td></tr>
+</tbody>
+</table>
+<h2>Document schema (lmpdf docx)</h2>
+<table>
+<thead><tr><th>Type / context</th><th>Method signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context docx: DocxHost</td><td>docx.create(string) -> Docx</td><td>Create a new paginated PDF document builder writing to the given output path.</td></tr>
+<tr><td>DocxHost</td><td>docx.inspect(string) -> string | docx.to_markdown(string) -> string | docx.sample_image(string) -> void</td><td>Inspect a PDF as JSON, convert a PDF to Markdown, or write a deterministic 64x64 sample PNG image.</td></tr>
+<tr><td>Docx</td><td>d.heading(string, int) -> Paragraph | d.paragraph(string) -> Paragraph | d.bullet(string) -> Paragraph | d.numbered(string) -> Paragraph</td><td>Append a heading (level 1..6), body paragraph, bulleted item, or numbered list item.</td></tr>
+<tr><td>Docx</td><td>d.clause(string, int) -> Paragraph | d.signature(string) -> Paragraph</td><td>Append a numbered legal clause (level 1..3) or signature block line.</td></tr>
+<tr><td>Docx</td><td>d.table(int, int) -> Table | d.image(string, int, int) -> Docx | d.text_box(string, float, float) -> Docx</td><td>Append a rows-by-cols table, an inline image (path, width_px, height_px), or a bordered text box.</td></tr>
+<tr><td>Docx</td><td>d.page_break() -> Docx | d.section_break(string) -> Docx | d.columns(int, float) -> Docx</td><td>Insert a page or section break, or configure multi-column flow (count, gap_pt).</td></tr>
+<tr><td>Docx</td><td>d.header(string) | d.footer(string) | d.header_fields(string) | d.footer_fields(string) -> Docx</td><td>Configure running headers and footers with optional {PAGE} and {NUMPAGES} placeholders.</td></tr>
+<tr><td>Docx</td><td>d.title(string) | d.author(string) | d.font(string) | d.font_size(float) -> Docx</td><td>Set PDF metadata title/author and default document font family and size in points.</td></tr>
+<tr><td>Docx</td><td>d.page_size(float, float) | d.orientation(string) | d.margins(float, float, float, float) -> Docx</td><td>Set page width/height in points, portrait/landscape orientation, and top/right/bottom/left margins.</td></tr>
+<tr><td>Docx</td><td>d.toc(string, int) | d.heading_numbering(bool) -> Docx</td><td>Insert a generated table of contents with page numbers or enable hierarchical heading numbering.</td></tr>
+<tr><td>Docx</td><td>d.markdown(string) | d.markdown_file(string) | d.html_doc(string, string) | d.html_xml(string, string) -> Docx</td><td>Append content from Markdown text/file, html-doc@1 / css-doc@1 strings, or html-subset@1 / css-subset@1 strings.</td></tr>
+<tr><td>Docx</td><td>d.save() -> void</td><td>Render layout via Typst and write the tagged PDF/A-2b and PDF/UA-1 file to disk.</td></tr>
+<tr><td>Paragraph</td><td>p.bold(bool) | p.italic(bool) | p.size(float) | p.color(string) | p.align(string) | p.font(string) -> Paragraph</td><td>Configure paragraph font weight, style, point size, hex color, alignment, and font family.</td></tr>
+<tr><td>Paragraph</td><td>p.spacing(float, float, float) | p.indent(float, float, float) | p.keep_with_next(bool) | p.tab_stop(float, string) -> Paragraph</td><td>Configure paragraph spacing, indentation, pagination keep-with-next, and tab stop position/alignment.</td></tr>
+<tr><td>Paragraph</td><td>p.hyperlink(string, string) | p.footnote(string) | p.comment(string, string) | p.inserted(string, string) | p.deleted(string, string) -> Paragraph</td><td>Append a hyperlink, numbered page-bottom footnote, comment, or tracked insertion/deletion annotation.</td></tr>
+<tr><td>Table</td><td>t.cell(int, int, string) -> Table | t.paragraph(int, int, string) -> Paragraph</td><td>Set 1-based table cell text or return a stylable Paragraph inside a cell.</td></tr>
+<tr><td>Table</td><td>t.borders(bool) | t.column_width(int, float) | t.shade(int, int, string) | t.merge(int, int, int, int) | t.cell_border(int, int, string, string, int) -> Table</td><td>Configure table borders, column widths, cell background shading, rectangular cell merges, or custom cell borders.</td></tr>
+</tbody>
+</table>
+<h2>Slide deck schema (lmpdf pptx)</h2>
+<table>
+<thead><tr><th>Type / context</th><th>Method signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context pptx: PptxHost</td><td>pptx.create(string) -> Pptx | pptx.inspect(string) -> string | pptx.to_markdown(string) -> string | pptx.sample_image(string) -> void</td><td>Create a 16:9 PDF slide deck builder, inspect or extract Markdown from a PDF, or write a 64x64 sample PNG.</td></tr>
+<tr><td>Pptx</td><td>p.slide() -> Slide | p.theme(string, string, string, string) -> Pptx | p.markdown(string) -> Pptx | p.save() -> void</td><td>Add a slide, configure theme palette (primary, accent, background, text), build slides from Markdown, or write the PDF deck.</td></tr>
+<tr><td>Slide</td><td>s.title(string) | s.title_slide(string, string) | s.section_header(string, string, string) | s.two_content(string, string, string) -> Slide</td><td>Set slide title or populate standard title, section-header, or two-column slide layouts.</td></tr>
+<tr><td>Slide</td><td>s.text(float, float, float, float, string) | s.bullet(float, float, float, float, string) | s.hyperlink(float, float, float, float, string, string) -> Slide</td><td>Place a positioned text box, bullet box, or hyperlink at (x, y, w, h) on the 1280x720 canvas.</td></tr>
+<tr><td>Slide</td><td>s.image(string, float, float, float, float) | s.rect(float, float, float, float, string) | s.rounded_rect(float, float, float, float, string, string) | s.ellipse(float, float, float, float, string, string) -> Slide</td><td>Place an image, filled rectangle, rounded rectangle, or ellipse at (x, y, w, h).</td></tr>
+<tr><td>Slide</td><td>s.line(float, float, float, float, string, float) | s.arrow(float, float, float, float, string, float) -> Slide</td><td>Draw a line or arrow from (x1, y1) to (x2, y2) with hex color and stroke width.</td></tr>
+<tr><td>Slide</td><td>s.notes(string) | s.footer(string) | s.slide_number(bool) | s.transition(string) -> Slide</td><td>Attach speaker notes, slide footer text, slide number display, or transition metadata.</td></tr>
+<tr><td>Slide</td><td>s.table(float, float, float, float, int, int) -> PptxTable</td><td>Create a slide table at (x, y, w, h) with the given row and column counts.</td></tr>
+<tr><td>Slide</td><td>s.bar_chart(float, float, float, float, string, string, string, string) | s.line_chart(float, float, float, float, string, string, string, string) | s.pie_chart(float, float, float, float, string, string, string) -> Slide</td><td>Render a bar, line, or pie chart at (x, y, w, h) on the slide.</td></tr>
+<tr><td>PptxTable</td><td>t.cell(int, int, string) | t.cell_bg(int, int, string) | t.cell_color(int, int, string) | t.bold(int, int, bool) | t.font_size(int, int, float) | t.align(int, int, string) | t.header_row(string, string) -> PptxTable</td><td>Populate and style 1-based slide table cells and header rows.</td></tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 catalog</h2>
+<table>
+<thead><tr><th>Category or interface</th><th>Functions, types, or signatures</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Strings, math, and files</td><td>str_len, str_substr, str_find, str_contains, str_starts_with, str_ends_with, str_lower, str_upper, str_trim, str_replace, str_repeat, str_split, str_match, str_to_int, str_is_int, str_to_float, str_is_float, str_base64_encode, str_base64_decode, str_hex_encode, str_hex_decode, math_abs, math_min, math_max, math_floor, math_ceil, math_round, math_sqrt, math_pow, file_read, file_write, file_append, file_exists, file_lines</td><td>Standard string processing, numeric math, encoding, and UTF-8 file helpers.</td></tr>
+<tr><td>Collections, JSON, and return framing</td><td>IntList, FloatList, StrList, IntMap, FloatMap, StrMap, IntStack, FloatStack, StrStack, IntQueue, FloatQueue, StrQueue, IntPQ, FloatPQ, StrPQ, Json (json_parse, template_render), lmcode_return_set, lmcode_return_put, lmcode_return_put_null, lmcode_return_null</td><td>Typed containers, JSON parsing, template rendering, and structured LMCODE_RETURN payload builders.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th>Exit code</th><th>Phase</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>success</td><td>PDF rendering, dry validation, or inspection succeeded and emitted an LMCODE_RETURN frame.</td></tr>
+<tr><td>2</td><td>cli</td><td>Invalid CLI argument, retired flag (such as --first or --last), or malformed invocation manifest (such as missing/non-boolean dry).</td></tr>
+<tr><td>3</td><td>load / run</td><td>Bytecode load failure, schema mismatch, VM runtime error, or html_doc / html_xml dry validation failure.</td></tr>
+<tr><td>4</td><td>app</td><td>Application, Typst layout, missing input file, or output path write failure.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmpdf">github.com/lmctl-ai/lmpdf</a>.</p>
+</footer>
+</body>
+</html>

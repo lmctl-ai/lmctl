@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kimi-code authoring skill — kimi-code — lmctl.com tools</title>
+<meta name="description" content="kimi-code (lmctl-ai/kimi-code) is the patched fork of MoonshotAI/kimi-code maintained as a reliable provider backend for lmctl, fixing stale ACP runtime…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/kimi-code/">Overview</a></li>
+<li><a href="/tools/kimi-code/skill.html">Skill</a></li>
+<li><a href="/tools/kimi-code/guide.html">Guide</a></li>
+<li><a href="/tools/kimi-code/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>kimi-code authoring skill</h1>
+<p>kimi-code (lmctl-ai/kimi-code) is the patched fork of MoonshotAI/kimi-code maintained as a reliable provider backend for lmctl, fixing stale ACP runtime bindings on session restore and batching queued prompts.</p>
+<h2>Purpose</h2>
+<p>Use kimi-code to run the Kimi terminal coding agent in interactive TUI mode, headless stream-json mode (kimi -p), or Agent Client Protocol stdio mode (kimi acp) under lmctl without hitting stale runtime binding failures when switching between ACP and non-ACP hosts.</p>
+<h2>When to use it</h2>
+<p>Choose kimi-code when configuring a kimi provider member in lmctl, when restoring an ACP-created session inside a headless (-p), TUI, or kap-server process, or when pointing Kimi Code CLI at a custom OpenAI-compatible endpoint.</p>
+<h2>Install</h2>
+<p>Patched binaries are published as GitHub releases on the fork (asset kimi-code-linux-x64, SHA-256 verified against SHA256SUMS) and install with lmscript; back up the stock binary, then copy the cached one over it. Building from source needs Node.js 24.15.0 or newer and pnpm 10.33.0.</p>
+<pre><code>lmscript install github:lmctl-ai/kimi-code@v2.4.1+kimifix.1
+cp ~/.kimi-code/bin/kimi ~/.kimi-code/bin/kimi.stock.bak
+cp ~/.cache/lmscript/tools/github/lmctl-ai/kimi-code/v2.4.1+kimifix.1/kimi-code ~/.kimi-code/bin/kimi
+kimi --version</code></pre>
+<h2>Commands</h2>
+<p>Run kimi in interactive, headless stream-json, ACP, or development test modes.</p>
+<pre><code>kimi --version
+kimi
+kimi -p "Summarize the repository architecture" --output-format stream-json
+kimi acp
+pnpm test
+pnpm typecheck
+pnpm lint</code></pre>
+<h2>Inputs and outputs</h2>
+<p>kimi reads provider and model definitions from ~/.kimi-code/config.toml (note the .kimi-code directory name used by the v2 JS CLI, not legacy .kimi) and TUI settings from ~/.kimi-code/tui.toml. In headless mode (kimi -p "&lt;prompt>" --output-format stream-json), stdout emits newline-delimited JSON objects where the assistant reply appears in the object with role: "assistant" and field content. In ACP mode (kimi acp), stdin and stdout carry JSON-RPC messages.</p>
+<h2>Safety rules</h2>
+<p>Stock kimi-code auto-update silently replaces a patched binary with an unpatched upstream build and reintroduces the acp-runtime-after-reap wedge, and [upgrade] auto_install = false in ~/.kimi-code/tui.toml proved unreliable on its own. The fork build therefore skips the startup update flow unless KIMIFIX_ENABLE_AUTO_UPDATE is set (1, true, yes, or on); the manual kimi upgrade command still works. For custom endpoints, declare [providers.&lt;name>] and [models.&lt;name>] in ~/.kimi-code/config.toml. On Windows, ensure Git for Windows is installed (or set KIMI_SHELL_PATH to bash.exe).</p>
+<h2>Worked examples</h2>
+<p>Example 1: Configuring an isolated ~/.kimi-code/config.toml for a custom or loopback OpenAI-compatible provider and running a headless stream-json query.</p>
+<pre><code>mkdir -p "$HOME/.kimi-code"
+cat &lt;&lt;'EOF' > "$HOME/.kimi-code/config.toml"
+default_model = "mock"
+
+[providers.mock]
+type = "openai"
+base_url = "http://127.0.0.1:4567/v1"
+api_key = "synthetic-mock-key-129"
+
+[models.mock]
+provider = "mock"
+model = "mock-agent"
+max_context_size = 128000
+EOF
+
+kimi -p "Reply with exactly PROVIDER_MOCK_OK_129." --output-format stream-json</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Exit code 0 indicates the prompt or session completed normally. Non-zero exit codes indicate invalid CLI flags, missing provider registration in config.toml, or upstream API errors. With the acp-runtime-after-reap patch applied, restoring an ACP session in a non-ACP process automatically rebinds to the local runtime instead of throwing runtime acp:&lt;sessionId> does not exist in workspace &lt;id>.</p>
+<h2>How to verify</h2>
+<p>Run the repository unit tests (including the agentRuntime.ts rebinding tests), typecheck, and CLI version check.</p>
+<pre><code>pnpm test
+pnpm typecheck
+kimi --version</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/kimi-code">github.com/lmctl-ai/kimi-code</a>.</p>
+</footer>
+</body>
+</html>

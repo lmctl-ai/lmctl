@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tree-sitter-lmscript reference — tree-sitter-lmscript — lmctl.com tools</title>
+<meta name="description" content="Reference tables for tree-sitter-lmscript AST nodes, injection queries, companion parser rules, and test exit codes.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/tree-sitter-lmscript/">Overview</a></li>
+<li><a href="/tools/tree-sitter-lmscript/skill.html">Skill</a></li>
+<li><a href="/tools/tree-sitter-lmscript/guide.html">Guide</a></li>
+<li><a href="/tools/tree-sitter-lmscript/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>tree-sitter-lmscript reference</h1>
+<p>Reference tables for tree-sitter-lmscript AST nodes, injection queries, companion parser rules, and test exit codes.</p>
+<h2>AST node and grammar surface</h2>
+<table><thead><tr><th>Node / Artifact</th><th>Kind</th><th>Description</th></tr></thead><tbody>
+<tr><td>data_block_statement</td><td>Outer AST node</td><td>Wraps a queued data block header, body (lmcode_body or data_body), and block_closer</td></tr>
+<tr><td>block_marker</td><td>Outer AST node</td><td>Header token such as _lmcode_ or _dsl_ with cli, install, or schema attributes</td></tr>
+<tr><td>lmcode_body</td><td>Outer AST node</td><td>Exact physical byte range of the inner lmcode chunk excluding header and end _lmcode_</td></tr>
+<tr><td>data_body</td><td>Outer AST node</td><td>Body node for non-lmcode data blocks</td></tr>
+<tr><td>block_closer</td><td>Outer AST node</td><td>Closing delimiter line such as end _lmcode_ or end _dsl_</td></tr>
+<tr><td>lmscript_lmcode_body</td><td>Companion root node</td><td>Root node produced by the lmcode-body/ companion parser for injected lmcode_body ranges</td></tr>
+<tr><td>queries/injections.scm</td><td>Query file</td><td>Tree-sitter injection query binding lmcode_body to lmscript_lmcode</td></tr>
+<tr><td>scripts/conformance.mjs</td><td>Verification script</td><td>Runs public corpus checks, failing controls, mutant gates, and optional --live scan</td></tr>
+</tbody></table>
+<h2>Standard REST and CLI interfaces recognized by the grammar</h2>
+<table><thead><tr><th>Interface</th><th>Canonical declaration</th><th>Behavior</th></tr></thead><tbody>
+<tr><td>RestGet</td><td>interface RestGet(exchange: RestExchange) -> void</td><td>HTTP GET endpoint bound by path annotation such as @"/users/:id"</td></tr>
+<tr><td>RestPost</td><td>interface RestPost(exchange: RestExchange) -> void</td><td>HTTP POST endpoint bound by path annotation such as @"/users"</td></tr>
+<tr><td>RestPut</td><td>interface RestPut(exchange: RestExchange) -> void</td><td>HTTP PUT endpoint bound by path annotation such as @"/users/:id"</td></tr>
+<tr><td>RestDelete</td><td>interface RestDelete(exchange: RestExchange) -> void</td><td>HTTP DELETE endpoint bound by path annotation such as @"/users/:id"</td></tr>
+<tr><td>RestPatch</td><td>interface RestPatch(exchange: RestExchange) -> void</td><td>HTTP PATCH endpoint bound by path annotation such as @"/users/:id"</td></tr>
+<tr><td>RestHead</td><td>interface RestHead(exchange: RestExchange) -> void</td><td>HTTP HEAD endpoint bound by path annotation</td></tr>
+<tr><td>RestOptions</td><td>interface RestOptions(exchange: RestExchange) -> void</td><td>HTTP OPTIONS endpoint bound by path annotation</td></tr>
+<tr><td>RestHandler</td><td>interface RestHandler(exchange: RestExchange) -> void</td><td>Method-prefixed (@"POST /users") or rest_route(method, path, annotation) handler</td></tr>
+<tr><td>CliCommand</td><td>interface CliCommand(exchange: RestExchange) -> void</td><td>Stateless CLI subcommand entry dispatched by rest_cli(args)</td></tr>
+<tr><td>CliOption</td><td>interface CliOption(exchange: RestExchange) -> void</td><td>Stateless CLI flag or option entry dispatched before CliCommand by rest_cli(args)</td></tr>
+</tbody></table>
+<h2>Verification exit statuses</h2>
+<table><thead><tr><th>Exit code</th><th>Stage</th><th>Result</th><th>Condition</th></tr></thead><tbody>
+<tr><td>0</td><td>parse / test</td><td>Exit 0</td><td>Grammar generation, the generated-file freshness check and the corpus conformance cases all pass</td></tr>
+<tr><td>1</td><td>conformance</td><td>Exit 1</td><td>A corpus conformance case fails; the failing case is printed with a FAIL prefix</td></tr>
+<tr><td>1</td><td>freshness</td><td>Exit 1</td><td>Generated src/parser.c, grammar.json, or node-types.json differs from grammar.js after tree-sitter generate</td></tr>
+</tbody></table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/tree-sitter-lmscript">github.com/lmctl-ai/tree-sitter-lmscript</a>.</p>
+</footer>
+</body>
+</html>

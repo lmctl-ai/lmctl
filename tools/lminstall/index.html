@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lminstall — lmctl.com tools</title>
+<meta name="description" content="lminstall is a static Go CLI and GitHub Action to install, verify, upgrade, configure, run, and uninstall coding provider CLIs without shelling out.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lminstall/">Overview</a></li>
+<li><a href="/tools/lminstall/skill.html">Skill</a></li>
+<li><a href="/tools/lminstall/guide.html">Guide</a></li>
+<li><a href="/tools/lminstall/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lminstall</h1>
+<p>lminstall is a static Go CLI and GitHub Action to install, verify, upgrade, configure, run, and uninstall coding provider CLIs without shelling out.</p>
+<h2>Quick reference</h2>
+<pre><code>lmscript install github:lmctl-ai/lminstall@v0.1.22
+lminstall list
+lminstall install claude codex kimi
+lminstall status --json
+lminstall upgrade codex
+lminstall uninstall codex</code></pre>
+<table>
+<thead>
+<tr><th>Item</th><th>Kind</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>list [--json]</td><td>Subcommand</td><td>List all 15 coding providers and their official distribution channels.</td></tr>
+<tr><td>install / upgrade / uninstall</td><td>Subcommands</td><td>Manage provider binaries under an owned root prefix with SHA-256/SHA-512 verification.</td></tr>
+<tr><td>status [--json]</td><td>Subcommand</td><td>Inspect installed, broken, incomplete, absent, or unavailable status (exits 0).</td></tr>
+<tr><td>configure &lt;provider> ...</td><td>Subcommand</td><td>Write an isolated launch profile for mock or ollama-cloud backends.</td></tr>
+<tr><td>run &lt;provider> --profile-dir ABS -- ...</td><td>Subcommand</td><td>Run a provider in an ephemeral HOME with an in-memory credential redaction bridge.</td></tr>
+<tr><td>env &lt;provider> --profile-dir ABS --runtime-dir ABS</td><td>Subcommand</td><td>Export persistent mock-backend environment variables for orchestrators.</td></tr>
+</tbody>
+</table>
+<pre><code>lminstall configure claude --backend mock --base-url http://127.0.0.1:8080 \
+  --model mock-agent --credential-env MOCK_API_KEY --profile-dir /tmp/claude-profile
+lminstall run claude --profile-dir /tmp/claude-profile -- -p "Hello" --tools ""
+lminstall env claude --profile-dir /tmp/claude-profile --runtime-dir /tmp/claude-runtime --format sh</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lminstall/skill.html">Skill</a> for setup, zero-shell and credential-bridge safety rules, and verification.</li>
+<li><a href="/tools/lminstall/guide.html">Guide</a> for in-process installer engines, owned prefixes, and isolated launch profiles.</li>
+<li><a href="/tools/lminstall/reference.html">Reference</a> for subcommands, flags, the 16-entry provider catalog, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lminstall">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lminstall">github.com/lmctl-ai/lminstall</a>.</p>
+</footer>
+</body>
+</html>

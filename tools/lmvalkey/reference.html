@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmvalkey reference — lmvalkey — lmctl.com tools</title>
+<meta name="description" content="Complete command-line flag reference, integrated HTTP REST endpoints, host schema types and methods, standard lmcode_std_v3 REST and CLI interfaces, and exit…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmvalkey/">Overview</a></li>
+<li><a href="/tools/lmvalkey/skill.html">Skill</a></li>
+<li><a href="/tools/lmvalkey/guide.html">Guide</a></li>
+<li><a href="/tools/lmvalkey/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmvalkey reference</h1>
+<p>Complete command-line flag reference, integrated HTTP REST endpoints, host schema types and methods, standard lmcode_std_v3 REST and CLI interfaces, and exit codes for lmvalkey v0.1.0.</p>
+<h2>Server and host CLI flags</h2>
+<table>
+<thead><tr><th>Flag or environment variable</th><th>Arguments / default</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>--version / -v</td><td>none</td><td>Print the lmvalkey server version string (lmvalkey v=0.1.0) and exit 0.</td></tr>
+<tr><td>--port</td><td>&lt;port> (default 6379)</td><td>TCP port for native Valkey/Redis RESP connections (also auto-detects incoming HTTP REST requests).</td></tr>
+<tr><td>--rest-port</td><td>&lt;port></td><td>Dedicated TCP port for the integrated zero-auth HTTP JSON REST server (for example, 8080).</td></tr>
+<tr><td>--bind</td><td>&lt;addr> (default 127.0.0.1)</td><td>Bind RESP and REST listeners to the specified network interface addresses.</td></tr>
+<tr><td>--daemonize</td><td>yes | no (default no)</td><td>Run the lmvalkey server as a background daemon process.</td></tr>
+<tr><td>--requirepass</td><td>&lt;password></td><td>Require AUTH password on native RESP connections (HTTP REST endpoints remain unauthenticated).</td></tr>
+<tr><td>--lmcode</td><td>&lt;file.dslb></td><td>Load and execute a compiled LMScript bytecode file against the embedded lmvalkey schema.</td></tr>
+<tr><td>--lmcode-schema</td><td>[--json]</td><td>Print the exact embedded lmvalkey schema JSON bytes to stdout and exit 0.</td></tr>
+<tr><td>--lmcode-signatures</td><td>none</td><td>Print all 245 canonical context, function, and method signatures (19 host + 226 standard library).</td></tr>
+<tr><td>VALKEY_HOST / REDIS_HOST</td><td>127.0.0.1</td><td>Target host IPv4 address used by _lmcode_ ValkeyClient connections before falling back to in-memory mode.</td></tr>
+<tr><td>VALKEY_PORT / REDIS_PORT</td><td>6379</td><td>Target TCP port used by _lmcode_ ValkeyClient connections.</td></tr>
+</tbody>
+</table>
+<h2>Integrated HTTP REST endpoints</h2>
+<table>
+<thead><tr><th>HTTP method</th><th>Path pattern</th><th>Request body</th><th>Response envelope</th></tr></thead>
+<tbody>
+<tr><td>GET</td><td>/</td><td>none</td><td>{"ok":true,"result":...} server health and status summary.</td></tr>
+<tr><td>GET</td><td>/ping</td><td>none</td><td>{"ok":true,"result":"PONG"}.</td></tr>
+<tr><td>GET</td><td>/get/&lt;key></td><td>none</td><td>{"ok":true,"result":"&lt;value>"} (or null if key does not exist).</td></tr>
+<tr><td>POST</td><td>/set/&lt;key></td><td>raw value bytes</td><td>{"ok":true,"result":"OK"} after storing the request body under &lt;key>.</td></tr>
+<tr><td>POST</td><td>/set/&lt;key>/&lt;val></td><td>none</td><td>{"ok":true,"result":"OK"} after storing &lt;val> under &lt;key>.</td></tr>
+<tr><td>GET</td><td>/keys</td><td>none</td><td>{"ok":true,"result":["k1","k2",...]} listing all keys (KEYS *).</td></tr>
+<tr><td>GET</td><td>/keys/&lt;pattern></td><td>none</td><td>{"ok":true,"result":[...]} listing keys matching the glob pattern (such as user:*).</td></tr>
+<tr><td>PUT</td><td>/keys/&lt;key></td><td>raw value bytes</td><td>{"ok":true,"result":"OK"} RESTful key upsert from request body.</td></tr>
+<tr><td>DELETE</td><td>/keys/&lt;key></td><td>none</td><td>{"ok":true,"result":1} (number of deleted keys).</td></tr>
+<tr><td>POST</td><td>/cmd</td><td>["CMD","arg1",...] or {"command":"CMD","args":[...]}</td><td>{"ok":true,"result":...} executing any Valkey command against the unified datastore.</td></tr>
+</tbody>
+</table>
+<h2>Host schema types, methods, and functions</h2>
+<table>
+<thead><tr><th>Type / context</th><th>Method signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context valkey: Valkey</td><td>valkey.set(string, string) -> bool</td><td>Execute SET key value and return true when the server replies OK.</td></tr>
+<tr><td>Valkey</td><td>valkey.get(string) -> string</td><td>Execute GET key and return the stored string value (or "" when absent).</td></tr>
+<tr><td>Valkey</td><td>valkey.del(string) -> int</td><td>Execute DEL key and return the integer count of removed keys.</td></tr>
+<tr><td>Valkey</td><td>valkey.exists(string) -> bool</td><td>Execute EXISTS key and return true when the key is present.</td></tr>
+<tr><td>Valkey</td><td>valkey.cmd(string) -> string | valkey.cmd(string, string) -> string | valkey.cmd(string, string, string) -> string</td><td>Execute an arbitrary 1-, 2-, or 3-token Valkey command and return the reply string (or JSON array string for multi-bulk replies).</td></tr>
+<tr><td>Valkey</td><td>valkey.batch() -> Batch</td><td>Create a new pipelined command batch associated with the current ValkeyClient.</td></tr>
+<tr><td>Batch</td><td>b.set(string, string) -> Batch | b.get(string) -> Batch | b.del(string) -> Batch</td><td>Append a SET, GET, or DEL command to the batch pipeline and return the Batch receiver.</td></tr>
+<tr><td>Batch</td><td>b.cmd(string) -> Batch | b.cmd(string, string) -> Batch | b.cmd(string, string, string) -> Batch</td><td>Append an arbitrary 1-, 2-, or 3-token command to the batch pipeline and return the Batch receiver.</td></tr>
+<tr><td>Batch</td><td>b.len() -> int | b.clear() -> void</td><td>Return the number of queued commands in the batch or clear all queued commands.</td></tr>
+<tr><td>Batch</td><td>b.exec() -> string</td><td>Send all queued commands in a single pipelined round-trip and return a JSON array string of reply strings.</td></tr>
+<tr><td>function print</td><td>print(string) -> void</td><td>Write a string followed by a newline to stdout.</td></tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<table>
+<thead><tr><th>Interface or function</th><th>Signature / annotation</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>RestGet .. RestOptions</td><td>@"/path/:param" fn h(x: RestExchange) -> void implements RestGet</td><td>Bind an HTTP GET, POST, PUT, DELETE, PATCH, HEAD, or OPTIONS route handler.</td></tr>
+<tr><td>RestHandler</td><td>@"/path" fn h(x: RestExchange) -> void implements RestHandler</td><td>Bind a method-agnostic HTTP route handler.</td></tr>
+<tr><td>CliCommand</td><td>@"cmd" fn h(x: RestExchange) -> void implements CliCommand</td><td>Bind a named CLI subcommand dispatched by rest_cli.</td></tr>
+<tr><td>CliOption</td><td>@"--flag" fn h(x: RestExchange) -> void implements CliOption</td><td>Bind a CLI option flag (--flag=val or --flag val) evaluated before the command handler.</td></tr>
+<tr><td>rest_config</td><td>rest_config(key: string, value: string) -> void</td><td>Configure server or CLI settings such as host, port, and session (ephemeral or global).</td></tr>
+<tr><td>rest_route</td><td>rest_route(method: string, path: string, handler: string) -> void</td><td>Dynamically register an HTTP method and route pattern to a handler function name.</td></tr>
+<tr><td>rest_serve / rest_stop</td><td>rest_serve() -> void | rest_stop() -> void</td><td>Start or stop the embedded standard HTTP server loop.</td></tr>
+<tr><td>rest_cli</td><td>rest_cli(args: StrList) -> string</td><td>Dispatch CLI options, commands, or path requests in-process without opening a socket.</td></tr>
+<tr><td>RestExchange</td><td>x.method() | x.path() | x.body() | x.param(string) | x.query(string) | x.header(string) -> string</td><td>Read request method, path, body, :param segment, query parameter, or header.</td></tr>
+<tr><td>RestExchange</td><td>x.has_query(string) | x.has_header(string) -> bool</td><td>Check whether a query parameter or request header is present.</td></tr>
+<tr><td>RestExchange</td><td>x.status(int) | x.set_header(string, string) | x.send(string) | x.json(string) -> void</td><td>Set response status code and headers, and emit plain text or application/json bodies.</td></tr>
+<tr><td>RestExchange</td><td>x.get(string) -> string | x.set(string, string) -> void | x.increment(string) -> int</td><td>Read, write, or atomically increment session state keys across global or ephemeral exchanges.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th>Exit code</th><th>Phase / mode</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success</td><td>Server exited cleanly, or _lmcode_ bytecode / schema / signature command completed and all assertions passed.</td></tr>
+<tr><td>2</td><td>CLI usage (phase "cli")</td><td>Missing --lmcode &lt;file> argument or invalid host CLI invocation (code CLI_USAGE).</td></tr>
+<tr><td>3</td><td>Load / run error (phase "load" or "run")</td><td>Bytecode file missing or corrupt, schema hash mismatch, RESP command error reply, or failed runtime assertion.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmvalkey">github.com/lmctl-ai/lmvalkey</a>.</p>
+</footer>
+</body>
+</html>

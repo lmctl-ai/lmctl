@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>lmpy API guide — lmpy — lmctl.com tools</title>
-<meta name="description" content="This page summarizes how LMScript programs call the lmpy host.">
+<title>lmpy guide — lmpy — lmctl.com tools</title>
+<meta name="description" content="This guide explains how lmpy is built and how its pieces fit together: the compile and run pipeline, the value model, options and results, expression strings,…">
 <link rel="stylesheet" href="/tools/style.css">
 <link rel="icon" type="image/png" href="/tools/lmpy/img/icon.png">
 </head>
@@ -18,26 +18,130 @@
 <li><a href="/tools/lmpy/skill.html">Skill</a></li>
 <li><a href="/tools/lmpy/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmpy/guide.html">Guide</a></li>
+<li><a href="/tools/lmpy/reference.html">Reference</a></li>
 <li><a href="/tools/lmpy/examples/">Examples</a></li>
 </ul>
 </nav>
-<main><h1>lmpy API guide</h1>
-<p>This page summarizes how LMScript programs call the lmpy host. The checked-in schema and API reference are the complete source of operation names, options and result fields.</p>
-<h2>Overview</h2>
-<p>lmpy runs compiled LMScript LMCode bytecode in a native executable. Use cli="lmpy" and install="github:lmctl-ai/lmpy@latest" to bind compilation and execution to the same released schema.</p>
-<h2>Host declaration</h2>
+<main><h1>lmpy guide</h1>
+<p>This guide explains how lmpy is built and how its pieces fit together: the compile and run pipeline, the value model, options and results, expression strings, the standard catalog, and the limits to plan around. The complete list of signatures is in the reference.</p>
+<h2 id="overview">Overview</h2>
+<p>lmpy is one C++17 executable that runs LMScript lmcode bytecode against a numerical library. Everything except the system C library is linked in, so it needs no Python, R, Docker or other shared library at run time. Programs are _lmcode_ blocks in an LMScript file. lmscript type-checks a block against the lmpy schema and compiles it to bytecode; run_lmcode starts lmpy, which loads the bytecode, binds it to its embedded schema, runs it, and prints one framed result that run_lmcode decodes.</p>
+<p>The design replaces a call-per-operation model with one program of many steps. A block reads data, transforms it, fits a model, checks the answer and reports, all in native memory. Arrays are values (Vec, Mat, Frame) passed between calls, not files exchanged between processes.</p>
+<h2 id="pipeline">Compile and run pipeline</h2>
+<ol>
+<li>The block header names the host. With cli="lmpy", lmscript asks the binary for its schema (lmpy --lmcode-schema --json) and compiles against exactly those bytes. With install="github:lmctl-ai/lmpy@latest" it first downloads the release asset when lmpy is not available. With schema="file" it compiles against a schema file.</li>
+<li>Type errors are reported at compile time with a file, line and column: a wrong argument type, an unknown method or a misspelt function never reaches the host.</li>
+<li>run_lmcode passes the compiled program to lmpy --lmcode. The host loads every input before any part executes, so a malformed later part cannot leave file effects of an earlier one behind.</li>
+<li>Each part gets its own out collector. After the run the host writes one LMCODE_RETURN_BEGIN / JSON / LMCODE_RETURN_END frame; several parts return a result array in registration order.</li>
+<li>run_lmcode returns the decoded JSON: ok and result, or ok, phase, code and message.</li>
+</ol>
+<p>The schema is generated from the same registry that executes the calls, as are the API reference (lmpy --api-md) and the signature list (lmpy --lmcode-signatures). The bytecode is bound to the schema bytes by hash, which is why compiling with cli= against the binary that will run the block is the dependable route.</p>
+<h2 id="values">Value model</h2>
+<table>
+<thead>
+<tr><th>Type</th><th>Meaning</th><th>Mutability</th></tr>
+</thead>
+<tbody>
+<tr><td>Vec</td><td>1-D float64 array; operators +, -, * are elementwise and a float broadcasts</td><td>Methods return new vectors except push, set and extend, which change the vector in place</td></tr>
+<tr><td>StrVec</td><td>List of strings for column names, unknowns and labels</td><td>push appends in place</td></tr>
+<tr><td>Mat</td><td>Dense float64 matrix; * is the matrix product with a Mat, a matrix-vector product with a Vec and scaling with a float; hadamard is the elementwise product</td><td>Methods return new matrices</td></tr>
+<tr><td>Frame</td><td>Column table: numeric columns are float64 with NaN for missing values, other columns are text</td><td>Immutable; every method returns a new frame</td></tr>
+<tr><td>Opts</td><td>Named, validated options for one operation</td><td>set changes it in place and returns it for chaining</td></tr>
+<tr><td>Res</td><td>Named, typed result fields, possibly nested</td><td>Read-only</td></tr>
+<tr><td>Dist, Rng, Sparse, OdeSol, Interp, Filter, Graph, Estimator</td><td>Typed objects that are used again after they are built: evaluate a distribution, draw numbers, solve, interpolate, filter, search paths, predict</td><td>Rng methods advance the generator in place</td></tr>
+</tbody>
+</table>
+<p>Masks are vectors of 1.0 and 0.0 produced by comparison methods such as gt and le; where selects by mask and find returns the indexes. Indexes returned by operations are 0-based floats.</p>
+<h2 id="opts-res">Options and results</h2>
+<p>Operations with defaults have an overload without options and one with a trailing Opts. Option keys follow the names used by numpy, scipy, pandas, statsmodels and scikit-learn (method, tol, maxiter, rtol, t_eval and so on). Every key is read and validated, so a misspelt key is a run-time error instead of being ignored.</p>
+<p>Results distinguish two kinds of failure. Bad input (wrong shapes, an unknown method, non-finite data where finite data is required, a singular matrix in solve) is a run-time error whose message names the operation. A numerical outcome is a status string in the Res, such as OK, NO_CONVERGENCE or RANK_DEFICIENT: the program continues and decides what to do, usually with out.check on ok().</p>
+<h2 id="expressions">Expression strings</h2>
+<p>Objectives, residual models, equation systems, differential-equation right-hand sides, and table filters and mutations are written as expression strings, for example 100*(y-x^2)^2 + (1-x)^2. The host parses them with a closed grammar: arithmetic and comparison operators, the constants pi and e, elementary and special functions, ifelse, and the reducers sum, mean, prod, min and max. They cannot call host functions or run code.</p>
+<p>The unknowns are named by a StrVec. An option key that starts with $ binds a name for the expressions of that one operation: a float gives a scalar constant and a Vec gives a data vector, read as x[i] or through a reducer. Every expression evaluation in optimisation counts against max_evals and the optional time_limit, so an iterative method reports a status and never hangs.</p>
 <pre><code>p = _lmcode_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";
-let x = mat("1 2; 3 4").solve(vec(5.0, 11.0));
-out.close("known solution", x, vec(1.0, 2.0), 0.000000000001);
-out.put("solution", x);
-end _lmcode_</code></pre>
-<h2>Numerical operations</h2>
-<p>The host includes dense and sparse linear algebra, probability distributions, random sampling, optimisation, least squares, roots, quadrature, differential equations, interpolation and special functions.</p>
-<h2>Data and models</h2>
-<p>Operations cover typed frames and arrays, regression and time series, signal analysis, spatial neighbours and graphs, and machine-learning estimators. File inputs are read by the native executable using the documented formats.</p>
-<h2>Errors and checks</h2>
-<p>Use out.check for boolean conditions and out.close for numeric comparisons. A failed assertion exits unsuccessfully; successful output includes the result values and check summary.</p>
-<p>See the <a href="https://github.com/lmctl-ai/lmpy/blob/main/native/API.md">complete API reference</a> and the <a href="/tools/lmpy/skill.html">lmpy skill</a>.</p>
+let o = opts().set("method", "DOP853").set("rtol", 0.0000000001).set("atol", 0.000000000001).set("max_output_points", 161);
+o.set("$b", 0.3).set("$g", 0.1).set("$population", 1000.0);
+o.set("events", strs("b*s*i/population-g*i")).set("direction", vec(-1.0));
+let r = ode(strs("-b*s*i/population, b*s*i/population-g*i, g*i"), strs("s, i, r"), vec(999.0, 1.0, 0.0), 0.0, 160.0, o);
+out.check("status OK", r.ok());
+out.check("population conserved", r.mat("y").row_sums().sub(1000.0).abs().max() &lt;= 0.000001);
+let peak = r.vec("event_t").at(0);
+out.close("pinned peak day (scipy DOP853)", peak, 38.35530767144, 0.000001);
+out.put("peak_day", peak);
+out.put("peak_infected", r.mat("event_y").row(0).at(1));
+end _lmcode_
+
+res = run_lmcode(p);
+require(res.ok, json_stringify(res));
+v = res.result.values;
+println(sprintf("peak_day=%.6f peak_infected=%.6f", v.peak_day, v.peak_infected));</code></pre>
+<pre><kbd>lmscript sir.lms</kbd>
+<samp>peak_day=38.355308 peak_infected=300.796071</samp></pre>
+<p>This SIR epidemic model, adapted from examples/dsl/ode-sir.lms in the repository, binds three constants, locates the infection peak with an event expression, and pins the answer computed by scipy.</p>
+<h2 id="result">Result model</h2>
+<p>By default the result of a part is an object with values, holding everything recorded with out.put in order, and checks, holding the passed and failed counts and the failures with name and detail. A failed check does not stop the block: the remaining statements run, and at the end the host reports an application failure whose message names every failed check. out.fail stops immediately. out.log writes a line to standard error, because standard output is reserved for the frame.</p>
+<p>A block can replace the default result with the standard result helpers lmcode_return_set, lmcode_return_put and lmcode_return_null. Failed checks still make the run an application failure.</p>
+<pre><code>p = _lmcode_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";
+let v = linspace(0.0, 1.0, 5);
+out.check("five points", v.len() == 5);
+lmcode_return_put("mean", v.mean());
+lmcode_return_put("label", "linspace");
+end _lmcode_
+
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));
+println(json_stringify(r.result));</code></pre>
+<pre><kbd>lmscript ret.lms</kbd>
+<samp>{"mean":0.5,"label":"linspace"}</samp></pre>
+<h2 id="std">Standard catalog</h2>
+<p>The lmcode-cpp runtime inside lmpy installs the standard lmcode catalog, and lmscript declares it at compile time, so a block can mix standard functions with the host API. lmpy 0.1.46 vendors lmcode_std_v3 with 206 canonical signatures: string functions, encoding and template_render, math functions, file read and write, typed lists, maps, queues, stacks and priority queues, a Json type, and the lmcode_return helpers. The lmpy schema stays host-only with 551 signature lines; lmpy --lmcode-signatures prints both, 757 lines.</p>
+<p>The current lmcode_std_v3 catalog in lmcode-cpp has 226 signatures. It adds the standard REST and CLI interfaces: RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand and CliOption, the functions rest_config, rest_route, rest_serve, rest_stop and rest_cli, and 15 RestExchange methods. lmpy 0.1.46 does not ship them; it picks them up when it syncs the runtime and publishes a release.</p>
+<pre><code>p = _lmcode_ cli="lmpy" install="github:lmctl-ai/lmpy@latest";
+let names = str_split("ctrl,trt1,trt2", ",");
+let labels = str_list();
+for (k in range(0, names.len())) { labels.add(str_upper(names.at(k))); }
+let rng_draws = rng(7).standard_normal(1000);
+out.put("groups", labels.join(" "));
+out.put("largest", math_max(3, names.len()));
+out.put("mean_abs_below_one", rng_draws.mean() &lt; 1.0 &amp;&amp; rng_draws.mean() > -1.0);
+end _lmcode_
+
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));
+println(json_stringify(r.result.values));</code></pre>
+<pre><kbd>lmscript std.lms</kbd>
+<samp>{"groups":"CTRL TRT1 TRT2","largest":3,"mean_abs_below_one":true}</samp></pre>
+<h2 id="families">Operation families</h2>
+<table>
+<thead>
+<tr><th>Family</th><th>Entry points</th><th>Modelled on</th></tr>
+</thead>
+<tbody>
+<tr><td>Vectors, matrices, tables</td><td>vec, mat, cols, read_csv, groupby, merge, rolling, resample</td><td>numpy arrays and a pandas DataFrame subset</td></tr>
+<tr><td>Linear algebra and sparse</td><td>Mat methods solve, lstsq, decompositions, matrix functions; sparse, speye, tridiag</td><td>scipy.linalg and scipy.sparse, on Eigen 3.4</td></tr>
+<tr><td>Statistics</td><td>dist, rng, special functions, classical tests such as ttest_ind</td><td>scipy.stats 1.16 and numpy's PCG64 generator</td></tr>
+<tr><td>Optimisation</td><td>minimize, least_squares, root_scalar, root, quad, linprog</td><td>scipy.optimize and scipy.integrate; HiGHS for LP and MILP</td></tr>
+<tr><td>Differential equations</td><td>ode</td><td>scipy.integrate.solve_ivp: RK45, RK23, DOP853, Radau, BDF, LSODA</td></tr>
+<tr><td>Interpolation, signal, spatial</td><td>interp, iir, welch, find_peaks, fft, cdist</td><td>scipy.interpolate, scipy.signal 1.16, scipy.spatial</td></tr>
+<tr><td>Graphs</td><td>graph</td><td>networkx-style shortest paths and flows</td></tr>
+<tr><td>Statistical models</td><td>ols, glm, arima, acf, adfuller</td><td>statsmodels 0.14</td></tr>
+<tr><td>Machine learning</td><td>ml_fit, ml_cv, ml_metrics, load_model</td><td>scikit-learn 1.7.2 subset</td></tr>
+</tbody>
+</table>
+<p>The repository's examples/python directory holds 29 published Python recipes next to lmpy versions that pin every Python answer, so compatibility is measured per value.</p>
+<h2 id="limits">Limits and differences</h2>
+<ul>
+<li>Not implemented: random forests and gradient boosting (a clear error), the trust-constr minimiser, analog filter design, and convex hulls above three dimensions.</li>
+<li>LSODA is an automatic switch from RK45 to BDF, not ODEPACK. L-BFGS-B reaches the same optimum as scipy with different iteration counts.</li>
+<li>Numerics are single-threaded, deterministic IEEE arithmetic. Random numbers come only from an explicit integer seed.</li>
+<li>Run-time objects live in an arena for the whole run, so very long loops that create objects grow memory.</li>
+<li>A local variable in a block cannot reuse a schema function name such as dist, full or root.</li>
+<li>Inside a block, write comments on # lines; an apostrophe in a // comment inside the block is a compile error.</li>
+<li>The block language itself provides the built-ins sin, cos, sqrt, abs, floor, pow, min, max, clamp, lerp, int, float, str and range; the host adds exp, log, log10, tan, atan2, hypot, pi, fmt and similar helpers.</li>
+<li>Array files: .npy and .safetensors reads accept rank 1 or 2; writes are float64. Parquet is not supported.</li>
+<li>lmpy serves only the lmcode interface; plotting is out of scope.</li>
+</ul>
+<p>Continue with the <a href="/tools/lmpy/skill.html">skill</a> for the working procedure, the <a href="/tools/lmpy/reference.html">reference</a> for signatures, and the <a href="https://github.com/lmctl-ai/lmpy/blob/main/native/API.md">generated API reference</a> in the repository.</p>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmpy">github.com/lmctl-ai/lmpy</a>.</p>

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-rust-sample guide — lmcode-rust-sample — lmctl.com tools</title>
+<meta name="description" content="This guide walks through the 10-step architecture of lmcode-rust-sample, covering Rust (stable, zero crates.io dependencies) arena ownership, schema embedding,…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-rust-sample/">Overview</a></li>
+<li><a href="/tools/lmcode-rust-sample/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-rust-sample/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-rust-sample/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-rust-sample guide</h1>
+<p>This guide walks through the 10-step architecture of lmcode-rust-sample, covering Rust (stable, zero crates.io dependencies) arena ownership, schema embedding, R49 rule dispatch, dry mode, and corpus verification.</p>
+<h2>Overview</h2>
+<p>src/shop.rs defines Money, Items, Shop, and Ledger and stores live instances in dslvm::Context arena slots referenced by safe ObjRef indices without unsafe pointers. Host::new registers the 45 domain signatures on dslvm::Registry::new() (which installs lmcode_std_v3) and opts into the testing helpers. src/main.rs embeds sample.dsl.json via include_bytes!, processes discovery flags or multi-part --lmcode / --first / --last builder runs, dispatches @item and @total R49 entries, and writes the terminal LMCODE_RETURN frame.</p>
+<h2>Domain schema and registry bindings</h2>
+<p>The host registers two contexts (shop: Shop and ledger: Ledger), four object types (Money, Items, Shop, Ledger), the Currency enum, overloaded factory functions money(int) and money(float), arithmetic operator methods (plus, minus, times, neg), collection iteration methods (Items.len and Items.at), and two R49 SAM interfaces (Adjuster and Score). All 45 host signatures coexist with the default lmcode_std_v3 catalog.</p>
+<h2>Rule entry dispatch and standard interfaces</h2>
+<p>After the program body finishes, the host iterates Program.entries() in source order: every entry annotated @item is invoked once per shop item handle, and every entry annotated @total is invoked once with shop.total(). Non-void entry returns print 'entry NAME = VALUE' and increment entries_called.</p>
+<pre><code>./target/release/lmcode-rust-sample --version
+./target/release/lmcode-rust-sample --lmcode-schema --json
+./target/release/lmcode-rust-sample --lmcode-signatures
+./target/release/lmcode-rust-sample --lmcode sample-suite/bytecode/001-literals.dslb</code></pre>
+<h2>Invocation result protocol and dry mode</h2>
+<p>The sample CLI reads LMCODE_INVOCATION_FILE when present, propagates dry mode to Context before domain setup, allocates an independent ResultSink for each --lmcode, --first, or --last slot, and emits one terminal LMCODE_RETURN_BEGIN / LMCODE_RETURN_END frame after all bodies, @item and @total rule entries, and the non-negative ledger balance application check finish.</p>
+<h2>Conformance verification</h2>
+<p>Running ./test.sh verifies sdk.lock and suite.lock, compiles the host, audits that every standard and host signature is covered by the corpus, checks --version, --lmcode-schema [--json], and --lmcode-signatures, runs all 123 canonical bytecode cases byte-for-byte against expected stdout and exit codes (0, 2, 3, 4), verifies dry-mode sentinel isolation, and runs negative harness mutation controls.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-rust-sample">github.com/lmctl-ai/lmcode-rust-sample</a>.</p>
+</footer>
+</body>
+</html>

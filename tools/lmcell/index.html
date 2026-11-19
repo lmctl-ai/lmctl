@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcell — lmctl.com tools</title>
+<meta name="description" content="lmcell is a native lmcode host for 2D multicellular simulations: cell types that divide, die, migrate, follow gradients and exchange diffusing substrates, with…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcell/">Overview</a></li>
+<li><a href="/tools/lmcell/skill.html">Skill</a></li>
+<li><a href="/tools/lmcell/guide.html">Guide</a></li>
+<li><a href="/tools/lmcell/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmcell</h1>
+<p>lmcell is a native lmcode host for 2D multicellular simulations: cell types that divide, die, migrate, follow gradients and exchange diffusing substrates, with Hill rules that couple signals to behavior. It embeds serial PhysiCell and BioFVM in one static executable, is installed automatically by lmscript, and writes plain numeric CSV for plotting hosts.</p>
+<p>This page is the quick reference. The latest release is lmcell 0.1.4; it ships the 206-signature lmcode_std_v3 standard library next to its 36 host methods.</p>
+<h2 id="install">Install and run</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmscript colony.lms            # downloads the lmcell release on first use
+lmscript --check colony.lms    # compile the _lmcode_ block against the cached host schema
+lmscript --dry-run colony.lms  # plan only: no simulation, no files</code></pre>
+<p>The install attribute github:lmctl-ai/lmcell@latest on the block makes lmscript download and cache the release binary. Linux binaries need dynamic glibc 2.35 or newer (Ubuntu 22.04 and later). Run a repository example straight from its URL:</p>
+<pre><code>mkdir try-lmcell
+cd try-lmcell
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmcell/main/examples/contact_inhibition.lms</code></pre>
+<p>The gallery examples also draw pictures, so they additionally need a compatible lmplot on PATH (and lmdraw, lmblender or ffmpeg for a few of them).</p>
+<h2 id="minimal">Minimal runnable example</h2>
+<pre><code>prog = _lmcode_ cli="lmcell" install="github:lmctl-ai/lmcell@latest";
+let s = cell.sim(12345);
+s.cell_type("growing").cycle(0.3).radius(1.0);
+let r = s.seed("growing", 2000, 0.0, 0.0).run(2.0, 0.01);
+cell.assert_close(float(r.live()), cell.eval("2000*exp(0.6)"), 190.0);
+cell.assert_true(r.counts().rows() == 201);
+r.counts().save_csv("counts.csv");
+lmcode_return_put("live", r.live());
+lmcode_return_put("rows", r.counts().rows());
+end _lmcode_
+r = run_lmcode(prog);
+println(json_stringify(r));
+require(r.ok, "colony failed");</code></pre>
+<p>Saved as colony.lms and run with lmscript colony.lms, the program prints this line on stdout (the solver banner from BioFVM goes to stderr) and writes counts.csv with 201 rows of time,live:</p>
+<pre><kbd>lmscript colony.lms</kbd>
+<samp>{"ok":true,"result":{"live":3625,"rows":201}}</samp></pre>
+<h2 id="protocol">Host CLI and protocol</h2>
+<table>
+<thead>
+<tr><th>Invocation</th><th>Effect</th><th>Exit</th></tr>
+</thead>
+<tbody>
+<tr><td>lmcell --version</td><td>Print lmcell and its version, for example lmcell 0.1.4</td><td>0</td></tr>
+<tr><td>lmcell --notices</td><td>Print the embedded third-party license notices</td><td>0</td></tr>
+<tr><td>lmcell --lmcode-schema --json</td><td>Print the exact embedded schema JSON (schema format 2, name lmcell) that lmscript compiles against</td><td>0</td></tr>
+<tr><td>lmcell --lmcode-schema</td><td>Print the signature list as text (same as --lmcode-signatures)</td><td>0</td></tr>
+<tr><td>lmcell --lmcode-signatures</td><td>Print one line per context, function and method signature: 243 lines in 0.1.4</td><td>0</td></tr>
+<tr><td>lmcell --lmcode FILE.dslb [FILE.dslb ...]</td><td>Load every compiled program first, then run them in order; one terminal result frame on stdout</td><td>0, 3 or 4</td></tr>
+<tr><td>lmcell --dry-run --lmcode FILE.dslb ...</td><td>Verify and load the bytecode without running simulations or writing files</td><td>0 or 3</td></tr>
+<tr><td>Anything else</td><td>Usage text on stderr and a failure frame with code CLI_USAGE</td><td>2</td></tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr><th>Item</th><th>Value</th></tr>
+</thead>
+<tbody>
+<tr><td>Block header</td><td>cli="lmcell" install="github:lmctl-ai/lmcell@latest"</td></tr>
+<tr><td>Outer call</td><td>r = run_lmcode(prog) returns a map with ok and result; on failure ok is false and phase, code, message, line and column are set</td></tr>
+<tr><td>Result value</td><td>Set inside the block with lmcode_return_set(value) or lmcode_return_put(name, value); null when unset</td></tr>
+<tr><td>Exit codes</td><td>0 success, 2 CLI or invocation metadata, 3 load or run error, 4 application or output failure</td></tr>
+<tr><td>Environment</td><td>LMCELL_MAX_MEMORY_MB: total memory budget in MiB, default 4096</td></tr>
+<tr><td>Streams</td><td>stdout carries only the result frame; cell.print and solver chatter go to stderr; data leaves through CSV files</td></tr>
+<tr><td>Standard library</td><td>lmcode_std_v3, 206 signatures in release 0.1.4 (the current catalog has 226; see the reference)</td></tr>
+</tbody>
+</table>
+<h2 id="api">Host API quick reference</h2>
+<p>The single context object is cell, of type Cell. Units follow PhysiCell: micrometers and minutes, rates per minute, diffusion in square micrometers per minute.</p>
+<table>
+<thead>
+<tr><th>Call</th><th>Returns</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>cell.sim(seed)</td><td>Sim</td><td>Seeded simulation builder; seed in 0..4294967295</td></tr>
+<tr><td>cell.eval(expression)</td><td>float</td><td>Evaluate a scalar math expression string such as 2000*exp(0.6)</td></tr>
+<tr><td>cell.assert_close(a, b, tolerance), cell.assert_true(condition)</td><td>void</td><td>Stop the run with an error when a check fails</td></tr>
+<tr><td>cell.print(text)</td><td>void</td><td>Write a line to stderr</td></tr>
+<tr><td>sim.domain(xmin, xmax, ymin, ymax, voxel_size)</td><td>Sim</td><td>Rectangular 2D domain; default -100..100 on both axes with spacing 20</td></tr>
+<tr><td>sim.substrate(name, diffusion, decay, initial, boundary)</td><td>Sim</td><td>Diffusing field; boundary -1 is no flux, otherwise every edge voxel is held at that value</td></tr>
+<tr><td>sim.edge(substrate, side, value)</td><td>Sim</td><td>Per-side override for xmin, xmax, ymin or ymax</td></tr>
+<tr><td>sim.diffusion_dt(dt)</td><td>Sim</td><td>Largest diffusion and exchange substep inside each cell step</td></tr>
+<tr><td>sim.cell_type(name)</td><td>CellType</td><td>Named phenotype builder</td></tr>
+<tr><td>type.cycle(rate), type.death(rate), type.radius(r)</td><td>CellType</td><td>Division rate, apoptosis rate, cell radius</td></tr>
+<tr><td>type.motility(speed, persistence_time)</td><td>CellType</td><td>Persistent random walk</td></tr>
+<tr><td>type.chemotaxis(substrate, bias)</td><td>CellType</td><td>Steer up a gradient; bias in 0..1</td></tr>
+<tr><td>type.exchange(substrate, uptake, secretion)</td><td>CellType</td><td>Uptake and secretion of one substrate; once per substrate</td></tr>
+<tr><td>type.rule(signal, effect, target, half_max, hill)</td><td>CellType</td><td>Hill rule; effect increases or decreases</td></tr>
+<tr><td>type.rule_toward(signal, target, saturation, half_max, hill)</td><td>CellType</td><td>Saturating rule that pulls a rate toward a value</td></tr>
+<tr><td>sim.seed(type, count, x, y)</td><td>Sim</td><td>Colocated cells at one point</td></tr>
+<tr><td>sim.scatter(type, count, xmin, xmax, ymin, ymax), sim.seed_disk(type, count, x, y, radius)</td><td>Sim</td><td>Uniform random placement from a portable seeded generator; call after domain</td></tr>
+<tr><td>sim.record(interval)</td><td>Sim</td><td>Keep positions and fields every interval minutes</td></tr>
+<tr><td>sim.run(duration, max_dt)</td><td>Result</td><td>Freeze the builder and run once</td></tr>
+<tr><td>result.live(), result.live_of(type), result.substrate(index)</td><td>int, int, string</td><td>Final live counts and substrate names</td></tr>
+<tr><td>result.counts(), type_counts(), cells(), profiles(), history(), profile_history()</td><td>Matrix</td><td>Numeric tables of the run</td></tr>
+<tr><td>matrix.rows(), matrix.cols(), matrix.get(row, col), matrix.save_csv(path)</td><td>int, int, float, void</td><td>Zero-based access and headerless 17-digit CSV</td></tr>
+</tbody>
+</table>
+<p>Rule targets are cycle entry, apoptosis and migration speed. A rule signal is a declared substrate name or the built-in signal neighbors, the number of other live cells in the same voxel. One simulation can run per host process.</p>
+<h2 id="pages">Detail pages</h2>
+<ul>
+<li><a href="/tools/lmcell/skill.html">Skill</a>: install, commands, safety rules, worked examples, errors and verification for agents.</li>
+<li><a href="/tools/lmcell/guide.html">Guide</a>: the model, architecture, workflow, numerics and limits.</li>
+<li><a href="/tools/lmcell/reference.html">Reference</a>: every type, method, matrix layout, limit, flag, exit code and the standard library tables.</li>
+<li><a href="https://github.com/lmctl-ai/lmcell">GitHub repository lmctl-ai/lmcell</a>: source, 16 gallery examples and releases.</li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcell">github.com/lmctl-ai/lmcell</a>.</p>
+</footer>
+</body>
+</html>

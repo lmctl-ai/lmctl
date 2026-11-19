@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmmcp authoring skill — lmmcp — lmctl.com tools</title>
+<meta name="description" content="lmmcp is a single-binary Go Model Context Protocol (MCP) bridge and LMScript host built on the official Go MCP SDK and github.com/lmctl-ai/lmcode-go.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmmcp/">Overview</a></li>
+<li><a href="/tools/lmmcp/skill.html">Skill</a></li>
+<li><a href="/tools/lmmcp/guide.html">Guide</a></li>
+<li><a href="/tools/lmmcp/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmmcp authoring skill</h1>
+<p>lmmcp is a single-binary Go Model Context Protocol (MCP) bridge and LMScript host built on the official Go MCP SDK and github.com/lmctl-ai/lmcode-go. It connects to configured stdio, Streamable HTTP, and legacy HTTP+SSE MCP servers and exposes them through an HTTP REST gateway, a deterministic JSON CLI, concurrent JSON-lines REST over stdio, and _lmcode_ bytecode execution.</p>
+<h2>Purpose</h2>
+<p>Use lmmcp to discover and call MCP server tools, list and read text or base64 resource blobs, inspect resource URI templates, render prompts, cancel in-flight requests by ID, bridge MCP servers into HTTP REST or JSON-lines stdio pipelines, and orchestrate multi-server MCP workflows inside LMScript using typed Json envelopes and standard lmcode_std_v3 REST and CLI interfaces.</p>
+<h2>When to use it</h2>
+<p>Choose lmmcp when an agent, test harness, or LMScript workflow needs deterministic JSON access to local stdio or remote HTTP/SSE MCP servers with strict secret suppression, SSRF destination checks, and explicit cancellation. Pair lmmcp with lmmock when running offline contract and transport tests against simulated MCP servers. Use lmcurl instead when testing general HTTP/HTTPS or LDAPv3 endpoints outside the MCP protocol.</p>
+<h2>Install</h2>
+<p>lmmcp is currently built from source with Go 1.26 or newer (CGO_ENABLED=0) rather than downloaded from a public binary release. Place the compiled lmmcp binary on PATH and install @lmctl-ai/lmctl so lmscript can compile and execute _lmcode_ programs against lmmcp --lmcode-schema.</p>
+<pre><code>git clone https://github.com/lmctl-ai/lmmcp.git
+cd lmmcp
+CGO_ENABLED=0 go build -o lmmcp ./cmd/lmmcp
+./lmmcp --version
+./lmmcp --lmcode-schema --json > /tmp/lmmcp-schema.json
+./lmmcp --lmcode-signatures</code></pre>
+<h2>Commands</h2>
+<p>lmmcp provides in-process (--config) and remote (--url) client subcommands, a loopback HTTP REST server (serve), a concurrent JSON-lines REST dispatcher (stdio), OpenAPI 3.1 export (openapi), and _lmcode_ host flags.</p>
+<pre><code># Host introspection and bytecode execution
+lmmcp --version
+lmmcp --lmcode-schema --json
+lmmcp --lmcode-signatures
+lmmcp --config config.json --lmcode build/program.dslb
+
+# Direct CLI client commands (in-process via --config or remote via --url)
+lmmcp servers --config config.json
+lmmcp tools fixture --config config.json
+lmmcp call fixture echo --arg text=hello --config config.json
+lmmcp call fixture add --json '{"left":2,"right":3}' --config config.json
+lmmcp resources fixture --config config.json
+lmmcp read fixture mock://blob --config config.json
+lmmcp templates fixture --config config.json
+lmmcp prompts fixture --config config.json
+lmmcp prompt fixture greet --arg name=Ada --config config.json
+
+# Start loopback HTTP REST gateway or print OpenAPI 3.1 specification
+lmmcp serve --config config.json --listen 127.0.0.1:8080 --read-only
+lmmcp openapi
+
+# Query the running HTTP REST gateway
+curl http://127.0.0.1:8080/v1/servers/fixture/tools
+curl --json '{"text":"hello"}' http://127.0.0.1:8080/v1/servers/fixture/tools/echo/call
+curl 'http://127.0.0.1:8080/v1/servers/fixture/resources/read?uri=mock%3A%2F%2Fblob'
+
+# Concurrent JSON-lines REST over stdio
+printf '%s\n' '{"id":"r1","method":"GET","path":"/v1/servers","query":{},"body":null}' | lmmcp stdio --config config.json</code></pre>
+<h2>Inputs and outputs</h2>
+<p>lmmcp reads a strict JSON configuration file containing an mcpServers map of stdio entries (command, args, env, cwd, envAllowlist, allowTools, denyTools) or remote entries (url, headers, type/transport, protocolVersion, allowPrivateAddresses, allowTools, denyTools). Every CLI action and REST endpoint emits a single JSON envelope on stdout: {"ok":true,"data":...} on success or {"ok":false,"error":{"code":...,"message":...}} on failure. An MCP tool returning isError:true maps to HTTP 200 with ok:false, error.code:"TOOL_ERROR", and the original MCP payload in data so callers can distinguish tool errors from transport errors. In _lmcode_ mode, mcp_server(name) and mcp_* global functions return Json objects wrapping this exact REST envelope, and programs can assign a final Json result to $return.</p>
+<h2>Safety rules</h2>
+<p>Follow lmmcp configuration, credential, and network guardrails when connecting to MCP servers:</p>
+<ul>
+<li>Bind HTTP listeners to literal loopback IP addresses only (such as 127.0.0.1:8080 or [::1]:8080), and pass optional REST bearer tokens via --token-env NAME or --token-file FILE — never as command-line arguments.</li>
+<li>Use ${NAME} environment variable references for remote server headers in config.json (for example, "Authorization": "Bearer ${MCP_TOKEN}"); lmmcp refuses literal header credentials and unknown third-party config keys (such as timeout, autoApprove, or type:"streamableHttp").</li>
+<li>Rely on known-secret suppression: any referenced environment variable or bearer token of 8 or more bytes is automatically blocked from serialized string and numeric outputs if an MCP server attempts to echo it back.</li>
+<li>Respect destination and tool policies: plain HTTP remote URLs are allowed only for literal loopback IPs, cloud-metadata and link-local ranges (169.254.0.0/16, fe80::/10, fd00:ec2::254) are always refused before and after DNS resolution, allowTools/denyTools enforce exact tool-name filtering (where deny wins), and --read-only restricts calls to tools advertising readOnlyHint=true without destructiveHint=true.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>The first example acquires an MCPServer handle in _lmcode_, lists available tools, invokes the echo tool with a parsed Json argument object, and returns the resulting Json envelope in $return:</p>
+<pre><code>p = _lmcode_ schema="examples/schema.json";
+let server = mcp_server("fixture");
+let tools = server.tools();
+let reply = server.call("echo", json_parse("{\"text\":\"hello from lmcode\"}"));
+$return = json_parse("{\"tools\":" + tools.to_json() + ",\"reply\":" + reply.to_json() + "}");
+end _lmcode_
+r = run_lmcode(p, {command: ["lmmcp", "--config", ARGV[0], "--lmcode", "$DSLFILE"]});
+require(r.ok, json_stringify(r));
+println(json_stringify(r.result));</code></pre>
+<p>The second example combines MCPServer and mcp_call with the standard lmcode_std_v3 CliOption, CliCommand, and RestGet interfaces and dispatches them in-process with rest_cli:</p>
+<pre><code>p = _lmcode_ schema="examples/schema.json";
+@"--server"
+fn opt_server(x: RestExchange) -> void implements CliOption {
+  x.set("server", x.query("server"));
+}
+
+@"tools"
+fn cmd_tools(x: RestExchange) -> void implements CliCommand {
+  let srv = mcp_server(x.get("server"));
+  x.json(srv.tools().to_json());
+}
+
+@"/call/:tool"
+fn get_call(x: RestExchange) -> void implements RestGet {
+  let res = mcp_call(x.get("server"), x.param("tool"), json_parse("{\"text\":\"hello\"}"));
+  x.json(res.to_json());
+}
+
+rest_config("session", "global");
+let tools_out = rest_cli(str_split("--server=fixture tools", " "));
+let call_out = rest_cli(str_split("/call/echo", " "));
+$return = json_parse("{\"tools\":" + tools_out + ",\"call\":" + call_out + "}");
+end _lmcode_</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmmcp uses deterministic exit codes across CLI client actions, serve/stdio gateways, and _lmcode_ bytecode execution:</p>
+<ul>
+<li>Exit code 0 indicates that the CLI command, REST/stdio server shutdown, or _lmcode_ program completed without error.</li>
+<li>Exit code 2 indicates invalid CLI usage, bad or unreadable config.json, unknown config keys, literal credential headers, non-loopback --listen address, or incompatible flags (such as mixing --arg and --json, or --config and --url).</li>
+<li>Exit code 3 indicates an MCP tool error (isError:true on the CLI), upstream transport/protocol failure, authentication or policy refusal, broken stdout pipe, or a bytecode load/VM execution failure in _lmcode_ host mode.</li>
+<li>Exit code 4 indicates request or process cancellation via SIGINT, SIGTERM, or SIGHUP in CLI/server modes, or an application-level host failure in _lmcode_ mode.</li>
+</ul>
+<h2>How to verify</h2>
+<p>Verify the built lmmcp binary by checking its JSON version output, embedded schema and 242 signatures, and running the Go race and contract suites:</p>
+<pre><code>./lmmcp --version
+./lmmcp --lmcode-schema --json > /tmp/lmmcp-schema.json
+./lmmcp --lmcode-signatures > /tmp/lmmcp-sigs.txt
+go vet ./...
+CGO_ENABLED=1 go test -race ./...</code></pre>
+<p>To run the full remote integration and mutation gates against the pinned lmmock v0.1.111 MCP fixture in a source checkout, run scripts/prepare-mock.sh v0.1.111 /tmp/lmmcp-mock-cache followed by go test -tags integration ./... or python3 scripts/ci.py.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmmcp">github.com/lmctl-ai/lmmcp</a>.</p>
+</footer>
+</body>
+</html>

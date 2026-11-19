@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmssl guide — lmssl — lmctl.com tools</title>
+<meta name="description" content="lmssl unifies the upstream OpenSSL 4.0.3 command-line utility, statically linked libcrypto and libssl libraries, an embedded default openssl.cnf, and the…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmssl/">Overview</a></li>
+<li><a href="/tools/lmssl/skill.html">Skill</a></li>
+<li><a href="/tools/lmssl/guide.html">Guide</a></li>
+<li><a href="/tools/lmssl/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmssl guide</h1>
+<h2>Overview</h2>
+<p>lmssl unifies the upstream OpenSSL 4.0.3 command-line utility, statically linked libcrypto and libssl libraries, an embedded default openssl.cnf, and the lmcode-cpp bytecode virtual machine in a single zero-dependency executable. It lets developers and agents run standard openssl commands or execute type-checked _lmcode_ scripts that make every DNS, TCP, TLS, PKI, and cryptographic step explicit.</p>
+<h2>Dual-mode architecture and embedded OpenSSL 4.0.3</h2>
+<p>A common frustration with standalone OpenSSL deployments is missing shared libraries or missing openssl.cnf configuration files on minimal containers and build runners. lmssl eliminates both dependencies:</p>
+<ul>
+<li>Static single-file linkage: OpenSSL 4.0.3's libcrypto, libssl, and apps/openssl.c (with main renamed) are statically linked with the lmcode-cpp VM. On Linux, ldd lmssl reports that the binary is not a dynamic executable.</li>
+<li>Compiled-in configuration: When invoked in native OpenSSL CLI mode (any command not starting with --lmcode, --dry-run, --json, --version, --lmcode-schema, or --lmcode-signatures) and OPENSSL_CONF is unset, lmssl automatically materializes OpenSSL's stock openssl.cnf so commands such as lmssl req and lmssl ca work out of the box.</li>
+<li>Multi-part bytecode execution: In _lmcode_ mode, lmssl validates every --lmcode FILE [ARG...] part against the embedded schema SHA-256 before executing any part. Each part receives its own argument vector through ssl.args(), writes human diagnostics to stderr via out.line/text/warn, and emits a single terminal JSON SDK frame on stdout.</li>
+</ul>
+<h2>Cryptographic primitives and X.509 PKI builders</h2>
+<p>The ssl context exposes deterministic wrappers around OpenSSL's EVP and X509 APIs:</p>
+<ul>
+<li>Hexadecimal binary boundary: Functions that produce or consume raw cryptographic material (ssl.digest, ssl.hmac, ssl.pbkdf2, ssl.seal, ssl.open, Key.sign, Key.verify, ssl.rand_hex) use lowercase hexadecimal strings for keys, IVs, tags, digests, and signatures, while plaintext payloads and PEM blocks remain regular UTF-8 or byte strings. For AEAD (AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305), ssl.seal returns hex(ciphertext || 16-byte tag), and ssl.open verifies the 16-byte authentication tag before returning plaintext.</li>
+<li>Two-phase certificate construction: ssl.new_cert(key, subject) or ssl.cert_from_csr(csr) creates an unsigned X509 template with a random 63-bit serial number and 365-day default validity. Builder methods (san, ca, ext, valid_days, valid_between, serial) return the Cert receiver for chaining. Calling sign_self(key, digest) or sign_with(issuer_cert, issuer_key, digest) automatically attaches subjectKeyIdentifier, basicConstraints (CA:TRUE if ca(true) was set, otherwise CA:FALSE), and authorityKeyIdentifier before signing.</li>
+<li>Private key file hygiene: Key.save, Key.save_encrypted, and fs.write_private enforce 0600 file permissions at creation time so private keys are never world-readable.</li>
+</ul>
+<h2>Explicit DNS, TCP, and TLS handshake inspection</h2>
+<p>Unlike high-level HTTP clients that hide connection setup, lmssl separates name resolution, TCP socket connection, TLS policy configuration, and stream I/O so scripts can inspect or test each layer independently:</p>
+<ul>
+<li>Socket and listener layer: net.resolve(host) returns a StrList of resolved IP addresses, net.connect(host, port) opens a plain TCP Conn (backed by an OpenSSL BIO), and net.listen(port) binds a local TCP Listener (supporting port 0 ephemeral allocation via listener.port()).</li>
+<li>Fail-closed TLS policy: ssl.client_ctx() and ssl.server_ctx(cert, key) construct a TlsCtx. Client contexts enable peer certificate verification by default with no trust anchors loaded; scripts opt into trust via ctx.system_roots(), ctx.ca_file(path), or ctx.add_ca(cert), or disable enforcement with ctx.verify(false) to inspect untrusted chains via tls.verified() and tls.verify_result().</li>
+<li>Handshake telemetry: Enabling ctx.trace(true) before ctx.connect(conn, sni) or ctx.accept(conn) records every TLS record and handshake message with byte lengths. After handshake completion, tls.version(), tls.cipher(), tls.group() (including post-quantum hybrid groups like X25519MLKEM768 in OpenSSL 4.0.3), tls.peer_sigalg(), tls.alpn(), tls.peer(), and tls.chain_at(i) expose the negotiated session parameters.</li>
+</ul>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<p>lmssl embeds the full 226-signature lmcode_std_v3 standard library (cpp/stdlib/rest.hpp). Scripts can expose PKI, digest, or TLS inspection endpoints as HTTP routes or stateless CLI commands:</p>
+<ul>
+<li>HTTP route annotations: Functions annotated with static or parameterized paths (such as @"/pki/sign" or @"/certs/:serial") can implement RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, or RestHandler.</li>
+<li>Stateless CLI dispatch: Functions annotated with @"--flag" implement CliOption and functions annotated with @"command" implement CliCommand. rest_cli(args) dispatches flags, subcommands, or URL paths in-process and returns the response string.</li>
+<li>Stateful sessions and live listener: rest_config("session", "global") preserves key-value state across RestExchange.set and RestExchange.increment calls, while rest_serve() and rest_stop() control the embedded HTTP server loop.</li>
+</ul>
+<pre><code>p = _lmcode_ cli="lmssl" install="github:lmctl-ai/lmssl@latest";
+@"--curve"
+fn opt_curve(x: RestExchange) -> void implements CliOption {
+  x.set("curve", x.query("curve"));
+}
+
+@"gen-ca"
+fn cmd_gen_ca(x: RestExchange) -> void implements CliCommand {
+  let k = ssl.gen_ec(x.get("curve"));
+  let c = ssl.new_cert(k, "CN=" + x.body()).ca(true).valid_days(365).sign_self(k, "SHA256");
+  x.send(c.subject() + ":" + k.curve());
+}
+
+@"/hash/:alg"
+fn post_hash(x: RestExchange) -> void implements RestPost {
+  x.json("{\"alg\":\"" + x.param("alg") + "\",\"hex\":\"" + ssl.digest(x.param("alg"), x.body()) + "\"}");
+}
+
+rest_config("session", "global");
+assert_eq(rest_cli(str_split("--curve=P-256 gen-ca -- RootCA", " ")), "CN=RootCA:P-256");
+end _lmcode_</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmssl">github.com/lmctl-ai/lmssl</a>.</p>
+</footer>
+</body>
+</html>

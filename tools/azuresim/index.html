@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>azuresim — lmctl.com tools</title>
+<meta name="description" content="azuresim is a single-binary local Azure emulator on 127.0.0.1:4577 that runs Blob and Queue Storage in-process without Docker, Java, or an Azure account.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/azuresim/">Overview</a></li>
+<li><a href="/tools/azuresim/skill.html">Skill</a></li>
+<li><a href="/tools/azuresim/guide.html">Guide</a></li>
+<li><a href="/tools/azuresim/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>azuresim</h1>
+<p>azuresim is a single-binary local Azure emulator on 127.0.0.1:4577 that runs Blob and Queue Storage in-process without Docker, Java, or an Azure account.</p>
+<h2>Quick reference</h2>
+<p>Start azuresim on loopback port 4577 in open mode or with SharedKey and Bearer token enforcement, then connect lmazure, Azure SDKs, or curl.</p>
+<pre><code>azuresim --version
+azuresim serve
+azuresim serve --port 4577 --data-dir ./data
+azuresim serve --auth enforce --auth-config auth.json
+curl -f -X PUT "http://127.0.0.1:4577/devstoreaccount1/demo?restype=container"</code></pre>
+<table>
+<thead>
+<tr>
+<th>Command or endpoint</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>azuresim serve | start</td>
+<td>127.0.0.1:4577, in-memory</td>
+<td>Run the foreground loopback Azure Blob and Queue Storage emulator.</td>
+</tr>
+<tr>
+<td>--port &lt;port></td>
+<td>4577</td>
+<td>Override the loopback TCP listening port.</td>
+</tr>
+<tr>
+<td>--data-dir &lt;path></td>
+<td>in-memory</td>
+<td>Persist containers, blobs, and queues across restarts.</td>
+</tr>
+<tr>
+<td>--auth open | enforce</td>
+<td>open (AZURESIM_AUTH)</td>
+<td>Run in permissive open mode or enforce SharedKey/Bearer authentication and storage policies.</td>
+</tr>
+<tr>
+<td>--auth-config &lt;file></td>
+<td>AZURESIM_AUTH_CONFIG</td>
+<td>JSON file defining accounts, SharedKeys, Bearer tokens, and allow/deny storage rules.</td>
+</tr>
+<tr>
+<td>/devstoreaccount1 &amp; /devstoreaccount1-queue</td>
+<td>account devstoreaccount1</td>
+<td>Base URL paths for Azure Blob Storage and Azure Queue Storage requests.</td>
+</tr>
+</tbody>
+</table>
+<p>Runnable LMScript example driving azuresim on 127.0.0.1:4577 through lmazure and the shared lmcloud schema:</p>
+<pre><code>p = _lmcode_ cli="lmazure" install="github:lmctl-ai/lmazure@latest";
+  @"/azuresim/:container/:blob"
+  fn get_blob(x: RestExchange) -> void implements RestGet {
+    x.send(cloud.object_get(x.param("container"), x.param("blob")));
+  }
+
+  cloud.set_endpoint("all", "http://127.0.0.1:4577");
+  cloud.bucket_create("demo-c");
+  cloud.object_put("demo-c", "hello.txt", "hello from azuresim");
+  cloud.queue_create("demo-q");
+  cloud.queue_send("demo-q", "msg-1");
+
+  rest_config("prefix", "/v1");
+  let out = rest_cli(str_split("/v1/azuresim/demo-c/hello.txt", " "));
+  print(out);
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, "azuresim client run failed");</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/azuresim/skill.html">Skill</a> — LLM agent authoring rules, commands, connection strings, safety rules, and verification steps for azuresim.</li>
+<li><a href="/tools/azuresim/guide.html">Guide</a> — Architecture, real Azure semantics overlay, SharedKey and Bearer auth enforcement, and standard REST/CLI client workflows.</li>
+<li><a href="/tools/azuresim/reference.html">Reference</a> — CLI flags, environment variables, Blob and Queue endpoints, auth configuration, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/azuresim">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/azuresim">github.com/lmctl-ai/azuresim</a>.</p>
+</footer>
+</body>
+</html>

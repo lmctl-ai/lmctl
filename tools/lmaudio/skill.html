@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Use lmaudio from LMScript — lmaudio — lmctl.com tools</title>
+<meta name="description" content="lmaudio is an offline audio host for LMScript.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmaudio/">Overview</a></li>
+<li><a href="/tools/lmaudio/skill.html">Skill</a></li>
+<li><a href="/tools/lmaudio/guide.html">Guide</a></li>
+<li><a href="/tools/lmaudio/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>Use lmaudio from LMScript</h1>
+<p>lmaudio is an offline audio host for LMScript. A typed lmcode block synthesizes, processes and measures sound in one native process and returns numbers, CSV tables and WAV files.</p>
+<h2>Purpose</h2>
+<p>Use lmaudio to generate test signals and instrument voices, sequence notes and drum patterns from text, apply filters, dynamics and reverbs, and measure pitch, loudness, spectra and reverberation time. Results are deterministic, so a script can assert a known answer before it writes a file.</p>
+<h2>When to use it</h2>
+<ul>
+<li>Use it to render audio from a script without a sound card, for example a tone, a melody, a drum loop or an impulse response.</li>
+<li>Use it to check audio facts with numbers: a pitch in Hz, an integrated loudness in LUFS, an RT60, a filter gain at a frequency.</li>
+<li>Use it to produce CSV data for a plotting host such as lmplot from the same script.</li>
+<li>Do not use it for real-time playback, MIDI input, surround formats, or MP3, FLAC and Ogg output. Output audio is WAV only.</li>
+</ul>
+<h2>Install</h2>
+<p>Install the LMScript compiler from npm. The host itself needs no separate install step: the install declaration in the block downloads the release binary into the lmscript tool cache when lmaudio is not on PATH.</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmscript --version</code></pre>
+<p>The latest release is v0.2.2. Its release page lists lmaudio-linux-x64, lmaudio-linux-arm64, lmaudio-macos-x64, lmaudio-macos-arm64 and lmaudio-windows-x64.exe with a SHA256SUMS file. The repository README states that the current release lane builds the two Linux binaries, against glibc 2.35 or newer with all third-party libraries linked statically, so treat Linux as the supported platform for new releases. Use run_lmcode with lmscript 0.2.454 or newer; these pages were checked with lmscript 0.2.482.</p>
+<h2>Commands</h2>
+<p>The normal command is lmscript on a script that contains an lmcode block and calls run_lmcode. The host flags below are the protocol the compiler uses, and they are useful for inspection.</p>
+<pre><code>lmscript hello.lms
+lmscript --check hello.lms
+lmaudio --version
+lmaudio --lmcode-schema --json
+lmaudio --lmcode-signatures
+lmaudio --notices</code></pre>
+<table>
+<thead><tr><th>Command or variable</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td>lmaudio --version</td><td>Prints the release identity, for example lmaudio 0.2.2.</td></tr>
+<tr><td>lmaudio --notices</td><td>Prints the third-party software notices with the upstream license texts.</td></tr>
+<tr><td>lmaudio --lmcode-schema</td><td>Prints the embedded schema as readable JSON.</td></tr>
+<tr><td>lmaudio --lmcode-schema --json</td><td>Prints the exact schema bytes the compiler binds a program to (schema version 2, name lmaudio).</td></tr>
+<tr><td>lmaudio --lmcode-signatures</td><td>Prints every canonical signature the host registry provides, one per line, standard catalog included.</td></tr>
+<tr><td>lmaudio --lmcode FILE [FILE ...]</td><td>Runs compiled lmcode program files. This is what run_lmcode calls; the compiler owns the program files.</td></tr>
+<tr><td>lmaudio --dry-run --lmcode FILE</td><td>Runs a program without writing any file. The flag comes before --lmcode. The result envelope carries dry true.</td></tr>
+<tr><td>LMAUDIO_MAX_MEMORY_MB</td><td>Environment variable: total memory budget in MiB, default 4096. A value that is not a positive whole number is a usage error on every command.</td></tr>
+</tbody>
+</table>
+<p>lmscript --check compiles every block without running it. It needs the host schema, so run the script once, or have lmaudio on PATH, before the first check on a new machine: with no cached schema the check stops with the message No cached host schema for "lmaudio".</p>
+<pre><kbd>lmaudio --version</kbd>
+<samp>lmaudio 0.2.2</samp></pre>
+<h2>Inputs and outputs</h2>
+<p>Inputs are the literals in the block, values spliced from LMScript with ${...}, and WAV files read with audio.load_wav (PCM16, PCM24, float32 and WAVE_FORMAT_EXTENSIBLE). Durations are seconds, frequencies are Hz, and the sample rate argument is optional with a default of 44100.</p>
+<table>
+<thead><tr><th>Output</th><th>How</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Numbers to LMScript</td><td>lmcode_return_put(name, value) or lmcode_return_set(value)</td><td>They arrive as r.result after r = run_lmcode(block).</td></tr>
+<tr><td>Report text</td><td>audio.print(text)</td><td>Written to stderr, so it appears in the terminal and stays out of the result.</td></tr>
+<tr><td>WAV</td><td>Buffer.save_wav(path) or save_wav(path, bits)</td><td>16, 24 or 32 bits. 16 and 24 bit output clips samples outside -1 to 1 and warns on stderr; NaN and infinity are refused.</td></tr>
+<tr><td>CSV</td><td>Buffer.save_csv, Spectrum.save_csv, Spectrogram.save_csv, Biquad.save_response_csv, Buffer.pitch_track_csv</td><td>Header line starts with a # character, for example # freq_hz,magnitude,db,phase_rad.</td></tr>
+<tr><td>Text</td><td>audio.save_text(path, text)</td><td>Any text file, for example plot settings.</td></tr>
+</tbody>
+</table>
+<p>A failed run still returns a map: ok is false and phase, code, message, line and column describe the failure. run_lmcode does not stop the script on a host failure, so test r.ok.</p>
+<h2>Safety rules</h2>
+<ul>
+<li>Review a script before running it. lmscript and lmaudio run with your local file permissions, and install= downloads a native executable from the public release.</li>
+<li>Save methods write to the paths you give them and replace existing files; in a test with 0.2.2 save_wav also created a missing parent directory. Keep outputs in a dedicated working directory.</li>
+<li>Preview file effects with lmaudio --dry-run --lmcode FILE: the program runs and no file is written.</li>
+<li>Normalize before saving 16 or 24 bit WAV files, or save 32 bit float, so that samples above full scale are not clipped.</li>
+<li>Long or high sample rate buffers use memory quickly. The total budget is 4096 MiB unless LMAUDIO_MAX_MEMORY_MB changes it; beyond it the run stops with a run error instead of exhausting the machine.</li>
+<li>Use seeds for noise, karplus and granular so that renders repeat exactly.</li>
+<li>Binary releases after v0.2.1 use the Lattice Systems Binary License 1.0; the README, docs, images and examples are MIT.</li>
+</ul>
+<h2>Worked examples</h2>
+<h3>Arpeggio with a loudness check</h3>
+<pre><code># hello.lms: an A major arpeggio on a plucked string, checked and saved
+mkdir("audio");
+a = _lmcode_ cli="lmaudio" install="github:lmctl-ai/lmaudio@latest";
+let arp = audio.sequence("A3:0.5 C#4:0.5 E4:0.5 A4:1.5", 120.0, "karplus", 22050);
+let out = arp.reverb(0.8, 6500.0, 0.25).normalize_lufs(-16.0);
+audio.assert_close(out.lufs(), -16.0, 0.01);
+audio.print("pitch of the first note: " + str(arp.slice(0.0, 0.25).pitch()) + " Hz");
+out.save_wav("audio/hello.wav", 16);
+lmcode_return_put("lufs", out.lufs());
+lmcode_return_put("seconds", out.duration());
+end _lmcode_
+r = run_lmcode(a);
+println(json_stringify(r));
+assert(r.ok);</code></pre>
+<pre><kbd>lmscript hello.lms</kbd>
+<samp>pitch of the first note: 219.959988525778 Hz
+lmaudio: warning: 1 sample(s) outside [-1, 1] were clipped while writing audio/hello.wav (16-bit PCM); normalize() first or save with bits=32
+{"ok":true,"result":{"lufs":-16.00000004683295,"seconds":1.5000907029478459}}</samp></pre>
+<p>The warning is real output: reverb pushed one sample above full scale after loudness normalization, and 16 bit output clipped it.</p>
+<h3>Drum pattern from text</h3>
+<pre><code>mkdir("audio");
+a = _lmcode_ cli="lmaudio" install="github:lmctl-ai/lmaudio@latest";
+let sr = 22050;
+let bpm = 124.0;
+let kick = audio.drum("kick", 55.0, 0.5, 0.55, 0.45, 0.9, sr).normalize(0.95);
+let hat = audio.drum("hihat", 3800.0, 0.06, 0.15, 0.7, 0.75, sr).normalize(0.95);
+audio.assert_close(kick.slice(0.05, 0.45).pitch(30.0, 200.0), 55.0, 1.0);
+let k = kick.pattern("X...X...X...X...", bpm, 4);
+let h = hat.pattern("xo.oxo.oxo.oxo.o", bpm, 4);
+let groove = k.mix(h, 0.25).normalize(0.9);
+groove.save_wav("audio/groove.wav", 16);
+lmcode_return_put("seconds", groove.duration());
+lmcode_return_put("peak", groove.peak());
+lmcode_return_put("kick_hz", kick.slice(0.05, 0.45).pitch(30.0, 200.0));
+end _lmcode_
+r = run_lmcode(a);
+require(r.ok, "host failed");
+println(json_stringify(r.result));</code></pre>
+<pre><kbd>lmscript drums.lms</kbd>
+<samp>{"seconds":1.951609977324263,"peak":0.9000000357627869,"kick_hz":54.95497239392236}</samp></pre>
+<h3>Filter design, exact response and spectrum</h3>
+<pre><code>mkdir("build");
+a = _lmcode_ cli="lmaudio" install="github:lmctl-ai/lmaudio@latest";
+let sr = 44100;
+let lp = audio.biquad_design("lowpass", 800.0, 0.70710678, sr);
+audio.assert_close(lp.db_at(800.0), -3.0103, 0.01);
+lp.save_response_csv("build/lowpass.csv", 400, 20.0, 20000.0);
+let saw = audio.saw(220.0, 1.0, 0.8, sr);
+let soft = lp.apply(saw);
+let spec = soft.spectrum("hann", 16384);
+spec.save_csv("build/spectrum.csv", 5000.0);
+lmcode_return_put("gain_db_at_800", lp.db_at(800.0));
+lmcode_return_put("fundamental_hz", spec.peak_freq_in(150.0, 300.0));
+lmcode_return_put("centroid_before", saw.centroid());
+lmcode_return_put("centroid_after", soft.centroid());
+end _lmcode_
+r = run_lmcode(a);
+require(r.ok, "host failed: " + r.get("message", ""));
+println(json_stringify(r.result));</code></pre>
+<pre><kbd>lmscript filter.lms</kbd>
+<samp>{"gain_db_at_800":-3.010299971215047,"fundamental_hz":219.95764983987954,"centroid_before":3862.1785215452837,"centroid_after":587.2414572204808}</samp></pre>
+<p>The repository has 22 longer examples that also draw their figures with lmplot and lmdraw, for example <a href="https://github.com/lmctl-ai/lmaudio/blob/main/examples/drum_machine_pattern.lms">drum_machine_pattern.lms</a> and <a href="https://github.com/lmctl-ai/lmaudio/blob/main/examples/convolution_reverb_rt60.lms">convolution_reverb_rt60.lms</a>.</p>
+<h2>Errors and exit codes</h2>
+<table>
+<thead><tr><th>Exit code</th><th>Envelope</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>ok true</td><td>The program ran and every audio.assert_close held.</td></tr>
+<tr><td>2</td><td>phase cli, code CLI_USAGE</td><td>Unknown or misplaced arguments, or an invalid LMAUDIO_MAX_MEMORY_MB.</td></tr>
+<tr><td>3</td><td>phase load, for example code LOAD_BAD_BYTECODE or LOAD_UNBOUND</td><td>The program file cannot be read, or it imports a function the host does not provide.</td></tr>
+<tr><td>3</td><td>phase run, code RUN_HOST</td><td>A host error with a source line and column: a failed audio.assert_close, a missing WAV file, an invalid argument, or the memory budget being exceeded.</td></tr>
+</tbody>
+</table>
+<p>Errors print one JSON envelope on stdout and one readable line on stderr. A failed assertion looks like this from LMScript:</p>
+<pre><code>a = _lmcode_ cli="lmaudio" install="github:lmctl-ai/lmaudio@latest";
+let s = audio.sine(440.0, 0.5, 0.5, 22050);
+audio.assert_close(s.pitch(), 100.0, 1.0);
+end _lmcode_
+r = run_lmcode(a);
+println(json_stringify(r));</code></pre>
+<pre><kbd>lmscript fail.lms</kbd>
+<samp>lmaudio: dsl line 3:7: assert_close failed: got 440.0002658, expected 100 (|diff| = 340.0002658 > 1)
+{"ok":false,"phase":"run","code":"RUN_HOST","message":"dsl line 3:7: assert_close failed: got 440.0002658, expected 100 (|diff| = 340.0002658 > 1)","line":3,"column":7}</samp></pre>
+<table>
+<thead><tr><th>Symptom</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>Compile error: type Audio has no method NAME</td><td>The compiler lists the valid methods in the message. Check the name against the reference.</td></tr>
+<tr><td>No cached host schema for "lmaudio" during --check</td><td>Run the script once or put lmaudio on PATH, then check again.</td></tr>
+<tr><td>cannot open WAV file</td><td>The path is relative to the directory where lmscript runs.</td></tr>
+<tr><td>LOAD_UNBOUND: import is not provided by the host</td><td>The block calls a standard function that this release does not ship, such as the REST group.</td></tr>
+<tr><td>invalid lmaudio arguments or memory budget</td><td>Check flag order (--dry-run goes before --lmcode) and LMAUDIO_MAX_MEMORY_MB.</td></tr>
+<tr><td>Warning that samples were clipped</td><td>Call normalize first or save with 32 bits.</td></tr>
+</tbody>
+</table>
+<h2>How to verify</h2>
+<ol>
+<li>Check the host identity and surface: lmaudio --version prints the release, and lmaudio --lmcode-signatures prints 377 lines for v0.2.2.</li>
+<li>Compile without running: lmscript --check file.lms exits 0 when every block type-checks.</li>
+<li>Assert inside the block with audio.assert_close(actual, expected, tol) on a measured value such as pitch, lufs or rt60.</li>
+<li>Return the measured values with lmcode_return_put and assert r.ok in LMScript.</li>
+<li>Confirm that the expected WAV and CSV files exist and have a plausible size.</li>
+</ol>
+<pre><code>lmaudio --version
+lmaudio --lmcode-signatures | wc -l
+lmscript --check hello.lms
+lmscript hello.lms
+ls -l audio/hello.wav</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmaudio">github.com/lmctl-ai/lmaudio</a>.</p>
+</footer>
+</body>
+</html>

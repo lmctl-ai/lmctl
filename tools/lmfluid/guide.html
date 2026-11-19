@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmfluid guide — lmfluid — lmctl.com tools</title>
+<meta name="description" content="This guide explains how lmfluid is put together and how to think about its models: the pipeline from script to result, the object model, the equations each…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmfluid/">Overview</a></li>
+<li><a href="/tools/lmfluid/skill.html">Skill</a></li>
+<li><a href="/tools/lmfluid/guide.html">Guide</a></li>
+<li><a href="/tools/lmfluid/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmfluid guide</h1>
+<p>This guide explains how lmfluid is put together and how to think about its models: the pipeline from script to result, the object model, the equations each problem type solves, boundary numbering, units, numerics and the limits that follow from them. For step-by-step operation see the skill page; for exact signatures see the reference.</p>
+<h2 id="overview">Overview</h2>
+<p>lmfluid is a scripting-only host. A single executable embeds its schema, its legal notices, a serial build of MFEM 4.8 and an original D2Q9 lattice-Boltzmann solver. It has no interactive mode and no input language of its own: programs are lmcode bytecode produced by the lmscript compiler from _lmcode_ blocks, and numerical data leaves the host as CSV files or as the value returned to the script.</p>
+<p>Two independent solver families share that shell. The finite-element family handles Poisson and diffusion problems, transient heat conduction and isotropic linear elasticity on quadrilateral and hexahedral meshes. The lattice-Boltzmann family handles two-dimensional, low-Mach, weakly compressible flow in channels, lid-driven cavities and periodic boxes. They meet only in the Matrix type, which both use to hand tabular results to CSV.</p>
+<h2 id="pipeline">How a run flows</h2>
+<ol>
+<li>The outer lmscript program contains a block that starts with the marker _lmcode_ and the attributes cli="lmfluid" and install="github:lmctl-ai/lmfluid@latest", and ends with end _lmcode_.</li>
+<li>lmscript finds the host binary (on PATH or in its tool cache, downloading the release when install is given), asks it for its schema with --lmcode-schema --json, and compiles the block against that schema. Type errors, unknown methods and wrong argument counts are found here, before any solve.</li>
+<li>run_lmcode starts the host with --lmcode and the compiled bytecode. The host validates the invocation, loads and verifies every part before executing any of them, then runs the parts in order and stops at the first failure.</li>
+<li>The host writes exactly one result frame on stdout. run_lmcode turns it into a map with ok and result, or ok false with phase, code, message, line and column.</li>
+<li>The outer script reads CSV files the block wrote, checks or post-processes them, and often passes them to a drawing host such as lmplot, lmdraw or lmcad in another block.</li>
+</ol>
+<p>Because the schema is embedded in the binary and hashed into the bytecode, a program compiled for one lmfluid build is checked against the build that loads it. The quickstart example in the repository draws this pipeline as a picture using the number the solver just returned.</p>
+<h2 id="objects">Object model</h2>
+<p>Everything starts at the context object fluid. It is a factory and a small toolbox: it creates meshes, problems, flow simulations and matrices, and offers eval, assert_close, assert_true and print.</p>
+<table>
+<thead>
+<tr><th>Type</th><th>Created by</th><th>Role</th><th>Lifetime notes</th></tr>
+</thead>
+<tbody>
+<tr><td>Mesh</td><td>fluid.rect, fluid.box, fluid.load_mesh</td><td>Geometry and boundary attributes</td><td>Kept until the host exits</td></tr>
+<tr><td>Problem</td><td>fluid.poisson, fluid.heat, fluid.elasticity</td><td>Builder: equation kind, order, coefficients, boundary data, solver tolerance</td><td>Builder methods return the same problem, so calls chain</td></tr>
+<tr><td>Field</td><td>problem.solve, problem.evolve</td><td>A computed solution with its own mesh and space</td><td>Changing the problem afterwards does not change a solved field</td></tr>
+<tr><td>LBM</td><td>fluid.channel, fluid.cavity, fluid.periodic</td><td>A live lattice state that run advances</td><td>run continues from the current state; init resets density to one and time to zero</td></tr>
+<tr><td>Matrix</td><td>fluid.matrix, field.sample, flow.sample, flow.vorticity</td><td>Dense table of floats for CSV</td><td>Zero-based rows and columns</td></tr>
+</tbody>
+</table>
+<p>Objects live in arenas until the process exits; there is no explicit release. Each arena holds at most 100000 objects, and the sum of everything is bounded by the memory budget. A long parameter sweep that creates a new mesh and field per iteration therefore grows until the block ends, which is why the gallery sweeps keep meshes small or split work across blocks.</p>
+<p>The block language supplies let bindings, arithmetic, for loops over range, if, string concatenation with str and float conversion. Model physics is not written in that language but in expression strings evaluated by the host at quadrature points or cell centres.</p>
+<h2 id="expressions">Expression strings</h2>
+<p>Coefficients, sources, initial conditions, boundary data, exact solutions for error norms and obstacle shapes are strings. They may use the variables x, y, z and t, arithmetic, the power operator ^, the constant pi, and functions such as sin, cos, exp, log, sqrt, abs, min, max and sign. In 2D z is 0. A step at x = a is written 0.5+0.5*sign(x-a). Expressions must stay finite, and a diffusion coefficient must be positive wherever it is evaluated. fluid.eval evaluates one expression to a float, which is the way to get exp or sin of a number inside a block.</p>
+<p>To put a computed number into an expression, build the string in the block, for example by concatenating str of a value. For lattice simulations x and y are cell-centre coordinates ix+0.5 and iy+0.5.</p>
+<h2 id="fem">Finite-element problems</h2>
+<table>
+<thead>
+<tr><th>Kind</th><th>Equation</th><th>Builder methods that apply</th><th>Finish with</th></tr>
+</thead>
+<tbody>
+<tr><td>poisson</td><td>-div(k grad u) = f</td><td>diffusion, source, dirichlet, tol</td><td>solve</td></tr>
+<tr><td>heat</td><td>u_t - div(k grad u) = f, backward Euler from t = 0</td><td>diffusion, source, initial, dirichlet, tol</td><td>evolve(end_time, dt)</td></tr>
+<tr><td>elasticity</td><td>-div(lambda tr(epsilon) I + 2 mu epsilon) = force; plane strain in 2D</td><td>lame, force, displacement, tol</td><td>solve</td></tr>
+</tbody>
+</table>
+<p>All three use continuous H1 elements of order 1, 2 or 3 on the mesh given at creation. Boundary conditions are eliminated with MFEM's linear-system formation and the systems are solved by serial preconditioned conjugate gradients with an explicit convergence check; tol sets the relative tolerance and the iteration limit. For heat, the diffusion coefficient, the source and the Dirichlet data may depend on t, and the mass and diffusion operators are assembled at every step.</p>
+<h3 id="boundaries">Boundary attributes and defaults</h3>
+<p>If a problem declares no boundary data, the essential value is zero on every boundary face. Selecting a specific attribute replaces that default: the selected faces get the given data and all unselected faces become homogeneous natural boundaries, meaning insulated for scalar problems and traction-free for elasticity. Attribute 0 means every boundary and replaces earlier declarations. The displacement condition always fixes all components; there is no roller or single-component condition.</p>
+<table>
+<thead>
+<tr><th>Mesh</th><th>Attribute</th><th>Face</th></tr>
+</thead>
+<tbody>
+<tr><td>fluid.rect</td><td>1</td><td>Bottom, y = 0</td></tr>
+<tr><td>fluid.rect</td><td>2</td><td>Right, x = lx</td></tr>
+<tr><td>fluid.rect</td><td>3</td><td>Top</td></tr>
+<tr><td>fluid.rect</td><td>4</td><td>Left</td></tr>
+<tr><td>fluid.box</td><td>1</td><td>Bottom, z = 0</td></tr>
+<tr><td>fluid.box</td><td>2</td><td>Front, y = 0</td></tr>
+<tr><td>fluid.box</td><td>3</td><td>Right, x = lx</td></tr>
+<tr><td>fluid.box</td><td>4</td><td>Back</td></tr>
+<tr><td>fluid.box</td><td>5</td><td>Left</td></tr>
+<tr><td>fluid.box</td><td>6</td><td>Top</td></tr>
+</tbody>
+</table>
+<p>A typical mixed problem is a wall with fixed temperatures on its left and right faces and insulated top and bottom: declare dirichlet on attributes 4 and 2 and nothing else. A cantilever is displacement zero on attribute 4 with a body force; the other faces are then traction-free.</p>
+<h3 id="fields">Reading a field</h3>
+<p>value returns the solution at a point; the two-argument form reads component zero in 2D, and the four-argument form takes z and a zero-based component. gradient returns the derivative of one component along direction 0, 1 or 2 at the located point. Fluxes, strains and stresses are combinations of gradients that the script forms itself, for example heat flux k dT/dx, or sigma_xx = (lambda + 2 mu) du_x/dx + lambda du_y/dy. l2_error and l2_error_vector integrate the difference from an exact expression over the mesh, which is the natural check for manufactured solutions. sample evaluates the field on a regular grid over the bounding box and returns a Matrix.</p>
+<h3 id="meshes">Meshes from files</h3>
+<p>load_mesh reads the conforming MFEM mesh v1.0 and v1.2 text formats, which is also what mesh.save writes. Before MFEM parses a file the host validates vertex indices, geometry codes, attributes (1 to 100000), counts and the vertex space dimension. Gmsh, VTK, non-conforming and NURBS meshes are rejected. The plate_hole example shows the route for real geometry: the outer script writes its own graded MFEM mesh file with named attributes for the hole, the grips and the free edges, then loads it.</p>
+<h2 id="lbm">Lattice-Boltzmann flow</h2>
+<p>The flow solver is D2Q9 with BGK collisions, Guo forcing and halfway bounceback walls, including the moving-wall momentum correction for the cavity lid. All quantities are in lattice units: cell size 1, time step 1, reference density 1. The kinematic viscosity nu sets the relaxation time tau = 0.5 + 3 nu. Mapping to physical units is the caller's job through dimensionless numbers such as the Reynolds number; the host converts nothing.</p>
+<table>
+<thead>
+<tr><th>Constructor</th><th>Domain</th><th>Drive</th></tr>
+</thead>
+<tbody>
+<tr><td>fluid.channel(nx, ny, nu, g)</td><td>Periodic along x, no-slip walls at bottom and top</td><td>Body acceleration g along x</td></tr>
+<tr><td>fluid.cavity(nx, ny, nu, lid_speed)</td><td>Closed box with no-slip walls</td><td>Moving lid at lid_speed</td></tr>
+<tr><td>fluid.periodic(nx, ny, nu)</td><td>Periodic in both directions</td><td>None; set a velocity field with init</td></tr>
+</tbody>
+</table>
+<p>Walls sit half a cell outside the outermost fluid nodes, so a channel of ny cells has width H = ny and its exact Poiseuille profile is evaluated at y = j + 0.5. obstacle marks every cell whose centre makes an expression positive as solid; repeated calls add up. Solid cells skip collision, reflect incoming populations with the same halfway bounceback rule as the domain walls, report density 1 and zero velocity, and are excluded from mass and from init. solid_force returns the momentum exchanged with all solid cells, averaged over the steps of the most recent run call, because single-step values carry the acoustic noise of a weakly compressible method.</p>
+<p>Initialization removes the half-force impulse so that the velocities requested in init are the velocities reported at step zero. vorticity returns central-difference vorticity with no-slip walls, together with a solid flag, ready for a colour map.</p>
+<h3 id="stability">Stability envelope</h3>
+<ul>
+<li>Keep speeds below about 0.1 lattice units, which is Mach 0.17. run prints a warning on stderr once the Mach number exceeds 0.3 and stops with an error when a speed reaches 0.45 or a value becomes non-finite.</li>
+<li>A relaxation time below 0.51 prints a warning: BGK is fragile close to tau = 0.5. Raise the resolution or the viscosity instead of pushing tau down.</li>
+<li>The constructors reject a channel acceleration outside ±0.02, a lid speed of magnitude 0.2 or more, grids smaller than 3 by 3 and grids above 1 million cells.</li>
+<li>Obstacles are staircase shapes, so curved walls are first-order accurate.</li>
+</ul>
+<h2 id="workflow">Recommended workflow</h2>
+<ol>
+<li>Start from a problem with a known answer close to yours: a manufactured solution, a series solution, beam theory, Poiseuille flow, a published benchmark table.</li>
+<li>Write the block with assertions on that answer and run it at a coarse resolution.</li>
+<li>Refine and confirm the trend. For smooth solutions the L2 error falls with order 2, 3 and 4 for element orders 1, 2 and 3; per unknown, higher order wins by a wide margin.</li>
+<li>Only then change the model toward the real question, keeping a conservation or symmetry assertion in place.</li>
+<li>Record sweep results in a fluid.matrix, save one CSV, and draw it in a separate block for a drawing host.</li>
+</ol>
+<p>The 17 examples in the repository follow this pattern. Each asserts its own oracle before drawing: the Strouhal number of a cylinder wake, the Ghia, Ghia and Shin 1982 cavity tables at Re = 100, Euler-Bernoulli plus Timoshenko deflection of a cantilever, the stress concentration factor of a plate with a hole, the series solution of a self-heating cube, and convergence orders for P1 to P3.</p>
+<h2 id="determinism">Determinism and data exchange</h2>
+<p>Samples and CSV files use a fixed iteration order and 17 significant digits with no header. Rerunning a script on the same platform gives byte-identical CSV; other platforms agree to rounding. CSV is the interchange format with every other host: the outer script parses it with csv_parse or passes the path to a plotting block. Small results can skip files entirely and return through lmcode_return_put.</p>
+<h2 id="resources">Resource limits</h2>
+<p>A program may use at most 4096 MiB in total for meshes, finite-element spaces, solver matrices, lattice grids, sampled matrices and everything else the host keeps. Past that it stops with a run error naming the limit instead of exhausting the machine. LMFLUID_MAX_MEMORY_MB changes the budget; it must be a positive whole number of MiB. Per-object caps bound single requests: 100000 mesh elements, 1 million degrees of freedom, 1 million lattice cells, 5 million sample points and 100000 objects per arena. As a size guide from the project notes, a 1000 by 1000 lattice holds about 168 MB of populations.</p>
+<h2 id="limits">Limits</h2>
+<ul>
+<li>Flow is 2D lattice-Boltzmann only: no inlet or outlet boundaries, turbulence models, free surfaces or multiphase flow. Channel flow is periodic along x, so a cylinder in a channel is really a row of cylinders.</li>
+<li>Finite elements are serial MFEM with H1 spaces for Poisson, heat and linear elasticity: no Navier-Stokes finite elements, no mixed formulations, no single-component boundary conditions, no Neumann or Robin data builders, no eigenvalue solver, no adaptive refinement, no MPI or GPU.</li>
+<li>Time integration for heat is backward Euler, first order in time; choose dt so that the temporal error is below your tolerance.</li>
+<li>Only MFEM v1.0 and v1.2 mesh files are read.</li>
+<li>The benchmark comparisons in the examples are spot checks at modest resolution, not accuracy claims for high Reynolds numbers.</li>
+<li>The standard library shipped in lmfluid 0.2.2 is the 206-signature lmcode_std_v3. The current catalog has 226 signatures with the standard REST and CLI interfaces; those are not available in lmfluid until it syncs its SDK and releases.</li>
+</ul>
+<h2 id="build">Building from source</h2>
+<pre><code>scripts/sync-deps.sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel 4
+./test.sh</code></pre>
+<p>The build needs CMake 3.24 or newer, C++17, git and Python 3, and lmscript for the tests. MFEM is fetched at the commit pinned in deps.lock and built statically with exceptions and without MPI, METIS, OpenMP, GPU back ends, LAPACK or zlib. The host and the D2Q9 solver are MIT licensed; MFEM is BSD-3-Clause. See the <a href="https://github.com/lmctl-ai/lmfluid">repository</a> for the gallery and the durable-memory notes on numerics.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmfluid">github.com/lmctl-ai/lmfluid</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmoffice guide — lmoffice — lmctl.com tools</title>
+<meta name="description" content="Architecture, document-as-code workflows, Open XML layout rules, and the standard lmcode_std_v3 library for lmoffice.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmoffice/">Overview</a></li>
+<li><a href="/tools/lmoffice/skill.html">Skill</a></li>
+<li><a href="/tools/lmoffice/guide.html">Guide</a></li>
+<li><a href="/tools/lmoffice/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmoffice guide</h1>
+<p>Architecture, document-as-code workflows, Open XML layout rules, and the standard lmcode_std_v3 library for lmoffice.</p>
+<h2>Overview</h2>
+<p>lmoffice packages Microsoft's Open XML SDK (DocumentFormat.OpenXml 3.5.1) and the lmcode runtime into a single .NET 8 NativeAOT executable with three format-specific subcommands: docx, xlsx, and pptx. Each subcommand embeds its own schema and exposes a root factory context alongside the built-in lmcode_std_v3 standard library, while the shared inspect subcommand validates generated packages with OpenXmlValidator and extracts JSON summaries or canonical Markdown.</p>
+<h2>Subcommand architecture and format contexts</h2>
+<p>Because Word, Excel, and PowerPoint have distinct object models, lmoffice separates them into dedicated CLI routes so each _lmcode_ block compiles against a focused schema:</p>
+<ul>
+<li>Word processing route (cli="lmoffice docx"): exposes context docx: DocxHost. Calling docx.create(path) returns a Docx builder that owns paragraphs, headings, lists, clauses, signature lines, tables, headers, footers, section breaks, and table-of-contents fields.</li>
+<li>Spreadsheet route (cli="lmoffice xlsx"): exposes context xlsx: XlsxHost. Calling xlsx.create(path) returns an Xlsx workbook builder that creates Sheet handles for cell population, formulas, number and font styling, freeze panes, autofilters, data validation, conditional formatting, and charts.</li>
+<li>Presentation route (cli="lmoffice pptx"): exposes context pptx: PptxHost. Calling pptx.create(path) returns a Pptx deck builder that manages theme colors and creates Slide and PptxTable handles on a 1280x720 pixel canvas at 96 DPI.</li>
+<li>Cross-format workflows: a single LMScript program can combine multiple _lmcode_ blocks targeting different lmoffice routes (for example, computing a quarterly summary in outer LMScript and writing both an Excel workbook and an executive Word memo).</li>
+</ul>
+<h2>Documents as code: Markdown and XHTML/CSS profiles</h2>
+<p>In addition to fine-grained builder calls, lmoffice supports declarative document-as-code authoring across all three formats:</p>
+<ul>
+<li>Markdown to Office: Docx.markdown(text) and Docx.markdown_file(path) render headings, bold and italic spans, bullet and numbered lists, tables, blockquotes, and directives such as {{sign: Name}} into Word paragraphs and tables. Pptx.markdown(text) splits slide-separated Markdown into presentation slides, while Xlsx.sheet_from_markdown_table(name, text) and Xlsx.sheet_from_csv(name, text) create typed worksheets.</li>
+<li>Round-trip extraction: DocxHost.to_markdown(path), XlsxHost.to_markdown(path), PptxHost.to_markdown(path), and the CLI command lmoffice inspect FILE --markdown read existing Office packages back into canonical Markdown.</li>
+<li>XHTML and CSS profiles: Docx.html_doc(xml, css) implements the additive html-doc@1 and css-doc@1 contract supporting article and div containers, h1 through h3, p, span, strong, em, br, flat ul and ol lists, rectangular tables, local PNG/JPEG images, HTTP/HTTPS/mailto links, and @page geometry (Letter or A4 with four margins). The legacy Docx.html_xml(xml, css) method remains available for html-subset@1 and css-subset@1 templates.</li>
+</ul>
+<pre><code>content = "&lt;article xmlns=\"http://www.w3.org/1999/xhtml\">&lt;h1>Quarterly update&lt;/h1>&lt;p>Capacity is &lt;strong>stable&lt;/strong>.&lt;/p>&lt;/article>";
+styles = "&lt;style xmlns=\"urn:lmctl:css:1\">&lt;rule select=\"p\">&lt;set name=\"margin-bottom\" value=\"6pt\"/>&lt;/rule>&lt;/style>";
+p = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.33";
+let d = docx.create("update.docx");
+d.html_doc(${content}, ${styles});
+d.save();
+end _lmcode_
+r = run_lmcode(p);
+require(r.ok, json_stringify(r));</code></pre>
+<h2>Coordinate conventions and layout rules</h2>
+<ul>
+<li>1-based table and cell indexing: Word Table methods (cell, shade, paragraph, merge, cell_border, column_width), Excel Sheet methods (set, formula, bold, fill, merge, border, chart anchor cells), and PowerPoint PptxTable methods all use 1-based row and column numbers.</li>
+<li>Points vs pixels: Word page dimensions, margins, paragraph spacing, indents, tab stops, and font sizes are measured in points (72 points per inch). PowerPoint slide shapes, text boxes, images, tables, and charts use pixels on a 1280x720 canvas at 96 DPI.</li>
+<li>Colors and alignments: hex colors use six hexadecimal digits (with or without a leading #), and paragraph or cell alignments accept left, center, right, or justify.</li>
+<li>Self-contained sample images: docx.sample_image(path), xlsx.sample_image(path), and pptx.sample_image(path) write a deterministic 64x64 PNG on disk so examples and tests can embed artwork without external image assets.</li>
+</ul>
+<h2>Standard lmcode_std_v3 library</h2>
+<p>All three format registries include the standard lmcode_std_v3 catalog of string, math, collection (IntList, FloatList, StrList, IntMap, FloatMap, StrMap, stacks, queues, priority queues), JSON, template, file, and return-framing functions. The REST and CLI handler interfaces of newer lmcode_std_v3 catalogs are not documented for this host; check lmoffice docx --lmcode-signatures on the installed release before relying on them.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmoffice">github.com/lmctl-ai/lmoffice</a>.</p>
+</footer>
+</body>
+</html>

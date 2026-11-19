@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tree-sitter-lmcode guide — tree-sitter-lmcode — lmctl.com tools</title>
+<meta name="description" content="This guide explains the tree-sitter-lmcode grammar architecture, external scanner state serialization, $return and R49 entry syntax nodes, and the 127-body…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/tree-sitter-lmcode/">Overview</a></li>
+<li><a href="/tools/tree-sitter-lmcode/skill.html">Skill</a></li>
+<li><a href="/tools/tree-sitter-lmcode/guide.html">Guide</a></li>
+<li><a href="/tools/tree-sitter-lmcode/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>tree-sitter-lmcode guide</h1>
+<p>This guide explains the tree-sitter-lmcode grammar architecture, external scanner state serialization, $return and R49 entry syntax nodes, and the 127-body conformance gates.</p>
+<h2>Overview</h2>
+<p>tree-sitter-lmcode combines a declarative grammar.js with a stateful C external scanner in src/scanner.c. Because generated src/parser.c, src/grammar.json, and src/node-types.json are committed in the repository, C, Rust, Go, and editor consumers can compile parser.c and scanner.c directly without Node.js.</p>
+<h2>Grammar and external scanner rules</h2>
+<p>The grammar models every construct in the standalone lmcode language: typed fn declarations, @NAME and @"PATH" annotations, implements Interface clauses (R47-R49), typed let bindings, compound assignments, if/else, while, range and foreach loops, switch arms, break/continue, method chains, enum member access, map entries using =>, qw/qi/qf word and number lists, %json literals, and ${...} outer-language splices. Assignment-only $return, $return.name, and $return[expr] targets produce return_assignment nodes while rejecting $return in read positions, declarations, nested paths, or compound writes.</p>
+<h2>REST, CLI, and rule entry syntax coverage</h2>
+<p>Path-annotated standard REST and CLI entries—such as @"/users/:id" fn get_user(x: RestExchange) -> void implements RestGet or @"status" fn status(x: RestExchange) -> void implements CliCommand—parse into function_declaration nodes carrying an annotation child (with the string or identifier annotation) and an implements_clause child naming the standard interface (RestGet..RestOptions, RestHandler, CliCommand, CliOption). Calls to rest_config, rest_route, rest_serve, rest_stop, and rest_cli parse as call_expression nodes.</p>
+<pre><code># Run the complete tree-sitter-lmcode verification suite
+tree-sitter generate
+tree-sitter test --rebuild
+python3 scripts/conformance.py
+python3 scripts/negative.py
+python3 scripts/incremental.py
+python3 scripts/scanner-limits.py
+python3 scripts/controls.py</code></pre>
+<h2>Conformance and mutation controls</h2>
+<p>Five Python verification gates enforce grammar quality: scripts/conformance.py parses all 127 pinned real-world lmcode bodies without ERROR or MISSING nodes; scripts/negative.py verifies 21 syntax-refusal cases; scripts/incremental.py tests serialized scanner state across single-byte and multi-line edits; scripts/scanner-limits.py stress-tests deep heredoc queues and splice nesting; and scripts/controls.py mutates the scanner and grammar to confirm the test suite catches regressions.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/tree-sitter-lmcode">github.com/lmctl-ai/tree-sitter-lmcode</a>.</p>
+</footer>
+</body>
+</html>

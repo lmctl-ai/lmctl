@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-python — lmctl.com tools</title>
+<meta name="description" content="lmcode-python is a pure-Python 3.9+ SDK (package lmcode) for loading, verifying, and executing lmcode DSLB v6 bytecode with zero third-party dependencies.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-python/">Overview</a></li>
+<li><a href="/tools/lmcode-python/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-python/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-python/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-python</h1>
+<p>lmcode-python is a pure-Python 3.9+ SDK (package lmcode) for loading, verifying, and executing lmcode DSLB v6 bytecode with zero third-party dependencies. It ships the 206-signature lmcode_std_v3 catalog, raw byte-string callback options, opt-in lmcode.rest stdio HTTP controller, and InvocationResults framing.</p>
+<h2>Quick reference</h2>
+<pre><code>git clone https://github.com/lmctl-ai/lmcode-python.git
+cd lmcode-python
+python3 -m unittest discover -s tests
+python3 -m lmcode.conformance conformance/vectors</code></pre>
+<table><thead><tr><th>Item</th><th>Signature / Value</th><th>Role</th></tr></thead><tbody>
+<tr><td>Registry()</td><td>lmcode.Registry</td><td>Create a registry preloaded with all 206 canonical lmcode_std_v3 signatures</td></tr>
+<tr><td>Registry(include_std=False)</td><td>lmcode.Registry</td><td>Create an empty registry without the standard library catalog</td></tr>
+<tr><td>load(bytecode, schema, registry)</td><td>lmcode.Program</td><td>Verify DSLB v6 header, SHA-256 schema hash, imports, and control-flow stack depths</td></tr>
+<tr><td>program.run(context, registry)</td><td>None</td><td>Execute the verified program body against a Context</td></tr>
+<tr><td>program.call(idx, context, registry, args)</td><td>Any</td><td>Invoke an R49 rule entry by index or name</td></tr>
+<tr><td>register_rest(registry, ...)</td><td>lmcode.rest.RestController</td><td>Opt in to the REST std module, binding its signatures to a configured stdio HTTP/1.1 and CLI controller</td></tr>
+<tr><td>InvocationResults.from_command(files)</td><td>lmcode.InvocationResults</td><td>Read LMCODE_INVOCATION_FILE, manage per-part ResultSinks, and write LMCODE_RETURN frames</td></tr>
+</tbody></table>
+<pre><code>from pathlib import Path
+from lmcode import Context, Registry, load
+from lmcode.rest import register_rest
+
+registry = Registry()
+rest = register_rest(registry, max_body_bytes=1 &lt;&lt; 20)
+program = load(Path("app.dslb").read_bytes(), Path("host.schema.json").read_bytes(), registry)
+rest.run(program, Context())</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmcode-python/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-python/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-python/reference.html">Reference</a></li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmcode-python">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-python">github.com/lmctl-ai/lmcode-python</a>.</p>
+</footer>
+</body>
+</html>

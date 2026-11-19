@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmgh — lmctl.com tools</title>
+<meta name="description" content="lmgh is a native lmcode host that turns the GitHub CLI (gh) into a type-checked API for repositories, issues, pull requests, workflow runs, and reviews.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmgh/">Overview</a></li>
+<li><a href="/tools/lmgh/skill.html">Skill</a></li>
+<li><a href="/tools/lmgh/guide.html">Guide</a></li>
+<li><a href="/tools/lmgh/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmgh</h1>
+<p>lmgh is a native lmcode host that turns the GitHub CLI (gh) into a type-checked API for repositories, issues, pull requests, workflow runs, and reviews.</p>
+<h2>Quick reference</h2>
+<pre><code>lmscript install github:lmctl-ai/lmgh@v0.3.2
+lmgh --version
+lmgh --lmcode-schema --json
+lmgh --lmcode-signatures
+lmscript examples/open-prs.lms lmctl-ai lmgh</code></pre>
+<table>
+<thead>
+<tr><th>Item</th><th>Kind</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>--lmcode FILE</td><td>CLI flag</td><td>Execute compiled lmcode bytecode against the gh CLI (repeatable).</td></tr>
+<tr><td>gh.repo_view / pr_list / pr_triage</td><td>Host methods</td><td>Inspect repository metadata, open pull requests, and CI/review triage status.</td></tr>
+<tr><td>gh.run_list / run_failed_log</td><td>Host methods</td><td>List GitHub Actions runs and extract failed-job logs.</td></tr>
+<tr><td>gh.pr_prepare / pr_submit</td><td>Host methods</td><td>Two-step human-reviewed TOML pull-request creation workflow.</td></tr>
+<tr><td>gh.pr_review_prepare / pr_review_submit</td><td>Host methods</td><td>Two-step human-reviewed TOML pull-request review workflow.</td></tr>
+<tr><td>report.add / write_json / fail_if_any</td><td>Report context</td><td>Record audit findings, export reports, and gate CI with exit code 4.</td></tr>
+</tbody>
+</table>
+<pre><code>p = _lmcode_ cli="lmgh" install="github:lmctl-ai/lmgh@v0.3.2";
+let prs = gh.pr_list("lmctl-ai", "lmgh", "open", 10);
+for (i in range(0, prs.len())) {
+  let pr = prs.at(i);
+  print("#" + str(pr.number()) + ": " + pr.title());
+}
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok);</code></pre>
+<h2>Documentation pages</h2>
+<ul>
+<li><a href="/tools/lmgh/skill.html">Skill</a> for setup, dry-run and TOML review safety rules, and verification.</li>
+<li><a href="/tools/lmgh/guide.html">Guide</a> for CI log extraction, human-in-the-loop PR flows, and dry-run modes.</li>
+<li><a href="/tools/lmgh/reference.html">Reference</a> for Gh and Report methods, domain types, and exit codes.</li>
+</ul>
+<p><a href="https://github.com/lmctl-ai/lmgh">Source repository and releases</a></p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmgh">github.com/lmctl-ai/lmgh</a>.</p>
+</footer>
+</body>
+</html>

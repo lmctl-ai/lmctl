@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmssh reference — lmssh — lmctl.com tools</title>
+<meta name="description" content="Complete command-line flag reference, embedded OpenSSH client subcommands, host schema contexts and methods, standard lmcode_std_v3 REST and CLI interfaces,…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmssh/">Overview</a></li>
+<li><a href="/tools/lmssh/skill.html">Skill</a></li>
+<li><a href="/tools/lmssh/guide.html">Guide</a></li>
+<li><a href="/tools/lmssh/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmssh reference</h1>
+<p>Complete command-line flag reference, embedded OpenSSH client subcommands, host schema contexts and methods, standard lmcode_std_v3 REST and CLI interfaces, and exit codes for lmssh v0.1.1 (bundling OpenSSH 10.6p1).</p>
+<h2>Host and CLI flags</h2>
+<table>
+<thead><tr><th>Flag or command</th><th>Arguments</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>--version</td><td>none</td><td>Print the lmssh version string (lmssh 0.1.1) and exit 0.</td></tr>
+<tr><td>--lmcode</td><td>&lt;file.dslb>... [-- args...]</td><td>Load and execute one or more compiled LMScript bytecode files; arguments after -- are exposed via io.args().</td></tr>
+<tr><td>--dry-run</td><td>--lmcode &lt;file.dslb></td><td>Print every ssh, sftp, scp, and ssh-keygen command to stderr as [dry-run] without spawning processes or modifying local files.</td></tr>
+<tr><td>--lmcode-schema</td><td>[--json]</td><td>Print a human-readable schema signature summary, or exact embedded schema JSON bytes when --json is passed.</td></tr>
+<tr><td>--lmcode-signatures</td><td>none</td><td>Print all 334 canonical context, function, and method signatures (108 host + 226 standard library).</td></tr>
+<tr><td>ssh</td><td>[openssh-args...]</td><td>Run the embedded OpenSSH 10.6p1 ssh client (also invoked when argv[0] is ssh or argv[1] starts with a single -).</td></tr>
+<tr><td>sftp</td><td>[openssh-args...]</td><td>Run the embedded OpenSSH 10.6p1 sftp client using the lmssh binary as its underlying ssh transport.</td></tr>
+<tr><td>scp</td><td>[openssh-args...]</td><td>Run the embedded OpenSSH 10.6p1 scp client using the lmssh binary as its underlying ssh transport.</td></tr>
+<tr><td>ssh-keygen / keygen</td><td>[openssh-args...]</td><td>Run the embedded OpenSSH 10.6p1 ssh-keygen utility.</td></tr>
+</tbody>
+</table>
+<h2>Ssh, Session, Result, and ResultList methods</h2>
+<table>
+<thead><tr><th>Type / context</th><th>Method signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context ssh: Ssh</td><td>ssh.connect(string) -> Session</td><td>Create a Session for [user@]host or an ssh_config alias, inheriting current Ssh defaults.</td></tr>
+<tr><td>Ssh</td><td>ssh.each(StrList, string) -> ResultList</td><td>Execute a command across all destinations in parallel (up to parallel(n)) and return results in input order.</td></tr>
+<tr><td>Ssh</td><td>ssh.shutdown() -> void</td><td>Close all active ControlMaster multiplex sockets and remove the temporary work directory early.</td></tr>
+<tr><td>Ssh / Session</td><td>port(int) | user(string) | identity(string) | config(string) | jump(string) -> Ssh / Session</td><td>Configure SSH port (-p/-P), default user, identity key file (-i with IdentitiesOnly=yes), config file (-F), or ProxyJump (-J).</td></tr>
+<tr><td>Ssh / Session</td><td>known_hosts(string) | strict_host_key(string) | option(string) -> Ssh / Session</td><td>Set UserKnownHostsFile, StrictHostKeyChecking (yes, accept-new, no), or repeatable -o Key=Value options.</td></tr>
+<tr><td>Ssh / Session</td><td>connect_timeout(int) | timeout(int) | password(string) | reuse(bool) | parallel(int) -> Ssh / Session</td><td>Set ConnectTimeout seconds (default 30), per-step wall timeout seconds, askpass secret, ControlMaster reuse, or fan-out concurrency (1..256).</td></tr>
+<tr><td>Session</td><td>s.exec(string) -> Result | s.exec(string, string) -> Result</td><td>Run a remote command (optionally piping the second argument to stdin) and return a Result without throwing on non-zero exit status.</td></tr>
+<tr><td>Session</td><td>s.output(string) -> string | s.ok(string) -> bool</td><td>Run a remote command and return stdout (throwing RUN_HOST if exit status != 0) or return true on exit status 0.</td></tr>
+<tr><td>Session</td><td>s.put(string, string) | s.get(string, string) | s.put_dir(string, string) | s.get_dir(string, string) -> void</td><td>Upload or download a single file or recursive directory via scp, throwing RUN_HOST on failure.</td></tr>
+<tr><td>Session</td><td>s.cat(string) -> string | s.write(string, string) -> void</td><td>Read a remote file into a string or write string content to a remote file via a private temporary file and scp.</td></tr>
+<tr><td>Session</td><td>s.ls(string) -> StrList | s.exists(string) -> bool | s.mkdir(string) | s.rm(string) | s.rmdir(string) | s.rename(string, string) -> void</td><td>Inspect or mutate remote filesystem paths over an SFTP batch session with wildcard-neutralized literal paths.</td></tr>
+<tr><td>Session</td><td>s.sftp(string) -> Result | s.close() -> void | s.dest() -> string</td><td>Run a raw SFTP batch script on stdin (stripping sftp> echo lines), close this session's ControlMaster, or return the destination string.</td></tr>
+<tr><td>Result</td><td>r.ok() -> bool | r.status() -> int | r.stdout() -> string | r.stderr() -> string | r.dest() -> string | r.timed_out() -> bool | r.require() -> Result</td><td>Inspect remote execution status (status 124 on timeout) or throw RUN_HOST if the command failed or timed out.</td></tr>
+<tr><td>ResultList</td><td>rl.len() -> int | rl.at(int) -> Result | rl.failed() -> int | rl.require_all() -> ResultList</td><td>Inspect parallel fleet execution results or throw RUN_HOST listing every failed destination.</td></tr>
+</tbody>
+</table>
+<h2>Keys, Key, Io, and Report methods</h2>
+<table>
+<thead><tr><th>Type / context</th><th>Method signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context keys: Keys</td><td>keys.bits(int) -> Keys</td><td>Set the key bit length (-b) for subsequent keys.generate calls.</td></tr>
+<tr><td>Keys</td><td>keys.generate(string, string) -> Key | keys.generate(string, string, string, string) -> Key</td><td>Generate a new SSH key at path with type (ed25519, rsa, ecdsa) and optional comment and passphrase; refuses to overwrite existing files.</td></tr>
+<tr><td>Keys</td><td>keys.load(string) -> Key | keys.fingerprint(string) -> string</td><td>Load an existing key metadata handle or return the SHA256:... fingerprint string of a key or certificate file.</td></tr>
+<tr><td>Keys</td><td>keys.change_passphrase(string, string, string) | keys.set_comment(string, string, string) -> void</td><td>Update a private key's passphrase (-p) or comment (-c) via ssh-keygen.</td></tr>
+<tr><td>Keys</td><td>keys.known_hosts_find(string, string) -> string | keys.known_hosts_remove(string, string) | keys.known_hosts_hash(string) -> void</td><td>Find (-F), remove (-R), or hash (-H) host entries in a known_hosts file.</td></tr>
+<tr><td>Keys</td><td>keys.certify(string, string, string, string, string) -> string</td><td>Sign a public key with a CA key (ca_key, pub_key, identity, principals, validity) and return the *-cert.pub path.</td></tr>
+<tr><td>Keys</td><td>keys.sign(string, string, string) -> string | keys.verify(string, string, string, string, string) -> bool</td><td>Create a detached signature (key, namespace, file -> file.sig) or verify a signature against an allowed_signers file (-Y sign / -Y verify).</td></tr>
+<tr><td>Key</td><td>k.path() | k.public() | k.public_with(string) | k.fingerprint() | k.type() | k.comment() -> string | k.bits() -> int</td><td>Inspect key path, OpenSSH public key line (from .pub or derived with passphrase), SHA256 fingerprint, algorithm type, comment, or bit size.</td></tr>
+<tr><td>context io: Io</td><td>io.print(string) | io.eprint(string) | io.fail(string) -> void</td><td>Write a line to stdout or stderr, or terminate the script with APP_FAIL (exit code 4).</td></tr>
+<tr><td>Io</td><td>io.read(string) -> string | io.lines(string) -> StrList | io.write(string, string) | io.append(string, string) -> void</td><td>Read a local file as a string or line list, or write/append string content to a local path.</td></tr>
+<tr><td>Io</td><td>io.exists(string) -> bool | io.mkdir(string) | io.remove(string) -> void | io.temp_dir() -> string</td><td>Check local path existence, recursively create or delete directories, or allocate an auto-cleaned private temporary directory.</td></tr>
+<tr><td>Io</td><td>io.env(string) -> string | io.args() -> StrList | io.sha256(string) -> string | io.sleep_ms(int) -> void | io.now() -> int</td><td>Read an environment variable, script arguments after --, lowercase hex SHA-256 of a local file, sleep in ms, or read epoch seconds.</td></tr>
+<tr><td>context report: Report</td><td>report.add(string, string, int, string) -> void | report.count() -> int | report.text() -> string</td><td>Record a structured finding (kind, host_or_file, status_or_line, message), count findings, or format findings as text.</td></tr>
+<tr><td>Report</td><td>report.print() | report.write_text(string) | report.write_json(string) | report.fail_if_any() -> void</td><td>Print findings, export text or JSON finding reports, or exit with code 4 (APP_FAIL) if count() > 0.</td></tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<table>
+<thead><tr><th>Interface or function</th><th>Signature / annotation</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>RestGet .. RestOptions</td><td>@"/path/:param" fn h(x: RestExchange) -> void implements RestGet</td><td>Bind an HTTP GET, POST, PUT, DELETE, PATCH, HEAD, or OPTIONS route handler.</td></tr>
+<tr><td>RestHandler</td><td>@"/path" fn h(x: RestExchange) -> void implements RestHandler</td><td>Bind a method-agnostic HTTP route handler.</td></tr>
+<tr><td>CliCommand</td><td>@"cmd" fn h(x: RestExchange) -> void implements CliCommand</td><td>Bind a named CLI subcommand dispatched by rest_cli.</td></tr>
+<tr><td>CliOption</td><td>@"--flag" fn h(x: RestExchange) -> void implements CliOption</td><td>Bind a CLI option flag (--flag=val or --flag val) evaluated before the command handler.</td></tr>
+<tr><td>rest_config</td><td>rest_config(key: string, value: string) -> void</td><td>Configure server or CLI settings such as host, port, and session (ephemeral or global).</td></tr>
+<tr><td>rest_route</td><td>rest_route(method: string, path: string, handler: string) -> void</td><td>Dynamically register an HTTP method and route pattern to a handler function name.</td></tr>
+<tr><td>rest_serve / rest_stop</td><td>rest_serve() -> void | rest_stop() -> void</td><td>Start or stop the embedded standard HTTP server loop.</td></tr>
+<tr><td>rest_cli</td><td>rest_cli(args: StrList) -> string</td><td>Dispatch CLI options, commands, or path requests in-process without opening a socket.</td></tr>
+<tr><td>RestExchange</td><td>x.method() | x.path() | x.body() | x.param(string) | x.query(string) | x.header(string) -> string</td><td>Read request method, path, body, :param segment, query parameter, or header.</td></tr>
+<tr><td>RestExchange</td><td>x.has_query(string) | x.has_header(string) -> bool</td><td>Check whether a query parameter or request header is present.</td></tr>
+<tr><td>RestExchange</td><td>x.status(int) | x.set_header(string, string) | x.send(string) | x.json(string) -> void</td><td>Set response status code and headers, and emit plain text or application/json bodies.</td></tr>
+<tr><td>RestExchange</td><td>x.get(string) -> string | x.set(string, string) -> void | x.increment(string) -> int</td><td>Read, write, or atomically increment session state keys across global or ephemeral exchanges.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th>Exit code</th><th>Category</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success</td><td>Bytecode program or introspection command succeeded and all assertions passed.</td></tr>
+<tr><td>2</td><td>Usage error</td><td>Invalid command-line flag, missing --lmcode file argument, or malformed invocation.</td></tr>
+<tr><td>3</td><td>Load / host run error</td><td>Bytecode corrupt, schema hash mismatch, unbound import, or runtime host error (RUN_HOST).</td></tr>
+<tr><td>4</td><td>Application verdict</td><td>Script explicitly failed via io.fail(msg), report.fail_if_any(), or an assertion failure (APP_FAIL).</td></tr>
+<tr><td>0..255</td><td>Direct OpenSSH mode</td><td>When invoked as lmssh ssh|sftp|scp|ssh-keygen, returns the exact exit code of the OpenSSH client tool.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmssh">github.com/lmctl-ai/lmssh</a>.</p>
+</footer>
+</body>
+</html>

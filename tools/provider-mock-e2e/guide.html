@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>provider-mock-e2e guide — provider-mock-e2e — lmctl.com tools</title>
+<meta name="description" content="provider-mock-e2e is the cross-platform qualification suite that tests real, unmodified AI coding agent CLIs installed by lminstall against a checksum-verified…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/provider-mock-e2e/">Overview</a></li>
+<li><a href="/tools/provider-mock-e2e/skill.html">Skill</a></li>
+<li><a href="/tools/provider-mock-e2e/guide.html">Guide</a></li>
+<li><a href="/tools/provider-mock-e2e/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>provider-mock-e2e guide</h1>
+<h2>Overview</h2>
+<p>provider-mock-e2e is the cross-platform qualification suite that tests real, unmodified AI coding agent CLIs installed by lminstall against a checksum-verified lmmock loopback server. It verifies that 13 distinct provider CLIs can be configured hermetically on Linux, macOS, and Windows without vendor credentials, telemetry leaks, or global configuration pollution.</p>
+<h2>Reusable five-step qualification procedure</h2>
+<p>Every provider leg executes the same five-step contract:</p>
+<ul>
+<li>Step 1 — Binary acquisition via lminstall: scripts/run.py runs lminstall status &lt;provider> --json and extracts the exact installed binary path, refusing global PATH fallbacks.</li>
+<li>Step 2 — Checksum verification and fixture compilation: scripts/prepare.py verifies the lmmock release SHA256SUMS and compiles a checked llm-api.lms policy where advertised built-in tools do not force a tool call during the no-tool text smoke test (retaining the stock handler separately for wire-shape probes).</li>
+<li>Step 3 — Isolated HOME and environment synthesis: scripts/probe.py builds a clean environment map pointing HOME, USERPROFILE, XDG_CONFIG_HOME, XDG_DATA_HOME, XDG_CACHE_HOME, XDG_STATE_HOME, LOCALAPPDATA, and APPDATA to a fresh scratch directory and writes the provider's exact config file (JSON or TOML).</li>
+<li>Step 4 — Prompt execution and reply extraction: sends Reply with exactly PROVIDER_MOCK_OK_129. Do not call any tools. with stdin closed and parses the provider's JSON, JSONL, or plain-text stdout.</li>
+<li>Step 5 — Exact oracle, request audit, and negative control: verifies exit code 0 and exact reply PROVIDER_MOCK_OK_129, invokes the same oracle with a wrong expected string to prove it raises AssertionError, and verifies the lmmock request audit.</li>
+</ul>
+<h2>Cross-platform details: Windows batch bypass and Hermes gateway reaping</h2>
+<p>Two platform-specific safeguards prevent subtle false failures:</p>
+<ul>
+<li>Windows npm .cmd wrapper resolution (tool_argv in scripts/probe.py): on Windows, npm's generated .cmd batch wrappers alter empty and JSON-quoted arguments (such as --tools "" or --mcp-config '{"mcpServers":{}}'). When the binary ends in .cmd, tool_argv inspects the owned node_modules/&lt;package>/package.json bin entry, verifies the target stays inside the package directory, and invokes either the native .exe or node directly to preserve exact argv boundaries.</li>
+<li>Hermes detached gateway cleanup (scripts/cleanup-hermes.py): Hermes (chat --native) spawns a per-HOME background gateway process even for a one-shot query. The finally block runs cleanup-hermes.py, which reads only the scratch HOME gateway PID file, verifies its process kind, HOME, and start-time fingerprint, and terminates that exact numeric PID without scanning or touching any other process on the machine.</li>
+</ul>
+<h2>Endpoint matrix across wire families</h2>
+<p>The 13 qualified tools span four distinct LLM HTTP wire protocols served by lmmock on loopback origin B (http://127.0.0.1:PORT) and V (B/v1):</p>
+<ul>
+<li>Anthropic Messages (POST /v1/messages): Claude Code (claude --bare -p --output-format json) and DeepSeek Harness (dsh headless, which issues two POST /v1/messages calls).</li>
+<li>OpenAI Responses (POST /v1/responses): Codex (codex exec --skip-git-repo-check --json with wire_api="responses") and Miniplayer (miniplayer run --model openai/mock-agent).</li>
+<li>Google Gemini streamGenerateContent (POST /v1beta/models/*:streamGenerateContent?alt=sse): Gemini CLI (gemini -m gemini-2.5-flash with GEMINI_CLI_TRUST_WORKSPACE=true) and Antigravity CLI (agy -p --model gemini-3.8-flash with modelProvider="gemini").</li>
+<li>OpenAI Chat Completions (POST /v1/chat/completions): GitHub Copilot (BYOK mode with COPILOT_OFFLINE=true), OpenCode, Kimi Code CLI (.kimi-code/config.toml with --output-format stream-json), Qwen Code, Pi Coding Agent, lmplayer, and Hermes (chat --native).</li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/provider-mock-e2e">github.com/lmctl-ai/provider-mock-e2e</a>.</p>
+</footer>
+</body>
+</html>

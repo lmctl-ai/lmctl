@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmnum guide — lmnum — lmctl.com tools</title>
+<meta name="description" content="lmnum provides self-contained numerical computing for LMScript by linking Eigen and SUNDIALS into a single native host binary with deterministic random number…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmnum/">Overview</a></li>
+<li><a href="/tools/lmnum/skill.html">Skill</a></li>
+<li><a href="/tools/lmnum/guide.html">Guide</a></li>
+<li><a href="/tools/lmnum/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmnum guide</h1>
+<p>lmnum provides self-contained numerical computing for LMScript by linking Eigen and SUNDIALS into a single native host binary with deterministic random number generators and strict numerical validation.</p>
+<h2>Overview</h2>
+<p>Inside an LMScript _lmcode_ block declared with cli="lmnum", the global num object exposes 70 methods across five types: Num for constructors and scalar solvers, Matrix for dense linear algebra and tabular I/O, Func for compiled expression evaluation, Ode for initial-value differential equations, and System for nonlinear algebraic equations.</p>
+<h2>Matrices, deterministic randomness, and CSV format</h2>
+<p>All vectors and matrices in lmnum are dense double-precision Matrix objects with 0-based row and column indices. Column vectors have shape n x 1 (returned by linspace, eig_sym, svd_values, polyfit, minimize, and System.solve).</p>
+<ul>
+<li>num.parse("1 2; 3 4") parses inline text with rows separated by semicolons or newlines and entries separated by spaces or commas.</li>
+<li>num.random(rows, cols, seed) and num.normal(rows, cols, seed) use std::mt19937_64 with explicit 53-bit uniform scaling and Marsaglia polar normal transformations rather than C++ standard library distributions, producing identical matrices across Linux, macOS, and Windows.</li>
+<li>num.load_csv(path) accepts whitespace- or comma-separated numeric files and automatically skips one non-numeric header line.</li>
+<li>Matrix.save_csv(path) writes space-separated numbers using the shortest of %.15g to %.17g that round-trips back to the exact IEEE 754 double, with no header row.</li>
+</ul>
+<h2>Dense linear algebra and factorizations (Eigen)</h2>
+<p>Matrix wraps Eigen decompositions with explicit validity checks so ill-posed problems never fail silently:</p>
+<ul>
+<li>a.solve(b) uses Eigen FullPivLU and raises a run error (exit 3) if the matrix is numerically rank-deficient.</li>
+<li>a.lstsq(b) solves overdetermined or underdetermined linear least-squares problems.</li>
+<li>a.eig_sym() and a.eigvec_sym() verify that the receiver is symmetric before computing real eigenvalues and orthonormal eigenvectors.</li>
+<li>a.svd_values(), a.svd_u(), and a.svd_v() return singular values and thin U and V factors such that A = U * diag(s) * V^T.</li>
+<li>a.cholesky() returns the lower triangular factor L of a symmetric positive-definite matrix such that A = L * L^T.</li>
+</ul>
+<pre><code>let a = num.parse("4 12 -16; 12 37 -43; -16 -43 98");
+let l = a.cholesky();
+let diff = a.sub(l.mul(l.transpose())).norm();
+num.assert_close(diff, 0.0, 1e-12);</code></pre>
+<h2>Expression strings and Func objects</h2>
+<p>Because LMScript _lmcode_ blocks compile against a static schema without closures, mathematical functions are passed as expression strings such as "sin(x)*exp(-k*t)". Expressions support arithmetic operators (+, -, *, /, ^), parentheses, constants (pi, e), and standard transcendental functions (sin, cos, tan, asin, acos, atan, atan2, sinh, cosh, tanh, exp, log, log10, sqrt, abs, floor, ceil, min, max).</p>
+<p>Use num.eval(expr) for constant expressions, num.func(expr, "x") or num.func(expr, "x,y") for reusable 1D or 2D functions, and matrix.map(fn) to apply a 1D Func elementwise across a Matrix.</p>
+<h2>Differential equations and nonlinear systems (SUNDIALS)</h2>
+<p>num.ode(n) creates a builder for an n-dimensional system of first-order ODEs dy_i/dt = f_i(t, y0, ..., y{n-1}):</p>
+<ul>
+<li>Chain .param(name, val), .rhs(i, expr), and .init(i, y0_val) to define the system.</li>
+<li>By default, Ode.solve(t0, t1, points) integrates with SUNDIALS CVODE Adams-Moulton (nonstiff) using relative tolerance 1e-8 and absolute tolerance 1e-10.</li>
+<li>Call .stiff() to select CVODE's Backward Differentiation Formulas (BDF) for stiff chemical kinetics, thermal diffusion, or method-of-lines PDEs.</li>
+<li>Call .tol(rtol, atol) to customize integration tolerances.</li>
+</ul>
+<p>num.system(n) creates a builder for n coupled nonlinear algebraic equations F_i(x0, ..., x{n-1}) = 0. Define each residual with .eq(i, expr) and call .solve(guess, tol) to solve via SUNDIALS KINSOL with globalization line search and a dense finite-difference Jacobian.</p>
+<h2>Quadrature, roots, optimization, and fitting</h2>
+<p>For scalar and low-dimensional calculus tasks, lmnum provides direct methods on num:</p>
+<ul>
+<li>num.integrate(expr, var, a, b) and num.integrate_tol(expr, var, a, b, tol) evaluate definite integrals using adaptive Gauss-Kronrod quadrature.</li>
+<li>num.root(expr, var, a, b) finds a root inside a sign-changing bracket [a, b] via Brent's method.</li>
+<li>num.minimize(expr, vars, guess) and num.minimize_path(expr, vars, guess) minimize a multivariable expression using the Nelder-Mead simplex algorithm; minimize_path returns every simplex iteration as rows x0, ..., x{n-1}, f.</li>
+<li>num.polyfit(x, y, deg), num.polyval(coeffs, xq), and num.interp(x, y, xq) perform least-squares polynomial fitting and piecewise linear interpolation.</li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmnum">github.com/lmctl-ai/lmnum</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ocisim authoring skill — ocisim — lmctl.com tools</title>
+<meta name="description" content="ocisim is a standalone native local Oracle Cloud Infrastructure (OCI) emulator on 127.0.0.1:4599 built on floci-oci 0.5.0 with a two-layer RSA-SHA256 signature…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/ocisim/">Overview</a></li>
+<li><a href="/tools/ocisim/skill.html">Skill</a></li>
+<li><a href="/tools/ocisim/guide.html">Guide</a></li>
+<li><a href="/tools/ocisim/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>ocisim authoring skill</h1>
+<p>ocisim is a standalone native local Oracle Cloud Infrastructure (OCI) emulator on 127.0.0.1:4599 built on floci-oci 0.5.0 with a two-layer RSA-SHA256 signature and OCI IAM policy enforcement engine.</p>
+<h2>Purpose</h2>
+<p>Use ocisim to emulate OCI Object Storage, Identity (IAM), Queue, Streaming, Vault, KMS, and Secrets locally in a single native executable without Java, Docker, or an Oracle Cloud tenancy, and to test draft-cavage RSA-SHA256 HTTP request signing and OCI IAM policy statements with lmoci.</p>
+<h2>When to use it</h2>
+<p>Choose ocisim when testing LMScript OCI workflows or cross-cloud lmcloud conformance suites against local OCI REST endpoints on 127.0.0.1:4599, or when validating 401 NotAuthenticated and 403 NotAuthorizedOrNotFound policy responses in --auth enforce mode.</p>
+<h2>Install</h2>
+<p>Download the prebuilt ocisim release binary, or build the native executable from the pinned floci-oci source lock with GraalVM JDK 25.</p>
+<pre><code>python3 scripts/build.py
+./dist/ocisim --version</code></pre>
+<h2>Commands</h2>
+<p>Start ocisim in the foreground on port 4599, specify a custom port or persistence directory, or enable two-layer authentication and IAM enforcement.</p>
+<pre><code>ocisim --version
+ocisim --help
+ocisim serve
+ocisim start --port 4600 --data-dir ./state
+ocisim serve --auth enforce --auth-config ./auth.json
+curl -fsS http://127.0.0.1:4599/_floci-oci/health</code></pre>
+<h2>Inputs and outputs</h2>
+<p>In open mode, ocisim uses default namespace floci-local, region us-ashburn-1, tenancy OCID ocid1.tenancy.oc1..flocilocaltenancy0000000000000000000000000000000000000000, and user OCID ocid1.user.oc1..flocilocaluser00000000000000000000000000000000000000000000, while isolating storage per tenancy keyId parsed from Authorization: Signature headers. In --auth enforce mode, it reads an auth.json file mapping each keyId to a 2048-bit RSA publicKeyFile, group memberships, OCI IAM policy statements, and optional JSON policy statements. CLI errors emit {"ok":false,"error":{"kind":"usage|runtime","message":"..."}} on stdout.</p>
+<h2>Safety rules</h2>
+<p>The HTTP listener binds 127.0.0.1 only, disables TLS by default, and keeps Docker-backed services (functions and oke) in mock mode (FLOCI_OCI_SERVICES_FUNCTIONS_MOCK=true, FLOCI_OCI_SERVICES_OKE_MOCK=true) so no Docker daemon is required. In --auth enforce mode, always generate ephemeral test RSA-2048 keypairs rather than committing production private keys; policies enforce default-deny when present, explicit Deny overrides Allow, and denied requests return HTTP 403 NotAuthorizedOrNotFound (never 404) so idempotent SDK probes such as HeadBucket, HeadObject, and Delete* never misinterpret a permission denial as resource absence.</p>
+<h2>Worked examples</h2>
+<p>Example 1: Enforced auth.json combining OCI IAM syntax and JSON policy statements.</p>
+<pre><code>{
+  "credentials": [
+    {
+      "keyId": "ocid1.tenancy.oc1..flocilocaltenancy0000000000000000000000000000000000000000/ocid1.user.oc1..flocilocaluser00000000000000000000000000000000000000000000/11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff:00",
+      "publicKeyFile": "./user-public.pem",
+      "groups": ["ObjectWriters"],
+      "statements": [
+        "Allow group ObjectWriters to manage object-family in tenancy",
+        "Deny group ObjectWriters to manage buckets in tenancy where target.bucket.name = 'protected-*'"
+      ],
+      "policy": {
+        "Version": "2026-01-01",
+        "Statement": [
+          {
+            "Effect": "Deny",
+            "Action": "oci:os:DeleteBucket",
+            "Resource": "*"
+          }
+        ]
+      }
+    }
+  ]
+}</code></pre>
+<p>Example 2: Enforced workflow with lmoci; the final delete is denied by the explicit Deny statement with HTTP 403 NotAuthorizedOrNotFound.</p>
+<pre><code>ocisim serve --auth enforce --auth-config ./auth.json
+
+export LMOCI_TENANCY="ocid1.tenancy.oc1..flocilocaltenancy0000000000000000000000000000000000000000"
+export LMOCI_USER="ocid1.user.oc1..flocilocaluser00000000000000000000000000000000000000000000"
+export LMOCI_FINGERPRINT="11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff:00"
+export LMOCI_PRIVATE_KEY_FILE="./user-private.pem"
+
+lmoci os create-bucket app-data --endpoint http://127.0.0.1:4599
+lmoci os put-object app-data hello.txt --content "signed payload" --endpoint http://127.0.0.1:4599
+lmoci os delete-bucket app-data --endpoint http://127.0.0.1:4599</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Exit code 0 indicates clean shutdown or --version / --help; exit code 2 indicates invalid CLI usage or unreadable/invalid --auth-config (with kind: "usage"); exit code 3 indicates server startup or runtime failure (with kind: "runtime"). At the HTTP layer in enforce mode, Layer 1 signature or x-content-sha256 failures return HTTP 401 {"code":"NotAuthenticated",...} and Layer 2 policy rejections return HTTP 403 {"code":"NotAuthorizedOrNotFound",...}.</p>
+<h2>How to verify</h2>
+<p>Run the CLI contract and full open/enforce integration test suites against the built ocisim executable.</p>
+<pre><code>python3 scripts/test-cli.py dist/ocisim
+python3 scripts/test-integration.py dist/ocisim</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/ocisim">github.com/lmctl-ai/ocisim</a>.</p>
+</footer>
+</body>
+</html>

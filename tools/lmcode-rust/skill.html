@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-rust skill — lmcode-rust — lmctl.com tools</title>
+<meta name="description" content="Embed the dslvm Rust crate into a native binary to expose typed Rust domain objects, lmcode_std_v3, and REST/CLI endpoints to compiled lmcode bytecode.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-rust/">Overview</a></li>
+<li><a href="/tools/lmcode-rust/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-rust/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-rust/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-rust skill</h1>
+<p>Embed the dslvm Rust crate into a native binary to expose typed Rust domain objects, lmcode_std_v3, and REST/CLI endpoints to compiled lmcode bytecode.</p>
+<h2>Purpose</h2>
+<p>Build dependency-free Rust host executables that verify and run DSLB v6 bytecode, dispatch R49 rule entries and REST/CLI routes, and emit LMCODE_RETURN result envelopes.</p>
+<h2>When to use it</h2>
+<p>Use lmcode-rust when authoring or maintaining a Rust CLI or service host that executes schema-bound lmcode chunks with zero external crates.</p>
+<h2>Install</h2>
+<p>Add the dslvm crate from lmctl-ai/lmcode-rust as a path or git dependency in Cargo.toml using a stable Rust toolchain.</p>
+<h2>Commands</h2>
+<pre><code>cargo build --release
+cargo test
+cargo run --bin dsl-conformance -- conformance/vectors
+cargo run --bin dsl-conformance -- --std conformance/stdlib-vectors
+cargo run -p dslvm --bin rest-serve -- app.dslb host.schema.json</code></pre>
+<h2>Inputs and outputs</h2>
+<ul>
+<li>Input: compiled DSLB v6 bytecode slice, embedded dsl.schema: 2 JSON bytes, and optional LMCODE_INVOCATION_FILE manifest.</li>
+<li>Output: host mutations on Context arena objects, HTTP/1.1 responses on stdout in rest_serve mode, or a terminal LMCODE_RETURN frame.</li>
+<li>Strings: ByteString values preserve arbitrary raw bytes including interior NUL and invalid UTF-8.</li>
+</ul>
+<h2>Safety rules</h2>
+<ul>
+<li>Embed the exact schema JSON bytes with include_bytes! so Program::load verifies the compile-time SHA-256 hash.</li>
+<li>Use wrapping i64 arithmetic (wrapping_add, wrapping_sub, wrapping_mul, wrapping_neg) in host callbacks to match VM integer semantics.</li>
+<li>Use function_with_dry or method_with_dry so dry-mode invocations skip mutating callbacks unless an explicit preview closure is supplied.</li>
+</ul>
+<h2>Worked examples</h2>
+<pre><code>use dslvm::{Context, InvocationResults, Program, Registry, ResultContract, Value};
+
+let mut reg = Registry::new();
+reg.function("double_it", &amp;["int"], "int", |_ctx, args| {
+    Ok(Value::Int(args[0].as_int().wrapping_mul(2)))
+})?;
+let files = vec!["chunk.dslb".to_string()];
+let mut results = InvocationResults::from_command(&amp;files)?;
+let mut ctx = Context::new();
+ctx.set_dry(results.dry());
+let prog = Program::load(&amp;bytecode, schema_bytes, &amp;reg)?;
+let contract = ResultContract::from_schema(std::str::from_utf8(schema_bytes)?)?;
+results.select(0, &amp;reg, &amp;mut ctx, contract)?;
+prog.run(&amp;mut ctx, &amp;reg)?;
+results.complete(0)?;
+let code = results.write_frame(&amp;mut std::io::stdout().lock());
+std::process::exit(code);</code></pre>
+<h2>Errors and exit codes</h2>
+<table><thead><tr><th>Code</th><th>Phase</th><th>Exit</th><th>Condition</th></tr></thead><tbody>
+<tr><td>LOAD_BAD_BYTECODE</td><td>load</td><td>3</td><td>Malformed DSLB v6 header, bad magic or version, truncated section, invalid opcode, or stack depth violation</td></tr>
+<tr><td>LOAD_BAD_SCHEMA</td><td>load</td><td>3</td><td>Host schema JSON fails dsl.schema 2 validation or declares an invalid result contract</td></tr>
+<tr><td>LOAD_SCHEMA_MISMATCH</td><td>load</td><td>3</td><td>32-byte SHA-256 schema hash in DSLB v6 header does not match exact host schema bytes</td></tr>
+<tr><td>LOAD_UNBOUND</td><td>load</td><td>3</td><td>Bytecode imports a context, function, or method signature not registered in the host Registry</td></tr>
+<tr><td>RUN_ERROR</td><td>run</td><td>3</td><td>VM division or remainder by zero, or loop-free operand stack underflow</td></tr>
+<tr><td>RUN_HOST</td><td>run</td><td>3</td><td>Host callback failure, invalid encoding, expired collection handle, or REST route validation failure</td></tr>
+<tr><td>APP_FAIL</td><td>app</td><td>4</td><td>Post-run application domain validation failure or output stream write failure</td></tr>
+</tbody></table>
+<h2>How to verify</h2>
+<pre><code>bash scripts/sync-std.sh --verify
+bash scripts/sync-rest.sh --verify
+cargo test
+lmscript test.lms</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-rust">github.com/lmctl-ai/lmcode-rust</a>.</p>
+</footer>
+</body>
+</html>

@@ -18,6 +18,7 @@
 <li><a href="/tools/lmr/skill.html">Skill</a></li>
 <li><a href="/tools/lmr/get_started.html">Quickruns</a></li>
 <li><a href="/tools/lmr/guide.html">Guide</a></li>
+<li><a href="/tools/lmr/reference.html">Reference</a></li>
 <li><a href="/tools/lmr/examples/">Examples</a></li>
 </ul>
 </nav>
@@ -30,7 +31,7 @@ lmr --lmcode-schema
 lmr --lmcode-schema --json
 lmr --lmcode-signatures
 lmr --lmcode FILE.dslb</code></pre>
-<p>Use cli="lmr" to compile against the embedded schema and install="github:lmctl-ai/lmr@v0.5.1" to fetch the v0.5.1 release binary when lmr is not on PATH. The v0.5.1 host schema contains lmr-specific functions; the standard StrList methods come from the LMScript standard library.</p>
+<p>Write blocks as p = _lmcode_ cli="lmr" install="github:lmctl-ai/lmr@latest"; ... end _lmcode_ and execute them with r = run_lmcode(p), which returns ok and result. cli="lmr" compiles against the embedded schema and the install declaration fetches the release binary when lmr is not on PATH. The host schema contains only lmr-specific declarations: the out context object, 166 functions and 50 types. Standard types such as StrList come from the vendored lmcode_std_v3 library, which has 206 signatures in this repository; the current upstream catalog has 226 including the REST and CLI interfaces, and lmr does not ship those until it syncs its SDK pin.</p>
 <h2>Operation catalog</h2>
 <table>
 <thead><tr><th>Area</th><th>Operations</th></tr></thead>
@@ -44,12 +45,12 @@ lmr --lmcode FILE.dslb</code></pre>
 </tbody>
 </table>
 <h2>Results and errors</h2>
-<p>The DSL exposes typed result objects. Use out.set to include selected values in the single stdout JSON result, alongside check and failure counts. Non-finite numeric values serialize as JSON null. out.print writes to stderr. Load and execution errors produce a JSON error with a phase, code, and message.</p>
+<p>The DSL exposes typed result objects. Use out.set to include selected values in the run result: run_lmcode returns them as result.values, alongside result.checks and result.failures. Non-finite numeric values serialize as JSON null. out.print writes to stderr. Load and execution errors produce a JSON error with a phase, code, and message.</p>
 <p>In the native host, process exit codes are 0 for success, 2 for usage errors, 3 for bytecode loading or execution errors, and 4 for failed application checks.</p>
 <h2>Limits</h2>
 <p>Limits depend on the native operation; the old R-backed API limits do not describe this host. Keep examples small and check operation-specific errors when increasing input sizes. Read the operation descriptions in <a href="https://github.com/lmctl-ai/lmr/blob/main/docs/dsl-api.md">the lmr API source</a> for additional limits and supported options.</p>
 <h2>Examples</h2>
-<p>Start with the <a href="/tools/lmr/examples/">generated example book</a>. The repository also provides longer <a href="https://github.com/lmctl-ai/lmr/tree/main/examples/dsl">LMScript tutorials</a> and <a href="https://github.com/lmctl-ai/lmr/tree/main/examples/r-vs-dsl">R comparison recipes</a>.</p>
+<p>Start with the <a href="/tools/lmr/examples/">generated example book</a> and the <a href="/tools/lmr/reference.html">reference</a> of every signature. The repository also provides longer <a href="https://github.com/lmctl-ai/lmr/tree/main/examples/dsl">LMScript tutorials</a> and <a href="https://github.com/lmctl-ai/lmr/tree/main/examples/r-vs-dsl">R comparison recipes</a>.</p>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmr">github.com/lmctl-ai/lmr</a>.</p>

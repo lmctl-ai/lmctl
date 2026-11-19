@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmimg — lmctl.com tools</title>
+<meta name="description" content="lmimg is a native lmcode host for image editing, compositing and procedural graphics from scripts: a static ImageMagick core with original GIMP-style layers,…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmimg/">Overview</a></li>
+<li><a href="/tools/lmimg/skill.html">Skill</a></li>
+<li><a href="/tools/lmimg/guide.html">Guide</a></li>
+<li><a href="/tools/lmimg/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmimg</h1>
+<p>lmimg is a native lmcode host for image editing, compositing and procedural graphics from scripts: a static ImageMagick core with original GIMP-style layers, masks, curves, healing and LUTs. It is installed automatically by lmscript and reads and writes PNG, JPEG, TIFF, WebP, GIF, BMP and PNM files.</p>
+<p>This page is the quick reference. The latest release is lmimg 0.1.4; it ships the 206-signature lmcode_std_v3 standard library next to its 72 host methods.</p>
+<h2 id="install">Install and run</h2>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmscript quick.lms            # downloads the lmimg release on first use
+lmscript --check quick.lms    # compile the _lmcode_ block against the host schema
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmimg/main/examples/animation_wave.lms</code></pre>
+<p>The install attribute github:lmctl-ai/lmimg@latest on the block makes lmscript download and cache the release binary. The current release has Linux x64 and arm64 binaries that need dynamic glibc 2.35 or newer; libraries, fonts and codecs are linked statically.</p>
+<h2 id="minimal">Minimal runnable example</h2>
+<pre><code>mkdir("images");
+prog = _lmcode_ cli="lmimg" install="github:lmctl-ai/lmimg@latest";
+let original = img.pattern(440, 260, "x", "y", "0.2", "1");
+let edited = original.copy().levels(0.1, 0.8, 0.9);
+let panel = img.panel(original, edited, 4);
+panel.save("images/comparison.png");
+img.assert_close(original.ssim(original), 1.0, 0.000001);
+lmcode_return_put("width", panel.width());
+lmcode_return_put("height", panel.height());
+end _lmcode_
+r = run_lmcode(prog);
+println(json_stringify(r));
+require(r.ok, "comparison failed");</code></pre>
+<p>Saved as quick.lms and run with lmscript quick.lms, the program writes images/comparison.png and prints this line:</p>
+<pre><kbd>lmscript quick.lms</kbd>
+<samp>{"ok":true,"result":{"width":892,"height":268}}</samp></pre>
+<h2 id="protocol">Host CLI and protocol</h2>
+<table>
+<thead>
+<tr><th>Invocation</th><th>Effect</th><th>Exit</th></tr>
+</thead>
+<tbody>
+<tr><td>lmimg --version</td><td>Print lmimg and its version, for example lmimg 0.1.4</td><td>0</td></tr>
+<tr><td>lmimg --notices</td><td>Print the embedded third-party license notices</td><td>0</td></tr>
+<tr><td>lmimg --lmcode-schema --json</td><td>Print the compiler schema JSON (schema format 2, name lmimg, 6 host types, one context)</td><td>0</td></tr>
+<tr><td>lmimg --lmcode-signatures</td><td>Print one line per context, function and method signature: 279 lines in 0.1.4</td><td>0</td></tr>
+<tr><td>lmimg --lmcode FILE [FILE ...]</td><td>Run compiled bytecode files; result frame on stdout</td><td>0 or 3</td></tr>
+<tr><td>lmimg --dry-run --lmcode FILE ...</td><td>Verify bytecode without running image operations</td><td>0 or 3</td></tr>
+<tr><td>Anything else</td><td>Usage text on stderr and a failure frame with code CLI_USAGE</td><td>2</td></tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr><th>Item</th><th>Value</th></tr>
+</thead>
+<tbody>
+<tr><td>Block header</td><td>cli="lmimg" install="github:lmctl-ai/lmimg@latest"</td></tr>
+<tr><td>Outer call</td><td>r = run_lmcode(prog) returns a map with ok and result; on failure ok is false and phase, code, message, line and column are set</td></tr>
+<tr><td>Result value</td><td>Set inside the block with lmcode_return_set(value) or lmcode_return_put(name, value)</td></tr>
+<tr><td>Exit codes</td><td>0 success, 2 usage error or invalid memory setting, 3 bytecode-load or execution failure (including the memory budget)</td></tr>
+<tr><td>Environment</td><td>LMIMG_MAX_MEMORY_MB: total memory budget in whole MiB, default 4096</td></tr>
+<tr><td>Standard library</td><td>lmcode_std_v3, 206 signatures in release 0.1.4 (the current catalog has 226; see the reference)</td></tr>
+</tbody>
+</table>
+<h2 id="api">Host API quick reference</h2>
+<p>The single context object is img, of type Img. Image edits mutate their receiver and return it for chaining; use copy() first when the original must survive. Coordinates are pixels and RGBA values are 0..1.</p>
+<table>
+<thead>
+<tr><th>Task</th><th>Calls</th></tr>
+</thead>
+<tbody>
+<tr><td>Create and load</td><td>img.canvas(w, h, r, g, b, a), img.pattern(w, h, R, G, B, A) with expression strings, img.open(path), img.hald(level)</td></tr>
+<tr><td>Copy and save</td><td>image.copy(), image.save(path)</td></tr>
+<tr><td>Inspect and edit pixels</td><td>width(), height(), pixel(x, y, channel), set_pixel(x, y, r, g, b, a)</td></tr>
+<tr><td>Geometry</td><td>resize, crop, rotate, flip, perspective, lens</td></tr>
+<tr><td>Tone and colour</td><td>levels, curves, curves_rgb, hsl, channelmix, grayscale, sepia, invert, threshold, normalize, equalize, colormap(name), clut(hald)</td></tr>
+<tr><td>Filters</td><td>blur, sharpen, edges, morphology, unsharp, vignette, tilt_shift</td></tr>
+<tr><td>Compositing</td><td>blend(image, mode, opacity, x, y), mask(image), selection(x, y, w, h), img.layers(w, h) with add, masked and render</td></tr>
+<tr><td>Repair and builders</td><td>heal, img.curve().point(x, y), img.montage() with add(image) and render(columns, gap, r, g, b, a)</td></tr>
+<tr><td>Drawing</td><td>rect, circle, line, text, img.text_width(text, size)</td></tr>
+<tr><td>Measurements</td><td>mean, stddev, min, max, histogram(csv), psnr, ssim, property(key), metadata(key, value)</td></tr>
+<tr><td>Sheets and GIF</td><td>img.panel(a, b, gap), img.animation() with add(frame, delay), size() and save(path)</td></tr>
+<tr><td>Utilities</td><td>img.eval(expression), img.assert_true(condition), img.assert_close(a, b, tolerance), img.print(text)</td></tr>
+</tbody>
+</table>
+<p>Blend and layer modes: over, multiply, screen, overlay, difference, darken, lighten, addition, subtract, divide. Colormaps: gray, heat, viridis, coolwarm.</p>
+<h2 id="pages">Detail pages</h2>
+<ul>
+<li><a href="/tools/lmimg/skill.html">Skill</a>: install, commands, safety rules, worked examples, errors and verification for agents.</li>
+<li><a href="/tools/lmimg/guide.html">Guide</a>: the image model, architecture, workflow and limits.</li>
+<li><a href="/tools/lmimg/reference.html">Reference</a>: every type, method signature, mode, flag, exit code and the standard library tables.</li>
+<li><a href="https://github.com/lmctl-ai/lmimg">GitHub repository lmctl-ai/lmimg</a>: README, 30 gallery examples and releases.</li>
+</ul>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmimg">github.com/lmctl-ai/lmimg</a>.</p>
+</footer>
+</body>
+</html>

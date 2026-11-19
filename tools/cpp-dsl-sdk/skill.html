@@ -22,28 +22,47 @@
 </nav>
 <main>
 <h1>lmcode-cpp host authoring skill</h1>
-<p>This lmcode-cpp page is also kept at its former address for existing links.</p>
+<p>This lmcode-cpp page is also kept at its former address for existing links; the current address is <a href="/tools/lmcode-cpp/">/tools/lmcode-cpp/</a>.</p>
 <h2>Purpose</h2>
-<p>Guide the creation of a small C++ host that exposes a typed schema to lmscript and loads and runs bytecode with lmcode-cpp.</p>
+<p>Guide the creation of a small C++17 host that exposes a typed schema to lmscript and loads and runs _lmcode_ bytecode with the lmcode-cpp header include/dslvm.hpp.</p>
 <h2>When to use it</h2>
-<p>Use this when implementing a native application that should expose a controlled set of host objects, methods and functions to DSL scripts.</p>
+<p>Use this when implementing a native application that should expose a controlled set of host objects, methods and functions to _lmcode_ blocks, or when checking that an existing host still matches its schema and the standard catalog.</p>
 <h2>Install</h2>
-<p>Include dslvm.hpp from the SDK and compile as C++17. The standard function schema is included by each Registry; add callbacks only for host-specific functions and methods. Use a compiler that emits the SDK's current bytecode version.</p>
+<p>Vendor include/dslvm.hpp together with every stdlib/*.hpp file from the SDK and compile as C++17; there is no library build and no third-party dependency. Use a published lmscript compiler from the @lmctl-ai/lmctl npm package that emits bytecode version 6.</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+git clone https://github.com/lmctl-ai/lmcode-cpp</code></pre>
+<p>Every default dslvm::Registry includes the lmcode_std_v3 standard catalog: 226 canonical signatures (88 functions and 138 methods on 17 standard types), pinned in std.lock as version 3 of std/lmcode-std.schema.json. Registry(StdMode::Disabled) opts out and dslvm::register_std(registry) enables it idempotently.</p>
 <h2>Commands</h2>
 <pre><code>g++ -std=c++17 -Iinclude host.cpp -o host
 lmscript --lmcode-signatures schema.json
 ./host --lmcode-signatures
-./host --lmcode scene.dslb</code></pre>
+./host --lmcode scene.dslb
+python3 scripts/merge-std.py host.schema.json effective.schema.json
+make test
+make conformance</code></pre>
+<p>The merge-std.py helper in the SDK repository generates the effective compile and load schema from a host-only schema plus the standard catalog. The make targets run in the SDK checkout.</p>
 <h2>Inputs and outputs</h2>
-<ul><li>Input: binary bytecode and the exact JSON schema bytes used to compile it.</li><li>Host setup: registry callbacks plus context pointers to host-owned objects.</li><li>Output: host-defined effects and, for command-line programs, one standard JSON result line.</li></ul>
+<ul><li>Input: binary bytecode and the exact JSON schema bytes used to compile it.</li><li>Host setup: registry callbacks plus context pointers to host-owned objects.</li><li>Output: host-defined effects and, for command-line programs, one standard JSON result line that run_lmcode returns as ok and result.</li></ul>
+<p>Tool users write a block against a released host and execute it with run_lmcode:</p>
+<pre><code>prog = _lmcode_ cli="X" install="github:lmctl-ai/X@latest";
+...
+end _lmcode_
+r = run_lmcode(prog);</code></pre>
+<p>SDK authors developing a host compile against a local schema file and save the bytecode:</p>
+<pre><code>p = _lmcode_ schema="schema.json";
+g.say("Hello from lmcode");
+end _lmcode_
+savedsl(p, "demo.dslb");</code></pre>
 <h2>Safety rules</h2>
-<ul><li>Treat bytecode as trusted: the VM does not impose runtime limits or dynamic call checks.</li><li>Pass exact schema bytes and bind each host-specific context, function and method; standard functions are included by the Registry.</li><li>Keep objects and references returned by methods alive for all subsequent script calls.</li><li>Check signature parity during development. Matching arity and return type are part of the schema contract.</li><li>Expose collections as host object types with len() and at(i); DSL list/map value kinds do not exist.</li></ul>
+<ul><li>Treat bytecode as trusted: the VM does not impose runtime limits or dynamic call checks.</li><li>Pass exact schema bytes and bind each host-specific context, function and method; standard functions are included by the Registry.</li><li>Keep objects and references returned by methods alive for all subsequent script calls.</li><li>Check signature parity during development. Matching arity and return type are part of the schema contract.</li><li>Return standard collection values from native callbacks only through registry.std_collections(); they are valid for the current run.</li><li>The standard catalog includes file_read, file_write and file_append on native paths and the rest_serve server; opt out with Registry(StdMode::Disabled) when a host must not offer them.</li></ul>
 <h2>Worked examples</h2>
-<ol><li>Create one Registry and register a context object type.</li><li>Bind each method callback with argument and return type strings that exactly match the schema.</li><li>Load bytecode and schema bytes with Program::load.</li><li>Create host objects before Context::set; keep owners in scope through Program::run.</li><li>Use standard functions without host registration; bind only host-specific functions and methods.</li><li>For collections, return typed object values and implement the indexed access behavior in the host.</li></ol>
+<ol><li>Create one Registry and register a context object type.</li><li>Bind each method callback with argument and return type strings that exactly match the schema.</li><li>Load bytecode and schema bytes with Program::load.</li><li>Create host objects before Context::set; keep owners in scope through Program::run.</li><li>Use standard functions without host registration; bind only host-specific functions and methods.</li></ol>
+<p>The <a href="/tools/cpp-dsl-sdk/tutorial.html">tutorial</a> builds a complete greeter host; examples/rest_serve.cpp and examples/rule-entries.lms in the repository show the REST surface and annotated interface entries.</p>
+<p>The catalog includes the standard REST and CLI surface: the 10 interfaces RestGet, RestPost, RestPut, RestDelete, RestPatch, RestHead, RestOptions, RestHandler, CliCommand and CliOption (each takes one RestExchange and returns void), the functions rest_config, rest_route, rest_serve, rest_stop and rest_cli, and 15 RestExchange methods.</p>
 <h2>Errors and exit codes</h2>
-<p>Catch dslvm::Error around load and run. Standard CLI conventions use exit 2 for compilation/argument errors, 3 for bytecode load or run errors, and 4 for application failures. Include the error code and source location when present.</p>
+<p>Catch dslvm::Error around load and run. Standard CLI conventions use exit 2 for compilation or argument errors, 3 for bytecode load or run errors, and 4 for application failures. Include the error code and source location when present.</p>
 <h2>How to verify</h2>
-<ol><li>Compile a tiny DSL chunk against the host schema.</li><li>Diff the compiler's canonical signatures against Registry::signatures().</li><li>Test a valid run and representative load/runtime failures.</li><li>Confirm the host passes the exact schema bytes used by the compiler.</li><li>Test object ownership and collection access over the complete script run.</li></ol>
+<ol><li>Compile a tiny _lmcode_ block against the host schema.</li><li>Diff the compiler signatures against Registry::signatures().</li><li>Test a valid run and representative load and runtime failures.</li><li>Confirm the host passes the exact schema bytes used by the compiler.</li><li>Test object ownership and collection access over the complete script run.</li><li>In the SDK checkout run make test and make conformance.</li></ol>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-cpp">github.com/lmctl-ai/lmcode-cpp</a>.</p>

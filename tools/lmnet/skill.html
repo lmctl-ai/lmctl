@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmnet authoring skill — lmnet — lmctl.com tools</title>
+<meta name="description" content="lmnet is a statically-linked Linux network diagnostics CLI and LMScript host that unifies iputils ping and tracepath, iperf3, rtnetlink routing and link…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmnet/">Overview</a></li>
+<li><a href="/tools/lmnet/skill.html">Skill</a></li>
+<li><a href="/tools/lmnet/guide.html">Guide</a></li>
+<li><a href="/tools/lmnet/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmnet authoring skill</h1>
+<p>lmnet is a statically-linked Linux network diagnostics CLI and LMScript host that unifies iputils ping and tracepath, iperf3, rtnetlink routing and link inspection, procfs socket and SNMP counter dumps, RFC 1035 DNS queries, UDP/ICMP traceroute, parallel TCP port scanning, and raw TCP socket scripting.</p>
+<h2>Purpose</h2>
+<p>Use lmnet to inspect Linux network interfaces, 64-bit RX/TX link counters, routing tables, policy rules, ARP/NDP neighbor caches, active TCP/UDP/Unix sockets with PID attribution, kernel protocol counters, DNS records, and open TCP ports from either JSON-emitting CLI commands or compiled _lmcode_ scripts.</p>
+<h2>When to use it</h2>
+<p>Choose lmnet on Linux x86_64 or arm64 when a workflow needs host-level network topology, rtnetlink state, socket process attribution, iperf3 throughput testing, TCP port reachability checks, or raw TCP byte exchanges. Use lmcurl for HTTP, HTTPS, and LDAPv3 application requests, lmssl for TLS certificate and cipher inspection, lmproxy for HTTP/HTTPS proxy interception, or lmshark for deep packet capture.</p>
+<h2>Install</h2>
+<p>Install the lmctl toolchain with npm install -g @lmctl-ai/lmctl@latest. When an LMScript program declares cli="lmnet" and install="github:lmctl-ai/lmnet@latest", the runtime resolves the statically-linked Linux x86_64 or arm64 executable. Because lmnet directly queries Linux rtnetlink, /proc/net, and iputils internals, it is supported on Linux only.</p>
+<pre><code>lmscript --version
+lmnet --version
+lmnet --lmcode-schema
+lmnet --lmcode-signatures</code></pre>
+<h2>Commands</h2>
+<p>lmnet supports host introspection and bytecode execution flags, embedded iputils and iperf3 engines, and structured JSON diagnostic subcommands.</p>
+<pre><code># Host schema, signatures, and bytecode execution
+lmnet --lmcode-schema
+lmnet --lmcode-schema --json
+lmnet --lmcode-signatures
+lmnet --lmcode build/program.dslb
+lmnet --dry-run --lmcode build/program.dslb
+
+# Embedded upstream engines
+lmnet ping -c 3 127.0.0.1
+lmnet tracepath 127.0.0.1
+lmnet iperf3 -s -1 -p 15201
+lmnet iperf3 -c 127.0.0.1 -p 15201 -t 1
+
+# DNS and RFC 1035 UDP dig queries (JSON output)
+lmnet dns localhost
+lmnet dig example.com A @1.1.1.1
+
+# Linux libc and rtnetlink topology dumps (JSON output)
+lmnet ifaddrs
+lmnet link
+lmnet route
+lmnet rule
+lmnet neigh
+
+# Kernel /proc/net counters and socket tables (JSON output)
+lmnet counters
+lmnet sockets
+lmnet sockets tcp --listen
+lmnet sockets --summary
+
+# Traceroute, TCP connect port scanner, and TCP stdio bridge
+lmnet trace 1.1.1.1 16
+lmnet scan 127.0.0.1 --ports 22,80,443,8000-8010 --timeout 500 --concurrency 32
+lmnet pipe 127.0.0.1 8080
+lmnet pipe --listen 18080</code></pre>
+<h2>Inputs and outputs</h2>
+<p>In CLI mode, ping, tracepath, and iperf3 preserve their upstream text and flag formats, pipe streams raw binary bytes between stdin/stdout and a TCP socket, and dns, dig, ifaddrs, link, route, rule, neigh, counters, sockets, trace, and scan emit single-document JSON arrays or objects on stdout. In _lmcode_ mode, lmnet exposes context net: Net and println(string) (which writes diagnostics to stderr) alongside the 226 standard lmcode_std_v3 signatures, emitting a single terminal SDK invocation JSON frame on stdout.</p>
+<h2>Safety rules</h2>
+<p>Observe platform, privilege, and timeout boundaries when authoring lmnet commands and scripts:</p>
+<ul>
+<li>Linux-only host: lmnet requires a Linux kernel for rtnetlink sockets and /proc/net introspection; do not target macOS or Windows hosts with lmnet bytecode.</li>
+<li>Raw-socket privileges: lmnet trace (UDP probes with raw ICMP receive) and raw ICMP modes of lmnet ping require root or CAP_NET_RAW, whereas lmnet scan, net.scan, and net.check use unprivileged non-blocking TCP connect calls.</li>
+<li>Scan and query bounds: CLI --ports accepts only valid port numbers or ranges in 1..65535, --timeout is clamped to 100..30000 ms (fixed 750 ms in net.scan and net.check), --concurrency is clamped to 1..512 workers (default 64), and net.dns_query uses a 3-second connected UDP timeout.</li>
+<li>Non-throwing vs. throwing TCP calls: net.check(host, port) returns false on any connection refusal or timeout without throwing, whereas net.tcp_connect and net.tcp_listen throw a runtime error on resolution, connect, or bind failure, and TcpConn.send or TcpConn.recv throws after TcpConn.close().</li>
+</ul>
+<h2>Worked examples</h2>
+<p>The first example inspects loopback interfaces, rtnetlink link statistics, routing tables, socket summaries, and an ephemeral loopback TCP echo listener in LMScript:</p>
+<pre><code>p = _lmcode_ cli="lmnet" install="github:lmctl-ai/lmnet@latest";
+let links = net.links();
+let found_lo = false;
+for (i in range(0, links.len())) {
+  let l = links.at(i);
+  if (l.name() == "lo" &amp;&amp; l.loopback() &amp;&amp; l.up()) {
+    found_lo = true;
+  }
+}
+assert_eq(found_lo, true);
+
+let sum = net.socket_summary("tcp");
+assert(sum.total() >= 0);
+
+let srv = net.tcp_listen(29182);
+assert_eq(net.check("127.0.0.1", 29182), true);
+let peer = srv.accept();
+peer.close();
+lmcode_return_put("links", links.len());
+end _lmcode_
+res = run_lmcode(p);
+require(res.ok, json_stringify(res));</code></pre>
+<p>The second example exposes Linux DNS and link diagnostics through the standard lmcode_std_v3 REST and stateless CLI interfaces:</p>
+<pre><code>p = _lmcode_ cli="lmnet" install="github:lmctl-ai/lmnet@latest";
+@"--dev"
+fn opt_dev(x: RestExchange) -> void implements CliOption {
+  x.set("dev", x.query("dev"));
+}
+
+@"link-state"
+fn cmd_link_state(x: RestExchange) -> void implements CliCommand {
+  let target = x.get("dev");
+  let links = net.links();
+  let out = "missing";
+  for (i in range(0, links.len())) {
+    let l = links.at(i);
+    if (l.name() == target) {
+      out = l.name() + ":" + str(l.loopback()) + ":" + str(l.up());
+    }
+  }
+  x.send(out);
+}
+
+@"/dns/:host"
+fn get_dns(x: RestExchange) -> void implements RestGet {
+  let addrs = net.dns_lookup(x.param("host"));
+  x.json("{\"count\":" + str(addrs.len()) + "}");
+}
+
+rest_config("session", "global");
+assert_eq(rest_cli(str_split("--dev=lo link-state", " ")), "lo:true:true");
+assert_eq(rest_cli(str_split("/dns/localhost", " ")), "{\"count\":1}");
+end _lmcode_</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmnet uses consistent exit codes across CLI subcommands and _lmcode_ bytecode execution:</p>
+<ul>
+<li>Exit code 0 indicates that the CLI subcommand, dry-run validation, or bytecode execution completed and all assertions passed.</li>
+<li>Exit code 1 indicates a native CLI network operation error (such as DNS lookup failure, unreachable TCP pipe endpoint, or raw socket permission refusal).</li>
+<li>Exit code 2 indicates command-line usage errors, malformed port specifications, retired flag names, or conflicting dry-run metadata.</li>
+<li>Exit code 3 indicates a bytecode load error, schema hash mismatch, or unhandled runtime exception (such as TcpConn closed or bind failure).</li>
+<li>Exit code 4 indicates an application assertion failure or result contract violation during _lmcode_ execution.</li>
+</ul>
+<h2>How to verify</h2>
+<p>Verify the installed lmnet binary by checking its version, embedded schema JSON, canonical signatures, and structured JSON output from loopback introspection commands:</p>
+<pre><code>lmnet --version
+lmnet --lmcode-schema --json > /tmp/lmnet-schema.json
+lmnet --lmcode-signatures > /tmp/lmnet-sigs.txt
+lmnet link
+lmnet sockets --summary</code></pre>
+<p>In a source checkout, run ./test.sh to verify static linkage (not a dynamic executable under ldd), signature parity with the 226-signature lmcode_std_v3 catalog, and all CLI and LMScript integration tests.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmnet">github.com/lmctl-ai/lmnet</a>.</p>
+</footer>
+</body>
+</html>

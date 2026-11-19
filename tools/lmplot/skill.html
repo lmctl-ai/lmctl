@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmplot authoring skill — lmplot — lmctl.com tools</title>
+<meta name="description" content="lmplot is a self-contained gnuplot executable and LMScript host with an embedded anti-aliased PNG rasterizer and DejaVu TrueType fonts for byte-identical PNG…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmplot/">Overview</a></li>
+<li><a href="/tools/lmplot/skill.html">Skill</a></li>
+<li><a href="/tools/lmplot/guide.html">Guide</a></li>
+<li><a href="/tools/lmplot/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmplot authoring skill</h1>
+<p>lmplot is a self-contained gnuplot executable and LMScript host with an embedded anti-aliased PNG rasterizer and DejaVu TrueType fonts for byte-identical PNG and SVG scientific plotting.</p>
+<h2>Purpose</h2>
+<p>Use lmplot to render 2D and 3D scientific plots, pm3d surfaces, contours, heat maps, histograms, polar and radar charts, curve fits, and statistical summaries from LMScript _lmcode_ blocks or direct gnuplot command-line invocations without X11, Cairo, libgd, or external font files.</p>
+<h2>When to use it</h2>
+<p>Choose lmplot for data visualization, mathematical function plotting, gnuplot stats and fit round-trips, multi-panel dashboards, and numbered PNG animation frames in headless containers, CI runners, or local scripts. Pair it with lmparticle, lmphysics, lmcad, or lmdraw when combining simulation data or 2D/3D schematics into composite figures.</p>
+<h2>Install</h2>
+<p>Install the lmctl CLI globally, or declare cli="lmplot" and install="github:lmctl-ai/lmplot@v0.3.1" in an LMScript _lmcode_ block so the runtime downloads and verifies the self-contained binary (Linux glibc 2.35 or newer, macOS, or Windows).</p>
+<pre><code>npm install -g @lmctl-ai/lmctl
+lmplot --version
+lmplot --notices
+lmplot --lmcode-schema --json</code></pre>
+<h2>Commands</h2>
+<p>lmplot operates both as an lmcode host invoked through run_lmcode(p) and as a complete headless gnuplot command-line tool via the lmplot gnuplot passthrough route.</p>
+<pre><code>lmplot --version
+lmplot --notices
+lmplot --lmcode-schema
+lmplot --lmcode-schema --json
+lmplot --lmcode-signatures
+lmplot --lmcode FILE [--lmcode FILE ...]
+lmplot gnuplot -e "set terminal png size 800,500; set output 'sin.png'; plot sin(x) lw 2"
+lmplot gnuplot script.gp</code></pre>
+<h2>Inputs and outputs</h2>
+<p>In _lmcode_ mode, lmplot exposes context plot: Plot alongside the standard lmcode_std_v3 catalog. All Plot methods execute immediately against a persistent in-process gnuplot session.</p>
+<ul>
+<li>Commands and scripts: plot.cmd(line) runs a single gnuplot command line (semicolon-separated statements allowed), plot.script(text) writes multi-line gnuplot text to a temporary file and loads it (supporting inline datablocks and if/do-for blocks), and plot.load(path) loads a .gp file.</li>
+<li>In-memory datablocks: plot.data(name, text) defines the gnuplot datablock $name (pass name without the leading $) using a collision-safe terminator.</li>
+<li>Outputs and read-back: plot.png(path, width, height) and plot.svg(path, width, height) select the terminal and output file, and plot.close() flushes and closes the output file. plot.num(expr) and plot.str(expr) evaluate gnuplot expressions (such as STATS_slope, FIT_WSSR, or GPVAL_* variables) back into LMScript variables.</li>
+<li>Image inputs: set pixmap and binary filetype=png|jpg|gif read PNG, JPEG, GIF (first frame), BMP, TGA, and PNM images via stb_image so renders from lmcad, lmdraw, or lmblender can be composited inside an lmplot figure.</li>
+</ul>
+<h2>Safety rules</h2>
+<ul>
+<li>Pair every plot.png(path, w, h) or plot.svg(path, w, h) call with plot.close() after plotting; plotting twice into the same open output file concatenates two images into one file.</li>
+<li>Pass datablock names to plot.data(name, text) without the leading $ sign (for example, plot.data("pts", text) defines $pts), and ensure the name starts with a letter.</li>
+<li>Ensure parent directories for output files exist before calling plot.png or plot.svg (for example, call mkdir("images") in outer LMScript).</li>
+<li>Do not pass retired flags (--first, --last, --dry-run) or invocation manifest metadata to the native lmplot gnuplot route; they are refused with exit code 2.</li>
+<li>Total host memory (datablocks, arrays, voxel grids, and the RGBA canvas) is bounded by LMPLOT_MAX_MEMORY_MB (default 4096 MiB).</li>
+</ul>
+<h2>Worked examples</h2>
+<p>Plot a function and its Taylor approximation to a deterministic PNG file:</p>
+<pre><code>mkdir("images");
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
+plot.png("images/sine.png", 800, 500);
+plot.cmd("set title 'sin(x) and cubic Taylor approximation'");
+plot.cmd("set xlabel 'x'; set ylabel 'y'; set grid");
+plot.cmd("plot [-3.14:3.14] sin(x) lw 2 title 'sin(x)', x - x**3/6.0 dt 2 lw 2 title 'x - x^3/6'");
+plot.close();
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));</code></pre>
+<p>Load an in-memory datablock, run gnuplot stats to compute a linear regression, verify the slope with plot.assert_close, and plot the data with the fitted line:</p>
+<pre><code>mkdir("images");
+p = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@v0.3.1";
+plot.data("pts", "1 2.1\n2 3.9\n3 6.2\n4 8.0\n5 9.9\n");
+plot.cmd("stats $pts using 1:2 nooutput");
+let slope = plot.num("STATS_slope");
+let intercept = plot.num("STATS_intercept");
+plot.assert_close(slope, 1.97, 0.05);
+plot.png("images/regression.png", 800, 500);
+plot.cmd("f(x) = STATS_slope * x + STATS_intercept");
+plot.cmd("plot $pts using 1:2 with points pt 7 ps 1.5 title 'Data', f(x) with lines lw 2 title 'OLS fit'");
+plot.close();
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));</code></pre>
+<h2>Errors and exit codes</h2>
+<p>Each lmcode invocation emits a single terminal LMCODE_RETURN_BEGIN / LMCODE_RETURN_END frame. Exit code 0 indicates success. Exit code 2 indicates CLI usage errors, retired flags, or malformed invocation manifest metadata. Exit code 3 indicates bytecode load failure, any gnuplot command or expression evaluation error (reported as gnuplot: &lt;GPVAL_ERRMSG>), a failed plot.assert_close check, an output write error, or exceeding LMPLOT_MAX_MEMORY_MB. Exit code 4 indicates an application or frame output failure.</p>
+<h2>How to verify</h2>
+<p>Check schema and signature parity against the lmscript compiler and confirm that rendering the same script twice yields byte-identical PNG files:</p>
+<pre><code>lmplot --version
+lmplot --lmcode-schema --json > /tmp/lmplot.schema.json
+lmplot --lmcode-signatures > /tmp/lmplot.sigs.txt
+lmscript --lmcode-signatures /tmp/lmplot.schema.json > /tmp/lmplot.compiler.txt
+diff -u /tmp/lmplot.compiler.txt /tmp/lmplot.sigs.txt</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmplot">github.com/lmctl-ai/lmplot</a>.</p>
+</footer>
+</body>
+</html>

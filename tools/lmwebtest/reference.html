@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmwebtest reference — lmwebtest — lmctl.com tools</title>
+<meta name="description" content="Complete reference for lmwebtest command-line subcommands and flags, environment variables, Web DSL types and methods, Playwright host handle types, and exit…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmwebtest/">Overview</a></li>
+<li><a href="/tools/lmwebtest/skill.html">Skill</a></li>
+<li><a href="/tools/lmwebtest/guide.html">Guide</a></li>
+<li><a href="/tools/lmwebtest/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmwebtest reference</h1>
+<p>Complete reference for lmwebtest command-line subcommands and flags, environment variables, Web DSL types and methods, Playwright host handle types, and exit codes.</p>
+<h2>Command-line subcommands and flags</h2>
+<table>
+<thead>
+<tr>
+<th>Command or flag</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>lmwebtest --version | -v</td>
+<td>Print lmwebtest X.Y.Z to stdout and exit 0</td>
+</tr>
+<tr>
+<td>lmwebtest --lmcode-schema [--json]</td>
+<td>Print human-readable Web DSL schema summary or exact lmwebtest.dsl.json bytes (--json) and exit 0</td>
+</tr>
+<tr>
+<td>lmwebtest --lmcode-signatures</td>
+<td>Print canonical sorted Web DSL method and function signatures and exit 0</td>
+</tr>
+<tr>
+<td>lmwebtest [--dry-run] --lmcode FILE</td>
+<td>Execute (or validate in dry-run mode) a compiled Web DSL bytecode file</td>
+</tr>
+<tr>
+<td>lmwebtest playwright --lmcode-schema [--json]</td>
+<td>Print human-readable signatures or exact JSON schema (--json) for the full Playwright lmcode host</td>
+</tr>
+<tr>
+<td>lmwebtest playwright --lmcode-signatures</td>
+<td>Print canonical sorted signatures for the full Playwright lmcode host</td>
+</tr>
+<tr>
+<td>lmwebtest playwright --lmcode FILE [--lmcode FILE2 ...]</td>
+<td>Execute one or more compiled Playwright host bytecode files in a synchronous worker-bridged session</td>
+</tr>
+<tr>
+<td>lmwebtest test &lt;url> [--status 200] [--title TEXT] [--selector CSS] [--timeout 10000]</td>
+<td>Load url in Chromium, check status, title, visible selectors, console/page/network errors, and broken images, and output JSON</td>
+</tr>
+<tr>
+<td>lmwebtest screenshot &lt;url> --out &lt;file.png> [--no-js] [--timeout 10000]</td>
+<td>Capture a full-page PNG screenshot of url (optionally with JavaScript disabled via --no-js) and output JSON</td>
+</tr>
+<tr>
+<td>lmwebtest init &lt;site-name> [--url &lt;url>]</td>
+<td>Create a starter Playwright site test configuration under sites/&lt;site-name></td>
+</tr>
+<tr>
+<td>lmwebtest run [site-id|file|dir] [options]</td>
+<td>Run Playwright test suites for a specific site directory or spec file (checkout mode only)</td>
+</tr>
+<tr>
+<td>lmwebtest batch | lmwebtest run --all</td>
+<td>Run Playwright test suites across all configured directories under sites/ (checkout mode only)</td>
+</tr>
+</tbody>
+</table>
+<h2>Environment variables</h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LMCODE_HEADED</td>
+<td>unset (0)</td>
+<td>Set to 1 to launch Playwright Chromium in headed (visible window) mode during lmwebtest playwright runs</td>
+</tr>
+<tr>
+<td>LMCODE_JS</td>
+<td>vendored</td>
+<td>Optional filesystem path to an external lmcode-js checkout overriding the vendored runtime</td>
+</tr>
+<tr>
+<td>LMCODE_INVOCATION_FILE</td>
+<td>unset</td>
+<td>Internal SDK invocation envelope path supplied automatically by run_lmcode</td>
+</tr>
+</tbody>
+</table>
+<h2>Web DSL context objects (cli="lmwebtest")</h2>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>web</td>
+<td>Web</td>
+<td>Root browser session controller for navigating to pages and configuring viewport, headers, user agent, and timeouts</td>
+</tr>
+<tr>
+<td>report</td>
+<td>Report</td>
+<td>Structured finding collector for recording assertion failures and exporting JSON or text reports</td>
+</tr>
+</tbody>
+</table>
+<h2>Web DSL types and methods (schema/lmwebtest.dsl.json)</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Method signature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Web</td>
+<td>Web.navigate(url: string) -> Page</td>
+<td>Launch Chromium if needed, navigate to url waiting for load, and return a Page handle</td>
+</tr>
+<tr>
+<td>Web</td>
+<td>Web.navigate(url: string, timeout_ms: int) -> Page</td>
+<td>Navigate to url with an explicit navigation timeout in milliseconds</td>
+</tr>
+<tr>
+<td>Web</td>
+<td>Web.set_timeout(timeout_ms: int) -> void</td>
+<td>Set the default operation timeout in milliseconds for subsequent navigations and waits</td>
+</tr>
+<tr>
+<td>Web</td>
+<td>Web.set_viewport(width: int, height: int) -> void</td>
+<td>Set the browser viewport dimensions in pixels (default 1280x720)</td>
+</tr>
+<tr>
+<td>Web</td>
+<td>Web.set_user_agent(ua: string) -> void</td>
+<td>Set a custom User-Agent string for browser contexts</td>
+</tr>
+<tr>
+<td>Web</td>
+<td>Web.set_header(name: string, value: string) -> void</td>
+<td>Add an extra HTTP request header sent with browser requests</td>
+</tr>
+<tr>
+<td>Web</td>
+<td>Web.close() -> void</td>
+<td>Close all open pages and shut down the Chromium browser instance</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.url() -> string</td>
+<td>Return the current page URL after redirects</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.title() -> string</td>
+<td>Return the current document title</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.status() -> int</td>
+<td>Return the HTTP status code of the main navigation response</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.html() -> string</td>
+<td>Return the full serialized HTML content of the live DOM</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.html(selector: string) -> string</td>
+<td>Return the outer HTML of the first element matching selector</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.save_html(path: string) -> void</td>
+<td>Write the full rendered DOM HTML to path (creating parent directories as needed)</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.screenshot(path: string) -> void</td>
+<td>Capture a full-page PNG screenshot to path</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.screenshot(path: string, full_page: bool) -> void</td>
+<td>Capture a PNG screenshot to path with configurable full_page behavior</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.wait_for(selector: string) -> Element</td>
+<td>Wait for selector to appear in the DOM and return the matched Element</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.wait_for(selector: string, timeout_ms: int) -> Element</td>
+<td>Wait up to timeout_ms milliseconds for selector to appear and return the Element</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.wait_for_timeout(ms: int) -> void</td>
+<td>Pause execution for ms milliseconds</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.wait_for_load() -> void</td>
+<td>Wait for the page load state to complete</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.select(selector: string) -> ElementList</td>
+<td>Return an ElementList of all elements matching CSS selector</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.select_one(selector: string) -> Element</td>
+<td>Return the first Element matching CSS selector</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.has(selector: string) -> bool</td>
+<td>Return true if at least one element matches CSS selector</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.count(selector: string) -> int</td>
+<td>Return the number of elements matching CSS selector</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.text(selector: string) -> string</td>
+<td>Return the text content of the first element matching CSS selector</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.inner_html(selector: string) -> string</td>
+<td>Return the inner HTML of the first element matching CSS selector</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.outer_html(selector: string) -> string</td>
+<td>Return the outer HTML of the first element matching CSS selector</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.click(selector: string) -> void</td>
+<td>Click the first element matching CSS selector</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.fill(selector: string, value: string) -> void</td>
+<td>Fill a form control matching CSS selector with value</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.press(selector: string, key: string) -> void</td>
+<td>Press keyboard key on the first element matching CSS selector</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>Page.eval(script: string) -> string</td>
+<td>Evaluate a JavaScript expression in the page context and return its stringified result</td>
+</tr>
+<tr>
+<td>Element</td>
+<td>Element.text() -> string</td>
+<td>Return the text content of this element</td>
+</tr>
+<tr>
+<td>Element</td>
+<td>Element.inner_html() -> string</td>
+<td>Return the inner HTML of this element</td>
+</tr>
+<tr>
+<td>Element</td>
+<td>Element.outer_html() -> string</td>
+<td>Return the outer HTML of this element</td>
+</tr>
+<tr>
+<td>Element</td>
+<td>Element.attr(name: string) -> string</td>
+<td>Return the value of attribute name (or empty string if absent)</td>
+</tr>
+<tr>
+<td>Element</td>
+<td>Element.has_attr(name: string) -> bool</td>
+<td>Return true if attribute name is present on this element</td>
+</tr>
+<tr>
+<td>Element</td>
+<td>Element.is_visible() -> bool</td>
+<td>Return true if this element is currently visible</td>
+</tr>
+<tr>
+<td>Element</td>
+<td>Element.click() -> void</td>
+<td>Click this element</td>
+</tr>
+<tr>
+<td>Element</td>
+<td>Element.fill(value: string) -> void</td>
+<td>Fill this form element with value</td>
+</tr>
+<tr>
+<td>Element</td>
+<td>Element.press(key: string) -> void</td>
+<td>Press keyboard key on this element</td>
+</tr>
+<tr>
+<td>Element</td>
+<td>Element.select(selector: string) -> ElementList</td>
+<td>Query descendant elements matching CSS selector</td>
+</tr>
+<tr>
+<td>Element</td>
+<td>Element.select_one(selector: string) -> Element</td>
+<td>Query the first descendant element matching CSS selector</td>
+</tr>
+<tr>
+<td>Element</td>
+<td>Element.count(selector: string) -> int</td>
+<td>Count descendant elements matching CSS selector</td>
+</tr>
+<tr>
+<td>ElementList</td>
+<td>ElementList.len() -> int</td>
+<td>Return the number of elements in the list</td>
+</tr>
+<tr>
+<td>ElementList</td>
+<td>ElementList.at(index: int) -> Element</td>
+<td>Return the Element at 0-based index</td>
+</tr>
+<tr>
+<td>ElementList</td>
+<td>ElementList.texts() -> StrList</td>
+<td>Return a StrList of text contents for all elements in the list</td>
+</tr>
+<tr>
+<td>Report</td>
+<td>Report.add(rule: string, selector: string, line: int, message: string) -> void</td>
+<td>Record a validation finding in the report</td>
+</tr>
+<tr>
+<td>Report</td>
+<td>Report.fail_if_any() -> void</td>
+<td>Raise a run failure if one or more findings have been added to the report</td>
+</tr>
+<tr>
+<td>Report</td>
+<td>Report.write_json(path: string) -> void</td>
+<td>Write all recorded findings to path as a JSON array</td>
+</tr>
+<tr>
+<td>Report</td>
+<td>Report.write_text(path: string) -> void</td>
+<td>Write all recorded findings to path as line-oriented text</td>
+</tr>
+</tbody>
+</table>
+<h2>Web DSL global functions</h2>
+<table>
+<thead>
+<tr>
+<th>Function signature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>print(message: string) -> void</td>
+<td>Write a diagnostic message line to stderr</td>
+</tr>
+<tr>
+<td>assert_close(actual: float, expected: float, tolerance: float) -> void</td>
+<td>Assert that actual and expected agree within absolute tolerance</td>
+</tr>
+</tbody>
+</table>
+<h2>Playwright host handle types (cli="lmwebtest playwright")</h2>
+<table>
+<thead>
+<tr>
+<th>Handle type</th>
+<th>Representative methods</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Playwright (context pw)</td>
+<td>launch, connect, env, call</td>
+<td>Root entry point for launching or connecting to browsers and reading environment variables</td>
+</tr>
+<tr>
+<td>Browser</td>
+<td>new_context, new_page, contexts_count, version, is_connected, close</td>
+<td>Browser process handle supporting isolated contexts and direct pages</td>
+</tr>
+<tr>
+<td>BrowserContext</td>
+<td>new_page, add_cookies, storage_state, route_fulfill, tracing_start, tracing_stop, close</td>
+<td>Isolated browser profile managing cookies, storage state, network routing, and tracing</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>goto, locator, click, fill, press, set_input_files, click_response, click_download, click_popup, screenshot, evaluate, close</td>
+<td>Browser tab supporting navigation, input actions, file uploads, event-synchronized clicks, and assertions</td>
+</tr>
+<tr>
+<td>Frame</td>
+<td>goto, locator, click, fill, text_content, evaluate, url, name</td>
+<td>Iframe or main frame execution target</td>
+</tr>
+<tr>
+<td>Locator</td>
+<td>locator, first, nth, count, click, fill, set_input_files, text_content, get_attribute</td>
+<td>Auto-waiting Playwright locator for resilient element interactions and retrying assertions</td>
+</tr>
+<tr>
+<td>Request / Response</td>
+<td>url, method, status, text, json</td>
+<td>Captured network request and response handles</td>
+</tr>
+<tr>
+<td>Download / FileChooser / Dialog</td>
+<td>suggested_filename, save_as, set_files, message, accept, dismiss</td>
+<td>Handles for browser downloads, file-chooser interceptions, and alert/confirm/prompt dialogs</td>
+</tr>
+<tr>
+<td>ApiContext / ApiResponse</td>
+<td>get, post, put, delete, fetch, status, text, dispose</td>
+<td>Direct HTTP client sharing or testing endpoints alongside browser contexts</td>
+</tr>
+<tr>
+<td>Object (all handles)</td>
+<td>id() -> int, call(path: string, argsJson: string) -> string, call_id(path: string, argsJson: string) -> int, release() -> void</td>
+<td>Universal handle reflection reaching any Playwright method or nested object by dotted path</td>
+</tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Exit code</th>
+<th>Mode</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>All modes</td>
+<td>All checks, screenshots, or bytecode programs completed without error</td>
+</tr>
+<tr>
+<td>1</td>
+<td>CLI (test / screenshot / run / batch)</td>
+<td>Page check failed (status mismatch, console/page/network error, missing selector, broken image) or Playwright test suite failed</td>
+</tr>
+<tr>
+<td>2</td>
+<td>All modes</td>
+<td>Invalid command-line arguments, unknown subcommand, or malformed URL/timeout/status option</td>
+</tr>
+<tr>
+<td>3</td>
+<td>lmcode hosts (--lmcode / playwright --lmcode)</td>
+<td>Bytecode load error, schema mismatch, Playwright browser/action failure, or report.fail_if_any() triggered</td>
+</tr>
+<tr>
+<td>4</td>
+<td>lmcode hosts</td>
+<td>Application error raised with code APP_FAIL</td>
+</tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmwebtest">github.com/lmctl-ai/lmwebtest</a>.</p>
+</footer>
+</body>
+</html>

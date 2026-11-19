@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmcode-csharp skill — lmcode-csharp — lmctl.com tools</title>
+<meta name="description" content="Use lmcode-csharp to embed the DSLB v6 bytecode runtime, 226-signature standard catalog, and REST/CLI controller into .NET 8 and NativeAOT C# hosts.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmcode-csharp/">Overview</a></li>
+<li><a href="/tools/lmcode-csharp/skill.html">Skill</a></li>
+<li><a href="/tools/lmcode-csharp/guide.html">Guide</a></li>
+<li><a href="/tools/lmcode-csharp/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmcode-csharp skill</h1>
+<p>Use lmcode-csharp to embed the DSLB v6 bytecode runtime, 226-signature standard catalog, and REST/CLI controller into .NET 8 and NativeAOT C# hosts.</p>
+<h2>Purpose</h2>
+<p>Build reflection-free, NativeAOT-ready C# host applications that verify and execute lmcode DSLB v6 programs and emit LMCODE_RETURN envelopes.</p>
+<h2>When to use it</h2>
+<p>Use lmcode-csharp when authoring a .NET 8 application or NativeAOT binary that exposes C# domain objects or REST/CLI routes to compiled lmcode bytecode.</p>
+<h2>Install</h2>
+<p>Reference src/LmCode/LmCode.csproj with dotnet add reference or vendor the src/LmCode directory in a .NET 8 SDK project.</p>
+<h2>Commands</h2>
+<pre><code>dotnet build -c Release -warnaserror
+dotnet test
+dotnet run --project conformance/LmCode.Conformance -- conformance/vectors
+dotnet run --project conformance/LmCode.Conformance -- conformance/stdlib-vectors
+dotnet publish examples/Greeter -r linux-x64 -c Release -p:PublishAot=true</code></pre>
+<h2>Inputs and outputs</h2>
+<ul>
+<li>Input: byte[] DSLB v6 bytecode, byte[] dsl.schema: 2 JSON, and optional LMCODE_INVOCATION_FILE manifest.</li>
+<li>Output: mutated C# objects in Context, HTTP/1.1 responses over stdio via RestController, or a terminal LMCODE_RETURN frame.</li>
+<li>Strings: VmString stores immutable raw bytes accessed via .Span; decode UTF-8 with .ToString() only when text is required.</li>
+</ul>
+<h2>Safety rules</h2>
+<ul>
+<li>Never round-trip arbitrary VmString byte payloads through C# UTF-16 string unless UTF-8 validity is guaranteed.</li>
+<li>Keep object handles (ObjRef) scoped to their owning Context and do not share mutable handles across concurrent runs.</li>
+<li>Use Registry.Dry(callback) to provide safe dry-mode previews while leaving mutating callbacks unslotted.</li>
+</ul>
+<h2>Worked examples</h2>
+<pre><code>var registry = new Registry();
+registry.Function("greet", ["string"], "void", (_, values) =>
+{
+    Console.Error.WriteLine("Hello, " + values[0].AsStr().ToString());
+    return Value.None;
+});
+var program = LmCode.Program.Load(File.ReadAllBytes(path), schemaBytes, registry);
+var context = new Context();
+program.Run(context, registry);</code></pre>
+<h2>Errors and exit codes</h2>
+<table><thead><tr><th>Code</th><th>Phase</th><th>Exit</th><th>Condition</th></tr></thead><tbody>
+<tr><td>LOAD_BAD_BYTECODE</td><td>load</td><td>3</td><td>Malformed DSLB v6 header, bad magic or version, truncated section, invalid opcode, or stack depth violation</td></tr>
+<tr><td>LOAD_BAD_SCHEMA</td><td>load</td><td>3</td><td>Host schema JSON fails dsl.schema 2 validation or declares an invalid result contract</td></tr>
+<tr><td>LOAD_SCHEMA_MISMATCH</td><td>load</td><td>3</td><td>32-byte SHA-256 schema hash in DSLB v6 header does not match exact host schema bytes</td></tr>
+<tr><td>LOAD_UNBOUND</td><td>load</td><td>3</td><td>Bytecode imports a context, function, or method signature not registered in the host Registry</td></tr>
+<tr><td>RUN_ERROR</td><td>run</td><td>3</td><td>VM division or remainder by zero, or loop-free operand stack underflow</td></tr>
+<tr><td>RUN_HOST</td><td>run</td><td>3</td><td>Host callback failure, invalid encoding, expired collection handle, or REST route validation failure</td></tr>
+<tr><td>APP_FAIL</td><td>app</td><td>4</td><td>Post-run application domain validation failure or output stream write failure</td></tr>
+</tbody></table>
+<h2>How to verify</h2>
+<pre><code>bash scripts/sync-std.sh --verify
+bash scripts/sync-rest.sh --verify
+dotnet test
+lmscript test.lms</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmcode-csharp">github.com/lmctl-ai/lmcode-csharp</a>.</p>
+</footer>
+</body>
+</html>

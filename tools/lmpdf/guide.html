@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmpdf guide — lmpdf — lmctl.com tools</title>
+<meta name="description" content="Typst layout architecture, lmoffice schema parity, PDF/A-2b and PDF/UA-1 archival conformance, dry validation, and the standard lmcode_std_v3 library for lmpdf.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmpdf/">Overview</a></li>
+<li><a href="/tools/lmpdf/skill.html">Skill</a></li>
+<li><a href="/tools/lmpdf/guide.html">Guide</a></li>
+<li><a href="/tools/lmpdf/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmpdf guide</h1>
+<p>Typst layout architecture, lmoffice schema parity, PDF/A-2b and PDF/UA-1 archival conformance, dry validation, and the standard lmcode_std_v3 library for lmpdf.</p>
+<h2>Overview</h2>
+<p>lmpdf is a self-contained Rust host built on the lmcode-rust SDK and an embedded Typst layout engine. It implements the same docx and pptx schemas as lmoffice, allowing one LMScript program to produce either an editable Open XML package or a deterministic, tagged PDF/A-2b and PDF/UA-1 document or presentation deck simply by switching the host command from lmoffice to lmpdf.</p>
+<h2>One script, two outputs: lmoffice parity</h2>
+<p>lmpdf exposes two subcommands that mirror lmoffice's document and presentation routes:</p>
+<ul>
+<li>Document parity (lmpdf docx): implements context docx: DocxHost and the Docx, Paragraph, and Table types. Scripts using headings, paragraphs, bullets, numbered lists, legal clauses, signatures, 1-based tables, repeating table headers, running headers and footers with {PAGE} and {NUMPAGES}, multi-column sections, tab stops, footnotes, generated tables of contents, Markdown bodies (Docx.markdown, Docx.markdown_file), and XHTML/CSS profiles (Docx.html_doc, Docx.html_xml) render directly to paginated PDF documents within tight line-count and ink-position parity thresholds.</li>
+<li>Presentation parity (lmpdf pptx): implements context pptx: PptxHost and the Pptx, Slide, and PptxTable types on a 16:9 canvas (1280x720 px mapped to 960x540 pt). Title slides, section headers, two-column slides, positioned text and bullet boxes, shapes, lines, arrows, tables, bar/line/pie charts, and slide-separated Markdown decks (Pptx.markdown) render within 2 pt text and 2 px shape box tolerances compared to LibreOffice Impress renders.</li>
+</ul>
+<h2>Archival PDF/A-2b, accessible PDF/UA-1, and bundled fonts</h2>
+<ul>
+<li>Default archival and accessibility tagging: every PDF emitted by lmpdf targets tagged PDF/A-2b and PDF/UA-1 out of the box, validated in release CI against qpdf --check and veraPDF (144 PDF/A-2b rules and 106 PDF/UA-1 rules).</li>
+<li>Bundled international fonts: all required fonts are compiled directly into the executable, including Latin families, Noto Naskh Arabic (with right-to-left layout and contextual Arabic glyph joining), and Kosugi (Japanese CJK). No system fonts are queried at runtime, guaranteeing byte-identical PDF output across Linux, macOS, and Windows runners.</li>
+<li>Scope boundaries: interactive AcroForms, PDF encryption, and cryptographic digital signatures are outside the v1 contract.</li>
+</ul>
+<h2>Invocation manifest, builder parts, and dry validation</h2>
+<p>When LMScript runs a program via run_lmcode(p), it passes an invocation manifest v1 through LMCODE_INVOCATION_FILE:</p>
+<ul>
+<li>Strict manifest validation: the host checks the manifest before constructing a document context or opening bytecode files. The manifest must include a boolean dry field; missing or non-boolean values fail immediately with exit code 2.</li>
+<li>Multi-part builders: repeated --lmcode FILE arguments share the active document context across parts while keeping sealed per-part result slots ordered by manifest index. All bytecode parts are loaded and verified before any part executes, and the first failure stops dispatch without emitting partial results.</li>
+<li>Dry execution: when dry is true, domain callbacks return SDK typed dummies while still validating html-doc@1 and html-subset@1 XML/CSS structure and source locations in memory. No PDF, image, or directory is created or modified on disk during a dry run.</li>
+</ul>
+<h2>Standard lmcode_std_v3 library</h2>
+<p>Both lmpdf docx and lmpdf pptx include the standard lmcode_std_v3 catalog (--lmcode-signatures --without-std omits the standard catalog when inspecting host-only signatures). The catalog provides string, encoding, math, typed collection (IntList, FloatList, StrList, IntMap, FloatMap, StrMap, stacks, queues, priority queues), JSON, template, file, and return-framing functions. The v0.2.19 release prints 206 standard signatures and does not ship the REST and CLI interfaces (RestGet, CliCommand, rest_serve and related functions).</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmpdf">github.com/lmctl-ai/lmpdf</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmformat authoring skill — lmformat — lmctl.com tools</title>
+<meta name="description" content="lmformat (@lmctl-ai/lmformat) is a dependency-free Node.js library for CLI output formatting, providing automatically sized tables, decimal alignment, shared…">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmformat/">Overview</a></li>
+<li><a href="/tools/lmformat/skill.html">Skill</a></li>
+<li><a href="/tools/lmformat/guide.html">Guide</a></li>
+<li><a href="/tools/lmformat/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmformat authoring skill</h1>
+<p>lmformat (@lmctl-ai/lmformat) is a dependency-free Node.js library for CLI output formatting, providing automatically sized tables, decimal alignment, shared multi-section grids, compact counts, durations, relative timestamps, and progress bars.</p>
+<h2>Purpose</h2>
+<p>Use lmformat in Node.js CLI tools and LMScript utilities to render aligned text tables, multi-section status reports, human-readable durations, relative reset countdowns, and single-line progress bars without external npm dependencies.</p>
+<h2>When to use it</h2>
+<p>Use lmformat whenever a JavaScript or TypeScript CLI prints tabular data, status dashboards, rate-limit summaries, or timing metrics to a terminal. Use an HTML or graphical plotting tool such as lmhtml or lmplot when generating web pages or image charts.</p>
+<h2>Install</h2>
+<p>Install @lmctl-ai/lmformat from npm on Node.js 18 or newer. Both CommonJS require and ECMAScript module import are supported out of the box alongside bundled TypeScript declarations.</p>
+<pre><code>npm install @lmctl-ai/lmformat
+node -e "const f = require('@lmctl-ai/lmformat'); f.printTable([['ok', f.formatCount(15800000)]], { headers: ['status', 'tokens'] });"</code></pre>
+<h2>Commands</h2>
+<p>Format or print a table in one call with formatTable or printTable, or combine scalar formatters for counts, durations, percentages, and relative timestamps:</p>
+<pre><code>const {
+  printTable, formatCount, formatDuration, formatPercent,
+  formatRelativeTime, formatBar,
+} = require('@lmctl-ai/lmformat');
+
+const now = '2026-09-25T20:00:00Z';
+const rows = [
+  ['triage.lmctl', formatCount(960462), formatDuration(7500000), formatPercent(0.16), formatBar(0.16), formatRelativeTime('2026-09-28T20:00:00Z', { now })],
+  ['math.lmctl', formatCount(15800000), formatDuration(185000), formatPercent(0.75), formatBar(0.75), formatRelativeTime('2026-09-25T20:40:00Z', { now })],
+];
+
+printTable(rows, {
+  headers: ['team', 'tokens', 'elapsed', 'used', 'bar', 'resets in'],
+  align: ['left', 'right', 'right', 'right', 'left', 'right'],
+});</code></pre>
+<h2>Inputs and outputs</h2>
+<p>Table functions accept an array of rows where each cell is a string, number, boolean, null, or undefined. Options configure headers, column alignment (left, right, decimal), per-column width caps (max), truncation behavior (truncate, truncateTrailing, ellipsis), and left indentation (margin).</p>
+<p>formatTable and renderGrid return a formatted string without a trailing newline; printTable writes the formatted string plus a newline to process.stdout or a custom stream (writing nothing if the table is empty). Scalar formatters return deterministic plain strings and return unknown (or ?% for formatPercent) on non-finite or unparseable inputs.</p>
+<h2>Safety rules</h2>
+<p>Cells must be plain single-line text: lmformat rejects tabs, newlines, ANSI escape sequences, and terminal control characters with a TypeError so untrusted data cannot spoof terminal lines. Pass untrusted strings through escapeCell(value) before table rendering.</p>
+<p>When formatting multiple relative timestamps in a single report, capture a single now reference timestamp and pass { now } to every formatRelativeTime call so the output is deterministic and free of clock-boundary drift.</p>
+<h2>Worked examples</h2>
+<p>Align multiple table sections onto a single shared column grid with measureColumns and renderGrid, or align currency amounts on their decimal point:</p>
+<pre><code>const { measureDecimalPlaces, measureColumns, renderGrid } = require('@lmctl-ai/lmformat');
+
+const sections = [
+  [['$10', 'base plan']],
+  [['$0.25', 'overage'], ['-$1.5', 'credit']],
+];
+const align = ['decimal', 'left'];
+const decimalPlaces = measureDecimalPlaces(sections);
+const widths = measureColumns(sections, { align, decimalPlaces });
+for (const rows of sections) {
+  console.log(renderGrid(rows, { widths, align, decimalPlaces, margin: 2 }));
+}</code></pre>
+<h2>Errors and exit codes</h2>
+<p>lmformat throws a TypeError when passed control characters in cells, an invalid explicit now reference timestamp, wide or multi-character glyphs in formatBar, or both widths and max simultaneously in renderGrid. Non-finite numbers and invalid target timestamps in scalar formatters do not throw; they return unknown (or ?%).</p>
+<h2>How to verify</h2>
+<p>Run the test suite, syntax check, and bundled session and rate-limit examples from a checkout of lmformat.</p>
+<pre><code>npm test
+npm run check
+npm run example
+npm run example:ratelimit</code></pre>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmformat">github.com/lmctl-ai/lmformat</a>.</p>
+</footer>
+</body>
+</html>

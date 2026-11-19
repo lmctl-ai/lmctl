@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmnet reference — lmnet — lmctl.com tools</title>
+<meta name="description" content="Complete command-line subcommands and flags, Net context types and methods, standard lmcode_std_v3 REST and CLI interfaces, and exit codes for lmnet v0.1.1.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmnet/">Overview</a></li>
+<li><a href="/tools/lmnet/skill.html">Skill</a></li>
+<li><a href="/tools/lmnet/guide.html">Guide</a></li>
+<li><a href="/tools/lmnet/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main>
+<h1>lmnet reference</h1>
+<p>Complete command-line subcommands and flags, Net context types and methods, standard lmcode_std_v3 REST and CLI interfaces, and exit codes for lmnet v0.1.1.</p>
+<h2>Host and CLI subcommands</h2>
+<table>
+<thead><tr><th>Command or flag</th><th>Arguments</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>--version</td><td>none</td><td>Print the lmnet version string and exit 0.</td></tr>
+<tr><td>--lmcode-schema</td><td>[--json]</td><td>Print a human-readable schema summary, or exact embedded host schema JSON bytes when --json is passed.</td></tr>
+<tr><td>--lmcode-signatures</td><td>none</td><td>Print all canonical context, function, and method signatures (host + 226 standard library signatures).</td></tr>
+<tr><td>--lmcode</td><td>[--dry-run] &lt;file.dslb>...</td><td>Load and execute (or dry-validate without network/file effects) compiled LMScript bytecode files.</td></tr>
+<tr><td>ping</td><td>&lt;host> [iputils-options]</td><td>Execute the embedded upstream iputils ping engine.</td></tr>
+<tr><td>tracepath</td><td>&lt;host> [iputils-options]</td><td>Execute the embedded upstream iputils tracepath engine.</td></tr>
+<tr><td>iperf3</td><td>[iperf3-options]</td><td>Execute the embedded upstream iperf 3.22 throughput client or server engine.</td></tr>
+<tr><td>dns</td><td>&lt;host></td><td>Resolve host addresses via getaddrinfo and print a JSON array of IP strings.</td></tr>
+<tr><td>dig</td><td>&lt;name> [TYPE] [@server]</td><td>Send an RFC 1035 UDP DNS query (3 s timeout) and print {"rcode":...,"answers":[{name,type,ttl,data}]}.</td></tr>
+<tr><td>ifaddrs</td><td>none</td><td>Print address-bearing network interfaces as JSON [{name,addr,mtu,up,loopback}].</td></tr>
+<tr><td>link</td><td>none</td><td>Dump all link devices and 64-bit RX/TX counters over rtnetlink as JSON.</td></tr>
+<tr><td>route</td><td>none</td><td>Dump IPv4 and IPv6 kernel routing tables over rtnetlink as JSON [{dest,via,dev,proto,scope,metric,table,prefsrc}].</td></tr>
+<tr><td>rule</td><td>none</td><td>Dump policy routing rules over rtnetlink as JSON [{pref,family,table,action,from,to,fwmark,iif,oif,goto_target}].</td></tr>
+<tr><td>neigh</td><td>none</td><td>Dump ARP/NDP neighbor cache over rtnetlink as JSON [{ip,dev,state,mac,family,router,proxy}].</td></tr>
+<tr><td>counters</td><td>none</td><td>Dump kernel protocol counters from /proc/net/{snmp,netstat,snmp6} as a flat sorted JSON object.</td></tr>
+<tr><td>sockets</td><td>[tcp|udp|unix] [--listen] [--summary]</td><td>Dump /proc/net socket tables with PID/process attribution as JSON, or ss-style aggregate counts with --summary.</td></tr>
+<tr><td>trace</td><td>&lt;host> [maxttl]</td><td>Run an IPv4 UDP/ICMP traceroute (default 30 hops) and print {"dest_ip":...,"hops":[{ttl,from,rtt_ms,reached}]}.</td></tr>
+<tr><td>scan</td><td>&lt;host> [--ports SPEC] [--timeout MS] [--concurrency N]</td><td>Run a parallel TCP connect port scan (default top-15 ports, 750 ms timeout, 64 workers) and print JSON verdicts.</td></tr>
+<tr><td>pipe</td><td>&lt;host> &lt;port> | --listen &lt;port> [--forever]</td><td>Stream raw bytes between stdin/stdout and a TCP connection or listening port.</td></tr>
+</tbody>
+</table>
+<h2>Host context net: Net and inspection types</h2>
+<table>
+<thead><tr><th>Type / context</th><th>Method signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>context net: Net</td><td>net.dns_lookup(string) -> StrList</td><td>Resolve a hostname and return a StrList of IPv4/IPv6 address strings.</td></tr>
+<tr><td>Net</td><td>net.dns_query(string, string, string) -> DnsResult</td><td>Send an RFC 1035 UDP query for (name, record_type, server_or_empty) and return a DnsResult.</td></tr>
+<tr><td>Net</td><td>net.interfaces() -> IfaceList | net.links() -> LinkList</td><td>Return address-bearing interfaces (getifaddrs) or all rtnetlink link devices with 64-bit RX/TX counters.</td></tr>
+<tr><td>Net</td><td>net.routes() -> RouteList | net.rules() -> RuleList | net.neighbors() -> NeighborList</td><td>Return kernel routing table entries, policy routing rules, or ARP/NDP neighbor table entries over rtnetlink.</td></tr>
+<tr><td>Net</td><td>net.counters() -> CounterList</td><td>Return sorted kernel networking counters from /proc/net/{snmp,netstat,snmp6}.</td></tr>
+<tr><td>Net</td><td>net.sockets(string, bool) -> SocketList | net.socket_summary(string) -> SocketSummary</td><td>Return /proc/net socket rows filtered by protocol ("" for all) and listen_only flag, or aggregate summary counts.</td></tr>
+<tr><td>Net</td><td>net.scan(string, string) -> ScanResult | net.check(string, int) -> bool</td><td>Scan a port specification ("" for default top-15) with 750 ms timeout, or test a single TCP port without throwing.</td></tr>
+<tr><td>Net</td><td>net.trace(string, int) -> TraceResult</td><td>Run a UDP/ICMP traceroute to host up to max_ttl hops and return a TraceResult.</td></tr>
+<tr><td>Net / function</td><td>net.tcp_connect(string, int) -> TcpConn | net.tcp_listen(int) -> TcpListener | println(string) -> void</td><td>Open a blocking TCP client connection, bind a loopback/TCP listener on port, or print diagnostics to stderr.</td></tr>
+<tr><td>DnsResult / DnsAnswer</td><td>r.rcode() | r.error() -> string | r.answers() -> DnsAnswerList | a.name() | a.type() | a.data() -> string | a.ttl() -> int</td><td>Inspect DNS response code, error text, and answer records (DnsAnswerList supports len() and at(int)).</td></tr>
+<tr><td>Iface / IfaceList</td><td>i.name() | i.addr() -> string | i.mtu() -> int | i.up() | i.loopback() -> bool | list.len() -> int | list.at(int) -> Iface</td><td>Inspect interface name, IP address, MTU, and UP/LOOPBACK flags.</td></tr>
+<tr><td>Link / LinkList</td><td>l.name() | l.mac() -> string | l.index() | l.mtu() | l.txqlen() | l.rx_bytes() | l.rx_packets() | l.rx_errors() | l.rx_dropped() | l.tx_bytes() | l.tx_packets() | l.tx_errors() | l.tx_dropped() -> int | l.up() | l.loopback() -> bool</td><td>Inspect rtnetlink device attributes and 64-bit receive/transmit counters (LinkList supports len() and at(int)).</td></tr>
+<tr><td>Route / RouteList</td><td>r.dest() | r.via() | r.dev() | r.proto() | r.scope() | r.table() | r.prefsrc() -> string | r.metric() -> int</td><td>Inspect kernel routing table entry attributes (RouteList supports len() and at(int)).</td></tr>
+<tr><td>Rule / RuleList</td><td>r.pref() | r.goto_target() -> int | r.family() | r.table() | r.action() | r.from() | r.to() | r.fwmark() | r.iif() | r.oif() -> string</td><td>Inspect policy routing rule priority, selectors, and action (RuleList supports len() and at(int)).</td></tr>
+<tr><td>Neighbor / NeighborList</td><td>n.ip() | n.dev() | n.state() | n.mac() | n.family() -> string | n.router() | n.proxy() -> bool</td><td>Inspect ARP/NDP neighbor entry fields (NeighborList supports len() and at(int)).</td></tr>
+<tr><td>Counter / CounterList</td><td>c.name() -> string | c.value() -> int | list.len() -> int | list.at(int) -> Counter</td><td>Inspect kernel protocol counter name (Section.Field) and 64-bit integer value.</td></tr>
+<tr><td>Socket / SocketList</td><td>s.proto() | s.local() | s.remote() | s.state() | s.process() -> string | s.pid() -> int</td><td>Inspect socket protocol, local/remote endpoints, state, owning PID, and process name (SocketList supports len() and at(int)).</td></tr>
+<tr><td>SocketSummary</td><td>s.total() | s.listening() | s.tcp() | s.tcp6() | s.udp() | s.udp6() | s.unix() -> int | s.state_count(string) -> int</td><td>Inspect aggregate socket counts by family and kernel TCP state name.</td></tr>
+<tr><td>ScanResult / Port</td><td>sr.host() | sr.resolved() -> string | sr.open() | sr.closed() | sr.filtered() -> int | sr.ports() -> PortList | p.number() -> int | p.state() | p.service() -> string</td><td>Inspect TCP scan summary counts and per-port number, state (open, closed, filtered), and well-known service name.</td></tr>
+<tr><td>TraceResult / Hop</td><td>tr.dest_ip() | tr.error() -> string | tr.hops() -> HopList | h.ttl() -> int | h.from() -> string | h.rtt_ms() -> float | h.reached() -> bool</td><td>Inspect traceroute target IP, error string, and per-hop TTL, responder IP, RTT in ms, and destination reached flag.</td></tr>
+<tr><td>TcpConn / TcpListener</td><td>conn.send(string) -> void | conn.recv(int) -> string | conn.close() -> void | listener.accept() -> TcpConn</td><td>Send raw bytes, receive up to N bytes ("" on EOF), idempotently close a connection, or accept an incoming TCP peer.</td></tr>
+</tbody>
+</table>
+<h2>Standard lmcode_std_v3 REST and CLI interfaces</h2>
+<table>
+<thead><tr><th>Interface or function</th><th>Signature / annotation</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>RestGet .. RestOptions</td><td>@"/path/:param" fn h(x: RestExchange) -> void implements RestGet</td><td>Bind an HTTP GET, POST, PUT, DELETE, PATCH, HEAD, or OPTIONS route handler.</td></tr>
+<tr><td>RestHandler</td><td>@"/path" fn h(x: RestExchange) -> void implements RestHandler</td><td>Bind a method-agnostic HTTP route handler.</td></tr>
+<tr><td>CliCommand</td><td>@"cmd" fn h(x: RestExchange) -> void implements CliCommand</td><td>Bind a named CLI subcommand dispatched by rest_cli.</td></tr>
+<tr><td>CliOption</td><td>@"--flag" fn h(x: RestExchange) -> void implements CliOption</td><td>Bind a CLI option flag (--flag=val or --flag val) evaluated before the command handler.</td></tr>
+<tr><td>rest_config</td><td>rest_config(key: string, value: string) -> void</td><td>Configure server or CLI settings such as host, port, and session (ephemeral or global).</td></tr>
+<tr><td>rest_route</td><td>rest_route(method: string, path: string, handler: string) -> void</td><td>Dynamically register an HTTP method and route pattern to a handler function name.</td></tr>
+<tr><td>rest_serve / rest_stop</td><td>rest_serve() -> void | rest_stop() -> void</td><td>Start or stop the embedded standard HTTP server loop.</td></tr>
+<tr><td>rest_cli</td><td>rest_cli(args: StrList) -> string</td><td>Dispatch CLI options, commands, or path requests in-process without opening a socket.</td></tr>
+<tr><td>RestExchange</td><td>x.method() | x.path() | x.body() | x.param(string) | x.query(string) | x.header(string) -> string</td><td>Read request method, path, body, :param segment, query parameter, or header.</td></tr>
+<tr><td>RestExchange</td><td>x.has_query(string) | x.has_header(string) -> bool</td><td>Check whether a query parameter or request header is present.</td></tr>
+<tr><td>RestExchange</td><td>x.status(int) | x.set_header(string, string) | x.send(string) | x.json(string) -> void</td><td>Set response status code and headers, and emit plain text or application/json bodies.</td></tr>
+<tr><td>RestExchange</td><td>x.get(string) -> string | x.set(string, string) -> void | x.increment(string) -> int</td><td>Read, write, or atomically increment session state keys across global or ephemeral exchanges.</td></tr>
+</tbody>
+</table>
+<h2>Exit codes</h2>
+<table>
+<thead><tr><th>Exit code</th><th>Category</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Success</td><td>CLI diagnostic command, dry-run check, or _lmcode_ program succeeded and all assertions passed.</td></tr>
+<tr><td>1</td><td>Operation error</td><td>Direct CLI network operation failed (resolution error, unreachable endpoint, or insufficient raw socket privileges).</td></tr>
+<tr><td>2</td><td>Usage error</td><td>Invalid CLI flag, malformed port range or argument, retired flag name, or invocation metadata mismatch.</td></tr>
+<tr><td>3</td><td>Host / load error</td><td>Bytecode format error, schema hash mismatch, or unhandled runtime error (such as socket bind/connect failure).</td></tr>
+<tr><td>4</td><td>Contract failure</td><td>An assertion (assert, assert_eq) or result schema contract failed during script execution.</td></tr>
+</tbody>
+</table>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmnet">github.com/lmctl-ai/lmnet</a>.</p>
+</footer>
+</body>
+</html>

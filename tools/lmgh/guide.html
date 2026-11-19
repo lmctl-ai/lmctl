@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmgh guide — lmgh — lmctl.com tools</title>
+<meta name="description" content="Typed GitHub domain objects, CI failure-log extraction, and human-in-the-loop TOML proposals in lmgh.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmgh/">Overview</a></li>
+<li><a href="/tools/lmgh/skill.html">Skill</a></li>
+<li><a href="/tools/lmgh/guide.html">Guide</a></li>
+<li><a href="/tools/lmgh/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmgh guide</h1>
+<p>Typed GitHub domain objects, CI failure-log extraction, and human-in-the-loop TOML proposals in lmgh.</p>
+<h2>Overview</h2>
+<p>lmgh bridges the lmcode-go virtual machine and the GitHub CLI (gh). Instead of parsing raw JSON or scraping terminal text in shell scripts, LMScript programs compile against schema/lmgh.dsl.json and interact with two built-in contexts: gh (the GitHub operation catalog) and report (a structured findings sink).</p>
+<h2>Read operations and CI failure analysis</h2>
+<p>The gh context provides typed read access to repositories, issues, pull requests, releases, and GitHub Actions workflow runs:</p>
+<ul>
+<li>Repository and content inspection: gh.repo_view(owner, repo) returns a Repo object with default_branch(), license(), stars(), forks(), open_issues(), is_archived(), is_private(), and topics(). gh.file_text(owner, repo, path) fetches UTF-8 file contents from the repository.</li>
+<li>Pull-request triage: gh.pr_triage(owner, repo, number) aggregates check-run counts (checks_total, checks_passed, checks_failing), review counts (approved, changes_requested, review_decision), mergeability, and a boolean ok() gate into one Triage object.</li>
+<li>Workflow run logs: gh.run_list(owner, repo, limit).failing() filters to failed runs, and gh.run_failed_log(owner, repo, run.id()) retrieves the failed-job log text so scripts can pinpoint the first compiler or test error.</li>
+<li>Cross-repository search: gh.search_repos(query, limit), gh.search_issues(query, limit), and gh.search_prs(query, limit) query GitHub search across organizations.</li>
+</ul>
+<h2>Write operations and human-in-the-loop TOML workflows</h2>
+<p>All write methods on gh honor gh.dry_run(true), which logs the intended operation into report without invoking gh. For high-impact pull-request creation and review actions, lmgh provides three structured mechanisms:</p>
+<ol>
+<li>Two-step PR creation: gh.pr_prepare(owner, repo, title, body, base, head, draft) writes pr-review-OWNER-REPO.toml and refuses to overwrite an existing file. After operator review, gh.pr_submit(owner, repo, path) strictly validates field names, case sensitivity, and repository match before running gh pr create.</li>
+<li>Two-step PR review: gh.pr_review_prepare(owner, repo, number, event, body) writes pr-review-verdict-OWNER-REPO-NUMBER.toml for APPROVE, REQUEST_CHANGES, or COMMENT verdicts. gh.pr_review_submit(owner, repo, number, path) verifies the file, posts the review with --body-file, and returns a Review object with confirmed(), id(), url(), and state().</li>
+<li>Inline TOML proposals: pr_create_toml(toml_text) accepts a complete [pr] table; its explicit dry callback validates and echoes every proposal field offline during dry invocations, and creates the pull request once in live mode.</li>
+</ol>
+<h2>Invocation dry mode versus operation dry_run</h2>
+<p>When LMCODE_INVOCATION_FILE sets dry: true, the lmcode-go runtime skips domain callbacks (except pr_create_toml's offline validator) and returns typed dummy values without starting subprocesses or writing report files. Calling gh.dry_run(false) inside bytecode cannot override an invocation-level dry run.</p>
+<h2>Standard library scope</h2>
+<p>The pinned lmcode-go SDK supplies the standard library that lmgh registers next to its host methods; lmgh --lmcode-signatures prints the exact registry. The v0.3.2 host does not register the REST or CLI router interfaces (RestGet, CliCommand, rest_cli and related functions), so programs targeting lmgh should not rely on them.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmgh">github.com/lmctl-ai/lmgh</a>.</p>
+</footer>
+</body>
+</html>

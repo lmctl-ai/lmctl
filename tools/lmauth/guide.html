@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmauth guide — lmauth — lmctl.com tools</title>
+<meta name="description" content="Secret-isolated token collection architecture, lmconn broker integration, and invocation manifest handling for lmauth.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmauth/">Overview</a></li>
+<li><a href="/tools/lmauth/skill.html">Skill</a></li>
+<li><a href="/tools/lmauth/guide.html">Guide</a></li>
+<li><a href="/tools/lmauth/reference.html">Reference</a></li>
+</ul>
+</nav>
+<main><h1>lmauth guide</h1>
+<p>Secret-isolated token collection architecture, lmconn broker integration, and invocation manifest handling for lmauth.</p>
+<h2>Overview</h2>
+<p>lmauth separates credential guidance and orchestration from secret possession. An LLM agent or automation script can request a token setup flow for specific repositories, while the human operator enters the token into a local interface that hands the secret directly to the encrypted lmconn store.</p>
+<h2>Secret-isolated authorization flow</h2>
+<p>Every authorization session moves through five explicit stages:</p>
+<ol>
+<li>Recipe planning (auth_plan or lmauth plan) generates human-readable instructions for creating a fine-grained GitHub personal access token scoped to the target owner and repositories with a seven-day expiry.</li>
+<li>Presentation (auth_present or lmauth present) launches either a loopback operator web page or a controlling-TTY hidden prompt (--terminal) when a real terminal session is attached.</li>
+<li>Collection (auth_collect) holds the entered token in memory inside the host process and assigns an internal opaque session reference.</li>
+<li>Verification (auth_verify) queries the provider identity endpoint and public repository metadata (or a local lmmock endpoint when --mock-api is supplied) to confirm the token authenticates as a valid user while marking permission grants as human-attested.</li>
+<li>Broker storage (auth_store) invokes lmconn over stdin in broker store mode, storing the token under a random lmauth:HANDLE key with reveal disabled.</li>
+</ol>
+<h2>lmconn store and encryption boundary</h2>
+<p>lmauth does not maintain its own credential database. Instead, it delegates persistence to lmconn, which encrypts credentials at rest. When --lmconn-key-file ABS is provided, lmauth validates that the key file resides in a private directory distinct from the database directory and forwards the path to lmconn as LMCONN_KEY_FILE without reading the key bytes or accepting raw keys in environment variables.</p>
+<h2>Invocation manifest and dry-mode guarantees</h2>
+<p>When invoked via --lmcode FILE, lmauth inspects LMCODE_INVOCATION_FILE before starting any server or terminal prompt. The manifest must be valid version-1 JSON with a boolean dry field; missing or non-boolean dry values fail immediately with exit code 2 before dispatch. In dry mode, domain callbacks are bypassed and the host emits a dry-no-auth return envelope so orchestration pipelines can verify wiring offline.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmauth">github.com/lmctl-ai/lmauth</a>.</p>
+</footer>
+</body>
+</html>
