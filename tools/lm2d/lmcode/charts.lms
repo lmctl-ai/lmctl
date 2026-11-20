@@ -1,0 +1,31 @@
+program = _lmcode_ schema="charts.schema.json";
+
+@release
+fn releaseChart() -> void implements ChartHandler {
+  lm2d_clear();
+  lm2d_bar("Core", 42.0, "#61d6c5");
+  lm2d_bar("SVG", 68.0, "#ffcb6b");
+  lm2d_bar("Canvas", 55.0, "#a99cf5");
+  lm2d_bar("Charts", 84.0, "#ff7f9f");
+  lm2d_use();
+}
+
+@components
+fn componentChart() -> void implements ChartHandler {
+  lm2d_clear();
+  lm2d_bar("Scales", 31.0, "#78b9ff");
+  lm2d_bar("Axes", 47.0, "#61d6c5");
+  lm2d_bar("Paths", 73.0, "#ffcb6b");
+  lm2d_bar("Hosts", 62.0, "#a99cf5");
+  lm2d_use();
+}
+
+@failure
+fn failAfterUse() -> void implements ChartHandler {
+  lm2d_clear();
+  lm2d_bar("Unsafe", 100.0, "#ff7f9f");
+  lm2d_use();
+  lm2d_bar("Bad", 12.0, "#ffffff");
+  lm2d_use();
+}
+end _lmcode_

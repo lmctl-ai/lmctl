@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lm2d — lmctl.com tools</title>
+<meta name="description" content="lm2d is a Java and TeaVM library for SVG, HTML Canvas, charts, and plots. It calls browser APIs directly, without a JavaScript drawing or chart library.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lm2d/">Overview</a></li>
+<li><a href="/tools/lm2d/skill.html">Skill</a></li>
+<li><a href="/tools/lm2d/demo-animation.html">Demo: A frame callback and a moving target.</a></li>
+<li><a href="/tools/lm2d/demo-bar.html">Demo: Categories become measured shapes.</a></li>
+<li><a href="/tools/lm2d/demo-canvas.html">Demo: Immediate pixels, direct browser API.</a></li>
+<li><a href="/tools/lm2d/demo-line.html">Demo: Shared data, connected points.</a></li>
+<li><a href="/tools/lm2d/demo-lmcode.html">Demo: Annotated handlers call Java hosts.</a></li>
+<li><a href="/tools/lm2d/demo-pie.html">Demo: Arc commands become readable proportions.</a></li>
+<li><a href="/tools/lm2d/demo-scatter.html">Demo: The same chart model, now on Canvas.</a></li>
+<li><a href="/tools/lm2d/demo-svg.html">Demo: Retained graphics, element by element.</a></li>
+<li><a href="/tools/lm2d/demo.html">Demo</a></li>
+</ul>
+</nav>
+<main><h1>lm2d</h1>
+<p>lm2d is a Java and TeaVM library for SVG, HTML Canvas, charts, and plots. It calls browser APIs directly, without a JavaScript drawing or chart library. This page is a compact reference for building an application from the public repository.</p>
+<h2>Start here</h2>
+<ul>
+<li><a href="/tools/lm2d/demo.html">Open the eight-chapter demo book</a>.</li>
+<li><a href="/tools/lm2d/skill.html">Read the authoring and verification skill</a>.</li>
+<li><a href="https://github.com/lmctl-ai/lm2d">Clone the MIT-licensed source</a>.</li>
+<li><a href="/tools/lm2d/lmcode/charts.lms">Read the LMCode chart handlers</a> and their <a href="/tools/lm2d/lmcode/charts.schema.json">typed schema</a>.</li>
+</ul>
+<h2>Build</h2>
+<p>Use Java 21, Maven, and Node 24.15 or newer. The pinned LMCode runtime commit and compiler version make the generated application reproducible.</p>
+<pre><code>git clone https://github.com/lmctl-ai/lm2d.git
+git clone https://github.com/lmctl-ai/lmcode-java.git
+(cd lmcode-java &amp;&amp; git checkout b88d3401ee10210a0a6583991d6a81427d5f112a &amp;&amp; mvn -DskipTests install)
+cd lm2d
+npm install --prefix compiler @lmctl-ai/lmctl@0.2.482
+export LMCODE_COMPILER_MODULE="$PWD/compiler/node_modules/@lmctl-ai/lmctl/dist/dsl.js"
+mvn clean package</code></pre>
+<p>The static book appears under target/demo. Set demo.output to an absolute path to generate it directly into another static site.</p>
+<h2>Core API</h2>
+<table>
+<thead><tr><th>Class</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>Graphics2D</td><td>Backend-neutral rectangles, circles, lines, paths, text, dimensions, and clearing.</td></tr>
+<tr><td>SvgGraphics</td><td>Retained SVG DOM, transformed groups, redraw, and root Element access.</td></tr>
+<tr><td>CanvasGraphics</td><td>Immediate Canvas rendering, pixel-ratio sizing, and native context access.</td></tr>
+<tr><td>Path2D</td><td>Move, line, quadratic and cubic curves, arcs, and close commands for either backend.</td></tr>
+<tr><td>Paint and TextStyle</td><td>Validated fill, stroke, opacity, font, alignment, and weight values.</td></tr>
+<tr><td>LinearScale and BandScale</td><td>Numeric mapping, nice ticks, categorical bands, padding, and centers.</td></tr>
+</tbody>
+</table>
+<h2>Minimal drawing</h2>
+<pre><code>SvgGraphics svg = new SvgGraphics(container, 960, 540);
+svg.rectangle(10, 10, 180, 90, Paint.fill("#61d6c5"));
+svg.path(new Path2D().moveTo(240, 100)
+    .quadraticCurveTo(330, 0, 420, 100),
+    Paint.stroke("#ffcb6b", 4));
+
+CanvasGraphics canvas = new CanvasGraphics(canvasElement);
+canvas.setSize(960, 540, Window.current().getDevicePixelRatio());
+canvas.circle(480, 270, 80, Paint.fill("#a99cf5"));</code></pre>
+<p>SvgGraphics.element exposes the root SVG Element. CanvasGraphics.context exposes TeaVM's CanvasRenderingContext2D, so native gradients, compositing, images, transforms, and pixel operations remain available.</p>
+<h2>Charts and plots</h2>
+<p>All chart models render through Graphics2D. Change the graphics object to change the backend without changing the data.</p>
+<table>
+<thead><tr><th>Primitive</th><th>Input</th><th>Generated output</th></tr></thead>
+<tbody>
+<tr><td>BarChart</td><td>Bar label, value, and color records</td><td>Band positions, zero baseline, bars, ticks, and labels</td></tr>
+<tr><td>LineChart</td><td>Named Series of Point2D values</td><td>Shared axes, paths, point markers, and legend</td></tr>
+<tr><td>ScatterPlot</td><td>Named Series of Point2D values</td><td>Shared axes, circles, opacity, and legend</td></tr>
+<tr><td>PieChart</td><td>Non-negative Slice values</td><td>Arc wedges, percentage labels, and legend</td></tr>
+</tbody>
+</table>
+<pre><code>List&lt;BarChart.Bar> bars = List.of(
+    new BarChart.Bar("Mon", 34, "#61d6c5"),
+    new BarChart.Bar("Tue", 52, "#ffcb6b"));
+new BarChart("Weekly activity", bars).render(svg);</code></pre>
+<h2>Demo book</h2>
+<p>There is no pull-down selector. Each page selects and explains one feature, with previous and next links.</p>
+<ol>
+<li><a href="/tools/lm2d/demo-svg.html">SVG drawing</a>: retained shapes, groups, curves, and palette redraw.</li>
+<li><a href="/tools/lm2d/demo-canvas.html">Canvas drawing</a>: native gradients, paths, arcs, and pointer marks.</li>
+<li><a href="/tools/lm2d/demo-bar.html">Bar charts</a>: six categories, scales, grid, and zero baseline.</li>
+<li><a href="/tools/lm2d/demo-line.html">Line charts</a>: two series and twelve points.</li>
+<li><a href="/tools/lm2d/demo-scatter.html">Scatter plots</a>: fifty-six samples rendered to Canvas.</li>
+<li><a href="/tools/lm2d/demo-pie.html">Pie charts</a>: four arc wedges and percentage labels.</li>
+<li><a href="/tools/lm2d/demo-animation.html">Animation and events</a>: requestAnimationFrame, pointer tracking, pause, and keyboard resume.</li>
+<li><a href="/tools/lm2d/demo-lmcode.html">LMCode charts</a>: annotated handlers and failure-atomic chart replacement.</li>
+</ol>
+<h2>LMCode host functions</h2>
+<p>LMCode sees typed functions and Java owns the chart data. Call lm2d_clear to reset staged bars, lm2d_bar with a string label, float value, and string color to append, and lm2d_use to commit a defensive copy. Empty commits and repeated commits are rejected.</p>
+<pre><code>@release
+fn releaseChart() -> void implements ChartHandler {
+  lm2d_clear();
+  lm2d_bar("Core", 42.0, "#61d6c5");
+  lm2d_bar("SVG", 68.0, "#ffcb6b");
+  lm2d_use();
+}</code></pre>
+<h2>Limits and verification</h2>
+<p>lm2d is a focused library, not a D3 port. Charts currently have fixed margins, generated numeric ticks, no built-in animation or data loading, and no accessibility table fallback. Applications own responsive relayout and text-measurement policy.</p>
+<pre><code>mvn clean verify
+npm ci
+npx playwright install --with-deps chromium
+npm test</code></pre>
+<p>The JVM suite has 21 tests. Browser integration visits all nine pages and checks SVG DOM, Canvas pixels, pointer events, animation, LMCode failure safety, mobile overflow, external requests, and runtime errors. GitHub Actions runs both suites from public dependencies.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lm2d">github.com/lmctl-ai/lm2d</a>.</p>
+</footer>
+</body>
+</html>

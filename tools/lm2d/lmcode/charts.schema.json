@@ -1,0 +1,12 @@
+{
+  "dsl.schema": 2,
+  "name": "lm2d_charts",
+  "functions": {
+    "lm2d_bar": [{"params": ["string", "float", "string"], "returns": "void"}],
+    "lm2d_clear": [{"params": [], "returns": "void"}],
+    "lm2d_use": [{"params": [], "returns": "void"}]
+  },
+  "interfaces": {
+    "ChartHandler": {"params": [], "returns": "void"}
+  }
+}

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Author an lm2d application — lm2d — lmctl.com tools</title>
+<meta name="description" content="Use this skill to create a Java and TeaVM application with SVG, Canvas, charts, plots, or LMCode-authored chart data.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lm2d/">Overview</a></li>
+<li><a href="/tools/lm2d/skill.html">Skill</a></li>
+<li><a href="/tools/lm2d/demo-animation.html">Demo: A frame callback and a moving target.</a></li>
+<li><a href="/tools/lm2d/demo-bar.html">Demo: Categories become measured shapes.</a></li>
+<li><a href="/tools/lm2d/demo-canvas.html">Demo: Immediate pixels, direct browser API.</a></li>
+<li><a href="/tools/lm2d/demo-line.html">Demo: Shared data, connected points.</a></li>
+<li><a href="/tools/lm2d/demo-lmcode.html">Demo: Annotated handlers call Java hosts.</a></li>
+<li><a href="/tools/lm2d/demo-pie.html">Demo: Arc commands become readable proportions.</a></li>
+<li><a href="/tools/lm2d/demo-scatter.html">Demo: The same chart model, now on Canvas.</a></li>
+<li><a href="/tools/lm2d/demo-svg.html">Demo: Retained graphics, element by element.</a></li>
+<li><a href="/tools/lm2d/demo.html">Demo</a></li>
+</ul>
+</nav>
+<main><h1>Author an lm2d application</h1>
+<p>Use this skill to create a Java and TeaVM application with SVG, Canvas, charts, plots, or LMCode-authored chart data. Start from the public lm2d repository and verify real browser output rather than only compilation.</p>
+<h2>Purpose</h2>
+<p>lm2d supplies a small shared drawing API and two browser backends. SvgGraphics creates retained SVG DOM. CanvasGraphics draws immediately through HTML Canvas. Chart primitives use the shared API, so their data and layout do not depend on the chosen backend.</p>
+<p>The repository also contains a nine-page demo book. Its cover is demo.html and each feature is a demo-topic.html page. Use page links for feature selection; do not replace the book with a pull-down.</p>
+<h2>When to use it</h2>
+<ul>
+<li>Use lm2d when application logic should remain Java and TeaVM should generate the browser JavaScript.</li>
+<li>Use SVG when shapes should remain inspectable DOM, groups need transforms, or individual elements need browser event listeners.</li>
+<li>Use Canvas for immediate drawing, many frame updates, native gradients, compositing, images, or pixel operations.</li>
+<li>Use BarChart, LineChart, ScatterPlot, and PieChart for compact fixed-layout visualizations with generated axes and labels.</li>
+<li>Use Lm2dHost when an annotated LMCode handler should supply bar-chart data through typed Java host functions.</li>
+</ul>
+<h2>Install</h2>
+<p>Install Java 21, Maven, and Node 24.15 or newer. Clone both repositories, install the pinned runtime, and select the exact published compiler.</p>
+<pre><code>git clone https://github.com/lmctl-ai/lm2d.git
+git clone https://github.com/lmctl-ai/lmcode-java.git
+(cd lmcode-java &amp;&amp; git checkout b88d3401ee10210a0a6583991d6a81427d5f112a &amp;&amp; mvn -DskipTests install)
+cd lm2d
+npm install --prefix compiler @lmctl-ai/lmctl@0.2.482
+export LMCODE_COMPILER_MODULE="$PWD/compiler/node_modules/@lmctl-ai/lmctl/dist/dsl.js"
+mvn clean package</code></pre>
+<p>The Maven artifact is com.lmctl:lm2d version 0.1.0 after mvn install. TeaVM is 0.16.0. No npm drawing or chart runtime is used.</p>
+<h2>Commands</h2>
+<p>Build and run JVM tests with Maven. Run browser integration separately after installing Playwright Chromium.</p>
+<pre><code>mvn clean verify
+npm ci
+npx playwright install --with-deps chromium
+npm test</code></pre>
+<p>Regenerate chapter HTML after editing scripts/generate-book.py, then inspect the resulting diff.</p>
+<pre><code>python3 scripts/generate-book.py
+git diff --check</code></pre>
+<p>Generate into another static directory with an absolute demo.output path.</p>
+<pre><code>mvn -Ddemo.output=/absolute/site/path clean package</code></pre>
+<p>To run browser tests against a deployed book, set DEMO_URL to its demo.html URL. PLAYWRIGHT_CHROMIUM_EXECUTABLE selects an existing Chromium binary.</p>
+<h2>Inputs and outputs</h2>
+<p>Graphics2D methods use logical double coordinates. Paint contains fill, stroke, non-negative stroke width, and opacity from zero to one. TextStyle contains color, positive size, alignment, baseline, and font weight. Point2D rejects non-finite coordinates.</p>
+<table>
+<thead><tr><th>Input</th><th>Output or behavior</th></tr></thead>
+<tbody>
+<tr><td>SvgGraphics container, width, height</td><td>One namespaced SVG root appended to the container</td></tr>
+<tr><td>CanvasGraphics canvasElement</td><td>Immediate drawing through the canvas 2D context</td></tr>
+<tr><td>BarChart title and nonempty bars</td><td>Categorical bars with numeric ticks and a zero baseline</td></tr>
+<tr><td>LineChart or ScatterPlot title and nonempty series</td><td>Shared linear domains, axes, markers, and legend</td></tr>
+<tr><td>PieChart title and slices with positive total</td><td>Normalized arc wedges, percentages, and legend</td></tr>
+<tr><td>LMCode string, float, string bar arguments</td><td>A validated Java Bar record staged for commit</td></tr>
+</tbody>
+</table>
+<p>Path2D supports moveTo, lineTo, quadraticCurveTo, bezierCurveTo, arc, and close. SvgGraphics.beginGroup and endGroup manage retained transforms. CanvasGraphics.setSize takes logical width, logical height, and positive device pixel ratio. Access native JSO objects through SvgGraphics.element and CanvasGraphics.context.</p>
+<h2>Safety rules</h2>
+<ul>
+<li>Do not add D3, Three.js, a Canvas wrapper, or another JavaScript drawing runtime. Call the TeaVM JSO browser APIs.</li>
+<li>Do not use innerHTML to construct SVG. Use namespaced SVG elements through SvgGraphics.</li>
+<li>Validate finite coordinates, nonempty chart data, non-negative pie values, and positive dimensions before drawing.</li>
+<li>Clear a retained SVG scene or redraw a Canvas frame deliberately. Canvas does not retain shapes for later event hit testing.</li>
+<li>Convert pointer CSS coordinates to logical scene coordinates when canvas size and display size differ.</li>
+<li>Stage LMCode output in a temporary consumer result. Replace visible output only after Program.call returns successfully and the host reports use.</li>
+<li>Treat lm2d_use as a single terminal commit. Empty or repeated use is an error.</li>
+<li>Keep text alternatives or a data table in the host application when chart accessibility requires them.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>Create a retained SVG path and a circle. Paint.stroke produces no fill; withStroke adds an outline to an existing fill.</p>
+<pre><code>SvgGraphics svg = new SvgGraphics(container, 960, 540);
+svg.beginGroup("translate(480 270)");
+svg.circle(0, 0, 48, Paint.fill("#ffcb6b"));
+svg.path(new Path2D().moveTo(-120, 80)
+    .bezierCurveTo(-60, -100, 60, -100, 120, 80),
+    Paint.stroke("#61d6c5", 4));
+svg.endGroup();</code></pre>
+<p>Build a chart with ordinary Java values and render it to either backend.</p>
+<pre><code>List&lt;BarChart.Bar> bars = List.of(
+    new BarChart.Bar("Mon", 34, "#61d6c5"),
+    new BarChart.Bar("Tue", 52, "#ffcb6b"));
+BarChart chart = new BarChart("Weekly activity", bars);
+chart.render(svg);</code></pre>
+<p>Provide LMCode chart data through the published schema. Register Lm2dHost before Program.load, resolve the entry by its annotation, call it with no arguments, and require host.used before replacing the chart.</p>
+<pre><code>@release
+fn releaseChart() -> void implements ChartHandler {
+  lm2d_clear();
+  lm2d_bar("Core", 42.0, "#61d6c5");
+  lm2d_bar("SVG", 68.0, "#ffcb6b");
+  lm2d_use();
+}</code></pre>
+<p>For animation, store previousTimestamp and elapsed in Java, cap large frame deltas, redraw, and schedule the next requestAnimationFrame. Pause by skipping state updates and drawing while continuing or cancelling the callback schedule.</p>
+<h2>Errors and exit codes</h2>
+<p>Java constructors and drawing methods throw IllegalArgumentException for invalid values. SvgGraphics.endGroup throws IllegalStateException when no group is open. LMCode missing annotations and missing lm2d_use throw IllegalStateException. The demo catches handler failures and keeps the previous chart visible.</p>
+<p>Maven returns nonzero for LMCode compiler diagnostics, Java compilation, TeaVM compilation, or JVM test failures. npm test returns nonzero on browser errors, HTTP errors, unexpected requests, incorrect DOM or pixels, interaction failures, and mobile overflow. If LMCODE_COMPILER_MODULE is missing, the compiler bridge exits with an explicit error. A missing local lmcode-java artifact requires the pinned install step.</p>
+<h2>How to verify</h2>
+<ol>
+<li>Run python3 scripts/generate-book.py and confirm no unexpected source diff.</li>
+<li>Run mvn clean verify and require all 21 JVM tests to pass.</li>
+<li>Run npm ci, install Chromium, and run npm test. Require the cover and all eight chapters to pass with zero browser errors.</li>
+<li>Inspect SVG elements and Canvas pixels, not only screenshots or JavaScript compilation.</li>
+<li>Click pointer and LMCode controls, pause and resume animation, and confirm failed LMCode leaves the previous chart unchanged.</li>
+<li>Check narrow mobile layout and ensure no third-party runtime requests occur.</li>
+<li>For deployment, rerun the same browser suite with DEMO_URL pointing to the public demo.html page.</li>
+</ol>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lm2d">github.com/lmctl-ai/lm2d</a>.</p>
+</footer>
+</body>
+</html>
