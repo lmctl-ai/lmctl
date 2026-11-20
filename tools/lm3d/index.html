@@ -23,9 +23,13 @@
 <p>Quick reference for building browser 3D applications with a Three.js-inspired Java scene graph, TeaVM, and WebGL, without a JavaScript 3D library.</p>
 <p>Open the <a href="/tools/lm3d/demo.html">interactive WebGL demo</a> or clone <a href="https://github.com/lmctl-ai/lm3d">lmctl-ai/lm3d</a>. Version 0.1.0 is MIT licensed; TeaVM uses Apache-2.0, and the licenses are compatible.</p>
 <h2>Build and run</h2>
-<p>Install Java 21 and Maven. Node 24.15 or newer is required only for browser integration tests. No LMCode runtime or JavaScript package is used by the application.</p>
+<p>Install Java 21, Maven, Node 24.15 or newer, lmcode-java commit b88d3401ee10210a0a6583991d6a81427d5f112a in the local Maven repository, and LMCode compiler @lmctl-ai/lmctl 0.2.482. The runtime commit and compiler version are pinned for reproducible bytecode and TeaVM compatibility.</p>
 <pre><kbd>git clone https://github.com/lmctl-ai/lm3d.git
+git clone https://github.com/lmctl-ai/lmcode-java.git
+(cd lmcode-java &amp;&amp; git checkout b88d3401ee10210a0a6583991d6a81427d5f112a &amp;&amp; mvn -DskipTests install)
 cd lm3d
+npm install --prefix compiler @lmctl-ai/lmctl@0.2.482
+export LMCODE_COMPILER_MODULE="$PWD/compiler/node_modules/@lmctl-ai/lmctl/dist/dsl.js"
 mvn clean package</kbd></pre>
 <p>The build compiles Java to target/demo/teavm.js and copies demo.html, demo.css, boot.js, and the favicon. boot.js contains only main(); it is not a rendering library. To generate assets directly into another static site, use an absolute output directory:</p>
 <pre><kbd>mvn -Ddemo.output=/absolute/site/path clean package</kbd></pre>
@@ -39,6 +43,7 @@ mvn clean package</kbd></pre>
 <tr><td>com.lmctl.lm3d.camera</td><td>PerspectiveCamera, OrthographicCamera</td><td>Projection matrices, camera position, up vector, and look-at target.</td></tr>
 <tr><td>com.lmctl.lm3d.renderer</td><td>WebGLRenderer</td><td>Shader compilation, cached GPU buffers, normal matrices, depth testing, alpha blending, and drawing.</td></tr>
 <tr><td>com.lmctl.lm3d.loader</td><td>GltfLoader, GltfModel</td><td>Asynchronous glTF 2.x JSON loading, external buffers, node hierarchies, geometry, and material conversion.</td></tr>
+<tr><td>com.lmctl.lm3d.lmcode</td><td>Lm3dHost</td><td>Typed LMCode host functions for groups, meshes, transforms, parenting, and Phong materials.</td></tr>
 <tr><td>com.lmctl.lm3d.controls</td><td>OrbitControls</td><td>Java pointer-drag rotation, wheel zoom, configurable limits, and reset.</td></tr>
 </tbody></table>
 <h2>Create a scene</h2>
@@ -100,6 +105,36 @@ loader.load("models/hierarchy.gltf", model -> {
 <tr><td>glTF: interleaved torus</td><td>models/torus-interleaved.gltf and torus.bin</td><td>Interleaved accessors, byte stride, node matrix, default scene and material.</td></tr>
 </tbody></table>
 <p>The original examples are MIT licensed. Regenerate them with python3 scripts/generate-gltf.py from the repository.</p>
+<h2>Build scenes with LMCode</h2>
+<p>Lm3dHost exposes Java scene construction as typed LMCode functions. LMCode holds integer handles; Java owns the actual Object3D instances. The source schema and three annotated handlers are published under lmcode/ in the demo directory.</p>
+<table><thead><tr><th>Function</th><th>Returns</th><th>Purpose</th></tr></thead><tbody>
+<tr><td>lm3d_group()</td><td>int</td><td>Create a group handle.</td></tr>
+<tr><td>lm3d_box(w, h, d, color)</td><td>int</td><td>Create a Phong box mesh.</td></tr>
+<tr><td>lm3d_sphere(radius, widthSegments, heightSegments, color)</td><td>int</td><td>Create a Phong sphere mesh.</td></tr>
+<tr><td>lm3d_torus(radius, tube, radialSegments, tubularSegments, color)</td><td>int</td><td>Create a Phong torus mesh.</td></tr>
+<tr><td>lm3d_add(parent, child)</td><td>void</td><td>Attach a child node.</td></tr>
+<tr><td>lm3d_position, lm3d_rotation, lm3d_scale</td><td>void</td><td>Set a node handle's position, Euler rotation in radians, or scale using x, y, z.</td></tr>
+<tr><td>lm3d_shininess(node, value)</td><td>void</td><td>Set Phong shininess.</td></tr>
+<tr><td>lm3d_specular(node, color), lm3d_emissive(node, color)</td><td>void</td><td>Set Phong specular or emissive color.</td></tr>
+<tr><td>lm3d_use(group)</td><td>void</td><td>Give the completed root to the Java application.</td></tr>
+</tbody></table>
+<p>The demo's LMCode cube option runs this handler from lmcode/scenes.lms:</p>
+<pre><code>@cube
+fn buildCube() -> void implements SceneHandler {
+  let root = lm3d_group();
+  let cube = lm3d_box(2.0, 2.0, 2.0, "#61d6c5");
+  lm3d_position(cube, 0.0, 1.25, 0.0);
+  lm3d_rotation(cube, 0.15, 0.4, 0.0);
+  lm3d_shininess(cube, 72.0);
+  lm3d_add(root, cube);
+  lm3d_use(root);
+}</code></pre>
+<p>Register Lm3dHost with the exact schema, load the compiled program, and call the entry whose annotation is cube, hierarchy, or materials. The Maven build embeds bytecode and exact schema bytes in a generated Java class.</p>
+<pre><code>Registry registry = new Registry(false);
+Lm3dHost host = new Lm3dHost(registry, scene::add);
+Program program = Program.load(bytecode, schemaBytes, registry);
+program.call(entryIndex, new Context(), registry, List.of());</code></pre>
+<p>The hierarchy handler composes three transformed meshes. The materials handler exercises shininess, specular, and emissive properties. Use host.meshCount() and host.vertexCount() for statistics, and host.used() to verify that the handler supplied a root. The host rejects direct and indirect scene cycles. The failure handler calls lm3d_use and then fails; the demo stages roots and replaces the previous scene only after successful completion.</p>
 <h2>Animate and orbit</h2>
 <p>Use TeaVM's Window.requestAnimationFrame. Update object transforms in Java and call render again. Cancel or gate updates when leaving a scene. The demo continues rendering while paused so orbit controls remain responsive, but stops changing object transforms.</p>
 <pre><code>OrbitControls controls = new OrbitControls(camera, canvas);
@@ -117,14 +152,14 @@ Window.requestAnimationFrame(timestamp -> {
 <li>No Three.js code, external JavaScript library, binary GLB container, textures, sparse accessors, non-triangle glTF primitives, skins, glTF animation, shadow map, post-processing, quaternion animation API, or transparent-object sorting is included.</li>
 <li>Meshes render double-sided. All visible ambient lights are accumulated; the first visible directional and point lights are used.</li>
 <li>BufferGeometry is immutable and uploaded once per renderer. Replacing a mesh geometry creates a new cached GPU entry; renderer.dispose releases all cached buffers and the shader program.</li>
-<li>WebGL 1 and GLSL support are required. Display initialization and glTF loading errors through accessible page status rather than failing silently.</li>
+<li>WebGL 1 and GLSL support are required. Display initialization, glTF loading, LMCode compilation, and host dispatch errors through accessible page status rather than failing silently.</li>
 </ul>
 <h2>Verify an application</h2>
 <pre><kbd>mvn clean verify
 npm ci
 npx playwright install --with-deps chromium
 npm test</kbd></pre>
-<p>The JVM suite tests math, cameras, hierarchy, colors, geometry counts, normals, defensive copies, and invalid inputs. The browser suite checks real WebGL pixels, three procedural geometries, all three glTF examples and external buffers, animation, pause/resume, keyboard input, orbit, zoom, reset, mobile overflow, local-only runtime resources, and browser errors. Set DEMO_URL to run the same suite against a deployed page.</p>
+<p>The 21 JVM tests cover math, cameras, hierarchy, colors, geometry, invalid inputs, LMCode handlers, failure after use, and indirect-cycle rejection. The browser suite checks real WebGL pixels, three procedural geometries, all three glTF examples and external buffers, all three successful LMCode scenes, failure-atomic replacement, animation, pause/resume, keyboard input, orbit, zoom, reset, mobile overflow, local-only runtime resources, and browser errors. Set DEMO_URL to run the same suite against a deployed page.</p>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lm3d">github.com/lmctl-ai/lm3d</a>.</p>

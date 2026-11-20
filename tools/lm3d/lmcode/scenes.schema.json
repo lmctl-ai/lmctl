@@ -1,0 +1,21 @@
+{
+  "dsl.schema": 2,
+  "name": "lm3d_scenes",
+  "functions": {
+    "lm3d_group": [{"params": [], "returns": "int"}],
+    "lm3d_box": [{"params": ["float", "float", "float", "string"], "returns": "int"}],
+    "lm3d_sphere": [{"params": ["float", "int", "int", "string"], "returns": "int"}],
+    "lm3d_torus": [{"params": ["float", "float", "int", "int", "string"], "returns": "int"}],
+    "lm3d_add": [{"params": ["int", "int"], "returns": "void"}],
+    "lm3d_position": [{"params": ["int", "float", "float", "float"], "returns": "void"}],
+    "lm3d_rotation": [{"params": ["int", "float", "float", "float"], "returns": "void"}],
+    "lm3d_scale": [{"params": ["int", "float", "float", "float"], "returns": "void"}],
+    "lm3d_shininess": [{"params": ["int", "float"], "returns": "void"}],
+    "lm3d_specular": [{"params": ["int", "string"], "returns": "void"}],
+    "lm3d_emissive": [{"params": ["int", "string"], "returns": "void"}],
+    "lm3d_use": [{"params": ["int"], "returns": "void"}]
+  },
+  "interfaces": {
+    "SceneHandler": {"params": [], "returns": "void"}
+  }
+}

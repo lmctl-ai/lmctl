@@ -45,11 +45,14 @@ retain the normal decoration and content contract.
 ## Build the lm3d demo
 
 Canonical Java 3D sources and browser integration tests are in
-`github.com/lmctl-ai/lm3d`. Java 21 and Maven are the only application build
-requirements; LMCode is not used:
+`github.com/lmctl-ai/lm3d`. Install Java 21, lmcode-java at the pinned runtime
+commit, and the exact public LMCode compiler, then override the output directory:
 
 ```bash
-mvn -f /path/to/lm3d/pom.xml -Ddemo.output="$PWD/tools/lm3d" clean package
+(cd /path/to/lmcode-java && git checkout b88d3401ee10210a0a6583991d6a81427d5f112a && mvn -DskipTests install)
+npm install --prefix /tmp/lm3d-compiler @lmctl-ai/lmctl@0.2.482
+LMCODE_COMPILER_MODULE=/tmp/lm3d-compiler/node_modules/@lmctl-ai/lmctl/dist/dsl.js \
+  mvn -f /path/to/lm3d/pom.xml -Ddemo.output="$PWD/tools/lm3d" clean package
 ```
 
 The tools publisher serves `/tools/lm3d/demo.html` and the LLM quick reference at

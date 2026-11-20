@@ -1,0 +1,58 @@
+program = _lmcode_ schema="scenes.schema.json";
+
+@cube
+fn buildCube() -> void implements SceneHandler {
+  let root = lm3d_group();
+  let cube = lm3d_box(2.0, 2.0, 2.0, "#61d6c5");
+  lm3d_position(cube, 0.0, 1.25, 0.0);
+  lm3d_rotation(cube, 0.15, 0.4, 0.0);
+  lm3d_shininess(cube, 72.0);
+  lm3d_add(root, cube);
+  lm3d_use(root);
+}
+
+@hierarchy
+fn buildHierarchy() -> void implements SceneHandler {
+  let root = lm3d_group();
+  let left = lm3d_sphere(0.85, 24, 16, "#61d6c5");
+  lm3d_position(left, -1.35, 1.1, 0.0);
+  lm3d_add(root, left);
+
+  let right = lm3d_box(1.35, 1.35, 1.35, "#ffcb6b");
+  lm3d_position(right, 1.35, 1.1, 0.0);
+  lm3d_rotation(right, 0.0, 0.0, 0.35);
+  lm3d_add(root, right);
+
+  let ring = lm3d_torus(0.8, 0.24, 32, 16, "#a99cf5");
+  lm3d_position(ring, 0.0, 1.25, -1.5);
+  lm3d_rotation(ring, 0.5, 0.0, 0.0);
+  lm3d_add(root, ring);
+  lm3d_use(root);
+}
+
+@materials
+fn buildMaterials() -> void implements SceneHandler {
+  let root = lm3d_group();
+  let sphere = lm3d_sphere(1.1, 32, 24, "#a99cf5");
+  lm3d_position(sphere, -1.3, 1.25, 0.0);
+  lm3d_shininess(sphere, 96.0);
+  lm3d_specular(sphere, "#ffffff");
+  lm3d_add(root, sphere);
+
+  let ring = lm3d_torus(1.0, 0.32, 48, 24, "#61d6c5");
+  lm3d_position(ring, 1.35, 1.25, 0.0);
+  lm3d_rotation(ring, 0.65, 0.0, 0.0);
+  lm3d_emissive(ring, "#102c28");
+  lm3d_add(root, ring);
+  lm3d_use(root);
+}
+
+@failure
+fn failAfterUse() -> void implements SceneHandler {
+  let root = lm3d_group();
+  let cube = lm3d_box(2.0, 2.0, 2.0, "#ff6b8a");
+  lm3d_add(root, cube);
+  lm3d_use(root);
+  lm3d_position(999999, 0.0, 0.0, 0.0);
+}
+end _lmcode_

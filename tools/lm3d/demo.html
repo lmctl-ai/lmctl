@@ -22,7 +22,7 @@
                 <p class="eyebrow">Java scene graph · TeaVM · WebGL</p>
                 <h1 id="demo-title">3D in the browser.<br><span>Written in Java.</span></h1>
             </div>
-            <p class="lede">A small Three.js-inspired library with no JavaScript runtime dependency. TeaVM compiles the scene, glTF loader, transforms, animation, controls, and WebGL calls.</p>
+            <p class="lede">A small Three.js-inspired library with no JavaScript runtime dependency. TeaVM compiles the scene, glTF loader, LMCode host API, transforms, animation, controls, and WebGL calls.</p>
         </section>
 
         <section class="demo-shell" aria-label="Interactive lm3d demonstration">
@@ -46,6 +46,10 @@
                     <option value="gltf-cube">glTF: embedded cube</option>
                     <option value="gltf-hierarchy">glTF: external-buffer hierarchy</option>
                     <option value="gltf-torus">glTF: interleaved torus</option>
+                    <option value="lmcode-cube">LMCode: cube (@cube)</option>
+                    <option value="lmcode-hierarchy">LMCode: hierarchy (@hierarchy)</option>
+                    <option value="lmcode-materials">LMCode: materials (@materials)</option>
+                    <option value="lmcode-failure">LMCode: failure safety (@failure)</option>
                 </select>
                 <div class="button-row">
                     <button id="toggle-animation" type="button" aria-pressed="false">Pause animation</button>

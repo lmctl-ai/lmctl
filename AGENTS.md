@@ -56,7 +56,7 @@ The static /tools/ section (one plain-HTML section per tool, skill page for LLM 
 - bash scripts/deploy-quickrun.sh: Deploys only /quickrun/ tasks and verifies content hashes via curl.
 - npm ci / Node version: Requires Node \>= 22 (declared in package.json "engines").
 - TeaVM + LMCode demo: canonical sources and browser integration tests live in `github.com/lmctl-ai/lmteavm`. Install lmcode-java, set `LMCODE_COMPILER_MODULE` to the public compiler package's `dist/dsl.js`, and run `mvn -f /path/to/lmteavm/pom.xml -Ddemo.output="$PWD/tools/lmteavm" clean package`. Commit generated `teavm.js` and assets. The tools publisher serves `/tools/lmteavm/demo.html`; `index.html` is the LLM quick reference and `demo.html` is a raw executable page exempt from documentation decoration. See DEPLOY.md and tools/README.md.
-- lm3d Java 3D demo: canonical sources and browser integration tests live in `github.com/lmctl-ai/lm3d`. Run `mvn -f /path/to/lm3d/pom.xml -Ddemo.output="$PWD/tools/lm3d" clean package` with Java 21; no LMCode installation is needed. Commit generated `teavm.js` and assets. The tools publisher serves `/tools/lm3d/demo.html`; `index.html` is the LLM quick reference. See DEPLOY.md.
+- lm3d Java 3D demo: canonical sources and browser integration tests live in `github.com/lmctl-ai/lm3d`. Install lmcode-java, set `LMCODE_COMPILER_MODULE` to the public compiler package's `dist/dsl.js`, and run `mvn -f /path/to/lm3d/pom.xml -Ddemo.output="$PWD/tools/lm3d" clean package` with Java 21. Commit generated `teavm.js`, LMCode sources, glTF models, and assets. The tools publisher serves `/tools/lm3d/demo.html`; `index.html` is the LLM quick reference. See DEPLOY.md.
 
 ## Traps that have bitten people
 
