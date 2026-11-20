@@ -42,6 +42,20 @@ reference at `/tools/lmteavm/`. Commit the regenerated assets with documentation
 changes. The raw demo page uses the restricted demo role; documentation pages
 retain the normal decoration and content contract.
 
+## Build the lm3d demo
+
+Canonical Java 3D sources and browser integration tests are in
+`github.com/lmctl-ai/lm3d`. Java 21 and Maven are the only application build
+requirements; LMCode is not used:
+
+```bash
+mvn -f /path/to/lm3d/pom.xml -Ddemo.output="$PWD/tools/lm3d" clean package
+```
+
+The tools publisher serves `/tools/lm3d/demo.html` and the LLM quick reference at
+`/tools/lm3d/`. Commit the generated TeaVM JavaScript and static assets with the
+documentation changes.
+
 ## Deploy
 
 | Target | Script |

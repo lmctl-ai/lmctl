@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="An interactive 3D scene rendered by Java and TeaVM with the lm3d scene graph and WebGL renderer, without a JavaScript 3D library.">
+    <title>lm3d · Java 3D for the browser</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="demo.css">
+</head>
+<body>
+    <header class="site-header">
+        <a class="brand" href="/tools/lm3d/" aria-label="lm3d documentation">lm<span>3d</span></a>
+        <nav aria-label="Project links">
+            <a href="/tools/lm3d/">Quick reference</a>
+            <a href="https://github.com/lmctl-ai/lm3d">Source on GitHub</a>
+        </nav>
+    </header>
+    <main>
+        <section class="intro" aria-labelledby="demo-title">
+            <div>
+                <p class="eyebrow">Java scene graph · TeaVM · WebGL</p>
+                <h1 id="demo-title">3D in the browser.<br><span>Written in Java.</span></h1>
+            </div>
+            <p class="lede">A small Three.js-inspired library with no JavaScript runtime dependency. TeaVM compiles the scene, transforms, animation, controls, and WebGL calls.</p>
+        </section>
+
+        <section class="demo-shell" aria-label="Interactive lm3d demonstration">
+            <div class="viewport">
+                <canvas id="scene-canvas" width="960" height="540" aria-label="Interactive animated 3D scene">
+                    This demo requires a browser with WebGL support.
+                </canvas>
+                <p class="viewport-badge">LIVE WEBGL</p>
+                <p class="interaction-hint">Drag to orbit · Scroll to zoom</p>
+            </div>
+            <div class="control-panel">
+                <div class="control-heading">
+                    <p class="eyebrow">Scene controls</p>
+                    <h2>Built with objects.</h2>
+                </div>
+                <label for="geometry">Hero geometry</label>
+                <select id="geometry">
+                    <option value="box">Box</option>
+                    <option value="sphere">Sphere</option>
+                    <option value="torus">Torus</option>
+                </select>
+                <div class="button-row">
+                    <button id="toggle-animation" type="button" aria-pressed="false">Pause animation</button>
+                    <button id="reset-scene" type="button" class="secondary">Reset scene</button>
+                </div>
+                <p id="status" class="status" role="status" aria-live="polite">Compiling the scene…</p>
+                <p id="render-stats" class="stats">Waiting for the first frame</p>
+                <dl class="scene-inventory">
+                    <div><dt>Scene</dt><dd>3 meshes</dd></div>
+                    <div><dt>Lighting</dt><dd>Ambient + directional + point</dd></div>
+                    <div><dt>Camera</dt><dd>Perspective + orbit controls</dd></div>
+                    <div><dt>Renderer</dt><dd>Indexed WebGL 1</dd></div>
+                </dl>
+            </div>
+        </section>
+
+        <section class="feature-grid" aria-label="Library capabilities">
+            <article>
+                <p class="feature-number">01</p>
+                <h2>A familiar scene graph</h2>
+                <p>Compose Object3D, Group, Scene, and Mesh nodes with position, rotation, scale, visibility, and inherited world transforms.</p>
+            </article>
+            <article>
+                <p class="feature-number">02</p>
+                <h2>Real GPU rendering</h2>
+                <p>Indexed geometry, cached buffers, inverse-transpose normals, Phong and unlit materials, depth testing, and three light types.</p>
+            </article>
+            <article>
+                <p class="feature-number">03</p>
+                <h2>Java browser events</h2>
+                <p>OrbitControls listens for pointer and wheel events. requestAnimationFrame updates the same Java scene every frame.</p>
+            </article>
+        </section>
+
+        <section class="code-section" aria-labelledby="code-title">
+            <div>
+                <p class="eyebrow">One language, end to end</p>
+                <h2 id="code-title">Create. Position. Render.</h2>
+                <p>The API is intentionally recognizable to Three.js users, while remaining ordinary Java. lm3d is a focused subset, not a drop-in Three.js port.</p>
+                <a class="text-link" href="/tools/lm3d/">Read the LLM quick reference →</a>
+            </div>
+            <pre><code>Scene scene = new Scene();
+PerspectiveCamera camera =
+    new PerspectiveCamera(48, 16f / 9, 0.1f, 100);
+camera.position.set(5, 4, 7);
+camera.lookAt(0, 1, 0);
+
+Mesh cube = new Mesh(
+    new BoxGeometry(2, 2, 2),
+    new MeshPhongMaterial("#61d6c5"));
+cube.position.y = 1.25f;
+scene.add(cube);
+scene.add(new AmbientLight("#ffffff", 0.4f));
+
+WebGLRenderer renderer = new WebGLRenderer(canvas);
+renderer.setSize(960, 540);
+renderer.render(scene, camera);</code></pre>
+        </section>
+    </main>
+    <footer>
+        <p><strong>lm3d</strong> · Java 21 + TeaVM 0.16.0 · MIT licensed</p>
+        <p>No Three.js. No JavaScript framework. Only TeaVM-generated application code.</p>
+    </footer>
+    <noscript>This demo needs JavaScript enabled. The JavaScript is generated from Java by TeaVM.</noscript>
+    <script src="teavm.js"></script>
+    <script src="boot.js"></script>
+</body>
+</html>

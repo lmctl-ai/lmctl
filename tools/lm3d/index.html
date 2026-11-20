@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lm3d — lmctl.com tools</title>
+<meta name="description" content="Quick reference for building browser 3D applications with a Three.js-inspired Java scene graph, TeaVM, and WebGL, without a JavaScript 3D library.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lm3d/">Overview</a></li>
+<li><a href="/tools/lm3d/skill.html">Skill</a></li>
+<li><a href="/tools/lm3d/demo.html">Demo</a></li>
+</ul>
+</nav>
+<main><h1>lm3d</h1>
+<p>Quick reference for building browser 3D applications with a Three.js-inspired Java scene graph, TeaVM, and WebGL, without a JavaScript 3D library.</p>
+<p>Open the <a href="/tools/lm3d/demo.html">interactive WebGL demo</a> or clone <a href="https://github.com/lmctl-ai/lm3d">lmctl-ai/lm3d</a>. Version 0.1.0 is MIT licensed; TeaVM uses Apache-2.0, and the licenses are compatible.</p>
+<h2>Build and run</h2>
+<p>Install Java 21 and Maven. Node 24.15 or newer is required only for browser integration tests. No LMCode runtime or JavaScript package is used by the application.</p>
+<pre><kbd>git clone https://github.com/lmctl-ai/lm3d.git
+cd lm3d
+mvn clean package</kbd></pre>
+<p>The build compiles Java to target/demo/teavm.js and copies demo.html, demo.css, boot.js, and the favicon. boot.js contains only main(); it is not a rendering library. To generate assets directly into another static site, use an absolute output directory:</p>
+<pre><kbd>mvn -Ddemo.output=/absolute/site/path clean package</kbd></pre>
+<h2>API map</h2>
+<table><thead><tr><th>Package</th><th>Types</th><th>Purpose</th></tr></thead><tbody>
+<tr><td>com.lmctl.lm3d.core</td><td>Object3D, Group, Scene, Mesh, Color</td><td>Scene hierarchy, visibility, transforms, mesh geometry/material pairing, and RGB colors.</td></tr>
+<tr><td>com.lmctl.lm3d.math</td><td>Vector3f, Matrix4f</td><td>Mutable vectors and column-major matrices for transform composition, inversion, projection, and view math.</td></tr>
+<tr><td>com.lmctl.lm3d.geometry</td><td>BufferGeometry, BoxGeometry, SphereGeometry, PlaneGeometry, TorusGeometry</td><td>Indexed positions, normals, and triangle geometry.</td></tr>
+<tr><td>com.lmctl.lm3d.material</td><td>MeshBasicMaterial, MeshPhongMaterial</td><td>Unlit color or ambient/diffuse/specular lighting with emissive color, shininess, and opacity.</td></tr>
+<tr><td>com.lmctl.lm3d.light</td><td>AmbientLight, DirectionalLight, PointLight</td><td>Scene lighting. Point lights support optional distance attenuation.</td></tr>
+<tr><td>com.lmctl.lm3d.camera</td><td>PerspectiveCamera, OrthographicCamera</td><td>Projection matrices, camera position, up vector, and look-at target.</td></tr>
+<tr><td>com.lmctl.lm3d.renderer</td><td>WebGLRenderer</td><td>Shader compilation, cached GPU buffers, normal matrices, depth testing, alpha blending, and drawing.</td></tr>
+<tr><td>com.lmctl.lm3d.controls</td><td>OrbitControls</td><td>Java pointer-drag rotation, wheel zoom, configurable limits, and reset.</td></tr>
+</tbody></table>
+<h2>Create a scene</h2>
+<p>Construct the scene and camera, add meshes and lights, then render with a canvas obtained through TeaVM JSO. Java fields are intentionally public and mutable, matching the direct manipulation style familiar to Three.js users.</p>
+<pre><code>HTMLCanvasElement canvas =
+    (HTMLCanvasElement) document.getElementById("scene");
+Scene scene = new Scene();
+PerspectiveCamera camera =
+    new PerspectiveCamera(48, 16f / 9, 0.1f, 100);
+camera.position.set(5, 4, 7);
+camera.lookAt(0, 1, 0);
+
+Mesh cube = new Mesh(
+    new BoxGeometry(2, 2, 2),
+    new MeshPhongMaterial("#61d6c5"));
+cube.position.y = 1.25f;
+scene.add(cube);
+scene.add(new AmbientLight("#ffffff", 0.4f));
+DirectionalLight sun = new DirectionalLight("#ffffff", 1);
+sun.position.set(4, 7, 5);
+scene.add(sun);
+
+WebGLRenderer renderer = new WebGLRenderer(canvas);
+renderer.setSize(960, 540);
+renderer.render(scene, camera);</code></pre>
+<p>Add the imports shown in the repository README. The renderer updates scene world matrices and the camera view on every render. Set renderer dimensions and camera aspect together when resizing.</p>
+<h2>Hierarchy and transforms</h2>
+<p>Object3D owns position, rotation, scale, matrix, matrixWorld, visible, name, and a child list. Add children with parent.add(child), not scene.add(parent).add(child): add returns the receiver, so the chained form adds both nodes to the scene. Euler rotation is expressed in radians. Geometry uses a right-handed coordinate system and cameras look at their target.</p>
+<pre><code>Group group = new Group();
+group.position.set(2, 0, 0);
+group.rotation.y = (float) Math.PI / 4;
+Mesh mesh = new Mesh(new BoxGeometry(1, 1, 1), material);
+mesh.position.set(1, 1, 0);
+scene.add(group);
+group.add(mesh);</code></pre>
+<h2>Geometry contract</h2>
+<p>BufferGeometry accepts float positions, matching float normals, and char triangle indices. Arrays are cloned on input and output. Every three positions form one vertex, every three indices form one triangle, and indices must reference existing vertices. WebGL 1 limits an indexed geometry to 65,536 vertices.</p>
+<pre><code>float[] positions = {0, 0, 0, 1, 0, 0, 0, 1, 0};
+float[] normals = {0, 0, 1, 0, 0, 1, 0, 0, 1};
+char[] indices = {0, 1, 2};
+BufferGeometry triangle =
+    new BufferGeometry(positions, normals, indices);</code></pre>
+<p>BoxGeometry takes width, height, and depth. SphereGeometry takes radius, width segments, and height segments. PlaneGeometry takes width and height in the XY plane. TorusGeometry takes major radius, tube radius, radial segments, and tubular segments.</p>
+<h2>Animate and orbit</h2>
+<p>Use TeaVM's Window.requestAnimationFrame. Update object transforms in Java and call render again. Cancel or gate updates when leaving a scene. The demo continues rendering while paused so orbit controls remain responsive, but stops changing object transforms.</p>
+<pre><code>OrbitControls controls = new OrbitControls(camera, canvas);
+controls.minRadius = 2;
+controls.maxRadius = 30;
+
+Window.requestAnimationFrame(timestamp -> {
+    cube.rotation.y += 0.01f;
+    renderer.render(scene, camera);
+});</code></pre>
+<p>The one-argument renderer uses a normal non-preserved drawing buffer. Use new WebGLRenderer(canvas, true) when canvas.toDataURL or gl.readPixels must inspect frames after rendering.</p>
+<h2>Scope and limits</h2>
+<ul>
+<li>lm3d is a focused Three.js-inspired subset, not API-compatible with Three.js and not a port of its source.</li>
+<li>No Three.js code, external JavaScript library, texture loader, model loader, shadow map, post-processing, quaternion animation, or transparent-object sorting is included.</li>
+<li>Meshes render double-sided. All visible ambient lights are accumulated; the first visible directional and point lights are used.</li>
+<li>BufferGeometry is immutable and uploaded once per renderer. Replacing a mesh geometry creates a new cached GPU entry; renderer.dispose releases all cached buffers and the shader program.</li>
+<li>WebGL 1 and GLSL support are required. Display initialization errors through accessible page status rather than failing silently.</li>
+</ul>
+<h2>Verify an application</h2>
+<pre><kbd>mvn clean verify
+npm ci
+npx playwright install --with-deps chromium
+npm test</kbd></pre>
+<p>The JVM suite tests math, cameras, hierarchy, colors, geometry counts, normals, defensive copies, and invalid inputs. The browser suite checks real WebGL pixels, all three demo geometries, animation, pause/resume, keyboard input, orbit, zoom, reset, mobile overflow, local-only runtime resources, and browser errors. Set DEMO_URL to run the same suite against a deployed page.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lm3d">github.com/lmctl-ai/lm3d</a>.</p>
+</footer>
+</body>
+</html>

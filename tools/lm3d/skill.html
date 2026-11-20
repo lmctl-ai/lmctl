@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lm3d Java 3D application skill — lm3d — lmctl.com tools</title>
+<meta name="description" content="Use lm3d to build a browser scene graph and WebGL renderer in Java, compiled by TeaVM without a JavaScript 3D runtime.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lm3d/">Overview</a></li>
+<li><a href="/tools/lm3d/skill.html">Skill</a></li>
+<li><a href="/tools/lm3d/demo.html">Demo</a></li>
+</ul>
+</nav>
+<main><h1>lm3d Java 3D application skill</h1>
+<p>Use lm3d to build a browser scene graph and WebGL renderer in Java, compiled by TeaVM without a JavaScript 3D runtime.</p>
+<h2>Purpose</h2>
+<p>Create Java scenes with meshes, indexed geometry, basic or Phong materials, lights, perspective or orthographic cameras, and orbit controls. Render them into an HTML canvas through WebGL 1. Start with the <a href="/tools/lm3d/">quick reference</a>, the <a href="/tools/lm3d/demo.html">working demo</a>, and the <a href="https://github.com/lmctl-ai/lm3d">public source</a>.</p>
+<h2>When to use it</h2>
+<p>Use lm3d when Java should own scene objects, transforms, rendering, and browser events, or when a TeaVM application needs a small familiar 3D API. It is suitable for focused visualizations and teaching examples. It is not a drop-in Three.js replacement and currently has no textures, model loaders, shadows, post-processing, or transparent-object sorting.</p>
+<h2>Install</h2>
+<p>Install Java 21 and Maven, then clone and build the public repository. lm3d is not published to Maven Central; mvn install places com.lmctl:lm3d:0.1.0 in the local Maven repository. Node 24.15 or newer and Playwright are test-only dependencies.</p>
+<pre><kbd>git clone https://github.com/lmctl-ai/lm3d.git
+cd lm3d
+mvn clean install</kbd></pre>
+<h2>Commands</h2>
+<p>Build the library and static demo, or override demo.output to generate the deployable assets elsewhere:</p>
+<pre><kbd>mvn clean package
+mvn -Ddemo.output=/absolute/site/path clean package</kbd></pre>
+<p>Run the JVM and real-browser suites:</p>
+<pre><kbd>mvn clean verify
+npm ci
+npx playwright install --with-deps chromium
+npm test</kbd></pre>
+<h2>Inputs and outputs</h2>
+<ul>
+<li>Inputs: Java scene code, TeaVM JSO canvas references, geometry arrays or built-in geometry parameters, colors, light intensities, and browser events.</li>
+<li>Build outputs: the lm3d JAR and target/demo/ containing demo.html, demo.css, teavm.js, boot.js, and favicon.svg.</li>
+<li>Runtime outputs: WebGL frames, draw-call and triangle counts, scene transforms, and application-defined DOM status.</li>
+<li>Geometry input: float XYZ positions, matching float XYZ normals, and char triangle indices. Arrays are defensively copied.</li>
+<li>Renderer output: the one-argument constructor uses a non-preserved buffer; the two-argument constructor can preserve it for screenshots and readback.</li>
+</ul>
+<h2>Safety rules</h2>
+<ul>
+<li>Treat Java and TeaVM build inputs as trusted code. Do not compile or execute unreviewed generated JavaScript.</li>
+<li>Validate external numeric geometry data before allocating arrays. Limit vertices and indices, reject malformed lengths, and keep each index within the vertex array.</li>
+<li>Use innerText for untrusted labels or errors. lm3d does not sanitize application HTML.</li>
+<li>Call renderer.dispose when permanently replacing a renderer to release GPU buffers and its program. Replacing many immutable geometries in one renderer retains their cache entries until disposal.</li>
+<li>Preserve drawing buffers only when readback is required; normal rendering should use the default non-preserved buffer.</li>
+<li>Handle unavailable WebGL and shader errors visibly. Test on the target browser and GPU, including software WebGL in CI.</li>
+</ul>
+<h2>Worked examples</h2>
+<ol>
+<li>Create a Scene and PerspectiveCamera, position the camera, and call lookAt.</li>
+<li>Create a Mesh with BoxGeometry and MeshPhongMaterial, set its position, and add it to the scene.</li>
+<li>Add AmbientLight and DirectionalLight. A directional light points from its position toward its target, whose default position is the origin.</li>
+<li>Construct WebGLRenderer with the canvas, call setSize, and render the scene and camera.</li>
+<li>For hierarchy, call scene.add(group) and group.add(mesh) as separate statements. Object3D.add returns its receiver.</li>
+<li>For animation, update Java transforms inside Window.requestAnimationFrame and render again. For camera input, create OrbitControls with the same camera and canvas.</li>
+<li>For screenshot or pixel tests, construct WebGLRenderer(canvas, true). Read renderer.triangles() and renderer.drawCalls() after rendering.</li>
+</ol>
+<p>The complete compilable scene and imports are in the <a href="/tools/lm3d/">quick reference</a> and repository README.</p>
+<h2>Errors and exit codes</h2>
+<p>Maven returns nonzero for Java compilation, TeaVM compilation, or JVM test failures. npm test returns nonzero for browser launch, assertion, HTTP, console, page, or WebGL errors. Constructors throw IllegalArgumentException for invalid dimensions, arrays, indices, projections, or null required objects. Matrix4f.invert throws IllegalStateException for a singular matrix. WebGLRenderer throws IllegalStateException when WebGL is unavailable or shader compilation/linking fails; include its message in an accessible status.</p>
+<h2>How to verify</h2>
+<ol>
+<li>Run mvn clean verify to execute the JVM tests and generate the TeaVM site.</li>
+<li>Run npm test with Chromium installed. The test starts its own local server.</li>
+<li>Exercise actual geometry selection and pointer/wheel events, not just Java compilation.</li>
+<li>Read WebGL pixels and check gl.getError. A DOM canvas element alone does not prove a scene rendered.</li>
+<li>Check animation frames differ, pause makes them stable, resume restarts motion, and controls still redraw while object motion is paused.</li>
+<li>Check desktop and narrow mobile layouts, external requests, console errors, and page errors. Set DEMO_URL to repeat the suite against production.</li>
+</ol>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lm3d">github.com/lmctl-ai/lm3d</a>.</p>
+</footer>
+</body>
+</html>
