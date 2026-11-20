@@ -22,7 +22,7 @@
                 <p class="eyebrow">Java scene graph · TeaVM · WebGL</p>
                 <h1 id="demo-title">3D in the browser.<br><span>Written in Java.</span></h1>
             </div>
-            <p class="lede">A small Three.js-inspired library with no JavaScript runtime dependency. TeaVM compiles the scene, transforms, animation, controls, and WebGL calls.</p>
+            <p class="lede">A small Three.js-inspired library with no JavaScript runtime dependency. TeaVM compiles the scene, glTF loader, transforms, animation, controls, and WebGL calls.</p>
         </section>
 
         <section class="demo-shell" aria-label="Interactive lm3d demonstration">
@@ -38,11 +38,14 @@
                     <p class="eyebrow">Scene controls</p>
                     <h2>Built with objects.</h2>
                 </div>
-                <label for="geometry">Hero geometry</label>
+                <label for="geometry">Scene / geometry</label>
                 <select id="geometry">
-                    <option value="box">Box</option>
-                    <option value="sphere">Sphere</option>
-                    <option value="torus">Torus</option>
+                    <option value="box">Procedural Box</option>
+                    <option value="sphere">Procedural Sphere</option>
+                    <option value="torus">Procedural Torus</option>
+                    <option value="gltf-cube">glTF: embedded cube</option>
+                    <option value="gltf-hierarchy">glTF: external-buffer hierarchy</option>
+                    <option value="gltf-torus">glTF: interleaved torus</option>
                 </select>
                 <div class="button-row">
                     <button id="toggle-animation" type="button" aria-pressed="false">Pause animation</button>
@@ -51,7 +54,7 @@
                 <p id="status" class="status" role="status" aria-live="polite">Compiling the scene…</p>
                 <p id="render-stats" class="stats">Waiting for the first frame</p>
                 <dl class="scene-inventory">
-                    <div><dt>Scene</dt><dd>3 meshes</dd></div>
+                    <div><dt>Scene</dt><dd id="scene-mesh-count">3 meshes</dd></div>
                     <div><dt>Lighting</dt><dd>Ambient + directional + point</dd></div>
                     <div><dt>Camera</dt><dd>Perspective + orbit controls</dd></div>
                     <div><dt>Renderer</dt><dd>Indexed WebGL 1</dd></div>

@@ -38,6 +38,7 @@ mvn clean package</kbd></pre>
 <tr><td>com.lmctl.lm3d.light</td><td>AmbientLight, DirectionalLight, PointLight</td><td>Scene lighting. Point lights support optional distance attenuation.</td></tr>
 <tr><td>com.lmctl.lm3d.camera</td><td>PerspectiveCamera, OrthographicCamera</td><td>Projection matrices, camera position, up vector, and look-at target.</td></tr>
 <tr><td>com.lmctl.lm3d.renderer</td><td>WebGLRenderer</td><td>Shader compilation, cached GPU buffers, normal matrices, depth testing, alpha blending, and drawing.</td></tr>
+<tr><td>com.lmctl.lm3d.loader</td><td>GltfLoader, GltfModel</td><td>Asynchronous glTF 2.x JSON loading, external buffers, node hierarchies, geometry, and material conversion.</td></tr>
 <tr><td>com.lmctl.lm3d.controls</td><td>OrbitControls</td><td>Java pointer-drag rotation, wheel zoom, configurable limits, and reset.</td></tr>
 </tbody></table>
 <h2>Create a scene</h2>
@@ -81,6 +82,24 @@ char[] indices = {0, 1, 2};
 BufferGeometry triangle =
     new BufferGeometry(positions, normals, indices);</code></pre>
 <p>BoxGeometry takes width, height, and depth. SphereGeometry takes radius, width segments, and height segments. PlaneGeometry takes width and height in the XY plane. TorusGeometry takes major radius, tube radius, radial segments, and tubular segments.</p>
+<h2>Load glTF</h2>
+<p>GltfLoader reads glTF 2.x JSON documents asynchronously. Add the returned root to the scene in the success callback and render again. External buffer URIs resolve relative to the .gltf document and follow normal HTTP CORS rules.</p>
+<pre><code>GltfLoader loader = new GltfLoader();
+loader.load("models/hierarchy.gltf", model -> {
+    scene.add(model.root());
+    renderer.render(scene, camera);
+    System.out.println(model.meshCount() + " meshes, "
+        + model.triangleCount() + " triangles");
+}, error -> status.setInnerText(error));</code></pre>
+<p>Supported geometry includes FLOAT VEC3 positions and normals, sequential or indexed triangles, interleaved buffer views, accessor strides, and unsigned byte, short, or integer indices within the renderer's 16-bit limit. Missing normals are generated. Node TRS, quaternion rotation, node matrices, and multiple primitives become Java scene nodes and meshes.</p>
+<p>Materials map base color, emissive factor, alpha blend, KHR_materials_unlit, and a Phong approximation of metallic/roughness factors. GltfModel exposes root, meshCount, vertexCount, and triangleCount.</p>
+<h3>Runnable glTF examples</h3>
+<table><thead><tr><th>Demo selection</th><th>Files</th><th>Demonstrates</th></tr></thead><tbody>
+<tr><td>glTF: embedded cube</td><td>models/cube-embedded.gltf</td><td>Base64 buffer, quaternion rotation, indexed cube geometry.</td></tr>
+<tr><td>glTF: external-buffer hierarchy</td><td>models/hierarchy.gltf and hierarchy.bin</td><td>External buffer, parent and children, two materials, generated normals.</td></tr>
+<tr><td>glTF: interleaved torus</td><td>models/torus-interleaved.gltf and torus.bin</td><td>Interleaved accessors, byte stride, node matrix, default scene and material.</td></tr>
+</tbody></table>
+<p>The original examples are MIT licensed. Regenerate them with python3 scripts/generate-gltf.py from the repository.</p>
 <h2>Animate and orbit</h2>
 <p>Use TeaVM's Window.requestAnimationFrame. Update object transforms in Java and call render again. Cancel or gate updates when leaving a scene. The demo continues rendering while paused so orbit controls remain responsive, but stops changing object transforms.</p>
 <pre><code>OrbitControls controls = new OrbitControls(camera, canvas);
@@ -95,17 +114,17 @@ Window.requestAnimationFrame(timestamp -> {
 <h2>Scope and limits</h2>
 <ul>
 <li>lm3d is a focused Three.js-inspired subset, not API-compatible with Three.js and not a port of its source.</li>
-<li>No Three.js code, external JavaScript library, texture loader, model loader, shadow map, post-processing, quaternion animation, or transparent-object sorting is included.</li>
+<li>No Three.js code, external JavaScript library, binary GLB container, textures, sparse accessors, non-triangle glTF primitives, skins, glTF animation, shadow map, post-processing, quaternion animation API, or transparent-object sorting is included.</li>
 <li>Meshes render double-sided. All visible ambient lights are accumulated; the first visible directional and point lights are used.</li>
 <li>BufferGeometry is immutable and uploaded once per renderer. Replacing a mesh geometry creates a new cached GPU entry; renderer.dispose releases all cached buffers and the shader program.</li>
-<li>WebGL 1 and GLSL support are required. Display initialization errors through accessible page status rather than failing silently.</li>
+<li>WebGL 1 and GLSL support are required. Display initialization and glTF loading errors through accessible page status rather than failing silently.</li>
 </ul>
 <h2>Verify an application</h2>
 <pre><kbd>mvn clean verify
 npm ci
 npx playwright install --with-deps chromium
 npm test</kbd></pre>
-<p>The JVM suite tests math, cameras, hierarchy, colors, geometry counts, normals, defensive copies, and invalid inputs. The browser suite checks real WebGL pixels, all three demo geometries, animation, pause/resume, keyboard input, orbit, zoom, reset, mobile overflow, local-only runtime resources, and browser errors. Set DEMO_URL to run the same suite against a deployed page.</p>
+<p>The JVM suite tests math, cameras, hierarchy, colors, geometry counts, normals, defensive copies, and invalid inputs. The browser suite checks real WebGL pixels, three procedural geometries, all three glTF examples and external buffers, animation, pause/resume, keyboard input, orbit, zoom, reset, mobile overflow, local-only runtime resources, and browser errors. Set DEMO_URL to run the same suite against a deployed page.</p>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lm3d">github.com/lmctl-ai/lm3d</a>.</p>

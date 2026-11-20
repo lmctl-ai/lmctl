@@ -18,7 +18,8 @@ ROOT = Path(__file__).resolve().parents[2]
 NO_CACHE = 'no-cache, max-age=0, must-revalidate'
 DAY = 'public, max-age=86400'
 TYPES = {'.js': 'text/javascript; charset=utf-8', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
-         '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.txt': 'text/plain; charset=utf-8',
+         '.json': 'application/json; charset=utf-8', '.gltf': 'model/gltf+json; charset=utf-8', '.bin': 'application/octet-stream',
+         '.png': 'image/png', '.svg': 'image/svg+xml', '.txt': 'text/plain; charset=utf-8',
          '.lms': 'text/plain; charset=utf-8',
          '.lmctl': 'text/plain; charset=utf-8',
          '.md': 'text/plain; charset=utf-8', '.xml': 'application/xml; charset=utf-8',
@@ -77,11 +78,11 @@ def inventory(area, root=ROOT):
         if not path.is_file():
             continue
         allowed = ({'.html', '.lms', '.png'} if area == 'lmscript' else
-                   {'.html', '.css', '.js', '.json', '.png', '.svg', '.txt', '.lms'} if area == 'tools' else
+                   {'.html', '.css', '.js', '.json', '.gltf', '.bin', '.png', '.svg', '.txt', '.lms'} if area == 'tools' else
                    {'.html'} if area == 'skills' else
                    {'.html', '.txt', '.lms', '.lmctl'} if area == 'helloexample' else
                    {'.html', '.txt'} if area == 'autorun' else
-                   set(TYPES) - {'.md', '.lms'} if area == 'homepage' else
+                   set(TYPES) - {'.md', '.lms', '.gltf', '.bin'} if area == 'homepage' else
                    set(TYPES) - {'.md'})
         if path.suffix not in allowed:
             raise ValueError(f'unexpected publication file: {path}')

@@ -54,7 +54,7 @@ Topic pages (guide-schema.html, tutorial-animation.html) are labelled Role: h1 i
 
 ## The page contract
 
-A demo.html is a raw executable exception: it is not decorated and may use application markup, demo.css, favicon.svg, and external body scripts named teavm.js and boot.js. Inline scripts, event-handler attributes, and inline style attributes remain forbidden. Its same-tool JavaScript and JSON assets are published. All documentation pages follow this contract:
+A demo.html is a raw executable exception: it is not decorated and may use application markup, demo.css, favicon.svg, and external body scripts named teavm.js and boot.js. Inline scripts, event-handler attributes, and inline style attributes remain forbidden. Its same-tool JavaScript, JSON, glTF (.gltf), and binary glTF buffer (.bin) assets are published. All documentation pages follow this contract:
 
 - One h1. Allowed elements only: html head meta title link body header nav main section footer h1 h2 h3 h4 p ul ol li dl dt dd pre code kbd samp em strong a table thead tbody tr th td blockquote hr figure figcaption img.
 - Forbidden: class and style attributes, script, div, span, iframes, on\* handlers, data attributes, unlisted attributes, external resources. id only on h2/h3, unique. Explicit closing tags (malformed markup is reported, not repaired). At most 153600 bytes per page.

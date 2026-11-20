@@ -103,6 +103,30 @@ class LiveTests(unittest.TestCase):
         self.assertEqual(obj['content_type'], 'text/plain; charset=utf-8')
         self.assertEqual(obj['cache_control'], site.NO_CACHE)
 
+    def test_tools_gltf_inventory_types_and_binary_buffers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'static/js').mkdir(parents=True)
+            (root / 'static/js/lmctl-copy.js').write_text('/* copy */')
+            (root / 'tools/lm3d/models').mkdir(parents=True)
+            (root / 'tools/lm3d/models/scene.gltf').write_text('{"asset":{"version":"2.0"}}')
+            (root / 'tools/lm3d/models/scene.bin').write_bytes(b'\x00\x01\x02\xff')
+            entries = site.inventory('tools', root)
+        self.assertEqual(entries['tools/lm3d/models/scene.gltf']['content_type'], 'model/gltf+json; charset=utf-8')
+        self.assertEqual(entries['tools/lm3d/models/scene.gltf']['cache_control'], site.NO_CACHE)
+        self.assertEqual(entries['tools/lm3d/models/scene.bin']['content_type'], 'application/octet-stream')
+        self.assertEqual(entries['tools/lm3d/models/scene.bin']['cache_control'], site.NO_CACHE)
+        self.assertEqual(entries['tools/lm3d/models/scene.bin']['data'], b'\x00\x01\x02\xff')
+
+    def test_homepage_rejects_tool_specific_gltf_formats(self):
+        for suffix in ('.gltf', '.bin'):
+            with self.subTest(suffix=suffix), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                (root / 'homepage/models').mkdir(parents=True)
+                (root / f'homepage/models/scene{suffix}').write_bytes(b'fixture')
+                with self.assertRaisesRegex(ValueError, 'unexpected publication file'):
+                    site.inventory('homepage', root)
+
     def test_homepage_video_inventory_types_and_cache(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

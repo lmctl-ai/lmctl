@@ -22,9 +22,9 @@
 <main><h1>lm3d Java 3D application skill</h1>
 <p>Use lm3d to build a browser scene graph and WebGL renderer in Java, compiled by TeaVM without a JavaScript 3D runtime.</p>
 <h2>Purpose</h2>
-<p>Create Java scenes with meshes, indexed geometry, basic or Phong materials, lights, perspective or orthographic cameras, and orbit controls. Render them into an HTML canvas through WebGL 1. Start with the <a href="/tools/lm3d/">quick reference</a>, the <a href="/tools/lm3d/demo.html">working demo</a>, and the <a href="https://github.com/lmctl-ai/lm3d">public source</a>.</p>
+<p>Create Java scenes with meshes, indexed geometry, basic or Phong materials, lights, perspective or orthographic cameras, orbit controls, and glTF 2.x JSON models. Render them into an HTML canvas through WebGL 1. Start with the <a href="/tools/lm3d/">quick reference</a>, the <a href="/tools/lm3d/demo.html">working demo</a>, and the <a href="https://github.com/lmctl-ai/lm3d">public source</a>.</p>
 <h2>When to use it</h2>
-<p>Use lm3d when Java should own scene objects, transforms, rendering, and browser events, or when a TeaVM application needs a small familiar 3D API. It is suitable for focused visualizations and teaching examples. It is not a drop-in Three.js replacement and currently has no textures, model loaders, shadows, post-processing, or transparent-object sorting.</p>
+<p>Use lm3d when Java should own scene objects, transforms, rendering, glTF loading, and browser events, or when a TeaVM application needs a small familiar 3D API. It is suitable for focused visualizations and teaching examples. It is not a drop-in Three.js replacement and currently has no binary GLB container support, textures, skins, glTF animation, shadows, post-processing, or transparent-object sorting.</p>
 <h2>Install</h2>
 <p>Install Java 21 and Maven, then clone and build the public repository. lm3d is not published to Maven Central; mvn install places com.lmctl:lm3d:0.1.0 in the local Maven repository. Node 24.15 or newer and Playwright are test-only dependencies.</p>
 <pre><kbd>git clone https://github.com/lmctl-ai/lm3d.git
@@ -41,16 +41,17 @@ npx playwright install --with-deps chromium
 npm test</kbd></pre>
 <h2>Inputs and outputs</h2>
 <ul>
-<li>Inputs: Java scene code, TeaVM JSO canvas references, geometry arrays or built-in geometry parameters, colors, light intensities, and browser events.</li>
-<li>Build outputs: the lm3d JAR and target/demo/ containing demo.html, demo.css, teavm.js, boot.js, and favicon.svg.</li>
-<li>Runtime outputs: WebGL frames, draw-call and triangle counts, scene transforms, and application-defined DOM status.</li>
-<li>Geometry input: float XYZ positions, matching float XYZ normals, and char triangle indices. Arrays are defensively copied.</li>
+<li>Inputs: Java scene code, TeaVM JSO canvas references, geometry arrays or built-in parameters, glTF 2.x JSON and buffer files, colors, light intensities, and browser events.</li>
+<li>Build outputs: the lm3d JAR and target/demo/ containing demo.html, demo.css, teavm.js, boot.js, favicon.svg, and models/ glTF examples.</li>
+<li>Runtime outputs: WebGL frames, imported scene roots, mesh/vertex/triangle counts, scene transforms, and application-defined DOM status.</li>
+<li>Geometry input: float XYZ positions, matching float XYZ normals, and char triangle indices. Arrays are defensively copied. glTF supports FLOAT VEC3 attributes and unsigned indices within the 16-bit renderer limit.</li>
 <li>Renderer output: the one-argument constructor uses a non-preserved buffer; the two-argument constructor can preserve it for screenshots and readback.</li>
 </ul>
 <h2>Safety rules</h2>
 <ul>
 <li>Treat Java and TeaVM build inputs as trusted code. Do not compile or execute unreviewed generated JavaScript.</li>
 <li>Validate external numeric geometry data before allocating arrays. Limit vertices and indices, reject malformed lengths, and keep each index within the vertex array.</li>
+<li>Treat downloaded glTF and buffer files as untrusted input. Enforce HTTP origin and size limits appropriate to the application, and handle loader errors without replacing the last valid scene.</li>
 <li>Use innerText for untrusted labels or errors. lm3d does not sanitize application HTML.</li>
 <li>Call renderer.dispose when permanently replacing a renderer to release GPU buffers and its program. Replacing many immutable geometries in one renderer retains their cache entries until disposal.</li>
 <li>Preserve drawing buffers only when readback is required; normal rendering should use the default non-preserved buffer.</li>
@@ -64,16 +65,19 @@ npm test</kbd></pre>
 <li>Construct WebGLRenderer with the canvas, call setSize, and render the scene and camera.</li>
 <li>For hierarchy, call scene.add(group) and group.add(mesh) as separate statements. Object3D.add returns its receiver.</li>
 <li>For animation, update Java transforms inside Window.requestAnimationFrame and render again. For camera input, create OrbitControls with the same camera and canvas.</li>
+<li>For glTF, call GltfLoader.load with a .gltf URL, add model.root() only in the success callback, and render. Use model.meshCount(), vertexCount(), and triangleCount() for imported statistics.</li>
+<li>Try the demo's embedded cube, external-buffer hierarchy, and interleaved torus options to see base64 buffers, external .bin files, generated normals, quaternion rotation, byte strides, and node matrices.</li>
 <li>For screenshot or pixel tests, construct WebGLRenderer(canvas, true). Read renderer.triangles() and renderer.drawCalls() after rendering.</li>
 </ol>
 <p>The complete compilable scene and imports are in the <a href="/tools/lm3d/">quick reference</a> and repository README.</p>
 <h2>Errors and exit codes</h2>
-<p>Maven returns nonzero for Java compilation, TeaVM compilation, or JVM test failures. npm test returns nonzero for browser launch, assertion, HTTP, console, page, or WebGL errors. Constructors throw IllegalArgumentException for invalid dimensions, arrays, indices, projections, or null required objects. Matrix4f.invert throws IllegalStateException for a singular matrix. WebGLRenderer throws IllegalStateException when WebGL is unavailable or shader compilation/linking fails; include its message in an accessible status.</p>
+<p>Maven returns nonzero for Java compilation, TeaVM compilation, or JVM test failures. npm test returns nonzero for browser launch, assertion, HTTP, console, page, or WebGL errors. Constructors throw IllegalArgumentException for invalid dimensions, arrays, indices, projections, or null required objects. Matrix4f.invert throws IllegalStateException for a singular matrix. WebGLRenderer throws IllegalStateException when WebGL is unavailable or shader compilation/linking fails. GltfLoader reports HTTP, network, JSON, buffer, accessor, hierarchy, and unsupported-feature errors through its error callback. Include loader messages in an accessible status.</p>
 <h2>How to verify</h2>
 <ol>
 <li>Run mvn clean verify to execute the JVM tests and generate the TeaVM site.</li>
 <li>Run npm test with Chromium installed. The test starts its own local server.</li>
 <li>Exercise actual geometry selection and pointer/wheel events, not just Java compilation.</li>
+<li>Load each glTF example and verify its .gltf and expected external .bin requests, imported mesh counts, and distinct rendered frames.</li>
 <li>Read WebGL pixels and check gl.getError. A DOM canvas element alone does not prove a scene rendered.</li>
 <li>Check animation frames differ, pause makes them stable, resume restarts motion, and controls still redraw while object motion is paused.</li>
 <li>Check desktop and narrow mobile layouts, external requests, console errors, and page errors. Set DEMO_URL to repeat the suite against production.</li>
