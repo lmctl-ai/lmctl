@@ -18,6 +18,7 @@
 <li><a href="/tools/lmplot/skill.html">Skill</a></li>
 <li><a href="/tools/lmplot/guide.html">Guide</a></li>
 <li><a href="/tools/lmplot/reference.html">Reference</a></li>
+<li><a href="/tools/lmplot/demo.html">Demo</a></li>
 </ul>
 </nav>
 <main>
@@ -38,6 +39,17 @@
 <li>Two-way expression bridge: an _lmcode_ block can synthesize data or load a datablock with plot.data(name, text), run gnuplot's stats or Marquardt-Levenberg fit command, read the resulting internal variables back into LMScript with plot.num("STATS_slope") or plot.str("GPVAL_TERM"), check tolerances with plot.assert_close, and format derived annotations onto the final figure.</li>
 <li>Compositing images from sibling hosts: gnuplot's set pixmap N "file.png" at screen X,Y width screen W and plot "file.png" binary filetype=png with rgbimage read PNG, JPEG, GIF, BMP, TGA, and PNM files through stb_image. A script can run lmparticle or lmphysics to simulate a system, render a 2D schematic with lmdraw or a 3D cutaway with lmcad, and place that image inside an lmplot multiplot dashboard.</li>
 <li>Persistent session state: variables, user functions, datablocks, and terminal settings persist across Plot method calls and across multi-part --lmcode builder files within a single invocation.</li>
+</ul>
+<h2>Running in the browser (WebAssembly)</h2>
+<p>The browser build splits lmplot into a systems layer and an application layer. The systems layer is lmplot.wasm: the same gnuplot sources, patches, rasterizer, fonts, lmcode-cpp VM and Plot functions as the native binary, compiled once with Emscripten 7.0.0. The application layer is lmcode bytecode. A page or an app loads programs at run time, or ships them as assets, and the wasm host runs them without being rebuilt.</p>
+<ul>
+<li>Build: scripts/build-wasm.sh builds build-wasm/lmplot.js and lmplot.wasm. It uses EMSDK, or clones emsdk into third_party/emsdk. CMake adds wasm exception handling for gnuplot's setjmp/longjmp error recovery and C++ exceptions.</li>
+<li>Programs: scripts/precompile-examples.sh runs each example natively through lmscript, with a shim named lmplot on PATH that keeps the private program file run_lmcode hands to the host. The lmscript code around the block, including ${...} values, has already run, so the file is the complete lmcode program.</li>
+<li>Runner: web/lmplot-runner.js is shared by the browser Worker and the Node tests. It instantiates the compiled module, writes the program and data files into MEMFS, calls main("--lmcode", file), parses the LMCODE_RETURN frame and collects the files written under images/. Every run starts from a fresh instance, so gnuplot state never leaks between programs.</li>
+<li>Page: web/worker.js owns the wasm and web/boot.js only posts {program, output} messages. Output files are shown as data: URLs, so the page needs no blob: or inline script permissions.</li>
+<li>Tests: tests/wasm-examples.mjs runs all 45 programs in both SVG and PNG modes under Node and compares the PNG files with the native renders. tests/browser-site.mjs runs the built site in headless Chrome with the site's Content-Security-Policy.</li>
+<li>Content-Security-Policy: compiling WebAssembly needs script-src 'self' 'wasm-unsafe-eval'. That keyword allows only WebAssembly compilation, not JavaScript eval. Without it the browser refuses lmplot.wasm.</li>
+<li>Limits in the browser: no shell (system, pipes and set output "|cmd" fail), no persistent files, and the memory budget defaults to 2048 MiB because wasm32 linear memory ends at 4 GiB. Programs are precompiled; compiling lmcode in the page is the next step.</li>
 </ul>
 <h2>Standard lmcode_std_v3 library</h2>
 <p>Alongside context plot: Plot, lmplot embeds the pinned standard lmcode_std_v3 catalog (cpp/std/lmcode-std.schema.json, 206 canonical signatures) of string, encoding, math, collection (IntList, FloatList, StrList, IntMap, FloatMap, StrMap, stacks, queues, priority queues), JSON, template, file, and return-framing functions. The pinned catalog does not include the REST and CLI interfaces (RestGet, CliCommand, rest_serve and related functions) found in newer lmcode_std_v3 catalogs, so do not use them in lmplot blocks.</p>

@@ -1,0 +1,411 @@
+{
+ "version": "0.3.1",
+ "data": [
+  {
+   "path": "examples/data/GM1_sugar.pdb",
+   "url": "data/GM1_sugar.pdb.bin"
+  },
+  {
+   "path": "examples/data/arrowstyle.dat",
+   "url": "data/arrowstyle.dat.bin"
+  },
+  {
+   "path": "examples/data/battery.dat",
+   "url": "data/battery.dat.bin"
+  },
+  {
+   "path": "examples/data/blutux.rgb",
+   "url": "data/blutux.rgb.bin"
+  },
+  {
+   "path": "examples/data/candlesticks.dat",
+   "url": "data/candlesticks.dat.bin"
+  },
+  {
+   "path": "examples/data/energy_circles.dat",
+   "url": "data/energy_circles.dat.bin"
+  },
+  {
+   "path": "examples/data/hemisphr.dat",
+   "url": "data/hemisphr.dat.bin"
+  },
+  {
+   "path": "examples/data/immigration.dat",
+   "url": "data/immigration.dat.bin"
+  },
+  {
+   "path": "examples/data/silver.dat",
+   "url": "data/silver.dat.bin"
+  },
+  {
+   "path": "examples/data/steps.dat",
+   "url": "data/steps.dat.bin"
+  },
+  {
+   "path": "examples/data/table.dat",
+   "url": "data/table.dat.bin"
+  }
+ ],
+ "examples": [
+  {
+   "name": "kepler_rv_fit",
+   "section": "Showcase",
+   "title": "Exoplanet radial-velocity fit",
+   "bytes": 7750,
+   "sha256": "858769da5cb17e49076664d45ed4fba0db5993c5569c46062bfbbf653c4dd246",
+   "program": "examples/kepler_rv_fit.bin"
+  },
+  {
+   "name": "blackbody_planck",
+   "section": "Showcase",
+   "title": "Planck blackbody spectra",
+   "bytes": 5247,
+   "sha256": "36a48d396b4a7d48606f73549c0aa5a2d0669b58d1753c3c690939be07b7706a",
+   "program": "examples/blackbody_planck.bin"
+  },
+  {
+   "name": "potential_vortex_surface",
+   "section": "Showcase",
+   "title": "Double-well free-energy surface",
+   "bytes": 5182,
+   "sha256": "829c7819acb364606d79649c62fd133cbc88063da0b7b59326ec6629eb1d2abf",
+   "program": "examples/potential_vortex_surface.bin"
+  },
+  {
+   "name": "urban_heat_island",
+   "section": "Showcase",
+   "title": "Urban heat island field",
+   "bytes": 7733,
+   "sha256": "429d4595e7986a44079534865c1b9e6a403d5bf60f05073cd8815f99fbc7663e",
+   "program": "examples/urban_heat_island.bin"
+  },
+  {
+   "name": "phased_array_polar",
+   "section": "Showcase",
+   "title": "Phased-array beam steering",
+   "bytes": 6281,
+   "sha256": "be517d60984b82073a95adc43d5d27e30c1159796a22ef6533533fbf48eb9314",
+   "program": "examples/phased_array_polar.bin"
+  },
+  {
+   "name": "quant_trading_dashboard",
+   "section": "Showcase",
+   "title": "Trading regime dashboard",
+   "bytes": 8862,
+   "sha256": "da2f0414ec44dfa26e88e8c1b39f27970f20060c20f3cc1dd224221161273f98",
+   "program": "examples/quant_trading_dashboard.bin"
+  },
+  {
+   "name": "enzyme_michaelis_menten",
+   "section": "Showcase",
+   "title": "Michaelis–Menten kinetics",
+   "bytes": 7567,
+   "sha256": "a4a61d174103bad55163afd44d58f15408063e51efd97e12bb093a1aa171f797",
+   "program": "examples/enzyme_michaelis_menten.bin"
+  },
+  {
+   "name": "damped_driven_resonance",
+   "section": "Showcase",
+   "title": "Driven damped resonance",
+   "bytes": 6034,
+   "sha256": "7fe82b99d32283519f6cd2447c1fed2955f3b359b2931e3298675e8bceb399fa",
+   "program": "examples/damped_driven_resonance.bin"
+  },
+  {
+   "name": "quadrature_convergence",
+   "section": "Showcase",
+   "title": "Quadrature convergence",
+   "bytes": 7341,
+   "sha256": "edd3f36a3fa40f421c5508154b8adadbbe0d16b5133a16eb09911bf546927e8a",
+   "program": "examples/quadrature_convergence.bin"
+  },
+  {
+   "name": "option_greeks_dashboard",
+   "section": "Showcase",
+   "title": "Black–Scholes Greeks",
+   "bytes": 5892,
+   "sha256": "189a0edc147664f97fce4cde94d068577a909349e758a7489add7ad6230d9e46",
+   "program": "examples/option_greeks_dashboard.bin"
+  },
+  {
+   "name": "roc_auc",
+   "section": "Model evaluation",
+   "title": "ROC curve and AUC",
+   "bytes": 18947,
+   "sha256": "ff2c42fa11550223035a16b5983fb611b75239f6e68a79cc635f1a410eb811a9",
+   "program": "examples/roc_auc.bin"
+  },
+  {
+   "name": "pr_average_precision",
+   "section": "Model evaluation",
+   "title": "Precision–recall and AP",
+   "bytes": 23042,
+   "sha256": "b727732846dbb0b11452d7235089626a786f0064a30669c2cb2bc0a3aa2ad037",
+   "program": "examples/pr_average_precision.bin"
+  },
+  {
+   "name": "confusion_matrix",
+   "section": "Model evaluation",
+   "title": "Confusion matrix",
+   "bytes": 2327,
+   "sha256": "dd13f1e1f0ca8777f6a7b97618db965968438f2450a48a8de0a5e83ff11f9942",
+   "program": "examples/confusion_matrix.bin"
+  },
+  {
+   "name": "poisson_contours",
+   "section": "Model evaluation",
+   "title": "Poisson equation contours",
+   "bytes": 131427,
+   "sha256": "a9aecdd23c4eb8403ed9a4ad6bcc5ed363eb58e798671ea0d162fced556f282d",
+   "program": "examples/poisson_contours.bin"
+  },
+  {
+   "name": "cavity_quiver",
+   "section": "Model evaluation",
+   "title": "Lid-driven cavity flow",
+   "bytes": 72978,
+   "sha256": "7852bee77ee36ce9988834d1a602db799dce94ddc5c0eac6b3e648fd2bcfa179",
+   "program": "examples/cavity_quiver.bin"
+  },
+  {
+   "name": "symlog_outlier",
+   "section": "Model evaluation",
+   "title": "Symlog axis with an outlier",
+   "bytes": 2656,
+   "sha256": "9ad0d0b487f0d18f9b5c534f2459b2bfbb817245d192758c4b9e4c8664e331b4",
+   "program": "examples/symlog_outlier.bin"
+  },
+  {
+   "name": "residual_scatter",
+   "section": "Model evaluation",
+   "title": "Regression residuals",
+   "bytes": 4622,
+   "sha256": "8c614789b3c87cd455623193292f257fc62b35c34b2fad79d0aebf9ba7751fcf",
+   "program": "examples/residual_scatter.bin"
+  },
+  {
+   "name": "simple",
+   "section": "gnuplot gallery",
+   "title": "Simple functions",
+   "bytes": 626,
+   "sha256": "b81403ba8981c115d9b22bac30b1f3ec53c9a5ff5b628391f6de9c23aee77d23",
+   "program": "examples/simple.bin"
+  },
+  {
+   "name": "fillcrvs",
+   "section": "gnuplot gallery",
+   "title": "Filled curves",
+   "bytes": 2176,
+   "sha256": "35fba4d162c03cb00dcc0e3ab64741527547c7c1c61bc717214559221a039e5e",
+   "program": "examples/fillcrvs.bin"
+  },
+  {
+   "name": "fillbetween",
+   "section": "gnuplot gallery",
+   "title": "Fill between curves",
+   "bytes": 1585,
+   "sha256": "2bb75bfbf30bc15f42cea03f1197dc7f7d50f7cf149c93a38495037a23b5903a",
+   "program": "examples/fillbetween.bin"
+  },
+  {
+   "name": "transparent",
+   "section": "gnuplot gallery",
+   "title": "Transparent fills",
+   "bytes": 2106,
+   "sha256": "5434e9e577001d27b0d703d20ff361989fd991de7be9f9305bf5f1dac5d10d51",
+   "program": "examples/transparent.bin"
+  },
+  {
+   "name": "errorbars",
+   "section": "gnuplot gallery",
+   "title": "Error bars",
+   "bytes": 1374,
+   "sha256": "875cb92f1b4c4c5260e8ed4d488ad468b3997c4e4ecaa181271810f61828b84c",
+   "program": "examples/errorbars.bin"
+  },
+  {
+   "name": "candlesticks",
+   "section": "gnuplot gallery",
+   "title": "Candlesticks",
+   "bytes": 1258,
+   "sha256": "1c4bb69887a63bfbb4090c6aca9c9cc5d821f5f6812fef417ccee51541fcd79a",
+   "program": "examples/candlesticks.bin"
+  },
+  {
+   "name": "boxplot",
+   "section": "gnuplot gallery",
+   "title": "Box plots",
+   "bytes": 1524,
+   "sha256": "43ae2a88f6cdc338a01a165970600029a668a604a083d344665223a3eabb61f6",
+   "program": "examples/boxplot.bin"
+  },
+  {
+   "name": "histograms",
+   "section": "gnuplot gallery",
+   "title": "Histograms",
+   "bytes": 2515,
+   "sha256": "4fd7463ef19dd3608493ce017bb19cb744e283b14e6f78b606dd82368e39a680",
+   "program": "examples/histograms.bin"
+  },
+  {
+   "name": "steps",
+   "section": "gnuplot gallery",
+   "title": "Step plots",
+   "bytes": 1226,
+   "sha256": "e5e43f4024e69873ea03fdeafa98cc01183a4474943fb169c790049cd3ea3103",
+   "program": "examples/steps.bin"
+  },
+  {
+   "name": "param",
+   "section": "gnuplot gallery",
+   "title": "Parametric plots",
+   "bytes": 1910,
+   "sha256": "5e0e6026e58c0e9434fc8e0c2c12ea9aa4d74fee2cc97b36da0aaee59ed311ed",
+   "program": "examples/param.bin"
+  },
+  {
+   "name": "polar",
+   "section": "gnuplot gallery",
+   "title": "Polar plots",
+   "bytes": 1523,
+   "sha256": "8ababb2fa8719da6dc3e8a2057e9f25a36b0857c2dad48d34f06e7f8cd4a3509",
+   "program": "examples/polar.bin"
+  },
+  {
+   "name": "surface1",
+   "section": "gnuplot gallery",
+   "title": "3D surfaces",
+   "bytes": 2089,
+   "sha256": "5efd6b64295e0d7410c347084932a2e0615b3288e00387bfbe927f52bc8371bb",
+   "program": "examples/surface1.bin"
+  },
+  {
+   "name": "hidden",
+   "section": "gnuplot gallery",
+   "title": "Hidden-line removal",
+   "bytes": 1249,
+   "sha256": "57adf9eba5a07c7de07d2fc5ec4f1daa88a22e2e390c0e73f16bff093ea529ec",
+   "program": "examples/hidden.bin"
+  },
+  {
+   "name": "contours",
+   "section": "gnuplot gallery",
+   "title": "Contours",
+   "bytes": 1672,
+   "sha256": "ee8205291b60f94acad0a7b4de7141b9ab6d9ebf456d2ee0cb7c213358bb8059",
+   "program": "examples/contours.bin"
+  },
+  {
+   "name": "pm3d",
+   "section": "gnuplot gallery",
+   "title": "pm3d colour surfaces",
+   "bytes": 1944,
+   "sha256": "59419b3f9167ff217503ccc910c506490607e03671f6b279eff074328d610fc8",
+   "program": "examples/pm3d.bin"
+  },
+  {
+   "name": "heatmaps",
+   "section": "gnuplot gallery",
+   "title": "Heat maps",
+   "bytes": 1790,
+   "sha256": "75d98358ab121136db69f93ffbff63a7ec67d2ecf987811cc5f80a6ee8f3ec73",
+   "program": "examples/heatmaps.bin"
+  },
+  {
+   "name": "vector",
+   "section": "gnuplot gallery",
+   "title": "Vector field",
+   "bytes": 2148,
+   "sha256": "ce6a53b54f17aac2eaf0fef3acc1b8a1b2872397f108b9ed88201df462279824",
+   "program": "examples/vector.bin"
+  },
+  {
+   "name": "image",
+   "section": "gnuplot gallery",
+   "title": "Binary RGB image",
+   "bytes": 1699,
+   "sha256": "4c27a927781b13d0d6400746bfba769b3869afae7407b28e562a1012d68aa2f0",
+   "program": "examples/image.bin"
+  },
+  {
+   "name": "layout",
+   "section": "gnuplot gallery",
+   "title": "Multiplot layouts",
+   "bytes": 3535,
+   "sha256": "809fea59135fcef04713a8ccfeb835f6a6bdc8f63e5d6ff4eaeaca44f98a97cf",
+   "program": "examples/layout.bin"
+  },
+  {
+   "name": "spiderplot",
+   "section": "gnuplot gallery",
+   "title": "Spider plots",
+   "bytes": 2253,
+   "sha256": "78d2f8810b340d8c41aa85027d336af85d26056918fb5342d5f5488853de7f9d",
+   "program": "examples/spiderplot.bin"
+  },
+  {
+   "name": "parallel",
+   "section": "gnuplot gallery",
+   "title": "Parallel axes",
+   "bytes": 2994,
+   "sha256": "38d8c301156826d3e3c479c1e47dd57badfc917cee1ae9029acbbef7eaf25da2",
+   "program": "examples/parallel.bin"
+  },
+  {
+   "name": "dashtypes",
+   "section": "gnuplot gallery",
+   "title": "Dash types",
+   "bytes": 4435,
+   "sha256": "f7293cfaa51988fc6cd822dd13d938f37d88cd11f667dd130215cca52ac0269e",
+   "program": "examples/dashtypes.bin"
+  },
+  {
+   "name": "lines_arrows",
+   "section": "gnuplot gallery",
+   "title": "Lines, points and arrows",
+   "bytes": 5107,
+   "sha256": "1999c88427d021a198b5410dad7187951e3b374219f5db051ba007474f217ea3",
+   "program": "examples/lines_arrows.bin"
+  },
+  {
+   "name": "enhanced_utf8",
+   "section": "gnuplot gallery",
+   "title": "Enhanced text and UTF-8",
+   "bytes": 3324,
+   "sha256": "384b57cc78651f7c61533ee133016c6701756381e5896fc6eb7cb011cd0089a7",
+   "program": "examples/enhanced_utf8.bin"
+  },
+  {
+   "name": "rotate_labels",
+   "section": "gnuplot gallery",
+   "title": "Text boxes and rotated labels",
+   "bytes": 3492,
+   "sha256": "328b53db0537f60bdbcfa7e0cad3f3a6ef6b657f3c278efc2cdad32859fafac8",
+   "program": "examples/rotate_labels.bin"
+  },
+  {
+   "name": "nonlinear2",
+   "section": "gnuplot gallery",
+   "title": "Nonlinear axes",
+   "bytes": 2788,
+   "sha256": "58dd5502f7df459af431b4fe7c5987b55de359e89aff79d500027f895cc0acac",
+   "program": "examples/nonlinear2.bin"
+  },
+  {
+   "name": "stats",
+   "section": "gnuplot gallery",
+   "title": "Data, stats and labels",
+   "bytes": 4384,
+   "sha256": "291070839b5042fc239432696a35aec3d730fb47303277e4b86f1c69bd1380e6",
+   "program": "examples/stats.bin"
+  },
+  {
+   "name": "turntable",
+   "section": "gnuplot gallery",
+   "title": "Turntable frames",
+   "bytes": 1812,
+   "sha256": "76598e38758797d41e3a96a6b76c7c75f324fc0f05378755984ce49e6d6cc750",
+   "program": "examples/turntable.bin"
+  }
+ ]
+}

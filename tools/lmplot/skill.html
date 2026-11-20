@@ -18,6 +18,7 @@
 <li><a href="/tools/lmplot/skill.html">Skill</a></li>
 <li><a href="/tools/lmplot/guide.html">Guide</a></li>
 <li><a href="/tools/lmplot/reference.html">Reference</a></li>
+<li><a href="/tools/lmplot/demo.html">Demo</a></li>
 </ul>
 </nav>
 <main>
@@ -49,6 +50,7 @@ lmplot gnuplot script.gp</code></pre>
 <li>Commands and scripts: plot.cmd(line) runs a single gnuplot command line (semicolon-separated statements allowed), plot.script(text) writes multi-line gnuplot text to a temporary file and loads it (supporting inline datablocks and if/do-for blocks), and plot.load(path) loads a .gp file.</li>
 <li>In-memory datablocks: plot.data(name, text) defines the gnuplot datablock $name (pass name without the leading $) using a collision-safe terminator.</li>
 <li>Outputs and read-back: plot.png(path, width, height) and plot.svg(path, width, height) select the terminal and output file, and plot.close() flushes and closes the output file. plot.num(expr) and plot.str(expr) evaluate gnuplot expressions (such as STATS_slope, FIT_WSSR, or GPVAL_* variables) back into LMScript variables.</li>
+<li>SVG instead of PNG: with LMPLOT_PNG_AS=svg, plot.png(path, w, h) writes path with .png replaced by .svg using gnuplot's svg terminal. The browser build at /tools/lmplot/demo.html uses this by default.</li>
 <li>Image inputs: set pixmap and binary filetype=png|jpg|gif read PNG, JPEG, GIF (first frame), BMP, TGA, and PNM images via stb_image so renders from lmcad, lmdraw, or lmblender can be composited inside an lmplot figure.</li>
 </ul>
 <h2>Safety rules</h2>

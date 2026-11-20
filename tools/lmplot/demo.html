@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="All lmplot examples running in the browser: gnuplot and the lmcode VM compiled to WebAssembly, each plot a precompiled lmcode program loaded at run time.">
+    <title>lmplot in the browser: gnuplot on WebAssembly, driven by lmcode</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="demo.css">
+</head>
+<body data-page="gallery" data-base="browser/">
+    <header class="site-header">
+        <a class="brand" href="demo.html" aria-label="lmplot in the browser">lm<span>plot</span></a>
+        <nav class="project-nav" aria-label="Project links">
+            <a href="/tools/lmplot/">Quick reference</a>
+            <a href="demo.html">All examples</a>
+            <a href="https://github.com/lmctl-ai/lmplot">Source on GitHub</a>
+        </nav>
+    </header>
+    <main class="cover">
+        <section class="cover-intro">
+            <div>
+                <p class="eyebrow">lmplot 0.3.1 · WebAssembly</p>
+                <h1>gnuplot in your <span>browser</span>, driven by lmcode.</h1>
+            </div>
+            <p class="lede">One fixed WebAssembly host, <code>lmplot.wasm</code> (4.6 MB), holds gnuplot, the lmcode virtual machine and the
+            <code>Plot</code> functions. Each example below is application code: a few kilobytes of lmcode bytecode the page loads at run time and the
+            host executes. New plots never need a new wasm build.</p>
+        </section>
+        <section class="demo-shell layers" aria-label="How it fits together">
+            <div class="layer">
+                <p class="eyebrow">System layer · C/C++ → wasm</p>
+                <p>gnuplot (pinned, patched), lmplot's PNG rasterizer and fonts, the lmcode-cpp VM, and the 13 host functions of
+                <code>schema/lmplot.dsl.json</code>. Built once with Emscripten; runs in a Worker; a fresh instance per run.</p>
+            </div>
+            <div class="layer">
+                <p class="eyebrow">Application layer · lmcode</p>
+                <p><code>plot.data</code>, <code>plot.cmd</code>, <code>plot.num</code>, <code>plot.png</code>… Configuration, data, computation and
+                drawing commands live in the program. Loaded as bytecode (<code>browser/examples/&lt;name&gt;.bin</code>) or embedded as an asset.</p>
+            </div>
+            <div class="controls">
+                <button id="run-all" type="button">Run all 45 examples here</button>
+                <p id="status" class="status" role="status" aria-live="polite">Thumbnails were rendered by the same wasm host. Open an example to run it live,
+                or run every example now and time it.</p>
+            </div>
+        </section>
+            <h2>Showcase</h2>
+            <ul class="gallery">
+                <li data-example="kepler_rv_fit">
+                    <a href="browser/demo-kepler_rv_fit.html">
+                        <img src="browser/thumbs/kepler_rv_fit.png" width="480" height="299" alt="Exoplanet radial-velocity fit" loading="lazy">
+                        <strong>Exoplanet radial-velocity fit</strong>
+                        <span>Astrophysics / Statistics: 44 phase-folded Doppler radial-velocity measurements of a warm-Jupiter host star, stats round-trip (plot.num), derived planet mass Mp sin i and χ²ν, 2-panel fit + O-C residuals</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="blackbody_planck">
+                    <a href="browser/demo-blackbody_planck.html">
+                        <img src="browser/thumbs/blackbody_planck.png" width="480" height="299" alt="Planck blackbody spectra" loading="lazy">
+                        <strong>Planck blackbody spectra</strong>
+                        <span>Physics / Spectroscopy: Planck spectral radiance Bλ(λ, T) across stellar photospheres (3800–6500 K), visible band highlight, Wien displacement locus and bolometric flux σ T^4</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="potential_vortex_surface">
+                    <a href="browser/demo-potential_vortex_surface.html">
+                        <img src="browser/thumbs/potential_vortex_surface.png" width="480" height="320" alt="Double-well free-energy surface" loading="lazy">
+                        <strong>Double-well free-energy surface</strong>
+                        <span>Condensed Matter / Surfaces: 3D Ginzburg–Landau double-well free-energy landscape F(qx, qy) (pm3d depthorder), base contour projection and minimum-energy transition pathway</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="urban_heat_island">
+                    <a href="browser/demo-urban_heat_island.html">
+                        <img src="browser/thumbs/urban_heat_island.png" width="480" height="299" alt="Urban heat island field" loading="lazy">
+                        <strong>Urban heat island field</strong>
+                        <span>Meteorology / Heatmaps: 24×24 km nocturnal urban heat island anomaly field Δ T(x, y) (with image) paired with West–East and South–North thermal dome transects and river cooling dip</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="phased_array_polar">
+                    <a href="browser/demo-phased_array_polar.html">
+                        <img src="browser/thumbs/phased_array_polar.png" width="480" height="267" alt="Phased-array beam steering" loading="lazy">
+                        <strong>Phased-array beam steering</strong>
+                        <span>Electromagnetics / Polar: 8-element uniform linear antenna array (d = λ/2) steered to θ0 = 30°, comparing uniform excitation vs cosine-pedestal side-lobe suppression in polar dB gain</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="quant_trading_dashboard">
+                    <a href="browser/demo-quant_trading_dashboard.html">
+                        <img src="browser/thumbs/quant_trading_dashboard.png" width="480" height="320" alt="Trading regime dashboard" loading="lazy">
+                        <strong>Trading regime dashboard</strong>
+                        <span>Quantitative Finance: 60-day equity regime shift: OHLC candlesticks, 5-day moving average, ± 2σ Bollinger Band envelope, daily volume bars and underwater peak-to-trough drawdown</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="enzyme_michaelis_menten">
+                    <a href="browser/demo-enzyme_michaelis_menten.html">
+                        <img src="browser/thumbs/enzyme_michaelis_menten.png" width="480" height="299" alt="Michaelis–Menten kinetics" loading="lazy">
+                        <strong>Michaelis–Menten kinetics</strong>
+                        <span>Biochemistry / Regression: Michaelis–Menten enzyme saturation curves under competitive and non-competitive inhibition paired with Lineweaver–Burk double-reciprocal OLS regression (stats)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="damped_driven_resonance">
+                    <a href="browser/demo-damped_driven_resonance.html">
+                        <img src="browser/thumbs/damped_driven_resonance.png" width="480" height="299" alt="Driven damped resonance" loading="lazy">
+                        <strong>Driven damped resonance</strong>
+                        <span>Nonlinear Dynamics: Driven damped harmonic oscillator steady-state magnification M(ω/ω0), resonance peak backbone locus, half-power bandwidth and quadrature phase lag φ(ω/ω0)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="quadrature_convergence">
+                    <a href="browser/demo-quadrature_convergence.html">
+                        <img src="browser/thumbs/quadrature_convergence.png" width="480" height="299" alt="Quadrature convergence" loading="lazy">
+                        <strong>Quadrature convergence</strong>
+                        <span>Numerical analysis: Trapezoid, Simpson and Gauss–Legendre on ∫0^π/2 e^xcos x dx; fit measures orders 2 and 4 (asserted with plot.assert_close) and 8 Gauss points beat 1025 Simpson points</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="option_greeks_dashboard">
+                    <a href="browser/demo-option_greeks_dashboard.html">
+                        <img src="browser/thumbs/option_greeks_dashboard.png" width="463" height="360" alt="Black–Scholes Greeks" loading="lazy">
+                        <strong>Black–Scholes Greeks</strong>
+                        <span>Quantitative Finance: Black–Scholes call via gnuplot norm(): value surface, price vs spot, delta, gamma and vega; reproduces Hull&#x27;s textbook 4.76 / 0.81 and put–call parity</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+            </ul>
+            <h2>Model evaluation</h2>
+            <ul class="gallery">
+                <li data-example="roc_auc">
+                    <a href="browser/demo-roc_auc.html">
+                        <img src="browser/thumbs/roc_auc.png" width="450" height="360" alt="ROC curve and AUC" loading="lazy">
+                        <strong>ROC curve and AUC</strong>
+                        <span>Machine learning: ROC curve of a 300-case synthetic classifier: every observed score is a threshold, AUC by the trapezoid rule checked against the Mann–Whitney pair count, Youden-J operating point marked</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="pr_average_precision">
+                    <a href="browser/demo-pr_average_precision.html">
+                        <img src="browser/thumbs/pr_average_precision.png" width="450" height="360" alt="Precision–recall and AP" loading="lazy">
+                        <strong>Precision–recall and AP</strong>
+                        <span>Machine learning: Precision–recall curve of a 400-case detector with 15% positives: average precision as the step-wise sum ∑ (Rk - Rk-1) Pk, prevalence baseline and best-F1 point</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="confusion_matrix">
+                    <a href="browser/demo-confusion_matrix.html">
+                        <img src="browser/thumbs/confusion_matrix.png" width="400" height="360" alt="Confusion matrix" loading="lazy">
+                        <strong>Confusion matrix</strong>
+                        <span>Machine learning: 3-class confusion matrix (240 cases): counts and row percentages in each cell, label colour chosen per cell for contrast, accuracy checked against the diagonal</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="poisson_contours">
+                    <a href="browser/demo-poisson_contours.html">
+                        <img src="browser/thumbs/poisson_contours.png" width="480" height="250" alt="Poisson equation contours" loading="lazy">
+                        <strong>Poisson equation contours</strong>
+                        <span>Numerical PDE: Poisson equation ∇²φ = -f solved by SOR on a 41×41 grid; the exact cubic-per-variable solution is reproduced to 1e-9, and eight contour lines of φ are drawn over the heat map</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="cavity_quiver">
+                    <a href="browser/demo-cavity_quiver.html">
+                        <img src="browser/thumbs/cavity_quiver.png" width="400" height="360" alt="Lid-driven cavity flow" loading="lazy">
+                        <strong>Lid-driven cavity flow</strong>
+                        <span>Fluid mechanics: Lid-driven cavity: streamfunction heat map with auto-scaled velocity arrows; an analytic creeping-flow-like field, with wall conditions and continuity checked</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="symlog_outlier">
+                    <a href="browser/demo-symlog_outlier.html">
+                        <img src="browser/thumbs/symlog_outlier.png" width="480" height="277" alt="Symlog axis with an outlier" loading="lazy">
+                        <strong>Symlog axis with an outlier</strong>
+                        <span>Statistics: Monthly commit counts with one 63,000-commit month on a symlog axis (linear to 100, logarithmic beyond), tick labels in the original units</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="residual_scatter">
+                    <a href="browser/demo-residual_scatter.html">
+                        <img src="browser/thumbs/residual_scatter.png" width="480" height="336" alt="Regression residuals" loading="lazy">
+                        <strong>Regression residuals</strong>
+                        <span>Statistics: Least-squares line through 80 heteroscedastic points; residuals against fitted values with the zero line, ±2 RMSE band, R² and RMSE; zero-sum residuals checked</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+            </ul>
+            <h2>gnuplot gallery</h2>
+            <ul class="gallery">
+                <li data-example="simple">
+                    <a href="browser/demo-simple.html">
+                        <img src="browser/thumbs/simple.png" width="480" height="360" alt="Simple functions" loading="lazy">
+                        <strong>Simple functions</strong>
+                        <span>functions with points (gnuplot simple.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="fillcrvs">
+                    <a href="browser/demo-fillcrvs.html">
+                        <img src="browser/thumbs/fillcrvs.png" width="480" height="360" alt="Filled curves" loading="lazy">
+                        <strong>Filled curves</strong>
+                        <span>every filledcurve mode, parametric fills (gnuplot fillcrvs.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="fillbetween">
+                    <a href="browser/demo-fillbetween.html">
+                        <img src="browser/thumbs/fillbetween.png" width="480" height="360" alt="Fill between curves" loading="lazy">
+                        <strong>Fill between curves</strong>
+                        <span>area between two data curves (gnuplot fillbetween.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="transparent">
+                    <a href="browser/demo-transparent.html">
+                        <img src="browser/thumbs/transparent.png" width="480" height="360" alt="Transparent fills" loading="lazy">
+                        <strong>Transparent fills</strong>
+                        <span>alpha fills and pattern fills (gnuplot transparent.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="errorbars">
+                    <a href="browser/demo-errorbars.html">
+                        <img src="browser/thumbs/errorbars.png" width="480" height="360" alt="Error bars" loading="lazy">
+                        <strong>Error bars</strong>
+                        <span>x/y error bars, boxxyerror, log axis (gnuplot errorbars.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="candlesticks">
+                    <a href="browser/demo-candlesticks.html">
+                        <img src="browser/thumbs/candlesticks.png" width="480" height="360" alt="Candlesticks" loading="lazy">
+                        <strong>Candlesticks</strong>
+                        <span>candlesticks and box-and-whisker (gnuplot candlesticks.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="boxplot">
+                    <a href="browser/demo-boxplot.html">
+                        <img src="browser/thumbs/boxplot.png" width="480" height="360" alt="Box plots" loading="lazy">
+                        <strong>Box plots</strong>
+                        <span>boxplots, factor colouring (gnuplot boxplot.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="histograms">
+                    <a href="browser/demo-histograms.html">
+                        <img src="browser/thumbs/histograms.png" width="480" height="360" alt="Histograms" loading="lazy">
+                        <strong>Histograms</strong>
+                        <span>clustered, stacked and grouped histograms (gnuplot histograms.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="steps">
+                    <a href="browser/demo-steps.html">
+                        <img src="browser/thumbs/steps.png" width="480" height="360" alt="Step plots" loading="lazy">
+                        <strong>Step plots</strong>
+                        <span>steps, fsteps, histeps (gnuplot steps.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="param">
+                    <a href="browser/demo-param.html">
+                        <img src="browser/thumbs/param.png" width="480" height="360" alt="Parametric plots" loading="lazy">
+                        <strong>Parametric plots</strong>
+                        <span>parametric curves and a pm3d sphere (gnuplot param.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="polar">
+                    <a href="browser/demo-polar.html">
+                        <img src="browser/thumbs/polar.png" width="480" height="360" alt="Polar plots" loading="lazy">
+                        <strong>Polar plots</strong>
+                        <span>polar functions and grids (gnuplot polar.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="surface1">
+                    <a href="browser/demo-surface1.html">
+                        <img src="browser/thumbs/surface1.png" width="480" height="360" alt="3D surfaces" loading="lazy">
+                        <strong>3D surfaces</strong>
+                        <span>hidden-line surfaces, labels, arrows (gnuplot surface1.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="hidden">
+                    <a href="browser/demo-hidden.html">
+                        <img src="browser/thumbs/hidden.png" width="480" height="360" alt="Hidden-line removal" loading="lazy">
+                        <strong>Hidden-line removal</strong>
+                        <span>hidden3d on explicit surfaces (gnuplot hidden.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="contours">
+                    <a href="browser/demo-contours.html">
+                        <img src="browser/thumbs/contours.png" width="480" height="360" alt="Contours" loading="lazy">
+                        <strong>Contours</strong>
+                        <span>contour lines on base and surface (gnuplot contours.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="pm3d">
+                    <a href="browser/demo-pm3d.html">
+                        <img src="browser/thumbs/pm3d.png" width="480" height="360" alt="pm3d colour surfaces" loading="lazy">
+                        <strong>pm3d colour surfaces</strong>
+                        <span>pm3d surfaces, palette, colorbox, depth order (gnuplot pm3d.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="heatmaps">
+                    <a href="browser/demo-heatmaps.html">
+                        <img src="browser/thumbs/heatmaps.png" width="480" height="360" alt="Heat maps" loading="lazy">
+                        <strong>Heat maps</strong>
+                        <span>images from matrix and XYZ data (gnuplot heatmaps.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="vector">
+                    <a href="browser/demo-vector.html">
+                        <img src="browser/thumbs/vector.png" width="360" height="270" alt="Vector field" loading="lazy">
+                        <strong>Vector field</strong>
+                        <span>contours into a table, vector field (gnuplot vector.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="image">
+                    <a href="browser/demo-image.html">
+                        <img src="browser/thumbs/image.png" width="480" height="360" alt="Binary RGB image" loading="lazy">
+                        <strong>Binary RGB image</strong>
+                        <span>binary RGB image, rotated copies (gnuplot image.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="layout">
+                    <a href="browser/demo-layout.html">
+                        <img src="browser/thumbs/layout.png" width="360" height="360" alt="Multiplot layouts" loading="lazy">
+                        <strong>Multiplot layouts</strong>
+                        <span>multiplot layouts and stacked panels (gnuplot layout.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="spiderplot">
+                    <a href="browser/demo-spiderplot.html">
+                        <img src="browser/thumbs/spiderplot.png" width="360" height="360" alt="Spider plots" loading="lazy">
+                        <strong>Spider plots</strong>
+                        <span>spider (radar) plots (gnuplot spiderplot.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="parallel">
+                    <a href="browser/demo-parallel.html">
+                        <img src="browser/thumbs/parallel.png" width="480" height="360" alt="Parallel axes" loading="lazy">
+                        <strong>Parallel axes</strong>
+                        <span>parallel-axis plots (gnuplot parallel.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="dashtypes">
+                    <a href="browser/demo-dashtypes.html">
+                        <img src="browser/thumbs/dashtypes.png" width="411" height="360" alt="Dash types" loading="lazy">
+                        <strong>Dash types</strong>
+                        <span>native and custom dash patterns (gnuplot dashtypes.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="lines_arrows">
+                    <a href="browser/demo-lines_arrows.html">
+                        <img src="browser/thumbs/lines_arrows.png" width="480" height="360" alt="Lines, points and arrows" loading="lazy">
+                        <strong>Lines, points and arrows</strong>
+                        <span>line, point and arrow styles (gnuplot lines_arrows.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="enhanced_utf8">
+                    <a href="browser/demo-enhanced_utf8.html">
+                        <img src="browser/thumbs/enhanced_utf8.png" width="480" height="347" alt="Enhanced text and UTF-8" loading="lazy">
+                        <strong>Enhanced text and UTF-8</strong>
+                        <span>enhanced text, Symbol and Unicode (gnuplot enhanced_utf8.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="rotate_labels">
+                    <a href="browser/demo-rotate_labels.html">
+                        <img src="browser/thumbs/rotate_labels.png" width="480" height="240" alt="Text boxes and rotated labels" loading="lazy">
+                        <strong>Text boxes and rotated labels</strong>
+                        <span>boxed and rotated labels (gnuplot textbox.dem, rotate_labels.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="nonlinear2">
+                    <a href="browser/demo-nonlinear2.html">
+                        <img src="browser/thumbs/nonlinear2.png" width="480" height="360" alt="Nonlinear axes" loading="lazy">
+                        <strong>Nonlinear axes</strong>
+                        <span>logscale versus set nonlinear (gnuplot nonlinear2.dem)</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="stats">
+                    <a href="browser/demo-stats.html">
+                        <img src="browser/thumbs/stats.png" width="480" height="360" alt="Data, stats and labels" loading="lazy">
+                        <strong>Data, stats and labels</strong>
+                        <span>generate data in lmscript, stats, compute, label and plot</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+                <li data-example="turntable">
+                    <a href="browser/demo-turntable.html">
+                        <img src="browser/thumbs/turntable.png" width="360" height="360" alt="Turntable frames" loading="lazy">
+                        <strong>Turntable frames</strong>
+                        <span>a loop rendering a rotating surface as 8 frames</span>
+                    </a>
+                    <p class="card-status"></p>
+                </li>
+            </ul>
+    </main>
+    <footer>
+        <p><strong>lmplot 0.3.1</strong> · gnuplot and the lmcode VM compiled to WebAssembly · everything runs in this tab</p>
+        <p>lmplot is MIT licensed; gnuplot is distributed under its own license (see the notices).</p>
+    </footer>
+    <noscript>This page needs JavaScript and WebAssembly. The plots are drawn by gnuplot running in your browser.</noscript>
+    <script src="boot.js"></script>
+</body>
+</html>

@@ -18,6 +18,7 @@
 <li><a href="/tools/lmplot/skill.html">Skill</a></li>
 <li><a href="/tools/lmplot/guide.html">Guide</a></li>
 <li><a href="/tools/lmplot/reference.html">Reference</a></li>
+<li><a href="/tools/lmplot/demo.html">Demo</a></li>
 </ul>
 </nav>
 <main>
@@ -47,11 +48,24 @@ plot.close();
 end _lmcode_
 r = run_lmcode(p);
 assert(r.ok, json_stringify(r));</code></pre>
+<h2>Run in the browser</h2>
+<p>lmplot also builds to WebAssembly. <a href="/tools/lmplot/demo.html">The browser demo</a> runs all 45 standalone examples inside the page. gnuplot, the lmcode virtual machine and the 13 Plot functions are one fixed host, lmplot.wasm (4.6 MB), written once as systems code in C and C++. Each example is application code: a few kilobytes of lmcode bytecode the page loads at run time, so a new plot never needs a new wasm build.</p>
+<figure>
+<img src="/tools/lmplot/img/browser-kepler.png" alt="Radial-velocity curve with a Keplerian fit and residual panel, rendered by lmplot.wasm" width="440" height="274">
+<figcaption>examples/kepler_rv_fit.lms, rendered by lmplot.wasm in a browser tab from 7.6 KB of bytecode.</figcaption>
+</figure>
+<ul>
+<li>In the browser, plot.png(file, w, h) writes file.svg with gnuplot's svg terminal (LMPLOT_PNG_AS=svg). The PNG option uses lmplot's own rasterizer and fonts. 84 or 85 of the 92 example PNGs (depending on the platform the native build ran on) are byte-identical to the native binary's; the rest are 3D views that differ in a few pixels because each libm rounds sin and cos differently.</li>
+<li>Each run gets a fresh WebAssembly instance in a Worker, with the example's data files in an in-memory file system. The compiled module is reused, so a typical example runs in 30 to 250 ms.</li>
+<li>The examples are compiled ahead of time by lmscript, which also evaluates the lmscript code around each _lmcode_ block. Build everything from an lmplot checkout with the command below; the guide has the details.</li>
+</ul>
+<pre><kbd>scripts/build-web.sh build-site</kbd></pre>
 <h2>Documentation pages</h2>
 <ul>
 <li><a href="/tools/lmplot/skill.html">Skill</a> — authoring rules, CLI commands, inputs and outputs, safety rules, worked examples, and verification steps.</li>
 <li><a href="/tools/lmplot/guide.html">Guide</a> — native PNG rasterizer, embedded DejaVu font selection, stats/fit read-back loops, multi-host image compositing, and the standard lmcode_std_v3 catalog.</li>
 <li><a href="/tools/lmplot/reference.html">Reference</a> — complete CLI flags, Plot schema methods, built-in terminals, standard library catalog, and exit codes.</li>
+<li><a href="/tools/lmplot/demo.html">Demo</a> — all 45 examples running on the WebAssembly host, one live page per example.</li>
 </ul>
 <p><a href="https://github.com/lmctl-ai/lmplot">Source repository and releases</a></p>
 </main>

@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Meteorology / Heatmaps: 24×24 km nocturnal urban heat island anomaly field Δ T(x, y) (with image) paired with West–East and South–North thermal dome transects and river cooling dip">
+    <title>Urban heat island field · lmplot in the browser</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="demo.css">
+</head>
+<body data-example="urban_heat_island">
+    <header class="site-header">
+        <a class="brand" href="../demo.html" aria-label="lmplot in the browser">lm<span>plot</span></a>
+        <nav class="project-nav" aria-label="Project links">
+            <a href="/tools/lmplot/">Quick reference</a>
+            <a href="../demo.html">All examples</a>
+            <a href="https://github.com/lmctl-ai/lmplot">Source on GitHub</a>
+        </nav>
+    </header>
+    <main class="book-layout">
+        <nav class="book-nav" aria-label="Examples">
+            <p>Showcase</p>
+            <ol>
+                <li><a href="demo-kepler_rv_fit.html">Exoplanet radial-velocity fit</a></li>
+                <li><a href="demo-blackbody_planck.html">Planck blackbody spectra</a></li>
+                <li><a href="demo-potential_vortex_surface.html">Double-well free-energy surface</a></li>
+                <li><a href="demo-urban_heat_island.html" aria-current="page">Urban heat island field</a></li>
+                <li><a href="demo-phased_array_polar.html">Phased-array beam steering</a></li>
+                <li><a href="demo-quant_trading_dashboard.html">Trading regime dashboard</a></li>
+                <li><a href="demo-enzyme_michaelis_menten.html">Michaelis–Menten kinetics</a></li>
+                <li><a href="demo-damped_driven_resonance.html">Driven damped resonance</a></li>
+                <li><a href="demo-quadrature_convergence.html">Quadrature convergence</a></li>
+                <li><a href="demo-option_greeks_dashboard.html">Black–Scholes Greeks</a></li>
+            </ol>
+            <p>Model evaluation</p>
+            <ol>
+                <li><a href="demo-roc_auc.html">ROC curve and AUC</a></li>
+                <li><a href="demo-pr_average_precision.html">Precision–recall and AP</a></li>
+                <li><a href="demo-confusion_matrix.html">Confusion matrix</a></li>
+                <li><a href="demo-poisson_contours.html">Poisson equation contours</a></li>
+                <li><a href="demo-cavity_quiver.html">Lid-driven cavity flow</a></li>
+                <li><a href="demo-symlog_outlier.html">Symlog axis with an outlier</a></li>
+                <li><a href="demo-residual_scatter.html">Regression residuals</a></li>
+            </ol>
+            <p>gnuplot gallery</p>
+            <ol>
+                <li><a href="demo-simple.html">Simple functions</a></li>
+                <li><a href="demo-fillcrvs.html">Filled curves</a></li>
+                <li><a href="demo-fillbetween.html">Fill between curves</a></li>
+                <li><a href="demo-transparent.html">Transparent fills</a></li>
+                <li><a href="demo-errorbars.html">Error bars</a></li>
+                <li><a href="demo-candlesticks.html">Candlesticks</a></li>
+                <li><a href="demo-boxplot.html">Box plots</a></li>
+                <li><a href="demo-histograms.html">Histograms</a></li>
+                <li><a href="demo-steps.html">Step plots</a></li>
+                <li><a href="demo-param.html">Parametric plots</a></li>
+                <li><a href="demo-polar.html">Polar plots</a></li>
+                <li><a href="demo-surface1.html">3D surfaces</a></li>
+                <li><a href="demo-hidden.html">Hidden-line removal</a></li>
+                <li><a href="demo-contours.html">Contours</a></li>
+                <li><a href="demo-pm3d.html">pm3d colour surfaces</a></li>
+                <li><a href="demo-heatmaps.html">Heat maps</a></li>
+                <li><a href="demo-vector.html">Vector field</a></li>
+                <li><a href="demo-image.html">Binary RGB image</a></li>
+                <li><a href="demo-layout.html">Multiplot layouts</a></li>
+                <li><a href="demo-spiderplot.html">Spider plots</a></li>
+                <li><a href="demo-parallel.html">Parallel axes</a></li>
+                <li><a href="demo-dashtypes.html">Dash types</a></li>
+                <li><a href="demo-lines_arrows.html">Lines, points and arrows</a></li>
+                <li><a href="demo-enhanced_utf8.html">Enhanced text and UTF-8</a></li>
+                <li><a href="demo-rotate_labels.html">Text boxes and rotated labels</a></li>
+                <li><a href="demo-nonlinear2.html">Nonlinear axes</a></li>
+                <li><a href="demo-stats.html">Data, stats and labels</a></li>
+                <li><a href="demo-turntable.html">Turntable frames</a></li>
+            </ol>
+        </nav>
+        <article class="chapter">
+            <header class="chapter-heading">
+                <p class="eyebrow">Showcase · examples/urban_heat_island.lms</p>
+                <h1>Urban heat island field</h1>
+                <p class="lede">Meteorology / Heatmaps: 24×24 km nocturnal urban heat island anomaly field Δ T(x, y) (with image) paired with West–East and South–North thermal dome transects and river cooling dip</p>
+            </header>
+            <section class="demo-shell" aria-label="Live output">
+                <div class="controls">
+                    <button id="run" type="button">Run in browser</button>
+                    <label class="mode">Output
+                        <select id="output-mode">
+                            <option value="svg" selected>SVG (vector)</option>
+                            <option value="png">PNG (lmplot rasterizer)</option>
+                        </select>
+                    </label>
+                    <p id="status" class="status" role="status" aria-live="polite">Loading the WebAssembly host…</p>
+                </div>
+                <div id="images" class="images" aria-live="polite"></div>
+                <pre id="echo" class="echo" hidden></pre>
+            </section>
+            <section class="chapter-notes">
+                <div>
+                    <h2>What runs</h2>
+                    <p>The page fetches <a href="examples/urban_heat_island.bin">examples/urban_heat_island.bin</a>, 7,733 bytes of lmcode bytecode
+                    (sha256 <code>429d4595e798…</code>), and hands it to the same <code>lmplot.wasm</code> every example uses.
+                    The bytecode calls the host's <code>Plot</code> functions (<code>plot.cmd</code>, <code>plot.data</code>, <code>plot.num</code>,
+                    <code>plot.png</code> …); gnuplot draws into an in-memory file system and the page shows the files the program wrote.</p>
+                    <p>In SVG mode <code>plot.png("x.png", w, h)</code> writes <code>x.svg</code> with gnuplot's svg terminal; PNG mode uses lmplot's
+                    own rasterizer and fonts, the same bytes as the native binary.</p>
+                    <p>The program was compiled ahead of time from the source on the right with <code>lmscript</code>; the lmscript lines around the
+                    <code>_lmcode_</code> block (data generation, <code>${...}</code> values, <code>run_lmcode</code>) ran at compile time.</p>
+                </div>
+                <pre><code># Urban Heat Island (UHI) thermal anomaly field across a 24x24 km metropolitan
+# basin (downtown core, industrial corridor, river cooling channel, and park),
+# paired with West-East and South-North cross-section transects.
+# Writes images/urban_heat_island.png (900x560).
+mkdir(&quot;images&quot;);
+mkdir(&quot;build&quot;);
+p = _lmcode_ cli=&quot;lmplot&quot; install=&quot;github:lmctl-ai/lmplot@v0.3.1&quot;;
+
+fn exp_neg(u: float) -&gt; float {
+  return pow(2.718281828459045, 0.0 - u);
+}
+
+# Build a 61x61 grid over [-12, +12] km (0.4 km cells):
+let grid_rows = &quot;&quot;;
+let we_rows = &quot;&quot;;
+let sn_rows = &quot;&quot;;
+for (iy in range(0, 61)) {
+  let y = -12.0 + 24.0 * float(iy) / 60.0;
+  for (ix in range(0, 61)) {
+    let x = -12.0 + 24.0 * float(ix) / 60.0;
+    let r2_core = (x * x + 1.2 * y * y) / 18.0;
+    let r2_ind = ((x - 4.5) * (x - 4.5) + (y + 2.5) * (y + 2.5)) / 10.0;
+    let r2_sub = (x * x + y * y) / 65.0;
+    let d_river = (y - 0.35 * x + 2.0);
+    let r2_river = (d_river * d_river) / 1.4;
+    let r2_park = ((x + 4.0) * (x + 4.0) + (y - 3.5) * (y - 3.5)) / 5.5;
+    let urban = 4.4 * exp_neg(r2_core) + 2.5 * exp_neg(r2_ind) + 1.4 * exp_neg(r2_sub);
+    # The river cools its banks and damps the urban excess it flows through.
+    let river = exp_neg(r2_river);
+    let dt = urban * (1.0 - 0.55 * river) - 1.2 * river - 1.65 * exp_neg(r2_park);
+    grid_rows = grid_rows + str(x) + &quot; &quot; + str(y) + &quot; &quot; + str(dt) + &quot;\n&quot;;
+    if (iy == 30) {
+      we_rows = we_rows + str(x) + &quot; &quot; + str(dt) + &quot;\n&quot;;
+    }
+    if (ix == 30) {
+      sn_rows = sn_rows + str(y) + &quot; &quot; + str(dt) + &quot;\n&quot;;
+    }
+  }
+  grid_rows = grid_rows + &quot;\n&quot;;
+}
+plot.data(&quot;UHI&quot;, grid_rows);
+plot.data(&quot;WE&quot;, we_rows);
+plot.data(&quot;SN&quot;, sn_rows);
+
+plot.cmd(&quot;set terminal unknown&quot;);
+plot.cmd(&quot;stats $UHI using 3 nooutput&quot;);
+let dt_max = plot.num(&quot;STATS_max&quot;);
+let dt_min = plot.num(&quot;STATS_min&quot;);
+let dt_mean = plot.num(&quot;STATS_mean&quot;);
+plot.echo(&quot;Peak downtown anomaly: +&quot; + str(dt_max) + &quot; C&quot;);
+plot.echo(&quot;Park/river minimum:    &quot; + str(dt_min) + &quot; C&quot;);
+plot.echo(&quot;Basin mean anomaly:    +&quot; + str(dt_mean) + &quot; C&quot;);
+plot.cmd(&quot;stats $WE using 2 nooutput&quot;);
+let we_min = plot.num(&quot;STATS_min&quot;);
+let we_min_x = plot.num(&quot;STATS_index_min&quot;);
+
+plot.png(&quot;images/urban_heat_island.png&quot;, 900, 560);
+plot.cmd(&quot;set encoding utf8&quot;);
+plot.cmd(&quot;set multiplot&quot;);
+
+# Left panel: 2D Urban Heat Island map
+plot.script(&quot;set lmargin at screen 0.075\nset rmargin at screen 0.475\nset tmargin at screen 0.86\nset bmargin at screen 0.14&quot;);
+plot.cmd(&quot;set colorbox user origin screen 0.49, 0.14 size screen 0.022, 0.72&quot;);
+plot.cmd(&quot;set title &#x27;Nocturnal Urban Heat Island ΔT(x, y) [°C]&#x27; font &#x27;,11.5&#x27;&quot;);
+plot.cmd(&quot;set xlabel &#x27;East–West Distance x (km)&#x27;&quot;);
+plot.cmd(&quot;set ylabel &#x27;South–North Distance y (km)&#x27;&quot;);
+plot.cmd(&quot;set xrange [-12.2:12.2]&quot;);
+plot.cmd(&quot;set yrange [-12.2:12.2]&quot;);
+plot.cmd(&quot;set cbrange [-1.0:5.8]&quot;);
+plot.cmd(&quot;set cblabel &#x27;ΔT above rural baseline (°C)&#x27; offset 0.8,0&quot;);
+plot.cmd(&quot;set palette defined (0 &#x27;#1e3a8a&#x27;, 0.22 &#x27;#38bdf8&#x27;, 0.42 &#x27;#fef08a&#x27;, 0.70 &#x27;#f97316&#x27;, 1 &#x27;#991b1b&#x27;)&quot;);
+plot.cmd(&quot;unset key&quot;);
+plot.cmd(&quot;set arrow 1 from -11.6, 0 to 11.6, 0 nohead dt 2 lw 1.3 lc rgb &#x27;#ffffff&#x27; front&quot;);
+plot.cmd(&quot;set arrow 2 from 0, -11.6 to 0, 11.6 nohead dt 3 lw 1.3 lc rgb &#x27;#ffffff&#x27; front&quot;);
+plot.cmd(&quot;set label 1 sprintf(&#x27;CBD core\n+%.1f°C&#x27;, &quot; + str(dt_max) + &quot;) at 0.6, 2.6 left front tc rgb &#x27;#ffffff&#x27; font &#x27;,9&#x27;&quot;);
+plot.cmd(&quot;set label 2 &#x27;Park&#x27; at -4.0, 5.6 center front tc rgb &#x27;#0f172a&#x27; font &#x27;,8.5&#x27;&quot;);
+plot.cmd(&quot;set label 3 &#x27;Industrial&#x27; at 4.5, -2.8 center front tc rgb &#x27;#ffffff&#x27; font &#x27;,8.5&#x27;&quot;);
+plot.cmd(&quot;set label 5 &#x27;River&#x27; at -9.5, -6.2 center front rotate by 19 tc rgb &#x27;#ffffff&#x27; font &#x27;,8.5&#x27;&quot;);
+plot.cmd(&quot;plot $UHI using 1:2:3 with image&quot;);
+
+# Right panel: West-East and South-North cross-section transects
+plot.cmd(&quot;unset arrow 1&quot;);
+plot.cmd(&quot;unset arrow 2&quot;);
+plot.cmd(&quot;unset label 1&quot;);
+plot.cmd(&quot;unset label 2&quot;);
+plot.cmd(&quot;unset label 3&quot;);
+plot.cmd(&quot;unset label 5&quot;);
+plot.script(&quot;set lmargin at screen 0.645\nset rmargin at screen 0.98\nset tmargin at screen 0.86\nset bmargin at screen 0.14&quot;);
+plot.cmd(&quot;set title &#x27;Transects Through the CBD&#x27; font &#x27;,11.5&#x27;&quot;);
+plot.cmd(&quot;set xlabel &#x27;Transect Coordinate (km from CBD)&#x27;&quot;);
+plot.cmd(&quot;set ylabel &#x27;Temperature Anomaly ΔT (°C)&#x27;&quot;);
+plot.cmd(&quot;set xrange [-12:12]&quot;);
+plot.cmd(&quot;set yrange [-2:8]&quot;);
+plot.cmd(&quot;set grid xtics ytics lc rgb &#x27;#e2e8f0&#x27; lw 1&quot;);
+plot.cmd(&quot;set key top right width -4 samplen 1.6 spacing 1.1 opaque box lc rgb &#x27;#cbd5e1&#x27; font &#x27;,8.5&#x27;&quot;);
+plot.cmd(&quot;set style fill transparent solid 0.20 noborder&quot;);
+
+let stat_txt = plot.str(&quot;sprintf(&#x27;peak  +%.1f °C\nmean  +%.2f °C\nriver (W–E) %.1f °C\n  at x = %.1f km\ncoolest  %.1f °C&#x27;, &quot; + str(dt_max) + &quot;, &quot; + str(dt_mean) + &quot;, &quot; + str(we_min) + &quot;, &quot; + str(-12.0 + 0.4 * we_min_x) + &quot;, &quot; + str(dt_min) + &quot;)&quot;);
+plot.cmd(&quot;set label 4 &#x27;&quot; + stat_txt + &quot;&#x27; at -11.4, 7.6 left front boxed noenhanced font &#x27;,8&#x27;&quot;);
+
+plot.cmd(&quot;plot $WE using 1:2 with filledcurves y1=0 lc rgb &#x27;#ef4444&#x27; notitle, $WE using 1:2 with lines lw 2.5 lc rgb &#x27;#dc2626&#x27; title &#x27;W–E, y = 0&#x27;, $SN using 1:2 with lines lw 2.2 dt 2 lc rgb &#x27;#2563eb&#x27; title &#x27;S–N, x = 0&#x27;, &quot; + str(dt_mean) + &quot; with lines dt 3 lw 1.3 lc rgb &#x27;#475569&#x27; title &#x27;basin mean&#x27;&quot;);
+
+plot.cmd(&quot;unset multiplot&quot;);
+plot.close();
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
+println(&quot;wrote images/urban_heat_island.png&quot;);
+</code></pre>
+            </section>
+            <nav class="pager" aria-label="Example navigation"><a href="demo-potential_vortex_surface.html">← Double-well free-energy surface</a><a href="demo-phased_array_polar.html">Phased-array beam steering →</a></nav>
+        </article>
+    </main>
+    <footer>
+        <p><strong>lmplot 0.3.1</strong> · gnuplot and the lmcode VM compiled to WebAssembly · everything runs in this tab</p>
+        <p>lmplot is MIT licensed; gnuplot is distributed under its own license (see the notices).</p>
+    </footer>
+    <noscript>This page needs JavaScript and WebAssembly. The plots are drawn by gnuplot running in your browser.</noscript>
+    <script src="boot.js"></script>
+</body>
+</html>

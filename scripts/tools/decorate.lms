@@ -150,6 +150,16 @@ fn basename(path: string) -> string {
   for (i in range(0, str_len(path))) { if (str_substr(path, i, 1) == "/") { slash = i + 1; } }
   return str_substr(path, slash, str_len(path));
 }
+# True when path lies in a subdirectory of directory (tools/<tool>/<dir>/page.html).
+fn nested_page(path: string, directory: string) -> bool {
+  let at = str_find(path, directory + "/");
+  let nested = false;
+  if (at >= 0) {
+    let rest_start = at + str_len(directory) + 1;
+    nested = str_contains(str_substr(path, rest_start, str_len(path) - rest_start), "/");
+  }
+  return nested;
+}
 fn role(filename: string) -> string {
   let stem = str_substr(filename, 0, str_len(filename) - 5);
   if (filename == "get_started.html") { stem = "guide"; }
@@ -330,6 +340,9 @@ while (str_find(tool_dirs, "|") >= 0) {
     for (page in pages) {
       let filename = basename(page.path());
       if (filename == "index.html" || role(filename) != name) { continue; }
+      # A demo book kept in a subdirectory (tools/<tool>/<dir>/demo-*.html) is reached from its
+      # top-level demo.html; only top-level demo pages are tool navigation entries.
+      if (name == "demo" && nested_page(page.path(), directory)) { continue; }
       let text = label;
       if (filename != name + ".html") { text = label + ": " + excerpt(heading(page), 80, false); }
       if (filename == "get_started.html") { text = "Quickruns"; }
@@ -373,6 +386,8 @@ while (str_find(tool_dirs, "|") >= 0) {
     }
   }
   for (page in html.load_dir(directory, "*/*.html", "")) {
+    # Demo pages are raw executable documents wherever they live; never wrap them in the doc shell.
+    if (role(basename(page.path())) == "demo") { continue; }
     if (${tool_scope} == "" || ${tool_scope} == tool) {
     let result = render(tool_layout, nav, footer, content(page), page_title(heading(page), tool), page_description(page));
     store(page.path(), result, page.source(), check, differences(page, result));

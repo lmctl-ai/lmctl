@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Numerical analysis: Trapezoid, Simpson and Gauss–Legendre on ∫0^π/2 e^xcos x dx; fit measures orders 2 and 4 (asserted with plot.assert_close) and 8 Gauss points beat 1025 Simpson points">
+    <title>Quadrature convergence · lmplot in the browser</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="demo.css">
+</head>
+<body data-example="quadrature_convergence">
+    <header class="site-header">
+        <a class="brand" href="../demo.html" aria-label="lmplot in the browser">lm<span>plot</span></a>
+        <nav class="project-nav" aria-label="Project links">
+            <a href="/tools/lmplot/">Quick reference</a>
+            <a href="../demo.html">All examples</a>
+            <a href="https://github.com/lmctl-ai/lmplot">Source on GitHub</a>
+        </nav>
+    </header>
+    <main class="book-layout">
+        <nav class="book-nav" aria-label="Examples">
+            <p>Showcase</p>
+            <ol>
+                <li><a href="demo-kepler_rv_fit.html">Exoplanet radial-velocity fit</a></li>
+                <li><a href="demo-blackbody_planck.html">Planck blackbody spectra</a></li>
+                <li><a href="demo-potential_vortex_surface.html">Double-well free-energy surface</a></li>
+                <li><a href="demo-urban_heat_island.html">Urban heat island field</a></li>
+                <li><a href="demo-phased_array_polar.html">Phased-array beam steering</a></li>
+                <li><a href="demo-quant_trading_dashboard.html">Trading regime dashboard</a></li>
+                <li><a href="demo-enzyme_michaelis_menten.html">Michaelis–Menten kinetics</a></li>
+                <li><a href="demo-damped_driven_resonance.html">Driven damped resonance</a></li>
+                <li><a href="demo-quadrature_convergence.html" aria-current="page">Quadrature convergence</a></li>
+                <li><a href="demo-option_greeks_dashboard.html">Black–Scholes Greeks</a></li>
+            </ol>
+            <p>Model evaluation</p>
+            <ol>
+                <li><a href="demo-roc_auc.html">ROC curve and AUC</a></li>
+                <li><a href="demo-pr_average_precision.html">Precision–recall and AP</a></li>
+                <li><a href="demo-confusion_matrix.html">Confusion matrix</a></li>
+                <li><a href="demo-poisson_contours.html">Poisson equation contours</a></li>
+                <li><a href="demo-cavity_quiver.html">Lid-driven cavity flow</a></li>
+                <li><a href="demo-symlog_outlier.html">Symlog axis with an outlier</a></li>
+                <li><a href="demo-residual_scatter.html">Regression residuals</a></li>
+            </ol>
+            <p>gnuplot gallery</p>
+            <ol>
+                <li><a href="demo-simple.html">Simple functions</a></li>
+                <li><a href="demo-fillcrvs.html">Filled curves</a></li>
+                <li><a href="demo-fillbetween.html">Fill between curves</a></li>
+                <li><a href="demo-transparent.html">Transparent fills</a></li>
+                <li><a href="demo-errorbars.html">Error bars</a></li>
+                <li><a href="demo-candlesticks.html">Candlesticks</a></li>
+                <li><a href="demo-boxplot.html">Box plots</a></li>
+                <li><a href="demo-histograms.html">Histograms</a></li>
+                <li><a href="demo-steps.html">Step plots</a></li>
+                <li><a href="demo-param.html">Parametric plots</a></li>
+                <li><a href="demo-polar.html">Polar plots</a></li>
+                <li><a href="demo-surface1.html">3D surfaces</a></li>
+                <li><a href="demo-hidden.html">Hidden-line removal</a></li>
+                <li><a href="demo-contours.html">Contours</a></li>
+                <li><a href="demo-pm3d.html">pm3d colour surfaces</a></li>
+                <li><a href="demo-heatmaps.html">Heat maps</a></li>
+                <li><a href="demo-vector.html">Vector field</a></li>
+                <li><a href="demo-image.html">Binary RGB image</a></li>
+                <li><a href="demo-layout.html">Multiplot layouts</a></li>
+                <li><a href="demo-spiderplot.html">Spider plots</a></li>
+                <li><a href="demo-parallel.html">Parallel axes</a></li>
+                <li><a href="demo-dashtypes.html">Dash types</a></li>
+                <li><a href="demo-lines_arrows.html">Lines, points and arrows</a></li>
+                <li><a href="demo-enhanced_utf8.html">Enhanced text and UTF-8</a></li>
+                <li><a href="demo-rotate_labels.html">Text boxes and rotated labels</a></li>
+                <li><a href="demo-nonlinear2.html">Nonlinear axes</a></li>
+                <li><a href="demo-stats.html">Data, stats and labels</a></li>
+                <li><a href="demo-turntable.html">Turntable frames</a></li>
+            </ol>
+        </nav>
+        <article class="chapter">
+            <header class="chapter-heading">
+                <p class="eyebrow">Showcase · examples/quadrature_convergence.lms</p>
+                <h1>Quadrature convergence</h1>
+                <p class="lede">Numerical analysis: Trapezoid, Simpson and Gauss–Legendre on ∫0^π/2 e^xcos x dx; fit measures orders 2 and 4 (asserted with plot.assert_close) and 8 Gauss points beat 1025 Simpson points</p>
+            </header>
+            <section class="demo-shell" aria-label="Live output">
+                <div class="controls">
+                    <button id="run" type="button">Run in browser</button>
+                    <label class="mode">Output
+                        <select id="output-mode">
+                            <option value="svg" selected>SVG (vector)</option>
+                            <option value="png">PNG (lmplot rasterizer)</option>
+                        </select>
+                    </label>
+                    <p id="status" class="status" role="status" aria-live="polite">Loading the WebAssembly host…</p>
+                </div>
+                <div id="images" class="images" aria-live="polite"></div>
+                <pre id="echo" class="echo" hidden></pre>
+            </section>
+            <section class="chapter-notes">
+                <div>
+                    <h2>What runs</h2>
+                    <p>The page fetches <a href="examples/quadrature_convergence.bin">examples/quadrature_convergence.bin</a>, 7,341 bytes of lmcode bytecode
+                    (sha256 <code>edd3f36a3fa4…</code>), and hands it to the same <code>lmplot.wasm</code> every example uses.
+                    The bytecode calls the host's <code>Plot</code> functions (<code>plot.cmd</code>, <code>plot.data</code>, <code>plot.num</code>,
+                    <code>plot.png</code> …); gnuplot draws into an in-memory file system and the page shows the files the program wrote.</p>
+                    <p>In SVG mode <code>plot.png("x.png", w, h)</code> writes <code>x.svg</code> with gnuplot's svg terminal; PNG mode uses lmplot's
+                    own rasterizer and fonts, the same bytes as the native binary.</p>
+                    <p>The program was compiled ahead of time from the source on the right with <code>lmscript</code>; the lmscript lines around the
+                    <code>_lmcode_</code> block (data generation, <code>${...}</code> values, <code>run_lmcode</code>) ran at compile time.</p>
+                </div>
+                <pre><code># Numerical integration, three methods compared on a problem with a known answer:
+#   I = integral of exp(x) cos(x) over [0, pi/2] = (exp(pi/2) - 1) / 2 = 1.905238690482676
+# Composite trapezoid (error ~ h^2), composite Simpson (~ h^4) and n-point Gauss-Legendre
+# (exponential) are run for growing n. gnuplot&#x27;s `fit` measures the slope of each
+# log-log error line, and the program checks the textbook orders 2 and 4.
+# Writes images/quadrature_convergence.png (900x560).
+mkdir(&quot;images&quot;);
+mkdir(&quot;build&quot;);
+p = _lmcode_ cli=&quot;lmplot&quot; install=&quot;github:lmctl-ai/lmplot@v0.3.1&quot;;
+
+let a = 0.0;
+let b = 1.5707963267948966;
+let exact = (pow(2.718281828459045, b) - 1.0) / 2.0;
+
+fn f(x: float) -&gt; float {
+  return pow(2.718281828459045, x) * cos(x);
+}
+
+# Trapezoid and Simpson on n = 2, 4, ..., 1024 panels (the work is n + 1 evaluations).
+let rows = &quot;&quot;;
+let n = 2;
+for (k in range(0, 10)) {
+  let h = (b - a) / float(n);
+  let st = 0.5 * (f(a) + f(b));
+  let ss = f(a) + f(b);
+  for (i in range(1, n)) {
+    let fx = f(a + float(i) * h);
+    st = st + fx;
+    if (i % 2 == 1) { ss = ss + 4.0 * fx; } else { ss = ss + 2.0 * fx; }
+  }
+  let e_t = abs(st * h - exact);
+  let e_s = abs(ss * h / 3.0 - exact);
+  rows = rows + str(n + 1) + &quot; &quot; + str(e_t) + &quot; &quot; + str(e_s) + &quot;\n&quot;;
+  n = n * 2;
+}
+plot.data(&quot;NC&quot;, rows);
+
+# Gauss-Legendre: nodes are roots of P_m, found by Newton from the Chebyshev guess;
+# weights 2 / ((1 - x^2) P&#x27;_m(x)^2).
+let grows = &quot;&quot;;
+for (m in range(1, 9)) {
+  let sum = 0.0;
+  for (j in range(0, m)) {
+    let x = cos(3.141592653589793 * (float(j) + 0.75) / (float(m) + 0.5));
+    let dp = 1.0;
+    for (it in range(0, 30)) {
+      let p0 = 1.0;
+      let p1 = x;
+      for (q in range(2, m + 1)) {
+        let p2 = ((2.0 * float(q) - 1.0) * x * p1 - (float(q) - 1.0) * p0) / float(q);
+        p0 = p1;
+        p1 = p2;
+      }
+      if (m == 1) { p0 = 1.0; p1 = x; }
+      dp = float(m) * (x * p1 - p0) / (x * x - 1.0);
+      x = x - p1 / dp;
+    }
+    let w = 2.0 / ((1.0 - x * x) * dp * dp);
+    let t = 0.5 * (b - a) * x + 0.5 * (b + a);
+    sum = sum + w * f(t);
+  }
+  let e_g = abs(0.5 * (b - a) * sum - exact);
+  if (e_g &lt; 0.0000000000000001) { e_g = 0.0000000000000001; }
+  grows = grows + str(m) + &quot; &quot; + str(e_g) + &quot;\n&quot;;
+}
+plot.data(&quot;GL&quot;, grows);
+
+# Measured orders: fit log10(error) = c - p log10(evaluations) on the asymptotic part.
+plot.cmd(&quot;set terminal unknown&quot;);
+plot.cmd(&quot;set fit quiet nolog&quot;);
+plot.cmd(&quot;lt(n) = ct - pt*log10(n); ls(n) = cs - ps*log10(n); ct = 1; pt = 1; cs = 1; ps = 1&quot;);
+plot.cmd(&quot;fit lt(x) $NC every ::3::9 using ($1-1):(log10($2)) via ct, pt&quot;);
+plot.cmd(&quot;fit ls(x) $NC every ::3::7 using ($1-1):(log10($3)) via cs, ps&quot;);
+let order_t = plot.num(&quot;pt&quot;);
+let order_s = plot.num(&quot;ps&quot;);
+plot.echo(&quot;trapezoid order &quot; + str(order_t) + &quot;, Simpson order &quot; + str(order_s));
+plot.assert_close(order_t, 2.0, 0.05);
+plot.assert_close(order_s, 4.0, 0.1);
+plot.cmd(&quot;stats $GL using 2 nooutput&quot;);
+let gl8 = plot.num(&quot;STATS_min&quot;);
+plot.cmd(&quot;stats $NC using 3 nooutput&quot;);
+let simpson_best = plot.num(&quot;STATS_min&quot;);
+plot.echo(&quot;8-point Gauss error &quot; + str(gl8) + &quot;, Simpson with 1025 points &quot; + str(simpson_best));
+
+plot.png(&quot;images/quadrature_convergence.png&quot;, 900, 560);
+plot.cmd(&quot;set encoding utf8&quot;);
+plot.cmd(&quot;set title &#x27;∫_0^{π/2} e^x cos x dx = (e^{π/2} − 1)/2: error vs. function evaluations&#x27; font &#x27;,13&#x27;&quot;);
+plot.cmd(&quot;set logscale xy&quot;);
+plot.cmd(&quot;set xrange [1:2000]&quot;);
+plot.cmd(&quot;set yrange [1e-17:10]&quot;);
+plot.cmd(&quot;set format y &#x27;10^{%L}&#x27;&quot;);
+plot.cmd(&quot;set ytics 1e-16, 100, 1&quot;);
+plot.cmd(&quot;set xlabel &#x27;function evaluations&#x27;&quot;);
+plot.cmd(&quot;set ylabel &#x27;absolute error&#x27;&quot;);
+plot.cmd(&quot;set grid xtics ytics mxtics lc rgb &#x27;#e2e8f0&#x27;&quot;);
+plot.cmd(&quot;set key top right opaque box lc rgb &#x27;#cbd5e1&#x27; font &#x27;,10&#x27; spacing 1.2&quot;);
+plot.cmd(&quot;set object 1 rect from graph 0, graph 0 to graph 1, first 2.2e-16 behind fc rgb &#x27;#f1f5f9&#x27; fs solid noborder&quot;);
+plot.cmd(&quot;set label 1 &#x27;below double-precision round-off (2.2·10^{-16})&#x27; at 1.2, 4e-17 left font &#x27;,9&#x27; tc rgb &#x27;#64748b&#x27;&quot;);
+plot.cmd(&quot;set label 2 sprintf(&#x27;slope −%.2f&#x27;, &quot; + str(order_t) + &quot;) at 140, 3e-4 left font &#x27;,11&#x27; tc rgb &#x27;#2563eb&#x27;&quot;);
+plot.cmd(&quot;set label 3 sprintf(&#x27;slope −%.2f&#x27;, &quot; + str(order_s) + &quot;) at 60, 1e-10 left font &#x27;,11&#x27; tc rgb &#x27;#d97706&#x27;&quot;);
+plot.cmd(&quot;set label 4 &#x27;8 Gauss points beat\n1025 Simpson points&#x27; at 9, 1e-14 left font &#x27;,10&#x27; tc rgb &#x27;#059669&#x27;&quot;);
+plot.cmd(&quot;plot $NC using 1:2 with linespoints lw 2.4 pt 7 ps 1.1 lc rgb &#x27;#2563eb&#x27; title &#x27;composite trapezoid  (error ∝ h^2)&#x27;, $NC using 1:3 with linespoints lw 2.4 pt 5 ps 1.1 lc rgb &#x27;#d97706&#x27; title &#x27;composite Simpson  (error ∝ h^4)&#x27;, $GL using 1:2 with linespoints lw 2.4 pt 9 ps 1.3 lc rgb &#x27;#059669&#x27; title &#x27;Gauss–Legendre  (exponential)&#x27;, 10**ct * x**(-pt) with lines dt 2 lw 1.2 lc rgb &#x27;#93c5fd&#x27; notitle, 10**cs * x**(-ps) with lines dt 2 lw 1.2 lc rgb &#x27;#fcd34d&#x27; notitle&quot;);
+plot.close();
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
+println(&quot;wrote images/quadrature_convergence.png&quot;);
+</code></pre>
+            </section>
+            <nav class="pager" aria-label="Example navigation"><a href="demo-damped_driven_resonance.html">← Driven damped resonance</a><a href="demo-option_greeks_dashboard.html">Black–Scholes Greeks →</a></nav>
+        </article>
+    </main>
+    <footer>
+        <p><strong>lmplot 0.3.1</strong> · gnuplot and the lmcode VM compiled to WebAssembly · everything runs in this tab</p>
+        <p>lmplot is MIT licensed; gnuplot is distributed under its own license (see the notices).</p>
+    </footer>
+    <noscript>This page needs JavaScript and WebAssembly. The plots are drawn by gnuplot running in your browser.</noscript>
+    <script src="boot.js"></script>
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Quantitative Finance: 60-day equity regime shift: OHLC candlesticks, 5-day moving average, ± 2σ Bollinger Band envelope, daily volume bars and underwater peak-to-trough drawdown">
+    <title>Trading regime dashboard · lmplot in the browser</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="demo.css">
+</head>
+<body data-example="quant_trading_dashboard">
+    <header class="site-header">
+        <a class="brand" href="../demo.html" aria-label="lmplot in the browser">lm<span>plot</span></a>
+        <nav class="project-nav" aria-label="Project links">
+            <a href="/tools/lmplot/">Quick reference</a>
+            <a href="../demo.html">All examples</a>
+            <a href="https://github.com/lmctl-ai/lmplot">Source on GitHub</a>
+        </nav>
+    </header>
+    <main class="book-layout">
+        <nav class="book-nav" aria-label="Examples">
+            <p>Showcase</p>
+            <ol>
+                <li><a href="demo-kepler_rv_fit.html">Exoplanet radial-velocity fit</a></li>
+                <li><a href="demo-blackbody_planck.html">Planck blackbody spectra</a></li>
+                <li><a href="demo-potential_vortex_surface.html">Double-well free-energy surface</a></li>
+                <li><a href="demo-urban_heat_island.html">Urban heat island field</a></li>
+                <li><a href="demo-phased_array_polar.html">Phased-array beam steering</a></li>
+                <li><a href="demo-quant_trading_dashboard.html" aria-current="page">Trading regime dashboard</a></li>
+                <li><a href="demo-enzyme_michaelis_menten.html">Michaelis–Menten kinetics</a></li>
+                <li><a href="demo-damped_driven_resonance.html">Driven damped resonance</a></li>
+                <li><a href="demo-quadrature_convergence.html">Quadrature convergence</a></li>
+                <li><a href="demo-option_greeks_dashboard.html">Black–Scholes Greeks</a></li>
+            </ol>
+            <p>Model evaluation</p>
+            <ol>
+                <li><a href="demo-roc_auc.html">ROC curve and AUC</a></li>
+                <li><a href="demo-pr_average_precision.html">Precision–recall and AP</a></li>
+                <li><a href="demo-confusion_matrix.html">Confusion matrix</a></li>
+                <li><a href="demo-poisson_contours.html">Poisson equation contours</a></li>
+                <li><a href="demo-cavity_quiver.html">Lid-driven cavity flow</a></li>
+                <li><a href="demo-symlog_outlier.html">Symlog axis with an outlier</a></li>
+                <li><a href="demo-residual_scatter.html">Regression residuals</a></li>
+            </ol>
+            <p>gnuplot gallery</p>
+            <ol>
+                <li><a href="demo-simple.html">Simple functions</a></li>
+                <li><a href="demo-fillcrvs.html">Filled curves</a></li>
+                <li><a href="demo-fillbetween.html">Fill between curves</a></li>
+                <li><a href="demo-transparent.html">Transparent fills</a></li>
+                <li><a href="demo-errorbars.html">Error bars</a></li>
+                <li><a href="demo-candlesticks.html">Candlesticks</a></li>
+                <li><a href="demo-boxplot.html">Box plots</a></li>
+                <li><a href="demo-histograms.html">Histograms</a></li>
+                <li><a href="demo-steps.html">Step plots</a></li>
+                <li><a href="demo-param.html">Parametric plots</a></li>
+                <li><a href="demo-polar.html">Polar plots</a></li>
+                <li><a href="demo-surface1.html">3D surfaces</a></li>
+                <li><a href="demo-hidden.html">Hidden-line removal</a></li>
+                <li><a href="demo-contours.html">Contours</a></li>
+                <li><a href="demo-pm3d.html">pm3d colour surfaces</a></li>
+                <li><a href="demo-heatmaps.html">Heat maps</a></li>
+                <li><a href="demo-vector.html">Vector field</a></li>
+                <li><a href="demo-image.html">Binary RGB image</a></li>
+                <li><a href="demo-layout.html">Multiplot layouts</a></li>
+                <li><a href="demo-spiderplot.html">Spider plots</a></li>
+                <li><a href="demo-parallel.html">Parallel axes</a></li>
+                <li><a href="demo-dashtypes.html">Dash types</a></li>
+                <li><a href="demo-lines_arrows.html">Lines, points and arrows</a></li>
+                <li><a href="demo-enhanced_utf8.html">Enhanced text and UTF-8</a></li>
+                <li><a href="demo-rotate_labels.html">Text boxes and rotated labels</a></li>
+                <li><a href="demo-nonlinear2.html">Nonlinear axes</a></li>
+                <li><a href="demo-stats.html">Data, stats and labels</a></li>
+                <li><a href="demo-turntable.html">Turntable frames</a></li>
+            </ol>
+        </nav>
+        <article class="chapter">
+            <header class="chapter-heading">
+                <p class="eyebrow">Showcase · examples/quant_trading_dashboard.lms</p>
+                <h1>Trading regime dashboard</h1>
+                <p class="lede">Quantitative Finance: 60-day equity regime shift: OHLC candlesticks, 5-day moving average, ± 2σ Bollinger Band envelope, daily volume bars and underwater peak-to-trough drawdown</p>
+            </header>
+            <section class="demo-shell" aria-label="Live output">
+                <div class="controls">
+                    <button id="run" type="button">Run in browser</button>
+                    <label class="mode">Output
+                        <select id="output-mode">
+                            <option value="svg" selected>SVG (vector)</option>
+                            <option value="png">PNG (lmplot rasterizer)</option>
+                        </select>
+                    </label>
+                    <p id="status" class="status" role="status" aria-live="polite">Loading the WebAssembly host…</p>
+                </div>
+                <div id="images" class="images" aria-live="polite"></div>
+                <pre id="echo" class="echo" hidden></pre>
+            </section>
+            <section class="chapter-notes">
+                <div>
+                    <h2>What runs</h2>
+                    <p>The page fetches <a href="examples/quant_trading_dashboard.bin">examples/quant_trading_dashboard.bin</a>, 8,862 bytes of lmcode bytecode
+                    (sha256 <code>da2f0414ec44…</code>), and hands it to the same <code>lmplot.wasm</code> every example uses.
+                    The bytecode calls the host's <code>Plot</code> functions (<code>plot.cmd</code>, <code>plot.data</code>, <code>plot.num</code>,
+                    <code>plot.png</code> …); gnuplot draws into an in-memory file system and the page shows the files the program wrote.</p>
+                    <p>In SVG mode <code>plot.png("x.png", w, h)</code> writes <code>x.svg</code> with gnuplot's svg terminal; PNG mode uses lmplot's
+                    own rasterizer and fonts, the same bytes as the native binary.</p>
+                    <p>The program was compiled ahead of time from the source on the right with <code>lmscript</code>; the lmscript lines around the
+                    <code>_lmcode_</code> block (data generation, <code>${...}</code> values, <code>run_lmcode</code>) ran at compile time.</p>
+                </div>
+                <pre><code># Quantitative trading regime dashboard: 60 trading days of synthetic OHLC price
+# action with 10-day SMA, +-2 sigma Bollinger Bands, volume histogram, and
+# underwater peak-to-trough drawdown curve analysed via gnuplot stats.
+# Writes images/quant_trading_dashboard.png (900x600).
+mkdir(&quot;images&quot;);
+mkdir(&quot;build&quot;);
+p = _lmcode_ cli=&quot;lmplot&quot; install=&quot;github:lmctl-ai/lmplot@v0.3.1&quot;;
+
+fn sqrt_pos(v: float) -&gt; float {
+  let g = 1.0;
+  if (v &gt; 0.000001) {
+    g = v * 0.5 + 0.5;
+    for (k in range(0, 8)) {
+      g = 0.5 * (g + v / g);
+    }
+  }
+  return g;
+}
+
+# Simulate 60 trading days (trend rally -&gt; volatility shock -&gt; recovery) with deterministic LCG
+let seed = 410293;
+let price = 100.0;
+let peak = 100.0;
+let rows_up = &quot;&quot;;
+let rows_dn = &quot;&quot;;
+let rows_band = &quot;&quot;;
+
+# Keep a 5-day rolling window in scalar variables for local mean &amp; volatility
+let w0 = 100.0;
+let w1 = 100.0;
+let w2 = 100.0;
+let w3 = 100.0;
+let w4 = 100.0;
+
+for (day in range(1, 61)) {
+  seed = (seed * 1103515245 + 12345) % 2147483648;
+  let u1 = 2.0 * float(seed) / 2147483648.0 - 1.0;
+  seed = (seed * 1103515245 + 12345) % 2147483648;
+  let u2 = 2.0 * float(seed) / 2147483648.0 - 1.0;
+  seed = (seed * 1103515245 + 12345) % 2147483648;
+  let u3 = float(seed) / 2147483648.0;
+
+  # Regime-dependent drift &amp; volatility
+  let drift = 0.45;
+  let vol = 1.65;
+  if (day &gt;= 24) {
+    if (day &lt;= 37) {
+      drift = -0.82;
+      vol = 2.75;
+    }
+  }
+  if (day &gt; 37) {
+    drift = 0.62;
+    vol = 1.85;
+  }
+
+  let open_p = price;
+  let delta = drift + vol * (u1 + 0.5 * u2);
+  let close_p = open_p + delta;
+  let body_hi = open_p;
+  let body_lo = close_p;
+  if (close_p &gt; open_p) {
+    body_hi = close_p;
+    body_lo = open_p;
+  }
+  let high_p = body_hi + vol * (0.35 + 0.85 * u3);
+  seed = (seed * 1103515245 + 12345) % 2147483648;
+  let u4 = float(seed) / 2147483648.0;
+  let low_p = body_lo - vol * (0.35 + 0.85 * u4);
+  price = close_p;
+
+  if (close_p &gt; peak) { peak = close_p; }
+  let dd_pct = 100.0 * (close_p - peak) / peak;
+
+  # Update 5-day rolling window
+  w0 = w1;
+  w1 = w2;
+  w2 = w3;
+  w3 = w4;
+  w4 = close_p;
+  let sma = (w0 + w1 + w2 + w3 + w4) / 5.0;
+  let var5 = ((w0 - sma)*(w0 - sma) + (w1 - sma)*(w1 - sma) + (w2 - sma)*(w2 - sma) + (w3 - sma)*(w3 - sma) + (w4 - sma)*(w4 - sma)) / 5.0;
+  let sd5 = sqrt_pos(var5) + 1.45;
+  let bb_hi = sma + 2.0 * sd5;
+  let bb_lo = sma - 2.0 * sd5;
+
+  let abs_d = delta;
+  if (abs_d &lt; 0.0) { abs_d = 0.0 - abs_d; }
+  let volume_m = 1.8 + 0.95 * abs_d + 1.4 * u3;
+
+  # candlesticks format: x box_min whisker_min whisker_max box_max
+  let line = str(day) + &quot; &quot; + str(open_p) + &quot; &quot; + str(low_p) + &quot; &quot; + str(high_p) + &quot; &quot; + str(close_p) + &quot; &quot; + str(volume_m) + &quot;\n&quot;;
+  if (close_p &gt;= open_p) {
+    rows_up = rows_up + line;
+  }
+  if (close_p &lt; open_p) {
+    rows_dn = rows_dn + line;
+  }
+  rows_band = rows_band + str(day) + &quot; &quot; + str(close_p) + &quot; &quot; + str(sma) + &quot; &quot; + str(bb_lo) + &quot; &quot; + str(bb_hi) + &quot; &quot; + str(dd_pct) + &quot; &quot; + str(volume_m) + &quot;\n&quot;;
+}
+plot.data(&quot;UP&quot;, rows_up);
+plot.data(&quot;DN&quot;, rows_dn);
+plot.data(&quot;BAND&quot;, rows_band);
+
+plot.cmd(&quot;set terminal unknown&quot;);
+plot.cmd(&quot;stats $BAND using 2:6 nooutput&quot;);
+let p_min = plot.num(&quot;STATS_min_x&quot;);
+let p_max = plot.num(&quot;STATS_max_x&quot;);
+let max_dd = plot.num(&quot;STATS_min_y&quot;);
+let total_ret = 100.0 * (price - 100.0) / 100.0;
+plot.echo(&quot;Price range:   $&quot; + str(p_min) + &quot; .. $&quot; + str(p_max));
+plot.echo(&quot;Total return:  +&quot; + str(total_ret) + &quot;%&quot;);
+plot.echo(&quot;Max drawdown:  &quot; + str(max_dd) + &quot;%&quot;);
+
+plot.png(&quot;images/quant_trading_dashboard.png&quot;, 900, 600);
+plot.cmd(&quot;set encoding utf8&quot;);
+plot.cmd(&quot;set multiplot&quot;);
+plot.cmd(&quot;set boxwidth 0.62&quot;);
+
+# Top panel: OHLC Candlesticks + Bollinger Bands
+plot.script(&quot;set origin 0.0, 0.47\nset size 1.0, 0.53&quot;);
+plot.script(&quot;set lmargin 9\nset rmargin 3\nset tmargin 2.5\nset bmargin 0.5&quot;);
+plot.cmd(&quot;set title &#x27;Equity Regime Shift — OHLC Candlesticks, ±2σ Bollinger Envelope and Drawdown&#x27; font &#x27;,12&#x27;&quot;);
+plot.cmd(&quot;set ylabel &#x27;Price ($)&#x27;&quot;);
+plot.cmd(&quot;set xrange [0:61]&quot;);
+plot.cmd(&quot;set yrange [84:131]&quot;);
+plot.cmd(&quot;set ytics 85, 5, 120&quot;);
+plot.cmd(&quot;set format x &#x27;&#x27;&quot;);
+plot.cmd(&quot;set grid xtics ytics lc rgb &#x27;#e2e8f0&#x27; lw 1&quot;);
+plot.cmd(&quot;set key top left horizontal maxrows 2 width -1 samplen 2.0 spacing 1.1 opaque box lc rgb &#x27;#cbd5e1&#x27; font &#x27;,9&#x27;&quot;);
+plot.cmd(&quot;set style fill transparent solid 0.18 noborder&quot;);
+
+let perf_box = plot.str(&quot;sprintf(&#x27;Peak Price: $%.1f  |  60-Day Close: $%.1f\nMax Drawdown: %.1f%% (Days 24–37 shock)&#x27;, &quot; + str(p_max) + &quot;, &quot; + str(price) + &quot;, &quot; + str(max_dd) + &quot;)&quot;);
+plot.cmd(&quot;set label 1 &#x27;&quot; + perf_box + &quot;&#x27; at 40.5, 113.0 left front boxed noenhanced font &#x27;,8.5&#x27;&quot;);
+
+plot.cmd(&quot;plot $BAND using 1:4:5 with filledcurves lc rgb &#x27;#60a5fa&#x27; title &#x27;±2σ Bollinger band&#x27;, $BAND using 1:3 with lines lw 2.0 lc rgb &#x27;#1d4ed8&#x27; title &#x27;5-day moving average&#x27;, $UP using 1:2:3:4:5 with candlesticks fs solid 0.88 lc rgb &#x27;#16a34a&#x27; lw 1.2 title &#x27;Bullish close (C ≥ O)&#x27;, $DN using 1:2:3:4:5 with candlesticks fs solid 0.88 lc rgb &#x27;#dc2626&#x27; lw 1.2 title &#x27;Bearish close (C &lt; O)&#x27;&quot;);
+
+# Middle panel: Daily Volume
+plot.cmd(&quot;unset label 1&quot;);
+plot.cmd(&quot;unset title&quot;);
+plot.script(&quot;set origin 0.0, 0.28\nset size 1.0, 0.19&quot;);
+plot.script(&quot;set lmargin 9\nset rmargin 3\nset tmargin 0.3\nset bmargin 0.5&quot;);
+plot.cmd(&quot;set ylabel &#x27;Vol (M)&#x27;&quot;);
+plot.cmd(&quot;set yrange [0:8.2]&quot;);
+plot.cmd(&quot;set ytics (0, 2, 4, 6, 8)&quot;);
+plot.cmd(&quot;unset key&quot;);
+plot.cmd(&quot;plot $UP using 1:6 with boxes fs solid 0.75 lc rgb &#x27;#16a34a&#x27;, $DN using 1:6 with boxes fs solid 0.75 lc rgb &#x27;#dc2626&#x27;&quot;);
+
+# Bottom panel: Underwater Drawdown (%)
+plot.script(&quot;set origin 0.0, 0.0\nset size 1.0, 0.28&quot;);
+plot.script(&quot;set lmargin 9\nset rmargin 3\nset tmargin 0.3\nset bmargin 3.2&quot;);
+plot.cmd(&quot;set xlabel &#x27;Trading Day&#x27;&quot;);
+plot.cmd(&quot;set ylabel &#x27;Drawdown (%)&#x27;&quot;);
+plot.cmd(&quot;set format x &#x27;%g&#x27;&quot;);
+plot.cmd(&quot;set yrange [&quot; + str(max_dd * 1.25) + &quot;:1.5]&quot;);
+plot.cmd(&quot;set ytics (-20, -10, 0)&quot;);
+plot.cmd(&quot;set style fill transparent solid 0.32 noborder&quot;);
+plot.cmd(&quot;plot $BAND using 1:6 with filledcurves y1=0 lc rgb &#x27;#ef4444&#x27; notitle, $BAND using 1:6 with lines lw 1.8 lc rgb &#x27;#b91c1c&#x27; notitle, 0 with lines lw 1.0 lc rgb &#x27;#64748b&#x27; notitle&quot;);
+
+plot.cmd(&quot;unset multiplot&quot;);
+plot.close();
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
+println(&quot;wrote images/quant_trading_dashboard.png&quot;);
+</code></pre>
+            </section>
+            <nav class="pager" aria-label="Example navigation"><a href="demo-phased_array_polar.html">← Phased-array beam steering</a><a href="demo-enzyme_michaelis_menten.html">Michaelis–Menten kinetics →</a></nav>
+        </article>
+    </main>
+    <footer>
+        <p><strong>lmplot 0.3.1</strong> · gnuplot and the lmcode VM compiled to WebAssembly · everything runs in this tab</p>
+        <p>lmplot is MIT licensed; gnuplot is distributed under its own license (see the notices).</p>
+    </footer>
+    <noscript>This page needs JavaScript and WebAssembly. The plots are drawn by gnuplot running in your browser.</noscript>
+    <script src="boot.js"></script>
+</body>
+</html>

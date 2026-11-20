@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="generate data in lmscript, stats, compute, label and plot">
+    <title>Data, stats and labels · lmplot in the browser</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="demo.css">
+</head>
+<body data-example="stats">
+    <header class="site-header">
+        <a class="brand" href="../demo.html" aria-label="lmplot in the browser">lm<span>plot</span></a>
+        <nav class="project-nav" aria-label="Project links">
+            <a href="/tools/lmplot/">Quick reference</a>
+            <a href="../demo.html">All examples</a>
+            <a href="https://github.com/lmctl-ai/lmplot">Source on GitHub</a>
+        </nav>
+    </header>
+    <main class="book-layout">
+        <nav class="book-nav" aria-label="Examples">
+            <p>Showcase</p>
+            <ol>
+                <li><a href="demo-kepler_rv_fit.html">Exoplanet radial-velocity fit</a></li>
+                <li><a href="demo-blackbody_planck.html">Planck blackbody spectra</a></li>
+                <li><a href="demo-potential_vortex_surface.html">Double-well free-energy surface</a></li>
+                <li><a href="demo-urban_heat_island.html">Urban heat island field</a></li>
+                <li><a href="demo-phased_array_polar.html">Phased-array beam steering</a></li>
+                <li><a href="demo-quant_trading_dashboard.html">Trading regime dashboard</a></li>
+                <li><a href="demo-enzyme_michaelis_menten.html">Michaelis–Menten kinetics</a></li>
+                <li><a href="demo-damped_driven_resonance.html">Driven damped resonance</a></li>
+                <li><a href="demo-quadrature_convergence.html">Quadrature convergence</a></li>
+                <li><a href="demo-option_greeks_dashboard.html">Black–Scholes Greeks</a></li>
+            </ol>
+            <p>Model evaluation</p>
+            <ol>
+                <li><a href="demo-roc_auc.html">ROC curve and AUC</a></li>
+                <li><a href="demo-pr_average_precision.html">Precision–recall and AP</a></li>
+                <li><a href="demo-confusion_matrix.html">Confusion matrix</a></li>
+                <li><a href="demo-poisson_contours.html">Poisson equation contours</a></li>
+                <li><a href="demo-cavity_quiver.html">Lid-driven cavity flow</a></li>
+                <li><a href="demo-symlog_outlier.html">Symlog axis with an outlier</a></li>
+                <li><a href="demo-residual_scatter.html">Regression residuals</a></li>
+            </ol>
+            <p>gnuplot gallery</p>
+            <ol>
+                <li><a href="demo-simple.html">Simple functions</a></li>
+                <li><a href="demo-fillcrvs.html">Filled curves</a></li>
+                <li><a href="demo-fillbetween.html">Fill between curves</a></li>
+                <li><a href="demo-transparent.html">Transparent fills</a></li>
+                <li><a href="demo-errorbars.html">Error bars</a></li>
+                <li><a href="demo-candlesticks.html">Candlesticks</a></li>
+                <li><a href="demo-boxplot.html">Box plots</a></li>
+                <li><a href="demo-histograms.html">Histograms</a></li>
+                <li><a href="demo-steps.html">Step plots</a></li>
+                <li><a href="demo-param.html">Parametric plots</a></li>
+                <li><a href="demo-polar.html">Polar plots</a></li>
+                <li><a href="demo-surface1.html">3D surfaces</a></li>
+                <li><a href="demo-hidden.html">Hidden-line removal</a></li>
+                <li><a href="demo-contours.html">Contours</a></li>
+                <li><a href="demo-pm3d.html">pm3d colour surfaces</a></li>
+                <li><a href="demo-heatmaps.html">Heat maps</a></li>
+                <li><a href="demo-vector.html">Vector field</a></li>
+                <li><a href="demo-image.html">Binary RGB image</a></li>
+                <li><a href="demo-layout.html">Multiplot layouts</a></li>
+                <li><a href="demo-spiderplot.html">Spider plots</a></li>
+                <li><a href="demo-parallel.html">Parallel axes</a></li>
+                <li><a href="demo-dashtypes.html">Dash types</a></li>
+                <li><a href="demo-lines_arrows.html">Lines, points and arrows</a></li>
+                <li><a href="demo-enhanced_utf8.html">Enhanced text and UTF-8</a></li>
+                <li><a href="demo-rotate_labels.html">Text boxes and rotated labels</a></li>
+                <li><a href="demo-nonlinear2.html">Nonlinear axes</a></li>
+                <li><a href="demo-stats.html" aria-current="page">Data, stats and labels</a></li>
+                <li><a href="demo-turntable.html">Turntable frames</a></li>
+            </ol>
+        </nav>
+        <article class="chapter">
+            <header class="chapter-heading">
+                <p class="eyebrow">gnuplot gallery · examples/stats.lms</p>
+                <h1>Data, stats and labels</h1>
+                <p class="lede">generate data in lmscript, stats, compute, label and plot</p>
+            </header>
+            <section class="demo-shell" aria-label="Live output">
+                <div class="controls">
+                    <button id="run" type="button">Run in browser</button>
+                    <label class="mode">Output
+                        <select id="output-mode">
+                            <option value="svg" selected>SVG (vector)</option>
+                            <option value="png">PNG (lmplot rasterizer)</option>
+                        </select>
+                    </label>
+                    <p id="status" class="status" role="status" aria-live="polite">Loading the WebAssembly host…</p>
+                </div>
+                <div id="images" class="images" aria-live="polite"></div>
+                <pre id="echo" class="echo" hidden></pre>
+            </section>
+            <section class="chapter-notes">
+                <div>
+                    <h2>What runs</h2>
+                    <p>The page fetches <a href="examples/stats.bin">examples/stats.bin</a>, 4,384 bytes of lmcode bytecode
+                    (sha256 <code>291070839b50…</code>), and hands it to the same <code>lmplot.wasm</code> every example uses.
+                    The bytecode calls the host's <code>Plot</code> functions (<code>plot.cmd</code>, <code>plot.data</code>, <code>plot.num</code>,
+                    <code>plot.png</code> …); gnuplot draws into an in-memory file system and the page shows the files the program wrote.</p>
+                    <p>In SVG mode <code>plot.png("x.png", w, h)</code> writes <code>x.svg</code> with gnuplot's svg terminal; PNG mode uses lmplot's
+                    own rasterizer and fonts, the same bytes as the native binary.</p>
+                    <p>The program was compiled ahead of time from the source on the right with <code>lmscript</code>; the lmscript lines around the
+                    <code>_lmcode_</code> block (data generation, <code>${...}</code> values, <code>run_lmcode</code>) ran at compile time.</p>
+                </div>
+                <pre><code># lmscript + gnuplot: generate data, analyse it with `stats`, compute in the DSL, plot.
+# What this adds over a plain .gp script: the numbers flow back into the program
+# (plot.num), are combined with ordinary typed arithmetic/strings, printed with
+# plot.echo and fed back to gnuplot for the final figure.
+# Writes images/stats.png.
+mkdir(&quot;images&quot;);
+mkdir(&quot;build&quot;);
+p = _lmcode_ cli=&quot;lmplot&quot; install=&quot;github:lmctl-ai/lmplot@v0.3.1&quot;;
+
+# 1. Noisy line y = 2.5 + 0.8 x, from a deterministic LCG (no rand(), so reruns are byte-identical).
+let seed = 12345;
+let rows = &quot;&quot;;
+for (i in range(0, 60)) {
+  # noise ~ sum of 4 uniforms in [-1,1] (roughly bell shaped, sd ~ 1.15)
+  let noise = 0.0;
+  for (k in range(0, 4)) {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    noise = noise + 2.0 * float(seed) / 2147483648.0 - 1.0;
+  }
+  let x = float(i) * 0.5;
+  let y = 2.5 + 0.8 * x + 2.0 * noise;
+  rows = rows + str(x) + &quot; &quot; + str(y) + &quot;\n&quot;;
+}
+plot.data(&quot;D&quot;, rows);
+
+# 2. gnuplot&#x27;s stats command fills the STATS_* variables (nooutput: no console report)
+plot.cmd(&quot;stats $D using 1:2 nooutput&quot;);
+let n = plot.num(&quot;STATS_records&quot;);
+let slope = plot.num(&quot;STATS_slope&quot;);
+let icpt = plot.num(&quot;STATS_intercept&quot;);
+let r = plot.num(&quot;STATS_correlation&quot;);
+let mean_y = plot.num(&quot;STATS_mean_y&quot;);
+let sd_y = plot.num(&quot;STATS_stddev_y&quot;);
+let sd_slope = plot.num(&quot;STATS_slope_err&quot;);
+
+# 3. compute with the results inside the DSL
+let r2 = r * r;
+let x_at_20 = (20.0 - icpt) / slope;     # where does the fit reach y = 20?
+let y_at_40 = icpt + slope * 40.0;        # extrapolation
+let ci = 1.96 * sd_slope;                 # ~95% interval of the slope
+plot.echo(&quot;records       &quot; + str(int(n)));
+plot.echo(&quot;mean(y)       &quot; + str(mean_y) + &quot;  stddev(y) &quot; + str(sd_y));
+plot.echo(&quot;fit           y = &quot; + str(icpt) + &quot; + &quot; + str(slope) + &quot; * x&quot;);
+plot.echo(&quot;R-squared     &quot; + str(r2));
+plot.echo(&quot;x where y=20  &quot; + str(x_at_20));
+plot.echo(&quot;y(40)         &quot; + str(y_at_40));
+
+# 4. hand derived numbers back to gnuplot as variables and build the label text there
+plot.cmd(&quot;fit_a = &quot; + str(icpt));
+plot.cmd(&quot;fit_b = &quot; + str(slope));
+plot.cmd(&quot;mu = &quot; + str(mean_y));
+plot.cmd(&quot;lo = &quot; + str(slope - ci));
+plot.cmd(&quot;hi = &quot; + str(slope + ci));
+let label = plot.str(&quot;sprintf(&#x27;y = %.2f + %.3f x\nR² = %.3f\nslope in [%.3f, %.3f]\nmean y = %.1f&#x27;, fit_a, fit_b, &quot; + str(r2) + &quot;, lo, hi, mu)&quot;);
+plot.echo(label);
+
+plot.png(&quot;images/stats.png&quot;, 800, 600);
+# unicode superscript instead of enhanced &quot;R^2&quot;: a boxed enhanced label gets a too wide box in lmplot
+plot.cmd(&quot;set encoding utf8&quot;);
+plot.cmd(&quot;set title &#x27;stats on generated data, fit computed in lmscript&#x27;&quot;);
+plot.cmd(&quot;set xlabel &#x27;x&#x27;&quot;);
+plot.cmd(&quot;set ylabel &#x27;y&#x27;&quot;);
+plot.cmd(&quot;set key top left&quot;);
+plot.cmd(&quot;set grid&quot;);
+plot.cmd(&quot;set label 1 &#x27;&quot; + label + &quot;&#x27; at graph 0.97, 0.2 right front boxed noenhanced&quot;);
+# guide lines to the point where the fitted line reaches y = 20 (value computed above)
+plot.cmd(&quot;set arrow 1 from &quot; + str(x_at_20) + &quot;, graph 0 to &quot; + str(x_at_20) + &quot;, 20 nohead dt 2 lc &#x27;grey40&#x27;&quot;);
+plot.cmd(&quot;set arrow 2 from graph 0, first 20 to &quot; + str(x_at_20) + &quot;, 20 nohead dt 2 lc &#x27;grey40&#x27;&quot;);
+plot.cmd(&quot;set label 2 &#x27;y = 20 at x = &quot; + plot.str(&quot;sprintf(&#x27;%.1f&#x27;, &quot; + str(x_at_20) + &quot;)&quot;) + &quot;&#x27; at 22.5, 16 left&quot;);
+plot.cmd(&quot;plot $D using 1:2 with points pt 7 ps 1 lc &#x27;dark-violet&#x27; title &#x27;data&#x27;, fit_a + fit_b*x with lines lw 2 lc &#x27;orange-red&#x27; title &#x27;fit&#x27;, mu with lines dt 3 lc &#x27;grey30&#x27; title &#x27;mean y&#x27;&quot;);
+plot.close();
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
+println(&quot;wrote images/stats.png&quot;);
+</code></pre>
+            </section>
+            <nav class="pager" aria-label="Example navigation"><a href="demo-nonlinear2.html">← Nonlinear axes</a><a href="demo-turntable.html">Turntable frames →</a></nav>
+        </article>
+    </main>
+    <footer>
+        <p><strong>lmplot 0.3.1</strong> · gnuplot and the lmcode VM compiled to WebAssembly · everything runs in this tab</p>
+        <p>lmplot is MIT licensed; gnuplot is distributed under its own license (see the notices).</p>
+    </footer>
+    <noscript>This page needs JavaScript and WebAssembly. The plots are drawn by gnuplot running in your browser.</noscript>
+    <script src="boot.js"></script>
+</body>
+</html>

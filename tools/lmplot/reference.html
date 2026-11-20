@@ -18,6 +18,7 @@
 <li><a href="/tools/lmplot/skill.html">Skill</a></li>
 <li><a href="/tools/lmplot/guide.html">Guide</a></li>
 <li><a href="/tools/lmplot/reference.html">Reference</a></li>
+<li><a href="/tools/lmplot/demo.html">Demo</a></li>
 </ul>
 </nav>
 <main>
@@ -33,7 +34,8 @@
 <tr><td>lmplot --lmcode-signatures</td><td>none</td><td>Print canonical context, function, and method signatures registered in the host.</td></tr>
 <tr><td>lmplot --lmcode</td><td>FILE [--lmcode FILE ...]</td><td>Load and execute one or more compiled LMScript bytecode files in a shared gnuplot session.</td></tr>
 <tr><td>lmplot gnuplot</td><td>[gnuplot-options] [file.gp ...]</td><td>Run the full headless gnuplot command-line interface (such as -e "commands" or script files).</td></tr>
-<tr><td>LMPLOT_MAX_MEMORY_MB</td><td>integer (default 4096)</td><td>Maximum total memory budget in MiB for gnuplot datablocks, arrays, voxel grids, and the PNG canvas.</td></tr>
+<tr><td>LMPLOT_MAX_MEMORY_MB</td><td>integer (default 4096; 2048 in the WebAssembly build)</td><td>Maximum total memory budget in MiB for gnuplot datablocks, arrays, voxel grids, and the PNG canvas.</td></tr>
+<tr><td>LMPLOT_PNG_AS</td><td>png (default) or svg</td><td>With svg, plot.png(file, w, h) uses gnuplot's svg terminal with a white background and writes file with .png replaced by .svg. The browser build's default view; works natively too.</td></tr>
 </tbody>
 </table>
 <h2>Host schema methods (context plot: Plot)</h2>
@@ -63,6 +65,16 @@
 <tr><td>Vector and TeX terminals</td><td>svg, canvas, postscript, eps, epslatex, pslatex, pstricks, context, cgm, emf, fig, hpgl, dxf</td><td>Standard headless gnuplot vector, HTML5 canvas, CAD, and LaTeX terminals.</td></tr>
 <tr><td>Text terminals</td><td>dumb, block, tek40xx</td><td>ASCII/UTF-8 terminal plots for console logs.</td></tr>
 <tr><td>Image inputs</td><td>png, jpg, gif (first frame), bmp, tga, pnm</td><td>Loaded via set pixmap or plot ... binary filetype=png|jpg|gif with rgbimage / rgbalpha.</td></tr>
+</tbody>
+</table>
+<h2>WebAssembly build files</h2>
+<table>
+<thead><tr><th>File</th><th>Built by</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td>lmplot.js, lmplot.wasm</td><td>scripts/build-wasm.sh</td><td>The host: factory createLmplot (MODULARIZE), main runs with --lmcode FILE; exported callMain, FS, ENV.</td></tr>
+<tr><td>lmplot-runner.js</td><td>web/</td><td>runProgram(createLmplot, module, {program, files, output}) returns {code, frame, stdout, stderr, images}.</td></tr>
+<tr><td>worker.js</td><td>web/</td><td>Message {id, program: URL or ArrayBuffer, output: svg or png}; reply {id, ok, code, frame, stdout, stderr, ms, images}.</td></tr>
+<tr><td>examples/NAME.bin, examples.json</td><td>scripts/precompile-examples.sh, scripts/build-site.py</td><td>Precompiled lmcode programs (DSLB v6) and the list of data files every run mounts under examples/data/.</td></tr>
 </tbody>
 </table>
 <h2>Standard lmcode_std_v3 catalog</h2>

@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="line, point and arrow styles (gnuplot lines_arrows.dem)">
+    <title>Lines, points and arrows · lmplot in the browser</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="demo.css">
+</head>
+<body data-example="lines_arrows">
+    <header class="site-header">
+        <a class="brand" href="../demo.html" aria-label="lmplot in the browser">lm<span>plot</span></a>
+        <nav class="project-nav" aria-label="Project links">
+            <a href="/tools/lmplot/">Quick reference</a>
+            <a href="../demo.html">All examples</a>
+            <a href="https://github.com/lmctl-ai/lmplot">Source on GitHub</a>
+        </nav>
+    </header>
+    <main class="book-layout">
+        <nav class="book-nav" aria-label="Examples">
+            <p>Showcase</p>
+            <ol>
+                <li><a href="demo-kepler_rv_fit.html">Exoplanet radial-velocity fit</a></li>
+                <li><a href="demo-blackbody_planck.html">Planck blackbody spectra</a></li>
+                <li><a href="demo-potential_vortex_surface.html">Double-well free-energy surface</a></li>
+                <li><a href="demo-urban_heat_island.html">Urban heat island field</a></li>
+                <li><a href="demo-phased_array_polar.html">Phased-array beam steering</a></li>
+                <li><a href="demo-quant_trading_dashboard.html">Trading regime dashboard</a></li>
+                <li><a href="demo-enzyme_michaelis_menten.html">Michaelis–Menten kinetics</a></li>
+                <li><a href="demo-damped_driven_resonance.html">Driven damped resonance</a></li>
+                <li><a href="demo-quadrature_convergence.html">Quadrature convergence</a></li>
+                <li><a href="demo-option_greeks_dashboard.html">Black–Scholes Greeks</a></li>
+            </ol>
+            <p>Model evaluation</p>
+            <ol>
+                <li><a href="demo-roc_auc.html">ROC curve and AUC</a></li>
+                <li><a href="demo-pr_average_precision.html">Precision–recall and AP</a></li>
+                <li><a href="demo-confusion_matrix.html">Confusion matrix</a></li>
+                <li><a href="demo-poisson_contours.html">Poisson equation contours</a></li>
+                <li><a href="demo-cavity_quiver.html">Lid-driven cavity flow</a></li>
+                <li><a href="demo-symlog_outlier.html">Symlog axis with an outlier</a></li>
+                <li><a href="demo-residual_scatter.html">Regression residuals</a></li>
+            </ol>
+            <p>gnuplot gallery</p>
+            <ol>
+                <li><a href="demo-simple.html">Simple functions</a></li>
+                <li><a href="demo-fillcrvs.html">Filled curves</a></li>
+                <li><a href="demo-fillbetween.html">Fill between curves</a></li>
+                <li><a href="demo-transparent.html">Transparent fills</a></li>
+                <li><a href="demo-errorbars.html">Error bars</a></li>
+                <li><a href="demo-candlesticks.html">Candlesticks</a></li>
+                <li><a href="demo-boxplot.html">Box plots</a></li>
+                <li><a href="demo-histograms.html">Histograms</a></li>
+                <li><a href="demo-steps.html">Step plots</a></li>
+                <li><a href="demo-param.html">Parametric plots</a></li>
+                <li><a href="demo-polar.html">Polar plots</a></li>
+                <li><a href="demo-surface1.html">3D surfaces</a></li>
+                <li><a href="demo-hidden.html">Hidden-line removal</a></li>
+                <li><a href="demo-contours.html">Contours</a></li>
+                <li><a href="demo-pm3d.html">pm3d colour surfaces</a></li>
+                <li><a href="demo-heatmaps.html">Heat maps</a></li>
+                <li><a href="demo-vector.html">Vector field</a></li>
+                <li><a href="demo-image.html">Binary RGB image</a></li>
+                <li><a href="demo-layout.html">Multiplot layouts</a></li>
+                <li><a href="demo-spiderplot.html">Spider plots</a></li>
+                <li><a href="demo-parallel.html">Parallel axes</a></li>
+                <li><a href="demo-dashtypes.html">Dash types</a></li>
+                <li><a href="demo-lines_arrows.html" aria-current="page">Lines, points and arrows</a></li>
+                <li><a href="demo-enhanced_utf8.html">Enhanced text and UTF-8</a></li>
+                <li><a href="demo-rotate_labels.html">Text boxes and rotated labels</a></li>
+                <li><a href="demo-nonlinear2.html">Nonlinear axes</a></li>
+                <li><a href="demo-stats.html">Data, stats and labels</a></li>
+                <li><a href="demo-turntable.html">Turntable frames</a></li>
+            </ol>
+        </nav>
+        <article class="chapter">
+            <header class="chapter-heading">
+                <p class="eyebrow">gnuplot gallery · examples/lines_arrows.lms</p>
+                <h1>Lines, points and arrows</h1>
+                <p class="lede">line, point and arrow styles (gnuplot lines_arrows.dem)</p>
+            </header>
+            <section class="demo-shell" aria-label="Live output">
+                <div class="controls">
+                    <button id="run" type="button">Run in browser</button>
+                    <label class="mode">Output
+                        <select id="output-mode">
+                            <option value="svg" selected>SVG (vector)</option>
+                            <option value="png">PNG (lmplot rasterizer)</option>
+                        </select>
+                    </label>
+                    <p id="status" class="status" role="status" aria-live="polite">Loading the WebAssembly host…</p>
+                </div>
+                <div id="images" class="images" aria-live="polite"></div>
+                <pre id="echo" class="echo" hidden></pre>
+            </section>
+            <section class="chapter-notes">
+                <div>
+                    <h2>What runs</h2>
+                    <p>The page fetches <a href="examples/lines_arrows.bin">examples/lines_arrows.bin</a>, 5,107 bytes of lmcode bytecode
+                    (sha256 <code>1999c88427d0…</code>), and hands it to the same <code>lmplot.wasm</code> every example uses.
+                    The bytecode calls the host's <code>Plot</code> functions (<code>plot.cmd</code>, <code>plot.data</code>, <code>plot.num</code>,
+                    <code>plot.png</code> …); gnuplot draws into an in-memory file system and the page shows the files the program wrote.</p>
+                    <p>In SVG mode <code>plot.png("x.png", w, h)</code> writes <code>x.svg</code> with gnuplot's svg terminal; PNG mode uses lmplot's
+                    own rasterizer and fonts, the same bytes as the native binary.</p>
+                    <p>The program was compiled ahead of time from the source on the right with <code>lmscript</code>; the lmscript lines around the
+                    <code>_lmcode_</code> block (data generation, <code>${...}</code> values, <code>run_lmcode</code>) ran at compile time.</p>
+                </div>
+                <pre><code># Line types, dash patterns, point intervals and arrow styles: gnuplot &quot;lines_arrows.dem&quot;.
+# Image 1: line colour and dash type chosen independently (linetype vs linecolor).
+# Image 2: &#x27;pointinterval&#x27; with a UTF-8 character as the point symbol.
+# Image 3: arrow styles (heads, filled/empty/nofilled), compared with &#x27;with vectors&#x27;.
+mkdir(&quot;images&quot;);
+mkdir(&quot;build&quot;);
+if (!file_exists(&quot;examples/data/arrowstyle.dat&quot;)) {
+  mkdir(&quot;examples/data&quot;);
+  write_file(&quot;examples/data/arrowstyle.dat&quot;, http_get(&quot;https://raw.githubusercontent.com/lmctl-ai/lmplot/main/examples/data/arrowstyle.dat&quot;));
+}
+p = _lmcode_ cli=&quot;lmplot&quot; install=&quot;github:lmctl-ai/lmplot@v0.3.1&quot;;
+
+# --- 1: independent colours and dash styles ---
+plot.png(&quot;images/lines_arrows-1.png&quot;, 800, 600);
+plot.cmd(&quot;set termoption dash&quot;);
+plot.cmd(&quot;set xrange [-0.5:3.5]&quot;);
+plot.cmd(&quot;set yrange [-1:1.4]&quot;);
+plot.cmd(&quot;set bmargin 7&quot;);
+plot.cmd(&quot;unset ytics&quot;);
+plot.cmd(&quot;unset xtics&quot;);
+plot.cmd(&quot;set title &#x27;Independent colors and dot/dash styles&#x27;&quot;);
+plot.cmd(&quot;set xlabel &#x27;You will only see dashed lines if your current terminal setting permits it&#x27;&quot;);
+plot.cmd(&quot;unset colorbox&quot;);
+# reset the base linetypes 1..5 to the terminal&#x27;s five dash patterns
+plot.cmd(&quot;set for [i=1:5] linetype i dt i&quot;);
+plot.cmd(&quot;set style line 1 lt 2 lc rgb &#x27;red&#x27; lw 3&quot;);
+plot.cmd(&quot;set style line 2 lt 2 lc rgb &#x27;orange&#x27; lw 2&quot;);
+plot.cmd(&quot;set style line 3 lt 2 lc rgb &#x27;yellow&#x27; lw 3&quot;);
+plot.cmd(&quot;set style line 4 lt 2 lc rgb &#x27;green&#x27; lw 2&quot;);
+plot.cmd(&quot;set label 1 &#x27;set style line 1 lt 2 lc rgb \&quot;red\&quot; lw 3&#x27; at -0.4, -0.25 tc rgb &#x27;red&#x27;&quot;);
+plot.cmd(&quot;set label 2 &#x27;set style line 2 lt 2 lc rgb \&quot;orange\&quot; lw 2&#x27; at -0.4, -0.35 tc rgb &#x27;orange&#x27;&quot;);
+plot.cmd(&quot;set label 3 &#x27;set style line 3 lt 2 lc rgb \&quot;yellow\&quot; lw 3&#x27; at -0.4, -0.45 tc rgb &#x27;yellow&#x27;&quot;);
+plot.cmd(&quot;set label 4 &#x27;set style line 4 lt 2 lc rgb \&quot;green\&quot; lw 2&#x27; at -0.4, -0.55 tc rgb &#x27;green&#x27;&quot;);
+plot.cmd(&quot;set label 5 &#x27;plot ... lt 1 lc 3 &#x27; at -0.4, -0.65 tc lt 3&quot;);
+plot.cmd(&quot;set label 6 &#x27;plot ... lt 3 lc 3 &#x27; at -0.4, -0.75 tc lt 3&quot;);
+plot.cmd(&quot;set label 7 &#x27;plot ... lt 5 lc 3 &#x27; at -0.4, -0.85 tc lt 3&quot;);
+plot.cmd(&quot;plot cos(x) ls 1 title &#x27;ls 1&#x27;, cos(x-.2) ls 2 title &#x27;ls 2&#x27;, cos(x-.4) ls 3 title &#x27;ls 3&#x27;, cos(x-.6) ls 4 title &#x27;ls 4&#x27;, cos(x-.8) lt 1 lc 3 title &#x27;lt 1 lc 3&#x27;, cos(x-1.) lt 3 lc 3 title &#x27;lt 3 lc 3&#x27;, cos(x-1.2) lt 5 lc 3 title &#x27;lt 5 lc 3&#x27;&quot;);
+plot.close();
+
+# --- 2: point interval with unicode glyphs as point symbols ---
+plot.png(&quot;images/lines_arrows-2.png&quot;, 800, 600);
+plot.cmd(&quot;unset for [i=1:8] label i&quot;);
+plot.cmd(&quot;set encoding utf8&quot;);
+plot.cmd(&quot;set title &#x27;The pointinterval property also works with character point symbols&#x27;&quot;);
+plot.cmd(&quot;set bmargin 6&quot;);
+plot.cmd(&quot;set offset .05, .05&quot;);
+plot.cmd(&quot;set xrange [-0.5:3.3]&quot;);
+plot.cmd(&quot;set style data linespoints&quot;);
+plot.cmd(&quot;set pointintervalbox 1.5&quot;);
+plot.cmd(&quot;unset xlabel&quot;);
+plot.cmd(&quot;plot &#x27;+&#x27; using 1:(cos(x-1.)) with line lt -1 lw 1 title &#x27;lw 1&#x27;, &#x27;+&#x27; using 1:(cos(x)) lt -1 pi -4 pt &#x27;C&#x27; title &#x27;pi -4&#x27;, &#x27;+&#x27; using 1:(cos(x-.8)) lt -1 pi -3 pt &#x27;D&#x27; title &#x27;pi -3 pt \&quot;D\&quot;&#x27;, &#x27;+&#x27; using 1:(cos(x-.2)) lt -1 pi -6 pt &#x27;✠&#x27; tc rgb &#x27;blue&#x27; title &#x27;pi -6 tc rgb \&quot;blue\&quot;&#x27;, &#x27;+&#x27; using 1:(cos(x-.4)) lt -1 pi -3 pt &#x27;✲&#x27; title &#x27;pi -3&#x27;, &#x27;+&#x27; using 1:(cos(x-.6)) lt nodraw pi 5 pt &#x27;☺&#x27; title &#x27;lt nodraw pi 5&#x27;, &#x27;+&#x27; using 1:(cos(x+.2)) with line lt -1 lw 2 title &#x27;lw 2&#x27;&quot;);
+plot.close();
+
+# --- 3: arrow styles ---
+plot.png(&quot;images/lines_arrows-3.png&quot;, 800, 600);
+plot.cmd(&quot;reset&quot;);
+plot.cmd(&quot;set xrange [-1000:1000]&quot;);
+plot.cmd(&quot;set yrange [-178:86]&quot;);
+plot.cmd(&quot;set tics scale 0&quot;);
+plot.cmd(&quot;set style line 1 lt 1 lw 2&quot;);
+plot.cmd(&quot;set style line 2 lt 1 lc rgb &#x27;skyblue&#x27; lw 2&quot;);
+plot.cmd(&quot;set style arrow 1 head filled size screen 0.025,30,45 ls 1&quot;);
+plot.cmd(&quot;set style arrow 2 head nofilled size screen 0.03,15 ls 2&quot;);
+plot.cmd(&quot;set style arrow 3 head filled size screen 0.03,15,45 ls 1&quot;);
+plot.cmd(&quot;set style arrow 4 head filled size screen 0.03,15 ls 2&quot;);
+plot.cmd(&quot;set style arrow 5 heads filled size screen 0.03,15,135 ls 1&quot;);
+plot.cmd(&quot;set style arrow 6 head empty size screen 0.03,15,135 ls 2&quot;);
+plot.cmd(&quot;set style arrow 7 nohead ls 1&quot;);
+plot.cmd(&quot;set style arrow 8 heads size screen 0.008,90 ls 2&quot;);
+# eight explicit arrows with matching labels, generated by a gnuplot do-loop
+plot.script(&quot;do for [i=1:8] { y = -90-10*i; set arrow i from -500,y rto 1000,0 as i; set label i sprintf(&#x27;arrowstyle %d:&#x27;, i) at -520,y right }&quot;);
+plot.cmd(&quot;set title &#x27;Top: plot with vectors arrowstyle 1, Bottom: explicit arrows&#x27;&quot;);
+plot.cmd(&quot;plot &#x27;examples/data/arrowstyle.dat&#x27; using 1:2:(0):3 notitle with vectors arrowstyle 3&quot;);
+plot.close();
+end _lmcode_
+r = run_lmcode(p);
+assert(r.ok, json_stringify(r));
+cp = system cp images/lines_arrows-1.png images/lines_arrows.png;
+assert(cp.code == 0);
+println(&quot;wrote images/lines_arrows.png (and images/lines_arrows-1.png .. images/lines_arrows-3.png)&quot;);
+</code></pre>
+            </section>
+            <nav class="pager" aria-label="Example navigation"><a href="demo-dashtypes.html">← Dash types</a><a href="demo-enhanced_utf8.html">Enhanced text and UTF-8 →</a></nav>
+        </article>
+    </main>
+    <footer>
+        <p><strong>lmplot 0.3.1</strong> · gnuplot and the lmcode VM compiled to WebAssembly · everything runs in this tab</p>
+        <p>lmplot is MIT licensed; gnuplot is distributed under its own license (see the notices).</p>
+    </footer>
+    <noscript>This page needs JavaScript and WebAssembly. The plots are drawn by gnuplot running in your browser.</noscript>
+    <script src="boot.js"></script>
+</body>
+</html>
