@@ -1,16 +1,25 @@
 # Publishing lmctl.com
 
-Homepage, tools, skills and lmscript tutorial changes publish automatically from main after the path-filtered workflow checks them, uploads changed objects, invalidates their exact URLs and verifies the live site.
+Homepage, tools, skills and lmscript tutorial changes publish from main when someone runs the deploy-static workflow by hand. It checks them, uploads changed objects, invalidates their exact URLs and verifies the live site. A push alone publishes nothing.
 
-## Automatic static publishing
+## Static publishing (manual dispatch)
 
-1. Commit a change and push it to main. The .github/workflows/deploy-static.yml workflow runs for changes under homepage/, tools/, skills/, skills-moved/, helloexample/, autorun/, lmscript-site/, deployment scripts, site scripts, or the workflow itself. A manual workflow dispatch selects all manifest-backed areas.
+Every workflow in .github/workflows (deploy-static, tools-check, memory-check, deploy) runs only on workflow_dispatch; this is owner policy since commit 767069d (2026-10-26), so reviewed work can sit on main without going live.
+
+Commit the change and push it to main, then start the publisher and watch it. A dispatch publishes main as it is, including anyone else's unpublished commits, so look at git log origin/main first.
+
+```
+gh workflow run deploy-static -R lmctl-ai/lmctl --ref main
+gh run watch -R lmctl-ai/lmctl $(gh run list -R lmctl-ai/lmctl -w deploy-static -L 1 --json databaseId -q '.[0].databaseId')
+```
+
+1. The dispatch runs .github/workflows/deploy-static.yml on main.
 2. The workflow checks tools, lmscript tutorials and examples, skills, homepage media and durable memory, then runs their self-tests. A failing check stops publication.
-3. The changed-area selector chooses homepage, tools, skills, lmscript, helloexample and/or autorun from the push range. Changes under scripts/ select all manifest-backed areas.
+3. On a dispatch the area selector (static-site.py changed) selects every manifest-backed area: homepage, tools, skills, lmscript, helloexample and autorun. Its path-range selection only applies to push events, which the workflow no longer receives.
 4. For each selected area, the publisher compares its manifest with S3 and uploads only missing or changed objects. It deletes only obsolete keys recorded in that area's previous manifest.
 5. Uploaded/deleted paths and stale live CDN copies are invalidated even if S3 is already current. The workflow polls only mismatches for about five minutes and re-invalidates remaining paths once, then runs full link verification.
 
-There is no manual approval gate in this workflow: make the change, commit it, and push to main. A successful run means the checks and publication verification completed.
+There is no approval gate inside the workflow: the dispatch is the decision to publish. A successful run means the checks and publication verification completed.
 
 ## Published areas and ownership
 
@@ -18,9 +27,9 @@ The production defaults are S3 bucket lmctl-website-prod and CloudFront distribu
 
 | URL and S3 key scope | Source and publisher | Publication model |
 | --- | --- | --- |
-| Homepage root and assets/ | homepage/; scripts/deploy-homepage.sh | Static workflow on changed paths; manual script available |
-| /tools/ and tools/ | tools/; scripts/deploy-tools.sh | Static workflow on changed paths; manual script available |
-| /skills/ and skills/ | skills/ and skills-moved/; scripts/deploy-skills.sh | Static workflow on changed paths; manual script available |
+| Homepage root and assets/ | homepage/; scripts/deploy-homepage.sh | deploy-static dispatch; manual script available |
+| /tools/ and tools/ | tools/; scripts/deploy-tools.sh | deploy-static dispatch; manual script available |
+| /skills/ and skills/ | skills/ and skills-moved/; scripts/deploy-skills.sh | deploy-static dispatch; manual script available |
 | /lmscript/ | lmscript-site/; scripts/deploy-lmscript.sh | Dedicated manifest and incremental page/example upload; existing /lmscript/commands objects are outside its ownership |
 | /lmctl/ | Docusaurus build/; scripts/deploy.sh | Separate full deployment; not an area published by deploy-static.yml |
 | /lmprobe/ | lmprobe site bundle; scripts/deploy-lmprobe.sh | Standalone deployment script |

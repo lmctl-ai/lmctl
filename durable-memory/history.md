@@ -19,7 +19,7 @@ npm run serve   # preview the built artifact
 
 ## Publishing
 
-Static homepage, tools and skills changes publish automatically on main through the checked OIDC workflow. Docusaurus uses the separate full deployment. See [publishing.md](<publishing.md>) for current instructions.
+Static homepage, tools and skills changes publish from main through the checked OIDC workflow, which since 2026-10-26 runs only when dispatched by hand. Docusaurus uses the separate full deployment. See [publishing.md](<publishing.md>) for current instructions.
 
 ## Recent docs updates
 

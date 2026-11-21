@@ -4,7 +4,7 @@ A guide for an LLM (or a person) adding or improving a tool's documentation in t
 
 ## Purpose and where it is published
 
-tools/ is the source of [https://lmctl.com/tools/](<https://lmctl.com/tools/>): one plain-HTML section per tool (lmscript, lmcad, lmdraw, lmhtml, lmcode-cpp, …), each with a skill page written for LLM agents plus optional tutorial, guide, recipes, reference, FAQ, changelog and executable demo pages. Documentation has no framework, JavaScript or application build step: authors write content HTML, and scripts/tools/ (an lmscript \_dsl\_ program run by the lmhtml host) decorates and checks it. A demo.html is a raw executable exception with same-tool assets. scripts/deploy-tools.sh publishes it directly, and a push to main automatically publishes changed tool pages through the path-filtered static workflow. Details are in [Publishing lmctl.com](<publishing.md>).
+tools/ is the source of [https://lmctl.com/tools/](<https://lmctl.com/tools/>): one plain-HTML section per tool (lmscript, lmcad, lmdraw, lmhtml, lmcode-cpp, …), each with a skill page written for LLM agents plus optional tutorial, guide, recipes, reference, FAQ, changelog and executable demo pages. Documentation has no framework, JavaScript or application build step: authors write content HTML, and scripts/tools/ (an lmscript \_dsl\_ program run by the lmhtml host) decorates and checks it. A demo.html is a raw executable exception with same-tool assets. scripts/deploy-tools.sh publishes it directly, or push to main and dispatch the deploy-static workflow (a push alone publishes nothing). Details are in [Publishing lmctl.com](<publishing.md>).
 
 ## The 30-second version
 
@@ -133,7 +133,7 @@ AWS_PROFILE=lmctl-website-deploy DRY_RUN=1 bash scripts/deploy-tools.sh
 AWS_PROFILE=lmctl-website-deploy bash scripts/deploy-tools.sh
 ```
 
-A push to main also runs the static publisher automatically after checks; no manual approval gate is used. See [the publishing guide](<publishing.md>) for the workflow, credentials, other site areas and live verification.
+A push to main does not publish; after pushing, run gh workflow run deploy-static -R lmctl-ai/lmctl --ref main, which checks and then publishes. See [the publishing guide](<publishing.md>) for the workflow, credentials, other site areas and live verification.
 
 The script refuses unless run.sh check passes. It excludes templates, README and hidden files, refuses unexpected types and symlinks, and compares S3 bytes/headers before uploading only changes. It publishes exact directory index aliases and invalidates uploaded/deleted paths plus any stale live CDN copies. HTML uses no-cache; CSS/images use one-day caching. See [publishing.md](<publishing.md>) for the five-minute targeted retry and verify-live.sh --repair-cdn. CloudFront function changes remain a separate administrator step.
 
@@ -161,7 +161,7 @@ The older raw utility and coordination skills live in skills/\*.html and share t
 - icons rendered (render.sh --check passes), PNGs \< 20 KB
 - visual review at narrow/wide, light/dark and print; findings fixed
 - prose is public-safe; experimental features are labelled
-- content and generated HTML committed together; push to main for checked automatic publication or use the manual script after a dry run
+- content and generated HTML committed together; push to main, then dispatch deploy-static for checked publication, or use the manual script after a dry run
 
 ## Markdown durable memory and HTML skills
 

@@ -57,7 +57,7 @@ npm run build fails on broken links and broken anchors — fix them before publi
 
 ## Publishing
 
-Homepage, tools and skills publish automatically from main through the path-filtered static workflow after checks pass. The Docusaurus /lmctl/ site remains a separate deployment:
+Homepage, tools and skills publish from main when the deploy-static workflow is dispatched (it checks first; a push alone publishes nothing). The Docusaurus /lmctl/ site remains a separate deployment:
 
 ```
 npm run build
