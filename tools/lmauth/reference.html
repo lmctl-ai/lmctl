@@ -34,6 +34,12 @@
 <tr><td>lmauth --lmcode FILE</td><td>Execute a compiled lmcode bytecode program (honors LMCODE_INVOCATION_FILE).</td></tr>
 <tr><td>lmauth plan --owner OWNER --repos REPOS</td><td>Print the guided fine-grained GitHub token recipe for OWNER and comma-separated REPOS.</td></tr>
 <tr><td>lmauth present --owner OWNER --repos REPOS ...</td><td>Present the guided recipe, collect the token, verify identity, and store it in lmconn.</td></tr>
+<tr><td>lmauth publish --package DIR|FILE.tgz --credential lmauth:NAME ...</td><td>Pack and publish npm packages through the stored npm login; every npm approval link goes on a page you click. See the guide.</td></tr>
+<tr><td>--login --expect-user NPMUSER</td><td>(publish) Sign in through npm's web login when there is no working token; refuse any account other than NPMUSER.</td></tr>
+<tr><td>--trust-repo OWNER/REPO --trust-file WORKFLOW.yml</td><td>(publish) Also set the package's npm trusted publisher to that GitHub workflow.</td></tr>
+<tr><td>--access public, --tag TAG</td><td>(publish) npm access and dist-tag for the publish.</td></tr>
+<tr><td>lmauth npm-release --repo OWNER/REPO --name NAME --target OS-CPU=ASSET ...</td><td>Build npm packages from the binaries of a GitHub release (checked against SHA256SUMS), publish them and set their trusted publishers.</td></tr>
+<tr><td>LMBRIDGE_APPKEY</td><td>Environment variable for the approval page bridge: the appkey field of ~/.config/lmctl/appkey.json.</td></tr>
 <tr><td>--lmconn-node ABS</td><td>Absolute path to the Node.js executable used to run the lmconn broker.</td></tr>
 <tr><td>--lmconn-entry ABS</td><td>Absolute path to lmconn's bin/lmconn.js entry script.</td></tr>
 <tr><td>--lmconn-db ABS</td><td>Absolute path to the private SQLite credentials database managed by lmconn.</td></tr>

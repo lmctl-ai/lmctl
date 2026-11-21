@@ -37,6 +37,17 @@
 <p>lmauth does not maintain its own credential database. Instead, it delegates persistence to lmconn, which encrypts credentials at rest. When --lmconn-key-file ABS is provided, lmauth validates that the key file resides in a private directory distinct from the database directory and forwards the path to lmconn as LMCONN_KEY_FILE without reading the key bytes or accepting raw keys in environment variables.</p>
 <h2>Invocation manifest and dry-mode guarantees</h2>
 <p>When invoked via --lmcode FILE, lmauth inspects LMCODE_INVOCATION_FILE before starting any server or terminal prompt. The manifest must be valid version-1 JSON with a boolean dry field; missing or non-boolean dry values fail immediately with exit code 2 before dispatch. In dry mode, domain callbacks are bypassed and the host emits a dry-no-auth return envelope so orchestration pipelines can verify wiring offline.</p>
+<h2>Publishing to npm</h2>
+<p>lmauth publish packs a package, publishes it through an npm login kept in the lmconn store, and can set the package's trusted publisher so that the repository's GitHub workflow publishes later versions with no token. You only click links; the npm token never reaches you, the agent or the page.</p>
+<p>Use it when a package's trusted-publishing workflow fails with ENEEDAUTH (npm has no trusted publisher for the package yet), or for a new package, since npm accepts a trusted publisher only for a package that already exists.</p>
+<pre><code>export LMBRIDGE_APPKEY="$(node -p "require(process.env.HOME + '/.config/lmctl/appkey.json').appkey")"
+lmauth publish --package /abs/path/to/package-dir --access public --tag latest \
+  --credential lmauth:npm-NPMUSER --login --expect-user NPMUSER \
+  --trust-repo OWNER/REPO --trust-file release.yml \
+  --lmconn-node $T/node --lmconn-entry $T/lmconn/bin/lmconn.js --lmconn-db $D/creds.db</code></pre>
+<p>$T is a directory holding private copies of node and lmconn that only you can write, and $D is a 700 store directory directly under your home. lmconn must be at commit 4f5b14e or later, or a first login stops with login_check_failed.</p>
+<p>lmauth prints each approval page on stderr as {"approve":"https://lmctl.ai/r/.../npm-approve-N.html"}. Open it signed in to lmctl.ai and click the npm link. A first run showed two pages: npm's web login (approve as NPMUSER), then the 2FA approval for the publish, which also covered the trusted publisher. The receipt on stdout reports outcome published_confirmed, trust configured and verified true; the exit code is 0 only when every package is confirmed.</p>
+<p>The full procedure, including the one-time setup and the errors, is in <a href="https://github.com/lmctl-ai/lmauth/blob/main/docs/npm-publish.md">docs/npm-publish.md</a>.</p>
 </main>
 <footer>
 <p>Source and releases: <a href="https://github.com/lmctl-ai/lmauth">github.com/lmctl-ai/lmauth</a>.</p>
