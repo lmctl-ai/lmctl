@@ -53,7 +53,10 @@ host="$(cd "$(dirname "$host")" && pwd)/$(basename "$host")"
 PATH="$(dirname "$host"):$PATH"
 export PATH
 if [[ $command_name == host-path ]]; then printf '%s\n' "$host"; exit 0; fi
-is_demo_page() { case "$1" in */demo.html|*/demo-*.html|*.demo.html) return 0;; *) return 1;; esac; }
+is_demo_page() {
+  case "$1" in */demo.html|*/demo-*.html|*.demo.html) return 0;; esac
+  [[ "$1" == */index.html ]] && grep -Eq '<body[^>]*[[:space:]]data-page=' "$1"
+}
 lint_tool_pages() {
   local source=${1:-tools} page target
   if [[ $source != tools ]]; then

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lmdart quick reference — lmdart — lmctl.com tools</title>
+<meta name="description" content="lmdart compiles Dart to JavaScript and calls browser DOM, SVG, Canvas, and WebGL APIs directly.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmdart/">Overview</a></li>
+<li><a href="/tools/lmdart/skill.html">Skill</a></li>
+<li><a href="/tools/lmdart/guide.html">Guide</a></li>
+<li><a href="/tools/lmdart/demo-animation.html">Demo: Position and attributes share a clock.</a></li>
+<li><a href="/tools/lmdart/demo-canvas.html">Demo: Immediate pixels from the same data idea.</a></li>
+<li><a href="/tools/lmdart/demo-chart.html">Demo: Axes, bars, and arc wedges.</a></li>
+<li><a href="/tools/lmdart/demo-hydration.html">Demo: Static markup, live behavior.</a></li>
+<li><a href="/tools/lmdart/demo-plot.html">Demo: One series model, two plot forms.</a></li>
+<li><a href="/tools/lmdart/demo-svg.html">Demo: Data becomes retained SVG.</a></li>
+<li><a href="/tools/lmdart/demo-table.html">Demo: A table is just a bound model.</a></li>
+<li><a href="/tools/lmdart/demo-webgl.html">Demo: Shaders and matrices, directly from Dart.</a></li>
+</ul>
+</nav>
+<main><h1>lmdart quick reference</h1>
+<p>lmdart compiles Dart to JavaScript and calls browser DOM, SVG, Canvas, and WebGL APIs directly. HTML remains a template, JSON supplies application data, and small JavaScript handlers register with the Dart runtime. No Flutter or heavyweight framework is used.</p>
+<h2>Overview</h2>
+<p>The <a href="/tools/lmdart/">demo book starts at the tool root</a>. Its eight chapters are separate pages, not options in a selector.</p>
+<ol>
+<li><a href="/tools/lmdart/demo-hydration.html">HTML hydration</a> updates a static card from JSON and runs JavaScript and Dart handlers.</li>
+<li><a href="/tools/lmdart/demo-table.html">JSON HTML tables</a> bind columns and rows with pointer and keyboard selection.</li>
+<li><a href="/tools/lmdart/demo-svg.html">SVG drawing</a> creates retained DOM from JSON commands.</li>
+<li><a href="/tools/lmdart/demo-canvas.html">Canvas drawing</a> renders immediate shapes and validated pointer marks.</li>
+<li><a href="/tools/lmdart/demo-chart.html">Charts</a> render SVG bars and arc wedges.</li>
+<li><a href="/tools/lmdart/demo-plot.html">Plots</a> render line and scatter series to Canvas.</li>
+<li><a href="/tools/lmdart/demo-animation.html">Animation</a> tweens position, radius, opacity, and Canvas particles.</li>
+<li><a href="/tools/lmdart/demo-webgl.html">WebGL</a> compiles shaders and draws an animated 3D cube.</li>
+</ol>
+<h2>Build</h2>
+<p>The SDK installer supports Linux x64 and arm64. It downloads official Dart 3.14.1 and verifies a pinned SHA-256 checksum.</p>
+<pre><code>git clone https://github.com/lmctl-ai/lmdart.git
+cd lmdart
+bash scripts/build.sh</code></pre>
+<p>The static site is written to target/site. Pass an absolute output path to build directly into another site.</p>
+<h2>Runtime API</h2>
+<table>
+<thead><tr><th>JavaScript API</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>LMDart.version</td><td>Runtime version 0.1.0.</td></tr>
+<tr><td>LMDart.register(name, handler)</td><td>Register a JavaScript function taking one context object.</td></tr>
+<tr><td>LMDart.call(name, context)</td><td>Call a registered JavaScript or Dart handler and return its value.</td></tr>
+<tr><td>LMDart.loadJson(path, success, failure)</td><td>Fetch JSON and deliver converted values or an error.</td></tr>
+<tr><td>LMDart.setText(selector, value)</td><td>Set textContent on an existing element.</td></tr>
+<tr><td>LMDart.setAttribute(selector, name, value)</td><td>Set an attribute on an existing element.</td></tr>
+<tr><td>LMDart.start()</td><td>Dispatch the page after all handlers are registered.</td></tr>
+</tbody>
+</table>
+<h2>Register a handler</h2>
+<pre><code>LMDart.register('card.clicked', context => {
+  const result = LMDart.call('dart.stamp', { value: context.value });
+  LMDart.setText('#result', result);
+  return true;
+});
+LMDart.start();</code></pre>
+<p>JavaScript and Dart handlers share one namespace. Empty, duplicate, and unknown names are errors. Context objects and return values use dart:js_interop conversions rather than serialized strings.</p>
+<h2>Reusable Dart APIs</h2>
+<table>
+<thead><tr><th>API</th><th>Feature</th></tr></thead>
+<tbody>
+<tr><td>fetchJson and JSON validators</td><td>HTTP JSON loading and typed object, array, string, and finite-number checks.</td></tr>
+<tr><td>hydrate</td><td>Populate existing data-hydrate elements without replacing their static structure.</td></tr>
+<tr><td>JsonTable</td><td>Validate and bind rectangular JSON table data.</td></tr>
+<tr><td>drawSvg and drawCanvas</td><td>Render rect, circle, line, polyline, path, and text commands.</td></tr>
+<tr><td>renderBarChart and renderPieChart</td><td>Generate SVG charts from validated models.</td></tr>
+<tr><td>renderPlot</td><td>Render line or scatter plots from named Series.</td></tr>
+<tr><td>TweenPlayer</td><td>Animate numeric attributes and SVG positions using requestAnimationFrame.</td></tr>
+<tr><td>WebglCube and Matrix4</td><td>Run a small shader-based WebGL example with column-major matrix math.</td></tr>
+</tbody>
+</table>
+<h2>Verify</h2>
+<pre><code>scripts/install-dart.sh
+.tools/dart-sdk/bin/dart analyze
+.tools/dart-sdk/bin/dart test -r expanded
+bash scripts/build.sh
+npm ci
+npx playwright install --with-deps chromium
+npm test</code></pre>
+<p>Twelve VM tests cover models, scales, tween math, and matrices. Browser integration covers all nine pages, real SVG and Canvas output, WebGL pixels, JSON requests, runtime handlers, keyboard events, and mobile layout. Set DEMO_URL to the deployed root URL for live verification.</p>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmdart">github.com/lmctl-ai/lmdart</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A multi-page Dart DOM, SVG, Canvas, chart, tween, WebGL, and JavaScript handler demo.">
+    <title>lmdart · Dart directly in the browser</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="demo.css">
+</head>
+<body data-page="cover">
+    <header class="site-header">
+        <a class="brand" href="index.html" aria-label="lmdart demo book">lm<span>dart</span></a>
+        <nav class="project-nav" aria-label="Project links">
+            <a href="https://github.com/lmctl-ai/lmdart">Source on GitHub</a>
+            <a href="https://dart.dev/">Dart language</a>
+        </nav>
+    </header>
+    <main class="cover">
+        <section class="cover-intro">
+            <div><p class="eyebrow">A Dart browser demo book</p><h1>Small runtime. <br><span>Direct to the DOM.</span></h1></div>
+            <p class="lede">Eight standalone chapters use HTML templates, JSON data, Dart-generated JavaScript, and registered JavaScript handlers. No Flutter or heavyweight framework.</p>
+        </section>
+        <ol class="chapter-grid">
+            <li><a href="demo-hydration.html"><div><h2>HTML hydration</h2><p>Hydrate an ordinary static card with JSON values, then connect its existing button to JavaScript and Dart runtime handlers.</p></div></a></li>
+            <li><a href="demo-table.html"><div><h2>JSON HTML tables</h2><p>Bind JSON columns and rows to a real HTML table. Row click and keyboard selection flow through a registered JavaScript handler.</p></div></a></li>
+            <li><a href="demo-svg.html"><div><h2>SVG drawing</h2><p>Load rectangles, circles, lines, polylines, and text from JSON. A JavaScript palette handler drives a Dart SVG redraw.</p></div></a></li>
+            <li><a href="demo-canvas.html"><div><h2>Canvas drawing</h2><p>Draw JSON commands through CanvasRenderingContext2D. Pointer coordinates pass through a JavaScript validator before Dart redraws the canvas.</p></div></a></li>
+            <li><a href="demo-chart.html"><div><h2>Charts</h2><p>Generate bar and pie charts from one JSON document. Dart computes scales, ticks, positions, labels, and SVG arc paths.</p></div></a></li>
+            <li><a href="demo-plot.html"><div><h2>Line and scatter plots</h2><p>Render named point series as a connected line plot and a scatter plot. Both use Dart linear scales and immediate Canvas drawing.</p></div></a></li>
+            <li><a href="demo-animation.html"><div><h2>Animation and tweening</h2><p>Tween SVG transform, radius, and opacity while drawing Canvas particles with requestAnimationFrame. JavaScript controls pause, resume, and reset.</p></div></a></li>
+            <li><a href="demo-webgl.html"><div><h2>3D Canvas with WebGL</h2><p>Compile shaders, upload a colored cube, compute perspective and rotation matrices, and animate WebGL without a 3D JavaScript library.</p></div></a></li>
+        </ol>
+    </main>
+    <footer>
+        <p><strong>lmdart</strong> · Dart 3.14.1 · MIT licensed</p>
+        <p>No Flutter. No UI framework. Direct browser APIs and small JavaScript handlers.</p>
+    </footer>
+    <script src="lmdart.js"></script>
+    <script src="boot.js"></script>
+</body>
+</html>

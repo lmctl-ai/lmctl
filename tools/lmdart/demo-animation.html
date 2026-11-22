@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Tween SVG transform, radius, and opacity while drawing Canvas particles with requestAnimationFrame. JavaScript controls pause, resume, and reset.">
+    <title>Animation and tweening · lmdart</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="demo.css">
+</head>
+<body data-page="animation">
+    <header class="site-header">
+        <a class="brand" href="index.html" aria-label="lmdart demo book">lm<span>dart</span></a>
+        <nav class="project-nav" aria-label="Project links">
+            <a href="https://github.com/lmctl-ai/lmdart">Source on GitHub</a>
+            <a href="https://dart.dev/">Dart language</a>
+        </nav>
+    </header>
+    <main class="book-layout">
+        <nav class="book-nav" aria-label="Demo chapters">
+            <p>lmdart demo book</p>
+            <ol>
+                <li><a href="demo-hydration.html">HTML hydration</a></li>
+                <li><a href="demo-table.html">JSON HTML tables</a></li>
+                <li><a href="demo-svg.html">SVG drawing</a></li>
+                <li><a href="demo-canvas.html">Canvas drawing</a></li>
+                <li><a href="demo-chart.html">Charts</a></li>
+                <li><a href="demo-plot.html">Line and scatter plots</a></li>
+                <li><a href="demo-animation.html" aria-current="page">Animation and tweening</a></li>
+                <li><a href="demo-webgl.html">3D Canvas with WebGL</a></li>
+            </ol>
+        </nav>
+        <article class="chapter">
+            <header class="chapter-heading">
+                <p class="eyebrow">Chapter 07 · Dart + browser APIs</p>
+                <h1>Position and attributes share a clock.</h1>
+                <p class="lede">Tween SVG transform, radius, and opacity while drawing Canvas particles with requestAnimationFrame. JavaScript controls pause, resume, and reset.</p>
+            </header>
+            <section class="demo-shell" aria-label="Live Animation and tweening example">
+                <div class="animation-scenes">
+                    <svg viewBox="0 0 640 540" role="img" aria-label="SVG position and attribute tween">
+                        <rect width="640" height="540" fill="#0b1726"></rect>
+                        <path d="M90 100 L470 310" stroke="#393e60" stroke-width="3" stroke-dasharray="8 8"></path>
+                        <g id="tween-group" transform="translate(90 100)"><circle id="tween-dot" cx="0" cy="0" r="22" fill="#b7a1ff"></circle></g>
+                    </svg>
+                    <canvas id="particle-canvas" width="320" height="540" aria-label="Dart Canvas particles"></canvas>
+                </div>
+                <div class="controls">
+                    <button id="action" type="button" aria-pressed="false">Pause animation</button>
+                    <button id="reset" type="button" class="secondary">Reset</button>
+                    <p id="status" class="status" role="status" aria-live="polite">Starting animation…</p>
+                </div>
+            </section>
+            <section class="chapter-notes">
+                <div><h2>How it works</h2><p>The HTML is a static template. JSON supplies values or drawing data. Dart owns rendering and browser events; boot.js registers small JavaScript handlers through LMDart.register.</p></div>
+                <pre><code>final player = TweenPlayer(await fetchJson(&#x27;data/tween.json&#x27;),
+  onFrame: (seconds) =&gt; drawParticles(canvas, seconds));
+player.start();
+player.toggle();
+player.reset();</code></pre>
+            </section>
+            <nav class="pager" aria-label="Chapter navigation"><a href="demo-plot.html">← Line and scatter plots</a><a href="demo-webgl.html">3D Canvas with WebGL →</a></nav>
+        </article>
+    </main>
+    <footer>
+        <p><strong>lmdart</strong> · Dart 3.14.1 · MIT licensed</p>
+        <p>No Flutter. No UI framework. Direct browser APIs and small JavaScript handlers.</p>
+    </footer>
+    <noscript>This chapter needs JavaScript enabled. Dart compiles to JavaScript, then boot.js registers the handlers.</noscript>
+    <script src="lmdart.js"></script>
+    <script src="boot.js"></script>
+</body>
+</html>

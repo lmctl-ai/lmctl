@@ -167,8 +167,8 @@ fn check_demo_page(page: Doc) -> void {
   let scripts = page.select("script");
   if (scripts.len() == 0) { finding(file, "document", "demo needs an external script"); }
   for (node in scripts) {
-    if (node.parent().tag() != "body" || (node.attr("src") != "teavm.js" && node.attr("src") != "boot.js")) {
-      finding(file, node.path(), "demo scripts must be external teavm.js or boot.js in body");
+    if (node.parent().tag() != "body" || (node.attr("src") != "teavm.js" && node.attr("src") != "lmdart.js" && node.attr("src") != "boot.js")) {
+      finding(file, node.path(), "demo scripts must be external teavm.js, lmdart.js or boot.js in body");
     }
     if (normalized(node.text()) != "") { finding(file, node.path(), "demo scripts must not contain inline code"); }
   }
@@ -188,7 +188,7 @@ fn check_page(page: Doc) -> void {
   if (page.byte_size() > 153600) { finding(file, "document", "page is " + str(page.byte_size()) + " bytes (limit 153600)"); }
   if (page.doctype() != "html") { finding(file, "document", "page must start with <!doctype html>"); }
   for (problem in page.markup_errors()) { finding(file, "document", problem); }
-  let demo = page_role(file) == "demo";
+  let demo = page_role(file) == "demo" || (filename(file) == "index.html" && page.select("body[data-page]").len() == 1);
   if (demo) { check_demo_page(page); }
   if (!demo) {
   let pres = page.source_elements("pre");

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Author an lmdart application — lmdart — lmctl.com tools</title>
+<meta name="description" content="Use this skill to build a browser application with Dart-generated JavaScript, static HTML templates, JSON data, and registered JavaScript handlers.">
+<link rel="stylesheet" href="/tools/style.css">
+
+</head>
+<body>
+<nav>
+<ul>
+<li><a href="/">lmctl.com</a></li>
+<li><a href="/tools/">Tools</a></li>
+<li><a href="/skills/">Skills</a></li>
+<li><a href="/tools/lmdart/">Overview</a></li>
+<li><a href="/tools/lmdart/skill.html">Skill</a></li>
+<li><a href="/tools/lmdart/guide.html">Guide</a></li>
+<li><a href="/tools/lmdart/demo-animation.html">Demo: Position and attributes share a clock.</a></li>
+<li><a href="/tools/lmdart/demo-canvas.html">Demo: Immediate pixels from the same data idea.</a></li>
+<li><a href="/tools/lmdart/demo-chart.html">Demo: Axes, bars, and arc wedges.</a></li>
+<li><a href="/tools/lmdart/demo-hydration.html">Demo: Static markup, live behavior.</a></li>
+<li><a href="/tools/lmdart/demo-plot.html">Demo: One series model, two plot forms.</a></li>
+<li><a href="/tools/lmdart/demo-svg.html">Demo: Data becomes retained SVG.</a></li>
+<li><a href="/tools/lmdart/demo-table.html">Demo: A table is just a bound model.</a></li>
+<li><a href="/tools/lmdart/demo-webgl.html">Demo: Shaders and matrices, directly from Dart.</a></li>
+</ul>
+</nav>
+<main><h1>Author an lmdart application</h1>
+<p>Use this skill to build a browser application with Dart-generated JavaScript, static HTML templates, JSON data, and registered JavaScript handlers. Keep the runtime small and use browser APIs directly.</p>
+<h2>Purpose</h2>
+<p>lmdart demonstrates hydration, HTML table binding, SVG, Canvas 2D, charts, plots, animation, numeric attribute and position tweening, and WebGL. It is a focused example library rather than a component framework.</p>
+<p>The public demo root is the book cover. Each chapter is an independent demo-topic.html page. The HTML contains no inline scripts or inline event handlers. Runtime data is loaded from local JSON files.</p>
+<h2>When to use it</h2>
+<ul>
+<li>Use lmdart when application rendering and event logic should be written in Dart and compiled to JavaScript.</li>
+<li>Use hydration when static server-rendered or authored HTML should gain values and behavior without replacing its structure.</li>
+<li>Use JsonTable for rectangular JSON models that should become accessible HTML tables.</li>
+<li>Use SVG for retained inspectable elements and Canvas for immediate or frequently redrawn output.</li>
+<li>Use the chart functions for compact fixed-layout charts and TweenPlayer for numeric SVG animation.</li>
+<li>Use WebglCube as a minimal direct WebGL example, not as a full 3D engine.</li>
+</ul>
+<h2>Install</h2>
+<p>Use Linux x64 or arm64 with curl, unzip, Python 3, and Node 24.15 or newer for browser tests. The pinned installer selects and checksum-verifies official Dart SDK 3.14.1.</p>
+<pre><code>git clone https://github.com/lmctl-ai/lmdart.git
+cd lmdart
+scripts/install-dart.sh
+bash scripts/build.sh</code></pre>
+<p>The SDK stays in the ignored .tools directory. package:web 1.1.1 supplies typed browser bindings. No Flutter SDK or npm runtime package is required.</p>
+<h2>Commands</h2>
+<p>Generate and compile the complete static site with one command.</p>
+<pre><code>bash scripts/build.sh</code></pre>
+<p>Choose another output directory with an absolute path.</p>
+<pre><code>bash scripts/build.sh /absolute/site/path</code></pre>
+<p>Run static analysis, VM tests, and browser integration separately.</p>
+<pre><code>.tools/dart-sdk/bin/dart analyze
+.tools/dart-sdk/bin/dart test -r expanded
+npm ci
+npx playwright install --with-deps chromium
+npm test</code></pre>
+<p>After changing chapter templates in scripts/generate-book.py, regenerate and review the source diff.</p>
+<pre><code>python3 scripts/generate-book.py
+git diff --check</code></pre>
+<h2>Inputs and outputs</h2>
+<p>JSON validators require objects with string keys, arrays, strings, and finite numbers as appropriate. JsonTable requires nonempty columns and rows of matching length. Pie slices must be nonnegative with a positive total. Tween duration must be positive. WebGL data supplies six hexadecimal colors and a finite speed.</p>
+<table>
+<thead><tr><th>Input</th><th>Output</th></tr></thead>
+<tbody>
+<tr><td>data-hydrate attribute and JSON value</td><td>Existing element text or a selected attribute</td></tr>
+<tr><td>Table columns and rows</td><td>Real thead and tbody cells with selectable rows</td></tr>
+<tr><td>Drawing title, dimensions, and commands</td><td>Retained SVG or immediate Canvas output</td></tr>
+<tr><td>Bars, slices, and named series</td><td>SVG charts or Canvas plots with scales and labels</td></tr>
+<tr><td>Attribute and position tween records</td><td>Numeric attributes and SVG translate transforms</td></tr>
+<tr><td>JavaScript handler and context object</td><td>A JavaScript return value through LMDart.call</td></tr>
+</tbody>
+</table>
+<p>The compiled lmdart.js installs window.LMDart. boot.js registers handlers and then calls LMDart.start. Do not call start before registration is complete.</p>
+<h2>Safety rules</h2>
+<ul>
+<li>Do not add Flutter, React, D3, Three.js, or another UI, chart, animation, or 3D framework.</li>
+<li>Do not construct HTML with innerHTML. Hydrate existing nodes or create elements and use textContent.</li>
+<li>Load JSON through HTTP rather than opening file URLs. Validate values before using them as coordinates or timing parameters.</li>
+<li>Keep handler names unique and nonempty. Unknown handlers throw instead of silently doing nothing.</li>
+<li>Pass one ordinary context object across the JavaScript boundary. Convert return values with dart:js_interop rules.</li>
+<li>Convert pointer coordinates from CSS display size to logical canvas coordinates.</li>
+<li>Cap animation frame deltas and provide pause and reset behavior.</li>
+<li>Treat WebglCube as an example with a preserved buffer for tests, not as a complete retained 3D renderer.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>Register JavaScript, call Dart, and update an existing element.</p>
+<pre><code>LMDart.register('card.clicked', context => {
+  const message = LMDart.call('dart.stamp', { value: context.value });
+  LMDart.setText('#result', message);
+});
+LMDart.start();</code></pre>
+<p>Hydrate static HTML after loading its JSON values.</p>
+<pre><code>final data = jsonMap(await fetchJson('data/card.json'), 'card');
+hydrate(document.getElementById('card')!, data);</code></pre>
+<p>Render the same command-oriented data concept to either 2D backend.</p>
+<pre><code>drawSvg(svgContainer, await fetchJson('data/scene.json'));
+drawCanvas(canvasElement, await fetchJson('data/scene.json'));</code></pre>
+<p>Create an attribute and position tween and draw additional Canvas output from the same frame callback.</p>
+<pre><code>final player = TweenPlayer(await fetchJson('data/tween.json'),
+  onFrame: (seconds) => drawParticles(canvas, seconds));
+player.start();</code></pre>
+<h2>Errors and exit codes</h2>
+<p>JSON shape and value failures use FormatException. Missing DOM elements and unavailable Canvas or WebGL contexts use StateError. Duplicate, empty, and unknown runtime handlers use ArgumentError. The page dispatcher reports startup failure in its status element and rethrows for browser diagnostics.</p>
+<p>The SDK installer exits nonzero for unsupported platforms, download failure, or checksum mismatch. Dart analysis, tests, and compilation return nonzero on errors. Browser tests return nonzero for HTTP errors, runtime errors, wrong output, interaction failures, third-party requests, or mobile overflow.</p>
+<h2>How to verify</h2>
+<ol>
+<li>Run dart analyze and require no issues.</li>
+<li>Run the 12 VM tests for models, scales, tween math, and matrices.</li>
+<li>Build the site and confirm generated HTML is synchronized.</li>
+<li>Run npm test and require all nine pages to pass without browser or HTTP errors.</li>
+<li>Click hydration and table controls, redraw SVG, add Canvas marks, and invoke JavaScript-to-Dart calls.</li>
+<li>Verify chart pixels, SVG arc paths, position and attribute changes, animation pause/reset, and WebGL pixels with gl.getError equal to zero.</li>
+<li>Check the book at narrow mobile width and confirm no third-party runtime requests.</li>
+<li>For deployment, set DEMO_URL to the public root URL and rerun the browser suite.</li>
+</ol>
+</main>
+<footer>
+<p>Source and releases: <a href="https://github.com/lmctl-ai/lmdart">github.com/lmctl-ai/lmdart</a>.</p>
+</footer>
+</body>
+</html>

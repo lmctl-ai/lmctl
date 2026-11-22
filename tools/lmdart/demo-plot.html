@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Render named point series as a connected line plot and a scatter plot. Both use Dart linear scales and immediate Canvas drawing.">
+    <title>Line and scatter plots · lmdart</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="demo.css">
+</head>
+<body data-page="plot">
+    <header class="site-header">
+        <a class="brand" href="index.html" aria-label="lmdart demo book">lm<span>dart</span></a>
+        <nav class="project-nav" aria-label="Project links">
+            <a href="https://github.com/lmctl-ai/lmdart">Source on GitHub</a>
+            <a href="https://dart.dev/">Dart language</a>
+        </nav>
+    </header>
+    <main class="book-layout">
+        <nav class="book-nav" aria-label="Demo chapters">
+            <p>lmdart demo book</p>
+            <ol>
+                <li><a href="demo-hydration.html">HTML hydration</a></li>
+                <li><a href="demo-table.html">JSON HTML tables</a></li>
+                <li><a href="demo-svg.html">SVG drawing</a></li>
+                <li><a href="demo-canvas.html">Canvas drawing</a></li>
+                <li><a href="demo-chart.html">Charts</a></li>
+                <li><a href="demo-plot.html" aria-current="page">Line and scatter plots</a></li>
+                <li><a href="demo-animation.html">Animation and tweening</a></li>
+                <li><a href="demo-webgl.html">3D Canvas with WebGL</a></li>
+            </ol>
+        </nav>
+        <article class="chapter">
+            <header class="chapter-heading">
+                <p class="eyebrow">Chapter 06 · Dart + browser APIs</p>
+                <h1>One series model, two plot forms.</h1>
+                <p class="lede">Render named point series as a connected line plot and a scatter plot. Both use Dart linear scales and immediate Canvas drawing.</p>
+            </header>
+            <section class="demo-shell" aria-label="Live Line and scatter plots example">
+                <div class="dual-scenes">
+                    <section><h2>Canvas line plot</h2><canvas id="line-plot" width="960" height="540">Canvas 2D is required.</canvas></section>
+                    <section><h2>Canvas scatter plot</h2><canvas id="scatter-plot" width="960" height="540">Canvas 2D is required.</canvas></section>
+                </div>
+                <div class="controls">
+                    <p id="status" class="status" role="status" aria-live="polite">Loading the Dart application…</p>
+                </div>
+            </section>
+            <section class="chapter-notes">
+                <div><h2>How it works</h2><p>The HTML is a static template. JSON supplies values or drawing data. Dart owns rendering and browser events; boot.js registers small JavaScript handlers through LMDart.register.</p></div>
+                <pre><code>renderPlot(lineCanvas, data[&#x27;line&#x27;]);
+renderPlot(scatterCanvas, data[&#x27;scatter&#x27;], scatter: true);</code></pre>
+            </section>
+            <nav class="pager" aria-label="Chapter navigation"><a href="demo-chart.html">← Charts</a><a href="demo-animation.html">Animation and tweening →</a></nav>
+        </article>
+    </main>
+    <footer>
+        <p><strong>lmdart</strong> · Dart 3.14.1 · MIT licensed</p>
+        <p>No Flutter. No UI framework. Direct browser APIs and small JavaScript handlers.</p>
+    </footer>
+    <noscript>This chapter needs JavaScript enabled. Dart compiles to JavaScript, then boot.js registers the handlers.</noscript>
+    <script src="lmdart.js"></script>
+    <script src="boot.js"></script>
+</body>
+</html>

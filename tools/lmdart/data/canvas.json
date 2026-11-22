@@ -1,0 +1,14 @@
+{
+  "title": "JSON-driven Canvas scene",
+  "width": 960,
+  "height": 540,
+  "commands": [
+    {"type": "rect", "x": 0, "y": 0, "width": 960, "height": 540, "color": "#0b1726"},
+    {"type": "text", "x": 42, "y": 55, "text": "Immediate Canvas drawing from Dart", "color": "#edf5ff", "fontSize": 25},
+    {"type": "circle", "cx": 170, "cy": 280, "r": 80, "color": "#a99cf5"},
+    {"type": "circle", "cx": 390, "cy": 240, "r": 54, "color": "#61d6c5"},
+    {"type": "circle", "cx": 620, "cy": 320, "r": 92, "color": "#ffcb6b"},
+    {"type": "polyline", "points": [{"x": 80, "y": 420}, {"x": 270, "y": 170}, {"x": 480, "y": 390}, {"x": 720, "y": 150}, {"x": 890, "y": 390}], "color": "#ff7f9f", "strokeWidth": 4},
+    {"type": "text", "x": 42, "y": 495, "text": "Pointer coordinates return through a JavaScript validator", "color": "#91a5bd", "fontSize": 14}
+  ]
+}

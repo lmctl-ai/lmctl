@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Hydrate an ordinary static card with JSON values, then connect its existing button to JavaScript and Dart runtime handlers.">
+    <title>HTML hydration · lmdart</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="demo.css">
+</head>
+<body data-page="hydration">
+    <header class="site-header">
+        <a class="brand" href="index.html" aria-label="lmdart demo book">lm<span>dart</span></a>
+        <nav class="project-nav" aria-label="Project links">
+            <a href="https://github.com/lmctl-ai/lmdart">Source on GitHub</a>
+            <a href="https://dart.dev/">Dart language</a>
+        </nav>
+    </header>
+    <main class="book-layout">
+        <nav class="book-nav" aria-label="Demo chapters">
+            <p>lmdart demo book</p>
+            <ol>
+                <li><a href="demo-hydration.html" aria-current="page">HTML hydration</a></li>
+                <li><a href="demo-table.html">JSON HTML tables</a></li>
+                <li><a href="demo-svg.html">SVG drawing</a></li>
+                <li><a href="demo-canvas.html">Canvas drawing</a></li>
+                <li><a href="demo-chart.html">Charts</a></li>
+                <li><a href="demo-plot.html">Line and scatter plots</a></li>
+                <li><a href="demo-animation.html">Animation and tweening</a></li>
+                <li><a href="demo-webgl.html">3D Canvas with WebGL</a></li>
+            </ol>
+        </nav>
+        <article class="chapter">
+            <header class="chapter-heading">
+                <p class="eyebrow">Chapter 01 · Dart + browser APIs</p>
+                <h1>Static markup, live behavior.</h1>
+                <p class="lede">Hydrate an ordinary static card with JSON values, then connect its existing button to JavaScript and Dart runtime handlers.</p>
+            </header>
+            <section class="demo-shell" aria-label="Live HTML hydration example">
+                <section id="hydration-card" class="hydration-card" aria-label="Static card hydrated by Dart">
+                    <h2 data-hydrate="title">Static template title</h2>
+                    <p data-hydrate="description">This static description will be hydrated from JSON.</p>
+                    <button id="action" type="button" data-hydrate="action">Static template button</button>
+                    <p id="hydration-result">No runtime handler has run yet.</p>
+                </section>
+                <div class="controls"><p id="status" class="status" role="status" aria-live="polite">Hydrating static HTML…</p></div>
+            </section>
+            <section class="chapter-notes">
+                <div><h2>How it works</h2><p>The HTML is a static template. JSON supplies values or drawing data. Dart owns rendering and browser events; boot.js registers small JavaScript handlers through LMDart.register.</p></div>
+                <pre><code>final data = await fetchJson(&#x27;data/hydration.json&#x27;);
+hydrate(document.getElementById(&#x27;hydration-card&#x27;)!, data);
+button.onClick.listen((_) {
+  LMDart.call(&#x27;hydrate.clicked&#x27;, {&#x27;value&#x27;: &#x27;hydration&#x27;});
+});</code></pre>
+            </section>
+            <nav class="pager" aria-label="Chapter navigation"><a href="index.html">← Book contents</a><a href="demo-table.html">JSON HTML tables →</a></nav>
+        </article>
+    </main>
+    <footer>
+        <p><strong>lmdart</strong> · Dart 3.14.1 · MIT licensed</p>
+        <p>No Flutter. No UI framework. Direct browser APIs and small JavaScript handlers.</p>
+    </footer>
+    <noscript>This chapter needs JavaScript enabled. Dart compiles to JavaScript, then boot.js registers the handlers.</noscript>
+    <script src="lmdart.js"></script>
+    <script src="boot.js"></script>
+</body>
+</html>

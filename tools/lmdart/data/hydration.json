@@ -1,0 +1,5 @@
+{
+  "title": "This began as static HTML",
+  "description": "Dart loaded this sentence from hydration.json and preserved the existing card structure.",
+  "action": "Run the JavaScript handler"
+}

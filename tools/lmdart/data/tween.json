@@ -1,0 +1,10 @@
+{
+  "duration": 3200,
+  "attributes": [
+    {"selector": "#tween-dot", "attribute": "r", "from": 22, "to": 58},
+    {"selector": "#tween-dot", "attribute": "opacity", "from": 1, "to": 0.35}
+  ],
+  "positions": [
+    {"selector": "#tween-group", "fromX": 90, "fromY": 100, "toX": 470, "toY": 310}
+  ]
+}

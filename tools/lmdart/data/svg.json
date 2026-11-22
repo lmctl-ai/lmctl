@@ -1,0 +1,14 @@
+{
+  "title": "JSON-driven SVG scene",
+  "width": 960,
+  "height": 540,
+  "commands": [
+    {"type": "rect", "x": 0, "y": 0, "width": 960, "height": 540, "color": "#0b1726"},
+    {"type": "text", "x": 42, "y": 55, "text": "SVG elements from Dart and JSON", "color": "#edf5ff", "fontSize": 25},
+    {"type": "circle", "cx": 480, "cy": 290, "r": 72, "color": "#61d6c5", "opacity": 0.3},
+    {"type": "circle", "cx": 480, "cy": 290, "r": 42, "color": "#61d6c5"},
+    {"type": "polyline", "points": [{"x": 70, "y": 390}, {"x": 230, "y": 210}, {"x": 360, "y": 340}, {"x": 600, "y": 170}, {"x": 890, "y": 390}], "color": "#61d6c5", "strokeWidth": 5},
+    {"type": "line", "x1": 70, "y1": 430, "x2": 890, "y2": 430, "color": "#91a5bd", "strokeWidth": 1},
+    {"type": "text", "x": 42, "y": 495, "text": "rect · circle · line · polyline · text", "color": "#91a5bd", "fontSize": 14}
+  ]
+}

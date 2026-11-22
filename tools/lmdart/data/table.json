@@ -1,0 +1,10 @@
+{
+  "columns": ["Component", "Runtime", "Output"],
+  "rows": [
+    ["Hydration", "Dart + JavaScript", "DOM"],
+    ["Drawing", "Dart", "SVG + Canvas"],
+    ["Charts", "Dart", "SVG + Canvas"],
+    ["Motion", "Dart + JavaScript", "Attributes + frames"],
+    ["3D", "Dart", "WebGL"]
+  ]
+}

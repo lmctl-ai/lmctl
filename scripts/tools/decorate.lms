@@ -373,10 +373,12 @@ while (str_find(tool_dirs, "|") >= 0) {
   let index_exists = html.link_exists(root_probe, "/" + directory + "/index.html");
   let index_page = html.parse("");
   if (index_exists) { index_page = html.load(directory + "/index.html"); }
-  let authored_index = index_exists && !str_contains(index_page.source(), "<!-- generated tool index -->");
+  let raw_index = index_exists && index_page.select("body[data-page]").len() == 1;
+  let generated_index = str_contains(index_page.source(), "<!-- generated tool index -->");
+  let authored_index = index_exists && !raw_index && !generated_index;
   let tool_title = "";
   let tool_summary = "";
-  if (authored_index) { tool_title = heading(index_page); tool_summary = summary(index_page); }
+  if (index_exists && !generated_index) { tool_title = heading(index_page); tool_summary = summary(index_page); }
   for (page in pages) {
     if (basename(page.path()) == "index.html" || role(basename(page.path())) == "demo") { continue; }
     if (tool_title == "") { tool_title = heading(page); tool_summary = summary(page); }
@@ -412,7 +414,7 @@ while (str_find(tool_dirs, "|") >= 0) {
   let index_result = render(tool_layout, nav, footer, index_body, page_title(tool_title, tool), index_description);
   let index_diff = "missing or stale generated tool index";
   if (authored_index) { index_diff = differences(index_page, index_result); }
-  store(directory + "/index.html", index_result, index_before, check, index_diff);
+  if (!raw_index) { store(directory + "/index.html", index_result, index_before, check, index_diff); }
   }
   let icon = "";
   if (asset_exists(icon_path)) { icon = "<img src=\"" + escape(icon_path) + "\" alt=\"\">"; }
