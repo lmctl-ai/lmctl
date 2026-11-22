@@ -1,0 +1,9 @@
+name: hydrate
+publish_to: none
+environment:
+  sdk: ^3.6.0
+dependencies:
+  intl: ^0.20.3
+  web: ^1.1.0
+dev_dependencies:
+  lints: ^6.1.0
