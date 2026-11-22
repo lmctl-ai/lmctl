@@ -277,7 +277,7 @@ fn check_page(page: Doc) -> void {
       let decorative = false;
       if (page_path == "tools/index.html" && node.parent().tag() == "li" && str_ends_with(src, "/img/icon.png")) {
         let links = node.parent().select("a");
-        if (links.len() == 1 && normalized(links.at(0).text()) != "" && links.at(0).attr("href") == str_substr(src, 0, str_len(src) - 12)) {
+        if (links.len() == 1 && normalized(links.at(0).text()) != "" && (links.at(0).attr("href") == str_substr(src, 0, str_len(src) - 12) || links.at(0).attr("href") == str_substr(src, 0, str_len(src) - 12) + "index.html")) {
           for (candidate in page.select("main > ul > li > img")) { if (candidate.path() == path) { decorative = true; } }
         }
       }

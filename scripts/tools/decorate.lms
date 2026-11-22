@@ -418,7 +418,7 @@ while (str_find(tool_dirs, "|") >= 0) {
   }
   let icon = "";
   if (asset_exists(icon_path)) { icon = "<img src=\"" + escape(icon_path) + "\" alt=\"\">"; }
-  tool_links = tool_links + "<li>" + icon + "<a href=\"/tools/" + escape(tool) + "/\">" + escape(tool_title) + "</a> — " + escape(tool_summary) + "</li>\n";
+  tool_links = tool_links + "<li>" + icon + "<a href=\"/tools/" + escape(tool) + "/index.html\">" + escape(tool_title) + "</a> — " + escape(tool_summary) + "</li>\n";
 }
 if (${tool_scope} == "" || ${tool_scope} == "catalog") {
 for (page in html.load_dir("tools", "*.html", "*/*.html")) {

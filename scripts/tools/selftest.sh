@@ -58,7 +58,7 @@ let fragment = html.load("original.fragment");
 if (skill.source_inner("main") != str_replace(fragment.source(), "&lt;input&gt;", "&lt;input>")) { report.add("test", "skill", 0, "authored bytes changed"); }
 if (skill.select("main").at(0).text() != fragment.select("body").at(0).text()) { report.add("test", "skill", 0, "authored text changed"); }
 let root = html.load("tools/index.html");
-if (root.select("main li").len() != 1 || root.select("main li a").at(0).attr("href") != "/tools/zeta/") { report.add("test", "index", 0, "wrong generated index"); }
+if (root.select("main li").len() != 1 || root.select("main li a").at(0).attr("href") != "/tools/zeta/index.html") { report.add("test", "index", 0, "wrong generated index"); }
 if (skill.select("nav a").len() != 5) { report.add("test", "nav", 0, "shared site links or optional pages missing from nav"); }
 if (skill.select("head title").at(0).text() != "Example & helpers {{CONTENT}} — zeta — lmctl.com tools") { report.add("test", "title", 0, "placeholder expansion corrupted title"); }
 report.write_text("assert.txt");
