@@ -2,7 +2,11 @@ name: tools-check
 
 # Validates the static /tools/ pages (scripts/tools/**). No secrets,
 # read-only token, no deploy.
-# Owner policy: checks/publication run only on explicit dispatch.
+# Owner policy: checks run only on explicit dispatch.
+# PUBLICATION EXCEPTION (operator, 2026-11-22): tools-publish.yml publishes /tools/
+# automatically on a push to main that touches its inputs. That is a deliberate,
+# narrow override of the dispatch-only rule for publication; this file stays
+# dispatch-only. Keep the two consistent if either changes.
 on:
   workflow_dispatch:
 
